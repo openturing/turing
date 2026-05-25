@@ -22,8 +22,10 @@ import { PromptEditor } from "@/components/ui/prompt-editor"
 import { useCreateAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
+import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
+import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
@@ -43,6 +45,7 @@ import { SmartDescription } from "../ui/smart-description"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
+const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turFeaturesService = new TurFeaturesService();
 const urlBase = ROUTES.AI_AGENT_INSTANCE
@@ -100,6 +103,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const navigate = useNavigate()
   const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
   const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
+  const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
   const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
   const [globalDefaultEmbeddingModelId, setGlobalDefaultEmbeddingModelId] = useState<string>("");
   const [globalDefaultEmbeddingStoreId, setGlobalDefaultEmbeddingStoreId] = useState<string>("");
@@ -157,12 +161,17 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // The toggles now live in sn.site.genai.form.tsx.
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
+      // T28 / §III.5 Phase C — null clears the per-agent SE binding so
+      // TurAnalyticsIntentIndexer.resolveSeInstance falls back to the
+      // global default (property / first registered SE).
+      analyticsSeInstance: value.analyticsSeInstance ?? null,
     });
   }, [value])
 
   useEffect(() => {
     turEmbeddingModelService.query().then(setEmbeddingModels);
     turStoreInstanceService.query().then(setStoreInstances);
+    turSEInstanceService.query().then(setSeInstances);
     turGlobalSettingsService.query().then((settings) => {
       setGlobalRagEnabled(settings.ragEnabled ?? false);
       setGlobalDefaultEmbeddingModelId(settings.defaultEmbeddingModelId ?? "");
@@ -437,6 +446,50 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                             <SelectItem value={NONE_VALUE}>{t("forms.agentSettings.noEmbeddingStore")}</SelectItem>
                             {storeInstances.map((instance) => (
                               <SelectItem key={instance.id} value={instance.id}>
+                                {instance.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="analyticsSeInstance"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.analyticsSeInstance")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.analyticsSeInstanceDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={(value: string) => {
+                            if (value === NONE_VALUE) {
+                              field.onChange(null);
+                            } else {
+                              const instance = seInstances.find((i) => i.id === value);
+                              field.onChange(instance ?? null);
+                            }
+                          }}
+                          value={field.value?.id ?? NONE_VALUE}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={t("forms.agentSettings.analyticsSeInstanceNone")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NONE_VALUE}>
+                              {t("forms.agentSettings.analyticsSeInstanceNone")}
+                            </SelectItem>
+                            {seInstances.map((instance) => (
+                              <SelectItem key={instance.id} value={instance.id!}>
                                 {instance.title}
                               </SelectItem>
                             ))}

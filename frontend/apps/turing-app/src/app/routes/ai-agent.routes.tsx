@@ -17,6 +17,7 @@ const AIAgentSlotPage = lazy(() => import("../console/ai-agent/slot/ai-agent.slo
 const IntentListPage = lazy(() => import("../console/intent/intent.list.page"))
 const IntentSettingsPage = lazy(() => import("../console/intent/settings/intent.settings.page"))
 const IntentAiChatPage = lazy(() => import("../console/intent/ai-chat/intent.ai-chat.page"))
+const AnalyticsIntentListPage = lazy(() => import("../console/analytics-intent/analytics-intent.list.page"))
 const ChatFlowListPage = lazy(() => import("../console/chat-flow/chat-flow.list.page"))
 const ChatFlowPage = lazy(() => import("../console/chat-flow/chat-flow.page"))
 const ChatFlowAiChatPage = lazy(() => import("../console/chat-flow/ai-chat/chat-flow.ai-chat.page"))
@@ -53,6 +54,7 @@ export const AIAgentRoutes = (
             <Route path="intent/new/ai-chat" element={<IntentAiChatPage />} />
             <Route path="intent/:intentId" element={<RedirectToIntentSettings />} />
             <Route path="intent/:intentId/settings" element={<IntentSettingsPage />} />
+            <Route path="analytics-intent" element={<AnalyticsIntentListPage />} />
         </Route>
     </Route>
 )

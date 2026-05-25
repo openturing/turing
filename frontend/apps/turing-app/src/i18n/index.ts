@@ -26,6 +26,7 @@ import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
 import enSetup from "./locales/en/setup.json";
 import enIntent from "./locales/en/intent.json";
+import enAnalyticsIntent from "./locales/en/analyticsIntent.json";
 import enLlm from "./locales/en/llm.json";
 import enLogging from "./locales/en/logging.json";
 import enMarketplace from "./locales/en/marketplace.json";
@@ -66,6 +67,7 @@ import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
 import ptSetup from "./locales/pt/setup.json";
 import ptIntent from "./locales/pt/intent.json";
+import ptAnalyticsIntent from "./locales/pt/analyticsIntent.json";
 import ptLlm from "./locales/pt/llm.json";
 import ptLogging from "./locales/pt/logging.json";
 import ptMarketplace from "./locales/pt/marketplace.json";
@@ -87,7 +89,7 @@ const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
-  ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
+  ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona,
@@ -97,7 +99,7 @@ const pt = {
   ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat, ...ptChatFlow,
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
-  ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
+  ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona,

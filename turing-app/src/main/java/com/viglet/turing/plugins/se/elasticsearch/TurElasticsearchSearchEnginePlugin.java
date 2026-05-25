@@ -387,6 +387,57 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
         }
     }
 
+    /**
+     * T28 / §III.5 — Elasticsearch {@code more_like_this} backend for
+     * {@code TurSeMltIntentClassifier}. Submits the user transcript as
+     * the {@code like} text on a per-agent intent index, scoring against
+     * {@code field} (typically {@code "samples"}). Returns the top docs
+     * whose ids are the catalog labels (catalogs are indexed one doc per
+     * label).
+     */
+    @Override
+    public List<com.viglet.turing.plugins.se.TurSEStandaloneHit> moreLikeThisStandalone(
+            TurSEInstance seInstance, String indexName, String field, String text, int topK) {
+        if (text == null || text.isBlank() || topK < 1) {
+            return List.of();
+        }
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    try {
+                        @SuppressWarnings({ "unchecked", "rawtypes" })
+                        Class<Map<String, Object>> mapType = (Class) Map.class;
+                        var resp = instance.getClient().search(s -> s
+                                .index(indexName)
+                                .size(topK)
+                                .source(src -> src.filter(f -> f.includes("id", "label")))
+                                .query(q -> q.moreLikeThis(m -> m
+                                        .fields(field)
+                                        .like(l -> l.text(text))
+                                        .minTermFreq(1)
+                                        .minDocFreq(1)
+                                        .minWordLength(3)
+                                        .maxQueryTerms(40))),
+                                mapType);
+                        List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits =
+                                new java.util.ArrayList<>(resp.hits().hits().size());
+                        for (var hit : resp.hits().hits()) {
+                            Map<String, Object> source = hit.source();
+                            String label = source != null && source.get("label") != null
+                                    ? source.get("label").toString()
+                                    : hit.id();
+                            Double rawScore = hit.score();
+                            double score = rawScore == null ? 0.0 : rawScore.doubleValue();
+                            hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
+                                    label, "", Map.of(), score));
+                        }
+                        return hits;
+                    } catch (Exception e) {
+                        log.warn("[ES] MLT standalone '{}' failed: {}", indexName, e.getMessage());
+                        return java.util.List.<com.viglet.turing.plugins.se.TurSEStandaloneHit>of();
+                    }
+                }).orElse(List.of());
+    }
+
     // ---- Content export ---------------------------------------------------
 
     @Override

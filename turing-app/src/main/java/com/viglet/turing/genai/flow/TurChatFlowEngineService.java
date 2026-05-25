@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.flow;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,6 +27,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -45,7 +48,11 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.queries.mlt.MoreLikeThis;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -112,6 +119,29 @@ public class TurChatFlowEngineService {
      * @since 2026.2.8
      */
     public static final String CACHE_ROUTER_DECISION = "turChatFlowRouterDecision";
+
+    /**
+     * T27 / §II.2.3 — per-agent {@link SearcherManager} index of trigger
+     * descriptions, scored with {@link BM25Similarity} via Lucene
+     * {@link MoreLikeThis}. Each entry holds one bucket per
+     * {@link Analyzer} (PT/EN) so T25 language routing is preserved.
+     *
+     * <p>Built lazily on the first procedural route per agent; reused on
+     * subsequent turns. Wiped on any {@link TurChatFlow} save/delete via
+     * {@link TurChatFlowRouterEvictionListener} so admin edits to trigger
+     * descriptions propagate without restart — same semantics as the
+     * existing {@link #CACHE_ROUTER_DECISION} hook.
+     *
+     * <p>Local to this JVM by design: {@code SearcherManager} +
+     * {@code ByteBuffersDirectory} are non-serializable live resources that
+     * cannot ride a clustered cache. Other nodes rebuild their own copy on
+     * their next turn after any save/delete (each node fires its own
+     * listener through Hibernate's per-JVM SessionFactory).
+     *
+     * @since 2026.3.1
+     */
+    private final ConcurrentMap<String, AgentRouterIndex> routerIndexByAgent =
+            new ConcurrentHashMap<>();
 
     /**
      * Minimum ratio by which the top-scoring flow must beat the runner-up to
@@ -785,7 +815,8 @@ public class TurChatFlowEngineService {
         //     freshly-triggered turns where the trigger is obvious. Falls
         //     back to the LLM router when the procedural pass is ambiguous
         //     or no description has enough keyword density.
-        String proceduralPick = tryProceduralRoute(candidates, lastUserMessage).orElse(null);
+        String proceduralPick = tryProceduralRoute(agent.getId(), candidates, lastUserMessage)
+                .orElse(null);
         final String pickedId;
         if (proceduralPick != null) {
             log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", proceduralPick);
@@ -1084,6 +1115,283 @@ public class TurChatFlowEngineService {
     }
 
     private record ScoredRoute(String bestId, float bestScore, float secondScore) {
+    }
+
+    /**
+     * T27 / §II.2.3 — cached variant of
+     * {@link #tryProceduralRoute(List, String)} that reuses a pre-built
+     * {@link SearcherManager}-per-analyzer index keyed by {@code agentId}.
+     *
+     * <p>The index covers every enabled flow on the agent (regardless of
+     * per-conversation eligibility); routing applies the eligibility mask
+     * after MLT scoring so the cache survives across conversations. Built
+     * lazily on first call; reused on subsequent turns; wiped via
+     * {@link #evictRouterIndexes()} when any flow on any agent is saved or
+     * deleted.
+     *
+     * <p>The static overload (used by unit tests and as the on-demand
+     * fallback) still works — this method delegates to it whenever the
+     * cached index is empty or unavailable for the agent.
+     *
+     * @since 2026.3.1
+     */
+    Optional<String> tryProceduralRoute(String agentId, List<RouterCandidate> candidates,
+            String userMessage) {
+        if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        if (agentId == null || agentId.isBlank()) {
+            return tryProceduralRoute(candidates, userMessage);
+        }
+        AgentRouterIndex index = routerIndexByAgent.computeIfAbsent(agentId,
+                this::buildRouterIndex);
+        if (index.isEmpty()) {
+            return Optional.empty();
+        }
+        return scoreCachedRoute(index, candidates, userMessage);
+    }
+
+    /**
+     * Drops every cached {@link AgentRouterIndex}, releasing the underlying
+     * Lucene {@link Directory}/{@link SearcherManager} resources. Invoked by
+     * {@link TurChatFlowRouterEvictionListener} on
+     * {@link TurChatFlow} persist/update/remove and by the API layer at the
+     * one bulk-DML delete site that bypasses JPA entity callbacks.
+     *
+     * @since 2026.3.1
+     */
+    public void evictRouterIndexes() {
+        if (routerIndexByAgent.isEmpty()) {
+            return;
+        }
+        List<AgentRouterIndex> drained = new ArrayList<>(routerIndexByAgent.values());
+        routerIndexByAgent.clear();
+        for (AgentRouterIndex index : drained) {
+            index.close();
+        }
+        log.debug("[FlowEngine] Router index cache evicted ({} agent entries)",
+                drained.size());
+    }
+
+    /**
+     * Test-visible accessor for the per-agent index cache size. Production
+     * code never reads this — it exists so unit tests can pin the hit/miss
+     * contract without reflection.
+     */
+    int routerIndexCacheSize() {
+        return routerIndexByAgent.size();
+    }
+
+    private AgentRouterIndex buildRouterIndex(String agentId) {
+        List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agentId);
+        Map<Analyzer, List<TurChatFlow>> grouped = new HashMap<>(2);
+        for (TurChatFlow flow : flows) {
+            if (flow.getEnabled() != 1) {
+                continue;
+            }
+            String description = flow.getTriggerDescription();
+            if (description == null || description.isBlank()) {
+                continue;
+            }
+            Analyzer analyzer = analyzerFor(flow.getTriggerLanguage(), description);
+            grouped.computeIfAbsent(analyzer, ignored -> new ArrayList<>()).add(flow);
+        }
+        if (grouped.isEmpty()) {
+            return AgentRouterIndex.empty();
+        }
+        Map<Analyzer, AnalyzerBucket> buckets = new HashMap<>(grouped.size());
+        for (Map.Entry<Analyzer, List<TurChatFlow>> entry : grouped.entrySet()) {
+            AnalyzerBucket bucket = buildBucket(entry.getKey(), entry.getValue());
+            if (bucket != null) {
+                buckets.put(entry.getKey(), bucket);
+            }
+        }
+        if (buckets.isEmpty()) {
+            return AgentRouterIndex.empty();
+        }
+        return new AgentRouterIndex(Map.copyOf(buckets));
+    }
+
+    private static AnalyzerBucket buildBucket(Analyzer analyzer, List<TurChatFlow> flows) {
+        Directory directory = new ByteBuffersDirectory();
+        IndexWriterConfig cfg = new IndexWriterConfig(analyzer)
+                .setSimilarity(new BM25Similarity());
+        int docs = 0;
+        try (IndexWriter writer = new IndexWriter(directory, cfg)) {
+            for (TurChatFlow flow : flows) {
+                Document doc = new Document();
+                doc.add(new StringField(MLT_FIELD_ID, flow.getId(), Field.Store.YES));
+                doc.add(new TextField(MLT_FIELD_TRIGGER, flow.getTriggerDescription(),
+                        Field.Store.NO));
+                writer.addDocument(doc);
+                docs++;
+            }
+            writer.commit();
+        } catch (IOException e) {
+            log.warn("[FlowEngine] Failed to build router index bucket: {}", e.getMessage());
+            try {
+                directory.close();
+            } catch (IOException closeException) {
+                log.debug("[FlowEngine] Failed to close directory after build error: {}",
+                        closeException.getMessage());
+            }
+            return null;
+        }
+        try {
+            SearcherManager searcherManager = new SearcherManager(directory, null);
+            return new AnalyzerBucket(directory, searcherManager, analyzer, docs);
+        } catch (IOException e) {
+            log.warn("[FlowEngine] Failed to open SearcherManager: {}", e.getMessage());
+            try {
+                directory.close();
+            } catch (IOException closeException) {
+                log.debug("[FlowEngine] Failed to close directory after SM error: {}",
+                        closeException.getMessage());
+            }
+            return null;
+        }
+    }
+
+    private static Optional<String> scoreCachedRoute(AgentRouterIndex index,
+            List<RouterCandidate> candidates, String userMessage) {
+        Set<String> eligibleIds = candidates.stream()
+                .map(c -> c.flow().getId())
+                .collect(Collectors.toSet());
+        float bestScore = 0f;
+        float secondScore = 0f;
+        String bestId = null;
+        for (AnalyzerBucket bucket : index.buckets().values()) {
+            ScoredRoute scored = searchBucket(bucket, eligibleIds, userMessage);
+            if (scored == null) {
+                continue;
+            }
+            if (scored.bestScore() > bestScore) {
+                if (bestScore > secondScore) {
+                    secondScore = bestScore;
+                }
+                bestScore = scored.bestScore();
+                bestId = scored.bestId();
+            } else if (scored.bestScore() > secondScore) {
+                secondScore = scored.bestScore();
+            }
+            if (scored.secondScore() > secondScore) {
+                secondScore = scored.secondScore();
+            }
+        }
+        if (bestId == null || bestScore <= 0f) {
+            return Optional.empty();
+        }
+        if (secondScore > 0f
+                && bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
+            log.debug("[FlowEngine] Cached router undecided "
+                    + "(best={}, second={}, ratio<{}) — falling back to LLM",
+                    bestScore, secondScore, PROCEDURAL_DOMINANCE_RATIO);
+            return Optional.empty();
+        }
+        return Optional.of(bestId);
+    }
+
+    private static ScoredRoute searchBucket(AnalyzerBucket bucket,
+            Set<String> eligibleIds, String userMessage) {
+        IndexSearcher searcher = null;
+        try {
+            searcher = bucket.searcherManager().acquire();
+            MoreLikeThis moreLikeThis = new MoreLikeThis(searcher.getIndexReader());
+            moreLikeThis.setAnalyzer(bucket.analyzer());
+            moreLikeThis.setFieldNames(new String[] { MLT_FIELD_TRIGGER });
+            moreLikeThis.setMinTermFreq(1);
+            moreLikeThis.setMinDocFreq(1);
+            moreLikeThis.setMinWordLen(2);
+            moreLikeThis.setMaxQueryTerms(25);
+            Query query = moreLikeThis.like(MLT_FIELD_TRIGGER, new StringReader(userMessage));
+            int topK = Math.max(2, bucket.docCount());
+            TopDocs hits = searcher.search(query, topK);
+            if (hits.scoreDocs.length == 0) {
+                return null;
+            }
+            StoredFields storedFields = searcher.storedFields();
+            String bestId = null;
+            float bestScore = 0f;
+            float secondScore = 0f;
+            for (ScoreDoc sd : hits.scoreDocs) {
+                String flowId = storedFields.document(sd.doc).get(MLT_FIELD_ID);
+                if (flowId == null || !eligibleIds.contains(flowId)) {
+                    continue;
+                }
+                if (sd.score > bestScore) {
+                    if (bestScore > secondScore) {
+                        secondScore = bestScore;
+                    }
+                    bestScore = sd.score;
+                    bestId = flowId;
+                } else if (sd.score > secondScore) {
+                    secondScore = sd.score;
+                }
+            }
+            if (bestId == null) {
+                return null;
+            }
+            return new ScoredRoute(bestId, bestScore, secondScore);
+        } catch (IOException e) {
+            log.warn("[FlowEngine] Cached MoreLikeThis search failed: {}", e.getMessage());
+            return null;
+        } finally {
+            if (searcher != null) {
+                try {
+                    bucket.searcherManager().release(searcher);
+                } catch (IOException e) {
+                    log.debug("[FlowEngine] Failed to release IndexSearcher: {}", e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Pre-built per-analyzer Lucene index for one agent. Lives in the
+     * {@code routerIndexByAgent} cache until {@link #evictRouterIndexes()}
+     * fires; closing it releases the underlying {@link Directory} and
+     * {@link SearcherManager}.
+     */
+    record AgentRouterIndex(Map<Analyzer, AnalyzerBucket> buckets) {
+
+        private static final AgentRouterIndex EMPTY = new AgentRouterIndex(Map.of());
+
+        static AgentRouterIndex empty() {
+            return EMPTY;
+        }
+
+        boolean isEmpty() {
+            return buckets.isEmpty();
+        }
+
+        void close() {
+            for (AnalyzerBucket bucket : buckets.values()) {
+                bucket.close();
+            }
+        }
+    }
+
+    /**
+     * One bucket of the {@link AgentRouterIndex}: a Lucene directory + open
+     * {@link SearcherManager} for a single {@link Analyzer} (PT or EN). The
+     * bucket holds the document count so callers can size their {@code topK}
+     * to cover eligibility filtering without truncating real matches.
+     */
+    record AnalyzerBucket(Directory directory, SearcherManager searcherManager,
+            Analyzer analyzer, int docCount) {
+
+        void close() {
+            try {
+                searcherManager.close();
+            } catch (IOException e) {
+                log.debug("[FlowEngine] SearcherManager close failed: {}", e.getMessage());
+            }
+            try {
+                directory.close();
+            } catch (IOException e) {
+                log.debug("[FlowEngine] Directory close failed: {}", e.getMessage());
+            }
+        }
     }
 
     private static final String MLT_FIELD_TRIGGER = "trigger";

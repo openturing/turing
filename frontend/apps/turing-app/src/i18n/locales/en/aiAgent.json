@@ -17,6 +17,7 @@
       "slots": "Slots",
       "chat": "Chat",
       "chatFlow": "Chat Flow",
+      "analyticsIntent": "Analytics Intent",
       "history": "History"
     },
     "persona": {

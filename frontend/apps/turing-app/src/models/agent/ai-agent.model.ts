@@ -3,6 +3,7 @@ import type { TurEmbeddingModel } from "../embedding/embedding-model.model.ts";
 import type { TurLLMInstance } from "../llm/llm-instance.model.ts";
 import type { TurMcpServer } from "../mcp/mcp-server.model.ts";
 import type { TurPersona } from "../persona/persona.model.ts";
+import type { TurSEInstance } from "../se/se-instance.model.ts";
 import type { TurStoreInstance } from "../store/store-instance.model.ts";
 
 /**
@@ -55,5 +56,12 @@ export interface TurAIAgent {
   defaultPersona?: TurPersona | null;
   turEmbeddingModelInstance?: TurEmbeddingModel | null;
   turStoreInstance?: TurStoreInstance | null;
+  /**
+   * T28 / §III.5 Phase C — optional SE binding for the analytics intent
+   * index. When null, {@code TurAnalyticsIntentIndexer} falls back to the
+   * global default property (or the first registered SE instance).
+   * @since 2026.3.1
+   */
+  analyticsSeInstance?: TurSEInstance | null;
   icon?: string | null;
 }

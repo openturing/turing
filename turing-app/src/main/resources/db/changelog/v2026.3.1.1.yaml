@@ -1,0 +1,69 @@
+databaseChangeLog:
+  # T28 / §III.5 — per-agent intent catalog for the chat analytics
+  # classifier. Each row carries one label + a newline-separated bag of
+  # representative user utterances. Independent from chat_flow:
+  # chat flows describe routing intents (runtime); analytics intents
+  # describe categorisation intents (post-hoc dashboards).
+  #
+  # Samples + description stored as longtext because catalogs ship dozens
+  # of samples per label in practice and VARCHAR caps lead to silent
+  # truncation. Unique (agent_id, label) prevents accidental duplicates;
+  # camelCase column names match the project convention (see CLAUDE.md
+  # "JPA & Database Column Naming").
+
+  - changeSet:
+      id: v2026.3.1.1-create-analytics-intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: analytics_intent
+      changes:
+        - createTable:
+            tableName: analytics_intent
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: label
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: samples
+                  type: longtext
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: longtext
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_analytics_intent_agent
+                    references: ai_agent(id)
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updatedAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: analytics_intent
+            constraintName: uq_analytics_intent_agent_label
+            columnNames: agent_id, label

@@ -495,6 +495,10 @@ public class TurChatFlowAPI {
                         && agentId.equals(flow.getTurAIAgent().getId()))
                 .map(flow -> {
                     turChatFlowRepository.delete(id);
+                    // Bulk-DML delete in the repository bypasses JPA entity
+                    // callbacks; wipe the router index cache here so the
+                    // engine doesn't keep scoring against a stale flow.
+                    chatFlowEngineService.evictRouterIndexes();
                     return true;
                 }).orElse(false);
     }

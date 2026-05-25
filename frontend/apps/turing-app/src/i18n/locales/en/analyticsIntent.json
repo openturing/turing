@@ -1,0 +1,33 @@
+{
+  "analyticsIntent": {
+    "title": "Analytics Intent",
+    "description": "Per-agent intent catalog used by the chat analytics classifier (Lucene MLT embedded + SE-backed Solr/ES).",
+    "blankTitle": "No analytics intents yet.",
+    "blankDescription": "Create labels with representative user utterances so the classifier can categorise finished conversations.",
+    "newInstance": "New Intent",
+    "editTitle": "Edit Analytics Intent",
+    "dialogDescription": "Label is shown on dashboards; samples are scored against session transcripts. Disabled labels are ignored.",
+    "labelRequired": "Label is required.",
+    "created": "Analytics intent \"{{name}}\" was created.",
+    "saved": "Analytics intent \"{{name}}\" was saved.",
+    "notSaved": "Could not save \"{{name}}\".",
+    "deleted": "Analytics intent \"{{name}}\" was deleted.",
+    "notDeleted": "Could not delete \"{{name}}\".",
+    "reindex": "Reindex into SE",
+    "reindexed": "Reindex done — {{count}} row(s) pushed to {{indexName}}.",
+    "notReindexed": "Reindex failed.",
+    "samplesHint": "One sample per line. The classifier concatenates them as the field MLT scores against.",
+    "fields": {
+      "label": "Label",
+      "samples": "Sample utterances",
+      "samplesPreview": "Samples (preview)",
+      "description": "Description (admin-only notes)",
+      "enabled": "Enabled"
+    },
+    "placeholders": {
+      "label": "e.g. Refund request",
+      "samples": "I want my money back\nrefund please\ncan I get a chargeback",
+      "description": "What this intent captures and why we track it."
+    }
+  }
+}

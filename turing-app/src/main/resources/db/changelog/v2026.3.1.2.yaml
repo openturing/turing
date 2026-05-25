@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T28 / §III.5 Phase C — per-agent SE binding for the analytics intent
+  # classifier. When set, TurAnalyticsIntentIndexer.resolveSeInstance(agentId)
+  # prefers this binding over the global default property. Optional —
+  # agents that don't need a custom SE keep working as before via the
+  # turing.chat.analytics.classifier.se-instance-id property + findAll
+  # fallback.
+
+  - changeSet:
+      id: v2026.3.1.2-add-ai-agent-analytics-se-instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: analytics_se_instance_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: analytics_se_instance_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_ai_agent_analytics_se_instance
+                    references: se_instance(id)
+                  remarks: "T28/§III.5 Phase C — optional SE binding for the analytics intent index. Null = use global default."

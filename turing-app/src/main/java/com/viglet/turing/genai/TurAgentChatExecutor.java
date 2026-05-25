@@ -48,6 +48,7 @@ import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurNativeToolService;
+import com.viglet.turing.genai.tool.TurToolPreFilterService;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAgentChatMode;
@@ -112,6 +113,7 @@ public class TurAgentChatExecutor {
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurCustomToolCallbackService customToolCallbackService;
     private final TurToolCallbackPipeline toolCallbackPipeline;
+    private final TurToolPreFilterService toolPreFilterService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
@@ -129,6 +131,7 @@ public class TurAgentChatExecutor {
             TurMcpToolCallbackService mcpToolCallbackService,
             TurCustomToolCallbackService customToolCallbackService,
             TurToolCallbackPipeline toolCallbackPipeline,
+            TurToolPreFilterService toolPreFilterService,
             TurLLMTokenUsageService tokenUsageService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
@@ -145,6 +148,7 @@ public class TurAgentChatExecutor {
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
         this.toolCallbackPipeline = toolCallbackPipeline;
+        this.toolPreFilterService = toolPreFilterService;
         this.tokenUsageService = tokenUsageService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
@@ -183,8 +187,32 @@ public class TurAgentChatExecutor {
      * runtime-resolved persona (which may differ from
      * {@code agent.getDefaultPersona()} when a chat flow has overridden it)
      * — used to decide which brand-context MCP tool, if any, to attach.
+     *
+     * <p>This overload preserves the legacy behavior (no pre-filtering)
+     * and is kept for callers that don't have a user message in hand
+     * (e.g. unit tests or non-chat surfaces). Production chat paths
+     * should prefer
+     * {@link #resolveToolCallbacks(TurAIAgent, TurPersona, String, ChatFlowNode)}
+     * so the §IV.2 / T29 pre-filter can trim large catalogs.
      */
     public ToolCallback[] resolveToolCallbacks(TurAIAgent agent, TurPersona activePersona) {
+        return resolveToolCallbacks(agent, activePersona, null, null);
+    }
+
+    /**
+     * Same as {@link #resolveToolCallbacks(TurAIAgent, TurPersona)} but
+     * runs the §IV.2 / T29 BM25 pre-filter against {@code userMessage}
+     * before returning. Tools listed in the agent's {@code nativeTools}
+     * and on the active node's {@code requiredTools} are always kept
+     * regardless of score; everything else is ranked and the top-K
+     * survives. When the candidate pool is small (or the user message
+     * is blank, or the filter is disabled) this degrades gracefully to
+     * the legacy behavior.
+     *
+     * @since 2026.3.1
+     */
+    public ToolCallback[] resolveToolCallbacks(TurAIAgent agent, TurPersona activePersona,
+            String userMessage, ChatFlowNode activeNode) {
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
                 ? new ToolCallback[0]
@@ -197,10 +225,27 @@ public class TurAgentChatExecutor {
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
         ToolCallback[] personaBrandCallbacks =
                 personaBrandContextProvider.getToolCallbacks(activePersona);
-        return toolCallbackPipeline.decorate(
+        ToolCallback[] decorated = toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
+        // Belt-and-suspenders: native tools (operator-curated) and the
+        // active flow node's requiredTools (flow-author declared) bypass
+        // the BM25 filter. Persona brand-context tool also bypasses
+        // implicitly via its name being in alwaysKeep would be nicer, but
+        // its name isn't exposed at this layer — the filter's small-pool
+        // bypass + the fact that brand tools have rich descriptions keeps
+        // them in the top-K in practice.
+        Set<String> alwaysKeep = new HashSet<>();
+        alwaysKeep.addAll(selectedNativeTools);
+        if (activeNode != null) {
+            for (String required : activeNode.requiredTools()) {
+                if (required != null && !required.isBlank()) {
+                    alwaysKeep.add(required.trim());
+                }
+            }
+        }
+        return toolPreFilterService.filter(decorated, userMessage, alwaysKeep);
     }
 
     /**
@@ -314,7 +359,15 @@ public class TurAgentChatExecutor {
         final TurPersona activePersona = personaResolver.resolve(agent, conversationId);
         final long tAfterPersona = System.currentTimeMillis();
 
-        ToolCallback[] callbacks = resolveToolCallbacks(agent, activePersona);
+        // Resolve the active node up-front so the §IV.2 / T29 tool
+        // pre-filter has access to its requiredTools list. The pure
+        // graph lookup is microseconds — no risk in pulling it earlier
+        // in the setup phase. (The post-LLM consumer at line ~407 is
+        // gone — that read is now done here.)
+        ChatFlowNode activeNode = flowContext == null ? null
+                : flowContext.graph().nodeById(flowContext.state().getCurrentNodeId()).orElse(null);
+        ToolCallback[] callbacks = resolveToolCallbacks(agent, activePersona,
+                lastUserMessageEarly, activeNode);
         final long tAfterTools = System.currentTimeMillis();
         log.info("[AgentExec] Agent '{}': {} tool callbacks", agent.getTitle(), callbacks.length);
         if (log.isDebugEnabled()) {
@@ -403,11 +456,9 @@ public class TurAgentChatExecutor {
         // acknowledgment text; tools fire once on the regen, with the
         // coupon already captured, and the card renders correctly the
         // first time.
-        ChatFlowNode activeNode = flowContext == null ? null
-                : flowContext.graph().nodeById(flowContext.state().getCurrentNodeId()).orElse(null);
-        // §I.5 step 3 / T11: use the node-aware overload so the declarative
-        // ChatFlowNode.toolsEnabled field wins when set; otherwise falls
-        // back to the legacy bilingual substring scan on aiInstruction.
+        // activeNode is computed in the setup phase above so the §IV.2
+        // pre-filter can read its requiredTools; reused here for the
+        // declarative tool-strip decision (T11).
         boolean activeNodeForbidsTools = forbidsToolCalls(activeNode);
         org.springframework.ai.chat.prompt.ChatOptions initialOptions = activeNodeForbidsTools
                 ? DefaultToolCallingChatOptions.builder()

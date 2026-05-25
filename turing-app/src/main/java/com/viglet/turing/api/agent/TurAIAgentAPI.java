@@ -63,6 +63,7 @@ public class TurAIAgentAPI {
     private final TurCustomToolRepository turCustomToolRepository;
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurStoreInstanceRepository turStoreInstanceRepository;
+    private final com.viglet.turing.persistence.repository.se.TurSEInstanceRepository turSEInstanceRepository;
     private final TurPersonaRepository turPersonaRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
@@ -75,6 +76,7 @@ public class TurAIAgentAPI {
             TurCustomToolRepository turCustomToolRepository,
             TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurStoreInstanceRepository turStoreInstanceRepository,
+            com.viglet.turing.persistence.repository.se.TurSEInstanceRepository turSEInstanceRepository,
             TurPersonaRepository turPersonaRepository,
             TurSNSiteGenAiRepository turSNSiteGenAiRepository,
             TurGlobalSettingsService turGlobalSettingsService,
@@ -86,6 +88,7 @@ public class TurAIAgentAPI {
         this.turCustomToolRepository = turCustomToolRepository;
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
+        this.turSEInstanceRepository = turSEInstanceRepository;
         this.turPersonaRepository = turPersonaRepository;
         this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
@@ -177,6 +180,11 @@ public class TurAIAgentAPI {
                     turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
             agentEdit.setTurStoreInstance(resolveSingleRelation(
                     turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+            // T28 / §III.5 Phase C — per-agent SE binding for the analytics
+            // intent index. Null clears the binding so the indexer falls back
+            // to the global default (property / first registered SE).
+            agentEdit.setAnalyticsSeInstance(resolveSingleRelation(
+                    turAIAgent.getAnalyticsSeInstance(), turSEInstanceRepository));
             // Personas: catalog (M2M) + default (M2O). The default, when set,
             // must belong to the catalog — otherwise the runtime resolver
             // would silently fall back to null on every turn. We enforce it
@@ -276,6 +284,9 @@ public class TurAIAgentAPI {
                 turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
         turAIAgent.setTurStoreInstance(resolveSingleRelation(
                 turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+        // T28 / §III.5 Phase C — same per-agent SE binding propagation on create.
+        turAIAgent.setAnalyticsSeInstance(resolveSingleRelation(
+                turAIAgent.getAnalyticsSeInstance(), turSEInstanceRepository));
         Set<TurPersona> personaCatalog = resolveRelations(
                 turAIAgent.getPersonas(), turPersonaRepository);
         turAIAgent.setPersonas(personaCatalog);

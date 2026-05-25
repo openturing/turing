@@ -18,10 +18,12 @@ import java.io.Serializable;
 import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.viglet.turing.genai.flow.TurChatFlowRouterEvictionListener;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -45,6 +47,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "chat_flow")
+@EntityListeners(TurChatFlowRouterEvictionListener.class)
 public class TurChatFlow implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

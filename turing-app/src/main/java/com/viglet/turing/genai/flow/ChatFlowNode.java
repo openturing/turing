@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -219,6 +219,28 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.toolsEnabled();
     }
 
+    /**
+     * Tools the LLM must have available on this node regardless of any
+     * runtime pre-filtering (§IV.2 / T29). When the tool catalog grows
+     * beyond {@code turing.genai.tool-prefilter.min-tools-threshold},
+     * {@code TurToolPreFilterService} runs a Lucene/BM25 similarity match
+     * between the user message and each tool's {@code prompts/tools/**.md}
+     * description and keeps only the top-K. Tools listed here are <em>never</em>
+     * dropped by that filter — use them on nodes that depend on a specific
+     * tool being callable even when the user's message doesn't lexically
+     * mention it.
+     *
+     * <p>Names match the {@code @Tool(name)} value (or the MCP/custom tool's
+     * registered name). Empty list (default) means "no protected tools on
+     * this node" — the filter is free to drop anything that scores below
+     * the cutoff.
+     *
+     * @since 2026.3.1
+     */
+    public List<String> requiredTools() {
+        return data.requiredTools() == null ? List.of() : data.requiredTools();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -241,7 +263,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String slotOperation,
             String slotValue,
             String onJudgeReject,
-            Boolean toolsEnabled) {
+            Boolean toolsEnabled,
+            List<String> requiredTools) {
     }
 
     /**

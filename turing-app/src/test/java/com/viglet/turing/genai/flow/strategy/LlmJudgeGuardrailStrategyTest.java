@@ -136,7 +136,8 @@ class LlmJudgeGuardrailStrategyTest {
                 /* slotOperation         */ null,
                 /* slotValue             */ null,
                 /* onJudgeReject         */ policy,
-                /* toolsEnabled          */ null);
+                /* toolsEnabled          */ null,
+                /* requiredTools         */ null);
         return new ChatFlowNode("test-node", "aiQuestion", data);
     }
 }

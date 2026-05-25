@@ -73,6 +73,11 @@ export const queryKeys = {
     listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,
     detail: (id: string) => [...queryKeys.intents.all(), 'detail', id] as const,
   },
+  analyticsIntents: {
+    all: () => ['analytics-intents'] as const,
+    listByAgent: (agentId: string) => [...queryKeys.analyticsIntents.all(), 'list', 'agent', agentId] as const,
+    detail: (id: string) => [...queryKeys.analyticsIntents.all(), 'detail', id] as const,
+  },
   mcpServers: {
     all: () => ['mcp-servers'] as const,
     list: () => [...queryKeys.mcpServers.all(), 'list'] as const,

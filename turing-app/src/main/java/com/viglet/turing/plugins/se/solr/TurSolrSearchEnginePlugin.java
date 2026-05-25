@@ -411,6 +411,96 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return query.replaceAll("([\\\\+\\-!\\(\\)\\{\\}\\[\\]\\^\"~\\*\\?:/])", "\\\\$1");
     }
 
+    /**
+     * T28 / §III.5 — Solr {@code MoreLikeThis} backend for
+     * {@code TurSeMltIntentClassifier}. Targets the {@code /mlt} request
+     * handler with {@code stream.body=<text>}; Solr 9 disables the
+     * stream-body parameter by default for security, so admins enabling
+     * the analytics intent path on Solr must opt in via
+     * {@code solrconfig.xml}'s {@code <requestParsers enableStreamBody="true"/>}.
+     *
+     * <p>Falls back to a regular BM25 search against {@code field} when
+     * the {@code /mlt} handler returns an empty result OR throws — keeps
+     * the analytics classifier alive on installs that haven't enabled
+     * stream-body yet (short transcripts still get a reasonable match
+     * through plain BM25 over the samples field).
+     */
+    @Override
+    public List<com.viglet.turing.plugins.se.TurSEStandaloneHit> moreLikeThisStandalone(
+            TurSEInstance seInstance, String indexName, String field, String text, int topK) {
+        if (text == null || text.isBlank() || topK < 1) {
+            return List.of();
+        }
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    List<com.viglet.turing.plugins.se.TurSEStandaloneHit> mltHits =
+                            tryMltHandler(instance, field, text, topK);
+                    if (!mltHits.isEmpty()) {
+                        return mltHits;
+                    }
+                    return tryBm25Fallback(instance, indexName, field, text, topK);
+                }).orElse(List.of());
+    }
+
+    private List<com.viglet.turing.plugins.se.TurSEStandaloneHit> tryMltHandler(
+            com.viglet.turing.solr.TurSolrInstance instance, String field, String text, int topK) {
+        try {
+            SolrQuery solrQuery = new SolrQuery();
+            // `qt` routes to the named request handler. `setRequestHandler`
+            // would do the same but was deprecated in SolrJ 9.
+            solrQuery.set("qt", "/mlt");
+            solrQuery.set("stream.body", text);
+            solrQuery.set("mlt.fl", field);
+            solrQuery.set("mlt.mintf", "1");
+            solrQuery.set("mlt.mindf", "1");
+            solrQuery.set("mlt.minwl", "3");
+            solrQuery.set("mlt.maxqt", "40");
+            solrQuery.setFields("id", "label", "score");
+            solrQuery.setRows(topK);
+            var response = instance.getSolrClient().query(solrQuery);
+            return collectMltHits(response.getResults());
+        } catch (Exception e) {
+            log.debug("[Solr] /mlt handler unavailable ('{}') — falling back to BM25",
+                    e.getMessage());
+            return List.of();
+        }
+    }
+
+    private List<com.viglet.turing.plugins.se.TurSEStandaloneHit> tryBm25Fallback(
+            com.viglet.turing.solr.TurSolrInstance instance, String indexName, String field,
+            String text, int topK) {
+        try {
+            SolrQuery query = new SolrQuery();
+            query.setQuery(field + ":(" + escapeSolr(text) + ")");
+            query.setFields("id", "label", "score");
+            query.setRows(topK);
+            var response = instance.getSolrClient().query(query);
+            return collectMltHits(response.getResults());
+        } catch (Exception e) {
+            log.warn("[Solr] MLT BM25 fallback on '{}' failed: {}", indexName, e.getMessage());
+            return List.of();
+        }
+    }
+
+    private static List<com.viglet.turing.plugins.se.TurSEStandaloneHit> collectMltHits(
+            org.apache.solr.common.SolrDocumentList docs) {
+        if (docs == null || docs.isEmpty()) {
+            return List.of();
+        }
+        List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits = new ArrayList<>(docs.size());
+        for (org.apache.solr.common.SolrDocument doc : docs) {
+            Object labelVal = doc.getFirstValue("label");
+            String label = labelVal == null ? String.valueOf(doc.getFirstValue("id")) : labelVal.toString();
+            Object scoreVal = doc.getFirstValue("score");
+            double score = scoreVal instanceof Number n ? n.doubleValue() : 0.0;
+            // The classifier rendering treats the hit "id" as the label.
+            // Catalog rows are one per label so this round-trip is lossless.
+            hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
+                    label, "", java.util.Map.of(), score));
+        }
+        return hits;
+    }
+
     private static void putIfPresent(Map<String, Object> map, String key, Object value) {
         if (value != null) {
             map.put(key, value);

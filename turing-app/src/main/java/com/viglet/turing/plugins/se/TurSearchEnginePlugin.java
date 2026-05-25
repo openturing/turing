@@ -251,6 +251,51 @@ public interface TurSearchEnginePlugin {
                 "retrieveStandalone not supported by " + getPluginType());
     }
 
+    /**
+     * T28 / §III.5 — {@code MoreLikeThis} search over a standalone
+     * index/core. Returns the top {@code topK} hits whose {@code field}
+     * is most similar to the supplied {@code text}, scored by the SE's
+     * native MLT implementation:
+     *
+     * <ul>
+     *   <li>Solr: {@code /mlt} request handler with {@code stream.body}
+     *       (requires admin opt-in via {@code enableStreamBody=true};
+     *       falls back to a regular BM25 search against {@code field}
+     *       when the handler isn't reachable).</li>
+     *   <li>Elasticsearch: {@code more_like_this} query with the text as
+     *       {@code like}.</li>
+     *   <li>Lucene-embedded: not overridden — single-JVM admins use the
+     *       {@code TurLuceneIntentClassifier} embedded strategy instead
+     *       (T28 Phase A), so a no-op default keeps the contract simple.</li>
+     * </ul>
+     *
+     * <p>Used by {@code TurSeMltIntentClassifier} on the SE-backed
+     * production analytics path: it dispatches to the per-agent intent
+     * index, gets the closest catalog labels, and returns the top match
+     * as the session's intent label.
+     *
+     * <p>{@code text} is the raw user transcript — plugins MUST sanitize
+     * before composing engine-specific queries (Solr's stream.body needs
+     * no escaping; ES MLT takes it verbatim). Empty / null returns an
+     * empty list, not throw.
+     *
+     * <p>Each {@link TurSEStandaloneHit#id() id} on the response is the
+     * intent label (catalogs index one doc per label); the score is the
+     * SE's native MLT relevance.
+     *
+     * @param field the indexed text field MLT scores against (typically
+     *              {@code "samples"} for intent catalogs)
+     * @return up to {@code topK} hits, sorted by relevance descending;
+     *         empty list when the query is blank, the index is missing,
+     *         or no docs cleared the MLT score threshold
+     * @since 2026.3.1
+     */
+    default List<TurSEStandaloneHit> moreLikeThisStandalone(TurSEInstance seInstance,
+            String indexName, String field, String text, int topK) {
+        throw new UnsupportedOperationException(
+                "moreLikeThisStandalone not supported by " + getPluginType());
+    }
+
     // ---- Copy field (Solr-specific; no-op for schema-less engines) -------
 
     /**

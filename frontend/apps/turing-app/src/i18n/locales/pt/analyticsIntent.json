@@ -1,0 +1,33 @@
+{
+  "analyticsIntent": {
+    "title": "Intent de Analytics",
+    "description": "Catálogo de intents por agente usado pelo classificador de analytics (Lucene MLT embarcado + Solr/ES via search engine).",
+    "blankTitle": "Nenhum intent de analytics ainda.",
+    "blankDescription": "Crie rótulos com frases representativas para o classificador categorizar conversas finalizadas.",
+    "newInstance": "Novo Intent",
+    "editTitle": "Editar Intent de Analytics",
+    "dialogDescription": "O rótulo aparece nos dashboards; as frases são comparadas com transcrições de sessões. Rótulos desabilitados são ignorados.",
+    "labelRequired": "O rótulo é obrigatório.",
+    "created": "Intent de analytics \"{{name}}\" foi criado.",
+    "saved": "Intent de analytics \"{{name}}\" foi salvo.",
+    "notSaved": "Não foi possível salvar \"{{name}}\".",
+    "deleted": "Intent de analytics \"{{name}}\" foi excluído.",
+    "notDeleted": "Não foi possível excluir \"{{name}}\".",
+    "reindex": "Reindexar no SE",
+    "reindexed": "Reindexação concluída — {{count}} linha(s) enviada(s) para {{indexName}}.",
+    "notReindexed": "Falha na reindexação.",
+    "samplesHint": "Uma frase por linha. O classificador concatena tudo no campo que o MLT pontua.",
+    "fields": {
+      "label": "Rótulo",
+      "samples": "Frases representativas",
+      "samplesPreview": "Frases (prévia)",
+      "description": "Descrição (notas internas do admin)",
+      "enabled": "Habilitado"
+    },
+    "placeholders": {
+      "label": "ex.: Pedido de reembolso",
+      "samples": "Quero meu dinheiro de volta\nme reembolsa por favor\nposso fazer um chargeback",
+      "description": "O que esse intent captura e por que ele é rastreado."
+    }
+  }
+}

@@ -116,10 +116,15 @@ public class TurChatAnalyticsEnricher {
             if (conversationId == null || conversationId.isBlank()) continue;
 
             String firstUserMessage = stringOf(row.get("firstUserMessage"));
+            String agentId = stringOf(row.get("agentId"));
             List<Map<String, Object>> messages =
                     chatMemoryStore.findMessages(conversationId, transcriptMessages);
 
-            TurChatSessionEnrichment enrichment = classifier.classify(firstUserMessage, messages);
+            // T28: threads agentId so the orchestrator can route to the
+            // per-agent intent catalog when the Lucene/ES strategies are
+            // active. Legacy rows without agentId still classify through
+            // the LLM strategy (which ignores agentId).
+            TurChatSessionEnrichment enrichment = classifier.classify(agentId, firstUserMessage, messages);
             store.enrichSession(conversationId, enrichment);
             if (enrichment.intentLabel() == TurChatIntentLabel.UNCLASSIFIED) {
                 unclassified++;

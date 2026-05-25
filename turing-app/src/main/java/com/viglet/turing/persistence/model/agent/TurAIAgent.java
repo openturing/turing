@@ -10,6 +10,7 @@ import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
@@ -212,4 +213,23 @@ public class TurAIAgent implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_persona_id")
     private TurPersona defaultPersona;
+
+    /**
+     * T28 / §III.5 Phase C — SE instance hosting the agent's analytics
+     * intent index (the per-agent {@code intent_<agentShortId>} core
+     * provisioned by {@code TurAnalyticsIntentIndexer}). When null, the
+     * indexer falls back to the global default
+     * ({@code turing.chat.analytics.classifier.se-instance-id} or the
+     * first registered SE) so agents that don't need a custom binding
+     * keep working as before.
+     *
+     * <p>Lazy fetch because the chat-runtime hot path doesn't touch this
+     * field — only the analytics enricher cycle (cron-driven) and the
+     * indexer (mutation-driven) resolve it.
+     *
+     * @since 2026.3.1
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "analytics_se_instance_id")
+    private TurSEInstance analyticsSeInstance;
 }
