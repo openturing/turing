@@ -99,6 +99,43 @@ public class TurAIAgent implements Serializable {
     @Column(name = "chat_memory_max_messages", nullable = false)
     private int chatMemoryMaxMessages = 100;
 
+    /**
+     * T30 / §IV.4 — opt-in to conversation-relevance retrieval: when {@code true}
+     * and persisted chat memory has more turns than {@link #chatMemoryRecentN},
+     * a per-conversation BM25 index over the older turns is built per request
+     * and the top {@link #chatMemoryRelevanceTopK} hits are concatenated to the
+     * head of the recent-N window (prefixed with a position/timestamp marker so
+     * the LLM keeps coherence). When {@code false} the executor behaves as
+     * before — only the recent-N client window is fed to the model. Default
+     * {@code false} so existing agents are unaffected.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_relevance_enabled", nullable = false)
+    private boolean chatMemoryRelevanceEnabled = false;
+
+    /**
+     * T30 / §IV.4 — how many older turns the BM25 retriever returns (per side
+     * — user and assistant messages are scored from the same pool). Capped at
+     * {@code 20} in practice by the retriever; the persisted column can hold
+     * any non-negative value. Default {@code 5}.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_relevance_top_k", nullable = false)
+    private int chatMemoryRelevanceTopK = 5;
+
+    /**
+     * T30 / §IV.4 — size of the recent-N FIFO window kept verbatim (no scoring,
+     * always passed to the LLM in chronological order). The BM25 retriever
+     * scores ONLY turns OLDER than this window so the retrieved set never
+     * duplicates the recent context. Default {@code 10}.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_recent_n", nullable = false)
+    private int chatMemoryRecentN = 10;
+
     @Column(length = 2000)
     private String nativeTools;
 

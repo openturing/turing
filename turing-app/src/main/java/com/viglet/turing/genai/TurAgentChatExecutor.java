@@ -59,6 +59,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
+import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -123,6 +124,7 @@ public class TurAgentChatExecutor {
     private final TurAgentPersonaResolver personaResolver;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatMemoryService chatMemoryService;
+    private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
     private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
@@ -141,6 +143,7 @@ public class TurAgentChatExecutor {
             TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatMemoryService chatMemoryService,
+            TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
             TurChatPipelineObservation chatPipelineObservation) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -158,6 +161,7 @@ public class TurAgentChatExecutor {
         this.personaResolver = personaResolver;
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatMemoryService = chatMemoryService;
+        this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
         this.chatPipelineObservation = chatPipelineObservation;
     }
 
@@ -430,9 +434,18 @@ public class TurAgentChatExecutor {
                 flowAugmented);
         final long tAfterCompose = System.currentTimeMillis();
 
+        // T30 / §IV.4 — conversation-relevance retrieval. When the agent has
+        // opted in AND the persisted store has more turns than the recent-N
+        // FIFO window covers, prepend the BM25-top-K older turns (each
+        // tagged with a position/timestamp marker) so the LLM keeps context
+        // from earlier in a long conversation. No-op when disabled or when
+        // the store has nothing older than the recent window.
+        List<ChatMessageItem> effectiveHistory = chatMemoryRelevanceRetriever.enrich(
+                agent, conversationId, lastUserMessageEarly, history);
+
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));
-        for (ChatMessageItem item : history) {
+        for (ChatMessageItem item : effectiveHistory) {
             String content = item.content() == null ? "" : item.content();
             if ("assistant".equals(item.role())) {
                 messages.add(new AssistantMessage(content));

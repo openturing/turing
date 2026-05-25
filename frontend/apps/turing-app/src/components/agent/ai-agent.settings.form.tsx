@@ -116,6 +116,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const embeddingModelValue = form.watch("turEmbeddingModelInstance");
   const storeInstanceValue = form.watch("turStoreInstance");
   const chatMemoryEnabled = form.watch("chatMemoryEnabled");
+  // T30 — gates the topK + recentN inputs; only meaningful when the base
+  // chat memory is also active, hence the && composition below.
+  const chatMemoryRelevanceEnabled = form.watch("chatMemoryRelevanceEnabled");
   const loggingActive = loggingEngine !== "none";
 
   // RAG can only be ON if both an embedding model AND a store are resolvable
@@ -151,6 +154,12 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
+      // T30 / §IV.4 — relevance retrieval defaults match the backend
+      // entity defaults so existing agents keep the prior recent-N FIFO
+      // behavior until the operator opts in.
+      chatMemoryRelevanceEnabled: value.chatMemoryRelevanceEnabled ?? false,
+      chatMemoryRelevanceTopK: value.chatMemoryRelevanceTopK ?? 5,
+      chatMemoryRecentN: value.chatMemoryRecentN ?? 10,
       pythonRequirements: value.pythonRequirements ?? "",
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
@@ -630,6 +639,103 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           ref={field.ref}
                           name={field.name}
                           disabled={!loggingActive || !chatMemoryEnabled}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              {/*
+                T30 / §IV.4 — conversation-relevance retrieval. Only useful
+                when the base chat memory is on (otherwise there's nothing
+                persisted to retrieve from), so all three controls gate on
+                loggingActive && chatMemoryEnabled. The topK+recentN inputs
+                additionally gate on chatMemoryRelevanceEnabled so the
+                operator sees them grayed out until they flip the switch.
+              */}
+              <FormField
+                control={form.control}
+                name="chatMemoryRelevanceEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryRelevance")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryRelevanceDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          disabled={!loggingActive || !chatMemoryEnabled}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryRelevanceTopK"
+                rules={{
+                  min: { value: 1, message: t("forms.agentSettings.chatMemoryMinValue") },
+                  max: { value: 20, message: t("forms.agentSettings.chatMemoryRelevanceTopKMaxValue") },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryRelevanceTopK")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryRelevanceTopKDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={field.value ?? 5}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryRelevanceEnabled}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryRecentN"
+                rules={{
+                  min: { value: 1, message: t("forms.agentSettings.chatMemoryMinValue") },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryRecentN")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryRecentNDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={field.value ?? 10}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryRelevanceEnabled}
                         />
                       </FormControl>
                       <FormMessage />

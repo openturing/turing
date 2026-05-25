@@ -380,6 +380,9 @@ public class TurAIAgentImportService {
         agent.setChatMemoryEnabled(a.isChatMemoryEnabled());
         agent.setChatMemoryFlushIntervalMinutes(a.getChatMemoryFlushIntervalMinutes());
         agent.setChatMemoryMaxMessages(a.getChatMemoryMaxMessages());
+        agent.setChatMemoryRelevanceEnabled(a.isChatMemoryRelevanceEnabled());
+        agent.setChatMemoryRelevanceTopK(a.getChatMemoryRelevanceTopK());
+        agent.setChatMemoryRecentN(a.getChatMemoryRecentN());
         agent.setNativeTools(a.getNativeTools());
         agent.setPythonRequirements(a.getPythonRequirements());
     }

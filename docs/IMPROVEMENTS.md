@@ -148,7 +148,7 @@ acting.
 | T27 | ✅ | T26 | Router scaling: per-agent `SearcherManager` cache in `TurChatFlowEngineService.routerIndexByAgent` (one `AnalyzerBucket` per PT/EN bucket, `IndexWriterConfig.setSimilarity(new BM25Similarity())`); built lazily on first procedural route per agent, reused on subsequent turns. Index covers every enabled flow on the agent regardless of per-conversation eligibility — the eligibility mask is applied after MLT scoring, so the cache survives across conversations. Eviction wired alongside the existing `turChatFlowRouterDecision` hook through a JPA `@EntityListeners(TurChatFlowRouterEvictionListener.class)` on `TurChatFlow` (`@PostPersist/@PostUpdate/@PostRemove` → `engine.evictRouterIndexes()`), mirroring the `TurSNSiteSnapshotEvictionListener` pattern; the one bulk-DML delete path in `TurChatFlowAPI.turChatFlowDelete` (bypasses JPA callbacks) calls `evictRouterIndexes()` explicitly. Local-only by design: `SearcherManager` + `ByteBuffersDirectory` are non-serializable live resources, so each JVM holds its own copy and rebuilds on its next turn after a save/delete (the JPA listener fires per-SessionFactory). T26's static `tryProceduralRoute(List, String)` kept intact as the on-demand fallback + unit-test entry point. 5 new unit tests pin: index built once per agent (hit-rate verified via Mockito `times(1)` on `findByTurAIAgent_IdOrderByNameAsc`), `evictRouterIndexes()` forces rebuild on next call, eligibility mask excludes completed flows even when they would score top in the cached bucket, empty candidates short-circuit without building, null/blank agentId falls back to the T26 static path. | §II.2.3 |
 | T28 | ✅ | — | **Phases A+B+C shipped 2026.3.1** — pluggable chat-analytics classifier backbone: new entity `TurAnalyticsIntent` (per-agent catalog, `label` + newline-separated `samples` + `enabled` + `description`, Liquibase `v2026.3.1.1.yaml` with unique `(agent_id, label)` constraint), Spring-cached `TurAnalyticsIntentRepository` (`turAnalyticsIntentFindByAgentId` + `turAnalyticsIntentMLTIndex`). Introduced `TurIntentClassifierStrategy` interface; the legacy LLM classifier moved to `TurLlmIntentClassifier` (unchanged behavior, plus an `agentId` parameter that the LLM strategy ignores). New `TurLuceneIntentClassifier` runs embedded Lucene `MoreLikeThis` over the per-agent catalog with the same per-agent `ConcurrentMap` cache pattern T27 uses (BM25 similarity, PT/EN analyzer pick via the same stopword heuristic as T25, `MIN_SCORE_FLOOR=0.5f` rejects incidental overlaps, `extractKeyTerms` matches the LLM strategy's 5-term cap). `TurChatIntentClassifier` rewritten as an orchestrator that picks one strategy per session per `turing.chat.analytics.classifier.mode` (`auto`/`llm`/`lucene`/`search-engine-mlt`; aliases `solr-mlt`/`elasticsearch-mlt`/`se-mlt`/`es`/`solr` all map to the same mode since the SE-backed strategy runs through `TurSearchEnginePlugin` and supports both Solr `MoreLikeThisHandler` and ES `more_like_this`); `auto` cascades LLM → SE-MLT → Lucene and falls through when a strategy returns unclassified. `TurChatAnalyticsEnricher` threads `agentId` from the session row into `classify(...)`. CRUD API at `/api/ai-agent/{agentId}/analytics-intent` (list/get/create/update/delete). JPA `@EntityListeners(TurAnalyticsIntentEvictionListener.class)` wipes the Lucene per-agent index on every catalog write, same hook pattern T27 uses for the chat-flow router. 12 unit tests pin: real catalog match (transcript → label), per-agent index built-once-per-cycle, `evictAll()` forces rebuild, below-floor score returns unclassified, null agent id short-circuits; orchestrator cascade LLM → Lucene, short-circuit on LLM hit, mode pinning, unavailable-strategy unclassified, backwards-compat shim. **Phase B shipped 2026.3.1** — search-engine-backed strategy live. `TurSearchEnginePlugin` gained `moreLikeThisStandalone(seInstance, indexName, field, text, topK)` (default `UnsupportedOperationException` for plugins that don't support MLT — single-JVM admins on the Lucene-embedded SE keep falling through to Phase A's `TurLuceneIntentClassifier`). Solr override hits the `/mlt` request handler via `qt=/mlt` + `stream.body=<transcript>` (`SolrQuery.setRequestHandler` deprecated in SolrJ 9 — switched to `set("qt", ...)`); falls back to a regular BM25 search against the samples field when the handler isn't reachable so installs that haven't opted into `enableStreamBody=true` still get a usable signal. ES override uses the native `more_like_this` query (`fields=samples`, `like=<text>`, `min_term_freq=1`, `min_doc_freq=1`, `min_word_length=3`, `max_query_terms=40`). New `TurSeMltIntentClassifier @Component` (`type="search-engine-mlt"`) wires those plugin methods into the orchestrator's `auto` cascade: LLM → SE-MLT → Lucene-embedded; floor `MIN_SCORE_FLOOR=0.5f` rejects incidental matches. `TurAnalyticsIntentIndexer @Service` keeps the per-agent SE index in sync — one doc per catalog row (`id`/`agentId`/`label`/`samples`), index name `intent_<agentShortId>` (matches T24b's `rag_` prefix convention so SN search APIs filter the internal indexes). The shared `TurAnalyticsIntentEvictionListener` fans out catalog mutations to both classifiers: wipes the Phase A in-memory index and upserts/removes the row in the SE-side index. `POST /api/ai-agent/{agentId}/analytics-intent/reindex` bootstrap path wipes the agent's slice via `deIndexStandaloneByField` then batch-pushes through `indexStandaloneDocuments`. SE binding (Phase B) uses property `turing.chat.analytics.classifier.se-instance-id` with fallback to the first registered SE instance — per-agent binding (new column on `TurAIAgent`) is a Phase C concern. 17 new unit tests (`TurSeMltIntentClassifierTest` 9, `TurAnalyticsIntentIndexerTest` 8) pin: availability gating (agent id + SE binding + non-empty catalog), top-hit → goalSummary mapping, below-floor unclassified, `UnsupportedOperationException` swallowed, index name normalization (UUID dashes stripped, capped at 12 chars), enabled rows upsert / disabled rows deindex, no-SE silent skip, full reindex wipes-then-pushes, configured property wins over `findAll` fallback. **Phase C shipped 2026.3.1** — frontend admin page and per-agent SE binding completed. New column `TurAIAgent.analyticsSeInstance` (`@ManyToOne(fetch=LAZY)`, nullable, FK to `se_instance(id)`, Liquibase `v2026.3.1.2.yaml`). `TurAnalyticsIntentIndexer.resolveSeInstance(agentId)` resolution order changed to: per-agent binding → property override → first registered SE; the backwards-compat no-arg overload delegates with `null`. `TurAIAgentAPI` PUT/POST propagate `analyticsSeInstance` via `resolveSingleRelation`. Frontend: new module under `frontend/apps/turing-app/src/app/console/analytics-intent/` — single `analytics-intent.list.page.tsx` with inline modal dialog for create/edit (heavier list+settings split kept for the legacy `intent/` module where actions/icon/sortOrder justify it; analytics intents have only label+samples+enabled+description so the compact form ships fine). Reindex button in the page header wires to the Phase B `POST /reindex` endpoint. New model (`analytics-intent.model.ts`), service (`analytics-intent.service.ts`), React Query hooks (`analytics-intent.queries.ts` with new `analyticsIntents` query key family), route registration (`/ai-agent/instance/:id/analytics-intent` lazy-loaded), sidebar nav entry under the chat group (`IconChartBar`), PT/EN i18n (`analyticsIntent.json` + `aiAgent.nav.analyticsIntent` + `forms.agentSettings.analyticsSeInstance*` keys). Agent settings form gains a `Select` for the SE binding (label + global-default fallback option). 31 backend tests still pass (added 2 new orchestrator tests for the per-agent SE binding fallback chain). | §III.5 |
 | T29 | ✅ | 2026.3.1 | Tool pre-filtering for large catalogs: `TurToolPreFilterService` does BM25 / MoreLikeThis over `prompts/tools/**/*.md` descriptions in an in-memory `ByteBuffersDirectory`, keeps top-K configured via `turing.genai.tool-prefilter.{top-k,min-tools-threshold,enabled}`. Always-kept set covers agent `nativeTools` + the active node's new `ChatFlowNode.requiredTools` list. Bypasses for blank user message / pool below threshold / cap already covers the pool. | §IV.2 |
-| T30 | 📋 | — | Conversation-relevance retrieval for chat memory: per-conversation `MemoryIndex` + BM25 of past turns concatenated with the recent-N window; prefix retrieved turns with timestamp/position marker so the LLM keeps coherence. | §IV.4 |
+| T30 | ✅ | 2026.3.1 | Conversation-relevance retrieval for chat memory: new `TurChatMemoryRelevanceRetriever` reads the persisted history, splits at the recent-N FIFO window, builds a per-call `ByteBuffersDirectory` + `BM25Similarity` index over the older pool, scores against the latest user message via `MoreLikeThis`, and prepends the top-K hits (chronologically re-sorted, prefixed with `[earlier turn #N at <ts>]` markers) to the history that flows into `TurAgentChatExecutor.execute()`. Three new opt-in fields on `TurAIAgent`: `chatMemoryRelevanceEnabled` (default false), `chatMemoryRelevanceTopK` (default 5, capped at 20 in code), `chatMemoryRecentN` (default 10) — Liquibase `v2026.3.1.3.yaml`. Exchange round-trip extended so import/export carries the new fields. 18 new unit tests pin: bypass when chat memory / relevance / store / convId / userMsg are off, bypass when persisted ≤ recent-N, no-overlap returns history unchanged, BM25 surfaces the matching older turn with position+ISO timestamp marker, multiple hits sorted by original position (not score), top-K cap honored + hard-capped at 20 on misconfig, role preserved on retrieved turns, null history → empty list, store I/O failure falls back to original history, malformed persisted rows (null/blank role/content) skipped, marker helpers (no-ts fallback, ISO normalization, epoch-millis path). | §IV.4 |
 | T31 | 📋 | — | System prompt fragment caching: `@Cacheable` the composed persona-prompt by `(personaId, agentId)` and the flow addendum by `(flowId, currentNodeId)`. Evict on persona/flow/agent edit via existing hooks. RAG fragment stays uncached. | §IV.5 |
 
 ### Non-goals (do NOT add as tasks)
@@ -797,25 +797,55 @@ private boolean containsForbiddenStem(String reply, List<String> forbidden) {
 the bot still says 'competitividade'" — same UX bug class as
 spotlights.
 
-### IV.4 💭 Conversation-relevance retrieval for chat memory
+### IV.4 ✅ Conversation-relevance retrieval for chat memory (shipped 2026.3.1 as T30)
 
 **Context**: [`TurChatMemoryService`](../turing-app/src/main/java/com/viglet/turing/service/chatmemory/TurChatMemoryService.java)
-keeps last N turns chronologically. For long conversations, important
-context from turn 3 gets dropped by turn 25.
+kept last N turns chronologically. For long conversations, important
+context from turn 3 was dropped by turn 25.
 
-**Idea**: index conversation turns into a tiny per-conversation Lucene
-`MemoryIndex`. Before composing the system prompt for a new turn,
-retrieve the top-K turns by BM25 similarity to the current user
-message. Concatenate them with the most-recent N turns to form the
-history payload. Keeps short-term continuity AND long-term relevance.
+**Shipped**: [`TurChatMemoryRelevanceRetriever`](../turing-app/src/main/java/com/viglet/turing/service/chatmemory/TurChatMemoryRelevanceRetriever.java)
+sits between the call site (`TurAgentChatExecutor.execute()`) and the
+prompt-message iteration. On each turn:
 
-**Risk**: turn ordering matters for the LLM's coherence — feeding
-out-of-order turns may confuse the model. Mitigation: prefix retrieved
-turns with their timestamp / position marker.
+1. Reads the persisted history via the existing `TurChatMemoryStore`
+   (no schema change — same `findMessages(conversationId, limit)`
+   contract the analytics enricher already used).
+2. Splits the list at `chatMemoryRecentN` (default 10) — anything
+   inside the window is left for the existing FIFO injection;
+   anything older becomes the BM25 candidate pool.
+3. Builds a per-call `ByteBuffersDirectory` with `BM25Similarity`
+   (matching the `TurToolPreFilterService` pattern — sub-millisecond
+   for typical pools, no cross-request cache to invalidate).
+4. Scores the latest user message via `MoreLikeThis(FIELD_CONTENT)`
+   and keeps the top `chatMemoryRelevanceTopK` (default 5, hard-capped
+   at 20 in code to guard against misconfig).
+5. Re-sorts the retrieved set in chronological order (so the LLM sees
+   the rescued turns in the order they originally happened) and
+   prefixes each one with `[earlier turn #N at <ISO timestamp>]` —
+   the position+timestamp marker the original sketch called for, with
+   a `[earlier turn #N]` fallback when the persisted row has no
+   timestamp.
+6. Returns `[retrieved-with-markers] ++ history` — never modifies the
+   recent window itself; the existing tail-N stays verbatim.
 
-**When**: long-conversation use cases emerge (support chat, sales
-qualification). Not before — adds latency without payoff for short
-chats.
+**Bypass conditions**: agent has `chatMemoryEnabled=false`, agent has
+`chatMemoryRelevanceEnabled=false`, store reports disabled (NoOp
+backend), conversationId blank, latest user message blank, persisted
+history ≤ recent-N (nothing to rescue), BM25 returns zero hits. Each
+short-circuits to returning the input list unchanged.
+
+**Persistence**: three new columns on `ai_agent` via Liquibase
+`v2026.3.1.3.yaml` — `chat_memory_relevance_enabled` (boolean, default
+false), `chat_memory_relevance_top_k` (INT, default 5),
+`chat_memory_recent_n` (INT, default 10). All three round-trip through
+`TurAIAgentExchange` so export/import preserves them.
+
+**Tests**: [`TurChatMemoryRelevanceRetrieverTest`](../turing-app/src/test/java/com/viglet/turing/service/chatmemory/TurChatMemoryRelevanceRetrieverTest.java)
+— 18 unit tests pin every bypass branch, BM25 surfacing of a target
+turn, chronological re-sort, top-K cap + hard-cap at 20, role
+preservation on retrieved turns, store I/O failure → return original,
+malformed-row skip, and the three marker formatting paths
+(ISO/epoch-millis/no-timestamp).
 
 ### IV.5 💭 System prompt fragment caching
 

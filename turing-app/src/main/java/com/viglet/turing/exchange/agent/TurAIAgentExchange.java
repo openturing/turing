@@ -48,6 +48,10 @@ public class TurAIAgentExchange {
     private boolean chatMemoryEnabled;
     private int chatMemoryFlushIntervalMinutes;
     private int chatMemoryMaxMessages;
+    // T30 / §IV.4 — conversation-relevance retrieval (since 2026.3.1)
+    private boolean chatMemoryRelevanceEnabled;
+    private int chatMemoryRelevanceTopK;
+    private int chatMemoryRecentN;
     private String nativeTools;
     private String pythonRequirements;
 
@@ -84,6 +88,9 @@ public class TurAIAgentExchange {
         e.chatMemoryEnabled = agent.isChatMemoryEnabled();
         e.chatMemoryFlushIntervalMinutes = agent.getChatMemoryFlushIntervalMinutes();
         e.chatMemoryMaxMessages = agent.getChatMemoryMaxMessages();
+        e.chatMemoryRelevanceEnabled = agent.isChatMemoryRelevanceEnabled();
+        e.chatMemoryRelevanceTopK = agent.getChatMemoryRelevanceTopK();
+        e.chatMemoryRecentN = agent.getChatMemoryRecentN();
         e.nativeTools = agent.getNativeTools();
         e.pythonRequirements = agent.getPythonRequirements();
 

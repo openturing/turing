@@ -34,6 +34,17 @@ export interface TurAIAgent {
   chatMemoryFlushIntervalMinutes: number;
   /** Hard cap on persisted messages per conversation. */
   chatMemoryMaxMessages: number;
+  /**
+   * T30 / §IV.4 — opt-in to BM25 retrieval of older turns when persisted
+   * memory has more entries than `chatMemoryRecentN`. The retrieved top-K
+   * are prepended (with position/timestamp markers) to the recent window
+   * fed to the LLM. @since 2026.3.1
+   */
+  chatMemoryRelevanceEnabled: boolean;
+  /** Number of older turns the BM25 retriever returns per request (1-20). @since 2026.3.1 */
+  chatMemoryRelevanceTopK: number;
+  /** Size of the recent FIFO window kept verbatim; the retriever only scores turns OLDER than this. @since 2026.3.1 */
+  chatMemoryRecentN: number;
   nativeTools?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
