@@ -152,6 +152,34 @@ public class TurChatFlowEngineService {
     private static final double PROCEDURAL_DOMINANCE_RATIO = 1.5;
 
     /**
+     * Minimum length (in characters) of at least one whitespace-separated
+     * token in the user message for the procedural router to even attempt
+     * scoring. Defense-in-depth alongside the single-candidate skip in
+     * {@link #tryProceduralRoute}.
+     *
+     * <p><b>Why a token-length guard and not a BM25 floor?</b> Empirical
+     * measurement showed BM25 in tiny analyzer buckets (1-2 docs) is
+     * dominated by IDF, not by term frequency or doc length — a 2-char
+     * token like {@code "oi"} landing on a quoted negative example
+     * ({@code "NÃO ATIVAR para saudações: 'oi', 'olá'..."}) scores around
+     * {@code 0.26}, indistinguishable from a legitimate rare-term match
+     * like {@code "refund"} hitting {@code "refund reimbursement
+     * chargeback"} ({@code 0.32}). No absolute BM25 floor can reliably
+     * separate the two without breaking legitimate matches.
+     *
+     * <p>A query-side discriminator avoids the score-calibration problem
+     * entirely: 2-char greeting tokens ({@code "oi"}, {@code "ok"},
+     * {@code "vc"}, {@code "tb"}) defer to the LLM router, which can
+     * honor the negative-list semantics. Genuine queries with at least
+     * one 3+ char content token (e.g. {@code "ir para onde?"},
+     * {@code "Q1 results?"}, {@code "refund"}) still hit the procedural
+     * fast-path.
+     *
+     * @since 2026.3.1
+     */
+    private static final int PROCEDURAL_MIN_TOKEN_LENGTH = 3;
+
+    /**
      * Per-language Lucene analyzers for the procedural pre-route. Each flow's
      * {@code triggerDescription} (and the user message, scored against that
      * flow) tokenizes through the matching analyzer:
@@ -808,13 +836,17 @@ public class TurChatFlowEngineService {
             return Optional.empty();
         }
 
-        // 3a) Procedural pre-route — fast, deterministic, no LLM. When the
-        //     user message has 2+ content words overlapping a flow's
-        //     triggerDescription AND that flow dominates the runner-up by
-        //     1.5×, commit straight to it. Cuts ~1-3s of LLM latency from
-        //     freshly-triggered turns where the trigger is obvious. Falls
-        //     back to the LLM router when the procedural pass is ambiguous
-        //     or no description has enough keyword density.
+        // 3a) Procedural pre-route — fast, deterministic, no LLM. Requires
+        //     ≥2 candidates AND a user message with at least one
+        //     PROCEDURAL_MIN_TOKEN_LENGTH-char content token (procedural
+        //     routing is a disambiguation fast-path: a single candidate
+        //     has nothing to disambiguate, and a bare 2-char greeting
+        //     ("oi", "ok") cannot be reliably distinguished from a
+        //     legitimate single-rare-term hit via BM25 alone — we defer
+        //     to the LLM router instead). When the top flow dominates
+        //     the runner-up by 1.5×, commit straight to it. Cuts ~1-3s
+        //     of LLM latency from freshly-triggered turns where the
+        //     trigger is obvious. Falls back to the LLM router otherwise.
         String proceduralPick = tryProceduralRoute(agent.getId(), candidates, lastUserMessage)
                 .orElse(null);
         final String pickedId;
@@ -1068,6 +1100,22 @@ public class TurChatFlowEngineService {
         if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
             return Optional.empty();
         }
+        // Procedural routing is a disambiguation fast-path: with a single
+        // candidate there is nothing to disambiguate. Defer to the LLM
+        // router, which understands negative-list semantics inside trigger
+        // descriptions (e.g. "NÃO ATIVAR para saudações: 'oi', 'olá'...")
+        // — keyword scoring cannot.
+        if (candidates.size() < 2) {
+            return Optional.empty();
+        }
+        // Query-side quality guard: require at least one substantive token
+        // (≥ PROCEDURAL_MIN_TOKEN_LENGTH chars) in the user message. Filters
+        // bare 2-char greetings ("oi", "ok", "vc") that would otherwise
+        // land on quoted negative examples in trigger descriptions and
+        // score the same as legitimate rare-term matches.
+        if (!hasSubstantiveToken(userMessage)) {
+            return Optional.empty();
+        }
         Map<Analyzer, List<RouterCandidate>> byAnalyzer = new HashMap<>(2);
         for (RouterCandidate c : candidates) {
             String description = c.flow().getTriggerDescription();
@@ -1118,6 +1166,30 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * Returns {@code true} when {@code userMessage} contains at least one
+     * whitespace-separated token of length ≥ {@link #PROCEDURAL_MIN_TOKEN_LENGTH}
+     * after stripping leading/trailing non-letter characters. The strip
+     * handles trailing punctuation ({@code "oi!"}, {@code "(oi)"}) so
+     * decoration around a short token doesn't leak it past the guard.
+     * Letter detection uses Unicode categories so PT accents and CJK
+     * characters count.
+     *
+     * @since 2026.3.1
+     */
+    static boolean hasSubstantiveToken(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return false;
+        }
+        for (String raw : userMessage.split("\\s+")) {
+            String trimmed = raw.replaceAll("^[^\\p{L}]+|[^\\p{L}]+$", "");
+            if (trimmed.length() >= PROCEDURAL_MIN_TOKEN_LENGTH) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * T27 / §II.2.3 — cached variant of
      * {@link #tryProceduralRoute(List, String)} that reuses a pre-built
      * {@link SearcherManager}-per-analyzer index keyed by {@code agentId}.
@@ -1138,6 +1210,15 @@ public class TurChatFlowEngineService {
     Optional<String> tryProceduralRoute(String agentId, List<RouterCandidate> candidates,
             String userMessage) {
         if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        // Same single-candidate skip as the static overload — see the
+        // disambiguation rationale there.
+        if (candidates.size() < 2) {
+            return Optional.empty();
+        }
+        // Same query-side quality guard as the static overload.
+        if (!hasSubstantiveToken(userMessage)) {
             return Optional.empty();
         }
         if (agentId == null || agentId.isBlank()) {

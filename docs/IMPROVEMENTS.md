@@ -39,6 +39,7 @@ acting.
 - [VI. Integration test plan for the harness refactor](#vi-integration-test-plan-for-the-harness-refactor)
 - [VII. Education customer engagement — platform synthesis](#vii-education-customer-engagement--platform-synthesis)
 - [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
+- [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
 
 ---
 
@@ -313,6 +314,84 @@ Remaining platform-relevant promotions:
 | TK4 | 💭 | Audit `functionCall` node type — implement (T46) OR remove from the schema | Vapor features are worse than absences. Decision needed. |
 | TK5 | 💭 | Replace Brevo email integration with Resend or Postmark | Modern provider, smaller footprint, better deliverability. Email-out is the feature; the provider is a swappable detail. |
 | TK6 | 💭 | Audit Custom Solr admin UI usage; if zero customers depend on it, fold into Solr native admin URL | TurSN legacy. Maintaining two admin surfaces dilutes. |
+
+### Block E — Deep Agents competitive parity (and beyond)
+
+> Triggered by analysis of LangChain Deep Agents (`langchain.com/deep-agents`).
+> Each task below either (a) reaches parity with a Deep-Agents capability
+> Turing currently lacks, or (b) differentiates with something Deep
+> Agents *doesn't* have. Full competitive analysis in §IX.
+>
+> **Strategic frame**: Deep Agents is a Python SDK with middleware
+> (planning tool, virtual filesystem, sub-agent spawner, context
+> compression). Turing already has the *infrastructure* analog of every
+> one of those (chat-flow = planning graph; `TurStorageService` = pluggable
+> filesystem; sub-flows = sub-agents; T30/T31 = context engineering).
+> What Turing lacks is the **per-conversation workspace primitive** that
+> ties them into a "deep" workflow. Block E closes that gap and adds
+> three moves where Turing leads.
+
+#### E.1 — Planning & decomposition (parity)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T108 | 📋 | — | **`planningStep` node type** — LLM emits a typed TODO list into a designated slot (`__plan` by convention), downstream `iteratePlan` nodes consume items one by one and mark complete. Authorable planning step, NOT always-on middleware overhead. Visible in the chat-flow graph, auditable, replayable. | §IX.2.a |
+| T109 | 📋 | — | **`agent.invoke(agentId, message, opts)` Custom Tool helper** — spawns another Turing agent in an isolated conversation, awaits final answer, returns it as a tool result. Cross-agent delegation. Each invocation gets a child `conversationId` linked to parent for trace reconstruction. | §IX.2.b |
+| T110 | 📋 | T109 | **Sub-agent scorecard rows** — each `agent.invoke(...)` call records a separate `TurChatSessionEvent` tagged `parentConversationId`. Scorecard supports drill-down: "orchestrator agent X invoked specialist Y in N sessions, average sub-task duration M ms." | §IX.2.c |
+
+#### E.2 — Agent Workspace (the key differentiator)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T111 | 📋 | — | **`TurAgentWorkspace` service** — per-conversation key-value-blob store backed by `TurStorageService` (already pluggable: NoOp / filesystem / MinIO). API: `put(key, bytes, contentType)`, `get(key)`, `list(prefix)`, `delete(key)`, `signedUrl(key)`. Scoped path `tenants/{agentId}/{conversationId}/workspace/<key>` — reuses the multi-tenant isolation pattern from T78 verbatim. Distinct from slots: slots are flat scalars/JSON; workspace is byte-blobs with content type + signed URLs. | §IX.3.a |
+| T112 | 📋 | T111 | **`workspace` helper for Custom Tool Groovy** — `workspace.put(key, value)`, `workspace.get(key)`, `workspace.list("drafts/")`, `workspace.url(key)` (returns HMAC-signed URL using the T79 signer). Tools write drafts, partial results, intermediate artifacts; downstream tools read them; LLM references them by URL in chat. | §IX.3.b |
+| T113 | 📋 | T111 | **Workspace SSE bus** — `GET /chat/workspace/stream?conversationId=X` emits `{event: put/delete, key, contentType, size, signedUrl}` events. Mirrors `TurChatSlotEventBus`. SDK hook `useTuringWorkspace<T>` consumes; UI renders the active artifact list as a sidebar. | §IX.3.c |
+| T114 | 📋 | T111 | **Auto-offload large tool results** — when a tool returns >`TOOL_RESULT_INLINE_MAX` chars (default 4096), `TurToolCallbackPipeline` stores the full payload in workspace at `tool-results/{toolName}-{ts}.json`, replaces inline text with `Stored at workspace://tool-results/foo-1234.json (15KB) — call workspace.read(key) for full content.` Marker tells the LLM it can re-fetch. Cuts prompt-token bloat dramatically on tools that return JSON catalogs. | §IX.3.d |
+| T115 | 📋 | T111 | **Memory compression to workspace** — when persisted history exceeds `chatMemoryCompressionThresholdTokens` (default 8k), the oldest turns past the T30 recent-N window get summarized via a single dedicated LLM call → stored as `memory/summary-{from}-{to}.md` in workspace → the summary URL replaces those turns in the prompt context. Pairs with T30 BM25 relevance (relevance still surfaces the original turns when needed; summary is the default cheap path). | §IX.3.e |
+
+#### E.3 — Skills as first-class (differentiator)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T116 | 📋 | — | **`TurSkill` entity** — composable bundle of `(personaFragment + flowSnippet + tools + workspaceDefaults + dependencies)`. SemVer + author + signature. Skills are persisted in a `tur_skill` table + portable JSON manifests. New agent can install skills like npm packages: `agent.install("scaffold-markdown@^1.2.0")`. The `scaffold.markdown` / `scaffold.pickQuote` / `scaffold.buildMindMap` helpers from §VII.4 become the first three platform skills. | §IX.4.a |
+| T117 | 📋 | T116 | **Skills marketplace UI** in admin — browse, search, version-pin, vendor-filter, install. Same shape as a code-package manager. Internal-only at v1; opens to public registry once T118 ships. | §IX.4.b |
+| T118 | 💭 | T116 | **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. Authenticated signing. Skill consumption pays bandwidth + optional license fees back to authors. **This is the marketplace moat Deep Agents doesn't have.** | §IX.4.c |
+
+#### E.4 — Human-in-the-loop (parity, made graph-visible)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T119 | 📋 | — | **`humanApproval` node type** — pauses the flow, sends notification to a configured channel (Slack/Email/webhook), persists a pending-approval record, returns a resume URL. Operator clicks Approve/Reject/Edit; operator decision becomes a slot value; engine advances. Distinct from generic chat — this is a graph-visible "this turn requires a human" step. | §IX.5.a |
+| T120 | 💭 | T119 | **Spectator + Co-pilot mode** — operator opens `/conversation/{id}?spectate=true`, sees live chat + slots + workspace, can take the wheel by toggling `manual=true` (LLM step is skipped on that turn; operator's text becomes the assistant message but persona/guardrail still apply). Already sketched in §VIII as a moat-builder — Block E formalizes the work. | §IX.5.b |
+
+#### E.5 — Long-horizon task primitives
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T121 | 📋 | — | **`flow.suspend(reason)` + `POST /chat/resume/{conversationId}`** — node marks conversation as parked with a reason slot. External system (webhook callback, scheduled job, human approval) calls resume endpoint with optional slot updates. Flow continues from the suspended node. Enables long-running tasks that pause hours/days for external completion. | §IX.6.a |
+| T122 | 💭 | T121 | **Parked-conversations dashboard** — admin panel listing all suspended conversations + reasons + waiting time + unblock action. Operator visibility into asynchronous workloads. | §IX.6.b |
+
+#### E.6 — Context engineering enforcement
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T123 | 📋 | T31 | **Token-budget enforcement per turn** — agent setting `maxPromptTokens`; engine refuses to call LLM if predicted prompt > budget. Failure mode is operator-configurable: `compact` (auto-trigger T115 summarization) / `error` (return error to caller) / `warn` (log + proceed). Pairs with cost predictor (§VIII T101 sketch). | §IX.7.a |
+| T124 | 💭 | T32 | **Workspace + memory + tool-offload metrics** — extend `TurChatPipelineObservation` with `turing.chat.workspace.{puts,gets,bytes_stored}` + `turing.chat.memory.compression_ratio` + `turing.chat.tools.offloaded_bytes`. Tells the operator "compression saved 40% prompt tokens last 24h." | §IX.7.b |
+
+#### E.7 — Developer experience (CLI + eval)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T125 | 📋 | — | **`turing` CLI** — `init` (scaffold new agent JSON), `dev` (spin up full local stack with hot reload), `deploy` (push agent + flows + tools + skills to remote instance), `logs` (tail chat events from remote). Built as a Node.js package shipped under `@viglet/turing-cli`. The `turing dev` subcommand uses Docker Compose to start Postgres + Solr + MinIO + the Spring Boot JAR with the file watcher pointed at the agent JSON. | §IX.8.a |
+| T126 | 📋 | T125 | **`turing eval` — YAML-defined regression suite** — agent authors write `evals/onboarding-flow.eval.yaml` with N test conversations + per-turn assertions (slot values, persona invariants, tool-call expected/forbidden, response regex). `turing eval --watch` runs locally; CI runs on every PR. The Behavioral IT pattern (§VI.4.3) generalized into a customer-facing tool. | §IX.8.b |
+| T127 | 💭 | T126 | **`turing eval` replay-as-test** — pull a production conversationId from the scorecard, freeze it as an eval fixture with all slot/turn snapshots. One-click "save as regression test." A production bug becomes a permanent eval line. | §IX.8.c |
+
+#### E.8 — Observability interop
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T128 | 💭 | T32 | **LangSmith-compatible export** — `TurChatPipelineObservation` events can be optionally mirrored to a LangSmith project via the public LangSmith API. Customers already invested in LangSmith dashboards see Turing traces without giving up Turing's auditability. Interop, not lock-out. | §IX.9.a |
+| T129 | 💭 | T32 | **OpenTelemetry trace export** — wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP-compatible backend (Honeycomb, Datadog, Jaeger). Standard transport instead of provider-specific. | §IX.9.b |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -2165,5 +2244,701 @@ buyer knows in 5s if it's for them):
 
 Difference is not features. It is **focus, clarity, and the courage to
 deprecate what does not pay**.
+
+---
+
+## IX. Deep Agents — competitive response
+
+> **Date of analysis**: 2026-05-25.
+> **Subject**: LangChain Deep Agents (`langchain.com/deep-agents`), the
+> Python harness LangChain ships for long-horizon autonomous agents.
+> **Verdict**: Turing has 80% of the underlying mechanics already, but
+> packages them as a different category (chat-flow platform, not deep
+> agent harness). This section maps the gap and proposes Turing's
+> response — three parity moves, three differentiation moves, two
+> interop moves. Tactical work is in §0 Block E (T108–T129).
+
+### IX.1 Feature-by-feature mapping — where Turing stands today
+
+The Deep Agents pitch reduces to five capabilities. Mapping each to
+what Turing already has:
+
+| Deep Agents capability | Quote from langchain.com/deep-agents | Turing today | Gap |
+|---|---|---|---|
+| **Planning tools** | "Planning tools let agents decompose tasks, track progress, and adapt as they learn" | Chat-flow graph (authored, deterministic); LLM-router for flow selection | No **LLM-emitted plan as runtime artifact**. Plans are author-time in Turing |
+| **Sub-agents with isolated context** | "Spawn subagents for independent subtasks, each with isolated context" | Sub-flow descent (`enterSubFlow`/`ascendFromSubFlow`); A/B variants; chat-flow router | Sub-flows are *graphs inside the same agent*. **No cross-agent invocation primitive.** |
+| **Virtual filesystem** | "Virtual filesystem stores system prompts, skills, and long-term memory" | Persona prompts (DB) + RAG vector store + chat memory FIFO + T30 relevance retrieval | No **per-conversation scratchpad** for arbitrary blobs. Slots are scalars/JSON, not files. |
+| **Context engineering middleware** | "Compress conversation history, offload large tool results, isolate context with subagents, use prompt caching" | T30 relevance retrieval (compress), `summarizeVariables` cap (partial offload), sub-flows (isolate), T31 prompt caching (caching) | **No automatic summarization** of compressed memory. **No artifact-store offload** for large tool results. |
+| **Human-in-the-loop** | "Supports human intervention when needed" | None directly; sketched as Spectator mode in §VIII | **No `humanApproval` node type.** |
+
+**Two operational features**:
+- **Model-agnostic** — Turing has it ✅ (Spring AI + 6 providers).
+- **SDK + CLI** — Turing has SDK ✅; **no CLI**.
+
+**Bottom line**: Turing is already a deep-agent-grade platform in
+infrastructure terms. The gap is one missing primitive (workspace) and
+two missing UX surfaces (CLI + eval).
+
+### IX.2 Parity moves — close the gap with primitives, not features
+
+#### IX.2.a Planning as a flow node (T108)
+
+Deep Agents bakes planning into the harness — every agent gets a
+planning tool by default. **Turing's better move**: make planning an
+**authorable node type**, not implicit middleware.
+
+```jsonc
+// Inside a chat-flow:
+{
+  "type": "planningStep",
+  "data": {
+    "outputVariable": "__plan",                  // slot receiving the JSON plan
+    "aiInstruction": "Break the user's goal into 3-6 concrete steps...",
+    "schema": "List<{id: string, title: string, status: 'pending'|'done'}>"
+  }
+}
+
+// followed by an iterator:
+{
+  "type": "iteratePlan",
+  "data": {
+    "planSlot": "__plan",
+    "bodyFlowId": "step-executor-subflow",      // sub-flow runs once per pending step
+    "completionMode": "mark_done"
+  }
+}
+```
+
+**Why this is better than Deep Agents' approach**:
+- Planning is **visible in the editor** — operators see "this flow plans before executing." Deep Agents hides it as middleware.
+- **Selective** — admins decide when planning is worth the LLM call. Deep Agents always plans.
+- **Auditable** — the plan IS a slot value; T54 SSE bus already emits it; T60 audit log already captures origin.
+- **Replayable** — exact plan from prod becomes a regression test fixture (T127).
+
+#### IX.2.b Cross-agent invocation (T109)
+
+Deep Agents spawns subagents inside the same harness. Turing should
+expose **agent-as-tool** at the platform level:
+
+```groovy
+// Inside a Custom Tool Groovy script:
+def specialist_answer = agent.invoke(
+    "specialist-legal-agent",                    // target agent
+    "Is this contract clause enforceable? ${slots.contract_excerpt}",
+    [timeout: 30_000, isolated: true]
+)
+slots.set("legal_review", specialist_answer)
+```
+
+Each invocation spawns a child conversation, links to parent via
+`parentConversationId`, gets its own scorecard row (T110). Recursion
+allowed up to a configurable depth (default 3) — mirrors the
+`TRANSPARENT_WALK_MAX` cycle cap pattern.
+
+**Why this beats Deep Agents subagents**:
+- Sub-agents in Turing are **persisted, named, reusable** entities — not anonymous spawns.
+- Each can have its own LLM, persona, flow, tools — true specialization.
+- **Multi-tenant by construction** — workspace + path isolation (T78) extend to child conversations automatically.
+- **Observable** — drill-down dashboard "orchestrator X calls specialist Y on average 2.3 times per conversation, costing $0.04 each."
+
+#### IX.2.c Sub-agent analytics (T110)
+
+Every `agent.invoke(...)` recorded as a separate session event with
+`parentConversationId` foreign key. Scorecard supports parent/child
+filter. Operator can answer "is the orchestrator overspending on the
+specialist?" — a question Deep Agents users have no built-in way to
+answer.
+
+### IX.3 The workspace primitive — Turing's defensible move
+
+This is the *one* primitive Deep Agents has that Turing doesn't, and
+also the one where Turing can ship a **strictly better** version
+because of pre-existing infrastructure.
+
+#### IX.3.0 What "workspace" means in Turing — concrete walkthrough
+
+Before the API design (§IX.3.a), make the concept tangible. The
+**Agent Workspace** is a per-conversation, persistent file area that
+Custom Tools and the LLM share. It's a *fourth* type of state in
+Turing, distinct from the three that already exist:
+
+| State surface | Today | Shape | Lifetime | Visible to LLM | Visible to portal |
+|---|---|---|---|---|---|
+| **Slots** | ✅ | Flat scalars / small JSON (~1KB) | Per conversation | Yes — embedded in every system prompt as `Already collected: {...}` | Yes — SSE bus (T54) |
+| **Chat memory** | ✅ | Ordered list of text turns | Per conversation, FIFO of last N | Yes — flows into prompt history | No |
+| **RAG vector store** | ✅ | Indexed chunks of corpus docs | Static, design-time | Yes — retrieved by `search_knowledge_base` tool | No (admin only) |
+| **Workspace** | ❌ (T111) | Binary blobs of arbitrary size, content-typed, key-addressable | Per conversation, persistent across turns and sessions | Yes — as URL references, not inlined content | Yes — SSE bus (T113) + signed URLs |
+
+Slots, memory and RAG cover the *small, structured, ephemeral, or
+shared-static* states. Workspace covers the gap they all leave:
+**large, unstructured, conversation-private, user-co-authored
+artifacts**.
+
+#### Why slots aren't enough
+
+Three concrete reasons Turing today can't just "use a bigger slot":
+
+1. **Slots embed in every system prompt.** The engine renders
+   `Already collected: { ... }` on every turn. Putting a 50KB CSV
+   there destroys cost economics — `gpt-4o-mini` at $0.15 / 1M tokens
+   means every turn pays $0.0075 just to re-send the same CSV. Across
+   a 20-turn conversation, **$0.15 in token bloat for one slot**.
+
+2. **Slots are scalars + JSON.** No content-type semantics; no binary
+   support. A PDF in a slot would mean base64-encoded text (33% size
+   penalty + impossible to render natively in the portal).
+
+3. **Slot SSE emits full snapshots.** The `TurChatSlotEventBus`
+   broadcasts every mutation as the full map. With a 50KB blob in one
+   slot, every other slot change re-pushes 50KB to every connected
+   client. Workspace SSE (T113) emits only metadata
+   (`{key, contentType, size, signedUrl}`), not content.
+
+#### Three concrete scenarios
+
+**Scenario 1 — B2B proposal flow (today's pattern, refactored)**
+
+The Education customer's `compor_proposta_in_company` tool today
+writes a ~1.5KB JSON to slot `proposta_in_company`, then
+`gerar_proposta_pdf` reads the slot and renders a PDF via Code
+Interpreter — the PDF URL goes into slot `proposta_pdf_url` and lives
+in the date-bucketed Code Interpreter session dir.
+
+With workspace:
+
+```groovy
+// compor_proposta_in_company:
+def proposalData = composePricingAndModules(slots)  // 50KB rich object
+workspace.put(
+    "proposals/main.json",
+    JsonOutput.toJson(proposalData).bytes,
+    "application/json"
+)
+slots.set("proposal_artifact", "workspace://proposals/main.json")
+
+// gerar_proposta_pdf, next turn:
+def proposalBytes = workspace.get("proposals/main.json")
+def pdfResult = code.executePython("""
+    import json
+    from reportlab.pdfgen import canvas
+    proposal = json.loads('''${new String(proposalBytes)}''')
+    # ... 4-page reportlab rendering ...
+""")
+def pdfBytes = http.getBytes("${pdfResult.fileUrl}")
+workspace.put("proposals/main.pdf", pdfBytes, "application/pdf")
+slots.set("proposal_pdf_artifact", "workspace://proposals/main.pdf")
+```
+
+**What this buys**:
+- The 50KB rich proposal stays *outside* the prompt — LLM sees only
+  `workspace://proposals/main.json (52KB)` reference (40 chars).
+- The PDF survives the Code Interpreter date-bucket cleanup —
+  workspace is durable storage, sandbox dir is ephemeral.
+- Tomorrow's conversation resume (T121) still has the PDF.
+- Portal sidebar renders: **📄 main.json (52KB) · 📑 main.pdf (340KB)**
+  with direct download links via HMAC-signed URLs.
+
+**Scenario 2 — Multi-document research session**
+
+User uploads CV + job description + reference letter across 3 turns.
+Today: each upload triggers `POST /chat/slot-extract` and writes a
+handful of flat slots (`cv_name`, `cv_experience_years`, `jd_role`,
+etc.) — losing the original files entirely.
+
+With workspace:
+
+```groovy
+// Custom Tool handling each upload:
+def fileBytes = http.getBytes("${args.uploadUrl}")
+workspace.put("uploads/cv.pdf", fileBytes, "application/pdf")
+
+// Later turn, "analyze_skill_gap" tool reads all three uploads:
+def cvBytes  = workspace.get("uploads/cv.pdf")
+def jdBytes  = workspace.get("uploads/jd.pdf")
+def refBytes = workspace.get("uploads/ref.pdf")
+def cvText  = tika.extract(cvBytes)
+def jdText  = tika.extract(jdBytes)
+def refText = tika.extract(refBytes)
+// ... LLM call comparing the 3 texts ...
+def analysisMd = "## Skills you have\n- ...\n\n## Skills the JD asks for\n- ..."
+workspace.put("analysis/skill-gap.md", analysisMd.bytes, "text/markdown")
+slots.set("analysis_url", workspace.url("analysis/skill-gap.md"))
+```
+
+**What this buys**:
+- Originals preserved for audit / re-analysis with a different prompt.
+- Analysis output is a real downloadable markdown file the user can
+  share with a mentor / send to a coach, not just text in a chat
+  bubble.
+- The LLM can reference the analysis file by name in subsequent turns
+  ("conforme analisado em `analysis/skill-gap.md`...") and the link
+  resolves to a signed URL the user can open.
+
+**Scenario 3 — Iterative content drafting**
+
+Marketing agent helps a user iterate on a blog post over 5 turns:
+
+```
+Turn 1: User → "Draft a post about hybrid retrieval RAG"
+        Tool → workspace.put("drafts/post-v1.md", "# Hybrid Retrieval\n...", "text/markdown")
+        LLM → "Draft v1 ready: workspace://drafts/post-v1.md (2.1KB)"
+
+Turn 2: User → "Make the intro stronger"
+        Tool → workspace.get("drafts/post-v1.md") → revise → put("drafts/post-v2.md", ...)
+        LLM → "Updated. v2: workspace://drafts/post-v2.md (2.3KB)"
+
+Turn 3: User → "Add a comparison table"
+        Tool → workspace.put("drafts/post-v3.md", ...)
+        ...
+
+Turn 5: User → "Publish this"
+        Tool → workspace.get("drafts/post-v5.md") → POST to CMS endpoint
+```
+
+**What this buys**:
+- Full version history of the draft — audit trail of every revision.
+- User can download any prior version from the portal sidebar.
+- The LLM's prompt stays clean: it sees only `workspace://drafts/`
+  listing + the *latest* file content, never all 5 versions stuffed
+  into the context window.
+- If conversation is suspended and resumed days later, drafts are
+  still there.
+
+#### API surface — concrete
+
+```java
+public interface TurAgentWorkspace {
+    /** Store bytes with content type. Overwrites if key exists. */
+    void put(String key, byte[] content, String contentType);
+
+    /** Convenience overloads. */
+    void putText(String key, String content);                 // UTF-8 + text/plain
+    void putJson(String key, Object obj);                     // serialized + application/json
+
+    Optional<byte[]> get(String key);
+    Optional<String> getText(String key);
+
+    /** List entries under a prefix ("drafts/", "uploads/", "" = all). */
+    List<WorkspaceEntry> list(String prefix);
+
+    void delete(String key);
+    void deletePrefix(String prefix);
+
+    /** HMAC-signed URL with TTL; reuses TurCodeInterpreterUrlSigner. */
+    String signedUrl(String key, Duration ttl);
+
+    /** Total storage used by this conversation, in bytes. */
+    long totalSize();
+
+    record WorkspaceEntry(
+            String key,
+            String contentType,
+            long sizeBytes,
+            Instant lastModifiedAt,
+            String writtenBy           // "tool:<name>" / "node:<id>" / "endpoint" / "user-upload"
+    ) {}
+}
+```
+
+From a Custom Tool Groovy script:
+
+```groovy
+workspace.put("reports/leads.csv", csvBytes, "text/csv")
+def text   = workspace.getText("drafts/v3.md")
+def url    = workspace.url("reports/leads.csv")   // signed URL, default 1h TTL
+def drafts = workspace.list("drafts/")            // returns WorkspaceEntry[]
+workspace.deletePrefix("drafts/")                 // cleanup older drafts
+```
+
+REST API (for portal + external integrations):
+
+```
+GET    /api/chat/workspace/{conversationId}                  → entries[]
+GET    /api/chat/workspace/{conversationId}/stream           → SSE bus
+GET    /api/chat/workspace/{conversationId}/files/{key+}     → signed redirect
+PUT    /api/chat/workspace/{conversationId}/files/{key+}     → upload (admin / authorized tool)
+DELETE /api/chat/workspace/{conversationId}/files/{key+}
+POST   /api/chat/workspace/{conversationId}/snapshot         → returns ZIP of all artifacts
+```
+
+SDK hook (would land in `@viglet/turing-react-sdk@2026.3.x`):
+
+```typescript
+const { entries, signedUrl, isLoading } = useTuringWorkspace({
+    conversationId,
+    transport: "sse",          // matches useTuringSlots pattern
+    prefix: "drafts/"          // optional filter
+});
+
+// Render the sidebar:
+{entries.map(e => (
+    <a href={signedUrl(e.key)} key={e.key} download>
+        {iconFor(e.contentType)} {e.key} ({fmtSize(e.sizeBytes)})
+    </a>
+))}
+```
+
+#### How the LLM sees the workspace
+
+Workspace contents are **NOT** dumped into the prompt. Instead, the
+system prompt gets a single appended block listing what's available:
+
+```
+## Available workspace artifacts (read with the workspace.read tool)
+
+- workspace://uploads/cv.pdf (application/pdf, 124KB, written by user-upload at 14:32)
+- workspace://uploads/jd.pdf (application/pdf, 18KB, written by user-upload at 14:35)
+- workspace://analysis/skill-gap.md (text/markdown, 4KB, written by tool:analyze_skill_gap at 14:38)
+```
+
+A new platform-level tool `workspace.read(key)` is always available;
+the LLM calls it when it needs to read content. This is the
+**offload pattern** — large content stays out of the prompt unless
+explicitly requested. Pairs directly with T114 (auto-offload large
+tool results) and T115 (memory compression to workspace summaries).
+
+#### Path scheme — the multi-tenant story
+
+Storage backend (NoOp / Filesystem / MinIO / S3) writes to a path that
+reuses T78's tenant isolation verbatim:
+
+```
+{turing.storage.path-root}/tenants/{agentId}/{conversationId}/workspace/<key>
+```
+
+- Two conversations of the same agent never see each other's workspace.
+- Two agents within the same Turing instance never see each other's
+  workspace.
+- Path traversal protected by `resolveSafe()` (already in
+  `TurFilesystemStorageService`).
+- HMAC URL signing (T79 `TurCodeInterpreterUrlSigner`) means stolen
+  URLs can't be replayed beyond TTL.
+
+Once T80 (container sandbox for Code Interpreter) ships, the same
+container can bind-mount only its own conversation's workspace —
+sealing the last leak vector.
+
+#### IX.3.a `TurAgentWorkspace` service (T111)
+
+Per-conversation, key-value-blob store. **Critical insight**: Turing
+already has the storage abstraction it needs — `TurStorageService`
+(NoOp / Filesystem / MinIO, configured via `turing.storage.type`).
+Workspace is a thin façade over that:
+
+```java
+public interface TurAgentWorkspace {
+    void put(String key, byte[] content, String contentType);
+    Optional<byte[]> get(String key);
+    List<WorkspaceEntry> list(String prefix);
+    void delete(String key);
+    String signedUrl(String key);  // uses TurCodeInterpreterUrlSigner pattern (T79)
+}
+
+// Scoped path: tenants/{agentId}/{conversationId}/workspace/<key>
+// Matches T78 multi-tenant isolation verbatim.
+```
+
+**Why this is strictly better than Deep Agents' virtual filesystem**:
+
+| Capability | Deep Agents virtual FS | Turing workspace |
+|---|---|---|
+| Storage backend | In-memory or implementation detail | **Pluggable** — NoOp/FS/MinIO/S3 per deployment |
+| Multi-tenant | Implicit / unclear | **Path-isolated** by agent + conversation (reuses T78) |
+| URL access | Not exposed | **HMAC-signed URLs** with cookie binding (reuses T79) |
+| Content types | Strings | Binary blobs with MIME type — PDFs, images, CSVs |
+| Eviction / TTL | Manual | Tied to `SubmissionRetention` config (T66) |
+| External serving | None | Files directly servable from the deployed instance |
+
+#### IX.3.b `workspace` Custom Tool helper (T112)
+
+```groovy
+// Custom Tool script can mix workspace with existing helpers:
+def report = code.executePython("""
+    import json, csv
+    data = json.loads('''${slots.dataset}''')
+    with open('report.csv', 'w') as f:
+        writer = csv.writer(f)
+        for row in data: writer.writerow(row)
+""")
+// code helper saved the file inside the sandbox; copy to workspace:
+def csvBytes = http.getBytes("${report.fileUrl}")
+workspace.put("reports/lead-export-${slots.export_date}.csv", csvBytes, "text/csv")
+
+// Later turn, another tool reads the same workspace entry:
+def previous = workspace.get("reports/lead-export-${slots.export_date}.csv")
+```
+
+This composes naturally with the existing `code`, `http`, `slots`,
+`turingSearch` helpers — same `ToolContext` threading, same per-call
+analytics.
+
+#### IX.3.c Workspace SSE bus (T113)
+
+Mirrors `TurChatSlotEventBus` (T54). Endpoint
+`GET /chat/workspace/stream?conversationId=X` emits
+`{event, key, contentType, size, signedUrl}`. SDK hook
+`useTuringWorkspace<T>` consumes; portals render the active artifact
+list as a sidebar — "files this agent built for you." Sub-100ms
+latency, multiplexer pattern reused from T104.
+
+#### IX.3.d Auto-offload large tool results (T114)
+
+When `TurToolCallbackPipeline.decorate(...)` wraps a `ToolCallback`,
+the wrapper intercepts the result. If the returned string > 4096 chars,
+the pipeline:
+1. Generates a key `tool-results/{toolName}-{timestamp}.json`
+2. Writes the full payload to `workspace.put(key, ...)`
+3. Replaces the returned content with:
+   `Stored at workspace://${key} (${size} KB). Call workspace.read(key) when needed.`
+
+The LLM sees the reference; if it needs the data, it calls a
+`workspace.read` tool (new platform-level callback, always present).
+Cuts prompt-token bloat dramatically on tools that return large
+catalogs / search results / JSON arrays — addresses the same problem
+Deep Agents' "offload large tool results" middleware solves, but with
+**audit trail** (workspace stores the artifact; T60 audit log tracks
+the write).
+
+#### IX.3.e Memory compression to workspace (T115)
+
+When the persisted history for a conversation exceeds
+`chatMemoryCompressionThresholdTokens` (default 8k tokens), the oldest
+turns past the T30 recent-N window get summarized via a dedicated LLM
+call → stored as `memory/summary-{from}-{to}.md` in workspace → the
+summary URL replaces those turns in the prompt context. **Composes
+with T30 relevance retrieval**: relevance still surfaces the original
+turns when the BM25 score matches a current query (high-signal
+recovery); summary is the cheap default for low-signal context.
+
+```yaml
+# Per-agent settings (Liquibase migration in T115):
+chatMemoryCompressionEnabled: true
+chatMemoryCompressionThresholdTokens: 8192
+chatMemoryCompressionModel: gpt-4o-mini    # explicitly cheap; summary doesn't need flagship model
+chatMemoryCompressionInterval: PT1H        # don't re-compress more than once per hour
+```
+
+### IX.4 Skills as first-class — the marketplace moat
+
+Deep Agents mentions "skills" in passing. Turing makes them **typed,
+versioned, marketplace-distributable units**:
+
+```json5
+// skill.manifest.json
+{
+  "name": "scaffold-markdown",
+  "version": "1.2.0",
+  "author": "viglet",
+  "signature": "sha256:...",
+  "description": "Generate beat-by-beat markdown scaffolds for narrative content",
+  "personaFragment": {
+    "instruction": "When asked to compose narrative content, structure as beats with timestamps...",
+    "vocab": { "mandatory": ["beat"], "forbidden": [] }
+  },
+  "tools": ["scaffold.markdown", "scaffold.pickQuote"],
+  "workspaceDefaults": {
+    "draft.md": "# {{title}}\n\n## Hook\n..."
+  },
+  "dependencies": ["http@^1.0.0"]
+}
+```
+
+**Three platform skills ship in v1 — the helpers extracted in §VII.4**:
+- `scaffold-markdown` — beat-structured markdown scaffolds
+- `scaffold-quote-extraction` — `pickQuote(text, term)` heuristic
+- `scaffold-mindmap` — `buildMindMap(abstracts, term)` for Mermaid trees
+
+**The moat**: Deep Agents has skills as a *concept*; Turing makes them a
+**distributable, versioned package format with vendor signatures**.
+Once `skills.turing.io` (T118) lives, the network effect is one-way —
+authors publish there because customers are there; customers go there
+because skills are there. LangChain has community packages but no
+deterministic catalog with vendor signing.
+
+### IX.5 Human-in-the-loop — make it a graph node, not magic
+
+Deep Agents has HITL as middleware (the harness pauses for you when
+appropriate). **Turing's better move**: `humanApproval` is a node
+type, visible in the editor, observable in the analytics, auditable
+in the slot audit log.
+
+```jsonc
+{
+  "type": "humanApproval",
+  "data": {
+    "notificationChannel": "slack",
+    "notificationTarget": "#sales-approvals",
+    "notificationTemplate": "Lead {{name}} from {{company}} ready to convert. Review: {{transcript_url}}",
+    "approvalSlot": "operator_decision",       // 'approve' | 'reject' | 'edit:<text>'
+    "timeoutSeconds": 3600,
+    "timeoutBehavior": "auto_reject"
+  }
+}
+```
+
+This is **graph-visible** — every flow's audit trail shows where humans
+intervened. Spectator + Co-pilot mode (T120) layers in for live
+co-driving.
+
+### IX.6 Long-horizon tasks — explicit suspend / resume
+
+Deep Agents pitches "long-running tasks" as runtime characteristic.
+Turing's move: **explicit suspend/resume primitive** (T121).
+
+```java
+// Inside a Custom Tool or flow node:
+flow.suspend("waiting_for_webhook:approval-system");
+// → conversation row marked suspended; engine stops processing turns
+// → REST endpoint enabled: POST /chat/resume/{conversationId}
+//    body: { slotUpdates: { ... }, resumeReason: "webhook_received" }
+```
+
+External systems (Salesforce webhook, scheduled job, human approval
+click) trigger the resume; flow advances from the suspend point with
+the new slot values. Deep Agents implies you build this yourself with
+generic state machines. Turing makes it a one-line authoring primitive.
+
+### IX.7 Context engineering — enforceable, not advisory
+
+Deep Agents says it compresses / offloads / isolates / caches. All four
+are advisory ("the framework helps"). Turing's competitive move:
+**enforceable token budgets** (T123).
+
+```yaml
+# Per-agent setting:
+maxPromptTokens: 16000
+overBudgetBehavior: compact     # auto-trigger T115 summarization
+# alternatives: error | warn
+```
+
+If the predicted prompt exceeds budget, engine routes through
+compression *before* calling LLM. If compression doesn't bring it
+under, the configured failure mode kicks in. **Cost is a first-class
+constraint, not a metric you discover after the fact.**
+
+### IX.8 Developer experience — CLI + eval as table stakes
+
+#### IX.8.a `turing` CLI (T125)
+
+Deep Agents has a CLI. Turing's CLI must be **strictly better** because
+it spans the whole stack:
+
+```bash
+$ turing init my-agent              # scaffolds agent JSON + flow + tools dir
+$ cd my-agent
+$ turing dev                        # docker-compose up: pg + solr + minio + jar
+                                    # file watcher → hot reload of flow + tools
+$ turing eval                       # run YAML eval suite
+$ turing deploy --env=staging       # push agent + flows + tools + skills
+$ turing logs --tail                # stream chat events from remote
+```
+
+The differentiator: `turing dev` boots the **full Turing stack** locally
+in one command. LangChain's CLI is just the SDK harness — you still
+need your own infrastructure. Turing's CLI is closer to Supabase's CLI
+(supabase + auth + postgres + storage in one) than to LangChain's.
+
+#### IX.8.b `turing eval` (T126)
+
+YAML-defined regression suite. Generalizes the BehavioralIT pattern
+(§VI.4.3) into a customer-facing tool:
+
+```yaml
+# evals/lead-capture.eval.yaml
+fixtures:
+  - id: happy-path-cfo
+    conversation:
+      - user: "Quero saber dos seus programas"
+      - assert.assistant.matches: ".*cargo.*"      # expected to ask cargo
+      - user: "Sou CFO numa fintech"
+      - assert.slot.cargo_atual: "CFO"             # judge captured it
+      - assert.tool_called: search_ee_programs     # tool fired
+      - assert.persona_invariants:                 # tone validator passed
+          forbidden: ["talvez", "não posso"]
+  - id: rejection-path-junior
+    ...
+```
+
+Customers run `turing eval --watch` locally; CI runs on every PR;
+production conversations get one-click "save as eval fixture" (T127).
+LangSmith has eval but provider-locked; Turing's eval works across all
+6 LLM providers because Spring AI abstracts them.
+
+### IX.9 Observability interop — don't fight LangSmith, federate
+
+Customers who already invested in LangSmith dashboards / OpenTelemetry
+backends should not have to abandon them to adopt Turing.
+
+- **T128 LangSmith mirror**: optional `turing.observability.langsmith.enabled=true` + API key → every chat-pipeline event also pushed to LangSmith via their public ingest API. Customers see Turing traces in LangSmith side-by-side with their LangChain agents.
+- **T129 OTel export**: wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP backend. Standard transport, no provider lock-in.
+
+**Strategic principle**: lock customers in via *capability*, never via
+*format*. The Turing scorecard is irreplaceable; the trace export
+shouldn't be.
+
+### IX.10 What we explicitly do NOT copy from Deep Agents
+
+- **"Skills" as undefined filesystem files** — Turing makes skills a
+  typed, versioned, signed package format. Looser is worse here.
+- **Always-on planning middleware** — Turing makes planning a node
+  authors add when they want it. Always-on overhead is opinionated
+  in the wrong direction.
+- **Python-only SDK** — Turing's SDK is React-first
+  (`@viglet/turing-react-sdk`), with backend served by Spring Boot Java
+  21. The CLI (T125) is Node.js. **No Python lock-in** — every
+  capability is REST-accessible.
+- **LangGraph-style explicit state machine on top of an LLM** — Turing
+  has the chat-flow DSL, which is a state machine but graphical and
+  authorable by non-devs. We don't need a second layer.
+
+### IX.11 Sequencing — what to ship first
+
+Three groups, ranked by ratio of differentiation × Turing-infra reuse:
+
+**Group 1 — workspace foundation** (~3 weeks, gates everything else):
+- T111 `TurAgentWorkspace` service (1 week, reuses `TurStorageService`)
+- T112 `workspace` Groovy helper (3 days)
+- T113 workspace SSE bus (3 days, reuses `TurChatSlotEventBus` pattern)
+- T114 auto-offload large tool results (1 week, reuses
+  `TurToolCallbackPipeline` middleware seam)
+
+**Group 2 — planning + cross-agent** (~2 weeks, reuses chat-flow + Custom Tool DSL):
+- T108 `planningStep` node type (1 week, similar surface to `writeSlot`)
+- T109 `agent.invoke(...)` helper (1 week, reuses agent + executor + analytics)
+- T110 sub-agent analytics rows (3 days, extends T84 scorecard schema)
+
+**Group 3 — CLI + eval** (~3 weeks parallel track):
+- T125 `turing` CLI scaffold + dev mode (2 weeks)
+- T126 `turing eval` (1 week, generalizes §VI.4.3 pattern)
+
+**Group 4 — long-running + HITL** (~2 weeks):
+- T121 suspend/resume primitive (1 week)
+- T119 `humanApproval` node type (1 week, layers on T54 SSE)
+
+**Group 5 — context enforcement** (~1 week):
+- T123 token-budget enforcement (1 week, plumbing through T31 + T30)
+- T115 memory compression to workspace (3 days, depends on T111)
+
+**Group 6 — interop + ecosystem** (~3 weeks):
+- T128 LangSmith export (1 week)
+- T129 OTel export (1 week)
+- T116 `TurSkill` entity + manifest format (2 weeks)
+- T117 skills marketplace UI (1 week, internal-only v1)
+
+**Total: ~14 weeks of focused work to reach Deep Agents parity +
+overtake on three dimensions** (workspace, skills marketplace, eval
+harness). T118 public skills registry (`skills.turing.io`) is a
+separate product launch, not a feature.
+
+### IX.12 The competitive narrative — one paragraph
+
+> "Deep Agents is an SDK harness for engineers writing autonomous agents
+> in Python. Turing is the same capability surface — planning, virtual
+> filesystem, sub-agents, context engineering, human-in-the-loop — but
+> as a **platform** with multi-tenant deployment, graphical flow
+> authoring, multi-LLM support, audit-grade observability, and a
+> versioned skills marketplace. Self-host or cloud. Engineer or
+> marketer can author. The customer's ops team can read every trace.
+> Deep Agents is what you write; Turing is what you run."
 
 ---

@@ -361,6 +361,29 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
                 com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(
                         agent, triggerable, importRepos());
 
+        // Second off-topic flow so the procedural router has ≥2 candidates
+        // (post-2026.3.1 Option B: single-candidate agents defer to the LLM
+        // router instead of running MoreLikeThis). Built directly via the
+        // repo to skip the persona M2M re-insert that ChatFlowImportTestUtil
+        // would attempt on a re-import. The trigger description shares no
+        // PT stems with the user message, so the first flow dominates by
+        // the PROCEDURAL_DOMINANCE_RATIO factor and gets picked
+        // deterministically.
+        com.viglet.turing.persistence.model.agent.TurChatFlow offTopic =
+                new com.viglet.turing.persistence.model.agent.TurChatFlow();
+        offTopic.setName("off-topic-decoy");
+        offTopic.setDescription("Off-topic decoy to keep procedural router engaged");
+        offTopic.setDefinitionJson(imp.flow().getDefinitionJson());
+        offTopic.setEnabled(1);
+        offTopic.setGuardrailMethod(
+                com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.LLM_JUDGE);
+        offTopic.setTriggerDescription(
+                "Ative para reclamações sobre boleto, fatura, pagamento ou pix");
+        offTopic.setTriggerMode(
+                com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode.ONCE);
+        offTopic.setTurAIAgent(agent);
+        chatFlowRepository.save(offTopic);
+
         // Fresh conversation: NO pre-existing state. Procedural router
         // will match the triggerDescription, select the flow, and the
         // engine returns FlowSelection.freshlyTriggered=true.
