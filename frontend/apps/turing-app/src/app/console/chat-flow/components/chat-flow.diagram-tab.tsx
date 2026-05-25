@@ -14,6 +14,7 @@ import {
 } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 
+import { ChatFlowLivePreviewPanel } from "./chat-flow.live-preview-panel";
 import { ChatPreview } from "./chat-preview";
 import { FlowProperties } from "./flow-properties";
 import { FlowSidebar } from "./flow-sidebar";
@@ -30,6 +31,7 @@ interface DiagramTabProps {
   zoomPercent: number;
   selectedNode: Node<FlowNodeData> | null;
   previewOpen: boolean;
+  livePreviewOpen: boolean;
   onNodesChange: (changes: NodeChange<Node<FlowNodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
   onConnect: (params: Connection) => void;
@@ -41,6 +43,7 @@ interface DiagramTabProps {
   updateNodeData: (nodeId: string, patch: Partial<FlowNodeData>) => void;
   setSelectedNodeId: (id: string | null) => void;
   setPreviewOpen: (open: boolean) => void;
+  setLivePreviewOpen: (open: boolean) => void;
 }
 
 /**
@@ -59,6 +62,7 @@ export function ChatFlowDiagramTab({
   zoomPercent,
   selectedNode,
   previewOpen,
+  livePreviewOpen,
   onNodesChange,
   onEdgesChange,
   onConnect,
@@ -70,6 +74,7 @@ export function ChatFlowDiagramTab({
   updateNodeData,
   setSelectedNodeId,
   setPreviewOpen,
+  setLivePreviewOpen,
 }: Readonly<DiagramTabProps>) {
   const { t } = useTranslation();
   return (
@@ -124,6 +129,21 @@ export function ChatFlowDiagramTab({
 
         {previewOpen && (
           <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />
+        )}
+
+        {/* T95 — node-focused live preview. Separate from ChatPreview
+            because they answer different questions: ChatPreview is the
+            whole-flow transcript walk, this panel zooms in on the selected
+            node with mocked slots so authors iterate in <300ms without
+            running a real LLM turn. */}
+        {livePreviewOpen && (
+          <ChatFlowLivePreviewPanel
+            selectedNode={selectedNode}
+            nodes={nodes}
+            edges={edges}
+            flowId={currentFlowId}
+            onClose={() => setLivePreviewOpen(false)}
+          />
         )}
       </div>
     </TabsContent>

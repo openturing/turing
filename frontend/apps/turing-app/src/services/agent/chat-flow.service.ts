@@ -3,6 +3,7 @@ import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
 import type {
   ChatFlowGeneration,
   TurChatFlow,
+  TurChatFlowLintIssue,
   TurChatFlowTriggerConflict,
 } from "@/models/agent/chat-flow.model";
 import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
@@ -111,6 +112,17 @@ export class TurChatFlowService {
   async triggerConflicts(agentId: string): Promise<TurChatFlowTriggerConflict[]> {
     const response = await axios.get<TurChatFlowTriggerConflict[]>(
       `/ai-agent/${agentId}/chat-flow/trigger-conflicts`,
+    );
+    return response.data;
+  }
+
+  /**
+   * T94 — static-analysis warnings for a single chat flow. Powers the
+   * sidebar panel in the admin editor.
+   */
+  async lint(agentId: string, flowId: string): Promise<TurChatFlowLintIssue[]> {
+    const response = await axios.get<TurChatFlowLintIssue[]>(
+      `/ai-agent/${agentId}/chat-flow/${flowId}/lint`,
     );
     return response.data;
   }

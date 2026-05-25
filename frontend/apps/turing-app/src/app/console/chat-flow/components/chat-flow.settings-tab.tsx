@@ -9,7 +9,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { IconBolt, IconFlask, IconSettings } from "@tabler/icons-react";
+import { IconArrowsRightLeft, IconBolt, IconFlask, IconSettings } from "@tabler/icons-react";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -21,6 +23,7 @@ import {
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 
+import { ChatFlowLintPanel } from "./chat-flow.lint-panel";
 import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
 import { FormRow } from "./form-row";
 
@@ -80,6 +83,8 @@ interface SettingsTabProps {
   setVariantLabel: (value: string) => void;
   trafficWeight: number | null;
   setTrafficWeight: (value: number | null) => void;
+  slotInheritanceJson: string;
+  setSlotInheritanceJson: (value: string) => void;
 }
 
 export function ChatFlowSettingsTab({
@@ -103,11 +108,18 @@ export function ChatFlowSettingsTab({
   setVariantLabel,
   trafficWeight,
   setTrafficWeight,
+  slotInheritanceJson,
+  setSlotInheritanceJson,
 }: Readonly<SettingsTabProps>) {
   const { t } = useTranslation();
   return (
     <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
       <div className="space-y-4 px-4 lg:px-6 py-2 pb-8">
+        {/* T94 — lint findings at the very top so ERROR-class issues
+            (dead-end node, …) blocking the runtime are unmissable. Renders
+            nothing on a clean flow. */}
+        {flowId && <ChatFlowLintPanel agentId={agentId} flowId={flowId} />}
+
         {/* T91 — render at the top so a heavy-overlap warning is the first
             thing the author sees when opening the editor. Renders nothing
             until the agent has ≥ 2 conflicting trigger descriptions. */}
@@ -341,7 +353,100 @@ export function ChatFlowSettingsTab({
             </div>
           </SectionCard.Content>
         </SectionCard>
+
+        {/* T93 / §VII.11.c — Inherit slots from earlier flows on the same
+            conversation. Two affordances:
+              • a "Preserve all session slots" toggle (writes the wildcard
+                {"*":"*"} and hides the advanced JSON), for the common case
+                of "just bring everything along".
+              • an advanced JSON textarea for renaming / picking specific
+                slots — same shape as the backend persists. */}
+        <SlotInheritanceCard
+          slotInheritanceJson={slotInheritanceJson}
+          setSlotInheritanceJson={setSlotInheritanceJson}
+        />
       </div>
     </TabsContent>
+  );
+}
+
+/**
+ * Card that maps the {@code slotInheritanceJson} field onto a
+ * Preserve-all toggle + advanced JSON textarea. Lives at the bottom of
+ * the editor since most flows don't need inheritance and the card
+ * collapses to a single switch row when off.
+ */
+function SlotInheritanceCard({
+  slotInheritanceJson,
+  setSlotInheritanceJson,
+}: Readonly<{
+  slotInheritanceJson: string;
+  setSlotInheritanceJson: (value: string) => void;
+}>) {
+  const { t } = useTranslation();
+  const trimmed = slotInheritanceJson.trim();
+  // The wildcard mapping is the "Preserve everything" semantics. Anything
+  // else (including empty) is either "no inheritance" or a custom mapping
+  // the operator typed by hand in the advanced textarea.
+  const isWildcard = trimmed === '{"*":"*"}' || trimmed === '{"*": "*"}';
+  const hasCustomMapping = trimmed.length > 0 && !isWildcard;
+  return (
+    <SectionCard variant="cyan">
+      <SectionCard.Header
+        icon={IconArrowsRightLeft}
+        title={t("chatFlow.sections.slotInheritance.title", {
+          defaultValue: "Slot inheritance",
+        })}
+        description={t("chatFlow.sections.slotInheritance.description", {
+          defaultValue:
+            "When the engine routes a visitor onto this flow from a different flow on the same conversation, decide which already-captured slots carry over. Empty = no inheritance.",
+        })}
+      />
+      <SectionCard.Content>
+        <div className="space-y-6">
+          <FormRow
+            htmlFor="chat-flow-preserve-all-slots"
+            label={t("chatFlow.fields.preserveAllSlots", {
+              defaultValue: "Preserve all session slots",
+            })}
+            description={t("chatFlow.fields.preserveAllSlotsHint", {
+              defaultValue:
+                "Bring every slot captured in earlier flows on this conversation through to this flow. Writes the wildcard mapping {\"*\":\"*\"}. Toggle off to author a specific slot map below.",
+            })}
+          >
+            <Switch
+              id="chat-flow-preserve-all-slots"
+              checked={isWildcard}
+              onCheckedChange={(checked) =>
+                setSlotInheritanceJson(checked ? '{"*":"*"}' : "")
+              }
+              disabled={hasCustomMapping}
+            />
+          </FormRow>
+
+          {!isWildcard && (
+            <FormRow
+              htmlFor="chat-flow-slot-inheritance-json"
+              label={t("chatFlow.fields.slotInheritanceJson", {
+                defaultValue: "Custom mapping (advanced)",
+              })}
+              description={t("chatFlow.fields.slotInheritanceJsonHint", {
+                defaultValue:
+                  'JSON object {"receivingSlot":"sourceSlot"}. Use the same name on both sides for a straight pass-through; use different names to rename, e.g. {"position":"cargo_atual"}. Slots not in the map are NOT inherited.',
+              })}
+            >
+              <Textarea
+                id="chat-flow-slot-inheritance-json"
+                value={slotInheritanceJson}
+                onChange={(event) => setSlotInheritanceJson(event.target.value)}
+                placeholder={'{"name":"name","position":"cargo_atual"}'}
+                rows={4}
+                className="font-mono text-xs"
+              />
+            </FormRow>
+          )}
+        </div>
+      </SectionCard.Content>
+    </SectionCard>
   );
 }

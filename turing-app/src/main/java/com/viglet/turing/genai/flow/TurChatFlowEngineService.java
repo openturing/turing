@@ -732,6 +732,272 @@ public class TurChatFlowEngineService {
         return states.size();
     }
 
+    /**
+     * Outcome of {@link #pinFlowForConversation}. {@code success=false} carries
+     * a {@link #reason} that the {@code POST /chat/flow-select} endpoint
+     * surfaces to the caller verbatim — useful in admin UIs / SDK error toasts
+     * to explain why a deep link (e.g. {@code ?flow=in-company}) failed to
+     * land.
+     */
+    public record PinResult(boolean success, String pinnedFlowId, String pinnedFlowName,
+            String reason) {
+        public static PinResult ok(TurChatFlow flow) {
+            return new PinResult(true, flow.getId(), flow.getName(), null);
+        }
+
+        public static PinResult error(String reason) {
+            return new PinResult(false, null, null, reason);
+        }
+    }
+
+    /**
+     * T92 / §VII.11.b — pins a specific flow on the conversation, overriding
+     * the LLM router for every subsequent turn until the flow terminates (or
+     * another pin overrides it). Used by deep links like
+     * {@code ?flow=in-company} that have to land the visitor on a specific
+     * persona before they type anything.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Resolve {@code flowSelector} on {@code agent}'s flows — id match
+     *       first, case-insensitive name match second.</li>
+     *   <li>Snapshot the conversation's currently captured slots (so values
+     *       already filled — name, email, role — carry over instead of being
+     *       silently lost on the pin).</li>
+     *   <li>Reset every other in-progress flow state for this conversation
+     *       on this agent, so the engine's continuation rule cannot keep the
+     *       caller on a stale flow.</li>
+     *   <li>Pre-create the chosen flow's state with the snapshot already
+     *       written in, then walk transparent / satisfied-question nodes so
+     *       the cursor lands on the first node that genuinely needs user
+     *       input. The next chat turn picks this state via the engine's
+     *       continuation rule — no caller-side {@code flowId} parameter
+     *       needed.</li>
+     * </ol>
+     *
+     * <p>Slots survive the pin via the snapshot-and-seed dance, so a visitor
+     * who switches from the B2C lead-capture flow to the B2B in-company quote
+     * mid-conversation keeps their {@code name} and {@code cargo_atual}. The
+     * receiving flow's satisfied-questions walker then auto-skips any
+     * aiQuestion node whose {@code outputVariable} is already filled.
+     *
+     * @param agent           owning AI agent (the flow must belong to it —
+     *                        cross-agent pins return {@link PinResult#error}).
+     * @param conversationId  active conversation id ({@code TUR_SESSION}).
+     * @param flowSelector    either the flow UUID or its (case-insensitive)
+     *                        name — names are convenient in deep links.
+     *
+     * @since 2026.3.1
+     */
+    @Transactional
+    public PinResult pinFlowForConversation(TurAIAgent agent, String conversationId,
+            String flowSelector) {
+        if (agent == null) {
+            return PinResult.error("agent is required");
+        }
+        if (conversationId == null || conversationId.isBlank()) {
+            return PinResult.error("conversationId is required");
+        }
+        if (flowSelector == null || flowSelector.isBlank()) {
+            return PinResult.error("flowSelector is required");
+        }
+        TurChatFlow flow = resolveFlowOnAgent(agent.getId(), flowSelector);
+        if (flow == null) {
+            return PinResult.error("flow '" + flowSelector + "' not found on agent "
+                    + agent.getId());
+        }
+        if (flow.getEnabled() != 1) {
+            return PinResult.error("flow '" + flow.getId() + "' is disabled");
+        }
+        Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
+        if (graphOpt.isEmpty()) {
+            return PinResult.error("flow '" + flow.getId() + "' has no parseable graph");
+        }
+        ChatFlowGraph graph = graphOpt.get();
+        Optional<ChatFlowNode> startNode = graph.startNode();
+        if (startNode.isEmpty()) {
+            return PinResult.error("flow '" + flow.getId() + "' has no start node");
+        }
+
+        // Snapshot slots BEFORE the reset so the receiving flow can resume
+        // mid-conversation without losing data the visitor already typed.
+        Map<String, String> currentSlots = new LinkedHashMap<>(
+                listSlotsForConversation(conversationId).slots());
+
+        // T93: when the receiving flow declares a slotInheritanceJson mapping,
+        // use ONLY the mapped slots (so the flow author controls what carries
+        // over — e.g. inherit `name` but not `last_topic_searched`). When no
+        // mapping is set, fall back to the legacy pin behaviour of seeding
+        // every slot — the operator explicitly chose this flow, so bringing
+        // along the full session context is the least-surprising default.
+        Map<String, String> mappedSlots = applySlotInheritance(flow, currentSlots);
+        Map<String, String> seedSlots = mappedSlots != null ? mappedSlots : currentSlots;
+
+        // Reset every other in-progress state on this agent so the engine's
+        // continuation rule cannot keep the next turn on a stale flow. We
+        // delete by agent (not just by flow) to guarantee a single non-
+        // terminal leaf remains after this method returns.
+        int resetCount = resetAllStatesForAgent(conversationId, agent.getId());
+
+        TurChatFlowState leaf = createInitialStateWithSeed(conversationId, flow, graph, seedSlots);
+
+        log.info("[FlowEngine.pinFlow] conv='{}' agent='{}' selector='{}' → flow='{}' "
+                + "(name='{}'), reset {} prior state(s), seeded {} slot(s)",
+                conversationId, agent.getId(), flowSelector, flow.getId(), flow.getName(),
+                resetCount, seedSlots.size());
+
+        // Notify SSE subscribers: the pin reshapes the slot graph (rows
+        // changed even if values didn't), so the slot inspector / live UI
+        // should refresh on the next render without polling.
+        slotEventBus.publish(conversationId,
+                listSlotsForConversation(conversationId).slots());
+        return PinResult.ok(flow);
+    }
+
+    /**
+     * Builds and persists a fresh state for {@code flow} on
+     * {@code conversationId} with {@code seedSlots} written into the variables
+     * BEFORE the transparent walker runs. Seeded slots feed
+     * {@code walkThroughSatisfiedQuestions}, so any aiQuestion whose
+     * {@code outputVariable} is already in the seed map is skipped at init
+     * time (same behaviour as a re-triggered ALWAYS flow).
+     *
+     * <p>Used by both the manual pin ({@link #pinFlowForConversation}) and
+     * the auto-router fresh-route branch when the receiving flow declares an
+     * inheritance mapping. Extracted as a separate helper so both paths share
+     * the same anchor / walk / save sequence.
+     *
+     * @since 2026.3.1
+     */
+    private TurChatFlowState createInitialStateWithSeed(String conversationId, TurChatFlow flow,
+            ChatFlowGraph graph, Map<String, String> seedSlots) {
+        ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(graph,
+                graph.startNode().orElseThrow(() ->
+                        new IllegalStateException("graph for flow '" + flow.getId()
+                                + "' has no start node")))
+                .orElse(graph.startNode().get());
+        TurChatFlowState created = new TurChatFlowState();
+        created.setConversationId(conversationId);
+        created.setFlow(flow);
+        created.setCurrentNodeId(anchor.id());
+        ChatFlowOps.writeVariables(created, seedSlots == null ? Map.of() : seedSlots);
+        ChatFlowOps.walkThroughConditions(created, graph, null);
+        TurChatFlowState saved = stateRepository.save(created);
+        TurChatFlowState leaf = walkTransparentNodes(saved, null);
+        if (leaf != saved) {
+            stateRepository.save(leaf);
+        }
+        return leaf;
+    }
+
+    /**
+     * T93 / §VII.11.c — projects {@code sourceSlots} through the receiving
+     * flow's {@code slotInheritanceJson} mapping and returns the resulting
+     * seed map. Returns {@code null} when the receiving flow declares no
+     * mapping, signalling "no T93 contract here — caller decides the
+     * fallback" (pin path defaults to full snapshot, auto-router path
+     * defaults to empty).
+     *
+     * <p>Mapping shape: a JSON object {@code {receivingSlot: sourceSlot}}.
+     * Use the same name on both sides for a straight pass-through; use
+     * different names to rename ({@code {"position": "cargo_atual"}}).
+     * Special key {@code "*"} (with any value) → copy every entry in the
+     * source map verbatim, useful for "give me everything" without listing
+     * each slot.
+     *
+     * <p>Slots whose source name is absent from {@code sourceSlots} are
+     * silently dropped (no null/empty placeholders end up in the seed —
+     * matches the satisfied-questions walker's "absent ≠ filled" rule).
+     *
+     * @since 2026.3.1
+     */
+    Map<String, String> applySlotInheritance(TurChatFlow receivingFlow,
+            Map<String, String> sourceSlots) {
+        if (receivingFlow == null) {
+            return null;
+        }
+        String mappingJson = receivingFlow.getSlotInheritanceJson();
+        if (mappingJson == null || mappingJson.isBlank()) {
+            return null;
+        }
+        Map<String, String> mapping = parseSlotInheritanceMapping(receivingFlow, mappingJson);
+        if (mapping.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        Map<String, String> safeSource = sourceSlots == null ? Map.of() : sourceSlots;
+        for (Map.Entry<String, String> entry : mapping.entrySet()) {
+            String receivingName = entry.getKey();
+            String sourceName = entry.getValue();
+            if (receivingName == null || receivingName.isBlank()) {
+                continue;
+            }
+            if ("*".equals(receivingName)) {
+                // Wildcard: copy every source slot verbatim. Names that
+                // collide with explicit entries are overwritten in this
+                // loop's iteration order — explicit entries win when they
+                // come later (LinkedHashMap preserves insertion).
+                result.putAll(safeSource);
+                continue;
+            }
+            if (sourceName == null || sourceName.isBlank()) {
+                continue;
+            }
+            String value = safeSource.get(sourceName);
+            if (value != null) {
+                result.put(receivingName, value);
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> parseSlotInheritanceMapping(TurChatFlow flow, String json) {
+        try {
+            Object parsed = OBJECT_MAPPER.readValue(json, Object.class);
+            if (!(parsed instanceof Map<?, ?> raw)) {
+                log.warn("[FlowEngine] slotInheritanceJson on flow '{}' is not a JSON object — ignoring",
+                        flow.getId());
+                return Map.of();
+            }
+            Map<String, String> out = new LinkedHashMap<>(raw.size());
+            for (Map.Entry<?, ?> e : raw.entrySet()) {
+                if (e.getKey() == null) continue;
+                out.put(String.valueOf(e.getKey()),
+                        e.getValue() == null ? null : String.valueOf(e.getValue()));
+            }
+            return out;
+        } catch (JacksonException e) {
+            log.warn("[FlowEngine] slotInheritanceJson on flow '{}' is unparseable: {}",
+                    flow.getId(), e.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * Resolves {@code selector} against the agent's flows: UUID match first
+     * (the common SDK path), case-insensitive name match second (deep-link
+     * convenience, so {@code ?flow=in-company} works without exposing UUIDs
+     * in the URL). Returns {@code null} when neither resolves.
+     */
+    private TurChatFlow resolveFlowOnAgent(String agentId, String selector) {
+        List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agentId);
+        if (flows == null || flows.isEmpty()) {
+            return null;
+        }
+        for (TurChatFlow flow : flows) {
+            if (selector.equals(flow.getId())) {
+                return flow;
+            }
+        }
+        for (TurChatFlow flow : flows) {
+            if (flow.getName() != null && selector.equalsIgnoreCase(flow.getName())) {
+                return flow;
+            }
+        }
+        return null;
+    }
+
     // ─────────────────────────── Auto-trigger router ───────────────────────────
 
     /**
@@ -889,11 +1155,31 @@ public class TurChatFlowEngineService {
             stateRepository.flush();
         }
 
-        Optional<TurChatFlowState> newState = loadOrInitState(conversationId, flow, pickedGraph);
-        // loadOrInitState walks transparent nodes; the leaf may belong to a
-        // sub-flow rather than the picked root flow. Align the FlowSelection
-        // with the leaf so the prompt addendum and strategy run against the
-        // correct graph.
+        // T93 / §VII.11.c — cross-flow slot inheritance. When the receiving
+        // flow declares a slotInheritanceJson mapping AND we're about to mint
+        // a brand-new state (no existing row for this flow on this
+        // conversation), seed the new state with the mapped slots BEFORE the
+        // transparent walker runs so satisfied questions auto-skip. ALWAYS
+        // retrigger keeps its dedicated path (resetForAlwaysRetrigger
+        // preserves the flow's own previous variables in-place), so we only
+        // apply inheritance when there is no existing row.
+        boolean noExistingRow = stateRepository
+                .findByConversationIdAndFlow_Id(conversationId, flow.getId()).isEmpty();
+        Map<String, String> inherited = noExistingRow
+                ? applySlotInheritance(flow, listSlotsForConversation(conversationId).slots())
+                : null;
+        Optional<TurChatFlowState> newState;
+        if (inherited != null && !inherited.isEmpty()) {
+            log.info("[FlowEngine] T93: inheriting {} slot(s) into fresh state for flow '{}'",
+                    inherited.size(), flow.getId());
+            newState = Optional.of(createInitialStateWithSeed(conversationId, flow, pickedGraph,
+                    inherited));
+        } else {
+            newState = loadOrInitState(conversationId, flow, pickedGraph);
+        }
+        // The leaf may belong to a sub-flow rather than the picked root flow.
+        // Align the FlowSelection with the leaf so the prompt addendum and
+        // strategy run against the correct graph.
         return newState.map(s -> {
             TurChatFlow activeFlow = s.getFlow();
             ChatFlowGraph activeGraph = activeFlow.getId().equals(flow.getId())

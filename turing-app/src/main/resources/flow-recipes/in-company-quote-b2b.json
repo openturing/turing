@@ -1,0 +1,29 @@
+{
+  "id": "in-company-quote-b2b",
+  "version": "1.0.0",
+  "name": "In-company quote (B2B)",
+  "description": "Pricing-quote conversational flow for B2B training requests. Captures company name, headcount, target topic and deadline; pre-wired with T93 slot inheritance from the lead-capture recipe so a B2C visitor switching contexts mid-conversation keeps their name without re-typing. Persona language is account-executive (formal, no first-name address — speaks to the company through an interlocutor).",
+  "vertical": "education",
+  "tags": ["b2b", "quote", "in-company", "education"],
+  "bundle": [
+    {
+      "chatFlow": {
+        "name": "In-company quote (B2B)",
+        "description": "Captures razão social, número de pessoas, tema e prazo para cotação in-company.",
+        "enabled": 1,
+        "guardrailMethod": "LLM_JUDGE",
+        "triggerMode": "ONCE",
+        "triggerLanguage": "PT",
+        "triggerDescription": "Ativar quando o visitante mencionar treinamento corporativo, in-company, programa para equipes, capacitação coletiva, formação fechada ou cotação para grupo. NÃO ATIVAR para perguntas sobre cursos abertos individuais ou inscrições próprias.",
+        "slotInheritanceJson": "{\"name\":\"name\",\"email\":\"email\"}",
+        "definitionJson": "{\"nodes\":[{\"id\":\"start\",\"type\":\"start\",\"position\":{\"x\":0,\"y\":0},\"data\":{\"label\":\"Início\",\"type\":\"start\"}},{\"id\":\"ask-razao-social\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":120},\"data\":{\"label\":\"Razão social\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Tom executivo, formal. Pergunte o nome da empresa (razão social) e em que setor atua. Sem primeira pessoa, sem 'Olá'. Linguagem direta.\",\"outputVariable\":\"razao_social\"}},{\"id\":\"ask-num-pessoas\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":240},\"data\":{\"label\":\"Número de pessoas\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Quantos colaboradores participariam do programa em {{razao_social}}? Aceite faixas aproximadas (ex: 10-15, 20+, etc).\",\"outputVariable\":\"num_pessoas\"}},{\"id\":\"ask-tema\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":360},\"data\":{\"label\":\"Tema\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Qual o tema central do programa para {{razao_social}}? Capture livremente; pode ser uma trilha ('Liderança para gerentes seniores') ou um objetivo de negócio ('Acelerar adoção de IA na operação').\",\"outputVariable\":\"tema\",\"onJudgeReject\":\"advance_with_literal\"}},{\"id\":\"ask-prazo\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":480},\"data\":{\"label\":\"Prazo\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Em que janela a {{razao_social}} pretende rodar o programa? Aceite respostas como 'próximo trimestre', 'até dezembro', 'sem urgência'.\",\"outputVariable\":\"prazo\"}},{\"id\":\"end\",\"type\":\"end\",\"position\":{\"x\":0,\"y\":600},\"data\":{\"label\":\"Fim\",\"type\":\"end\"}}],\"edges\":[{\"id\":\"e1\",\"source\":\"start\",\"target\":\"ask-razao-social\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e2\",\"source\":\"ask-razao-social\",\"target\":\"ask-num-pessoas\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e3\",\"source\":\"ask-num-pessoas\",\"target\":\"ask-tema\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e4\",\"source\":\"ask-tema\",\"target\":\"ask-prazo\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e5\",\"source\":\"ask-prazo\",\"target\":\"end\",\"type\":\"smoothstep\",\"label\":\"continue\"}]}"
+      },
+      "slots": [
+        { "name": "razao_social", "description": "Company legal name + sector", "type": "STRING" },
+        { "name": "num_pessoas", "description": "Approximate headcount (range OK)", "type": "STRING" },
+        { "name": "tema", "description": "Central topic / business objective for the program", "type": "STRING" },
+        { "name": "prazo", "description": "Time window for delivery", "type": "STRING" }
+      ]
+    }
+  ]
+}

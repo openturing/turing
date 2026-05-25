@@ -99,6 +99,32 @@ export interface TurChatFlow {
    * @since 2026.2.7
    */
   trafficWeight?: number | null;
+  /**
+   * T93 / §VII.11.c — JSON mapping {@code {receivingSlot: sourceSlot}} of
+   * slots this flow inherits from earlier flows on the same conversation.
+   * {@code {"*":"*"}} = pass every captured slot through. Null/blank
+   * disables inheritance. The editor exposes this as a "Preserve all
+   * session slots" toggle (writes the wildcard) plus an advanced JSON
+   * textarea for renaming / picking specific slots.
+   *
+   * @since 2026.3.1
+   */
+  slotInheritanceJson?: string | null;
+}
+
+/**
+ * T94 / §VII.11.d — one finding from the chat-flow linter, surfaced in the
+ * editor's sidebar warnings panel.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowLintIssue {
+  nodeId: string | null;
+  edgeId: string | null;
+  severity: "ERROR" | "WARNING" | "INFO";
+  code: string;
+  message: string;
+  hint: string;
 }
 
 /**

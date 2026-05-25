@@ -1,0 +1,28 @@
+{
+  "id": "micro-lesson-educational",
+  "version": "1.0.0",
+  "name": "Micro-lesson (educational)",
+  "description": "Mini conversational class delivering a 5-minute lesson on a chosen topic. Asks for a topic, picks a format (mind-map, case study, quick-reference), and emits a scaffolded outline the persona expands into voice. Pre-wired with slot inheritance from the lead-capture recipe so a returning visitor reuses their name. Distills the Aula-Relâmpago pattern from the Education customer engagement (§VII.3.1 — determinism + LLM hybrid).",
+  "vertical": "education",
+  "tags": ["education", "micro-learning", "scaffold", "aula-relampago"],
+  "bundle": [
+    {
+      "chatFlow": {
+        "name": "Micro-lesson (educational)",
+        "description": "Short conversational class on a chosen topic. Asks topic + format, then emits a 5-minute lesson scaffold.",
+        "enabled": 1,
+        "guardrailMethod": "LLM_JUDGE",
+        "triggerMode": "ALWAYS",
+        "triggerLanguage": "PT",
+        "triggerDescription": "Ativar quando o visitante pedir uma aula relâmpago, mini-aula, lição rápida, resumo de conceito ou explicação curta sobre algum tema educacional. NÃO ATIVAR para perguntas operacionais sobre matrículas ou preços.",
+        "slotInheritanceJson": "{\"name\":\"name\"}",
+        "definitionJson": "{\"nodes\":[{\"id\":\"start\",\"type\":\"start\",\"position\":{\"x\":0,\"y\":0},\"data\":{\"label\":\"Início\",\"type\":\"start\"}},{\"id\":\"ask-topic\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":120},\"data\":{\"label\":\"Tema da aula\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Cumprimente {{name}} (ou ofereça boas-vindas neutras se o nome não estiver disponível) e pergunte qual tema o visitante quer explorar nos próximos 5 minutos. Aceite respostas livres: um conceito ('viés cognitivo'), uma ferramenta ('OKRs'), uma habilidade ('escuta ativa').\",\"outputVariable\":\"tema_aula\",\"onJudgeReject\":\"advance_with_literal\"}},{\"id\":\"ask-format\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":240},\"data\":{\"label\":\"Formato\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Pergunte ao visitante qual formato prefere para {{tema_aula}}: mapa mental, estudo de caso ou referência rápida. Use chips.\",\"outputVariable\":\"formato_aula\",\"inlineOptions\":[\"Mapa mental\",\"Estudo de caso\",\"Referência rápida\"]}},{\"id\":\"deliver-lesson\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":360},\"data\":{\"label\":\"Entrega da aula\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Entregue agora a aula relâmpago sobre {{tema_aula}} no formato {{formato_aula}}, em até 5 parágrafos curtos. Estrutura: gancho (1 frase), conceito (2 frases), exemplo brasileiro (2 frases), aplicação imediata (1 ação concreta), referência opcional. Fim da aula deve convidar a uma próxima conversa — sem chamada para venda.\",\"outputVariable\":\"feedback_aula\",\"onJudgeReject\":\"advance_with_literal\"}},{\"id\":\"end\",\"type\":\"end\",\"position\":{\"x\":0,\"y\":480},\"data\":{\"label\":\"Fim\",\"type\":\"end\"}}],\"edges\":[{\"id\":\"e1\",\"source\":\"start\",\"target\":\"ask-topic\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e2\",\"source\":\"ask-topic\",\"target\":\"ask-format\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e3\",\"source\":\"ask-format\",\"target\":\"deliver-lesson\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e4\",\"source\":\"deliver-lesson\",\"target\":\"end\",\"type\":\"smoothstep\",\"label\":\"continue\"}]}"
+      },
+      "slots": [
+        { "name": "tema_aula", "description": "Topic the visitor wants explored in this micro-lesson", "type": "STRING" },
+        { "name": "formato_aula", "description": "Preferred format: mind-map / case study / quick-reference", "type": "STRING" },
+        { "name": "feedback_aula", "description": "Visitor's free-form feedback or follow-up after the lesson", "type": "STRING" }
+      ]
+    }
+  ]
+}

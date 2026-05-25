@@ -202,6 +202,52 @@ public class TurChatFlow implements Serializable {
     private Instant experimentEndsAt;
 
     /**
+     * T93 / §VII.11.c — cross-flow slot inheritance. JSON object whose keys
+     * are slot names this (receiving) flow expects to inherit from earlier
+     * flows on the same conversation, and whose values are the source-slot
+     * names to copy from. Use the same name on both sides for a straight
+     * pass-through (e.g. {@code {"name": "name"}}); use different names to
+     * rename (e.g. {@code {"position": "cargo_atual"}} brings the B2C flow's
+     * {@code cargo_atual} into the B2B flow as {@code position}).
+     *
+     * <p>Applied by both the manual pin
+     * ({@link com.viglet.turing.genai.flow.TurChatFlowEngineService#pinFlowForConversation})
+     * and the auto-router transition into a fresh flow. Null/blank → no
+     * inheritance, matches the pre-T93 behaviour where every flow started
+     * with an empty slot map.
+     *
+     * <p>{@link tools.jackson.databind.ObjectMapper} parses this at apply
+     * time, not on the JPA load — so a malformed JSON value is logged but
+     * does not crash the flow.
+     *
+     * @since 2026.3.1
+     */
+    @Lob
+    @Column(name = "slotInheritanceJson", columnDefinition = "longtext")
+    private String slotInheritanceJson;
+
+    /**
+     * T96 / §VII.11.f — stable id of the recipe this flow was installed from
+     * (e.g. {@code lead-capture-b2c}). {@code null} when the flow was
+     * hand-authored or imported from a raw JSON export. Drives the
+     * "Installed from recipe" badge in the editor and powers a future
+     * "upgrade available" UX when the bundled recipe ships a v2.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "installedFromRecipe", length = 64)
+    private String installedFromRecipe;
+
+    /**
+     * T96 / §VII.11.f — semver of the source recipe at install time. Set
+     * together with {@link #installedFromRecipe}; null otherwise.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "installedRecipeVersion", length = 32)
+    private String installedRecipeVersion;
+
+    /**
      * Owning AI agent. The client always knows the agent id from the URL, so
      * the back-reference is hidden from JSON to keep the payload small and
      * avoid serializing the full agent graph.

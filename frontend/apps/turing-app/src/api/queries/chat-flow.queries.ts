@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { TurChatFlow, TurChatFlowTriggerConflict } from '@/models/agent/chat-flow.model';
+import type { TurChatFlow, TurChatFlowLintIssue, TurChatFlowTriggerConflict } from '@/models/agent/chat-flow.model';
 import { TurChatFlowService, type TurChatFlowImportPayload } from '@/services/agent/chat-flow.service';
 import { queryKeys } from './keys';
 
@@ -15,9 +15,10 @@ export function useChatFlows(agentId: string | undefined) {
 }
 
 function invalidateChatFlows(queryClient: ReturnType<typeof useQueryClient>) {
-  // `chatFlows.all()` covers list, detail, AND the T91 trigger-conflicts
-  // cache, so a save/delete that changed a trigger description refreshes
-  // the ambiguity panel on the next render without an explicit second call.
+  // `chatFlows.all()` covers list, detail, the T91 trigger-conflicts cache
+  // AND the T94 lint cache, so a save/delete that changed a trigger
+  // description or a graph refreshes every dependent panel on the next
+  // render without an explicit second call.
   queryClient.invalidateQueries({ queryKey: queryKeys.chatFlows.all() });
 }
 
@@ -95,6 +96,20 @@ export function useDeleteChatFlow() {
       }
       invalidateChatFlows(queryClient);
     },
+  });
+}
+
+/**
+ * T94 — static-analysis warnings for a single chat flow. Renders the editor's
+ * sidebar warnings panel. Disabled until both ids are known.
+ */
+export function useChatFlowLint(agentId: string | undefined, flowId: string | undefined) {
+  return useQuery<TurChatFlowLintIssue[]>({
+    queryKey: agentId && flowId
+      ? queryKeys.chatFlows.lint(agentId, flowId)
+      : ['chat-flows', 'lint', 'pending'],
+    queryFn: () => service.lint(agentId as string, flowId as string),
+    enabled: Boolean(agentId && flowId),
   });
 }
 

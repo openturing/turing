@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T93 / §VII.11.c — cross-flow slot inheritance.
+  # Adds slotInheritanceJson on chat_flow: a JSON object whose keys are slot
+  # names the RECEIVING flow expects to inherit from earlier flows in the same
+  # conversation, and whose values are the source-slot names to copy from
+  # (use the same name on both sides for a straight rename-free pass-through).
+  # Empty/null → no inheritance, matches today's behaviour. longtext keeps
+  # H2/MySQL/PostgreSQL portable for big mapping documents.
+  #
+  # Idempotent: gated by columnExists so re-running on a database that
+  # already carries the column is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.4-add-slotInheritanceJson-to-chat-flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: slotInheritanceJson
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: slotInheritanceJson
+                  type: longtext
+                  remarks: "T93/§VII.11.c — JSON map {receivingSlot: sourceSlot} of slots to inherit from earlier flows on the same conversation."

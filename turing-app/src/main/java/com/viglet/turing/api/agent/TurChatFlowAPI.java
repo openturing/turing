@@ -38,12 +38,16 @@ import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.TurChatFlowLinterService;
 import com.viglet.turing.genai.flow.TurTriggerConflictService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowImportDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowLintIssueDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowRecipeDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
+import com.viglet.turing.service.chatflow.TurChatFlowRecipeService;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -84,6 +88,8 @@ public class TurChatFlowAPI {
     private final TurPersonaRepository turPersonaRepository;
     private final TurAIAgentSlotRepository turAIAgentSlotRepository;
     private final TurTriggerConflictService triggerConflictService;
+    private final TurChatFlowLinterService chatFlowLinterService;
+    private final TurChatFlowRecipeService chatFlowRecipeService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -93,7 +99,9 @@ public class TurChatFlowAPI {
             ChatFlowAuthoringSkill chatFlowAuthoringSkill,
             TurPersonaRepository turPersonaRepository,
             TurAIAgentSlotRepository turAIAgentSlotRepository,
-            TurTriggerConflictService triggerConflictService) {
+            TurTriggerConflictService triggerConflictService,
+            TurChatFlowLinterService chatFlowLinterService,
+            TurChatFlowRecipeService chatFlowRecipeService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -103,6 +111,8 @@ public class TurChatFlowAPI {
         this.turPersonaRepository = turPersonaRepository;
         this.turAIAgentSlotRepository = turAIAgentSlotRepository;
         this.triggerConflictService = triggerConflictService;
+        this.chatFlowLinterService = chatFlowLinterService;
+        this.chatFlowRecipeService = chatFlowRecipeService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -331,6 +341,50 @@ public class TurChatFlowAPI {
     }
 
     /**
+     * T96 / §VII.11.f — installs a Turing Recipe onto the agent. Looks up the
+     * bundled recipe by id, delegates the heavy lifting to the existing
+     * {@link #turChatFlowImportBundle} pipeline (sub-flow auto-wiring,
+     * persona / slot de-duplication, graph rewriting), and then stamps the
+     * resulting flows with {@code installedFromRecipe} + {@code installedRecipeVersion}
+     * so the editor can show the "Installed from {recipe} v{version}" badge
+     * and future "upgrade available" UX has the source pointer it needs.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Install a Turing Recipe onto the agent")
+    @PostMapping("/install-recipe/{recipeId}")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE" })
+    public List<TurChatFlowDto> turChatFlowInstallRecipe(@PathVariable String agentId,
+            @PathVariable String recipeId) {
+        TurChatFlowRecipeDto recipe = chatFlowRecipeService.get(recipeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Recipe '" + recipeId + "' not found"));
+        if (recipe.getBundle() == null || recipe.getBundle().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Recipe '" + recipeId + "' carries no flow bundle");
+        }
+        // Reuse the existing bundle-import machinery so persona / slot
+        // de-duplication and sub-flow wiring are handled exactly the same
+        // way they would for a hand-crafted export — no parallel pipeline.
+        List<TurChatFlowDto> created = turChatFlowImportBundle(agentId, recipe.getBundle());
+        // Tag the audit trail. Done as a second pass so we don't pollute
+        // the generic bundle importer with recipe-specific concerns.
+        for (TurChatFlowDto dto : created) {
+            if (dto == null || dto.getId() == null) continue;
+            turChatFlowRepository.findById(dto.getId()).ifPresent(entity -> {
+                entity.setInstalledFromRecipe(recipe.getId());
+                entity.setInstalledRecipeVersion(recipe.getVersion());
+                turChatFlowRepository.save(entity);
+                // Mirror the audit columns onto the response DTO so the
+                // frontend's "Installed from …" badge renders immediately.
+                dto.setInstalledFromRecipe(recipe.getId());
+                dto.setInstalledRecipeVersion(recipe.getVersion());
+            });
+        }
+        return created;
+    }
+
+    /**
      * Auto-creates any embedded slot whose name is not already declared on the
      * target agent (case-insensitive match — slot names are unique per agent).
      * Existing slots are left untouched: an import never overwrites the type or
@@ -473,6 +527,7 @@ public class TurChatFlowAPI {
                     existing.setTrafficWeight(incoming.getTrafficWeight());
                     existing.setExperimentStartsAt(incoming.getExperimentStartsAt());
                     existing.setExperimentEndsAt(incoming.getExperimentEndsAt());
+                    existing.setSlotInheritanceJson(incoming.getSlotInheritanceJson());
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);
                 }).orElse(new TurChatFlowDto());
@@ -493,6 +548,25 @@ public class TurChatFlowAPI {
             @PathVariable String agentId) {
         requireAgentExists(agentId);
         return triggerConflictService.detect(agentId);
+    }
+
+    /**
+     * T94 / §VII.11.d — static-analysis warnings for a single chat flow.
+     * Powers the sidebar panel in the admin editor. Returns an empty list
+     * when the flow is clean.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Static-analysis warnings for a single chat flow")
+    @GetMapping("/{id}/lint")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public List<TurChatFlowLintIssueDto> turChatFlowLint(@PathVariable String agentId,
+            @PathVariable String id) {
+        return turChatFlowRepository.findById(id)
+                .filter(flow -> flow.getTurAIAgent() != null
+                        && agentId.equals(flow.getTurAIAgent().getId()))
+                .map(flow -> chatFlowLinterService.lint(agentId, flow))
+                .orElse(List.of());
     }
 
     @Operation(summary = "Submissions of a Chat Flow (states that reached an end node)")

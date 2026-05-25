@@ -14,6 +14,7 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import {
+  IconBolt,
   IconDeviceFloppy,
   IconDownload,
   IconEye,
@@ -107,6 +108,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialGraph.edges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [livePreviewOpen, setLivePreviewOpen] = useState(false);
   const [name, setName] = useState(flow.name ?? "");
   const [description, setDescription] = useState(flow.description ?? "");
   const [guardrailMethod, setGuardrailMethod] = useState<TurChatFlowGuardrailMethod>(
@@ -122,6 +124,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [experimentKey, setExperimentKey] = useState(flow.experimentKey ?? "");
   const [variantLabel, setVariantLabel] = useState(flow.variantLabel ?? "");
   const [trafficWeight, setTrafficWeight] = useState<number | null>(flow.trafficWeight ?? null);
+  const [slotInheritanceJson, setSlotInheritanceJson] = useState(flow.slotInheritanceJson ?? "");
   const [open, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -200,6 +203,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       experimentKey: trimmedKey || null,
       variantLabel: trimmedKey ? (variantLabel.trim() || null) : null,
       trafficWeight: trimmedKey ? trafficWeight : null,
+      slotInheritanceJson: slotInheritanceJson.trim() || null,
     };
     try {
       if (isNew) {
@@ -217,7 +221,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       setSaving(false);
     }
   }, [name, description, guardrailMethod, triggerDescription, triggerMode, triggerLanguage,
-      experimentKey, variantLabel, trafficWeight,
+      experimentKey, variantLabel, trafficWeight, slotInheritanceJson,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
   const onExport = useCallback(() => {
@@ -347,6 +351,13 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           onClick={() => setPreviewOpen((openPreview) => !openPreview)}
         />
         <SubPageHeader.Action
+          label={t("chatFlow.actions.livePreview", {
+            defaultValue: "Live preview",
+          })}
+          icon={IconBolt}
+          onClick={() => setLivePreviewOpen((open) => !open)}
+        />
+        <SubPageHeader.Action
           label={t("chatFlow.actions.exportJson")}
           icon={IconDownload}
           onClick={onExport}
@@ -402,6 +413,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setVariantLabel={setVariantLabel}
           trafficWeight={trafficWeight}
           setTrafficWeight={setTrafficWeight}
+          slotInheritanceJson={slotInheritanceJson}
+          setSlotInheritanceJson={setSlotInheritanceJson}
         />
 
         <ChatFlowDiagramTab
@@ -413,6 +426,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           zoomPercent={zoomPercent}
           selectedNode={selectedNode}
           previewOpen={previewOpen}
+          livePreviewOpen={livePreviewOpen}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
@@ -424,6 +438,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           updateNodeData={updateNodeData}
           setSelectedNodeId={setSelectedNodeId}
           setPreviewOpen={setPreviewOpen}
+          setLivePreviewOpen={setLivePreviewOpen}
         />
       </Tabs>
     </div>

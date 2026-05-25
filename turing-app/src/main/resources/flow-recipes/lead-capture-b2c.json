@@ -1,0 +1,28 @@
+{
+  "id": "lead-capture-b2c",
+  "version": "1.0.0",
+  "name": "Lead capture (B2C)",
+  "description": "Conversational lead capture for individual consumers — collects name, email, area of interest and a free-form objective in four turns. Captured slots feed cross-flow inheritance into the B2B quote and micro-lesson recipes so a single visitor can switch contexts without re-typing identity data. Tone calibrated against the Education customer engagement (warm, first-person, no jargon).",
+  "vertical": "education",
+  "tags": ["b2c", "lead-capture", "education", "lgpd"],
+  "bundle": [
+    {
+      "chatFlow": {
+        "name": "Lead capture (B2C)",
+        "description": "Captures name, email, area of interest, objective.",
+        "enabled": 1,
+        "guardrailMethod": "LLM_JUDGE",
+        "triggerMode": "ONCE",
+        "triggerLanguage": "PT",
+        "triggerDescription": "Ativar quando o visitante demonstrar interesse em conhecer cursos, formações ou programas educacionais e ainda não tiver fornecido seus dados de contato. NÃO ATIVAR para saudações isoladas ('oi', 'olá', 'bom dia') nem para perguntas estritamente técnicas sobre um curso específico.",
+        "definitionJson": "{\"nodes\":[{\"id\":\"start\",\"type\":\"start\",\"position\":{\"x\":0,\"y\":0},\"data\":{\"label\":\"Início\",\"type\":\"start\"}},{\"id\":\"ask-name\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":120},\"data\":{\"label\":\"Pergunta nome\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Cumprimente brevemente e pergunte o nome do visitante. Tom acolhedor, primeira pessoa, uma frase só.\",\"outputVariable\":\"name\"}},{\"id\":\"ask-email\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":240},\"data\":{\"label\":\"Pergunta email\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Use o nome {{name}}. Peça o melhor email para contato, explicando que será usado apenas para enviar materiais relevantes.\",\"outputVariable\":\"email\",\"validationRule\":\"email\"}},{\"id\":\"ask-area\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":360},\"data\":{\"label\":\"Pergunta área\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Pergunte qual área de interesse do {{name}}: liderança, tecnologia, vendas, ou outra.\",\"outputVariable\":\"area\",\"inlineOptions\":[\"Liderança\",\"Tecnologia\",\"Vendas\",\"Outra\"]}},{\"id\":\"ask-objective\",\"type\":\"aiQuestion\",\"position\":{\"x\":0,\"y\":480},\"data\":{\"label\":\"Pergunta objetivo\",\"type\":\"aiQuestion\",\"aiInstruction\":\"Pergunte ao {{name}} qual é o principal objetivo de carreira no curto prazo (próximos 6-12 meses). Capture livremente.\",\"outputVariable\":\"objetivo\",\"onJudgeReject\":\"advance_with_literal\"}},{\"id\":\"end\",\"type\":\"end\",\"position\":{\"x\":0,\"y\":600},\"data\":{\"label\":\"Fim\",\"type\":\"end\"}}],\"edges\":[{\"id\":\"e1\",\"source\":\"start\",\"target\":\"ask-name\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e2\",\"source\":\"ask-name\",\"target\":\"ask-email\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e3\",\"source\":\"ask-email\",\"target\":\"ask-area\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e4\",\"source\":\"ask-area\",\"target\":\"ask-objective\",\"type\":\"smoothstep\",\"label\":\"continue\"},{\"id\":\"e5\",\"source\":\"ask-objective\",\"target\":\"end\",\"type\":\"smoothstep\",\"label\":\"continue\"}]}"
+      },
+      "slots": [
+        { "name": "name", "description": "Visitor first name", "type": "STRING" },
+        { "name": "email", "description": "Visitor primary email", "type": "STRING" },
+        { "name": "area", "description": "Area of interest (Liderança / Tecnologia / Vendas / Outra)", "type": "STRING" },
+        { "name": "objetivo", "description": "Free-form career objective in the next 6-12 months", "type": "STRING" }
+      ]
+    }
+  ]
+}

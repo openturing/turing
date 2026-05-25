@@ -411,6 +411,64 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * T92 / §VII.11.b — pin a specific chat flow on the conversation,
+	 * overriding the LLM router for every subsequent turn. The portal hits
+	 * this once on page load (typically wiring a deep-link param like
+	 * {@code ?flow=in-company} into the {@code flow} field) and the SDK keeps
+	 * chatting without ever threading a {@code flowId} through the chat call.
+	 *
+	 * <p>{@code flow} can be either the flow UUID (when known to the caller)
+	 * or the flow name (case-insensitive) — names are convenient in URLs.
+	 * Slots captured before the pin are preserved on the new flow's state,
+	 * so a visitor pinned mid-conversation does not have to re-type values
+	 * already filled. The receiving flow's satisfied-questions walker
+	 * auto-skips any aiQuestion node whose {@code outputVariable} is already
+	 * in the seeded map (matches T93's cross-flow slot inheritance).
+	 *
+	 * @since 2026.3.1
+	 */
+	@Transactional
+	@PostMapping("/flow-select")
+	public ChatFlowSelectResponse selectChatFlow(@PathVariable String siteName,
+			@RequestBody ChatFlowSelectRequest body) {
+		if (body == null) {
+			return new ChatFlowSelectResponse(false, null, null, "body is required");
+		}
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null) {
+						return new ChatFlowSelectResponse(false, null, null,
+								"site '" + siteName + "' has no GenAI agent configured");
+					}
+					TurAIAgent agent = genAi.getTurAIAgent();
+					if (agent == null) {
+						return new ChatFlowSelectResponse(false, null, null,
+								"site '" + siteName + "' has no GenAI agent configured");
+					}
+					TurChatFlowEngineService.PinResult pin = chatFlowEngineService
+							.pinFlowForConversation(agent, body.conversationId(), body.flow());
+					return new ChatFlowSelectResponse(pin.success(), pin.pinnedFlowId(),
+							pin.pinnedFlowName(), pin.reason());
+				})
+				.orElseGet(() -> new ChatFlowSelectResponse(false, null, null,
+						"site '" + siteName + "' not found"));
+	}
+
+	/**
+	 * Pin request: {@code conversationId} is the live {@code TUR_SESSION}
+	 * value; {@code flow} is either the flow UUID or its name (case-
+	 * insensitive). Either id or name resolves — the deep-link convenience
+	 * path uses the name.
+	 */
+	public record ChatFlowSelectRequest(String conversationId, String flow) {
+	}
+
+	public record ChatFlowSelectResponse(boolean success, String pinnedFlowId,
+			String pinnedFlowName, String reason) {
+	}
+
+	/**
 	 * Server-sent stream of slot updates for the given conversation. Pushes
 	 * the full merged slot map every time any of the three write paths
 	 * mutates a chat-flow state: the {@code slot} node executor, the

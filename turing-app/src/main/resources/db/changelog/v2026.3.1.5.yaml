@@ -1,0 +1,52 @@
+databaseChangeLog:
+  # T96 / §VII.11.f — install audit trail for the chat-flow recipe marketplace.
+  # Adds two columns on chat_flow:
+  #   - installedFromRecipe    : stable id of the recipe this flow was created from
+  #                              (e.g. "lead-capture-b2c"). Null when the flow was
+  #                              hand-authored or imported from a raw JSON export.
+  #   - installedRecipeVersion : semver of the source recipe at install time
+  #                              ("1.0.0"). Powers a future "upgrade available"
+  #                              UX when the bundled recipe ships a v2.
+  #
+  # Idempotent: each addColumn is gated by columnExists so re-running the
+  # changeset on databases that already have either column is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.5-add-installedFromRecipe-to-chat-flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: installedFromRecipe
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: installedFromRecipe
+                  type: varchar(64)
+                  remarks: "T96/§VII.11.f — id of the recipe this flow was installed from; null for hand-authored flows."
+
+  - changeSet:
+      id: v2026.3.1.5-add-installedRecipeVersion-to-chat-flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: installedRecipeVersion
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: installedRecipeVersion
+                  type: varchar(32)
+                  remarks: "T96/§VII.11.f — semver of the source recipe at install time; powers future upgrade-available detection."
