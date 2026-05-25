@@ -363,6 +363,36 @@ The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `ove
 - Write endpoints that load, mutate, save, and map `TurSNSite` should use
   `findByIdNoCache`; cached entities can trigger lazy-init issues in mappers.
 
+#### Adding a `@Cacheable` query
+
+When you introduce a new `@Cacheable` method, four things must line up
+or the cache will silently misbehave. `TurCacheAnnotationConventionsTest`
+(under `turing-app/src/test/java/com/viglet/turing/db/`) lints the first
+rule on every build; the rest are conventions:
+
+1. **Pair every cache name with an eviction.** Add the cache name to the
+   `@CacheEvict` list on the owning repository's `save(...)` and
+   `delete(...)` methods (and any bulk-DML write paths that bypass JPA
+   callbacks). The lint test fails when a `@Cacheable` name is never
+   evicted anywhere. If the data truly never changes at runtime, add the
+   name to `EVICTION_EXEMPT` inside the test with a comment explaining
+   why.
+2. **`@Cacheable` is proxy-based — never call it via `this`.** A
+   `this.cacheableMethod()` from the same class bypasses the Spring
+   proxy and silently no-ops the cache (and the eviction). For
+   intra-class calls, inject the bean into itself with `@Lazy` and route
+   through that reference. See
+   [`TurChatFlowStaticPromptCache`](turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCache.java)
+   for the canonical pattern.
+3. **Cache names follow lowerCamelCase.** Match the established
+   prefixes: `turXxxfindAll` / `turXxxfindById` for repository queries,
+   `turXxx<Purpose>` for service-level caches (e.g.
+   `turChatFlowRouterDecision`, `turPersonaStaticPrompt`). Lowercase
+   first letter, no separators.
+4. **Hazelcast vs in-process is a deploy-time concern.** The cache
+   topology is decided by whether `com.hazelcast:hazelcast-spring` is on
+   the classpath; the `@Cacheable` site stays identical either way.
+
 ### Agent Operational Memory (Repository)
 
 - In `react-hook-form`, `disabled` fields are omitted from submission payloads; use `readOnly` when a value must be non-editable but still sent.
