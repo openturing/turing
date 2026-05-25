@@ -45,7 +45,7 @@ import com.viglet.turing.persistence.model.persona.TurPersonaTone;
  * <h2>Cache name &amp; key</h2>
  *
  * The {@code turPersonaStaticPrompt} cache is keyed by
- * {@link TurPersona#getId() persona id}. Eviction is wired in
+ * {@link TurPersona#id persona id}. Eviction is wired in
  * {@link com.viglet.turing.persistence.repository.persona.TurPersonaRepository}
  * — the same {@code @Caching}/{@code @CacheEvict} chain that already
  * invalidates {@code turPersonafindById} on persona save/delete, so an

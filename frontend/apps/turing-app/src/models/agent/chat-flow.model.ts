@@ -101,6 +101,27 @@ export interface TurChatFlow {
   trafficWeight?: number | null;
 }
 
+/**
+ * T91 / §VII.11.a — one pair of chat flows whose trigger descriptions overlap
+ * enough that the procedural router will silently swing on small scoring deltas.
+ * Surfaced by {@code GET /ai-agent/{agentId}/chat-flow/trigger-conflicts} so
+ * the chat-flow editor can warn the author before the LLM-router fallback
+ * masks the conflict.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowTriggerConflict {
+  flowAId: string;
+  flowAName: string;
+  flowBId: string;
+  flowBName: string;
+  severity: "HIGH" | "WARNING";
+  similarity: number;
+  intersectionSize: number;
+  overlappingTokens: string[];
+  suggestion: string;
+}
+
 /* ─────────────────── AI Authoring shapes ─────────────────── */
 
 /**

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { TurChatFlow } from '@/models/agent/chat-flow.model';
+import type { TurChatFlow, TurChatFlowTriggerConflict } from '@/models/agent/chat-flow.model';
 import { TurChatFlowService, type TurChatFlowImportPayload } from '@/services/agent/chat-flow.service';
 import { queryKeys } from './keys';
 
@@ -15,6 +15,9 @@ export function useChatFlows(agentId: string | undefined) {
 }
 
 function invalidateChatFlows(queryClient: ReturnType<typeof useQueryClient>) {
+  // `chatFlows.all()` covers list, detail, AND the T91 trigger-conflicts
+  // cache, so a save/delete that changed a trigger description refreshes
+  // the ambiguity panel on the next render without an explicit second call.
   queryClient.invalidateQueries({ queryKey: queryKeys.chatFlows.all() });
 }
 
@@ -92,5 +95,20 @@ export function useDeleteChatFlow() {
       }
       invalidateChatFlows(queryClient);
     },
+  });
+}
+
+/**
+ * T91 — pairs of flows on this agent whose trigger descriptions overlap
+ * enough that the procedural router will silently swing on small scoring
+ * deltas. Empty list means no conflict detected.
+ */
+export function useChatFlowTriggerConflicts(agentId: string | undefined) {
+  return useQuery<TurChatFlowTriggerConflict[]>({
+    queryKey: agentId
+      ? queryKeys.chatFlows.triggerConflicts(agentId)
+      : ['chat-flows', 'trigger-conflicts', 'pending'],
+    queryFn: () => service.triggerConflicts(agentId as string),
+    enabled: Boolean(agentId),
   });
 }

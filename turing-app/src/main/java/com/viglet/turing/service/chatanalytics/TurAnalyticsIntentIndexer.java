@@ -93,7 +93,7 @@ public class TurAnalyticsIntentIndexer {
      * Resolves the SE instance to use for {@code agentId}'s analytics
      * intent index. Resolution order:
      * <ol>
-     *   <li>Phase C per-agent binding: {@link TurAIAgent#getAnalyticsSeInstance()}
+     *   <li>Phase C per-agent binding: {@link TurAIAgent#analyticsSeInstance}
      *       when set on the agent row.</li>
      *   <li>Property override: {@code turing.chat.analytics.classifier.se-instance-id}.</li>
      *   <li>Global fallback: the first registered SE instance.</li>

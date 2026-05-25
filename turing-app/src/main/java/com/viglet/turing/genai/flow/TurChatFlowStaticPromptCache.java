@@ -30,7 +30,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  *       only → cacheable by {@code (flowId, nodeId)}.</li>
  *   <li><b>Variables line</b> — {@code Already collected: {...}}. Derived
  *       from the per-conversation
- *       {@link TurChatFlowState#getVariablesJson() variablesJson}, which
+ *       {@link TurChatFlowState#variablesJson variablesJson}, which
  *       mutates as slots are filled. <b>Not cacheable.</b></li>
  *   <li><b>Tail</b> — the next-step preview hint (depends on the graph
  *       edges) and the conversational {@code HARD_RULES} constant.

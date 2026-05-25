@@ -1,6 +1,10 @@
 import axios from "axios";
 import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
-import type { ChatFlowGeneration, TurChatFlow } from "@/models/agent/chat-flow.model";
+import type {
+  ChatFlowGeneration,
+  TurChatFlow,
+  TurChatFlowTriggerConflict,
+} from "@/models/agent/chat-flow.model";
 import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
 import type { AiAuthoringRequest, AiAuthoringResponse } from "@/models/ai-authoring/ai-authoring.model";
 import type { TurPersona } from "@/models/persona/persona.model";
@@ -94,6 +98,19 @@ export class TurChatFlowService {
   async submissions(agentId: string, flowId: string): Promise<TurChatFlowSubmission[]> {
     const response = await axios.get<TurChatFlowSubmission[]>(
       `/ai-agent/${agentId}/chat-flow/${flowId}/submissions`,
+    );
+    return response.data;
+  }
+
+  /**
+   * T91 — pairs of flows on this agent whose trigger descriptions overlap
+   * enough that the procedural router cannot reliably separate them. The
+   * chat-flow editor renders these as inline warnings on the affected flow
+   * and as an agent-wide panel on the list page.
+   */
+  async triggerConflicts(agentId: string): Promise<TurChatFlowTriggerConflict[]> {
+    const response = await axios.get<TurChatFlowTriggerConflict[]>(
+      `/ai-agent/${agentId}/chat-flow/trigger-conflicts`,
     );
     return response.data;
   }

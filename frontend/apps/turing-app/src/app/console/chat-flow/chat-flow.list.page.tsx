@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { buildImportPayloadFromExport } from "./chat-flow.import";
+import { ChatFlowTriggerConflictsPanel } from "./components/chat-flow.trigger-conflicts-panel";
 
 /**
  * Lists chat flows that belong to the AI agent currently in the URL.
@@ -102,6 +103,11 @@ export default function ChatFlowListPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={flows} error={error} tryAgainUrl={baseUrl}>
+      {/* T91 — agent-wide conflict overview at the top of the list so authors
+          spot heavy trigger-description overlap before opening any flow. */}
+      <div className="px-4 lg:px-6">
+        <ChatFlowTriggerConflictsPanel agentId={agentId} />
+      </div>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
           <GridList.NewButton to={`${baseUrl}/new`} label={t("chatFlow.title")} />

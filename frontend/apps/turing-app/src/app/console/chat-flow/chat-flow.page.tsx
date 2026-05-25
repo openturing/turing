@@ -382,6 +382,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
         </TabsList>
 
         <ChatFlowSettingsTab
+          agentId={agentId}
+          flowId={isNew ? undefined : flow.id}
           name={name}
           setName={setName}
           description={description}

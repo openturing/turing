@@ -21,6 +21,7 @@ import {
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 
+import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
 import { FormRow } from "./form-row";
 
 /**
@@ -59,6 +60,8 @@ function buildTriggerDescriptionFieldInstruction(spec: {
 }
 
 interface SettingsTabProps {
+  agentId: string;
+  flowId?: string;
   name: string;
   setName: (value: string) => void;
   description: string;
@@ -80,6 +83,8 @@ interface SettingsTabProps {
 }
 
 export function ChatFlowSettingsTab({
+  agentId,
+  flowId,
   name,
   setName,
   description,
@@ -103,6 +108,11 @@ export function ChatFlowSettingsTab({
   return (
     <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
       <div className="space-y-4 px-4 lg:px-6 py-2 pb-8">
+        {/* T91 — render at the top so a heavy-overlap warning is the first
+            thing the author sees when opening the editor. Renders nothing
+            until the agent has ≥ 2 conflicting trigger descriptions. */}
+        <ChatFlowTriggerConflictsPanel agentId={agentId} flowId={flowId} />
+
         {/* ── Card: General ── */}
         <SectionCard variant="blue">
           <SectionCard.Header

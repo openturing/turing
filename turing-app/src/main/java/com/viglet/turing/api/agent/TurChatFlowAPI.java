@@ -38,10 +38,12 @@ import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.TurTriggerConflictService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowImportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -81,6 +83,7 @@ public class TurChatFlowAPI {
     private final ChatFlowAuthoringSkill chatFlowAuthoringSkill;
     private final TurPersonaRepository turPersonaRepository;
     private final TurAIAgentSlotRepository turAIAgentSlotRepository;
+    private final TurTriggerConflictService triggerConflictService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -89,7 +92,8 @@ public class TurChatFlowAPI {
             TurChatFlowEngineService chatFlowEngineService,
             ChatFlowAuthoringSkill chatFlowAuthoringSkill,
             TurPersonaRepository turPersonaRepository,
-            TurAIAgentSlotRepository turAIAgentSlotRepository) {
+            TurAIAgentSlotRepository turAIAgentSlotRepository,
+            TurTriggerConflictService triggerConflictService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -98,6 +102,7 @@ public class TurChatFlowAPI {
         this.chatFlowAuthoringSkill = chatFlowAuthoringSkill;
         this.turPersonaRepository = turPersonaRepository;
         this.turAIAgentSlotRepository = turAIAgentSlotRepository;
+        this.triggerConflictService = triggerConflictService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -471,6 +476,23 @@ public class TurChatFlowAPI {
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);
                 }).orElse(new TurChatFlowDto());
+    }
+
+    /**
+     * T91 / §VII.11.a — surfaces pairs of trigger descriptions on this agent
+     * that overlap enough for the procedural router to score them ambiguously.
+     * The admin UI uses this to warn an author before the LLM-router fallback
+     * silently masks a real intent collision.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Trigger description conflicts across this agent's chat flows")
+    @GetMapping("/trigger-conflicts")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public List<TurChatFlowTriggerConflictDto> turChatFlowTriggerConflicts(
+            @PathVariable String agentId) {
+        requireAgentExists(agentId);
+        return triggerConflictService.detect(agentId);
     }
 
     @Operation(summary = "Submissions of a Chat Flow (states that reached an end node)")

@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  * runs a fast in-memory Lucene/BM25 match between the user's latest
  * message and each tool's description (the one already loaded by
  * {@link TurToolDescriptionService} from {@code prompts/tools/**.md}),
- * keeping only the {@link TurGenAiToolPreFilterProperty#getTopK() top-K}
+ * keeping only the {@link TurGenAiToolPreFilterProperty#topK top-K}
  * tools by score.
  *
  * <h2>Always-kept set</h2>

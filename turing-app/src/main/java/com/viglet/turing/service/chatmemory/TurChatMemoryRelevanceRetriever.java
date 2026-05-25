@@ -64,15 +64,15 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <ol>
  *   <li>Read the full persisted history from {@link TurChatMemoryStore}
- *       (capped at {@link TurAIAgent#getChatMemoryMaxMessages()}).</li>
+ *       (capped at {@link TurAIAgent#chatMemoryMaxMessages}).</li>
  *   <li>Split into <em>recent</em> (last
- *       {@link TurAIAgent#getChatMemoryRecentN()} entries) and <em>older</em>
+ *       {@link TurAIAgent#chatMemoryRecentN} entries) and <em>older</em>
  *       (everything before).</li>
  *   <li>Build a per-conversation Lucene {@link ByteBuffersDirectory} over
  *       the older pool, scored with {@link BM25Similarity}.</li>
  *   <li>Score the latest user message against the older pool via
  *       {@link MoreLikeThis} and keep the top
- *       {@link TurAIAgent#getChatMemoryRelevanceTopK()} hits.</li>
+ *       {@link TurAIAgent#chatMemoryRelevanceTopK} hits.</li>
  *   <li>Sort the retrieved set chronologically (oldest first), prefix each
  *       turn with a position/timestamp marker so the LLM can place it on
  *       the conversation timeline despite the out-of-order injection, and

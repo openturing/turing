@@ -272,7 +272,7 @@ acting.
 
 | #   | Status | Depends on | Task | Detail in |
 |-----|--------|------------|------|-----------|
-| T91 | 📋 | — | **Trigger conflict resolver UI** — admin shows "this trigger description has ambiguity with flow X" + suggests disambiguation. Today the procedural router decides silently by specificity. | §VII.11.a |
+| T91 | ✅ | — | **Trigger conflict resolver UI** — `TurTriggerConflictService` runs Jaccard over analyzer-stemmed trigger descriptions on each agent and emits HIGH/WARNING pairs via `GET /chat-flow/trigger-conflicts`. Editor + list pages render `ChatFlowTriggerConflictsPanel` (rose card for HIGH, amber for WARNING) with overlapping stems and a PT/EN disambiguation hint. Refreshes automatically on chat-flow save/delete via the existing `chatFlows.all()` invalidation. | §VII.11.a |
 | T92 | 📋 | — | **Flow chooser endpoint** `POST /chat/flow-select` — portal forces a specific flow (override the LLM router). Useful for deep links (`?flow=in-company` lands directly on the B2B persona). | §VII.11.b |
 | T93 | 📋 | T92 | **Cross-flow slot inheritance** — when the engine routes a visitor from one flow to another (via mid-flow detection), preserve already-captured slots (`name`/`cargo_atual`) via a declared mapping in the receiving flow. | §VII.11.c |
 | T94 | 💭 | — | **Chat-flow lint** — `TurChatFlowLinter` returns `[{nodeId, severity, message, hint}]` for `aiInstruction > 500 chars`, `outputVariable without downstream read`, `dead-end node`, `ambiguous trigger across flows`, `edge without label`. Sidebar warnings panel in admin. | §VII.11.d |
