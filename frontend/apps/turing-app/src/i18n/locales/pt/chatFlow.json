@@ -142,6 +142,8 @@
       },
       "toolsEnabled": "Permitir chamadas de tool nesse nó",
       "toolsEnabledHint": "Quando desligado, as tool callbacks do agente (MCP / native / custom) são removidas nesse nó. Use para impedir que o LLM chame uma tool preemptivamente antes do slot ser capturado. Substitui o sentinel legado \"NÃO CHAME NENHUMA TOOL\" no aiInstruction.",
+      "requiredTools": "Tools obrigatórias (uma por linha)",
+      "requiredToolsHint": "Nomes de tools que precisam chegar até o LLM nesse nó, mesmo quando o pré-filtro de tools as descartaria por baixa similaridade com a mensagem do usuário. Uma por linha — precisa bater com o nome do @Tool, da MCP tool ou da custom tool.",
       "functionName": "Função",
       "toolSource": "Origem da Ferramenta",
       "toolSourceOptions": {

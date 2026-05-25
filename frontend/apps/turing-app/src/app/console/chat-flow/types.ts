@@ -142,6 +142,24 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.2.7
    */
   toolsEnabled?: boolean;
+  /**
+   * Tools the LLM must have available on this node regardless of the
+   * §IV.2 / T29 BM25 pre-filter. When the backend's tool-prefilter is
+   * active (catalog grows past `turing.genai.tool-prefilter.min-tools-threshold`),
+   * it ranks tools by similarity to the user message and keeps only the
+   * top-K. Tools listed here always survive, even if the user's wording
+   * doesn't lexically match the tool's description — use this on nodes
+   * that depend on a specific tool firing (e.g. a "compose proposal"
+   * node where the proposal-composer tool must remain callable after a
+   * slot is captured).
+   *
+   * Names must match the `@Tool(name)` value (native), the MCP tool
+   * name, or the custom-tool registered name. Empty/undefined means
+   * "no protected tools on this node" — the BM25 filter is free to drop
+   * anything below the cutoff.
+   * @since 2026.3.1
+   */
+  requiredTools?: string[];
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {

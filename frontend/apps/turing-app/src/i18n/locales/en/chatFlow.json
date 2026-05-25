@@ -142,6 +142,8 @@
       },
       "toolsEnabled": "Allow tool calls on this node",
       "toolsEnabledHint": "When off, the agent's tool callbacks (MCP / native / custom) are stripped on this node. Use to gate the LLM from preemptively calling a tool before a slot is captured. Replaces the legacy \"NÃO CHAME NENHUMA TOOL\" sentinel in aiInstruction.",
+      "requiredTools": "Required tools (one per line)",
+      "requiredToolsHint": "Tool names that must reach the LLM on this node, even when the tool-prefilter would otherwise drop them due to low similarity with the user message. Use one name per line — must match the @Tool name, MCP tool name, or custom-tool name.",
       "functionName": "Function Call",
       "toolSource": "Tool Source",
       "toolSourceOptions": {

@@ -297,6 +297,39 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </span>
               </div>
             )}
+
+            {type === "aiQuestion" && data.toolsEnabled !== false && (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="flow-node-required-tools">
+                  {t("chatFlow.properties.requiredTools", {
+                    defaultValue: "Required tools (one per line)",
+                  })}
+                </Label>
+                <Textarea
+                  id="flow-node-required-tools"
+                  rows={3}
+                  value={(data.requiredTools ?? []).join("\n")}
+                  onChange={(e) => {
+                    // Mirrors the inlineOptions editor: split on newlines,
+                    // trim, drop empties. Empty result → clear the field
+                    // entirely so the export JSON stays compact for nodes
+                    // that don't pin any tool.
+                    const names = e.target.value
+                      .split(/\r?\n/)
+                      .map((l) => l.trim())
+                      .filter((l) => l.length > 0);
+                    update({ requiredTools: names.length > 0 ? names : undefined });
+                  }}
+                  placeholder={"compor_proposta_in_company\nsearch_site"}
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  {t("chatFlow.properties.requiredToolsHint", {
+                    defaultValue:
+                      "Tool names that must reach the LLM on this node, even when the tool-prefilter (§IV.2 / T29) would otherwise drop them due to low similarity with the user message. Use one name per line — must match the @Tool name, MCP tool name, or custom-tool name.",
+                  })}
+                </span>
+              </div>
+            )}
           </>
         )}
 
