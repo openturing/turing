@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -33,18 +35,28 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class HeuristicGuardrailStrategy implements TurChatFlowGuardrailStrategy {
 
+    private final TurChatFlowStaticPromptCache staticPromptCache;
+
+    public HeuristicGuardrailStrategy(TurChatFlowStaticPromptCache staticPromptCache) {
+        this.staticPromptCache = staticPromptCache;
+    }
+
     @Override
     public TurChatFlowGuardrailMethod getMethod() {
         return TurChatFlowGuardrailMethod.HEURISTIC;
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
+    public String buildSystemPromptAddendum(TurChatFlow flow, ChatFlowNode node,
+            TurChatFlowState state, ChatFlowGraph graph) {
         // Once the flow has reached its END node, drop the guard rail entirely
         // so the user can keep chatting freely with the agent. The captured
         // variables remain in the conversation history, so the LLM still has
         // context if the user follows up about them.
-        String base = ChatFlowOps.buildBaseAddendum(node, state, graph);
+        // T31 / §IV.5 — the static head and tail of the base addendum
+        // are served from the per-(flowId,nodeId) Spring cache; only the
+        // "Already collected" line is built per turn.
+        String base = staticPromptCache.buildAddendum(flow, node, state, graph, true);
         if (base.isEmpty()) {
             return "";
         }

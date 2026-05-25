@@ -144,6 +144,29 @@ public final class ChatFlowOps {
         if (node == null || "end".equals(node.type())) {
             return "";
         }
+        // Composed from the three split helpers so a single source of
+        // truth covers both the cached path (via
+        // {@link com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache})
+        // and any legacy / direct caller using this static entry point.
+        return buildStaticAddendumHead(node)
+                + buildVariablesLine(state)
+                + buildStaticAddendumTail(node, graph, includeNextStepHint);
+    }
+
+    /**
+     * T31 / §IV.5 — deterministic head of the base addendum: depends only
+     * on {@code node}. Cached by
+     * {@link com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache#staticHead(String, String, ChatFlowNode)}
+     * keyed by {@code (flowId, nodeId)} — flow saves evict the cache so
+     * edits to a node's label / aiInstruction / outputVariable /
+     * validationRule propagate on the next chat turn without restart.
+     * Returns an empty string for null or terminal nodes so callers can
+     * short-circuit the whole addendum at one place.
+     */
+    public static String buildStaticAddendumHead(ChatFlowNode node) {
+        if (node == null || "end".equals(node.type())) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("\n\n=== ACTIVE FLOW STEP: ")
                 .append(safe(node.label()))
@@ -159,10 +182,39 @@ public final class ChatFlowOps {
             sb.append("Validate the collected value as: ")
                     .append(node.validationRule().trim()).append('\n');
         }
+        return sb.toString();
+    }
+
+    /**
+     * T31 / §IV.5 — dynamic part of the base addendum: the "Already
+     * collected" line. Derived from the per-conversation
+     * {@code variablesJson} so the value changes turn-to-turn — NOT
+     * cacheable on {@code (flowId, nodeId)} alone. Returns an empty string
+     * when no variables have been collected yet so callers can
+     * concatenate unconditionally.
+     */
+    public static String buildVariablesLine(TurChatFlowState state) {
         Map<String, String> variables = readVariables(state);
-        if (!variables.isEmpty()) {
-            sb.append("Already collected: ").append(summarizeVariables(variables)).append('\n');
+        if (variables.isEmpty()) {
+            return "";
         }
+        return "Already collected: " + summarizeVariables(variables) + "\n";
+    }
+
+    /**
+     * T31 / §IV.5 — deterministic tail of the base addendum: the next-step
+     * preview hint (depends on the graph) and the HARD_RULES constant.
+     * Depends only on {@code (node, graph, includeNextStepHint)}; cached by
+     * {@link com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache#staticTail(String, String, boolean, ChatFlowNode, ChatFlowGraph)}
+     * keyed by {@code (flowId, nodeId, includeNextStepHint)}. Edges /
+     * neighboring node aiInstruction changes evict via the flow save hook.
+     */
+    public static String buildStaticAddendumTail(ChatFlowNode node, ChatFlowGraph graph,
+            boolean includeNextStepHint) {
+        if (node == null || "end".equals(node.type())) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
         if (includeNextStepHint) {
             appendNextStepHint(sb, graph, node);
         }

@@ -9,7 +9,6 @@
  */
 package com.viglet.turing.genai.persona;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.ai.document.Document;
@@ -18,8 +17,6 @@ import org.springframework.util.StringUtils;
 
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.persona.TurPersona;
-import com.viglet.turing.persistence.model.persona.TurPersonaLanguageStyle;
-import com.viglet.turing.persistence.model.persona.TurPersonaTone;
 
 /**
  * Fuses a {@link TurPersona} into the system prompt for a chat turn. The
@@ -61,6 +58,16 @@ import com.viglet.turing.persistence.model.persona.TurPersonaTone;
  * delegates few-shot lookup to {@link TurPersonaFewShotRetriever} and
  * lets the caller decide which embedding model to use.
  *
+ * <p><b>T31 / §IV.5 caching:</b> the deterministic persona block (everything
+ * from {@code systemInstruction} through {@code Brand Context}) is built
+ * by {@link TurPersonaStaticPromptCache#composeStaticBlock(TurPersona)},
+ * which is a Spring {@code @Cacheable} method keyed by persona id. Persona
+ * edits invalidate that cache via the existing
+ * {@link com.viglet.turing.persistence.repository.persona.TurPersonaRepository}
+ * {@code @CacheEvict} chain. The few-shot block stays uncached — it
+ * depends on the user query (vector store retrieval) — and so does the
+ * base-prompt suffix (per-turn RAG context).
+ *
  * @author Alexandre Oliveira
  * @since 2026.2.6
  */
@@ -68,9 +75,12 @@ import com.viglet.turing.persistence.model.persona.TurPersonaTone;
 public class TurPersonaPromptComposer {
 
     private final TurPersonaFewShotRetriever fewShotRetriever;
+    private final TurPersonaStaticPromptCache staticPromptCache;
 
-    public TurPersonaPromptComposer(TurPersonaFewShotRetriever fewShotRetriever) {
+    public TurPersonaPromptComposer(TurPersonaFewShotRetriever fewShotRetriever,
+            TurPersonaStaticPromptCache staticPromptCache) {
         this.fewShotRetriever = fewShotRetriever;
+        this.staticPromptCache = staticPromptCache;
     }
 
     /**
@@ -90,24 +100,12 @@ public class TurPersonaPromptComposer {
             return basePrompt == null ? "" : basePrompt;
         }
 
-        StringBuilder sb = new StringBuilder();
-        appendIfPresent(sb, persona.getSystemInstruction());
-
-        appendStyleGuidelines(sb, persona);
-        appendTermsBlock(sb, "# Required Vocabulary",
-                "Naturally weave the following terms into your responses when they fit the topic:",
-                persona.getMandatoryTerms());
-        appendTermsBlock(sb, "# Forbidden Vocabulary",
-                "Never use the following terms — rephrase if needed:",
-                persona.getForbiddenTerms());
-
-        if (persona.getBrandContextMcpServer() != null) {
-            sb.append("\n\n# Brand Context\n");
-            sb.append("You have access to brand-guideline tools provided by the '")
-                    .append(persona.getBrandContextMcpServer().getTitle())
-                    .append("' MCP server. Consult them whenever the user asks about brand voice, ");
-            sb.append("messaging, or visual identity.");
-        }
+        // T31 — deterministic block goes through the cache bean so a
+        // repeat turn for the same persona skips the StringBuilder work
+        // (typically 1-3 KB of formatted prompt). The bean is a separate
+        // @Component because Spring's @Cacheable proxy doesn't intercept
+        // intra-class `this.method()` calls.
+        StringBuilder sb = new StringBuilder(staticPromptCache.composeStaticBlock(persona));
 
         appendFewShotBlock(sb, persona, embeddingModel, userQuery);
 
@@ -116,39 +114,6 @@ public class TurPersonaPromptComposer {
         }
 
         return sb.toString();
-    }
-
-    private static void appendStyleGuidelines(StringBuilder sb, TurPersona persona) {
-        TurPersonaTone tone = persona.getTone();
-        TurPersonaLanguageStyle style = persona.getLanguageStyle();
-        int verbosity = persona.getVerbosity();
-        if (tone == null && style == null && verbosity == 0) {
-            return;
-        }
-
-        if (sb.length() > 0) {
-            sb.append("\n\n");
-        }
-        sb.append("# Style Guidelines\n");
-        if (tone != null) {
-            sb.append("- Tone: ").append(tone.name().toLowerCase()).append('\n');
-        }
-        sb.append("- Verbosity (1=terse, 5=expansive): ")
-                .append(clampVerbosity(verbosity)).append('\n');
-        if (style != null) {
-            sb.append("- Language Style: ").append(style.name().toLowerCase()).append('\n');
-        }
-    }
-
-    private static void appendTermsBlock(StringBuilder sb, String header, String intro, String raw) {
-        List<String> terms = parseTerms(raw);
-        if (terms.isEmpty()) {
-            return;
-        }
-        sb.append("\n\n").append(header).append('\n').append(intro).append('\n');
-        for (String t : terms) {
-            sb.append("- ").append(t).append('\n');
-        }
     }
 
     private void appendFewShotBlock(StringBuilder sb, TurPersona persona,
@@ -173,31 +138,5 @@ public class TurPersonaPromptComposer {
             }
             sb.append(text.trim()).append('\n');
         }
-    }
-
-    private static void appendIfPresent(StringBuilder sb, String s) {
-        if (StringUtils.hasText(s)) {
-            sb.append(s.trim());
-        }
-    }
-
-    private static int clampVerbosity(int v) {
-        if (v < 1) return 1;
-        if (v > 5) return 5;
-        return v;
-    }
-
-    private static List<String> parseTerms(String raw) {
-        List<String> out = new ArrayList<>();
-        if (raw == null) {
-            return out;
-        }
-        for (String t : raw.split("\\|")) {
-            String trimmed = t.trim();
-            if (!trimmed.isEmpty()) {
-                out.add(trimmed);
-            }
-        }
-        return out;
     }
 }

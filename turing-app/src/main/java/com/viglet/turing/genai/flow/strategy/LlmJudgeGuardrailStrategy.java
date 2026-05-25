@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -65,9 +67,12 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     // of post-reject behavior. Recoverable from git log.
 
     private final HeuristicGuardrailStrategy fallback;
+    private final TurChatFlowStaticPromptCache staticPromptCache;
 
-    public LlmJudgeGuardrailStrategy(HeuristicGuardrailStrategy fallback) {
+    public LlmJudgeGuardrailStrategy(HeuristicGuardrailStrategy fallback,
+            TurChatFlowStaticPromptCache staticPromptCache) {
         this.fallback = fallback;
+        this.staticPromptCache = staticPromptCache;
     }
 
     @Override
@@ -76,10 +81,13 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
+    public String buildSystemPromptAddendum(TurChatFlow flow, ChatFlowNode node,
+            TurChatFlowState state, ChatFlowGraph graph) {
         // Layer 1 (the prompt-side contract) is shared with every other strategy
-        // via ChatFlowOps; the judge only adds layer 2 inside `advance`.
-        return ChatFlowOps.buildBaseAddendum(node, state, graph);
+        // via the static-prompt cache; the judge only adds layer 2 inside `advance`.
+        // T31 / §IV.5 — static portions served from the (flowId, nodeId)
+        // cache; the "Already collected" line is built per turn.
+        return staticPromptCache.buildAddendum(flow, node, state, graph, true);
     }
 
     @Override

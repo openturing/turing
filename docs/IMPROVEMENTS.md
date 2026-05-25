@@ -50,7 +50,7 @@ acting.
 > **Legend** (same as the global one): ✅ shipped · 🛠 in-progress ·
 > 📋 designed, not started · 💭 idea, needs design · ⏳ partial.
 >
-> **Status snapshot (2026-05-22 end-of-day, post-deferred-skeletons sweep)**:
+> **Status snapshot (2026-05-25, post-T31)**:
 > - **Block A** — infrastructure ✅; **9 tests now real**. Post-T16 audit
 >   deleted **11 obsolete skeletons**; then 2026-05-22 PM implemented all
 >   4 remaining deferred bodies: ✅ **#3** (tool-strip via declarative
@@ -63,8 +63,12 @@ acting.
 >   **15 ran / 0 failed / 1 skipped** in 3:43.
 > - **Block B** — ✅ COMPLETE. Inverted harness shipped, all legacy code
 >   paths deleted, 17 of 22 patches from §I.3 are gone.
-> - **Block C** — ✅ T17; everything else 📋, fully unblocked since T16
->   landed (no more dependency on Block B).
+> - **Block C** — ✅ T17–T31 all shipped 2026.2.7 / 2026.3.1. Next pending
+>   wave is T32 (observability) / T33 (executor decomposition) / T34
+>   (cache conventions docs+lint), added after T31 — see §IV.7, §I.8,
+>   §IV.8. No hard dependencies between the three; T32 is the highest-
+>   leverage starting point (validates whether T28-T31's claimed wins
+>   are real).
 > - **Test infra fix (2026-05-22)**: `AbstractTuringSpringIT` now sets
 >   `spring.artemis.embedded.persistent=false` to keep multiple Spring
 >   contexts in a single Maven fork from deadlocking on Artemis
@@ -149,7 +153,10 @@ acting.
 | T28 | ✅ | — | **Phases A+B+C shipped 2026.3.1** — pluggable chat-analytics classifier backbone: new entity `TurAnalyticsIntent` (per-agent catalog, `label` + newline-separated `samples` + `enabled` + `description`, Liquibase `v2026.3.1.1.yaml` with unique `(agent_id, label)` constraint), Spring-cached `TurAnalyticsIntentRepository` (`turAnalyticsIntentFindByAgentId` + `turAnalyticsIntentMLTIndex`). Introduced `TurIntentClassifierStrategy` interface; the legacy LLM classifier moved to `TurLlmIntentClassifier` (unchanged behavior, plus an `agentId` parameter that the LLM strategy ignores). New `TurLuceneIntentClassifier` runs embedded Lucene `MoreLikeThis` over the per-agent catalog with the same per-agent `ConcurrentMap` cache pattern T27 uses (BM25 similarity, PT/EN analyzer pick via the same stopword heuristic as T25, `MIN_SCORE_FLOOR=0.5f` rejects incidental overlaps, `extractKeyTerms` matches the LLM strategy's 5-term cap). `TurChatIntentClassifier` rewritten as an orchestrator that picks one strategy per session per `turing.chat.analytics.classifier.mode` (`auto`/`llm`/`lucene`/`search-engine-mlt`; aliases `solr-mlt`/`elasticsearch-mlt`/`se-mlt`/`es`/`solr` all map to the same mode since the SE-backed strategy runs through `TurSearchEnginePlugin` and supports both Solr `MoreLikeThisHandler` and ES `more_like_this`); `auto` cascades LLM → SE-MLT → Lucene and falls through when a strategy returns unclassified. `TurChatAnalyticsEnricher` threads `agentId` from the session row into `classify(...)`. CRUD API at `/api/ai-agent/{agentId}/analytics-intent` (list/get/create/update/delete). JPA `@EntityListeners(TurAnalyticsIntentEvictionListener.class)` wipes the Lucene per-agent index on every catalog write, same hook pattern T27 uses for the chat-flow router. 12 unit tests pin: real catalog match (transcript → label), per-agent index built-once-per-cycle, `evictAll()` forces rebuild, below-floor score returns unclassified, null agent id short-circuits; orchestrator cascade LLM → Lucene, short-circuit on LLM hit, mode pinning, unavailable-strategy unclassified, backwards-compat shim. **Phase B shipped 2026.3.1** — search-engine-backed strategy live. `TurSearchEnginePlugin` gained `moreLikeThisStandalone(seInstance, indexName, field, text, topK)` (default `UnsupportedOperationException` for plugins that don't support MLT — single-JVM admins on the Lucene-embedded SE keep falling through to Phase A's `TurLuceneIntentClassifier`). Solr override hits the `/mlt` request handler via `qt=/mlt` + `stream.body=<transcript>` (`SolrQuery.setRequestHandler` deprecated in SolrJ 9 — switched to `set("qt", ...)`); falls back to a regular BM25 search against the samples field when the handler isn't reachable so installs that haven't opted into `enableStreamBody=true` still get a usable signal. ES override uses the native `more_like_this` query (`fields=samples`, `like=<text>`, `min_term_freq=1`, `min_doc_freq=1`, `min_word_length=3`, `max_query_terms=40`). New `TurSeMltIntentClassifier @Component` (`type="search-engine-mlt"`) wires those plugin methods into the orchestrator's `auto` cascade: LLM → SE-MLT → Lucene-embedded; floor `MIN_SCORE_FLOOR=0.5f` rejects incidental matches. `TurAnalyticsIntentIndexer @Service` keeps the per-agent SE index in sync — one doc per catalog row (`id`/`agentId`/`label`/`samples`), index name `intent_<agentShortId>` (matches T24b's `rag_` prefix convention so SN search APIs filter the internal indexes). The shared `TurAnalyticsIntentEvictionListener` fans out catalog mutations to both classifiers: wipes the Phase A in-memory index and upserts/removes the row in the SE-side index. `POST /api/ai-agent/{agentId}/analytics-intent/reindex` bootstrap path wipes the agent's slice via `deIndexStandaloneByField` then batch-pushes through `indexStandaloneDocuments`. SE binding (Phase B) uses property `turing.chat.analytics.classifier.se-instance-id` with fallback to the first registered SE instance — per-agent binding (new column on `TurAIAgent`) is a Phase C concern. 17 new unit tests (`TurSeMltIntentClassifierTest` 9, `TurAnalyticsIntentIndexerTest` 8) pin: availability gating (agent id + SE binding + non-empty catalog), top-hit → goalSummary mapping, below-floor unclassified, `UnsupportedOperationException` swallowed, index name normalization (UUID dashes stripped, capped at 12 chars), enabled rows upsert / disabled rows deindex, no-SE silent skip, full reindex wipes-then-pushes, configured property wins over `findAll` fallback. **Phase C shipped 2026.3.1** — frontend admin page and per-agent SE binding completed. New column `TurAIAgent.analyticsSeInstance` (`@ManyToOne(fetch=LAZY)`, nullable, FK to `se_instance(id)`, Liquibase `v2026.3.1.2.yaml`). `TurAnalyticsIntentIndexer.resolveSeInstance(agentId)` resolution order changed to: per-agent binding → property override → first registered SE; the backwards-compat no-arg overload delegates with `null`. `TurAIAgentAPI` PUT/POST propagate `analyticsSeInstance` via `resolveSingleRelation`. Frontend: new module under `frontend/apps/turing-app/src/app/console/analytics-intent/` — single `analytics-intent.list.page.tsx` with inline modal dialog for create/edit (heavier list+settings split kept for the legacy `intent/` module where actions/icon/sortOrder justify it; analytics intents have only label+samples+enabled+description so the compact form ships fine). Reindex button in the page header wires to the Phase B `POST /reindex` endpoint. New model (`analytics-intent.model.ts`), service (`analytics-intent.service.ts`), React Query hooks (`analytics-intent.queries.ts` with new `analyticsIntents` query key family), route registration (`/ai-agent/instance/:id/analytics-intent` lazy-loaded), sidebar nav entry under the chat group (`IconChartBar`), PT/EN i18n (`analyticsIntent.json` + `aiAgent.nav.analyticsIntent` + `forms.agentSettings.analyticsSeInstance*` keys). Agent settings form gains a `Select` for the SE binding (label + global-default fallback option). 31 backend tests still pass (added 2 new orchestrator tests for the per-agent SE binding fallback chain). | §III.5 |
 | T29 | ✅ | 2026.3.1 | Tool pre-filtering for large catalogs: `TurToolPreFilterService` does BM25 / MoreLikeThis over `prompts/tools/**/*.md` descriptions in an in-memory `ByteBuffersDirectory`, keeps top-K configured via `turing.genai.tool-prefilter.{top-k,min-tools-threshold,enabled}`. Always-kept set covers agent `nativeTools` + the active node's new `ChatFlowNode.requiredTools` list. Bypasses for blank user message / pool below threshold / cap already covers the pool. | §IV.2 |
 | T30 | ✅ | 2026.3.1 | Conversation-relevance retrieval for chat memory: new `TurChatMemoryRelevanceRetriever` reads the persisted history, splits at the recent-N FIFO window, builds a per-call `ByteBuffersDirectory` + `BM25Similarity` index over the older pool, scores against the latest user message via `MoreLikeThis`, and prepends the top-K hits (chronologically re-sorted, prefixed with `[earlier turn #N at <ts>]` markers) to the history that flows into `TurAgentChatExecutor.execute()`. Three new opt-in fields on `TurAIAgent`: `chatMemoryRelevanceEnabled` (default false), `chatMemoryRelevanceTopK` (default 5, capped at 20 in code), `chatMemoryRecentN` (default 10) — Liquibase `v2026.3.1.3.yaml`. Exchange round-trip extended so import/export carries the new fields. 18 new unit tests pin: bypass when chat memory / relevance / store / convId / userMsg are off, bypass when persisted ≤ recent-N, no-overlap returns history unchanged, BM25 surfaces the matching older turn with position+ISO timestamp marker, multiple hits sorted by original position (not score), top-K cap honored + hard-capped at 20 on misconfig, role preserved on retrieved turns, null history → empty list, store I/O failure falls back to original history, malformed persisted rows (null/blank role/content) skipped, marker helpers (no-ts fallback, ISO normalization, epoch-millis path). | §IV.4 |
-| T31 | 📋 | — | System prompt fragment caching: `@Cacheable` the composed persona-prompt by `(personaId, agentId)` and the flow addendum by `(flowId, currentNodeId)`. Evict on persona/flow/agent edit via existing hooks. RAG fragment stays uncached. | §IV.5 |
+| T31 | ✅ | 2026.3.1 | System-prompt fragment caching: new `TurPersonaStaticPromptCache` `@Cacheable("turPersonaStaticPrompt")` keyed by `personaId` for the deterministic persona block (instruction + style + mandatory/forbidden vocab + brand placeholder); few-shot block stays uncached because it depends on `userQuery`. New `TurChatFlowStaticPromptCache` exposes `staticHead` (`@Cacheable("turChatFlowStaticAddendumHead")` keyed by `flowId:nodeId`) + `staticTail` (`@Cacheable("turChatFlowStaticAddendumTail")` keyed by `flowId:nodeId:includeNextStepHint`); the dynamic "Already collected" line is built per turn. `ChatFlowOps.buildBaseAddendum` refactored into three pure helpers (`buildStaticAddendumHead` / `buildVariablesLine` / `buildStaticAddendumTail`) so the cache bean and any legacy static caller share one source of truth. Strategy interface gained a `TurChatFlow flow` parameter so the cache key can be derived from the live flow. Eviction extends the existing `@CacheEvict` chains: `TurPersonaRepository.save/delete` now also wipes `turPersonaStaticPrompt`; `TurChatFlowRepository.save/delete` adds `turChatFlowStaticAddendumHead` + `turChatFlowStaticAddendumTail` to the existing router-decision eviction set. Self-injection (`@Lazy` self ref) in `TurChatFlowStaticPromptCache` routes intra-class calls through the Spring proxy so the `@Cacheable` advice actually fires. 24 new unit tests across `TurPersonaStaticPromptCacheTest` (12: null/blank persona, instruction/style/vocab/brand block presence, verbosity clamping, determinism, output excludes few-shot + base-separator boundaries) and `TurChatFlowStaticPromptCacheTest` (12: orchestrator null/terminal short-circuit, head+vars+tail concatenation, dynamic line omission on blank state, null-flow fallback, head/tail content split, hint-toggle, `buildBaseAddendum` equals head+vars+tail invariant). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted strategy tests (`LlmJudgeGuardrailStrategyTest` 7/7, `ChatFlowOpsTest` + `ChatFlowOpsBrDocUnitTest`) green. | §IV.5 |
+| T32 | 📋 | T28, T29, T30, T31 | Observability for the cache + retrieval features shipped in 2026.3.1: extend `TurChatPipelineObservation` with cache-hit-rate metrics (`turPersonaStaticPrompt`, `turChatFlowStaticAddendumHead/Tail`, `turAIAgentfindById`, `turChatFlowFindById`, `turChatFlowRouterDecision`, `turAnalyticsIntentMLTIndex`) read from Hazelcast `IMap.getLocalMapStats()`, plus per-turn timings for the T30 BM25 retrieval (pool size, hits returned, search ms) and the T29 tool pre-filter (in/out counts, BM25 ms, bypass reason when not engaged). All metrics surface through the existing Micrometer `MeterRegistry`; no Hazelcast Management Center dependency. | §IV.7 |
+| T33 | 💭 | — | Decompose `TurAgentChatExecutor.execute()` (~1000 lines, 13 timing substages) into 3 collaborator beans: `TurChatPromptAssembler` (history enrichment + system-prompt composition + messages list build — owns the T30 retriever + T31 cache call sites), `TurChatToolResolver` (callbacks + pre-filter + tool-strip decision), `TurChatStreamingDispatcher` (CALL vs STREAM branch + post-LLM regen + tone validation). `execute()` shrinks to ~150 lines orchestrating the three. Same observability shape (each collaborator records its own substage timing). Keeps the `Flux<ChatResponse>` contract so callers (`TurAIAgentChatAPI`, `TurSNGenAi`, `TurLLMSemanticChatAPI`) don't change. | §I.8 |
+| T34 | 📋 | — | Codify the recurring caching conventions agents have been re-deriving: (a) add the self-injection / `@Cacheable` proxy rule to `agents.md` (existing convention block for SN repository cache) so future contributors don't bypass the proxy via `this.x(...)`; (b) add a `TurCacheAnnotationConventionsTest` static-analysis unit test that fails when a `@Cacheable` method's enclosing class has no matching `@CacheEvict` in any sibling repository, mirroring `TurLiquibaseChangelogAgnosticTest`'s grep-the-tree approach. Cheap insurance against the "added a @Cacheable but forgot the @CacheEvict" class of bug that already required a memory-system entry. | §IV.8 |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -378,6 +385,62 @@ These are product, not patches — preserve verbatim:
   be tool-free, captureMode=never, etc. Those signals are *flow
   authorship*, not runtime inference. They become declarative node
   fields.
+
+### I.8 💭 Decompose `TurAgentChatExecutor` (post-Block-B god-class)
+
+**Context**: Block B (T9-T16) collapsed the harness's pre-LLM /
+post-LLM split into a single inverted path, which was the right move
+— but the consolidation pushed everything into one method.
+[`TurAgentChatExecutor.execute(...)`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java)
+is now ~600 lines on its own (the class is ~1000 with helpers) and
+threads 13 timing substages: decrypt → chat model → flow context →
+early advance → persona → tool callbacks → tool context → flow
+addendum → persona compose → history enrichment (T30) → messages
+build → CALL/STREAM dispatch → post-LLM regen + tone validation.
+
+Each substage shipped one at a time and each one was reasonable in
+isolation. The accumulated weight isn't. Adding T30 + T31 required
+both reading and editing this file at line ranges 280-510 — far from
+each other, near other unrelated concerns. The next feature is going
+to need the same archeology.
+
+**Idea**: extract three collaborator beans, each owning one
+substage cluster, called in order by a slim orchestrator method:
+
+| Bean | Owns | Inputs | Outputs |
+|---|---|---|---|
+| [`TurChatPromptAssembler`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java) (new) | History enrichment (T30) → flow addendum composition → persona prompt composition (T31) → `List<Message>` build | `agent`, `history`, `conversationId`, `flowContext`, `activePersona`, `lastUserMessageEarly` | `Prompt` ready to call |
+| `TurChatToolResolver` (new) | Native + MCP + custom callbacks → T29 pre-filter → declarative tool-strip decision (T11 `forbidsToolCalls`) | `agent`, `activePersona`, `lastUserMessageEarly`, `activeNode` | `ToolCallback[]` decorated by the pipeline |
+| `TurChatStreamingDispatcher` (new) | `CALL` vs `STREAM` branch → post-LLM `advance` (legacy path) → tone validation → SSE event mapping | `agent`, `Prompt`, `chatModel`, `flowContext`, `activePersona`, callbacks | `Flux<ChatResponse>` |
+
+After the split, `execute(...)` becomes ~150 lines of pure
+orchestration: setup phase → `toolResolver.resolve(...)` →
+`promptAssembler.assemble(...)` → `dispatcher.dispatch(...)`. The
+timing markers move to each collaborator (each captures its own
+`setup_<name>_ms` substage in `TurChatPipelineObservation`).
+
+**Risk**: this is a hot-path refactor. The mitigations:
+- The public `Flux<ChatResponse> execute(...)` signature must stay
+  exact — `TurAIAgentChatAPI`, `TurSNGenAi`, `TurLLMSemanticChatAPI`
+  pass it directly to clients.
+- The 13-step timing sequence is load-bearing for the
+  [`TurAgentChatLatencyIT`](../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatLatencyIT.java)
+  contract; the new collaborators must re-emit equivalent substage
+  metrics under the same `MeterName`s.
+- The `TurAgentChatExecutorMockSupport` test harness depends on
+  `@Primary` overrides at the executor level; each new collaborator
+  needs a matching test-support entry point (or the harness rebinds
+  to the assembler).
+- T15's audit (cycle cap @ engine:1244, strategy fallback @
+  engine:418, A/B window @ engine:881, agent-owner check @
+  executor:1223, silent telemetry) lives inside `execute(...)` today
+  — must preserve those during the split.
+
+**When**: when the next feature in the chat path needs to touch
+either the prompt assembly or the dispatch logic and the
+"archeology cost" hits a threshold the next author isn't willing to
+pay. Not before — Block B literally just shipped, the file is more
+churn-prone than usual right now.
 
 ---
 
@@ -847,27 +910,74 @@ preservation on retrieved turns, store I/O failure → return original,
 malformed-row skip, and the three marker formatting paths
 (ISO/epoch-millis/no-timestamp).
 
-### IV.5 💭 System prompt fragment caching
+### IV.5 ✅ System-prompt fragment caching (shipped 2026.3.1 as T31)
 
-**Context**: each turn composes a system prompt from base + persona +
+**Context**: each turn composed a system prompt from base + persona +
 flow addendum + RAG context + few-shot examples. Each fragment is
-deterministic given its inputs. Today they're recomputed every turn.
+deterministic given its inputs, but they were being recomputed every
+turn — the persona block alone is typically 1-3 KB of formatted text,
+and a flow node addendum carries another ~600-2000 B of `HARD_RULES`
+plus the active-step header.
 
-**Idea**: cache the **composed** persona-prompt and flow-addendum
-fragments (Spring `@Cacheable`) keyed by their input identifiers.
-Persona fragment by `(personaId, agentId)`; flow addendum by
-`(flowId, currentNodeId)`. Evict on persona / flow / agent edit (same
-hooks that already invalidate `turAIAgentfindById`).
+**Shipped — two cache surfaces** (both backed by the project's existing
+Hazelcast cache manager, both wired into the same `@CacheEvict` chains
+the catalog reads already use):
 
-**Caveat**: RAG context is per-turn (depends on user message) — that
-fragment stays uncached.
+- **Persona block** — [`TurPersonaStaticPromptCache.composeStaticBlock(persona)`](../turing-app/src/main/java/com/viglet/turing/genai/persona/TurPersonaStaticPromptCache.java)
+  is `@Cacheable("turPersonaStaticPrompt", key="#persona.id")`. The
+  block covers `systemInstruction` + style guidelines + required /
+  forbidden vocabulary + brand-context placeholder. The few-shot
+  examples are appended by [`TurPersonaPromptComposer`](../turing-app/src/main/java/com/viglet/turing/genai/persona/TurPersonaPromptComposer.java)
+  AFTER the cached call — they depend on `userQuery` (vector store
+  retrieval) and stay uncached. The agent base prompt (which may carry
+  per-turn RAG context) is also concatenated after.
 
-**Expected win**: ~10-30ms per turn (string concatenation isn't free
-when prompts are 2-5KB), more important as agents grow more complex.
+- **Flow addendum** — [`TurChatFlowStaticPromptCache`](../turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCache.java)
+  splits the addendum into three pieces: a static **head**
+  (`@Cacheable("turChatFlowStaticAddendumHead", key="#flowId+':'+#nodeId")`
+  — active-step header, Goal, Collect, Validate), a per-turn
+  **variables line** (built inline, never cached — depends on
+  `state.variablesJson` which mutates as slots fill), and a static
+  **tail** (`@Cacheable("turChatFlowStaticAddendumTail",
+  key="#flowId+':'+#nodeId+':'+#includeNextStepHint")` — next-step
+  preview hint + `HARD_RULES`). Splitting around the dynamic line
+  preserves the exact prompt structure the LLM was already seeing
+  while keeping the cache hit rate near 100% on the static portions
+  — keying on `hash(variablesJson)` would have collapsed the hit rate
+  every turn a slot was captured.
 
-**When**: a profiling pass on the `setup_ms` substages (now exposed by
-`TurChatPipelineObservation`) shows persona/flow composition taking
-≥50ms per turn.
+**Why the suggested `(personaId, agentId)` key didn't hold**: the
+persona composer also takes a `userQuery` argument that drives few-shot
+retrieval. Including `userQuery` in the key would collapse the hit
+rate; folding the few-shot block OUT of the cached surface (it's
+already a separate vector-store lookup, with its own cost profile)
+keeps the deterministic block reusable across turns.
+
+**Why the suggested `(flowId, currentNodeId)` key didn't hold either**:
+`state.getVariablesJson()` mutates each time a slot is collected, and
+the addendum embeds an `Already collected: {...}` line in the middle
+of the static text. Splitting the addendum around that line — head
+above, tail below — turned the same "key on `(flowId, nodeId)`" plan
+into a correct one: now each cached fragment is genuinely a function of
+its key.
+
+**Eviction**: the existing `@CacheEvict` blocks on
+[`TurPersonaRepository.save/delete`](../turing-app/src/main/java/com/viglet/turing/persistence/repository/persona/TurPersonaRepository.java)
+gained `turPersonaStaticPrompt`;
+[`TurChatFlowRepository.save/delete`](../turing-app/src/main/java/com/viglet/turing/persistence/repository/agent/TurChatFlowRepository.java)
+gained `turChatFlowStaticAddendumHead` + `turChatFlowStaticAddendumTail`
+alongside the existing `turChatFlowRouterDecision` eviction. Operator
+edits to persona instruction / tone / vocab — or to a flow node's
+label / aiInstruction / outputVariable / validationRule / edges —
+propagate on the next chat turn without restart, same as every other
+cached catalog read in the project.
+
+**Tests**: [`TurPersonaStaticPromptCacheTest`](../turing-app/src/test/java/com/viglet/turing/genai/persona/TurPersonaStaticPromptCacheTest.java)
+(12) + [`TurChatFlowStaticPromptCacheTest`](../turing-app/src/test/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCacheTest.java)
+(12). Spring-context smoke ITs (`HarnessFixtureSmokeIT` 3/3,
+`TestSupportSmokeIT` 1/1) plus impacted strategy tests
+(`LlmJudgeGuardrailStrategyTest`, `ChatFlowOpsTest`,
+`ChatFlowOpsBrDocUnitTest`) all green.
 
 ### IV.6 ✅ Slot value fuzzy matching (shipped 2026.2.7 as T23)
 
@@ -889,6 +999,100 @@ boolean matches = matcher.run(bytes, 0, bytes.length);
 
 **When**: customer flows show recurring "user typed almost-but-not-quite
 the chip label and the judge rejects it" reports.
+
+### IV.7 📋 Observability for the 2026.3.1 cache + retrieval features
+
+**Context**: T28 (intent classifier), T29 (tool pre-filter), T30
+(relevance retrieval) and T31 (prompt cache) all claim per-turn
+performance wins — "shaves 10-30 ms", "skips ~50 tool descriptions",
+"prepends top-K older turns" — but the project has **zero
+instrumentation** on any of them in production. The only existing
+chat-pipeline observability is
+[`TurChatPipelineObservation`](../turing-app/src/main/java/com/viglet/turing/observability/TurChatPipelineObservation.java),
+which aggregates `setup_ms` / `llm_ms` / `post_ms` per turn — coarse,
+and silent on cache outcomes entirely. Any claim about whether the
+caches are actually winning is currently faith-based.
+
+**Idea**: extend `TurChatPipelineObservation` (or a new sibling
+`TurChatCacheObservation` bean) with three classes of metric:
+
+1. **Cache hit-rate gauges** — pulled from Hazelcast
+   `IMap.getLocalMapStats()` (`getHits()` / `getMisses()` / `size()`)
+   for every cache the chat pipeline reads: `turPersonaStaticPrompt`
+   and `turChatFlowStaticAddendumHead/Tail` (T31), `turAIAgentfindById`
+   / `turChatFlowFindById` / `turPersonafindById` (catalog reads),
+   `turChatFlowRouterDecision` (T26), `turAnalyticsIntentMLTIndex`
+   (T28). Surfaced as Micrometer `Gauge` so Prometheus / Grafana
+   dashboards can chart the trend.
+2. **Per-turn retrieval timings** — `TurChatMemoryRelevanceRetriever`
+   (T30) records pool size + hits returned + search ms; the metric is
+   silent when the bypass conditions fire so it doesn't pollute the
+   percentile bands with `0 ms` no-ops. `TurToolPreFilterService` (T29)
+   records callbacks in / out / BM25 ms / bypass reason.
+3. **Sub-stage timing** — break `setup_ms` into its 13 existing
+   timing markers (already captured locally in
+   `TurAgentChatExecutor.execute()` via `tAfterDecrypt`, `tAfterFlow`,
+   `tAfterPersona`, …) so we can tell apart "everything cached
+   ~100ms" from "cold-start MCP handshake / first-time flow load" at
+   the metric layer.
+
+**Risk**: cardinality explosion if labels are unbounded (e.g. tagging
+metrics with `agentId` × `flowId` × `nodeId` would blow up the
+Prometheus storage). Mitigation: emit aggregates only — per-cache,
+per-agent at most. Skip the per-node breakdown unless someone asks for
+it.
+
+**Expected win**: the moment we have these dashboards, the next
+optimization decision is grounded in measurement instead of intuition.
+A second-order win: we'll learn which caches actually pay off (T31's
+flow tail might be unused in practice if regen rarely fires).
+
+**When**: as soon as someone goes to investigate "why is chat
+slow today?" the first time post-T31. The dashboards pay for
+themselves on the first incident.
+
+### IV.8 📋 Codify the caching conventions (docs + lint test)
+
+**Context**: shipping T31 required me to re-derive two conventions
+that already exist tacitly in this codebase but aren't in any
+canonical place:
+
+1. **`@Cacheable` is proxy-based**: a `this.cacheableMethod()` call
+   from the same class bypasses the Spring proxy and silently no-ops
+   the cache. T31's `TurChatFlowStaticPromptCache` solves this with
+   `@Lazy` self-injection; future contributors will hit the same wall.
+2. **Every `@Cacheable` query needs a corresponding `@CacheEvict`** in
+   the repository's save/delete methods — otherwise stale catalog
+   data is served indefinitely. The convention is enforced by
+   convention (i.e. memory) today; one missed eviction = a class of
+   bug that's already in our memory log
+   ([`feedback_sn_repository_cache.md`](../../../C:/Users/alexa/.claude/projects/d--Git-viglet-turing-2026-1/memory/)).
+
+**Idea**: pay it forward with two artifacts:
+
+- **`agents.md` block** — short subsection ("Adding a @Cacheable
+  query") covering: where the eviction goes, the self-injection rule,
+  the lowercase-cache-name convention, and a pointer to the
+  `TurChatFlowStaticPromptCache` self-injection example.
+
+- **`TurCacheAnnotationConventionsTest`** — static-analysis unit test
+  (no Spring context, just a class-loader walk over the compiled
+  `target/classes`) that:
+  - lists every `@Cacheable` method's cache name in the project;
+  - lists every cache name mentioned in any `@CacheEvict`;
+  - fails when a `@Cacheable` name is never evicted anywhere
+    (other than caches explicitly tagged with an annotation like
+    `@TurEvictExempt` for read-only stuff).
+
+  Mirrors the existing `TurLiquibaseChangelogAgnosticTest` which
+  greps the changelog tree for forbidden tokens.
+
+**Risk**: low. The lint test runs in seconds, no flake surface (pure
+classpath scan).
+
+**When**: any time. Especially valuable before the project takes on
+more contributors / agents — every new `@Cacheable` shipped without
+the right eviction is a future incident.
 
 ---
 

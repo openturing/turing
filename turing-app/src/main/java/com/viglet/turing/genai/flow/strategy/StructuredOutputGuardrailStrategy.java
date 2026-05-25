@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -52,11 +54,14 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
     private final LlmJudgeGuardrailStrategy judgeFallback;
     /** Last-resort fallback if both JSON parsing AND the judge call fail. */
     private final HeuristicGuardrailStrategy heuristicFallback;
+    private final TurChatFlowStaticPromptCache staticPromptCache;
 
     public StructuredOutputGuardrailStrategy(LlmJudgeGuardrailStrategy judgeFallback,
-            HeuristicGuardrailStrategy heuristicFallback) {
+            HeuristicGuardrailStrategy heuristicFallback,
+            TurChatFlowStaticPromptCache staticPromptCache) {
         this.judgeFallback = judgeFallback;
         this.heuristicFallback = heuristicFallback;
+        this.staticPromptCache = staticPromptCache;
     }
 
     @Override
@@ -65,11 +70,13 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
+    public String buildSystemPromptAddendum(TurChatFlow flow, ChatFlowNode node,
+            TurChatFlowState state, ChatFlowGraph graph) {
         // Shared base (active-step header + goal/collect/validation + already-collected
         // variables + HARD RULES) lives in ChatFlowOps so wording fixes propagate to
         // every strategy at once. We just bolt the JSON contract on top.
-        String base = ChatFlowOps.buildBaseAddendum(node, state, graph);
+        // T31 / §IV.5 — base routed through the (flowId, nodeId) cache.
+        String base = staticPromptCache.buildAddendum(flow, node, state, graph, true);
         if (base.isEmpty()) {
             return "";
         }

@@ -11,6 +11,7 @@ package com.viglet.turing.genai.flow.strategy;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -51,8 +52,16 @@ public interface TurChatFlowGuardrailStrategy {
      * capturing the name, immediately ask for the phone") — without that
      * hint, the bot stops after each value and the user has to send a
      * trigger message between every step.
+     * <p>
+     * The {@code flow} reference (T31 / §IV.5) is required so the static
+     * portions of the addendum can be cached by {@code (flowId, nodeId)}
+     * via {@link com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache}.
+     * Strategy implementations route their static-portion calls through
+     * the cache bean; only the per-turn "Already collected" line is
+     * built inline.
      */
-    String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph);
+    String buildSystemPromptAddendum(TurChatFlow flow, ChatFlowNode node,
+            TurChatFlowState state, ChatFlowGraph graph);
 
     /**
      * Decides the next node and an optional assistant override given the

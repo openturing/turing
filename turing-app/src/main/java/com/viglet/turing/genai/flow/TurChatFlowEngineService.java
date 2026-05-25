@@ -341,7 +341,7 @@ public class TurChatFlowEngineService {
         if (node.isEmpty()) {
             return "";
         }
-        return resolveStrategy(flow).buildSystemPromptAddendum(node.get(), state, graph);
+        return resolveStrategy(flow).buildSystemPromptAddendum(flow, node.get(), state, graph);
     }
 
     /**

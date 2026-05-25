@@ -45,7 +45,14 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
     Optional<TurChatFlow> findById(@NotNull String id);
 
     @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
-            "turChatFlowRouterDecision" }, allEntries = true)
+            "turChatFlowRouterDecision",
+            // T31 / §IV.5 — flow edits invalidate the cached static
+            // head/tail of the system-prompt addendum (node label,
+            // aiInstruction, validationRule, next-step preview all may
+            // have changed). Same eviction cadence as the router
+            // decision cache.
+            "turChatFlowStaticAddendumHead", "turChatFlowStaticAddendumTail" },
+            allEntries = true)
     @NotNull
     @Override
     <S extends TurChatFlow> S save(@NotNull S entity);
@@ -53,7 +60,14 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
     @Modifying
     @Query("delete from TurChatFlow f where f.id = ?1")
     @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
-            "turChatFlowRouterDecision" }, allEntries = true)
+            "turChatFlowRouterDecision",
+            // T31 / §IV.5 — flow edits invalidate the cached static
+            // head/tail of the system-prompt addendum (node label,
+            // aiInstruction, validationRule, next-step preview all may
+            // have changed). Same eviction cadence as the router
+            // decision cache.
+            "turChatFlowStaticAddendumHead", "turChatFlowStaticAddendumTail" },
+            allEntries = true)
     void delete(String id);
 
     /**

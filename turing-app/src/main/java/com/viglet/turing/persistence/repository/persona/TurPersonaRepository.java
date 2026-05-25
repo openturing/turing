@@ -77,7 +77,11 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
             @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
                     "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
             @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
-                    allEntries = true)
+                    allEntries = true),
+            // T31 / §IV.5 — persona edits change the composed static
+            // prompt block; the cache must drop alongside the persona
+            // lookups so the next chat turn sees the new voice.
+            @CacheEvict(value = "turPersonaStaticPrompt", allEntries = true)
     })
     @NotNull
     @Override
@@ -89,7 +93,11 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
             @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
                     "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
             @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
-                    allEntries = true)
+                    allEntries = true),
+            // T31 / §IV.5 — persona edits change the composed static
+            // prompt block; the cache must drop alongside the persona
+            // lookups so the next chat turn sees the new voice.
+            @CacheEvict(value = "turPersonaStaticPrompt", allEntries = true)
     })
     void delete(String id);
 }
