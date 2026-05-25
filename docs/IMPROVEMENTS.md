@@ -63,13 +63,17 @@ acting.
 >   **15 ran / 0 failed / 1 skipped** in 3:43.
 > - **Block B** — ✅ COMPLETE. Inverted harness shipped, all legacy code
 >   paths deleted, 17 of 22 patches from §I.3 are gone.
-> - **Block C** — ✅ T17–T32 all shipped 2026.2.7 / 2026.3.1. T32 closed
+> - **Block C** — ✅ T17–T33 all shipped 2026.2.7 / 2026.3.1. T32 closed
 >   the observability gap (Hazelcast cache gauges + T30/T29 per-turn
 >   timings + chat-setup sub-stage breakdown) so the wins claimed by
->   T28-T31 are now measurable on `/actuator/prometheus`. Remaining
->   pending: T33 💭 (executor decomposition — §I.8) and T34 📋 (cache
->   conventions docs + lint test — §IV.8). No hard dependencies between
->   them; T34 is the lower-risk follow-up.
+>   T28-T31 are now measurable on `/actuator/prometheus`. T33 (shipped
+>   2026.3.1) decomposed `TurAgentChatExecutor.execute()` into three
+>   collaborator beans (`TurChatToolResolver`, `TurChatPromptAssembler`,
+>   `TurChatStreamingDispatcher`) plus a top-level `TurAgentChatFlowContext`
+>   record — orchestrator method shrunk to 147 lines; every public API
+>   and every `STAGE_CHAT_*` meter preserved bit-for-bit. Remaining
+>   pending: T34 📋 (cache conventions docs + lint test — §IV.8) — the
+>   lower-risk follow-up with no hard dependency on T33.
 > - **Test infra fix (2026-05-22)**: `AbstractTuringSpringIT` now sets
 >   `spring.artemis.embedded.persistent=false` to keep multiple Spring
 >   contexts in a single Maven fork from deadlocking on Artemis
@@ -156,7 +160,7 @@ acting.
 | T30 | ✅ | 2026.3.1 | Conversation-relevance retrieval for chat memory: new `TurChatMemoryRelevanceRetriever` reads the persisted history, splits at the recent-N FIFO window, builds a per-call `ByteBuffersDirectory` + `BM25Similarity` index over the older pool, scores against the latest user message via `MoreLikeThis`, and prepends the top-K hits (chronologically re-sorted, prefixed with `[earlier turn #N at <ts>]` markers) to the history that flows into `TurAgentChatExecutor.execute()`. Three new opt-in fields on `TurAIAgent`: `chatMemoryRelevanceEnabled` (default false), `chatMemoryRelevanceTopK` (default 5, capped at 20 in code), `chatMemoryRecentN` (default 10) — Liquibase `v2026.3.1.3.yaml`. Exchange round-trip extended so import/export carries the new fields. 18 new unit tests pin: bypass when chat memory / relevance / store / convId / userMsg are off, bypass when persisted ≤ recent-N, no-overlap returns history unchanged, BM25 surfaces the matching older turn with position+ISO timestamp marker, multiple hits sorted by original position (not score), top-K cap honored + hard-capped at 20 on misconfig, role preserved on retrieved turns, null history → empty list, store I/O failure falls back to original history, malformed persisted rows (null/blank role/content) skipped, marker helpers (no-ts fallback, ISO normalization, epoch-millis path). | §IV.4 |
 | T31 | ✅ | 2026.3.1 | System-prompt fragment caching: new `TurPersonaStaticPromptCache` `@Cacheable("turPersonaStaticPrompt")` keyed by `personaId` for the deterministic persona block (instruction + style + mandatory/forbidden vocab + brand placeholder); few-shot block stays uncached because it depends on `userQuery`. New `TurChatFlowStaticPromptCache` exposes `staticHead` (`@Cacheable("turChatFlowStaticAddendumHead")` keyed by `flowId:nodeId`) + `staticTail` (`@Cacheable("turChatFlowStaticAddendumTail")` keyed by `flowId:nodeId:includeNextStepHint`); the dynamic "Already collected" line is built per turn. `ChatFlowOps.buildBaseAddendum` refactored into three pure helpers (`buildStaticAddendumHead` / `buildVariablesLine` / `buildStaticAddendumTail`) so the cache bean and any legacy static caller share one source of truth. Strategy interface gained a `TurChatFlow flow` parameter so the cache key can be derived from the live flow. Eviction extends the existing `@CacheEvict` chains: `TurPersonaRepository.save/delete` now also wipes `turPersonaStaticPrompt`; `TurChatFlowRepository.save/delete` adds `turChatFlowStaticAddendumHead` + `turChatFlowStaticAddendumTail` to the existing router-decision eviction set. Self-injection (`@Lazy` self ref) in `TurChatFlowStaticPromptCache` routes intra-class calls through the Spring proxy so the `@Cacheable` advice actually fires. 24 new unit tests across `TurPersonaStaticPromptCacheTest` (12: null/blank persona, instruction/style/vocab/brand block presence, verbosity clamping, determinism, output excludes few-shot + base-separator boundaries) and `TurChatFlowStaticPromptCacheTest` (12: orchestrator null/terminal short-circuit, head+vars+tail concatenation, dynamic line omission on blank state, null-flow fallback, head/tail content split, hint-toggle, `buildBaseAddendum` equals head+vars+tail invariant). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted strategy tests (`LlmJudgeGuardrailStrategyTest` 7/7, `ChatFlowOpsTest` + `ChatFlowOpsBrDocUnitTest`) green. | §IV.5 |
 | T32 | ✅ | 2026.3.1 | Observability for the cache + retrieval features shipped in 2026.3.1: new `TurChatCacheStatsRegistrar` registers Micrometer gauges (`turing.chat.cache.{hits,misses,size}` tagged by `cache`) for the 9 Hazelcast `IMap`s the chat pipeline reads — gauges resolve via `ObjectProvider<HazelcastInstance>` so dev mode (no clustered cache) degrades silently instead of flat-zeroing. Misses derived as `getOperationCount − getHits` since `LocalMapStats` doesn't expose a direct miss counter, clamped at 0. `TurChatPipelineObservation` gains `recordMemoryRetrieval(poolSize, hits, ms, outcome)` and `recordToolPrefilter(in, out, ms, reason)` helpers; T30 retriever wires every branch (5 bypass paths → `outcome=bypass`, BM25 zero-match → `no-hits`, prepended turns → `hits`) and T29 pre-filter wires its 6 reasons (`disabled`, `below-threshold`, `blank-query`, `already-covered`, `cap-covers-pool`, `engaged`) on a bypass counter alongside the timer outcome (`filtered` / `passthrough`). 6 new sub-stage breakdowns of `chat.setup` (`decrypt`/`model`/`flow`/`persona`/`tools`/`compose`) recorded from the existing timing locals in `TurAgentChatExecutor.execute()` — backwards-compatible: the parent `chat.setup` aggregate stays. 12 new unit tests (`TurChatPipelineObservationT32Test` 7, `TurChatCacheStatsRegistrarTest` 5) pin: hits/no-hits/bypass outcomes register the right timer+distribution combinations, distributions skipped on bypass to avoid zero-pollution, all 6 prefilter reasons get independent counters; per-cache gauges resolve to the expected derived values (hits=100 / misses=50 / size=42 round-trip), miss gauge clamps at 0 on stat regression, gauge supplier swallows Hazelcast exceptions so a cluster failure can't take down the Prometheus scrape, no-Hazelcast mode registers zero gauges (not flat-zero ones). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted existing tests green (`TurChatMemoryRelevanceRetrieverTest` 18/18, `TurToolPreFilterServiceTest` 9/9). Metrics exposed via the existing `/actuator/prometheus` endpoint — no new dependency. | §IV.7 |
-| T33 | 💭 | — | Decompose `TurAgentChatExecutor.execute()` (~1000 lines, 13 timing substages) into 3 collaborator beans: `TurChatPromptAssembler` (history enrichment + system-prompt composition + messages list build — owns the T30 retriever + T31 cache call sites), `TurChatToolResolver` (callbacks + pre-filter + tool-strip decision), `TurChatStreamingDispatcher` (CALL vs STREAM branch + post-LLM regen + tone validation). `execute()` shrinks to ~150 lines orchestrating the three. Same observability shape (each collaborator records its own substage timing). Keeps the `Flux<ChatResponse>` contract so callers (`TurAIAgentChatAPI`, `TurSNGenAi`, `TurLLMSemanticChatAPI`) don't change. | §I.8 |
+| T33 | ✅ | — | Decomposed `TurAgentChatExecutor.execute()` (was 1074 lines / 13 timing substages) into 3 collaborator beans + a top-level `TurAgentChatFlowContext` record: `TurChatToolResolver` (native + MCP + custom + persona-brand callbacks → pipeline-decorate → T29 BM25 pre-filter; static `forbidsToolCalls(ChatFlowNode)` lives here, with the executor exposing a thin static façade for back-compat with `TurAgentChatExecutorStructuralIT`), `TurChatPromptAssembler` (T31-cached flow addendum + persona compose + T30 conversation-relevance enrichment + `List<Message>` build), `TurChatStreamingDispatcher` (CALL vs STREAM branch, tone validation, telemetry, suggested options + SSE fan-out via the moved `AssistantTurn` + `emitTurn` helpers). Executor shrunk to 573 lines total; the 6-arg `execute()` body is 147 lines of pure orchestration. Observability shape preserved exactly — every `STAGE_CHAT_*` meter still fires (DECRYPT/MODEL/FLOW/PERSONA in the executor; TOOLS in the resolver; COMPOSE in the assembler; LLM_CALL/POST/TOTAL/ADVANCE/REGEN in the dispatcher) and the three `[AgentExec][timing]` log lines (setup_ms / llm_ms / total_ms / STREAM total_ms) keep their original shape. Public API untouched: `Flux<ChatResponse> execute(...)` 4-arg + 6-arg overloads, `resolveToolCallbacks(...)` overloads, `ChatMessageItem` / `ChatResponse` records, `FLOW_ID_NONE`, `forbidsToolCalls(ChatFlowNode)` all still on `TurAgentChatExecutor` so `TurAIAgentChatAPI`, `TurSNGenAi`, `TurSNSiteGenAiAPI`, `TurLLMSemanticChatAPI` and every test pass through with zero diff. Verified: backend compile clean (853 source files), 121/121 impacted unit tests green (`TurAIAgentChatAPITest` 16, `ChatFlowOpsBrDocUnitTest` 26, `ChatFlowOpsTest` 28, `LlmJudgeGuardrailStrategyTest` 7, `TurSNGenAiTest` 26, `TurChatMemoryRelevanceRetrieverTest` 18); 16/16 ITs green (`HarnessFixtureSmokeIT` 3, `TestSupportSmokeIT` 1, `TurAgentChatExecutorContractIT` 3 + 1 skipped, `TurAgentChatExecutorStructuralIT$ForbidsToolCallsUnitTests` 8). | §I.8 |
 | T34 | 📋 | — | Codify the recurring caching conventions agents have been re-deriving: (a) add the self-injection / `@Cacheable` proxy rule to `agents.md` (existing convention block for SN repository cache) so future contributors don't bypass the proxy via `this.x(...)`; (b) add a `TurCacheAnnotationConventionsTest` static-analysis unit test that fails when a `@Cacheable` method's enclosing class has no matching `@CacheEvict` in any sibling repository, mirroring `TurLiquibaseChangelogAgnosticTest`'s grep-the-tree approach. Cheap insurance against the "added a @Cacheable but forgot the @CacheEvict" class of bug that already required a memory-system entry. | §IV.8 |
 
 ### Non-goals (do NOT add as tasks)
@@ -387,61 +391,75 @@ These are product, not patches — preserve verbatim:
   authorship*, not runtime inference. They become declarative node
   fields.
 
-### I.8 💭 Decompose `TurAgentChatExecutor` (post-Block-B god-class)
+### I.8 ✅ Decompose `TurAgentChatExecutor` (post-Block-B god-class) — shipped 2026.3.1
 
-**Context**: Block B (T9-T16) collapsed the harness's pre-LLM /
-post-LLM split into a single inverted path, which was the right move
-— but the consolidation pushed everything into one method.
+**Context (historical, kept for the next time it grows back)**: Block
+B (T9-T16) collapsed the harness's pre-LLM / post-LLM split into a
+single inverted path, which was the right move — but the
+consolidation pushed everything into one method.
 [`TurAgentChatExecutor.execute(...)`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java)
-is now ~600 lines on its own (the class is ~1000 with helpers) and
-threads 13 timing substages: decrypt → chat model → flow context →
-early advance → persona → tool callbacks → tool context → flow
-addendum → persona compose → history enrichment (T30) → messages
-build → CALL/STREAM dispatch → post-LLM regen + tone validation.
+was 1074 lines and threaded 13 timing substages: decrypt → chat model
+→ flow context → early advance → persona → tool callbacks → tool
+context → flow addendum → persona compose → history enrichment (T30)
+→ messages build → CALL/STREAM dispatch → post-LLM tone validation.
 
 Each substage shipped one at a time and each one was reasonable in
-isolation. The accumulated weight isn't. Adding T30 + T31 required
+isolation. The accumulated weight wasn't. Adding T30 + T31 required
 both reading and editing this file at line ranges 280-510 — far from
-each other, near other unrelated concerns. The next feature is going
-to need the same archeology.
+each other, near other unrelated concerns. The decomposition below
+killed that archeology cost.
 
-**Idea**: extract three collaborator beans, each owning one
-substage cluster, called in order by a slim orchestrator method:
+**Shipped design** — three collaborator beans + a top-level
+`TurAgentChatFlowContext` record, called in order by a slim
+orchestrator method:
 
 | Bean | Owns | Inputs | Outputs |
 |---|---|---|---|
-| [`TurChatPromptAssembler`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java) (new) | History enrichment (T30) → flow addendum composition → persona prompt composition (T31) → `List<Message>` build | `agent`, `history`, `conversationId`, `flowContext`, `activePersona`, `lastUserMessageEarly` | `Prompt` ready to call |
-| `TurChatToolResolver` (new) | Native + MCP + custom callbacks → T29 pre-filter → declarative tool-strip decision (T11 `forbidsToolCalls`) | `agent`, `activePersona`, `lastUserMessageEarly`, `activeNode` | `ToolCallback[]` decorated by the pipeline |
-| `TurChatStreamingDispatcher` (new) | `CALL` vs `STREAM` branch → post-LLM `advance` (legacy path) → tone validation → SSE event mapping | `agent`, `Prompt`, `chatModel`, `flowContext`, `activePersona`, callbacks | `Flux<ChatResponse>` |
+| [`TurChatToolResolver`](../turing-app/src/main/java/com/viglet/turing/genai/TurChatToolResolver.java) | Native + MCP + custom + persona-brand callbacks → pipeline decoration → T29 BM25 pre-filter. Also owns the static `forbidsToolCalls(ChatFlowNode)` (T11 declarative check) — the executor exposes a thin static façade delegating here for back-compat with `TurAgentChatExecutorStructuralIT`. Records `STAGE_CHAT_SETUP_TOOLS`. | `agent`, `activePersona`, `userMessage`, `activeNode` | `ToolCallback[]` |
+| [`TurChatPromptAssembler`](../turing-app/src/main/java/com/viglet/turing/genai/TurChatPromptAssembler.java) | T31-cached flow addendum + persona prompt composition + T30 conversation-relevance history enrichment → `List<Message>` build. Records `STAGE_CHAT_SETUP_COMPOSE`. | `agent`, `history`, `conversationId`, `flowContext`, `effectivePersona`, `lastUserMessage`, `baseSystemPrompt` | `List<Message>` |
+| [`TurChatStreamingDispatcher`](../turing-app/src/main/java/com/viglet/turing/genai/TurChatStreamingDispatcher.java) | CALL vs STREAM branch selection (STREAM gated on `flowContext == null` per the pre-T33 invariant), tone validation, telemetry (token usage + chat memory + analytics), suggested-options derivation + SSE fan-out (the `AssistantTurn` + `emitTurn` helpers moved here). Records `STAGE_CHAT_LLM_CALL`, `STAGE_CHAT_POST`, `STAGE_CHAT_TOTAL`, `STAGE_CHAT_ADVANCE` (always 0 post-T16), `STAGE_CHAT_REGEN` (always 0 post-T16). | `agent`, `llmInstance`, `decryptedApiKey`, `chatModel`, `messages`, `initialOptions`, `flowContext`, `effectivePersona`, `conversationId`, `lastUserMessage`, `username`, `tStart`, `tSetupEnd` | `Flux<ChatResponse>` |
 
-After the split, `execute(...)` becomes ~150 lines of pure
-orchestration: setup phase → `toolResolver.resolve(...)` →
-`promptAssembler.assemble(...)` → `dispatcher.dispatch(...)`. The
-timing markers move to each collaborator (each captures its own
-`setup_<name>_ms` substage in `TurChatPipelineObservation`).
+After the split the 6-arg `execute()` body is 147 lines of pure
+orchestration: decrypt → model → flow context (with early advance) →
+persona → active node → `toolResolver.resolve(...)` →
+`buildChatOptions(...)` + tool-strip decision →
+`promptAssembler.assemble(...)` → `recordSessionStartSafely(...)` →
+`dispatcher.dispatch(...)`. Setup-phase substages owned by the
+executor (`STAGE_CHAT_SETUP_DECRYPT`, `_MODEL`, `_FLOW`, `_PERSONA`,
+plus the parent `STAGE_CHAT_SETUP` aggregate) recorded directly;
+TOOLS and COMPOSE recorded by their respective collaborators. The
+`[AgentExec][timing] setup_ms=...` log line preserves its original
+breakdown shape using wall-clock around the collaborator calls — so
+the legacy human-readable trace still works.
 
-**Risk**: this is a hot-path refactor. The mitigations:
-- The public `Flux<ChatResponse> execute(...)` signature must stay
-  exact — `TurAIAgentChatAPI`, `TurSNGenAi`, `TurLLMSemanticChatAPI`
-  pass it directly to clients.
-- The 13-step timing sequence is load-bearing for the
+**Risks mitigated**:
+- The public `Flux<ChatResponse> execute(...)` signature stayed
+  exact — `TurAIAgentChatAPI`, `TurSNGenAi`, `TurSNSiteGenAiAPI`,
+  `TurLLMSemanticChatAPI` all kept passing through with zero diff.
+- The `ChatMessageItem` and `ChatResponse` records, `FLOW_ID_NONE`
+  constant, `resolveToolCallbacks(...)` overloads, and the static
+  `forbidsToolCalls(ChatFlowNode)` all stayed on
+  `TurAgentChatExecutor` — every test reference still resolves.
+- The 13-step timing sequence kept the same `MeterName`s — the
   [`TurAgentChatLatencyIT`](../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatLatencyIT.java)
-  contract; the new collaborators must re-emit equivalent substage
-  metrics under the same `MeterName`s.
-- The `TurAgentChatExecutorMockSupport` test harness depends on
-  `@Primary` overrides at the executor level; each new collaborator
-  needs a matching test-support entry point (or the harness rebinds
-  to the assembler).
-- T15's audit (cycle cap @ engine:1244, strategy fallback @
-  engine:418, A/B window @ engine:881, agent-owner check @
-  executor:1223, silent telemetry) lives inside `execute(...)` today
-  — must preserve those during the split.
+  contract reads `STAGE_CHAT_SETUP / LLM_CALL / POST / TOTAL` and
+  all four are still emitted by exactly one collaborator each per
+  turn (single-recording — no double-count).
+- The `TurAgentChatExecutorMockSupport` `@Primary` overrides
+  intercept `TurLlmModelFactory` at the executor injection point;
+  the collaborators inherit the mocked `ChatModel` transitively
+  through the executor's `chatModel` local that the dispatcher
+  receives as a parameter, so no test-support changes were
+  required.
+- T15's audit items (cycle cap, strategy fallback, A/B window,
+  agent-owner check, silent telemetry) live in
+  `TurChatFlowEngineService` and the executor's `resolveForcedFlow`
+  — the decomposition didn't touch any of them.
 
-**When**: when the next feature in the chat path needs to touch
-either the prompt assembly or the dispatch logic and the
-"archeology cost" hits a threshold the next author isn't willing to
-pay. Not before — Block B literally just shipped, the file is more
-churn-prone than usual right now.
+**Verification (2026.3.1)**: 121/121 impacted unit tests green;
+16/16 ITs green (`HarnessFixtureSmokeIT` 3, `TestSupportSmokeIT` 1,
+`TurAgentChatExecutorContractIT` 3 + 1 skipped,
+`TurAgentChatExecutorStructuralIT$ForbidsToolCallsUnitTests` 8).
 
 ---
 
