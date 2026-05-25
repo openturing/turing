@@ -19,6 +19,7 @@ import {
   IconDownload,
   IconEye,
   IconSitemap,
+  IconSparkles,
   IconUpload,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -50,6 +51,7 @@ import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 import { buildImportPayloadFromExport } from "./chat-flow.import";
 import { ChatFlowDiagramTab } from "./components/chat-flow.diagram-tab";
 import { ChatFlowSettingsTab } from "./components/chat-flow.settings-tab";
+import { ChatFlowVariantDialog } from "./components/chat-flow.variant-dialog";
 import {
   INITIAL_ZOOM,
   buildDefaultNodeData,
@@ -109,6 +111,10 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
+  // T97 — chat-flow variant generator. Holds the source flow so the dialog
+  // remounts cleanly per open; `null` keeps the dialog closed. Disabled on
+  // new (unsaved) flows because the LLM needs a persisted source to rewrite.
+  const [variantSource, setVariantSource] = useState<TurChatFlow | null>(null);
   const [name, setName] = useState(flow.name ?? "");
   const [description, setDescription] = useState(flow.description ?? "");
   const [guardrailMethod, setGuardrailMethod] = useState<TurChatFlowGuardrailMethod>(
@@ -357,6 +363,15 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           icon={IconBolt}
           onClick={() => setLivePreviewOpen((open) => !open)}
         />
+        {!isNew && (
+          <SubPageHeader.Action
+            label={t("chatFlow.actions.generateVariant", {
+              defaultValue: "Generate variant",
+            })}
+            icon={IconSparkles}
+            onClick={() => setVariantSource(flow)}
+          />
+        )}
         <SubPageHeader.Action
           label={t("chatFlow.actions.exportJson")}
           icon={IconDownload}
@@ -441,6 +456,12 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setLivePreviewOpen={setLivePreviewOpen}
         />
       </Tabs>
+
+      <ChatFlowVariantDialog
+        source={variantSource}
+        agentId={agentId}
+        onClose={() => setVariantSource(null)}
+      />
     </div>
   );
 }

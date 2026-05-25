@@ -39,6 +39,7 @@ import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowLinterService;
+import com.viglet.turing.genai.flow.TurChatFlowVariantService;
 import com.viglet.turing.genai.flow.TurTriggerConflictService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
@@ -47,6 +48,8 @@ import com.viglet.turing.persistence.dto.agent.TurChatFlowLintIssueDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowRecipeDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowVariantRequest;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowVariantResponse;
 import com.viglet.turing.service.chatflow.TurChatFlowRecipeService;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
@@ -90,6 +93,7 @@ public class TurChatFlowAPI {
     private final TurTriggerConflictService triggerConflictService;
     private final TurChatFlowLinterService chatFlowLinterService;
     private final TurChatFlowRecipeService chatFlowRecipeService;
+    private final TurChatFlowVariantService chatFlowVariantService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -101,7 +105,8 @@ public class TurChatFlowAPI {
             TurAIAgentSlotRepository turAIAgentSlotRepository,
             TurTriggerConflictService triggerConflictService,
             TurChatFlowLinterService chatFlowLinterService,
-            TurChatFlowRecipeService chatFlowRecipeService) {
+            TurChatFlowRecipeService chatFlowRecipeService,
+            TurChatFlowVariantService chatFlowVariantService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -113,6 +118,7 @@ public class TurChatFlowAPI {
         this.triggerConflictService = triggerConflictService;
         this.chatFlowLinterService = chatFlowLinterService;
         this.chatFlowRecipeService = chatFlowRecipeService;
+        this.chatFlowVariantService = chatFlowVariantService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -567,6 +573,29 @@ public class TurChatFlowAPI {
                         && agentId.equals(flow.getTurAIAgent().getId()))
                 .map(flow -> chatFlowLinterService.lint(agentId, flow))
                 .orElse(List.of());
+    }
+
+    /**
+     * T97 / §VII.11.g — variant generator. Asks the default LLM to rewrite
+     * the source flow's user-facing copy per the author's instruction and
+     * returns an UNPERSISTED candidate. The author reviews it in the
+     * variant dialog and saves through the standard create endpoint when
+     * happy; nothing is written to the database here.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Generate a tone/length variant of an existing chat flow via LLM")
+    @PostMapping("/{id}/variant")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE", "AI_AGENT_EDIT" })
+    public TurChatFlowVariantResponse turChatFlowVariant(@PathVariable String agentId,
+            @PathVariable String id,
+            @RequestBody TurChatFlowVariantRequest request) {
+        return turChatFlowRepository.findById(id)
+                .filter(flow -> flow.getTurAIAgent() != null
+                        && agentId.equals(flow.getTurAIAgent().getId()))
+                .map(flow -> chatFlowVariantService.generate(flow, request))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Chat flow not found"));
     }
 
     @Operation(summary = "Submissions of a Chat Flow (states that reached an end node)")

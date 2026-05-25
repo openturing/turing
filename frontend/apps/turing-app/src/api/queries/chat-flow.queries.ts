@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { TurChatFlow, TurChatFlowLintIssue, TurChatFlowTriggerConflict } from '@/models/agent/chat-flow.model';
+import type {
+  TurChatFlow,
+  TurChatFlowLintIssue,
+  TurChatFlowTriggerConflict,
+  TurChatFlowVariantRequest,
+  TurChatFlowVariantResponse,
+} from '@/models/agent/chat-flow.model';
 import { TurChatFlowService, type TurChatFlowImportPayload } from '@/services/agent/chat-flow.service';
 import { queryKeys } from './keys';
 
@@ -110,6 +116,26 @@ export function useChatFlowLint(agentId: string | undefined, flowId: string | un
       : ['chat-flows', 'lint', 'pending'],
     queryFn: () => service.lint(agentId as string, flowId as string),
     enabled: Boolean(agentId && flowId),
+  });
+}
+
+type ChatFlowVariantVars = {
+  agentId: string;
+  flowId: string;
+  request: TurChatFlowVariantRequest;
+};
+
+/**
+ * T97 / §VII.11.g — call the variant-generator endpoint. The mutation does
+ * NOT touch the cache: the backend returns an unpersisted candidate, and
+ * the dialog hands it to {@link useCreateChatFlow} when (and if) the author
+ * accepts the rewrite. Failures surface through {@code mutate}/{@code mutateAsync}
+ * with the standard React Query error path.
+ */
+export function useGenerateChatFlowVariant() {
+  return useMutation<TurChatFlowVariantResponse, Error, ChatFlowVariantVars>({
+    mutationFn: ({ agentId, flowId, request }) =>
+      service.generateVariant(agentId, flowId, request),
   });
 }
 

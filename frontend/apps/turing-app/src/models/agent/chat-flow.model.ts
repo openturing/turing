@@ -148,6 +148,40 @@ export interface TurChatFlowTriggerConflict {
   suggestion: string;
 }
 
+/* ─────────────────── T97 — Variant generator ─────────────────── */
+
+/**
+ * T97 / §VII.11.g — request body for the variant-generator endpoint. The
+ * author types a free-text directive (tone, length, audience) and the LLM
+ * rewrites the source flow's user-facing copy without touching structure.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowVariantRequest {
+  instructions: string;
+  /** Optional explicit name; backend falls back to "{source.name} (variant)" when blank. */
+  targetName?: string | null;
+}
+
+/**
+ * T97 / §VII.11.g — server response from the variant-generator endpoint.
+ * The candidate is NOT persisted — the dialog shows it to the author and,
+ * on accept, posts it through the standard create endpoint.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowVariantResponse {
+  success: boolean;
+  /** Human-readable error message; populated only when {@link success} is false. */
+  error?: string | null;
+  /** Unpersisted candidate ({@code id == null}); populated only when {@link success} is true. */
+  candidate?: TurChatFlow | null;
+  /** One-line natural-language description of the rewrite the LLM applied. */
+  summary?: string | null;
+  /** Ids of the nodes whose copy was actually rewritten — lets the UI highlight the diff. */
+  rewrittenNodes: string[];
+}
+
 /* ─────────────────── AI Authoring shapes ─────────────────── */
 
 /**

@@ -5,6 +5,8 @@ import type {
   TurChatFlow,
   TurChatFlowLintIssue,
   TurChatFlowTriggerConflict,
+  TurChatFlowVariantRequest,
+  TurChatFlowVariantResponse,
 } from "@/models/agent/chat-flow.model";
 import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
 import type { AiAuthoringRequest, AiAuthoringResponse } from "@/models/ai-authoring/ai-authoring.model";
@@ -123,6 +125,24 @@ export class TurChatFlowService {
   async lint(agentId: string, flowId: string): Promise<TurChatFlowLintIssue[]> {
     const response = await axios.get<TurChatFlowLintIssue[]>(
       `/ai-agent/${agentId}/chat-flow/${flowId}/lint`,
+    );
+    return response.data;
+  }
+
+  /**
+   * T97 / §VII.11.g — ask the default LLM for a tone/length variant of
+   * an existing flow. The response carries a candidate {@link TurChatFlow}
+   * the dialog can save through the standard create endpoint after the
+   * author reviews it. Nothing is persisted on the backend yet.
+   */
+  async generateVariant(
+    agentId: string,
+    flowId: string,
+    request: TurChatFlowVariantRequest,
+  ): Promise<TurChatFlowVariantResponse> {
+    const response = await axios.post<TurChatFlowVariantResponse>(
+      `/ai-agent/${agentId}/chat-flow/${flowId}/variant`,
+      request,
     );
     return response.data;
   }
