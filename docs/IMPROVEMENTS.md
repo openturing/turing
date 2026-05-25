@@ -37,6 +37,8 @@ acting.
 - [IV. New ideas from the latest session](#iv-new-ideas-from-the-latest-session)
 - [V. Cross-cutting decisions](#v-cross-cutting-decisions)
 - [VI. Integration test plan for the harness refactor](#vi-integration-test-plan-for-the-harness-refactor)
+- [VII. Education customer engagement — platform synthesis](#vii-education-customer-engagement--platform-synthesis)
+- [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
 
 ---
 
@@ -168,6 +170,149 @@ acting.
 | T32 | ✅ | 2026.3.1 | Observability for the cache + retrieval features shipped in 2026.3.1: new `TurChatCacheStatsRegistrar` registers Micrometer gauges (`turing.chat.cache.{hits,misses,size}` tagged by `cache`) for the 9 Hazelcast `IMap`s the chat pipeline reads — gauges resolve via `ObjectProvider<HazelcastInstance>` so dev mode (no clustered cache) degrades silently instead of flat-zeroing. Misses derived as `getOperationCount − getHits` since `LocalMapStats` doesn't expose a direct miss counter, clamped at 0. `TurChatPipelineObservation` gains `recordMemoryRetrieval(poolSize, hits, ms, outcome)` and `recordToolPrefilter(in, out, ms, reason)` helpers; T30 retriever wires every branch (5 bypass paths → `outcome=bypass`, BM25 zero-match → `no-hits`, prepended turns → `hits`) and T29 pre-filter wires its 6 reasons (`disabled`, `below-threshold`, `blank-query`, `already-covered`, `cap-covers-pool`, `engaged`) on a bypass counter alongside the timer outcome (`filtered` / `passthrough`). 6 new sub-stage breakdowns of `chat.setup` (`decrypt`/`model`/`flow`/`persona`/`tools`/`compose`) recorded from the existing timing locals in `TurAgentChatExecutor.execute()` — backwards-compatible: the parent `chat.setup` aggregate stays. 12 new unit tests (`TurChatPipelineObservationT32Test` 7, `TurChatCacheStatsRegistrarTest` 5) pin: hits/no-hits/bypass outcomes register the right timer+distribution combinations, distributions skipped on bypass to avoid zero-pollution, all 6 prefilter reasons get independent counters; per-cache gauges resolve to the expected derived values (hits=100 / misses=50 / size=42 round-trip), miss gauge clamps at 0 on stat regression, gauge supplier swallows Hazelcast exceptions so a cluster failure can't take down the Prometheus scrape, no-Hazelcast mode registers zero gauges (not flat-zero ones). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted existing tests green (`TurChatMemoryRelevanceRetrieverTest` 18/18, `TurToolPreFilterServiceTest` 9/9). Metrics exposed via the existing `/actuator/prometheus` endpoint — no new dependency. | §IV.7 |
 | T33 | ✅ | — | Decomposed `TurAgentChatExecutor.execute()` (was 1074 lines / 13 timing substages) into 3 collaborator beans + a top-level `TurAgentChatFlowContext` record: `TurChatToolResolver` (native + MCP + custom + persona-brand callbacks → pipeline-decorate → T29 BM25 pre-filter; static `forbidsToolCalls(ChatFlowNode)` lives here, with the executor exposing a thin static façade for back-compat with `TurAgentChatExecutorStructuralIT`), `TurChatPromptAssembler` (T31-cached flow addendum + persona compose + T30 conversation-relevance enrichment + `List<Message>` build), `TurChatStreamingDispatcher` (CALL vs STREAM branch, tone validation, telemetry, suggested options + SSE fan-out via the moved `AssistantTurn` + `emitTurn` helpers). Executor shrunk to 573 lines total; the 6-arg `execute()` body is 147 lines of pure orchestration. Observability shape preserved exactly — every `STAGE_CHAT_*` meter still fires (DECRYPT/MODEL/FLOW/PERSONA in the executor; TOOLS in the resolver; COMPOSE in the assembler; LLM_CALL/POST/TOTAL/ADVANCE/REGEN in the dispatcher) and the three `[AgentExec][timing]` log lines (setup_ms / llm_ms / total_ms / STREAM total_ms) keep their original shape. Public API untouched: `Flux<ChatResponse> execute(...)` 4-arg + 6-arg overloads, `resolveToolCallbacks(...)` overloads, `ChatMessageItem` / `ChatResponse` records, `FLOW_ID_NONE`, `forbidsToolCalls(ChatFlowNode)` all still on `TurAgentChatExecutor` so `TurAIAgentChatAPI`, `TurSNGenAi`, `TurSNSiteGenAiAPI`, `TurLLMSemanticChatAPI` and every test pass through with zero diff. Verified: backend compile clean (853 source files), 121/121 impacted unit tests green (`TurAIAgentChatAPITest` 16, `ChatFlowOpsBrDocUnitTest` 26, `ChatFlowOpsTest` 28, `LlmJudgeGuardrailStrategyTest` 7, `TurSNGenAiTest` 26, `TurChatMemoryRelevanceRetrieverTest` 18); 16/16 ITs green (`HarnessFixtureSmokeIT` 3, `TestSupportSmokeIT` 1, `TurAgentChatExecutorContractIT` 3 + 1 skipped, `TurAgentChatExecutorStructuralIT$ForbidsToolCallsUnitTests` 8). | §I.8 |
 | T34 | ✅ | — | Codified the caching conventions agents kept re-deriving. (a) New "Adding a `@Cacheable` query" subsection under "Cache, Scheduling & Serialization Notes" in [agents.md](../agents.md) covering the four rules: pair every cache name with a `@CacheEvict` (now lint-enforced), `@Cacheable` is proxy-based so never call via `this` ([`TurChatFlowStaticPromptCache`](../turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCache.java) cited as the self-injection example), lowerCamelCase cache-name convention, Hazelcast-vs-in-process is a deploy-time concern not a `@Cacheable`-site concern. (b) New [`TurCacheAnnotationConventionsTest`](../turing-app/src/test/java/com/viglet/turing/db/TurCacheAnnotationConventionsTest.java) mirrors `TurLiquibaseChangelogAgnosticTest`'s file-tree-walk style: walks `target/classes`, reads `@Cacheable` / `@CacheEvict` / `@Caching` annotation metadata via Spring's bytecode-level `MetadataReader` (no class loading, no Spring context), unions cache names from both sides, fails when a `@Cacheable` name is never evicted. Caught one real case on first run — `turSNSiteSearchSnapshot` is evicted programmatically by `TurSNSiteSnapshotEvictionListener` (JPA `@PostPersist/@PostUpdate/@PostRemove` → `cacheManager.getCache(name).clear()`), not declaratively; added to `EVICTION_EXEMPT` with a comment so the lint stays honest. Test runs in ~0.8s. | §IV.8 |
+
+### Block D — Education customer engagement — platform-level expansion
+
+> Backlog distilled from the Education customer × Turing engagement (see
+> §VII for the full synthesis). Many items below were prototyped or
+> shipped as customer-side Custom Tools / portal code that should be
+> promoted to platform citizens. Status reflects **what is in the Turing
+> platform**, not what exists in the customer repo. The customer repo
+> doc is the authoritative source for the customer-side artifacts; this
+> section tracks what graduates into the Turing platform proper.
+
+#### D.1 — Custom Tool helpers & DX
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T35 | ✅ | — | `http`, `turingSearch` (with doc-level dedup), `slots` helpers exposed to Custom Tool Groovy scripts + `ToolContext` threading via `ChatOptions.toolContext` propagating `conversationId` end-to-end. | §VII.1.a |
+| T36 | ✅ | T35 | `code.executePython(...)` binding — `TurCodeInterpreterToolService` exposed to Custom Tools Groovy via `TurCustomToolCodeHelper`. Enables deterministic `Groovy compose → Python sandbox` pattern (PDF generation, charts, data transforms) without LLM in the critical path. | §VII.1.b |
+| T37 | ✅ | T35 | Hot-reload endpoint `POST /api/custom-tool/{id}/execute` for live Groovy testing without restart (`TurCustomToolCallbackService.executeForPreview`). Per-invocation latency tracking via `TurChatLoggingToolCallback` flushed in `recordSessionEnd`. | §VII.1.c |
+| T38 | ✅ | T35 | `turingSearch.sn(...)` helper — in-process call to `TurSNSearchProcess.search`, no HTTP self-call. Aliases for `query`/`q`/`rows`/`page`/`sort`/`fq[*]`/`fl`/`templateName`; return shape mirrors `ann()` (flat fields + `id`/`source`/`elevate`). | §VII.1.d |
+| T39 | 📋 | T35 | `http.bearer(token).postJson(...)` + `http.basic(user, pass)` chainable auth helpers — eliminates boilerplate when Custom Tools call authenticated APIs. Slot prefix `__` reserved for tokens (`__bearer_token` → auto `Authorization` header). | §VII.2.a |
+| T40 | 💭 | — | Groovy editor with auto-complete: descriptor JSON shipped to Monaco listing all helpers (`http`, `code`, `slots`, `turingSearch`) + signature hints. Lowers the bar for non-dev authors. | §VII.2.b |
+| T41 | 💭 | T40 | Hot-reload of Groovy via WebSocket — admin saves Groovy → WS pushes reload to backend → next invocation uses new script without restart. | §VII.2.c |
+
+#### D.2 — Engine declarative additions (new node types & policies)
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T42 | ✅ | — | `writeSlot` node type — slot SET with server-side `{{variable}}` interpolation via `ChatFlowOps.applyWriteSlotNode`. Editor palette item with `IconPencilPlus` (teal). | §VII.3.a |
+| T43 | ✅ | — | `formCapture` node type — like `aiQuestion` but with strict regex validation (CPF, CNPJ, email, phone, CEP). `ChatFlowOps.VALIDATION_PATTERNS` + canonical extractor cascade. Editor renders with `IconForms` (indigo) + rule-name badge. | §VII.3.b |
+| T44 | ✅ | — | CPF/CNPJ digit-check (mod-11) on `formCapture` patterns — strict regex format + checksum validation. | §VII.3.b |
+| T45 | ✅ | — | `onJudgeReject` declarative policy (already documented as patch #22) — `advance_with_literal` / `reprompt` / `block` per `aiQuestion`. Removes the need for `LlmJudgeGuardrailStrategy` retry heuristic. | §I.3 patch #22 |
+| T46 | 📋 | T45 | `functionCall` node runtime — type already exists in `ChatFlowNodeGeneration.ts` but the engine does not execute it. Decision needed: implement (deterministic tool invocation from the flow, not the LLM) OR remove from the DSL. **Vapor features are worse than absences.** | §VII.4.a |
+| T47 | 📋 | — | `subFlowSwitch` node — switch that chooses a sub-flow by slot value (vs routing edges). Composes reusable flows; pairs with cross-flow slot inheritance (T58). | §VII.4.b |
+| T48 | 💭 | — | `scheduleAgent` integration node — fires a routine remote and waits for its slot-bus response. Long-running tools without blocking the chat turn. | §VII.4.c |
+| T49 | 💭 | — | `continueOnFailure: true` flag on nodes — authors mark a node where a tool/LLM failure falls into an alternative path instead of stalling. | §VII.4.d |
+| T50 | 💭 | T49 | `onError` edges in editor visual — analogous to try/catch; red arrow that fires when the node fails. | §VII.4.d |
+| T51 | 💭 | — | Capture-first inversion — restructure engine to **always** persist the user message into the slot BEFORE the judge runs. Judge becomes advisory (`slot_confidence: low/high` in a parallel slot); the flow never stalls with `slot=null`. Architectural — kills the whole "judge rejects → flow stuck" class at the root (vs. T45's per-node mitigation). Affects all existing flows; requires full IT revalidation. | §VII.4.e |
+| T52 | 💭 | — | Few-shot baked into platform-level judge system prompt — 2-3 positive examples (compound `cargo+tempo` → capture; informal `objetivo` → capture) + 1 negative (clicked chip routed to wrong node → reject with redirect). Reduces stochastic rejects without architecture change. | §VII.4.f |
+| T53 | 💭 | — | `abandoned` auto-escalation — when judge detects abandonment, offer human consultant via handoff instead of just closing the session. | §VII.4.g |
+
+#### D.3 — Slot infrastructure & compliance
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T54 | ✅ | T42 | SSE for slot updates — `TurChatSlotEventBus` in-memory bus + `GET /chat/slots/stream` (`Flux<TurChatSessionSlotsDto>`); three write paths (node, `slots.set`, `POST /chat/slots`) instrumented. **Heartbeat 25s comment-only** keeps the channel alive through corporate proxies. Latency slot→UI: <100ms (was ~1.5s polling). | §VII.5.a |
+| T55 | ✅ | — | `POST /chat/handoff` — channel-agnostic handoff with transcript snapshot. 5 channels live: WhatsApp / Email / SMS / Telegram / Slack. Slot whitelist for transcript + custom intro; result includes `handoff_status` slot for analytics segmentation. | §VII.5.b |
+| T56 | ✅ | — | `GET /chat/share/og` — server-side rendered Open Graph card. Slot values via query params drive `og:*` + `twitter:*` tags; humans get meta-refresh redirect. Personalized link previews on WhatsApp / Slack / LinkedIn / X. | §VII.5.c |
+| T57 | ✅ | — | `GET /chat/state` — snapshot of active flow (`flowId`/`flowName`/`currentNodeId`/`guardrailMethod`/`experimentKey`/`variantLabel`). Powers SDK hooks `useTuringFlowState` + `useTuringExperiment` without polluting slots. | §VII.5.d |
+| T58 | ✅ | — | `POST /chat/slot-extract` — multipart file → Tika → LLM structured output → write per slot. Same `TurFileUtils.documentToText()` as RAG indexing; tolerant JSON parser (code-fence + drift whitelist). | §VII.5.e |
+| T59 | ✅ | — | `TurLlmSummaryService.generate(cacheKey, data, systemPrompt, regenerate)` — reusable LLM summary with cache (TTL from Global Settings) + regenerate. Powers `GET /api/sn/{id}/summary` + `GET /api/system/info/insights`. | §VII.5.f |
+| T60 | 📋 | T54 | **Slot audit log** — every slot write registers origin (`node:`/`tool:`/`endpoint:`/`extract:`) in `chat_slot_write_log` (conversationId, slot, oldValue, newValue, source, ts). LGPD audit + debug forensics. SlotInspector / SDK renders as timeline with source badge. | §VII.6.a |
+| T61 | 📋 | — | **PII slot prefix** `pii_*` — engine redacts in logs/analytics, encrypts at rest, TTL configurable (default 24h). LGPD/GDPR-ready compliance pitch. | §VII.6.b |
+| T62 | 💭 | T54 | Webhook handoff channel — `POST` transcript to a configured CRM endpoint (Salesforce / HubSpot / Pipedrive). Slot subscription wider: arbitrary slot writes can fire webhooks declared in admin. | §VII.6.c |
+| T63 | 💭 | T54 | Slot delta SSE — emit only `{added, removed, updated}` deltas instead of full snapshot. 10× fewer bytes on conversations with 20+ slots. | §VII.6.d |
+| T64 | 💭 | — | Multi-modal slots (`IMAGE`/`AUDIO`/`FILE` types) — slot value is URL to MinIO/S3 binary; Custom Tools resolve via Vision/Audio APIs. Photo-of-CV → Vision LLM → slots. | §VII.6.e |
+| T65 | 💭 | — | Snapshot export of conversation state — admin button "Export conversation" returns JSON of `chat_flow_state` + slots + transcript for debug / regression. | §VII.6.f |
+| T66 | 💭 | — | `SubmissionRetention` config (`RETAIN_FOREVER` / `RETAIN_DAYS=N` / `DELETE_AFTER_EXPORT`) per agent — compliance hook tied to PII expiration. | §VII.6.g |
+
+#### D.4 — A/B testing evolution
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T67 | ✅ | — | A/B testing native: 5 columns on `TurChatFlow` (`experimentKey`, `variantLabel`, `trafficWeight`, `experimentStartsAt`, `experimentEndsAt`) + `assignVariant` deterministic hash + sticky continuation + `isInExperimentWindow` scheduling filter. | §VII.7.a |
+| T68 | ✅ | T67 | A/B significance endpoint `/experiment/{key}/significance` — two-proportion z-test with Wald CI. Tells operator when to retire variant. | §VII.7.b |
+| T69 | ✅ | T67 | A/B analytics dimensions — `experimentKey` + `variantLabel` persisted in `TurChatSessionEvent`; scorecard supports 4 dimensions (agent / persona / experiment / variant). | §VII.7.c |
+| T70 | 📋 | T67 | **A/B multi-armed bandit** — auto-adjust `trafficWeight` based on observed conversion in last N sessions. Replaces manual fixed split + scheduling window with bandit math (Thompson sampling / UCB). Better optimization, less operator work. | §VII.8.a |
+| T71 | 💭 | T68, T70 | **Champion-challenger auto-promotion** — when significance endpoint detects a winner, auto-promote `trafficWeight=100` on the winner and archive the loser. | §VII.8.b |
+| T72 | 💭 | T67 | Per-node A/B (`ChatFlowNode.nodeExperimentKey`) — variants swap a single node, not the whole flow. Granular optimization without duplicating 50 nodes. | §VII.8.c |
+| T73 | 💭 | T67 | Forced variant via URL param (`?_ab_variant=lucas-alumni`) — useful for QA + sales demo. | §VII.8.d |
+| T74 | 💭 | T69 | Cohort filters in scorecard — filter by timezone / locale / user-agent (mobile vs desktop) to see if a variant wins in a sub-population. | §VII.8.e |
+| T75 | 💭 | T69 | Variant trace logging — line per turn `experimentKey:variantLabel:nodeId:userMessage` for exact path reconstruction in production. | §VII.8.f |
+
+#### D.5 — Code Interpreter hardening (the missing security layer)
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T76 | ✅ | — | Date-bucketed sessions + cleanup task — disk-leak fix (was accumulating ~50MB/day on a moderate site). | §VII.9.a |
+| T77 | ✅ | — | Per-agent Python deps auto-install (global + per-agent UNION) — admin declares `pip install reportlab matplotlib qrcode` in a Custom Tool textarea; engine ensures deps before `executePython`. | §VII.9.b |
+| T78 | ✅ | — | Multi-tenant path isolation — session dirs scoped as `tenants/{agentId}/{convId}/...`. Eliminates cross-tenant filesystem accidents (`TurCodeInterpreterToolService.executePythonForTenant`). | §VII.9.c |
+| T79 | ✅ | — | HMAC-signed URLs + cookie-binding for `/api/v2/code-interpreter/{session}/{file}` — prevents URL replay / cross-browser leakage (`TurCodeInterpreterUrlSigner`). | §VII.9.d |
+| T80 | 📋 | T78 | ⭐ **Container sandbox (Docker / gVisor / Firecracker)** — the ONLY remaining gap in the Code Interpreter threat model. Today a malicious Python script can `open("../../../etc/passwd")` and read any host file the JVM user can; path isolation + URL hardening close HTTP / operational vectors but not the runtime escape. Containerization isolates syscalls, filesystem, network. Estimated ~2 weeks: base image with `python+reportlab+matplotlib` pre-installed + bind-mount only on session dir + drop capabilities + seccomp filter; gVisor for defense-in-depth. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
+| T81 | 💭 | T80 | Resource limits per execution (cgroups) — CPU/RAM cap. Today only the 30s timeout controls runaway scripts (`[x*x for x in range(10**9)]` still trashes the JVM). | §VII.9.f |
+| T82 | 💭 | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. | §VII.9.g |
+| T83 | 💭 | T36 | Structured output capture — return `{stdout, files: [...], duration_ms, exit_code}` JSON instead of markdown-with-links so callers don't regex-parse. | §VII.9.h |
+
+#### D.6 — Analytics & observability gaps
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T84 | ✅ | — | Chat session analytics — 9 timeseries metrics (sessions, goal-achievement-rate, negative-sentiment-rate, avg-duration-ms, avg-tokens-out, tool-calls-per-session, tool-errors-per-session, avg-tool-latency-ms, tool-error-rate-pct) + 4 scorecard dimensions (agent/persona/experiment/variant). Mongo + Redis stores. | §VII.10.a |
+| T85 | 📋 | T84 | **Funnel visualization** — turn-by-turn abandonment heatmap over the flow graph. "60% drop between `ai-cargo` and `ai-objetivo`." Drives surgical UX fixes vs whole-flow rewrites. | §VII.10.b |
+| T86 | 📋 | T84 | **Conversation replay UI** — click `conversationId` in scorecard → transcript + slot timeline side-by-side, scrubber temporal, prompt+response artifacts per turn. Investigation-grade. | §VII.10.c |
+| T87 | 💭 | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
+| T88 | 💭 | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
+| T89 | 💭 | — | Flow router decision logs — structured log per LLM router call: candidate flows + score + winner. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
+| T90 | 💭 | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
+
+#### D.7 — Multi-flow architecture & flow editor DX
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T91 | 📋 | — | **Trigger conflict resolver UI** — admin shows "this trigger description has ambiguity with flow X" + suggests disambiguation. Today the procedural router decides silently by specificity. | §VII.11.a |
+| T92 | 📋 | — | **Flow chooser endpoint** `POST /chat/flow-select` — portal forces a specific flow (override the LLM router). Useful for deep links (`?flow=in-company` lands directly on the B2B persona). | §VII.11.b |
+| T93 | 📋 | T92 | **Cross-flow slot inheritance** — when the engine routes a visitor from one flow to another (via mid-flow detection), preserve already-captured slots (`name`/`cargo_atual`) via a declared mapping in the receiving flow. | §VII.11.c |
+| T94 | 💭 | — | **Chat-flow lint** — `TurChatFlowLinter` returns `[{nodeId, severity, message, hint}]` for `aiInstruction > 500 chars`, `outputVariable without downstream read`, `dead-end node`, `ambiguous trigger across flows`, `edge without label`. Sidebar warnings panel in admin. | §VII.11.d |
+| T95 | 💭 | — | **Live preview of flow in editor** — second panel shows "what the visitor would see" of the current node with mocked slots; updates < 300ms on edit. Iteration speed: 10× faster than running a real turn. | §VII.11.e |
+| T96 | 💭 | — | **Flow templates marketplace** — Lead-capture / B2B-quote / micro-lesson patterns shipped as installable templates in admin. Customer picks template at agent creation → flow + tools + slots pre-wired. | §VII.11.f |
+| T97 | 💭 | — | **Variant generator via LLM** — author writes flow A; clicks "generate variant B with more casual tone, 30% shorter" → LLM proposes ready-to-review variant. 1 flow + 5 variants in 10min vs 5 hours. | §VII.11.g |
+| T98 | 💭 | — | **TypeScript DSL** for chat-flow (`@viglet/turing-flow-dsl`) — `flows/foo.ts` with types imported from backend enums; transpiles to JSON at build time; back-compat reading raw JSON. Catches `tone=PROFESSIONAL` typos at compile time. | §VII.11.h |
+
+#### D.8 — Document extraction & document AI
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T99  | 💭 | T58 | OCR de CV (image) — phone-photo of CV bypasses Tika text extraction; integrate Tesseract (already a Tika parser dep) or Vision API. | §VII.12.a |
+| T100 | 💭 | T58 | Per-agent extraction schema — agent declares `documentSchema` in admin (slot names + validation patterns) instead of caller passing slot names per request. | §VII.12.b |
+| T101 | 💭 | T58 | Multi-doc context — upload CV + JD together → LLM identifies skill gap → writes `skill_gap` slot. | §VII.12.c |
+| T102 | 💭 | T58 | Extraction confidence per field — LLM returns `{value, confidence: 0-1}`; UI shows warning when `confidence < 0.7`. | §VII.12.d |
+| T103 | 💭 | T58 | Anthropic Files API / OpenAI Files — pass binary PDF/DOCX directly to the LLM (preserves tables/layout) instead of Tika→text. | §VII.12.e |
+
+#### D.9 — SDK & frontend surface
+
+The Education customer engagement shipped 10 React hooks. Most are
+already in `@viglet/turing-react-sdk` (versions 2026.2.21 → .29).
+Remaining platform-relevant promotions:
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T104 | ✅ | — | 10 hooks in `@viglet/turing-react-sdk`: `useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` · SSE in `useTuringSlots` · `useTuringVoice` · `useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>` generic with auto JSON.parse · SSE multiplexer (N→1 EventSource via refcount module-level). Storybook 100% coverage. | §VII.13.a |
+| T105 | 💭 | — | Promote `CompanyProposalCard` shape (header + pills + pricing hero + modules + timeline + similar cases) to SDK as a generic `ProposalCard<T>` taking a typed proposal payload. Reusable across customers (education / consulting / training). | §VII.13.b |
+| T106 | 💭 | T92 | `useTuringFlowChooser` hook — programmatically force a specific flow (pairs with T92 endpoint). | §VII.13.c |
+| T107 | 💭 | — | `formCapture` form-event SSE — emit structured event so SDK renders a native form (multi-field capture) instead of single-turn validation. | §VII.13.d |
+
+#### D.10 — Kill list (deprecate or remove)
+
+| #    | Status | Task | Rationale |
+|------|--------|------|-----------|
+| TK1 | 📋 | Deprecate `HeuristicGuardrailStrategy` (default → `LLM_JUDGE` for new flows; kept for back-compat) | Regex-only. `LLM_JUDGE` + tool-calling with provider schema does the job better. Third option that nobody picks pollutes the UI. |
+| TK2 | 📋 | Remove slot types `INTEGER` / `BOOLEAN` from the DSL | Client-side parser via `useTuringSlot<T>` does the coercion better. Schema-level types only generate coercion bugs. |
+| TK3 | 📋 | Remove `forbidsToolCalls(String)` substring overload (T16 left only the node-aware path; the bilingual substring matcher is still inside `@Nested` unit tests but not in production) | Already 95% gone post-T16. Finish the job. |
+| TK4 | 💭 | Audit `functionCall` node type — implement (T46) OR remove from the schema | Vapor features are worse than absences. Decision needed. |
+| TK5 | 💭 | Replace Brevo email integration with Resend or Postmark | Modern provider, smaller footprint, better deliverability. Email-out is the feature; the provider is a swappable detail. |
+| TK6 | 💭 | Audit Custom Solr admin UI usage; if zero customers depend on it, fold into Solr native admin URL | TurSN legacy. Maintaining two admin surfaces dilutes. |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -1508,3 +1653,517 @@ structurally with the critical patches: #1, #3, #7, #10, #12, #13.
 - `llm-it` profile in `turing-app/pom.xml` works locally
 - (Follow-up, out of scope) CI nightly pipeline for `-Pllm-it` with the
   `OPENAI_API_KEY` secret
+
+---
+
+## VII. Education customer engagement — platform synthesis
+
+> Consolidation of the platform-level discoveries from the Education
+> customer × Turing engagement. The customer repo's `docs/IMPROVEMENTS.md`
+> is exhaustive on the *customer side* (portal, 3 chat-flows, 4 Custom
+> Tools, 17 slots, Storybook stories). This section keeps only the
+> **Turing platform** projection: what shipped *here*, what should ship
+> *here*, and which lessons survive customer rotation.
+
+### VII.1 What shipped on the Turing platform during the engagement
+
+These were built or hardened inside `turing-app` while solving an
+Education customer need; they are platform citizens now and should not
+be re-derived by the next customer. T-numbered entries are tracked in
+§0 Block D for the audit trail.
+
+#### VII.1.a Custom Tool helper backbone (T35)
+[`TurCustomToolHttpHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolHttpHelper.java)
+(`http.postJson` / `http.getJson`),
+[`TurCustomToolSearchHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolSearchHelper.java)
+(`turingSearch.ann` with collapse-by-document dedup),
+[`TurCustomToolSlotHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolSlotHelper.java)
+(`slots.set` / `slots.get` / `slots.all`, also publishes to the SSE bus).
+`ToolContext` propagates `conversationId` end-to-end so helpers resolve
+the right state row without re-fetching by user message.
+
+#### VII.1.b `code.executePython(...)` for Custom Tools (T36)
+[`TurCustomToolCodeHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolCodeHelper.java)
+wraps `TurCodeInterpreterToolService.executePython(...)` as a Groovy
+binding. Unlocks the **deterministic-compose + sandbox-execute pattern**:
+Groovy composes a Python script from slots (zero LLM in the critical
+path), the Python sandbox renders the artifact, the URL is parsed from
+the markdown response and written back to a slot. Auditable, reproducible,
+not subject to LLM stochasticity. Proven in the Education engagement
+for PDF generation (reportlab 4-page proposal in ~3s) but applicable to
+any heavy-render output (charts, CSV transforms, vector graphics).
+
+#### VII.1.c Hot-reload + per-tool analytics (T37)
+`POST /api/custom-tool/{id}/execute` runs the Groovy script with mock
+args from admin without restart. `TurChatLoggingToolCallback` records
+per-invocation latency + success; flushed in `recordSessionEnd` as
+`totalToolCalls` / `toolErrors` / `totalToolLatencyMs` on the session
+event so the scorecard can answer "which tool is the p95 outlier?"
+
+#### VII.1.d `turingSearch.sn(...)` in-process (T38)
+Calls `TurSNSearchProcess.search` directly (no HTTP self-call). Aliases
+`query`/`q`/`rows`/`page`/`sort`/`fq[*]`/`fl`/`templateName`. Return
+shape mirrors `ann()` so Custom Tools can swap between vector and
+classic search without changing parsing. Five tests cover flatten,
+id-alias, null fields, reserved-key precedence.
+
+#### VII.3.a `writeSlot` node type (T42)
+Server-side `{{variable}}` interpolation via
+`ChatFlowOps.applyWriteSlotNode`. Consumers read resolved values; the
+template never leaks to the client. Editor palette item with
+`IconPencilPlus` (teal).
+
+#### VII.3.b `formCapture` node type with CPF/CNPJ checksum (T43, T44)
+Like `aiQuestion` but stricter — regex validation against the named
+pattern (CPF, CNPJ, email, phone, CEP). Mod-11 checksum for CPF / CNPJ.
+Editor renders with `IconForms` (indigo) + rule-name badge. The
+Education customer's B2B flow uses this for `razao_social` capture and
+the lead-capture branches.
+
+#### VII.5.a SSE slot bus + 25s heartbeat (T54)
+[`TurChatSlotEventBus`](../turing-app/src/main/java/com/viglet/turing/service/chatslots/TurChatSlotEventBus.java)
+in-memory bus + `GET /chat/slots/stream` (`Flux<TurChatSessionSlotsDto>`).
+Three write paths instrumented: slot node, `slots.set`, `POST /chat/slots`
+endpoint. Initial snapshot + delta events. 25s comment-only heartbeat
+keeps the channel alive through corporate proxies. Latency slot→UI
+collapsed from ~1.5s (polling) to <100ms.
+
+#### VII.5.b Multi-channel handoff (T55)
+[`TurChatHandoffService`](../turing-app/src/main/java/com/viglet/turing/service/chatslots/TurChatHandoffService.java)
+exposes 5 channels: WhatsApp / Email / SMS / Telegram / Slack. Slot
+whitelist for transcript composition + custom intro; tracking via
+`handoff_status` slot for analytics segmentation. Composed deep link
+returned for `window.open` / `<a href>`; SDK hook `useTuringHandoff`
+wraps the composition.
+
+#### VII.5.c OG share endpoint (T56)
+`GET /chat/share/og` renders a server-side Open Graph card. Caller
+passes slot values as query params (`?name=…&area=…&dest=…`); scrapers
+(WhatsApp / Slack / LinkedIn / X / Discord) parse `og:*` + `twitter:*`
+tags; humans get a meta-refresh redirect to the `dest` URL. Personalized
+preview drives viral B2C compared to generic landing-page preview.
+
+#### VII.5.d `GET /chat/state` (T57)
+DTO with `flowId` / `flowName` / `currentNodeId` / `guardrailMethod` /
+`experimentKey` / `variantLabel` (all-null when no flow active).
+Powers `useTuringFlowState` + `useTuringExperiment` SDK hooks for
+debug surfaces and variant-aware UI without polluting slots.
+
+#### VII.5.e `POST /chat/slot-extract` (T58)
+Multipart file → Tika → LLM structured output → `writeSlot` per field.
+Same `TurFileUtils.documentToText()` as RAG indexing (no duplication).
+Tolerant JSON parser absorbs code-fence wrapping and field drift via
+whitelist. Generic: caller passes slot names + file; same path serves
+CV, invoice, form, contract.
+
+#### VII.5.f `TurLlmSummaryService` (T59)
+`generate(cacheKey, data, systemPrompt, regenerate) → SummaryResult`.
+In-memory cache via `TurLlmCacheService` (TTL from Global Settings)
+respecting `llmCacheRegenerate` toggle. Used by SN Site Insights
+(`GET /api/sn/{id}/summary`) and System Info Insights
+(`GET /api/system/info/insights`).
+
+#### VII.7.a A/B testing native (T67)
+5 columns on `TurChatFlow` (`experimentKey`, `variantLabel`,
+`trafficWeight`, `experimentStartsAt`, `experimentEndsAt`) +
+`assignVariant` deterministic hash (`Math.floorMod` for negative-hash
+safety) + sticky continuation via state row + `isInExperimentWindow`
+scheduling filter. Admin card in `chat-flow.settings-tab.tsx`.
+13 unit tests pin distribution / stickiness / ratio normalize /
+zero-weight exclude / scheduling boundaries.
+
+#### VII.7.b A/B significance endpoint (T68)
+`/experiment/{key}/significance` runs two-proportion z-test with Wald CI.
+Tells the operator when to retire a variant with statistical justification.
+
+#### VII.7.c A/B scorecard (T69)
+`experimentKey` + `variantLabel` persisted on `TurChatSessionEvent` +
+Mongo + Redis. Scorecard supports 4 dimensions (agent / persona /
+experiment / variant). Education-customer exemplar:
+`programa-match-persona-2026q1` — control persona (authority voice) vs
+challenger persona (peer voice) with 50/50 split.
+
+#### VII.9 Code Interpreter hardening (T76–T79 shipped)
+| Layer | Vector closed | Status |
+|---|---|---|
+| Date-bucketed sessions + cleanup task | Disk leak (~50MB/day) | ✅ T76 |
+| Python deps auto-install (global ∪ per-agent) | Operator handoff of `pip install` between envs | ✅ T77 |
+| Multi-tenant path isolation (`tenants/{agentId}/{convId}/...`) | Cross-tenant accidental cleanup; per-agent search scoping | ✅ T78 |
+| HMAC-signed URLs + cookie-binding | URL guessing / cross-browser leakage | ✅ T79 |
+| Container sandbox (Docker / gVisor / Firecracker) | Runtime escape — malicious Python reading `/etc/passwd` or cross-tenant files | ❌ T80 — see VII.2.h |
+
+#### VII.10.a Chat analytics (T84)
+9 timeseries metrics + 4 scorecard dimensions exposed at
+`/api/chat-analytics`. Frontend dashboard with `TimeseriesPanel` (line
+chart) + `ScorecardPanel` (dimension dropdown). Mongo + Redis stores.
+
+#### VII.13.a SDK hooks (T104)
+`@viglet/turing-react-sdk` 2026.2.21 → .29 shipped 10 hooks:
+`useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` ·
+SSE transport in `useTuringSlots` · `useTuringVoice` ·
+`useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>`
+generic with `parse: "auto" | "json" | "raw" | (raw) => T` ·
+**SSE multiplexer** (N→1 EventSource via refcount module-level +
+late-subscriber snapshot replay through `queueMicrotask`) ·
+Storybook 100% coverage across the 10 hooks.
+
+### VII.2 Platform-pending items the engagement surfaced
+
+These are the items that *should* live in the Turing platform but
+currently exist only as Education customer-side patterns, sketches or
+explicit gaps. Each maps to a T-task in §0 Block D.
+
+#### VII.2.a HTTP auth chainable helpers (T39)
+Custom Tools today re-implement bearer / basic auth headers per call.
+Goal: `http.bearer(token).postJson(url, body)`, `http.basic(user, pw)`.
+Pairs with slot prefix `__` reserved for credentials (`__bearer_token`
+→ auto `Authorization` header on every `http.*` call, never echoed in
+logs).
+
+#### VII.2.b Groovy editor with auto-complete (T40)
+Descriptor JSON shipped to Monaco listing helpers + signature hints +
+return shapes. Today scripts are a textarea; typo on `slots.set`
+discovered at runtime. Lowers the bar for non-dev authors.
+
+#### VII.2.c Groovy hot-reload via WebSocket (T41)
+Admin edits → save → WS pushes reload notice to backend → next
+invocation uses the new script without restart. Cuts ~3min wait per
+iteration.
+
+#### VII.2.d `subFlowSwitch` + `functionCall` runtime (T46, T47)
+- `subFlowSwitch`: switch chooses a sub-flow by slot value (not edges).
+  Composes reusable mini-flows (lead-capture / handoff selection /
+  pricing tier flows).
+- `functionCall`: the type exists in `ChatFlowNodeGeneration.ts` but the
+  engine does not execute it. **Decision needed: implement OR remove
+  from the DSL.** Vapor types are worse than absences.
+
+#### VII.2.e Capture-first inversion (T51)
+Restructures the engine so the user message is **always** persisted into
+the active slot BEFORE the judge runs. Judge becomes advisory (writes
+`slot_confidence: low/high` into a parallel slot); the flow never stalls
+with `slot=null`. Architectural — kills the whole "judge rejects → flow
+stuck" class at the root (vs. T45's per-node `onJudgeReject` mitigation).
+Risk: affects every existing flow, requires full IT revalidation.
+Filosofia change: "validate-then-capture" → "capture-then-grade."
+
+#### VII.2.f Platform-level judge few-shot (T52)
+Bake 2-3 positive examples (compound `cargo+tempo`, informal `objetivo`)
++ 1 negative (chip-routed-to-wrong-node) into the **platform-level**
+judge system prompt, not into per-customer `aiInstruction` strings.
+Reduces stochastic rejects across all flows without each customer
+re-discovering. `gpt-4o-mini` improves dramatically with few-shot.
+
+#### VII.2.g Slot audit log + PII prefix (T60, T61)
+- **Audit log**: `chat_slot_write_log` (conversationId, slot, oldValue,
+  newValue, source ∈ {`node`, `tool`, `endpoint`, `extract`}, ts). LGPD
+  audit + debug forensics. SlotInspector renders as timeline with source
+  badge.
+- **PII prefix `pii_*`**: engine redacts in logs/analytics, encrypts at
+  rest, TTL configurable (default 24h). Compliance pitch for regulated
+  customers (banking, healthcare, B2C with strong privacy reqs).
+
+#### VII.2.h Code Interpreter container sandbox (T80) ⭐
+The single largest remaining gap in the Code Interpreter threat model.
+Today a malicious Python script runs as the JVM's OS user and can
+`open("../../../etc/passwd")` or read any file the JVM can. Path
+isolation (T78) + URL hardening (T79) closed the HTTP / operational
+vectors but **not** the runtime escape. Without containerization, any
+SaaS pitch with customer-authored Custom Tools is at risk of
+cross-tenant exfiltration. Estimated ~2 weeks: base Docker image with
+`python+reportlab+matplotlib+qrcode` pre-installed, bind-mount only the
+session dir, drop capabilities, seccomp filter. gVisor optional for
+defense in depth. **Gate item — this opens Turing Cloud (see §VIII).**
+
+#### VII.2.i A/B multi-armed bandit (T70) + champion-challenger (T71)
+Current A/B is fixed split + scheduling window. Bandit math (Thompson
+sampling / UCB) auto-adjusts `trafficWeight` based on observed conversion
+in the last N sessions. Champion-challenger auto-promotes a statistically
+significant winner to `trafficWeight=100` and archives the loser. Less
+operator vigilance; better optimization on slow-moving conversions.
+
+#### VII.2.j Funnel + conversation replay (T85, T86)
+- **Funnel viz**: turn-by-turn abandonment heatmap over the flow graph.
+  "60% drop between `ai-cargo` and `ai-objetivo`" enables surgical UX
+  fixes vs whole-flow rewrites.
+- **Conversation replay**: click `conversationId` in scorecard → see
+  transcript + slot timeline side-by-side, scrubber temporal, per-turn
+  prompt + response artifacts. Investigation-grade DX for operators.
+
+#### VII.2.k Flow editor capabilities (T94, T95, T98)
+- **Chat-flow lint** (`TurChatFlowLinter`): static analyzer flags
+  `aiInstruction > 500 chars`, dead-end node, orphan node, edge without
+  label, ambiguous trigger across flows, `outputVariable` never read.
+  Sidebar warnings panel. Analogue of TypeScript for chat-flows.
+- **Live preview** of the active node in editor — second panel renders
+  "what the visitor sees" with mocked slots, updates <300ms on edit.
+  Iteration speed: 10× vs running real turns.
+- **TypeScript DSL** (`@viglet/turing-flow-dsl`) — `flows/foo.ts` with
+  backend enums imported, transpiles to JSON at build time. Catches
+  `tone=PROFESSIONAL` typos at compile time; full IDE auto-complete.
+
+#### VII.2.l Multi-flow architecture (T91, T92, T93)
+With the Education customer running 3 coexisting flows (lead-capture
+B2C + in-company quote B2B + micro-lesson educational), three new
+platform needs emerged:
+- **Trigger conflict resolver UI**: admin flags "this triggerDescription
+  has overlap with flow X" + suggests disambiguation. Today specificity
+  decides silently.
+- **Flow chooser endpoint** `POST /chat/flow-select`: portal forces a
+  specific flow (override LLM router). Useful for deep links
+  (`?flow=in-company` lands on the right persona).
+- **Cross-flow slot inheritance**: when the engine mid-flow-routes
+  ("oh this is actually B2B"), preserve already-captured slots
+  (`name`/`cargo_atual`) via a declared mapping in the receiving flow.
+
+### VII.3 Lessons from the engagement worth keeping
+
+These survive customer rotation — patterns / pitfalls that should be
+internalized in the next customer's design phase, not re-discovered.
+
+1. **Determinism + LLM hybrid is the production pattern.** Three
+   Education-customer tools (`compor_proposta_in_company`,
+   `gerar_proposta_pdf`, `aula_relampago`) follow the same shape:
+   Groovy composes structure deterministically (pricing tables, layout,
+   mindmap), LLM contributes only *content* (tone, narrative voice).
+   Pricing and references must audit; tone is a stylistic dial.
+   Document this as platform doctrine and ship `scaffold.markdown` /
+   `scaffold.pickQuote` / `scaffold.buildMindMap` helpers (T98 in §VII.4).
+
+2. **Slot orthogonality enables multi-flow coexistence.** B2B flow uses
+   `razao_social`/`num_pessoas`/`tema`/`prazo`; B2C uses
+   `name`/`cargo_atual`/`objetivo`/`area`. Same session accumulates both
+   without corruption. LLM router decides at trigger; presence of a
+   distinctive slot (`proposta_in_company`) determines UI without
+   needing an explicit mode flag.
+
+3. **`triggerDescription` is a denylist, not an allowlist.** Allow-list
+   of keywords kills greetings. Denylist + specificity-tiebreak is what
+   works in production.
+
+4. **`gpt-4o-mini` at temp=0 is deterministic but NOT robust to JSON.**
+   Structured-output as a guardrail is a dead-end with this model class.
+   Use tool-calling with provider-side schema or the bilingual `LlmJudge`
+   strategy instead (already encoded as §I.7 non-goal — verbatim in §0).
+
+5. **DSpace / public-content grounding beats LLM-invented references.**
+   Pull the source + extract a verbatim quote ≥40 chars + hand it to the
+   persona in the scaffold. The LLM has no opportunity to hallucinate
+   an author. Generalizable beyond academia: any public-content corpus
+   (papers, manuals, knowledge base) works with the same pattern.
+
+6. **The persona should NOT use a first name in B2B.** "Olá, Maria"
+   sounds invasive in account-exec contexts; the B2B persona speaks to
+   the *company* through an interlocutor. Detail with outsized
+   credibility impact. Add to persona authoring guide.
+
+7. **Decision-role-aware closing branches one node, not the flow.**
+   Same proposal + 4 narratives (RH hears logistics, C-level hears ROI,
+   manager hears hands-on, buyer hears terms). `aiInstruction` ramifies
+   by `decision_role` slot. Cheaper than duplicating nodes.
+
+8. **SSE multiplexer pattern is generic.** N hook instances → 1
+   EventSource via refcount module-level + late-subscriber snapshot
+   replay via `queueMicrotask`. Applicable to any SSE multi-consumer
+   surface (chat tokens, analytics, code-interpreter logs). Shipped at
+   the SDK level (T104); reuse the same pattern for other streams.
+
+### VII.4 Helper APIs to extract from Education-customer tools
+
+The Education-customer tools repeated three primitives that should
+graduate to platform-level Groovy helpers:
+
+```groovy
+// Pattern observed in compor_proposta_in_company, aula_relampago,
+// gerar_proposta_pdf
+
+scaffold.markdown(
+    beats: [
+        [t: 0,  label: "Hook"],
+        [t: 22, label: "Conceito"],
+        [t: 44, label: "Caso brasileiro"],
+        [t: 66, label: "Aplicação imediata"],
+    ],
+    references: [
+        [author: "...", year: 2009, title: "...", quote: "..."]
+    ],
+    cargoHint: cargoRegisterHint  // "STRATEGIC" / "MANAGERIAL" / "FOUNDATIONAL"
+)  // returns a string scaffold for the persona to fill
+
+scaffold.pickQuote(abstractText, term, minLength = 40)
+// heuristic: longest sentence ≥40 chars containing the term;
+// fallback to the longest sentence overall
+
+scaffold.buildMindMap(abstracts, term, stopWords = "pt+en")
+// returns Mermaid mindmap source via title-case + stop-word filter
+// + drop-of-term + top-N frequency
+```
+
+Each helper is ~20-30 lines of Groovy; bundling into the SDK eliminates
+the Custom Tool copy-paste tax and gives a discoverable contract.
+
+---
+
+## VIII. Strategic moves — repositioning beyond features
+
+> The Education customer engagement proved the product. This section is
+> about **positioning** — what to start, what to deprecate, where the
+> moat deepens. Not a roadmap; a strategy memo. Items here are scoped at
+> *months*, not *PRs*. Tactical entries live in §0 Block D and §IV.
+
+### VIII.1 The pricing-tiers question — what to charge for
+
+Today everything is bundled. Three observable buyer profiles:
+
+| Profile | Buys | Pricing pressure |
+|---|---|---|
+| **Self-host enterprise** (education, banking) | Full source + on-prem deploy + support contract | Custom enterprise license — high willingness-to-pay, low volume |
+| **Mid-market SaaS** (would-be enterprise customers if smaller) | Hosted Turing without operating Spring Boot + Solr + JPA + Code Interpreter | Usage-based $0.01-0.05/conv; doesn't exist today, full mid-market lost to OpenAI Assistants |
+| **Code Interpreter only** (devs who want Python sandbox + URL signing) | Standalone Modal / E2B competitor | Pure usage-based; the *sandbox hardening* (T76–T80) is differentiator |
+
+**The strategic bet**: **separate Turing into 3 SKUs** with independent
+pricing and marketing:
+
+1. **Turing Search** — TurSN heritage (Solr + facets + ANN). Open
+   source + paid support. Mature, slow-growth, paying for itself.
+2. **Turing Agents** — chat-flow engine + Custom Tools + LLM-judge +
+   analytics + admin. Open source (self-host) + cloud usage-based.
+   Where the engagement work concentrates.
+3. **Turing Sandbox** — Code Interpreter multi-tenant standalone, after
+   T80 lands. Direct Modal / E2B competitor. Pure SaaS usage-based.
+
+Each has a different buyer, different pricing, different lifecycle.
+Bundling them dilutes the message — "is Turing a search engine or an
+agent platform or a code sandbox?" today gets a yes on all three and a
+buying decision on none.
+
+### VIII.2 The Cloud bet — paralleling open source
+
+**Tese**: SMB and mid-market will not operate Spring Boot + Solr +
+Code Interpreter + Liquibase + multi-LLM config. Today 100% of that
+segment goes to OpenAI Assistants / Copilot Studio. Self-host stays
+free + open; cloud charges per use. Supabase / Posthog / Sentry pattern.
+
+- **MVP shape**: signup → wizard creates agent → picks flow template
+  ("Educational Lead Capture" / "B2B Pricing Quote" / "Knowledge Q&A")
+  → WhatsApp integration → live in 10 min.
+- **Stack**: managed containers (Fly.io / Cloud Run / Modal) — do not
+  reinvent K8s.
+- **Pricing**: $0.01/conv with 1k free; Code Interpreter $0.05/min
+  additional; premium support in tiers.
+- **Risks**: distracts from OSS; operations cost real money; competes
+  with potential integrator partners.
+- **Why it matters**: SaaS valuation multiple is 8-15× revenue vs open
+  source 0-3×. Even if Cloud stays a small slice, it professionalizes
+  the product (because customers complain) and unlocks the multi-tenant
+  pitch that T80 will support.
+
+### VIII.3 Verticalize in 2-3 markets
+
+**Tese**: today Turing is "agent platform for anything." Wins no
+category. Sierra ($4.5B) is vertical customer-service; Decagon idem;
+Hippocratic AI is vertical healthcare. **Horizontal-positioned losers**:
+LangChain (commodity), Botpress (struggling), Copilot Studio
+(Microsoft-only). Verticalize on **Education + Financial Services**
+where the engagement opened doors:
+
+- Pre-built personas tone-calibrated per vertical
+- Pre-built Custom Tools (DSpace adapter for academia, Bloomberg / Quandl
+  for finance, FHIR for healthcare if added)
+- Pre-built flow templates (Lead Capture EE, Mortgage Pre-Qualification,
+  Patient Intake)
+- Compliance defaults (LGPD aggressive, PII redaction by default,
+  SOC2 audit trail)
+- Public case studies per vertical (Education customer as anchor, plus
+  1 bank + 1 hospital network)
+
+Vertical is where 2026 venture dollars sit. Horizontal is where they
+left.
+
+### VIII.4 The MCP-first transition
+
+**Tese**: Model Context Protocol is becoming the de facto standard for
+agent tools (Anthropic, Cursor, Claude Desktop, Glama, OpenTools).
+**Custom Tools Groovy is Turing-only lock-in**. Move Custom Tools to be
+**MCP servers by default**, with Groovy demoted to legacy mode.
+
+- **Ganho 1**: Custom Tools written for Turing become portable to any
+  MCP client.
+- **Ganho 2**: the MCP marketplace ecosystem becomes available *to*
+  Turing customers without writing new code (third-party tools listed
+  in the admin gallery).
+- **Trade-off**: existing Groovy customers need a migration path.
+- **Sequencing**: ship a one-shot Groovy → MCP exporter, then make MCP
+  the default for new tools while keeping Groovy on the docs as
+  "advanced" for power users.
+
+### VIII.5 The Spring AI question — fork or live with the lag
+
+**Tese**: Spring AI is the abstraction layer between Turing and
+underlying LLMs. **Every new feature ships in Spring AI weeks or months
+after the upstream SDKs.** Spring AI 2.0.0-M6's broken streaming (T17,
+T18) was a concrete example.
+
+**Two options**:
+- (A) **Keep Spring AI**, ship workarounds (T18: hand-rolled WebClient
+  for OpenAI streaming) as needed. Maintenance keeps growing.
+- (B) **Hybrid: direct SDKs for fast-moving features, Spring AI for
+  long-tail providers**. `turing-llm` thin abstraction layer routes by
+  provider type. Higher initial cost (~4-6 weeks senior dev); buys
+  feature parity at SDK release day.
+
+Recommend (B) before customer commitments require day-1 feature parity
+(vision, code-execution tools, prompt caching v2, etc.). The engagement
+already paid the price for this on T18.
+
+### VIII.6 What to deprecate (loud, with deadlines)
+
+Cutting saves ciclo. Hesitation costs forever-maintenance.
+
+| Feature | Why deprecate | Sunset window |
+|---|---|---|
+| `HeuristicGuardrailStrategy` as default for new flows | Regex-only; LLM_JUDGE + tool-calling do better. Third option pollutes the UI (TK1). | 6 months — flag-flip default; remove enum entry 12 months |
+| Slot types `INTEGER` / `BOOLEAN` (TK2) | `useTuringSlot<number>` does coercion correctly; schema types only generate bugs. | 12 months — silently migrate to `string`, remove enum 18 months |
+| `functionCall` node type (TK4) | Vapor — engine doesn't execute it. Either ship T46 or kill the type. | Decision in 1 sprint |
+| Brevo integration (TK5) | Modern alternatives (Resend, Postmark) have better deliverability + simpler API. | Replace within 6 months |
+| Custom Solr admin UI (TK6) | TurSN heritage; Solr has native admin. | Audit usage, kill if zero customers depend |
+| `forbidsToolCalls(String)` substring overload (TK3) | T16 left only node-aware path; finish the job. | 1 sprint |
+
+### VIII.7 Sequencing — what to start this quarter
+
+**Convicted choices, not exhaustive list**:
+
+1. ⭐ **T80 — Container sandbox for Code Interpreter** (~2 weeks). The
+   one feature that gates multi-tenant SaaS and the Turing Sandbox SKU.
+   No clean shortcut exists.
+2. **T60 + T61 — Slot audit log + PII prefix** (~2 weeks). Unlocks the
+   compliance pitch for regulated verticals. Required before any bank /
+   hospital conversation.
+3. **T94 — Chat-flow lint** (~1 week). Drives perceived editor
+   maturity; first thing CTOs see in a demo.
+4. **T70 — Multi-armed bandit for A/B** (~1 week). Replaces fixed-split
+   pain we already feel internally.
+5. **T46 OR TK4 — `functionCall` decision** (~1-3 days for decision +
+   1-2 weeks if implemented). Vapor cleanup. Either ship it or kill it.
+
+**Defer**: T80 cascades unblock T81 (resource limits) and T82
+(pre-warmed pool). Most Block D items wait on a customer to ask for them
+twice before scheduling.
+
+### VIII.8 The pergunta hard
+
+**Today's positioning** (~35 words; buyer zones out at the first comma):
+> "Open source platform for search + AI agents with chat-flows and
+> Custom Tools running on Spring Boot, supporting A/B testing and
+> multi-tenant Code Interpreter."
+
+**12 months from now, if VII.2.h + VIII.1 + VIII.3 ship** (~28 words;
+buyer knows in 5s if it's for them):
+> "Turing is the open-source conversational AI platform for Education
+> and Financial Services — self-host or cloud, end-to-end auditable,
+> with the best LLM-as-judge in the market."
+
+Difference is not features. It is **focus, clarity, and the courage to
+deprecate what does not pay**.
+
+---
