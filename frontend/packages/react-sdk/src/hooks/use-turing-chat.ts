@@ -7,7 +7,7 @@ import {
   postChatConversation,
   type ChatDisabledReason,
 } from "../core/api";
-import { useTuringContext } from "../core/use-turing-context";
+import { useOptionalTuringContext } from "../core/use-turing-context";
 import {
   TUR_SESSION_DEFAULT_COOKIE_NAME,
   TUR_SESSION_DEFAULT_TTL_SECONDS,
@@ -284,14 +284,26 @@ function savePersisted(key: string, value: PersistedChat): void {
 export function useTuringChat(
   options: UseTuringChatOptions = {},
 ): UseTuringChatReturn {
-  const { config } = useTuringContext();
+  // Site mode requires the provider for `config.site` (chat-enabled probe,
+  // `postChatConversation`, `deleteSiteConversationState`); agent mode reads
+  // nothing from it. Mirror the T228a pattern from `useTuringSlots` so an
+  // admin console with no real "site" can mount the agent-mode variant
+  // without wrapping the world in a placeholder <TuringProvider>.
+  const ctx = useOptionalTuringContext();
   const { persist = false, maxMessages = DEFAULT_MAX_MESSAGES, flowId, agent, locale: localeOverride } = options;
   const agentId = agent?.id;
   const agentLlmInstanceId = agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
-  const effectiveLocale = localeOverride ?? config.locale;
+  if (!ctx && !isAgentMode) {
+    throw new Error(
+      "useTuringChat in site mode requires a <TuringProvider> ancestor. " +
+      "Either mount the provider or pass `options.agent` to use agent mode.",
+    );
+  }
+  const siteName = ctx?.config.site ?? "";
+  const effectiveLocale = localeOverride ?? ctx?.config.locale;
 
-  const persistKey = persist ? storageKey(config.site, persist) : null;
+  const persistKey = persist && siteName ? storageKey(siteName, persist) : null;
 
   const initialPersisted = persistKey ? loadPersisted(persistKey) : { conversationId: null, messages: [] };
 
@@ -329,12 +341,12 @@ export function useTuringChat(
   // the server-driven session cookie name + TTL so the SDK can mint
   // TUR_SESSION with the deployment's overrides.
   useEffect(() => {
-    if (isAgentMode) {
+    if (isAgentMode || !siteName) {
       setEnabled(true);
       return;
     }
     let alive = true;
-    fetchChatEnabled(config.site)
+    fetchChatEnabled(siteName)
       .then((res) => {
         if (!alive) return;
         const isEnabled = Boolean(res?.enabled);
@@ -354,7 +366,7 @@ export function useTuringChat(
     return () => {
       alive = false;
     };
-  }, [config.site, isAgentMode]);
+  }, [siteName, isAgentMode]);
 
   // Persist on change + keep the synchronous refs in sync
   useEffect(() => {
@@ -482,7 +494,7 @@ export function useTuringChat(
               onToken,
               signal: controller.signal,
             })
-          : await postChatConversation(config.site, wire, effectiveLocale, {
+          : await postChatConversation(siteName, wire, effectiveLocale, {
               conversationId: activeConversationId,
               flowId,
               onToken,
@@ -508,7 +520,7 @@ export function useTuringChat(
         handleSendError(err, requestId);
       }
     },
-    [config.site, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, handleSendError],
+    [siteName, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, handleSendError],
   );
 
   const stop = useCallback(() => {
@@ -546,12 +558,13 @@ export function useTuringChat(
         if (!flowId) return false;
         return await deleteAgentFlowState(agentId, flowId, cid);
       }
-      const deleted = await deleteSiteConversationState(config.site, cid);
+      if (!siteName) return false;
+      const deleted = await deleteSiteConversationState(siteName, cid);
       return deleted > 0;
     } catch {
       return false;
     }
-  }, [agentId, agentLlmInstanceId, flowId, config.site]);
+  }, [agentId, agentLlmInstanceId, flowId, siteName]);
 
   return {
     enabled,
