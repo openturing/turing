@@ -5,6 +5,8 @@ import type {
   TurChatResponse,
   TurChatStreamEvent,
   TurIntent,
+  TurLlmContextInfo,
+  TurLlmInstance,
   TurSearchResponse,
   TurSortOption,
 } from "./types";
@@ -732,6 +734,59 @@ export async function postSiteHandoff(
     },
   );
   return data ?? { url: null, transcript: null, slotsIncluded: 0 };
+}
+
+/**
+ * Lists the LLM instances visible to the current session. Mirror of the
+ * admin's `GET /api/llm` listing — used by chat consumers that let the user
+ * pick which model to talk to (admin chat, future SDK pickers).
+ *
+ * Server endpoint: {@code GET /api/llm}. The endpoint is secured behind
+ * {@code ROLE_ADMIN} or the {@code LLM_VIEW} authority, so anonymous callers
+ * will receive 401/403 — callers should gate the request on whether the host
+ * session has the right grants.
+ *
+ * @since 2026.3.1
+ */
+export function fetchLlmInstances(): Promise<TurLlmInstance[]> {
+  return get<TurLlmInstance[]>(`/llm`);
+}
+
+/**
+ * Probes the configured context window for a given LLM instance. Calls into
+ * the provider when possible (live probe → `source: "provider"`) and falls
+ * back to the admin-configured value persisted on the instance
+ * ({@code source: "config"}).
+ *
+ * Server endpoint: {@code GET /api/v2/llm/{id}/chat/context-info}.
+ *
+ * @since 2026.3.1
+ */
+export function fetchLlmContextInfo(
+  llmInstanceId: string,
+): Promise<TurLlmContextInfo> {
+  return get<TurLlmContextInfo>(`/v2/llm/${llmInstanceId}/chat/context-info`);
+}
+
+/**
+ * Like {@link fetchLlmContextInfo} but scoped to an AI Agent — used when the
+ * picker is mounted inside the explicit agent chat. The agent + LLM tuple is
+ * required because the agent may pin its own context-window override.
+ *
+ * Server endpoint:
+ * {@code GET /api/v2/ai-agent/{agentId}/chat/context-info?llmInstanceId=...}.
+ *
+ * @since 2026.3.1
+ */
+export async function fetchAgentContextInfo(
+  agentId: string,
+  llmInstanceId: string,
+): Promise<TurLlmContextInfo> {
+  const { data } = await axios.get<TurLlmContextInfo>(
+    `/v2/ai-agent/${agentId}/chat/context-info`,
+    { params: { llmInstanceId } },
+  );
+  return data;
 }
 
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {

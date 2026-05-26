@@ -134,6 +134,58 @@ export interface TurSortOption {
   label: string;
 }
 
+// ── LLM Instances ──
+
+/**
+ * Vendor descriptor shared by every {@link TurLlmInstance}. Mirror of the
+ * server's `TurLLMVendor` projection — only the fields a chat-picker UI
+ * actually consumes are exposed here.
+ *
+ * @since 2026.3.1
+ */
+export interface TurLlmVendor {
+  readonly id: string;
+  readonly title: string;
+  readonly description?: string;
+}
+
+/**
+ * Public summary of an LLM instance available to the current session,
+ * returned by {@link fetchLlmInstances}. Only the picker-relevant fields are
+ * typed — the server may include additional admin-only attributes (provider
+ * options, temperature, top-K, etc.) that hosts can read by widening the type
+ * locally.
+ *
+ * @since 2026.3.1
+ */
+export interface TurLlmInstance {
+  readonly id: string;
+  readonly title: string;
+  readonly description?: string;
+  /** 1 = available to use; 0 = hidden from selection. */
+  readonly enabled: number;
+  /** Configured maximum context window in tokens (may be 0 = unknown). */
+  readonly contextWindow?: number;
+  /** Provider-side model identifier (e.g. `gpt-4o-mini`). */
+  readonly modelName?: string;
+  /** Iconify identifier (e.g. `simple-icons:openai`) when set by an admin. */
+  readonly icon?: string | null;
+  readonly turLLMVendor?: TurLlmVendor;
+}
+
+/**
+ * Returned by {@link fetchLlmContextInfo} and {@link fetchAgentContextInfo}.
+ * {@code source} discriminates whether {@code contextWindow} came from the
+ * provider's live capability probe (`"provider"`) or the admin-configured
+ * value persisted on the LLM instance (`"config"`).
+ *
+ * @since 2026.3.1
+ */
+export interface TurLlmContextInfo {
+  readonly contextWindow: number;
+  readonly source: string;
+}
+
 // ── Chat ──
 
 export interface TurChatResponse {

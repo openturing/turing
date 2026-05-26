@@ -10,11 +10,10 @@
 1. **Ordem de Execução:** Sempre analise o `IMPROVEMENTS.md` e execute as tarefas da mais fácil para a mais complexa.
 2. **Dúvidas/Bloqueios:** Se uma tarefa exigir análise humana ou houver dúvida, NÃO pergunte. Pule-a, atualize o status dela no markdown detalhando a dúvida para consulta posterior, e avance para a próxima.
 3. **Parametrização:** Nenhuma feature de backend pode ficar isolada; garanta que ela esteja parametrizada e funcional no frontend.
-4. **Gerenciamento de Contexto:** Use a função de compactar a sessão (`/compact` ou equivalente) a cada nova tarefa iniciada para manter o contexto limpo.
-5. **Documentação:** Ao finalizar ou pular uma tarefa, atualize o `IMPROVEMENTS.md` com o status e os aprendizados/motivos.
+4. **Documentação:** Ao finalizar ou pular uma tarefa, atualize o `IMPROVEMENTS.md` com o status e os aprendizados/motivos.
 
 ## Automação de Commit (Ambiente Windows)
 
 - O script `run-commit.cmd` está configurado no PATH do Windows (origem: `D:/Dev/bin`).
-- **Gatilho:** Assim que o `IMPROVEMENTS.md` for salvo com o status atualizado da tarefa, execute `run-commit.cmd` no terminal.
+- **Gatilho:** Assim que o `docs/IMPROVEMENTS.md` for salvo com o status atualizado da tarefa, execute `run-commit.cmd` no terminal.
 - **Diretório:** Certifique-se de que o comando seja disparado estando na **raiz do projeto** (`pwd` deve apontar para o diretório do projeto, não para subpastas ou para o local do binário).
