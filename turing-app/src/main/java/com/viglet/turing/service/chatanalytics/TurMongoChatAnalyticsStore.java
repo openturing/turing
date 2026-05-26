@@ -108,6 +108,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             set.add(Updates.set("totalToolLatencyMs", event.totalToolLatencyMs()));
             putIfNotBlank(set, "experimentKey", event.experimentKey());
             putIfNotBlank(set, "variantLabel", event.variantLabel());
+            // T110 — child-session linkage written once on start, preserved on end.
+            putIfNotBlank(set, "parentConversationId", event.parentConversationId());
             set.add(Updates.set("durationMs", event.durationMs()));
             set.add(Updates.set("updatedAt", new Date()));
             if (event.completedAt() != null) {
@@ -337,6 +339,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
                 case "personaId"    -> "personaId";
                 case "experimentKey" -> "experimentKey";
                 case "variantLabel" -> "variantLabel";
+                // T110 — drill-down by orchestrator → child relationship.
+                case "parentConversationId" -> "parentConversationId";
                 default -> "agentId";
             };
             int cap = Math.max(1, Math.min(maxRows, 100));
@@ -565,6 +569,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("totalToolLatencyMs", doc.get("totalToolLatencyMs", 0L));
         row.put("experimentKey",      doc.getString("experimentKey"));
         row.put("variantLabel",       doc.getString("variantLabel"));
+        // T110 — child-session linkage to parent conversation.
+        row.put("parentConversationId", doc.getString("parentConversationId"));
         row.put("durationMs",         doc.get("durationMs", 0L));
         row.put("firstUserMessage", doc.getString("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.

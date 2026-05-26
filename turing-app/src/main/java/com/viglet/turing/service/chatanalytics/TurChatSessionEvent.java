@@ -74,16 +74,42 @@ public record TurChatSessionEvent(
          * {@link #experimentKey} (e.g. {@code "control"}, {@code "treatment_v2"}).
          * {@code null} when {@link #experimentKey} is null.
          */
-        String variantLabel) {
+        String variantLabel,
+        /**
+         * Parent conversation id when this session was spawned by a
+         * {@code agent.invoke(...)} call from a Custom Tool (T109). Links
+         * the child session back to its orchestrator so the scorecard can
+         * drill down ("orchestrator agent X invoked specialist Y in N
+         * sessions, average sub-task duration M ms"). {@code null} for
+         * top-level (visitor-initiated) sessions.
+         *
+         * @since 2026.3.1 (T110)
+         */
+        String parentConversationId) {
 
     /** Builder of the start record (most aggregate fields zeroed/null). */
     public static TurChatSessionEvent start(String conversationId, String agentId,
             String personaId, String llmInstanceId, String embeddingModelId,
             String storeInstanceId, String userId, String locale, String firstUserMessage,
             Instant startedAt) {
+        return start(conversationId, agentId, personaId, llmInstanceId,
+                embeddingModelId, storeInstanceId, userId, locale, firstUserMessage,
+                startedAt, null);
+    }
+
+    /**
+     * Overload accepting a parent conversation id — used by T110 when a
+     * Custom Tool's {@code agent.invoke(...)} call spawns a child session.
+     *
+     * @since 2026.3.1
+     */
+    public static TurChatSessionEvent start(String conversationId, String agentId,
+            String personaId, String llmInstanceId, String embeddingModelId,
+            String storeInstanceId, String userId, String locale, String firstUserMessage,
+            Instant startedAt, String parentConversationId) {
         return new TurChatSessionEvent(conversationId, agentId, personaId,
                 llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
                 firstUserMessage, startedAt, null, TurChatSessionOutcome.IN_PROGRESS,
-                0, 0L, 0L, 0L, 0, 0, 0L, null, null);
+                0, 0L, 0L, 0L, 0, 0, 0L, null, null, parentConversationId);
     }
 }

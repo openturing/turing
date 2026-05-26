@@ -93,6 +93,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             fields.put("totalToolLatencyMs", String.valueOf(event.totalToolLatencyMs()));
             putIfNotBlank(fields, "experimentKey", event.experimentKey());
             putIfNotBlank(fields, "variantLabel",  event.variantLabel());
+            // T110 — child-session linkage; written once on start, preserved on end.
+            putIfNotBlank(fields, "parentConversationId", event.parentConversationId());
             fields.put("durationMs",         String.valueOf(event.durationMs()));
             fields.put("updatedAt",      Instant.now().toString());
             if (event.completedAt() != null) {
@@ -282,6 +284,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             case "personaId"     -> "personaId";
             case "experimentKey" -> "experimentKey";
             case "variantLabel"  -> "variantLabel";
+            // T110 — drill-down by orchestrator → child relationship.
+            case "parentConversationId" -> "parentConversationId";
             default -> "agentId";
         };
         int cap = Math.max(1, Math.min(maxRows, 100));
@@ -517,6 +521,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("totalToolLatencyMs", parseLong(hash.get("totalToolLatencyMs")));
         row.put("experimentKey",      hash.get("experimentKey"));
         row.put("variantLabel",       hash.get("variantLabel"));
+        // T110 — child-session linkage to parent conversation.
+        row.put("parentConversationId", hash.get("parentConversationId"));
         row.put("durationMs",         parseLong(hash.get("durationMs")));
         row.put("firstUserMessage", hash.get("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.

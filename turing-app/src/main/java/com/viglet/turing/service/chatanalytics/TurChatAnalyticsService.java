@@ -109,17 +109,65 @@ public class TurChatAnalyticsService {
             String userId, String locale, String firstUserMessage) {
         if (!store.isEnabled()) return;
         Instant now = Instant.now();
+        // T110 — when a Custom Tool's agent.invoke(...) spawns this session,
+        // the helper carries the parent conversation id inline on the first
+        // user message via the `[__parentConversationId=...]` prefix. Parse
+        // + strip here so the analytics row gets the structured field and
+        // the visible firstUserMessage stays clean of the audit marker.
+        String parentConversationId = extractParentConversationId(firstUserMessage);
+        String visibleFirstUserMessage = stripParentConversationIdPrefix(firstUserMessage);
         inFlight.computeIfAbsent(conversationId,
                 id -> new InFlight(now, agentId, personaId, llmInstanceId,
-                        embeddingModelId, storeInstanceId, userId, locale));
+                        embeddingModelId, storeInstanceId, userId, locale,
+                        parentConversationId));
         try {
             store.upsertSession(TurChatSessionEvent.start(conversationId, agentId, personaId,
                     llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
-                    firstUserMessage, now));
+                    visibleFirstUserMessage, now, parentConversationId));
         } catch (RuntimeException e) {
             log.warn("Chat analytics recordSessionStart failed for {}: {}",
                     conversationId, e.getMessage());
         }
+    }
+
+    /**
+     * T110 — parses the {@code [__parentConversationId=...]} prefix the
+     * Custom-Tool {@code agent.invoke(...)} helper writes on the child's
+     * first user message. Returns {@code null} when the input is null/blank
+     * or the prefix is absent.
+     *
+     * <p>Visible for testing — package-private + static so the parsing
+     * contract can be pinned independently of Spring wiring.
+     */
+    static String extractParentConversationId(String firstUserMessage) {
+        if (firstUserMessage == null) return null;
+        String s = firstUserMessage;
+        if (!s.startsWith("[__parentConversationId=")) return null;
+        int end = s.indexOf(']');
+        if (end < 0) return null;
+        String value = s.substring("[__parentConversationId=".length(), end);
+        return value.isBlank() ? null : value;
+    }
+
+    /**
+     * T110 — returns {@code firstUserMessage} with the
+     * {@code [__parentConversationId=...]\n} prefix stripped. Passes the
+     * input through unchanged when the prefix isn't present, so non-child
+     * sessions are unaffected.
+     */
+    static String stripParentConversationIdPrefix(String firstUserMessage) {
+        if (firstUserMessage == null) return null;
+        if (!firstUserMessage.startsWith("[__parentConversationId=")) return firstUserMessage;
+        int end = firstUserMessage.indexOf(']');
+        if (end < 0) return firstUserMessage;
+        // Skip the closing bracket; also skip a single trailing newline
+        // (the helper writes "[...]\n<message>") so the visible message
+        // starts at column 0 instead of with a stray blank line.
+        int after = end + 1;
+        if (after < firstUserMessage.length() && firstUserMessage.charAt(after) == '\n') {
+            after += 1;
+        }
+        return firstUserMessage.substring(after);
     }
 
     /**
@@ -281,7 +329,8 @@ public class TurChatAnalyticsService {
                     inflight == null ? 0  : inflight.toolErrors,
                     inflight == null ? 0L : inflight.totalToolLatencyMs,
                     inflight == null ? null : inflight.experimentKey,
-                    inflight == null ? null : inflight.variantLabel));
+                    inflight == null ? null : inflight.variantLabel,
+                    inflight == null ? null : inflight.parentConversationId));
             if (inflight != null && inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
@@ -318,6 +367,8 @@ public class TurChatAnalyticsService {
         final String storeInstanceId;
         final String userId;
         final String locale;
+        /** T110 — parent conversation id when spawned by {@code agent.invoke(...)}. */
+        final String parentConversationId;
         int turns;
         long tokensIn;
         long tokensOut;
@@ -331,7 +382,8 @@ public class TurChatAnalyticsService {
         volatile String variantLabel;
 
         InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
-                String embeddingModelId, String storeInstanceId, String userId, String locale) {
+                String embeddingModelId, String storeInstanceId, String userId, String locale,
+                String parentConversationId) {
             this.startedAt = startedAt;
             this.lastTouchedAt = startedAt;
             this.agentId = agentId;
@@ -341,6 +393,7 @@ public class TurChatAnalyticsService {
             this.storeInstanceId = storeInstanceId;
             this.userId = userId;
             this.locale = locale;
+            this.parentConversationId = parentConversationId;
         }
 
         synchronized void recordTurn(long in, long out) {
