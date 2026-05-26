@@ -52,6 +52,7 @@ import { buildImportPayloadFromExport } from "./chat-flow.import";
 import { ChatFlowDiagramTab } from "./components/chat-flow.diagram-tab";
 import { ChatFlowSettingsTab } from "./components/chat-flow.settings-tab";
 import { ChatFlowVariantDialog } from "./components/chat-flow.variant-dialog";
+import { failureEdgeOverlay } from "./components/flow-edges";
 import {
   INITIAL_ZOOM,
   buildDefaultNodeData,
@@ -137,13 +138,30 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
 
   const onConnect = useCallback(
     (params: Connection) =>
-      setEdges((eds) => addEdge({ ...params, type: "smoothstep", animated: false }, eds)),
+      setEdges((eds) =>
+        // T50 — failure-handle connections render as red dashed try/catch edges;
+        // the overlay flips `type` to "failure" so the edgeTypes map picks the
+        // FailureEdge renderer. Non-failure connections stay on smoothstep.
+        addEdge(
+          { ...params, animated: false, ...failureEdgeOverlay(params.sourceHandle) },
+          eds,
+        ),
+      ),
     [setEdges],
   );
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) =>
-      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds)),
+      // Reconnects can move an edge between a regular handle and the failure
+      // handle; re-derive the overlay so the visual stays consistent with the
+      // new sourceHandle.
+      setEdges((eds) =>
+        reconnectEdge(oldEdge, newConnection, eds).map((edge) =>
+          edge.id === oldEdge.id
+            ? { ...edge, ...failureEdgeOverlay(edge.sourceHandle) }
+            : edge,
+        ),
+      ),
     [setEdges],
   );
 

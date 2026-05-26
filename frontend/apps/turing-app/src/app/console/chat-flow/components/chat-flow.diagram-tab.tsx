@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import { ChatFlowLivePreviewPanel } from "./chat-flow.live-preview-panel";
 import { ChatPreview } from "./chat-preview";
+import { edgeTypes } from "./flow-edges";
 import { FlowProperties } from "./flow-properties";
 import { FlowSidebar } from "./flow-sidebar";
 import { nodeTypes } from "./flow-nodes";
@@ -98,6 +99,7 @@ export function ChatFlowDiagramTab({
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

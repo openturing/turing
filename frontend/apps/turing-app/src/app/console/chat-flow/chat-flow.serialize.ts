@@ -1,5 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 
+import { failureEdgeOverlay } from "./components/flow-edges";
 import type { FlowNodeData, FlowNodeType, FlowSwitchOption } from "./types";
 
 export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
@@ -124,7 +125,10 @@ export function deserializeGraph(json: string | null | undefined): {
       sourceHandle: e.sourceHandle ?? null,
       targetHandle: e.targetHandle ?? null,
       label: e.label ?? undefined,
-      type: "smoothstep",
+      // T50 — re-derive the visual type from sourceHandle so failure edges
+      // persisted before/after T50 both render as red try/catch edges. The
+      // overlay also sets the animated dashed look and the red arrow marker.
+      ...failureEdgeOverlay(e.sourceHandle ?? null),
     })) as Edge[];
     return { nodes: nodes.length > 0 ? nodes : INITIAL_NODES, edges };
   } catch {
