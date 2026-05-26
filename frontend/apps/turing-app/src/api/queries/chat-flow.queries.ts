@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   TurChatFlow,
+  TurChatFlowFunnelReport,
   TurChatFlowLintIssue,
   TurChatFlowTriggerConflict,
   TurChatFlowVariantRequest,
@@ -116,6 +117,24 @@ export function useChatFlowLint(agentId: string | undefined, flowId: string | un
       : ['chat-flows', 'lint', 'pending'],
     queryFn: () => service.lint(agentId as string, flowId as string),
     enabled: Boolean(agentId && flowId),
+  });
+}
+
+/**
+ * T85 / §VII.10.b — per-node funnel report. Polled every 30s while the
+ * editor is open so an admin tweaking the graph can watch how the
+ * cursor counts shift as visitors land on new nodes.
+ *
+ * @since 2026.3.1
+ */
+export function useChatFlowFunnel(agentId: string | undefined, flowId: string | undefined) {
+  return useQuery<TurChatFlowFunnelReport>({
+    queryKey: agentId && flowId
+      ? queryKeys.chatFlows.funnel(agentId, flowId)
+      : ['chat-flows', 'funnel', 'pending'],
+    queryFn: () => service.funnel(agentId as string, flowId as string),
+    enabled: Boolean(agentId && flowId),
+    refetchInterval: 30_000,
   });
 }
 

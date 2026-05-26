@@ -3,6 +3,7 @@ import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
 import type {
   ChatFlowGeneration,
   TurChatFlow,
+  TurChatFlowFunnelReport,
   TurChatFlowLintIssue,
   TurChatFlowTriggerConflict,
   TurChatFlowVariantRequest,
@@ -125,6 +126,18 @@ export class TurChatFlowService {
   async lint(agentId: string, flowId: string): Promise<TurChatFlowLintIssue[]> {
     const response = await axios.get<TurChatFlowLintIssue[]>(
       `/ai-agent/${agentId}/chat-flow/${flowId}/lint`,
+    );
+    return response.data;
+  }
+
+  /**
+   * T85 — per-node funnel report for a single chat flow. Powers the
+   * editor's sidebar panel that surfaces drop-off + completion counts
+   * per interactive node.
+   */
+  async funnel(agentId: string, flowId: string): Promise<TurChatFlowFunnelReport> {
+    const response = await axios.get<TurChatFlowFunnelReport>(
+      `/ai-agent/${agentId}/chat-flow/${flowId}/funnel`,
     );
     return response.data;
   }

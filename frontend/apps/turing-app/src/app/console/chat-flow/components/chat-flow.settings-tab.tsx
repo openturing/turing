@@ -23,6 +23,7 @@ import {
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 
+import { ChatFlowFunnelPanel } from "./chat-flow.funnel-panel";
 import { ChatFlowLintPanel } from "./chat-flow.lint-panel";
 import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
 import { FormRow } from "./form-row";
@@ -123,6 +124,12 @@ export function ChatFlowSettingsTab({
             (dead-end node, …) blocking the runtime are unmissable. Renders
             nothing on a clean flow. */}
         {flowId && <ChatFlowLintPanel agentId={agentId} flowId={flowId} />}
+
+        {/* T85 — per-node funnel under the lint panel: cursor + completion
+            counts so the operator spots where conversations stall. Hidden
+            on a brand-new (id-less) flow and on flows without any captured
+            states/submissions yet. */}
+        {flowId && <ChatFlowFunnelPanel agentId={agentId} flowId={flowId} />}
 
         {/* T91 — render at the top so a heavy-overlap warning is the first
             thing the author sees when opening the editor. Renders nothing

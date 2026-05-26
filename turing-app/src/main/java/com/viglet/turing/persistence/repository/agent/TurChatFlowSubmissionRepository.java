@@ -31,4 +31,18 @@ public interface TurChatFlowSubmissionRepository extends JpaRepository<TurChatFl
      * @since 2026.2.7
      */
     List<TurChatFlowSubmission> findByConversationIdOrderByCompletedAtDesc(String conversationId);
+
+    /**
+     * T85 — count of submissions per terminal node id for a given flow.
+     * Returns an array of {@code Object[2]} rows where {@code [0]} is the
+     * node id and {@code [1]} is the long count. Powers the funnel
+     * visualization that shows how many conversations ended at each node
+     * (real end nodes + the synthetic {@code __abandoned__} marker).
+     *
+     * @since 2026.3.1
+     */
+    @org.springframework.data.jpa.repository.Query(
+            "select s.endNodeId, count(s) from TurChatFlowSubmission s "
+            + "where s.flow.id = :flowId group by s.endNodeId")
+    List<Object[]> countByEndNodeForFlow(@org.springframework.data.repository.query.Param("flowId") String flowId);
 }

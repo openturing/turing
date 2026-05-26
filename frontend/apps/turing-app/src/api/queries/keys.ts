@@ -61,6 +61,8 @@ export const queryKeys = {
       [...queryKeys.chatFlows.all(), 'trigger-conflicts', agentId] as const,
     lint: (agentId: string, flowId: string) =>
       [...queryKeys.chatFlows.all(), 'lint', agentId, flowId] as const,
+    funnel: (agentId: string, flowId: string) =>
+      [...queryKeys.chatFlows.all(), 'funnel', agentId, flowId] as const,
   },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,

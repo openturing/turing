@@ -58,4 +58,17 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      * @since 2026.2.7
      */
     List<TurChatFlowState> findByConversationId(String conversationId);
+
+    /**
+     * T85 — count of in-flight states per cursor node id for a given
+     * flow. Mirrors the submission counterpart so the funnel
+     * visualization can show both "ended here" and "currently parked
+     * here" per node.
+     *
+     * @since 2026.3.1
+     */
+    @org.springframework.data.jpa.repository.Query(
+            "select s.currentNodeId, count(s) from TurChatFlowState s "
+            + "where s.flow.id = :flowId group by s.currentNodeId")
+    List<Object[]> countByCurrentNodeForFlow(@org.springframework.data.repository.query.Param("flowId") String flowId);
 }

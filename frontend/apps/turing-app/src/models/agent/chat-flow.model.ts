@@ -123,6 +123,31 @@ export interface TurChatFlow {
 }
 
 /**
+ * T85 / §VII.10.b — one row of the chat-flow funnel report. Powers the
+ * sidebar visualization showing where conversations get stuck or drop
+ * out in the graph.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowFunnelNode {
+  nodeId: string;
+  label: string;
+  type: string;
+  cursorCount: number;
+  completedCount: number;
+  abandonedCount: number;
+}
+
+export interface TurChatFlowFunnelReport {
+  flowId: string;
+  flowName: string;
+  totalStates: number;
+  totalSubmissions: number;
+  abandonedAtFlow: number;
+  nodes: TurChatFlowFunnelNode[];
+}
+
+/**
  * T94 / §VII.11.d — one finding from the chat-flow linter, surfaced in the
  * editor's sidebar warnings panel.
  *

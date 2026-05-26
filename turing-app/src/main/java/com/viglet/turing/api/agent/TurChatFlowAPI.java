@@ -39,6 +39,7 @@ import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowLinterService;
+import com.viglet.turing.service.chatanalytics.TurChatFlowFunnelService;
 import com.viglet.turing.genai.flow.TurChatFlowVariantService;
 import com.viglet.turing.genai.flow.TurTriggerConflictService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
@@ -94,6 +95,7 @@ public class TurChatFlowAPI {
     private final TurChatFlowLinterService chatFlowLinterService;
     private final TurChatFlowRecipeService chatFlowRecipeService;
     private final TurChatFlowVariantService chatFlowVariantService;
+    private final TurChatFlowFunnelService chatFlowFunnelService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -106,7 +108,8 @@ public class TurChatFlowAPI {
             TurTriggerConflictService triggerConflictService,
             TurChatFlowLinterService chatFlowLinterService,
             TurChatFlowRecipeService chatFlowRecipeService,
-            TurChatFlowVariantService chatFlowVariantService) {
+            TurChatFlowVariantService chatFlowVariantService,
+            TurChatFlowFunnelService chatFlowFunnelService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -119,6 +122,7 @@ public class TurChatFlowAPI {
         this.chatFlowLinterService = chatFlowLinterService;
         this.chatFlowRecipeService = chatFlowRecipeService;
         this.chatFlowVariantService = chatFlowVariantService;
+        this.chatFlowFunnelService = chatFlowFunnelService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -595,6 +599,27 @@ public class TurChatFlowAPI {
                 .filter(flow -> flow.getTurAIAgent() != null
                         && agentId.equals(flow.getTurAIAgent().getId()))
                 .map(flow -> chatFlowVariantService.generate(flow, request))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Chat flow not found"));
+    }
+
+    /**
+     * T85 / §VII.10.b — funnel statistics for a single chat flow. Returns
+     * per-node cursor + completion counts so the admin editor can render
+     * a turn-by-turn drop-off view. 404 when the flow id is unknown or
+     * doesn't belong to the agent in the path.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Per-node funnel statistics for a chat flow")
+    @GetMapping("/{id}/funnel")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurChatFlowFunnelService.FunnelReport turChatFlowFunnel(@PathVariable String agentId,
+            @PathVariable String id) {
+        return turChatFlowRepository.findById(id)
+                .filter(flow -> flow.getTurAIAgent() != null
+                        && agentId.equals(flow.getTurAIAgent().getId()))
+                .flatMap(flow -> chatFlowFunnelService.computeFunnel(flow.getId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Chat flow not found"));
     }
