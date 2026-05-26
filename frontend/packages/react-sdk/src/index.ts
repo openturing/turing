@@ -105,6 +105,11 @@ export type {
   UseTuringScheduleAgentWaitingReturn,
   UseTuringScheduleAgentWaitingOptions,
 } from "./hooks/use-turing-schedule-agent-waiting";
+export { useTuringLlmInstances } from "./hooks/use-turing-llm-instances";
+export type {
+  UseTuringLlmInstancesReturn,
+  UseTuringLlmInstancesOptions,
+} from "./hooks/use-turing-llm-instances";
 export { useTuringSlotWriter } from "./hooks/use-turing-slot-writer";
 export type {
   UseTuringSlotWriterReturn,
