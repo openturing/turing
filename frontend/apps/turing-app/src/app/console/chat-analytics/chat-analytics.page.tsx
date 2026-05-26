@@ -5,6 +5,8 @@ import {
   useChatAnalyticsTimeseries,
   useChatAnalyticsTranscript,
 } from "@/api/queries/chat-analytics.queries";
+import { useChatSlotAudit } from "@/api/queries/chat-session.queries";
+import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -134,10 +136,15 @@ interface DetailPanelProps {
 
 function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
   const { data, isLoading, isError } = useChatAnalyticsTranscript(conversationId);
+  // T86 — overlay the T60 slot audit trail so each transcript message
+  // sits next to the slot writes that happened around that turn. Polling
+  // is off for the detail panel — the conversation is historical by
+  // definition and the open sheet shouldn't keep generating traffic.
+  const { data: auditData } = useChatSlotAudit(conversationId, { refetchInterval: 0 });
 
   return (
     <Sheet open={Boolean(conversationId)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Conversation detail</SheetTitle>
           <SheetDescription className="font-mono text-xs">{conversationId}</SheetDescription>
@@ -232,42 +239,148 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Transcript ({data.messages.length} {data.messages.length === 1 ? "message" : "messages"})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {data.messages.length === 0 ? (
-                  <p className="text-muted-foreground py-4 text-center text-sm">
-                    No messages stored — chat memory may be disabled or already purged.
-                  </p>
-                ) : (
-                  data.messages.map((msg, idx) => (
-                    <div
-                      // Same conversation may have repeated content; index disambiguates.
-                      key={`${msg.timestamp ?? idx}-${idx}`}
-                      className="rounded-md border p-3"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <Badge variant={msg.role === "assistant" ? SUCCESS : NEUTRAL}>
-                          {msg.role ?? "unknown"}
-                        </Badge>
-                        <span className="text-muted-foreground text-xs">
-                          {formatTimestamp(msg.timestamp)}
-                        </span>
-                      </div>
-                      <p className="whitespace-pre-wrap text-sm">{msg.content ?? ""}</p>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+            <ReplayTimeline
+              messages={data.messages}
+              audit={auditData?.entries ?? []}
+            />
           </div>
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * T86 / §VII.10.c — unified conversation replay timeline. Interleaves
+ * chat-memory messages with T60 slot-audit entries by timestamp so the
+ * operator reads the conversation alongside the slot writes it produced.
+ * Each row carries an absolute time, a source badge (user / assistant /
+ * NODE / TOOL / ENDPOINT / EXTRACT), and the payload (message text or
+ * the {@code (old → new)} slot delta).
+ */
+function ReplayTimeline({
+  messages,
+  audit,
+}: Readonly<{
+  messages: ReadonlyArray<{ timestamp?: string | null; role?: string | null; content?: string | null }>;
+  audit: ReadonlyArray<TurChatSlotAuditEntry>;
+}>) {
+  type TimelineEvent =
+    | { kind: "message"; ts: number; tsRaw: string | null; role: string; content: string }
+    | { kind: "audit"; ts: number; tsRaw: string | null; entry: TurChatSlotAuditEntry };
+
+  const parseTs = (v?: string | null): { ts: number; raw: string | null } => {
+    if (!v) return { ts: 0, raw: null };
+    const t = Date.parse(v);
+    return { ts: Number.isNaN(t) ? 0 : t, raw: v };
+  };
+
+  const events: TimelineEvent[] = [];
+  messages.forEach((m, idx) => {
+    const { ts, raw } = parseTs(m.timestamp);
+    // No timestamp on a message → push to the end so ordering still falls
+    // back to the source order without exploding sort comparators.
+    events.push({
+      kind: "message",
+      ts: ts || Number.MAX_SAFE_INTEGER - (messages.length - idx),
+      tsRaw: raw,
+      role: m.role ?? "unknown",
+      content: m.content ?? "",
+    });
+  });
+  audit.forEach((a) => {
+    const { ts, raw } = parseTs(a.ts);
+    events.push({ kind: "audit", ts, tsRaw: raw, entry: a });
+  });
+  events.sort((a, b) => a.ts - b.ts);
+
+  if (events.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Replay timeline</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground py-4 text-center text-sm">
+            Nothing to replay — chat memory and slot audit are both empty for this conversation.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const sourceBadgeClass: Record<string, string> = {
+    NODE: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    TOOL: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+    ENDPOINT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+    EXTRACT: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  };
+  const renderValue = (v: string | null): string => {
+    if (v === null || v === undefined) return "—";
+    if (v === "") return "(empty)";
+    return v;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          Replay timeline ({events.length} event{events.length === 1 ? "" : "s"})
+        </CardTitle>
+        <CardDescription>
+          Messages + slot writes interleaved by timestamp so each turn sits next to the slots it wrote.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {events.map((ev, idx) => {
+          const stamp = formatTimestamp(ev.tsRaw);
+          if (ev.kind === "message") {
+            return (
+              <div
+                key={`m-${idx}`}
+                className="rounded-md border bg-background/40 p-3"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <Badge variant={ev.role === "assistant" ? SUCCESS : NEUTRAL}>
+                    {ev.role}
+                  </Badge>
+                  <span className="text-muted-foreground text-xs">{stamp}</span>
+                </div>
+                <p className="whitespace-pre-wrap text-sm">{ev.content}</p>
+              </div>
+            );
+          }
+          const e = ev.entry;
+          const badgeClass = sourceBadgeClass[e.source] ?? "bg-muted text-muted-foreground";
+          return (
+            <div
+              key={`a-${e.id}`}
+              className="rounded-md border border-dashed bg-muted/10 px-3 py-2 text-xs space-y-1"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${badgeClass}`}>
+                  slot · {e.source}
+                </span>
+                <span className="font-mono font-medium truncate" title={e.slotName}>
+                  {e.slotName}
+                </span>
+                <span className="text-muted-foreground ml-auto shrink-0">{stamp}</span>
+              </div>
+              <div className="font-mono leading-relaxed">
+                <span>{renderValue(e.oldValue)}</span>
+                <span className="mx-1.5 text-muted-foreground/60">→</span>
+                <span className="break-all">{renderValue(e.newValue)}</span>
+              </div>
+              {e.originDetail && (
+                <div className="text-muted-foreground/70 truncate" title={e.originDetail}>
+                  {e.originDetail}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }
 
