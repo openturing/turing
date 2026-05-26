@@ -12,6 +12,7 @@ export type FlowNodeType =
   | "formCapture"
   | "condition"
   | "functionCall"
+  | "scheduleAgent"
   | "subFlow"
   | "subFlowSwitch"
   | "persona"
@@ -171,6 +172,24 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   requiredTools?: string[];
+  /**
+   * Id of the {@code TurRoutine} a {@code scheduleAgent} node fires when
+   * the engine walks across it. The routine runs asynchronously through
+   * the JMS queue; its result lands in {@link outputVariable} via the
+   * slot bus, at which point the auto-resume listener advances the flow.
+   * @since 2026.3.1
+   */
+  routineId?: string;
+  /** Cached display name of the linked routine — same UX pattern as {@link subFlowName}. */
+  routineName?: string;
+  /**
+   * Per-node timeout override (ms) for a {@code scheduleAgent} node. Blank
+   * falls back to the routine's own {@code defaultTimeoutMs}. On expiry
+   * the engine takes the {@code timeout} outgoing edge (or the first edge
+   * when none is wired).
+   * @since 2026.3.1
+   */
+  routineTimeoutMs?: number;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
@@ -241,5 +260,13 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-indigo-50 dark:bg-indigo-950/40",
     border: "border-indigo-500",
     text: "text-indigo-900 dark:text-indigo-100",
+  },
+  scheduleAgent: {
+    // Lime signals "scheduled / time-driven" — visually adjacent to
+    // functionCall's orange (both invoke a tool) but cooler so authors
+    // can tell at a glance which call is async vs sync.
+    bg: "bg-lime-50 dark:bg-lime-950/40",
+    border: "border-lime-500",
+    text: "text-lime-900 dark:text-lime-100",
   },
 };

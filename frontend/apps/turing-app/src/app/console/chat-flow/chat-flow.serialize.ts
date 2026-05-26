@@ -9,6 +9,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   formCapture: "FORM CAPTURE",
   condition: "CONDITION",
   functionCall: "FUNCTION CALL",
+  scheduleAgent: "SCHEDULED ROUTINE",
   subFlow: "SUB FLOW",
   subFlowSwitch: "SUB-FLOW SWITCH",
   persona: "PERSONA SWITCH",

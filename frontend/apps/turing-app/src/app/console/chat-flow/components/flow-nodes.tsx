@@ -3,6 +3,7 @@ import {
   IconArrowRight,
   IconArrowsSplit2,
   IconBook2,
+  IconClock,
   IconDatabase,
   IconFlag3,
   IconForms,
@@ -434,6 +435,61 @@ export function FormCaptureNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
+  const routineName =
+    typeof data.routineName === "string" && data.routineName.trim().length > 0
+      ? data.routineName
+      : null;
+  const target = routineName ?? data.routineId ?? null;
+  const timeoutMs =
+    typeof data.routineTimeoutMs === "number" && data.routineTimeoutMs > 0
+      ? data.routineTimeoutMs
+      : null;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-lime-500 bg-background shadow-md">
+      <div className="flex items-center justify-between gap-2 bg-lime-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconClock className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">
+            {data.label || "Scheduled Routine"}
+          </div>
+        </div>
+        {timeoutMs && (
+          <span className="rounded bg-lime-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+            {Math.round(timeoutMs / 1000)}s
+          </span>
+        )}
+      </div>
+      <div className="bg-lime-50 p-3 text-xs leading-relaxed text-lime-900 dark:bg-lime-950/40 dark:text-lime-100">
+        <div>
+          <span className="font-semibold">Routine: </span>
+          <code className="rounded bg-lime-200/60 px-1 py-0.5 text-[11px] dark:bg-lime-900/50">
+            {target?.trim() || "not set"}
+          </code>
+        </div>
+        {data.outputVariable && (
+          <div className="mt-1 opacity-90">
+            <span className="font-semibold">Output Slot: </span>
+            <code className="rounded bg-lime-200/60 px-1 py-0.5 text-[11px] dark:bg-lime-900/50">
+              {data.outputVariable}
+            </code>
+          </div>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-lime-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-lime-600!" />
+      {/* Timeout edge — second outgoing handle wired by sourceHandle="timeout". */}
+      <Handle
+        type="source"
+        id="timeout"
+        position={Position.Bottom}
+        style={{ bottom: "-4px", left: "50%" }}
+        className="size-2.5! bg-rose-500!"
+      />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -441,6 +497,7 @@ export const nodeTypes = {
   formCapture: FormCaptureNode,
   condition: ConditionNode,
   functionCall: FunctionCallNode,
+  scheduleAgent: ScheduleAgentNode,
   subFlow: SubFlowNode,
   subFlowSwitch: SubFlowSwitchNode,
   persona: PersonaNode,

@@ -33,4 +33,13 @@ public class TurSNConstants {
     public static final String EXPORT_FILE = "export.json";
     public static final String INDEXING_QUEUE = "indexing.queue";
     public static final String INDEXING_QUEUE_LISTENER = "indexingQueueListener";
+
+    /**
+     * Artemis queue carrying {@code TurScheduleAgentMessage} payloads for
+     * async routine execution (T48 — scheduleAgent chat-flow node).
+     *
+     * @since 2026.3.1
+     */
+    public static final String ROUTINE_QUEUE = "routine.queue";
+    public static final String ROUTINE_QUEUE_LISTENER = "routineQueueListener";
 }

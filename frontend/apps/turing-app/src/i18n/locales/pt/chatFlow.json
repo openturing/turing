@@ -117,7 +117,8 @@
       "persona": "Trocar Persona",
       "switch": "Seletor",
       "slot": "Slot",
-      "writeSlot": "Gravar Slot (com template)"
+      "writeSlot": "Gravar Slot (com template)",
+      "scheduleAgent": "Rotina Agendada"
     },
     "properties": {
       "header": "Propriedades do Nó",
@@ -157,6 +158,16 @@
       "mcpServer": "Servidor MCP",
       "mcpServerPlaceholder": "Escolha um servidor MCP",
       "mcpServerHint": "Todas as ferramentas expostas pelo servidor MCP selecionado ficarão disponíveis para a LLM.",
+      "scheduleAgent": {
+        "routineId": "Rotina",
+        "routineIdPlaceholder": "Id da rotina",
+        "routineIdHint": "Id da rotina configurada para executar de forma assíncrona. O fluxo aguarda neste nó até a rotina gravar o slot de saída (ou expirar).",
+        "payloadTemplate": "Template do Payload (JSON)",
+        "payloadTemplateHint": "Template JSON enviado à rotina. Marcadores {{nomeSlot}} são interpolados a partir dos slots da conversa antes do envio. Em branco envia {}.",
+        "outputVariable": "Slot de Saída",
+        "timeoutMs": "Timeout (ms)",
+        "timeoutMsHint": "Override por nó (em milissegundos). Em branco usa o timeout padrão da rotina. Ao expirar, o engine segue pela aresta 'timeout' (ou pela primeira aresta se não houver)."
+      },
       "condition": "Expressão da Condição",
       "subFlow": "Sub Fluxo",
       "subFlowPlaceholder": "Escolha um chat flow",

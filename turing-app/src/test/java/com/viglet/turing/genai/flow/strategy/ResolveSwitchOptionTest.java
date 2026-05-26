@@ -159,6 +159,8 @@ class ResolveSwitchOptionTest {
                 null,                       // slotValue
                 null,                       // onJudgeReject
                 null,                       // toolsEnabled
-                List.of()));                // requiredTools
+                List.of(),                  // requiredTools
+                null,                       // routineId
+                null));                     // routineTimeoutMs
     }
 }

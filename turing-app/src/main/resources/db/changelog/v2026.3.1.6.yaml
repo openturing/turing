@@ -1,0 +1,68 @@
+databaseChangeLog:
+  # T48 / §VII.4.c — scheduleAgent chat-flow node + tur_routine entity.
+  #
+  # A "routine" is a named, configurable async job authored once and invoked
+  # by any number of scheduleAgent nodes across flows. The job body for MVP
+  # is a NATIVE @Tool reference (nativeToolName) — async wrapper around the
+  # same machinery functionCall uses synchronously. Future T48.1 may add
+  # GROOVY scriptSource. Routine completion writes back via the slot bus
+  # (POST /chat/slots) which the auto-resume listener picks up to advance
+  # the parked flow.
+  #
+  # Idempotent: each addition is gated by exists checks.
+
+  - changeSet:
+      id: v2026.3.1.6-create-tur_routine
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_routine
+      changes:
+        - createTable:
+            tableName: tur_routine
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_tur_routine_name
+              - column:
+                  name: description
+                  type: varchar(512)
+              - column:
+                  name: kind
+                  type: varchar(16)
+                  defaultValue: NATIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nativeToolName
+                  type: varchar(128)
+              - column:
+                  name: defaultTimeoutMs
+                  type: int
+                  defaultValueNumeric: 60000
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+              - column:
+                  name: updatedAt
+                  type: timestamp

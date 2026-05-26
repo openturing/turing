@@ -90,4 +90,18 @@ public class TurChatSlotEventBus {
         }
         return sink.asFlux().filter(event -> conversationId.equals(event.conversationId()));
     }
+
+    /**
+     * Unfiltered hot view of every slot event on the bus, regardless of
+     * conversation. Used by single-process listeners that need to react
+     * to slot writes globally — e.g. {@code TurChatFlowAutoResumeService}
+     * nudging the engine to advance any flow parked on a
+     * {@code scheduleAgent} node when its routine writes the output slot.
+     * Per-conversation SSE clients keep using {@link #subscribe(String)}.
+     *
+     * @since 2026.3.1
+     */
+    public Flux<TurChatSessionSlotsDto> subscribeAll() {
+        return sink.asFlux();
+    }
 }

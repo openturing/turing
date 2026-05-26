@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -241,6 +241,34 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.requiredTools() == null ? List.of() : data.requiredTools();
     }
 
+    /**
+     * Id of the {@code TurRoutine} this {@code scheduleAgent} node fires
+     * (T48). Only meaningful when the node's type is {@code scheduleAgent};
+     * ignored otherwise. The routine runs asynchronously via JMS — its
+     * result lands in {@link #outputVariable()} through the slot bus and
+     * the auto-resume listener walks the flow past this node when the slot
+     * arrives.
+     *
+     * @since 2026.3.1
+     */
+    public String routineId() {
+        return data.routineId();
+    }
+
+    /**
+     * Per-node timeout override (ms) for a {@code scheduleAgent} node.
+     * When the routine hasn't written its slot within this budget, the
+     * engine takes the {@code timeout} outgoing edge on the next
+     * walk-through (falls back to the first edge when none is wired). A
+     * blank/null value falls back to the routine's own
+     * {@code defaultTimeoutMs}.
+     *
+     * @since 2026.3.1
+     */
+    public Integer routineTimeoutMs() {
+        return data.routineTimeoutMs();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -264,7 +292,9 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String slotValue,
             String onJudgeReject,
             Boolean toolsEnabled,
-            List<String> requiredTools) {
+            List<String> requiredTools,
+            String routineId,
+            Integer routineTimeoutMs) {
     }
 
     /**

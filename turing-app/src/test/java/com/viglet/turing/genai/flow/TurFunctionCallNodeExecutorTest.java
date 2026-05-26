@@ -264,7 +264,9 @@ class TurFunctionCallNodeExecutorTest {
                 null,                  // slotValue
                 null,                  // onJudgeReject
                 null,                  // toolsEnabled
-                List.of()              // requiredTools
+                List.of(),             // requiredTools
+                null,                  // routineId
+                null                   // routineTimeoutMs
         ));
     }
 
@@ -278,6 +280,6 @@ class TurFunctionCallNodeExecutorTest {
                 null, null, null, null,
                 List.of(), List.of(),
                 null, null, null, null, null, null,
-                List.of()));
+                List.of(), null, null));
     }
 }

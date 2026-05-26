@@ -208,7 +208,7 @@ class TurChatFlowStaticPromptCacheTest {
         return new ChatFlowNode(id, type, new NodeData(
                 label, type, aiInstruction, outputVariable, validationRule,
                 null, null, null, null, null, null, null, null,
-                List.of(), List.of(), null, null, null, null, null, null, null));
+                List.of(), List.of(), null, null, null, null, null, null, null, null, null));
     }
 
     private static TurChatFlowState blankState() {

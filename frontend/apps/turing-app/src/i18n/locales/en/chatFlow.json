@@ -117,7 +117,8 @@
       "persona": "Persona Switch",
       "switch": "Switch",
       "slot": "Slot",
-      "writeSlot": "Write Slot (templated)"
+      "writeSlot": "Write Slot (templated)",
+      "scheduleAgent": "Scheduled Routine"
     },
     "properties": {
       "header": "Node Properties",
@@ -157,6 +158,16 @@
       "mcpServer": "MCP Server",
       "mcpServerPlaceholder": "Pick an MCP server",
       "mcpServerHint": "All tools exposed by the selected MCP server will be available to the LLM.",
+      "scheduleAgent": {
+        "routineId": "Routine",
+        "routineIdPlaceholder": "Routine id",
+        "routineIdHint": "Id of the configured routine to run asynchronously. The flow pauses on this node until the routine writes the output slot (or the timeout expires).",
+        "payloadTemplate": "Payload Template (JSON)",
+        "payloadTemplateHint": "JSON template passed to the routine. {{slotName}} placeholders are interpolated from the conversation's slot map before dispatch. Leave blank to send {}.",
+        "outputVariable": "Output Slot",
+        "timeoutMs": "Timeout (ms)",
+        "timeoutMsHint": "Per-node override (milliseconds). Leave blank to use the routine's default. On expiry the engine takes the 'timeout' outgoing edge (or the first edge if none is wired)."
+      },
       "condition": "Condition Expression",
       "subFlow": "Sub Flow",
       "subFlowPlaceholder": "Pick a chat flow",

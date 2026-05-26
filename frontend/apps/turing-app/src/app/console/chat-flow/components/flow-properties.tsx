@@ -426,6 +426,71 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
           </div>
         )}
 
+        {type === "scheduleAgent" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-routine-id">
+                {t("chatFlow.properties.scheduleAgent.routineId")}
+              </Label>
+              <Input
+                id="flow-node-routine-id"
+                value={data.routineId ?? ""}
+                onChange={(e) => update({ routineId: e.target.value || undefined })}
+                placeholder={t("chatFlow.properties.scheduleAgent.routineIdPlaceholder")}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.scheduleAgent.routineIdHint")}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-routine-payload">
+                {t("chatFlow.properties.scheduleAgent.payloadTemplate")}
+              </Label>
+              <Textarea
+                id="flow-node-routine-payload"
+                rows={3}
+                value={data.aiInstruction ?? ""}
+                onChange={(e) => update({ aiInstruction: e.target.value })}
+                placeholder='{"cargo":"{{cargo}}"}'
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.scheduleAgent.payloadTemplateHint")}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-routine-output">
+                {t("chatFlow.properties.scheduleAgent.outputVariable")}
+              </Label>
+              <Input
+                id="flow-node-routine-output"
+                value={data.outputVariable ?? ""}
+                onChange={(e) => update({ outputVariable: e.target.value || undefined })}
+                placeholder="proposta_pdf_url"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-routine-timeout">
+                {t("chatFlow.properties.scheduleAgent.timeoutMs")}
+              </Label>
+              <Input
+                id="flow-node-routine-timeout"
+                type="number"
+                min={1000}
+                step={1000}
+                value={data.routineTimeoutMs ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  update({ routineTimeoutMs: v === "" ? undefined : Number(v) });
+                }}
+                placeholder="60000"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.scheduleAgent.timeoutMsHint")}
+              </span>
+            </div>
+          </>
+        )}
+
         {type === "subFlow" && (
           <div className="flex flex-col gap-1">
             <Label>{t("chatFlow.properties.subFlow")}</Label>
@@ -789,6 +854,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.slot";
     case "writeSlot":
       return "chatFlow.palette.writeSlot";
+    case "scheduleAgent":
+      return "chatFlow.palette.scheduleAgent";
   }
 }
 

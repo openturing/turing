@@ -66,6 +66,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor;
 import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
@@ -243,6 +244,7 @@ public class TurChatFlowEngineService {
     private final TurChatSlotEventBus slotEventBus;
     private final CacheManager cacheManager;
     private final TurFunctionCallNodeExecutor functionCallExecutor;
+    private final TurScheduleAgentNodeExecutor scheduleAgentExecutor;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
@@ -252,6 +254,7 @@ public class TurChatFlowEngineService {
             TurChatSlotEventBus slotEventBus,
             CacheManager cacheManager,
             TurFunctionCallNodeExecutor functionCallExecutor,
+            TurScheduleAgentNodeExecutor scheduleAgentExecutor,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
@@ -260,6 +263,7 @@ public class TurChatFlowEngineService {
         this.slotEventBus = slotEventBus;
         this.cacheManager = cacheManager;
         this.functionCallExecutor = functionCallExecutor;
+        this.scheduleAgentExecutor = scheduleAgentExecutor;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -501,6 +505,39 @@ public class TurChatFlowEngineService {
     private static String truncate(String s, int max) {
         if (s == null) return "";
         return s.length() <= max ? s : s.substring(0, max) + "…";
+    }
+
+    /**
+     * T48 — re-walks every chat-flow state for {@code conversationId} whose
+     * cursor currently sits on a {@code scheduleAgent} node, so a routine
+     * completion delivered through the slot bus advances the flow without
+     * waiting for the user's next message. Safe to call any number of
+     * times: states not parked on a {@code scheduleAgent} are skipped, and
+     * the executor's COMPLETED/TIMEOUT/WAITING outcomes naturally idempotent.
+     *
+     * <p>Invoked by {@code TurChatFlowAutoResumeService} on every slot event.
+     *
+     * @since 2026.3.1
+     */
+    @Transactional
+    public void resumeParkedScheduleAgents(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return;
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        for (TurChatFlowState state : states) {
+            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+            if (graph == null) continue;
+            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty()) continue;
+            if (!"scheduleAgent".equals(currentOpt.get().type())) continue;
+            log.info("[FlowEngine] auto-resume: conv='{}' re-walking parked state '{}'",
+                    conversationId, state.getId());
+            TurChatFlowState leaf = walkTransparentNodes(state, null);
+            if (leaf != state) {
+                stateRepository.save(leaf);
+            }
+        }
     }
 
     private TurChatFlowGuardrailStrategy resolveStrategy(TurChatFlow flow) {
@@ -2202,6 +2239,42 @@ public class TurChatFlowEngineService {
                 state = stateRepository.save(state);
                 slotEventBus.publish(state.getConversationId(),
                         listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
+            // scheduleAgent node (T48): asynchronous routine dispatch. First
+            // entry enqueues a JMS message and parks the flow on this node;
+            // subsequent re-entries (driven by slot-bus auto-resume on
+            // completion, or the user's next turn) poll for the output slot
+            // or expiry. WAITING bails out of the transparent walk so the
+            // chat turn returns; COMPLETED advances normally; TIMEOUT routes
+            // via the optional 'timeout' sourceHandle; FAILED logs + advances
+            // like functionCall does on resolution errors.
+            if ("scheduleAgent".equals(current.type())) {
+                TurScheduleAgentNodeExecutor.Outcome outcome =
+                        scheduleAgentExecutor.execute(state, current);
+                switch (outcome) {
+                    case WAITING -> {
+                        state = stateRepository.save(state);
+                        return state;
+                    }
+                    case COMPLETED -> {
+                        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                        state = stateRepository.save(state);
+                        slotEventBus.publish(state.getConversationId(),
+                                listSlotsForConversation(state.getConversationId()).slots());
+                    }
+                    case TIMEOUT -> {
+                        TurScheduleAgentNodeExecutor.advanceOnTimeout(state, graph, current);
+                        state = stateRepository.save(state);
+                        slotEventBus.publish(state.getConversationId(),
+                                listSlotsForConversation(state.getConversationId()).slots());
+                    }
+                    case FAILED -> {
+                        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                        state = stateRepository.save(state);
+                    }
+                }
                 continue;
             }
 

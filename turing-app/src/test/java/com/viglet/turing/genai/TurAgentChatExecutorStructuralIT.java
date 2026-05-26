@@ -879,7 +879,9 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
                     null, // slotValue
                     null, // onJudgeReject
                     toolsEnabled,
-                    null); // requiredTools
+                    null, // requiredTools
+                    null, // routineId
+                    null); // routineTimeoutMs
         }
     }
 }
