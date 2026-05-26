@@ -7,6 +7,7 @@ import {
   IconForms,
   IconPencilPlus,
   IconPlayerPlayFilled,
+  IconRouteAltLeft,
   IconSparkles,
   IconSubtask,
   IconVariable,
@@ -40,6 +41,7 @@ const PALETTE: PaletteItem[] = [
   { type: "writeSlot", labelKey: "chatFlow.palette.writeSlot", icon: IconPencilPlus, accent: "text-teal-600" },
   { type: "functionCall", labelKey: "chatFlow.palette.functionCall", icon: IconBell, accent: "text-orange-600" },
   { type: "subFlow", labelKey: "chatFlow.palette.subFlow", icon: IconSubtask, accent: "text-violet-600" },
+  { type: "subFlowSwitch", labelKey: "chatFlow.palette.subFlowSwitch", icon: IconRouteAltLeft, accent: "text-purple-600" },
   { type: "persona", labelKey: "chatFlow.palette.persona", icon: IconSparkles, accent: "text-fuchsia-600" },
   { type: "end", labelKey: "chatFlow.palette.end", icon: IconFlag3, accent: "text-rose-600" },
 ];

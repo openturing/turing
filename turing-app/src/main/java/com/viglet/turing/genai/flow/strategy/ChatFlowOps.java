@@ -927,10 +927,31 @@ public final class ChatFlowOps {
     private static String resolveSwitchHandle(ChatModel auxModel,
             ChatFlowNode switchNode,
             Map<String, String> variables) {
+        return resolveSwitchOption(auxModel, switchNode, variables)
+                .map(ChatFlowNode.SwitchOption::id)
+                .orElse(null);
+    }
+
+    /**
+     * Same classification cascade as {@link #resolveSwitchHandle} but returns the matched
+     * {@link ChatFlowNode.SwitchOption} so callers can read other fields besides {@code id} —
+     * notably {@link ChatFlowNode.SwitchOption#subFlowId()} for the T47 {@code subFlowSwitch}
+     * node, which dispatches into a sub-flow per matched option instead of an outgoing edge.
+     *
+     * <p>Cascade is identical: exact label → substring (longest wins) → LLM classifier. Empty
+     * value, no options, or no fit at any tier returns {@link Optional#empty()} so the caller
+     * decides what fallback to apply (wildcard edge for {@code switch}; advance-without-descent
+     * for {@code subFlowSwitch}).
+     *
+     * @since 2026.3.1
+     */
+    public static Optional<ChatFlowNode.SwitchOption> resolveSwitchOption(ChatModel auxModel,
+            ChatFlowNode switchNode,
+            Map<String, String> variables) {
         List<ChatFlowNode.SwitchOption> options = switchNode.switchOptions();
         if (options == null || options.isEmpty()) {
             log.warn("[FlowOps] Switch '{}' has no options configured", switchNode.id());
-            return null;
+            return Optional.empty();
         }
         String variableName = switchNode.switchVariable();
         String rawValue = variableName == null || variableName.isBlank()
@@ -939,7 +960,7 @@ public final class ChatFlowOps {
         if (rawValue == null || rawValue.isBlank()) {
             log.info("[FlowOps] Switch '{}' has no usable value (var='{}') — falling back to wildcard",
                     switchNode.id(), variableName);
-            return null;
+            return Optional.empty();
         }
         String value = rawValue.trim();
         String lowerValue = value.toLowerCase();
@@ -952,7 +973,7 @@ public final class ChatFlowOps {
             if (option.label().trim().equalsIgnoreCase(value)) {
                 log.info("[FlowOps] Switch '{}' exact match: '{}' → option '{}'",
                         switchNode.id(), value, option.id());
-                return option.id();
+                return Optional.of(option);
             }
         }
 
@@ -976,7 +997,7 @@ public final class ChatFlowOps {
         if (best != null) {
             log.info("[FlowOps] Switch '{}' substring match: '{}' → option '{}' (label='{}')",
                     switchNode.id(), value, best.id(), best.label());
-            return best.id();
+            return Optional.of(best);
         }
 
         // 3) LLM classifier — the user phrased their answer in a way the cheap matches missed
@@ -984,9 +1005,18 @@ public final class ChatFlowOps {
         if (auxModel == null) {
             log.info("[FlowOps] Switch '{}' has no aux model for classification — falling back to wildcard",
                     switchNode.id());
-            return null;
+            return Optional.empty();
         }
-        return classifySwitchWithLlm(auxModel, switchNode, options, variableName, value);
+        String classifiedId = classifySwitchWithLlm(auxModel, switchNode, options, variableName, value);
+        if (classifiedId == null) {
+            return Optional.empty();
+        }
+        for (ChatFlowNode.SwitchOption option : options) {
+            if (option != null && classifiedId.equals(option.id())) {
+                return Optional.of(option);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

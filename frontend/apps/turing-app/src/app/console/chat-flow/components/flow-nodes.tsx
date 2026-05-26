@@ -9,6 +9,7 @@ import {
   IconPencilPlus,
   IconPlayerPlayFilled,
   IconBell,
+  IconRouteAltLeft,
   IconSparkles,
   IconSubtask,
   IconVariable,
@@ -238,6 +239,58 @@ export function SwitchNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function SubFlowSwitchNode({ data }: ChatFlowNodeProps) {
+  // Mirrors SwitchNode's per-option row layout so the two read as siblings,
+  // but the consequence column shows the linked sub-flow name (or "—" when
+  // unset) instead of an outgoing-edge arrow. There's a single source handle
+  // on the right for the WILDCARD edge — fires when no option matches or
+  // the matched option has no subFlowId. Matched options drive descent and
+  // never traverse an edge.
+  const options = ensureSwitchOptions(data);
+  return (
+    <div className="relative w-72 rounded-lg border-2 border-purple-500 bg-background shadow-md">
+      <div className="flex h-9 items-center gap-2 rounded-t-md bg-purple-500 px-3 text-white">
+        <IconRouteAltLeft className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Sub-flow Switch"}</div>
+      </div>
+      {options.length === 0 ? (
+        <div className="rounded-b-md bg-purple-50 px-3 py-2 text-xs italic text-purple-900/70 dark:bg-purple-950/40 dark:text-purple-100/70">
+          No options yet
+        </div>
+      ) : (
+        options.map((option, idx) => {
+          const isLast = idx === options.length - 1;
+          const optionLabel = option.label || `Option ${idx + 1}`;
+          const target = option.subFlowName ?? option.subFlowId ?? null;
+          return (
+            <div
+              key={option.id}
+              className={`flex h-9 items-center justify-between gap-2 border-t border-purple-200/70 bg-purple-50 pl-3 pr-3 text-xs text-purple-900 dark:border-purple-900/50 dark:bg-purple-950/40 dark:text-purple-100${isLast ? " rounded-b-md" : ""}`}
+            >
+              <span className="truncate font-medium">{optionLabel}</span>
+              <span className="flex items-center gap-1 truncate text-[11px] opacity-80">
+                <IconSubtask className="size-3 shrink-0" />
+                {target ? (
+                  <code className="truncate rounded bg-purple-200/60 px-1 py-0.5 dark:bg-purple-900/50">
+                    {target}
+                  </code>
+                ) : (
+                  <span className="italic opacity-70">—</span>
+                )}
+              </span>
+            </div>
+          );
+        })
+      )}
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-purple-600!" />
+      {/* Single source handle for the wildcard fallback edge — fires when no
+          option matches or the matched option has no subFlowId. Matched
+          options drive sub-flow descent and never traverse an edge. */}
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-purple-600!" />
+    </div>
+  );
+}
+
 export function SlotNode({ data }: ChatFlowNodeProps) {
   const operation = data.slotOperation ?? "SET";
   const slotName = typeof data.slotName === "string" && data.slotName.trim().length > 0
@@ -389,6 +442,7 @@ export const nodeTypes = {
   condition: ConditionNode,
   functionCall: FunctionCallNode,
   subFlow: SubFlowNode,
+  subFlowSwitch: SubFlowSwitchNode,
   persona: PersonaNode,
   switch: SwitchNode,
   slot: SlotNode,

@@ -119,6 +119,13 @@ function appendFromNode(entries: TranscriptEntry[], data: FlowNodeData) {
       entries.push({ actor: "bot", text: `↳ ${data.label}: ${target}` });
       break;
     }
+    case "subFlowSwitch": {
+      const routes = (data.switchOptions ?? [])
+        .map((o) => `${o.label || "—"} → ${o.subFlowName ?? o.subFlowId ?? "(unset)"}`)
+        .join(" | ");
+      entries.push({ actor: "bot", text: `↳⇆ ${data.label}: ${routes || "(no options)"}` });
+      break;
+    }
     case "slot": {
       const op = data.slotOperation ?? "SET";
       const name = data.slotName ?? "(no slot)";

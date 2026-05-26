@@ -307,6 +307,20 @@ function NodeRendering({
         </SystemBubble>
       );
     }
+    case "subFlowSwitch": {
+      const varName = data.switchVariable || "(no variable)";
+      const routes = (data.switchOptions ?? [])
+        .map((o) => `${o.label || "—"} → ${o.subFlowName || o.subFlowId || "(unset)"}`)
+        .join(" · ");
+      return (
+        <SystemBubble>
+          {t("chatFlow.livePreview.subFlowSwitch", {
+            defaultValue: "Routes by ",
+          })}
+          <code className="font-mono">{varName}</code>: {routes || "(no options)"}
+        </SystemBubble>
+      );
+    }
     case "persona": {
       const target = data.personaName || data.personaId || "(not set)";
       return (

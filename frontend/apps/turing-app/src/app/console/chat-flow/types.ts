@@ -13,6 +13,7 @@ export type FlowNodeType =
   | "condition"
   | "functionCall"
   | "subFlow"
+  | "subFlowSwitch"
   | "persona"
   | "switch"
   | "slot"
@@ -60,6 +61,16 @@ export type FlowOnJudgeReject = "advance_with_literal" | "reprompt" | "block";
 export interface FlowSwitchOption {
   id: string;
   label: string;
+  /**
+   * Only used by {@code subFlowSwitch} nodes (T47): when this option wins the
+   * classification cascade, the engine descends into the named sub-flow
+   * instead of routing through an outgoing edge. Ignored on plain
+   * {@code switch} nodes (which route via {@code id} → {@code sourceHandle}).
+   * @since 2026.3.1
+   */
+  subFlowId?: string;
+  /** Cached display name of the linked sub-flow — same UX pattern as {@link FlowNodeData.subFlowName}. */
+  subFlowName?: string;
 }
 
 export interface FlowNodeData extends Record<string, unknown> {
@@ -202,6 +213,14 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-cyan-50 dark:bg-cyan-950/40",
     border: "border-cyan-500",
     text: "text-cyan-900 dark:text-cyan-100",
+  },
+  subFlowSwitch: {
+    // Sits between `switch` (cyan — multi-way edge router) and `subFlow`
+    // (violet — single descent). Purple-cyan blend (sky) signals "switch
+    // semantics, sub-flow consequence" so authors spot the family at a glance.
+    bg: "bg-purple-50 dark:bg-purple-950/40",
+    border: "border-purple-500",
+    text: "text-purple-900 dark:text-purple-100",
   },
   slot: {
     bg: "bg-sky-50 dark:bg-sky-950/40",

@@ -462,7 +462,7 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
           </div>
         )}
 
-        {type === "switch" && (
+        {(type === "switch" || type === "subFlowSwitch") && (
           <>
             <div className="flex flex-col gap-1">
               <Label>{t("chatFlow.properties.switchVariable")}</Label>
@@ -536,9 +536,12 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
               <SwitchOptionsEditor
                 options={ensureSwitchOptions(data)}
                 onChange={(next) => update({ switchOptions: next })}
+                subFlowOptions={type === "subFlowSwitch" ? subFlowOptions : undefined}
               />
               <span className="text-[11px] text-muted-foreground">
-                {t("chatFlow.properties.switchOptionsHint")}
+                {t(type === "subFlowSwitch"
+                  ? "chatFlow.properties.subFlowSwitchOptionsHint"
+                  : "chatFlow.properties.switchOptionsHint")}
               </span>
             </div>
           </>
@@ -776,6 +779,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.functionCall";
     case "subFlow":
       return "chatFlow.palette.subFlow";
+    case "subFlowSwitch":
+      return "chatFlow.palette.subFlowSwitch";
     case "persona":
       return "chatFlow.palette.persona";
     case "switch":
@@ -790,9 +795,17 @@ function typeLabelKey(type: FlowNodeType): string {
 interface SwitchOptionsEditorProps {
   readonly options: FlowSwitchOption[];
   readonly onChange: (options: FlowSwitchOption[]) => void;
+  /**
+   * When provided, the editor renders an extra per-row sub-flow picker
+   * (T47, for {@code subFlowSwitch} nodes). Each option's matched sub-flow
+   * is stored on {@link FlowSwitchOption.subFlowId} with the resolved name
+   * cached on {@link FlowSwitchOption.subFlowName}, mirroring the
+   * {@code subFlow} node pattern.
+   */
+  readonly subFlowOptions?: ReadonlyArray<{ readonly id?: string | null; readonly name?: string | null }>;
 }
 
-function SwitchOptionsEditor({ options, onChange }: SwitchOptionsEditorProps) {
+function SwitchOptionsEditor({ options, onChange, subFlowOptions }: SwitchOptionsEditorProps) {
   const { t } = useTranslation();
   if (options.length === 0) {
     return (
@@ -804,26 +817,65 @@ function SwitchOptionsEditor({ options, onChange }: SwitchOptionsEditorProps) {
   return (
     <div className="flex flex-col gap-2">
       {options.map((option, idx) => (
-        <div key={option.id} className="flex items-center gap-2">
-          <Input
-            value={option.label}
-            placeholder={t("chatFlow.properties.switchOptionPlaceholder", { index: idx + 1 })}
-            onChange={(e) => {
-              const next = options.map((o) =>
-                o.id === option.id ? { ...o, label: e.target.value } : o,
-              );
-              onChange(next);
-            }}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t("chatFlow.properties.switchRemoveOption")}
-            onClick={() => onChange(options.filter((o) => o.id !== option.id))}
-          >
-            <IconTrash className="size-4 text-destructive" />
-          </Button>
+        <div key={option.id} className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Input
+              value={option.label}
+              placeholder={t("chatFlow.properties.switchOptionPlaceholder", { index: idx + 1 })}
+              onChange={(e) => {
+                const next = options.map((o) =>
+                  o.id === option.id ? { ...o, label: e.target.value } : o,
+                );
+                onChange(next);
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t("chatFlow.properties.switchRemoveOption")}
+              onClick={() => onChange(options.filter((o) => o.id !== option.id))}
+            >
+              <IconTrash className="size-4 text-destructive" />
+            </Button>
+          </div>
+          {subFlowOptions !== undefined && (
+            <Select
+              value={option.subFlowId ?? ""}
+              onValueChange={(value) => {
+                const selected = subFlowOptions.find((f) => f.id === value);
+                const next = options.map((o) =>
+                  o.id === option.id
+                    ? {
+                        ...o,
+                        subFlowId: value || undefined,
+                        subFlowName: selected?.name ?? undefined,
+                      }
+                    : o,
+                );
+                onChange(next);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder={t("chatFlow.properties.subFlowSwitchOptionPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {subFlowOptions.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {t("chatFlow.properties.subFlowEmpty")}
+                  </div>
+                ) : (
+                  subFlowOptions
+                    .filter((f) => f.id != null && f.name != null)
+                    .map((f) => (
+                      <SelectItem key={f.id as string} value={f.id as string}>
+                        {f.name}
+                      </SelectItem>
+                    ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       ))}
     </div>

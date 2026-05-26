@@ -2113,6 +2113,39 @@ public class TurChatFlowEngineService {
                 continue;
             }
 
+            // subFlowSwitch node (T47): like a `switch` for routing edges,
+            // but each matched option carries a `subFlowId` and descent runs
+            // the corresponding sub-flow. Composes reusable mini-flows by
+            // slot value (e.g. lead-capture B2B vs B2C, pricing tier flows).
+            // Falls back to first outgoing edge on no match / missing subFlowId
+            // (matches the switch wildcard contract — authors should always
+            // keep one such edge wired).
+            if ("subFlowSwitch".equals(current.type())) {
+                Map<String, String> variables = ChatFlowOps.readVariables(state);
+                Optional<ChatFlowNode.SwitchOption> matched =
+                        ChatFlowOps.resolveSwitchOption(auxModel, current, variables);
+                String matchedSubFlowId = matched
+                        .map(ChatFlowNode.SwitchOption::subFlowId)
+                        .filter(s -> s != null && !s.isBlank())
+                        .orElse(null);
+                Optional<TurChatFlowState> child = matchedSubFlowId == null
+                        ? Optional.empty()
+                        : enterSubFlowById(state, matchedSubFlowId, current);
+                if (child.isPresent()) {
+                    log.info("[FlowEngine] subFlowSwitch '{}' → option '{}' → subFlow '{}'",
+                            current.id(),
+                            matched.map(ChatFlowNode.SwitchOption::id).orElse("(none)"),
+                            matchedSubFlowId);
+                    state = child.get();
+                    continue;
+                }
+                log.info("[FlowEngine] subFlowSwitch '{}' no descent — advancing on outgoing edge",
+                        current.id());
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                continue;
+            }
+
             // Persona node: write the active-persona override into the state's
             // variables and immediately advance — no LLM round-trip. The
             // resolver (TurAgentPersonaResolver) reads __activePersonaId from
@@ -2197,10 +2230,24 @@ public class TurChatFlowEngineService {
      * where to resume on ascent.
      */
     private Optional<TurChatFlowState> enterSubFlow(TurChatFlowState parent, ChatFlowNode subFlowNode) {
-        String subFlowId = subFlowNode.subFlowId();
+        return enterSubFlowById(parent, subFlowNode.subFlowId(), subFlowNode);
+    }
+
+    /**
+     * Shared body for both the plain {@code subFlow} node (T18) and the
+     * {@code subFlowSwitch} node (T47) — descent is identical once we know
+     * the target sub-flow id; the only difference is where the id came from
+     * (node field vs matched switch option's {@code subFlowId}).
+     *
+     * @param parent       the parent state at the time of descent
+     * @param subFlowId    the resolved sub-flow id (may be null/blank — yields empty)
+     * @param sourceNode   originating chat-flow node, used for log context only
+     */
+    private Optional<TurChatFlowState> enterSubFlowById(TurChatFlowState parent,
+            String subFlowId, ChatFlowNode sourceNode) {
         if (subFlowId == null || subFlowId.isBlank()) {
-            log.warn("[FlowEngine] Sub Flow node '{}' has no subFlowId — skipping",
-                    subFlowNode.id());
+            log.warn("[FlowEngine] Sub Flow descent from node '{}' has no subFlowId — skipping",
+                    sourceNode.id());
             return Optional.empty();
         }
         if (chainContainsFlow(parent, subFlowId)) {
@@ -2211,7 +2258,7 @@ public class TurChatFlowEngineService {
         Optional<TurChatFlow> subFlowOpt = chatFlowRepository.findById(subFlowId);
         if (subFlowOpt.isEmpty()) {
             log.warn("[FlowEngine] Sub Flow '{}' referenced by node '{}' not found",
-                    subFlowId, subFlowNode.id());
+                    subFlowId, sourceNode.id());
             return Optional.empty();
         }
         TurChatFlow subFlow = subFlowOpt.get();

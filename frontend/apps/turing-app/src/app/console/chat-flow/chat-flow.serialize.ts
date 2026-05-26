@@ -10,6 +10,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   condition: "CONDITION",
   functionCall: "FUNCTION CALL",
   subFlow: "SUB FLOW",
+  subFlowSwitch: "SUB-FLOW SWITCH",
   persona: "PERSONA SWITCH",
   switch: "SWITCH",
   slot: "SLOT",
@@ -24,7 +25,10 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
  */
 export function buildDefaultNodeData(type: FlowNodeType): FlowNodeData {
   const base: FlowNodeData = { label: DEFAULT_LABEL[type], type };
-  if (type === "switch") {
+  if (type === "switch" || type === "subFlowSwitch") {
+    // subFlowSwitch reuses the switchOptions shape — each option will also
+    // get a subFlowId picker via FlowProperties (T47). Seed both kinds with
+    // two empty options so the multi-row shape is visible immediately.
     base.switchOptions = [
       { id: newSwitchOptionId(), label: "Option 1" },
       { id: newSwitchOptionId(), label: "Option 2" },

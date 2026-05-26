@@ -268,12 +268,24 @@ public record ChatFlowNode(String id, String type, NodeData data) {
     }
 
     /**
-     * A single branch on a {@code switch} node. {@code id} is the edge's {@code sourceHandle};
-     * {@code label} is the human-readable text the engine classifies against.
+     * A single branch on a {@code switch} or {@code subFlowSwitch} node.
+     * <ul>
+     *   <li>{@code id} — the edge's {@code sourceHandle} on a {@code switch} node, and the option
+     *       id the LLM classifier emits when no exact/substring match wins. Required.</li>
+     *   <li>{@code label} — the human-readable text the engine matches user input against. Required.</li>
+     *   <li>{@code subFlowId} — only used by {@code subFlowSwitch} (T47): when this option wins,
+     *       the engine descends into the named sub-flow instead of routing to an outgoing edge.
+     *       Optional / unused on plain {@code switch} nodes.</li>
+     * </ul>
      *
      * @since 2026.2.7
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record SwitchOption(String id, String label) {
+    public record SwitchOption(String id, String label, String subFlowId) {
+
+        /** Back-compat constructor for callers/tests that predate {@code subFlowId} (T47). */
+        public SwitchOption(String id, String label) {
+            this(id, label, null);
+        }
     }
 }
