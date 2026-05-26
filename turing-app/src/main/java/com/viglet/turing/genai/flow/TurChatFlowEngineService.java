@@ -181,6 +181,16 @@ public class TurChatFlowEngineService {
     private static final int PROCEDURAL_MIN_TOKEN_LENGTH = 3;
 
     /**
+     * T75 — upper bound on the {@code userMessage} field emitted in the
+     * per-turn A/B trace line. Keeps log records bounded so ELK/Loki
+     * shippers don't truncate the structured prefix when a visitor
+     * pastes a wall of text.
+     *
+     * @since 2026.3.1
+     */
+    private static final int VARIANT_TRACE_USER_MSG_MAX = 200;
+
+    /**
      * Per-language Lucene analyzers for the procedural pre-route. Each flow's
      * {@code triggerDescription} (and the user message, scored against that
      * flow) tokenizes through the matching analyzer:
@@ -522,7 +532,54 @@ public class TurChatFlowEngineService {
                         leaf.getConversationId(), auditEx.getMessage());
             }
         }
+        // T75 — structured per-turn trace line for A/B experiments. Only
+        // emits when the flow is part of an experiment (non-blank
+        // experimentKey); plain flows incur a single null-check. Format
+        // is `experimentKey:variantLabel:nodeId:userMessage` so operators
+        // grepping for `[A/B Trace]` get a one-line-per-turn audit of the
+        // exact variant + node path in production — matches the spec
+        // verbatim and pairs with T70 (Thompson sampling) and T69
+        // (scorecard) by giving a path-level forensic source when an
+        // aggregate metric surfaces a regression.
+        formatVariantTrace(flow, leaf.getCurrentNodeId(), userMessage)
+                .ifPresent(trace -> log.info("[A/B Trace] {}", trace));
         return new AdvanceResult(leaf, override);
+    }
+
+    /**
+     * T75 — format the per-turn A/B variant trace line. Returns
+     * {@link Optional#empty()} when {@code flow} is null or has a blank
+     * {@code experimentKey} (i.e. is not part of an experiment), so
+     * non-experiment flows emit nothing. Package-private for unit testing.
+     *
+     * <p>Format: {@code experimentKey:variantLabel:nodeId:userMessage}.
+     * The user message is truncated to {@link #VARIANT_TRACE_USER_MSG_MAX}
+     * chars and stripped of CR/LF so a single turn always occupies a
+     * single log line.
+     *
+     * @since 2026.3.1
+     */
+    static Optional<String> formatVariantTrace(TurChatFlow flow, String nodeId,
+            String userMessage) {
+        if (flow == null) {
+            return Optional.empty();
+        }
+        String key = flow.getExperimentKey();
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        String label = flow.getVariantLabel();
+        String safeLabel = (label == null || label.isBlank()) ? "(unset)" : label;
+        String safeNode = nodeId == null ? "" : nodeId;
+        String safeMsg = userMessage == null ? "" : userMessage;
+        if (safeMsg.length() > VARIANT_TRACE_USER_MSG_MAX) {
+            safeMsg = safeMsg.substring(0, VARIANT_TRACE_USER_MSG_MAX) + "…";
+        }
+        // Collapse CR/LF so each turn occupies exactly one log line —
+        // line-oriented shippers (filebeat / promtail) can ingest cleanly
+        // and `grep '[A/B Trace]'` returns one match per turn.
+        safeMsg = safeMsg.replace('\n', ' ').replace('\r', ' ');
+        return Optional.of(key + ":" + safeLabel + ":" + safeNode + ":" + safeMsg);
     }
 
     private static String truncate(String s, int max) {
