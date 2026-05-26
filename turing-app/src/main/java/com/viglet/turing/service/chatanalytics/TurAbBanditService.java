@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
@@ -70,6 +71,7 @@ public class TurAbBanditService {
     private final TurExperimentSignificanceService significanceService;
     private final Random rng;
 
+    @Autowired
     public TurAbBanditService(TurExperimentSignificanceService significanceService) {
         this(significanceService, null);
     }

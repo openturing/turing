@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(18)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(19)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -94,6 +94,12 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_EMBEDDING_STORE".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_AI_AGENT".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PII_SLOT_TTL_HOURS".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "24".equals(configVar.getValue())));
     }
 
     @Test
@@ -102,7 +108,7 @@ class TurConfigVarOnStartupTest {
         // ensureConfigVar leaves these alone (existing row → no save), but
         // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
         // secret. So save is called exactly once — for the secret heal —
-        // and the other 17 rows are skipped.
+        // and the other 18 rows are skipped.
         when(turConfigVarRepository.findById(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 
