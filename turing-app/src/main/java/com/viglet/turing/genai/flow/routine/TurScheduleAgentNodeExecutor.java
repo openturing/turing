@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  *       as the JSON input template, enqueues a {@link TurScheduleAgentMessage}
  *       and writes {@code __scheduleAgent_pending_<nodeId>=routineId} +
  *       {@code __scheduleAgent_startedAt_<nodeId>=epochMillis} into the
- *       variables map. Returns {@link Outcome#WAITING} so the engine
+ *       variables map. Returns {@link Outcome#WAITING_FIRED} so the engine
  *       stops walking the transparent chain and returns to the client.</li>
  *   <li><b>Re-entry while pending</b> — bookkeeping marker is set. If
  *       {@code outputVariable} is now non-blank (the routine wrote its
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
  *       so the engine advances. If the deadline elapsed,
  *       bookkeeping is cleared and {@link Outcome#TIMEOUT} is returned
  *       so the engine routes via the {@code timeout} sourceHandle (or
- *       first outgoing edge as fallback). Otherwise {@link Outcome#WAITING}
+ *       first outgoing edge as fallback). Otherwise {@link Outcome#WAITING_POLL}
  *       again.</li>
  * </ol>
  *
@@ -151,7 +151,7 @@ public class TurScheduleAgentNodeExecutor {
         ChatFlowOps.writeVariables(state, variables);
         log.info("[FlowOps/scheduleAgent] node '{}' fired routine '{}' on conv '{}' (slot '{}')",
                 node.id(), routineId, state.getConversationId(), outputSlot);
-        return Outcome.WAITING;
+        return Outcome.WAITING_FIRED;
     }
 
     private Outcome poll(TurChatFlowState state,
@@ -181,7 +181,7 @@ public class TurScheduleAgentNodeExecutor {
                     node.id(), deadlineMs, state.getConversationId());
             return Outcome.TIMEOUT;
         }
-        return Outcome.WAITING;
+        return Outcome.WAITING_POLL;
     }
 
     private long resolveTimeoutMs(ChatFlowNode node) {
@@ -240,8 +240,19 @@ public class TurScheduleAgentNodeExecutor {
 
     /** Result of one call to {@link #execute(TurChatFlowState, ChatFlowNode)}. */
     public enum Outcome {
-        /** Routine just enqueued, or still in flight — caller stops walking. */
-        WAITING,
+        /**
+         * Routine just enqueued — markers were freshly written by this call.
+         * Caller stops walking AND publishes the slot map so the chat UI
+         * picks up the pending indicator. Only emitted on the very first
+         * entry to a {@code scheduleAgent} node within a flow run.
+         */
+        WAITING_FIRED,
+        /**
+         * Routine still in flight, markers already set on a previous turn.
+         * Caller stops walking but must NOT republish — that would feed
+         * the auto-resume listener and create a publish→walk→publish loop.
+         */
+        WAITING_POLL,
         /** Output slot now populated — caller advances to first edge. */
         COMPLETED,
         /** Deadline expired — caller routes via {@link #advanceOnTimeout}. */

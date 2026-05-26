@@ -160,8 +160,9 @@
       "mcpServerHint": "Todas as ferramentas expostas pelo servidor MCP selecionado ficarão disponíveis para a LLM.",
       "scheduleAgent": {
         "routineId": "Rotina",
-        "routineIdPlaceholder": "Id da rotina",
-        "routineIdHint": "Id da rotina configurada para executar de forma assíncrona. O fluxo aguarda neste nó até a rotina gravar o slot de saída (ou expirar).",
+        "routineIdPlaceholder": "Escolha uma rotina…",
+        "routineIdEmpty": "Nenhuma rotina cadastrada. Crie uma em Rotinas primeiro.",
+        "routineIdHint": "Rotina configurada para executar de forma assíncrona. O fluxo aguarda neste nó até a rotina gravar o slot de saída (ou expirar).",
         "payloadTemplate": "Template do Payload (JSON)",
         "payloadTemplateHint": "Template JSON enviado à rotina. Marcadores {{nomeSlot}} são interpolados a partir dos slots da conversa antes do envio. Em branco envia {}.",
         "outputVariable": "Slot de Saída",

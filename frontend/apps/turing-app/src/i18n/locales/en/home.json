@@ -44,6 +44,10 @@
         "title": "Custom Tool",
         "description": "Define your own Spring AI tool callings backed by Groovy scripts."
       },
+      "routine": {
+        "title": "Routines",
+        "description": "Async jobs fired by scheduleAgent chat-flow nodes — long-running work without blocking the chat turn."
+      },
       "aiAgent": {
         "title": "AI Agent",
         "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."

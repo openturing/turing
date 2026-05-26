@@ -1,0 +1,41 @@
+{
+  "routine": {
+    "title": "Routines",
+    "newRoutine": "New Routine",
+    "newInstance": "Create Routine",
+    "blankTitle": "No routines yet",
+    "blankDescription": "Routines are async jobs that scheduleAgent chat-flow nodes fire and wait on. Create one to get started.",
+    "details": "Routine Details",
+    "detailsDesc": "Stable name and human-readable description. The name is referenced by scheduleAgent nodes.",
+    "name": "Name",
+    "nameDesc": "Unique identifier — letters, digits, underscore, hyphen, dot. Cannot start with a digit.",
+    "nameRequired": "Routine name is required.",
+    "description": "Description",
+    "descriptionPlaceholder": "What does this routine do? Surfaced in the scheduleAgent dropdown.",
+    "execution": "Execution",
+    "executionDesc": "Choose how the routine runs and what it executes.",
+    "kind": "Kind",
+    "kindDesc": "NATIVE wraps a Spring AI @Tool method (the same registry functionCall uses). GROOVY runs an inline script.",
+    "kindOptions": {
+      "NATIVE": "Native @Tool method",
+      "GROOVY": "Groovy script"
+    },
+    "nativeToolName": "Native Tool Name",
+    "nativeToolNameDesc": "Name of the @Tool method to invoke (e.g. get_current_time, search_site).",
+    "nativeToolNameRequired": "Native tool name is required when kind is NATIVE.",
+    "groovyScript": "Groovy Script",
+    "groovyScriptDesc": "Bindings: args (parsed payload Map + each top-level key), conversationId, routineName. The last expression is written to the scheduleAgent node's output slot.",
+    "groovyScriptRequired": "Groovy script body is required when kind is GROOVY.",
+    "defaultTimeoutMs": "Default Timeout (ms)",
+    "defaultTimeoutMsDesc": "Fallback timeout for scheduleAgent nodes that don't set their own. The flow takes the 'timeout' edge when expired.",
+    "enabled": "Enabled",
+    "enabledDesc": "Disabled routines are skipped (scheduleAgent logs a warning and advances the flow).",
+    "created": "Routine '{{name}}' created",
+    "updated": "Routine '{{name}}' updated",
+    "deleted": "Routine '{{name}}' deleted",
+    "saveFailed": "Could not save routine. Check the form for validation errors.",
+    "deleteFailed": "Could not delete routine.",
+    "createDescription": "Author a new routine that scheduleAgent nodes can fire across any chat flow.",
+    "editDescription": "Edit a routine — changes apply to all flows that reference it."
+  }
+}

@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.persistence.model.agent.TurRoutine;
-import com.viglet.turing.persistence.model.agent.TurRoutineKind;
 import com.viglet.turing.persistence.repository.agent.TurRoutineRepository;
 import com.viglet.turing.sn.TurSNConstants;
 
@@ -49,13 +48,16 @@ public class TurRoutineQueue {
 
     private final TurRoutineRepository routineRepository;
     private final TurNativeToolService nativeToolService;
+    private final TurRoutineGroovyExecutor groovyExecutor;
     private final TurChatFlowEngineService engine;
 
     public TurRoutineQueue(TurRoutineRepository routineRepository,
             TurNativeToolService nativeToolService,
+            TurRoutineGroovyExecutor groovyExecutor,
             @Lazy TurChatFlowEngineService engine) {
         this.routineRepository = routineRepository;
         this.nativeToolService = nativeToolService;
+        this.groovyExecutor = groovyExecutor;
         this.engine = engine;
     }
 
@@ -67,58 +69,68 @@ public class TurRoutineQueue {
             log.warn("[RoutineQueue] dropped null/empty message");
             return;
         }
-        String routineId = message.getRoutineId();
-        String conversationId = message.getConversationId();
-        String nodeId = message.getNodeId();
-        String outputVariable = message.getOutputVariable();
-
-        Optional<TurRoutine> routineOpt = routineRepository.findById(routineId);
+        Optional<TurRoutine> routineOpt = routineRepository.findById(message.getRoutineId());
         if (routineOpt.isEmpty()) {
             log.warn("[RoutineQueue] routine '{}' not found (conv={} node={})",
-                    routineId, conversationId, nodeId);
+                    message.getRoutineId(), message.getConversationId(), message.getNodeId());
             return;
         }
         TurRoutine routine = routineOpt.get();
         if (!routine.isEnabled()) {
             log.warn("[RoutineQueue] routine '{}' is disabled (conv={} node={})",
-                    routineId, conversationId, nodeId);
+                    routine.getName(), message.getConversationId(), message.getNodeId());
             return;
         }
-        if (routine.getKind() != TurRoutineKind.NATIVE) {
-            log.warn("[RoutineQueue] routine kind '{}' not yet supported (T48 MVP is NATIVE-only)",
-                    routine.getKind());
+        String result = switch (routine.getKind()) {
+            case NATIVE -> runNative(routine, message);
+            case GROOVY -> runGroovy(routine, message);
+        };
+        if (result == null) {
             return;
         }
+        log.info("[RoutineQueue] routine '{}' completed on conv={} node={} ({} chars{})",
+                routine.getName(), message.getConversationId(), message.getNodeId(),
+                result.length(),
+                message.getOutputVariable() == null ? " — no outputVariable"
+                        : " → slot '" + message.getOutputVariable() + "'");
+        if (message.getOutputVariable() != null && !message.getOutputVariable().isBlank()) {
+            engine.writeSlot(message.getConversationId(), message.getOutputVariable(), result);
+        }
+    }
+
+    /** Returns the tool result, or {@code null} when the routine could not run. */
+    private String runNative(TurRoutine routine, TurScheduleAgentMessage message) {
         String toolName = routine.getNativeToolName();
         if (toolName == null || toolName.isBlank()) {
-            log.warn("[RoutineQueue] routine '{}' has no nativeToolName", routineId);
-            return;
+            log.warn("[RoutineQueue] NATIVE routine '{}' has no nativeToolName", routine.getName());
+            return null;
         }
-
         ToolCallback[] callbacks = nativeToolService.getToolCallbacks(Set.of(toolName));
         if (callbacks.length == 0) {
             log.warn("[RoutineQueue] native tool '{}' not found for routine '{}'",
-                    toolName, routineId);
-            return;
+                    toolName, routine.getName());
+            return null;
         }
-
         String input = message.getInputJson() == null ? "{}" : message.getInputJson();
-        String result;
         try {
-            result = callbacks[0].call(input);
+            String out = callbacks[0].call(input);
+            return out == null ? "" : out;
         } catch (Exception e) {
-            log.warn("[RoutineQueue] routine '{}' tool '{}' failed: {}",
-                    routineId, toolName, e.getMessage(), e);
-            return;
+            log.warn("[RoutineQueue] NATIVE routine '{}' tool '{}' failed: {}",
+                    routine.getName(), toolName, e.getMessage(), e);
+            return null;
         }
+    }
 
-        log.info("[RoutineQueue] routine '{}' completed on conv={} node={} ({} chars{})",
-                routineId, conversationId, nodeId,
-                result == null ? 0 : result.length(),
-                outputVariable == null ? " — no outputVariable" : " → slot '" + outputVariable + "'");
-
-        if (outputVariable != null && !outputVariable.isBlank()) {
-            engine.writeSlot(conversationId, outputVariable, result == null ? "" : result);
+    /** Returns the script result, or {@code null} when execution failed. */
+    private String runGroovy(TurRoutine routine, TurScheduleAgentMessage message) {
+        try {
+            return groovyExecutor.execute(routine, message.getConversationId(),
+                    message.getInputJson() == null ? "{}" : message.getInputJson());
+        } catch (RuntimeException e) {
+            log.warn("[RoutineQueue] GROOVY routine '{}' failed: {}",
+                    routine.getName(), e.getMessage(), e);
+            return null;
         }
     }
 }

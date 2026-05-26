@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # T48 follow-up — GROOVY routine kind. Adds groovyScript column to tur_routine
+  # so admins can author async scripts directly without registering a separate
+  # Custom Tool. Mirrors the customGroovyScript column on tur_custom_tool.
+  #
+  # Idempotent: gated by tableExists + columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.7-add-groovyScript-to-tur_routine
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_routine
+        - not:
+            - columnExists:
+                tableName: tur_routine
+                columnName: groovyScript
+      changes:
+        - addColumn:
+            tableName: tur_routine
+            columns:
+              - column:
+                  name: groovyScript
+                  type: longtext
+                  remarks: "T48 GROOVY follow-up — Groovy script body executed when kind=GROOVY. Null for NATIVE routines."

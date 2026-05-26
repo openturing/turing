@@ -26,6 +26,7 @@ import {
   McpServerRoutes,
   PersonaRoutes,
   CustomToolRoutes,
+  RoutineRoutes,
   SERoutes,
   SNRoutes,
   StoreRoutes,
@@ -68,6 +69,7 @@ function App() {
                 {LLMRoutes}
                 {McpServerRoutes}
                 {CustomToolRoutes}
+                {RoutineRoutes}
                 {AIAgentRoutes}
                 {PersonaRoutes}
                 {IntegrationRoutes}

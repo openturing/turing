@@ -1,6 +1,11 @@
 {
   "chat": {
     "askMeAnything": "Ask me anything",
+    "scheduleAgent": {
+      "waiting": "Waiting for routine…",
+      "waiting_one": "Waiting for routine…",
+      "waiting_other": "Waiting for {{count}} routines…"
+    },
     "noDefaultLlm": "No default LLM configured",
     "howCanIHelp": "How can I help you today?",
     "sessions": "Sessions",

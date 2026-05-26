@@ -15,5 +15,5 @@
  */
 export { defineFlow } from "./define-flow.js";
 export { FlowSpecError, transpileFlow } from "./transpile.js";
-export type { AiQuestionNode, ConditionNode, EndNode, FlowEdge, FlowNode, FlowSpec, FormCaptureNode, FunctionCallNode, GuardrailMethod, NodeType, OnJudgeReject, PersonaDeclaration, PersonaNode, SlotDeclaration, SlotNode, SlotOperation, SlotType, StartNode, SubFlowNode, SwitchNode, SwitchOption, ToolSource, TranspiledEdge, TranspiledFlow, TranspiledNode, TranspiledNodeData, TriggerLanguage, TriggerMode, ValidationRule, WriteSlotNode, } from "./types.js";
+export type { AiQuestionNode, ConditionNode, EndNode, FlowEdge, FlowNode, FlowSpec, FormCaptureNode, FunctionCallNode, GuardrailMethod, NodeType, OnJudgeReject, PersonaDeclaration, PersonaNode, ScheduleAgentNode, SlotDeclaration, SlotNode, SlotOperation, SlotType, StartNode, SubFlowNode, SubFlowSwitchNode, SwitchNode, SwitchOption, ToolSource, TranspiledEdge, TranspiledFlow, TranspiledNode, TranspiledNodeData, TriggerLanguage, TriggerMode, ValidationRule, WriteSlotNode, } from "./types.js";
 //# sourceMappingURL=index.d.ts.map

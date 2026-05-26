@@ -42,6 +42,7 @@ acting.
 - [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
 - [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
 - [XI. Embedded LLM via Jlama — pure-Java in-process inference](#xi-embedded-llm-via-jlama--pure-java-in-process-inference)
+- [XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence](#xii-admin-chat--vigletturing-react-sdk-convergence)
 
 ---
 
@@ -119,6 +120,24 @@ acting.
 >   Mixtral (§XI.6); no JNI shutdown issues; clean Windows support
 >   out of the box. Tradeoff: SafeTensors format only (GGUF requires
 >   conversion via `jlama-cli`, addressed by T214).
+> - **Block H** — **NEW (2026-05-26)**: admin chat ↔
+>   `@viglet/turing-react-sdk` convergence (T219–T232). Today
+>   [chat.page.tsx](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx)
+>   reimplements the SSE plumbing, conversation-id minting, chip
+>   options handling, and `resetFlow` calls that the SDK's
+>   `useTuringChat` / `useTuringSlots` / `useTuringFlowState` already
+>   ship — drift that's already cost us one bug (admin chat missed
+>   the `disabledReason` surface and a streaming-status corner case
+>   the SDK had fixed). The block closes 6 gaps the SDK doesn't cover
+>   yet (multipart uploads on the agent endpoint, LLM listing,
+>   context-info, per-turn LLM override, real `AbortController`,
+>   plain-LLM mode for the title generator + sandbox), wires the
+>   admin page to the SDK as the canonical caller, and keeps the
+>   admin-only chrome (multi-agent tabs, IndexedDB session sidebar,
+>   AI-titled history, Markdown/highlight rendering, sandbox player,
+>   scheduleAgent "Aguardando rotina…" banner) as host code. ~10–14
+>   days focused work; T231 (the actual `chat.page.tsx` rewrite) is
+>   gated on T219–T225. See §XII.
 >
 > **Dependency rule of thumb** *(historical — kept for context):* "Safety
 > net" was supposed to land before §I.5 — in practice we shipped Block B
@@ -679,6 +698,131 @@ Remaining platform-relevant promotions:
 | T216 | 📋 | T193 | **JVM Panama Vector flag enforcement** — boot-time check that JVM was launched with `--add-modules jdk.incubator.vector --enable-preview`. If absent, log a precise error pointing at the documented startup snippet + the Docker image variants that ship the flags by default. Spring Boot launcher updated to include the flags in the executable jar's `Main-Class` wrapper + the Docker `ENTRYPOINT`. Required because Jlama's vector ops fail at first call without the modules — caught at boot, not at chat-turn time. | §XI.5 |
 | T217 | 💭 | T216 | **`jlama-native` SIMD opt-in** — per-deployment property `turing.embedded.jlama.native-simd=true` (default false). When enabled, the `com.github.tjake:jlama-native` jar (with OS/arch classifier) is loaded and Jlama's `OptimisedOperationsType` routes through hand-tuned SIMD kernels (AVX2 / AVX-512 / NEON). 2–3× speedup at the cost of a native dependency. Documented per platform: Linux/Mac x86_64+arm64 ship binaries; Windows x86_64 ships binary; Windows ARM falls through to pure-Java. T206 status panel surfaces whether SIMD is active for the loaded model. | §XI.5 |
 | T218 | 💭 | T193, T208 | **"This conversation cost $0.00" badge** — when every LLM call in a conversation went through embedded instances, the chat UI surfaces a green "$0 — fully local" badge. Operator-visible proof that the local path is being used. Small UX touch, big perceived-trust win for regulated-industry pitches. | §XI.7 |
+
+### Block H — Admin chat ↔ react-sdk convergence (T219–T232)
+
+> Today the admin chat at [chat.page.tsx](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx)
+> + [chat.service.ts](../frontend/apps/turing-app/src/services/chat/chat.service.ts)
+> reimplements the same SSE transport, conversation-id minting, chip-options
+> parsing, `resetFlow` calls, and CSRF cookie reading that
+> [`useTuringChat`](../frontend/packages/react-sdk/src/hooks/use-turing-chat.ts)
+> in `@viglet/turing-react-sdk` already ships for the public SN chat
+> widget. The SDK *already* supports agent mode (`UseTuringChatAgent`
+> since 2026.2.16), per-turn options (`onOptions` since 2026.2.17),
+> slot reading (`useTuringSlots`), flow state (`useTuringFlowState`)
+> and `resetFlow()`. The gap is six features that exist only on the
+> admin side, plus the admin page never adopted the SDK after it
+> shipped because the admin code predated it. The fix is bidirectional:
+> close the 6 SDK gaps, then rewrite the admin page to delegate
+> protocol concerns to the SDK while keeping the admin-only chrome
+> (multi-agent tabs, IndexedDB session list, AI titles, Markdown +
+> SandboxPlayer, scheduleAgent banner, file uploads).
+>
+> **Why this matters now**: every protocol-level fix (streaming-buffer
+> handling, `disabledReason` surfacing, options chip dispatch,
+> conversation-id stability across reloads) currently has to be
+> patched twice — once in the SDK and once in `chat.service.ts`. Bug
+> reports against the admin chat have already drifted from the SDK's
+> behavior twice in the last two minor versions (the `disabledReason`
+> hint was missing from the admin tooltip until 2026.2.31; the
+> options chip race condition fixed in `useTuringChat` 2026.2.17 is
+> still latent in [chat.page.tsx:317-334](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx#L317-L334),
+> where the admin reads `options` from the `onOptions` callback after
+> the stream closes rather than treating it as part of the assistant
+> message's `options` field).
+>
+> **What stays in the admin app** (not SDK material):
+> - Multi-agent tab strip + per-agent state (admin-only — public site
+>   chat is single-agent)
+> - IndexedDB-backed session sidebar with cross-tab history (admin's
+>   `chat-session.service.ts` — public chat persists per-tab via
+>   `sessionStorage`)
+> - AI-generated session titles (admin uses a second LLM call;
+>   could live in the SDK as a one-shot helper, but the trigger is
+>   admin-specific)
+> - Markdown + `rehype-highlight` rendering + `SandboxPlayer` for
+>   inline HTML blocks (`@viglet/viglet-design-system` material, not
+>   SDK)
+> - Multi-agent tab forwarding from the home page via `sessionStorage`
+>   (admin nav glue)
+> - Context-bar / token estimator with one-click compaction
+>   (admin-only feature surfaced inside the composer)
+>
+> **What the SDK needs to gain** (T219–T225):
+> 1. **`fetchLlmInstances`** + `fetchAgentContextInfo` /
+>    `fetchLlmContextInfo` — today only admin's `chat.service.ts`
+>    knows how to call them.
+> 2. **Multipart upload support on `postAgentChat`** — agent chat
+>    endpoint accepts `multipart/form-data` with `request` + `files`
+>    parts (admin's `sendAgentStream` doesn't actually use this yet
+>    for the agent route, only for the plain `/v2/llm/{id}/chat`
+>    route, but the backend already supports files on `aiAgent` per
+>    `TurAgentChatExecutor`; closing it in the SDK unlocks file-aware
+>    agent chats for SDK consumers too).
+> 3. **Per-turn LLM override on `useTuringChat`** — today the
+>    `agent.llmInstanceId` is pinned at hook init. Admin lets the
+>    user switch LLM dropdown mid-conversation; the SDK has to either
+>    accept a per-`send` option or re-fetch the agent's allowed
+>    `llmInstances` list and accept dynamic re-binding without
+>    losing message state.
+> 4. **Real `AbortController` for `stop()`** — today
+>    `useTuringChat.stop()` just bumps a `requestRef` counter that
+>    suppresses late chunks but doesn't cancel the network call.
+>    Admin chat has the same defect; both should pass
+>    `AbortController.signal` through to `fetch`.
+> 5. **Plain-LLM mode (`useTuringLlmChat` or `mode: "llm"` on
+>    `useTuringChat`)** — admin's title-generator + sandbox iframe +
+>    "no flow context, just talk to the model" path hits
+>    `POST /v2/llm/{id}/chat`, which the SDK doesn't expose at all
+>    today. Need a hook that takes `llmInstanceId` (not agent),
+>    sends/streams JSON messages, and exposes the same `onToken` /
+>    `onOptions` shape.
+> 6. **`useTuringScheduleAgentWaiting`** — admin polls
+>    `GET /agent/{id}/chat-slots` every 2s for
+>    `__scheduleAgent_pending_*` markers (the T48 banner). This is a
+>    trivial 30-line wrapper over `useTuringSlots`; lifting it into
+>    the SDK lets external chat hosts render the same banner without
+>    re-deriving the slot-key prefix convention.
+>
+> **Admin-side rewrite** (T226–T231): replace the imperative
+> `TurChatService.sendAgentStream` flow with `useTuringChat({ agent
+> })`; keep the multi-agent tab state but feed each tab's chat hook
+> the right `agent.id`; drop the per-message `requestRef`/`abortRef`
+> manual state (SDK owns it); read `messages` / `isStreaming` / `send`
+> / `stop` / `reset` / `resetFlow` from the hook. Net code delta:
+> -350 lines from `chat.page.tsx`, -200 lines from `chat.service.ts`
+> (drop `sendAgentStream`, `sendStream`, `sendSemanticStream`,
+> `handleSseLine`, `ensureCsrfToken` — all of which the SDK has).
+>
+> **Testing surface**: SDK gains 4 new hook tests (title generation
+> path, per-turn LLM override, multipart agent chat, schedule-agent
+> waiting). Admin gains 3 IT-level smoke tests proving the rewritten
+> page still passes today's manual checklist (send/receive/options
+> click, session restore, scheduleAgent banner appears and clears).
+
+#### H.1 — SDK gaps (close before admin migration can start)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T219 | 📋 | — | **`fetchLlmInstances()` + `fetchLlmContextInfo(llmId)` + `fetchAgentContextInfo(agentId, llmId)` in `core/api.ts`** — three low-level API functions wrapping `GET /llm`, `GET /v2/llm/{id}/chat/context-info`, and `GET /v2/ai-agent/{agentId}/chat/context-info?llmInstanceId=...`. Export from `index.ts`. Drop-in replacement for admin's [chat.service.ts:172-182, 344-350](../frontend/apps/turing-app/src/services/chat/chat.service.ts#L172-L182) — admin currently owns these because the SDK never needed them on the public path. Pure additions to the existing `core/api.ts` axios pattern; ~40 lines. | §XII.1 |
+| T220 | 📋 | T219 | **`useTuringLlmInstances()` hook** — wraps `fetchLlmInstances()` + the existing `useState`/`useEffect` boilerplate admin has in [use-llm-instances.ts](../frontend/apps/turing-app/src/app/console/chat/hooks/use-llm-instances.ts). Returns `{ instances, loaded, selectedId, selectedInstance, contextWindow, select }`. The 128k default + `contextWindowCache` Map deduplication stays the same; the `localStorage` selection persistence becomes opt-in via `options.persistKey`. Admin replaces its hook with a one-line `useTuringLlmInstances({ persistKey: LLM_STORAGE_KEY })`. | §XII.1 |
+| T221 | 📋 | — | **Multipart agent chat in `postAgentChat`** — accept `PostAgentChatOptions.files?: File[]`. When present, switch the request to `multipart/form-data` with `request` part (the existing JSON body as a `Blob` of `application/json`) plus one `files` part per file — mirrors the admin's [chat.service.ts:106-118](../frontend/apps/turing-app/src/services/chat/chat.service.ts#L106-L118) pattern. Verify `TurAgentChatExecutor` already accepts files on the agent endpoint (search APIs surface this via `TurAgentChatRequest`); if not, scope-creep alert: the backend needs the multipart variant first, in which case T221 spawns a backend prereq T221a. | §XII.1 |
+| T222 | 📋 | — | **Per-turn LLM override on `useTuringChat`** — extend `UseTuringChatOptions.agent` from `{ id, llmInstanceId }` to `{ id, llmInstanceId, allowOverride?: boolean }`, and let `send(content, { llmInstanceId? })` take an optional per-call override. Dispatch path: when `send`'s override is set and differs from `agent.llmInstanceId`, the `postAgentChat` call uses the override but the hook does NOT mutate `agent.llmInstanceId` (caller controls the "sticky" or "per-turn" semantics in their UI). Backwards-compatible: existing callers pass no second arg and behavior is unchanged. | §XII.1 |
+| T223 | 📋 | — | **Real `AbortController` for `stop()`** — replace the `requestRef++` + `abortedRef = true` pattern in [use-turing-chat.ts:435-439](../frontend/packages/react-sdk/src/hooks/use-turing-chat.ts#L435-L439) with a per-send `AbortController` stored in a ref; `stop()` calls `.abort()`, the reader loop in `consumeAssistantStream` propagates the abort, and `fetch` actually cancels in flight. Keep the `requestRef` counter as the cross-send guard for the legacy late-chunk case. Net: `stop()` actually saves backend tokens (no more "the model keeps generating but we throw the response away"). | §XII.1 |
+| T224 | 📋 | T219 | **`useTuringLlmChat({ llmInstanceId })`** — new hook that hits `POST /v2/llm/{id}/chat` (plain LLM, no agent, no flow context). Mirrors `useTuringChat`'s `{ messages, send, stop, reset, isStreaming, status, error, conversationId }` shape but without `enabled`/`disabledReason`/`resetFlow` (none apply). Implementation: extract the SSE consumer + assistant-message-bubble pattern from `useTuringChat` into a shared `useStreamingChatCore` private helper; both hooks call it. Admin's title generator + the sandbox-mode "talk to the raw LLM" path both migrate to this hook. Optional `files?: File[]` on `send` to cover multipart for plain LLM (the admin code already does this). | §XII.1 |
+| T225 | 📋 | — | **`useTuringScheduleAgentWaiting({ agentId })`** — thin wrapper over `useTuringSlots({ agent: { id } })` that filters slot keys starting with `__scheduleAgent_pending_` and exposes `{ waiting: boolean, routineIds: string[] }`. Default poll cadence 2000ms (matches admin's current code). 30-line move from [use-schedule-agent-waiting.ts](../frontend/apps/turing-app/src/app/console/chat/hooks/use-schedule-agent-waiting.ts) into `frontend/packages/react-sdk/src/hooks/`. Unblocks any SDK consumer that uses chat flows with `scheduleAgent` nodes. | §XII.1 |
+
+#### H.2 — Admin migration (drop the duplicated transport)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T226 | 📋 | T219, T220 | **Replace admin's `useLlmInstances` with `useTuringLlmInstances`** — drop [use-llm-instances.ts](../frontend/apps/turing-app/src/app/console/chat/hooks/use-llm-instances.ts) entirely. The replacement call retains the `LLM_STORAGE_KEY` localStorage persistence + the context-window cache + the `defaultContextWindow` fallback by passing them through the new hook's options. Admin keeps the agent-filtered `visibleLlmInstances` `useMemo` since it joins LLM list with `activeAgent.llmInstances` — that's admin business logic, stays. | §XII.2 |
+| T227 | 📋 | T222, T223, T224 | **Replace `TurChatService.sendAgentStream` call sites with `useTuringChat({ agent: { id, llmInstanceId } })`** — each agent tab in [chat.page.tsx](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx) renders an `<AgentTabContent agentId={...} llmId={...} />` child that owns its `useTuringChat` instance. The current `agentStates` per-agent state map (messages, input, loading, compacting) collapses to just `{ input, compacting }` per-tab; messages + loading come from the hook. Mid-conversation LLM switch routes through T222's per-turn override. File uploads route through T221's multipart path. | §XII.2 |
+| T228 | 📋 | T225 | **Replace admin's `useScheduleAgentWaiting` import with `useTuringScheduleAgentWaiting` from the SDK** — delete the local file; update the import in [chat.page.tsx:35](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx#L35). API is byte-for-byte compatible by design (T225 mirrors the admin hook). | §XII.2 |
+| T229 | 📋 | T224 | **Migrate admin's AI title generator to `useTuringLlmChat`** — [use-chat-session.ts:40-61](../frontend/apps/turing-app/src/app/console/chat/hooks/use-chat-session.ts#L40-L61) currently spins up a streaming call against `/v2/llm/{id}/chat` via the legacy `TurChatService.sendStream`. Replace with `useTuringLlmChat` (or call its underlying `postLlmChat` API function directly, since a one-shot non-streamed call is fine for title generation — the SDK should expose `postLlmChat(llmId, messages, { stream: false })` as part of T224). | §XII.2 |
+| T230 | 📋 | T219 | **Delete `TurChatService` and `chat.service.ts`** — every method now has an SDK equivalent: `sendStream` → T224 `postLlmChat`, `sendAgentStream` → T221+T222 `postAgentChat`, `queryLLMInstances` → T219 `fetchLlmInstances`, `fetchContextInfo` → T219 `fetchLlmContextInfo`, `sendSemanticStream` → out of scope (the `/semantic-chat` endpoint isn't used by admin's chat page; if it's still consumed elsewhere — search "sendSemanticStream" — that caller migrates first or stays on a slim residual service), `fetchAgentContextInfo` → T219, `resetAgentFlowState` → SDK's `deleteAgentFlowState`. Verify no other admin page imports `TurChatService` before deleting. | §XII.2 |
+| T231 | 📋 | T226–T230 | **`chat.page.tsx` rewrite** — extract per-agent tab content into `<AgentChatTab agent={...} llmInstance={...} flowId={...} onSessionChange={...} />`; each tab owns its own SDK hook trio (`useTuringChat`, `useTuringSlots`, `useTuringScheduleAgentWaiting`). Top-level `chat.page.tsx` keeps: agent loading + default-agent resolution, multi-tab header + LLM selector + flow selector (drives the per-tab `agent`/`flowId` props), session sidebar + restore (admin's IndexedDB sessions service stays), context-bar + compaction (admin-only). Expected net delta: chat.page.tsx 571 lines → ~350 lines; AgentChatTab adds ~150 lines; chat.service.ts gone (-368 lines). Total -~430 lines for the chat module. | §XII.2 |
+| T232 | 📋 | T231 | **Admin smoke ITs** — three Playwright/RTL-level tests in `frontend/apps/turing-app/src/app/console/chat/__tests__/` proving the rewrite is non-regressing: (1) **send + stream + chip-options**: type into the input → first SSE chunk arrives → chips render below assistant bubble → clicking a chip sends it as the next user message; (2) **session restore**: send a few turns → reload → sidebar shows the session → click restores messages and `activeSessionId`; (3) **scheduleAgent banner**: stub the `/agent/{id}/chat-slots` poll to inject a `__scheduleAgent_pending_xyz=routine-1` slot, assert the "Aguardando rotina…" banner appears, clear the slot, assert it disappears. None of these tests existed before the migration — they double as the regression suite for any future SDK ↔ admin protocol drift. | §XII.2 |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -4093,5 +4237,144 @@ hardening tracks.
 > five weeks of capability hardening — but the strategic surface it
 > unlocks is broad. The first Turing customer that wins a defense
 > or hospital contract because we can ship zero-egress is the bet."
+
+---
+
+## XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence
+
+> The admin chat at [chat.page.tsx](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx)
+> + [chat.service.ts](../frontend/apps/turing-app/src/services/chat/chat.service.ts)
+> ships its own SSE plumbing, conversation-id minting, chip parsing,
+> CSRF handling, and `resetFlow` calls — every one of which already
+> exists in `@viglet/turing-react-sdk` and is consumed by the public
+> SN search chat at
+> [ai-mode-chat.tsx](../frontend/apps/turing-app/src/search/components/ai-mode-chat.tsx).
+> The duplication exists because the admin chat predates the SDK's
+> agent-mode support (`UseTuringChatAgent` shipped in 2026.2.16) and
+> no one circled back to migrate. This section captures the
+> migration plan: close the 6 SDK gaps that block the move, then
+> rewrite the admin page to delegate protocol concerns to the SDK.
+
+### XII.1 What the SDK is missing (Block H part 1 — T219–T225)
+
+The SDK already covers everything the admin chat does **at the
+protocol layer** except these six items. Each is a small, additive
+change with no risk to existing SDK consumers (the marketplace apps
+and the public SN chat widget).
+
+#### Capability matrix — admin vs SDK today
+
+| Concern | Admin chat today | SDK today | Gap closed by |
+|---|---|---|---|
+| Site RAG chat (anonymous) | n/a — admin doesn't use it | ✅ `postChatConversation` | — |
+| Explicit agent chat | ✅ `sendAgentStream` | ✅ `postAgentChat` | — |
+| Token-by-token streaming | ✅ manual SSE reader | ✅ `consumeAssistantStream` | — |
+| Chip options (`type:"options"`) | ✅ `onOptions` callback | ✅ `onOptions` + `messages[i].options` | — (admin uses callback shape, see migration note) |
+| `conversationId` minting | ✅ `useChatSession.ensureSessionId` | ✅ `TUR_SESSION` cookie | — |
+| `resetFlow` server-side | ✅ `resetAgentFlowState` | ✅ `deleteAgentFlowState` + `resetFlow()` | — |
+| CSRF cookie reading | ✅ `ensureCsrfToken` | ✅ `readXsrfCookie` | — |
+| Slot read (`/chat-slots`) | ✅ inline poll | ✅ `useTuringSlots({ agent })` | — |
+| Flow state read | n/a in admin chat | ✅ `useTuringFlowState` | — |
+| Disabled-reason hint | ❌ missing | ✅ `disabledReason` + `CHAT_DISABLED_HINTS` | — (admin should adopt) |
+| **LLM instance listing** | ✅ `queryLLMInstances` | ❌ | **T219** |
+| **Context-info probe** | ✅ `fetchContextInfo` / `fetchAgentContextInfo` | ❌ | **T219** |
+| **`useLlmInstances` hook (state + cache)** | ✅ | ❌ | **T220** |
+| **Multipart file uploads** | ✅ on `/v2/llm/{id}/chat` only | ❌ | **T221** (+ backend verification for agent endpoint) |
+| **Per-turn LLM switch on agent chat** | ✅ user picks LLM mid-conversation | ❌ pinned at hook init | **T222** |
+| **Real `AbortController` for `stop()`** | ❌ also a `requestRef` no-op | ❌ same defect | **T223** |
+| **Plain-LLM chat (no agent, no site)** | ✅ `sendStream` to `/v2/llm/{id}/chat` | ❌ | **T224** |
+| **`__scheduleAgent_pending_*` banner** | ✅ `useScheduleAgentWaiting` | ❌ | **T225** |
+
+### XII.2 What the admin migration looks like (Block H part 2 — T226–T232)
+
+Once T219–T225 land in the SDK, the admin migration is mostly
+**deletion**:
+
+```
+chat.page.tsx    571 → ~350 lines  (extract AgentChatTab, drop manual SSE state)
+chat.service.ts  368 → 0    lines  (every method replaced by SDK equivalents)
+use-llm-instances.ts        77 → 0    lines  (replaced by T220 useTuringLlmInstances)
+use-schedule-agent-waiting  95 → 0    lines  (replaced by T225 useTuringScheduleAgentWaiting)
+use-chat-session.ts        145 → ~145 lines  (stays — IndexedDB sessions are admin-only)
+  AgentChatTab (new)         0 → ~150 lines  (per-tab SDK hook wrapper)
+---
+Net delta: ~ -430 lines for the chat module.
+```
+
+**The admin-only chrome stays in admin:**
+
+- Multi-agent tab strip (the SDK targets one agent at a time per
+  `useTuringChat` instance; admin renders N hooks, one per tab)
+- IndexedDB session sidebar with cross-tab history and AI-generated
+  titles — this is admin's `chat-session.service.ts` and is
+  intentionally different from the SDK's `sessionStorage`
+  per-tab persistence (public sites typically don't want a multi-tab
+  session sidebar)
+- Markdown + `rehype-highlight` rendering — host concern, not SDK
+  (SDK is headless by design)
+- `SandboxPlayer` for inline HTML blocks — admin/console feature
+- Compact-context button + token estimator — admin-only feature
+- Flow selector dropdown ("Auto-detect" sentinel + per-flow list) —
+  admin/console-only authoring tool
+- Forward-from-home-page handoff via `sessionStorage` — admin nav glue
+
+### XII.3 Risk + sequencing
+
+#### Risks worth calling out
+
+1. **Per-turn LLM override semantics (T222)** — the SDK is
+   opinionated that `agent.llmInstanceId` is pinned for the
+   conversation. Letting it change mid-conversation introduces a
+   "what counts as a new conversation?" question that the public SN
+   chat doesn't have. Resolution: the SDK never auto-mutates;
+   callers explicitly pass a per-`send` override and own the policy.
+2. **Multipart on the agent endpoint (T221)** — `TurAgentChatExecutor`
+   has historically accepted `application/json` only on the agent
+   chat route. If files-on-agent isn't actually wired backend-side,
+   T221 spawns a backend prereq (T221a) to add the multipart variant.
+   Verify against the latest `TurAgentChatAPI` before estimating.
+3. **`/semantic-chat` users (T230)** — `chat.service.ts.sendSemanticStream`
+   isn't called from the admin chat page, but a grep is required
+   before deletion. If a different admin page still uses it, the
+   migration leaves a residual slim service or moves that endpoint
+   into the SDK too.
+4. **Tests as the contract** — without T232's smoke ITs, the
+   rewrite is an article of faith. The three ITs are the cheapest
+   insurance against admin/SDK protocol drift going forward.
+
+#### Sequencing
+
+1. **Week 1**: T219–T223 (SDK plumbing — independent, can run in
+   parallel between 2 developers).
+2. **Week 2**: T224 + T225 (depends on T219; small).
+3. **Week 2 (parallel)**: T226 + T228 (1-line migrations once T220 +
+   T225 land).
+4. **Week 3**: T227 + T229 (per-tab hook wiring + title generator).
+5. **Week 3**: T230 (delete the dead service after every other
+   migration commit is green).
+6. **Week 3-4**: T231 (the actual `chat.page.tsx` rewrite + extract
+   `AgentChatTab`) + T232 (smoke ITs).
+
+**Total Block H: ~10–14 days focused work.** Net result: one chat
+protocol implementation in the codebase, one set of SDK consumers
+(public chat + admin chat + future marketplace apps), and every
+future protocol fix lands in exactly one place.
+
+### XII.4 The narrative — one paragraph
+
+> "The admin chat predates the SDK's agent-mode support; we built it
+> when the only thing the SDK could talk to was the site RAG
+> endpoint. Three years and two minor versions later, the SDK now
+> covers every chat surface the admin uses — agent chat with
+> streaming, chip options, slot polling, flow-state read, resetFlow,
+> CSRF, conversation-id management — and the admin's parallel
+> implementation has already drifted twice. Block H closes the 6
+> protocol gaps in the SDK (LLM listing, context-info, multipart,
+> per-turn LLM, real abort, plain-LLM chat, scheduleAgent banner) so
+> that **one transport implementation** serves the public chat, the
+> admin chat, and every future SDK consumer. Net code delta: -430
+> lines from the admin chat module, one canonical place to fix the
+> next protocol bug, and three smoke ITs that catch the drift before
+> it ships."
 
 ---

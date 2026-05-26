@@ -35,6 +35,8 @@ export const ROUTES = {
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
   CUSTOM_TOOL_ROOT: `${consolePath}/custom-tool`,
   CUSTOM_TOOL_INSTANCE: `${consolePath}/custom-tool/instance`,
+  ROUTINE_ROOT: `${consolePath}/routine`,
+  ROUTINE_INSTANCE: `${consolePath}/routine/instance`,
   AI_AGENT_ROOT: `${consolePath}/ai-agent`,
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
   PERSONA_ROOT: `${consolePath}/persona`,

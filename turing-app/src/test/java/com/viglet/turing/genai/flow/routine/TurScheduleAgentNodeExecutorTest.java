@@ -62,7 +62,7 @@ class TurScheduleAgentNodeExecutorTest {
 
         Outcome outcome = executor.execute(state, node);
 
-        assertThat(outcome).isEqualTo(Outcome.WAITING);
+        assertThat(outcome).isEqualTo(Outcome.WAITING_FIRED);
         verify(jms).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE), any(TurScheduleAgentMessage.class));
         Map<String, String> vars = ChatFlowOps.readVariables(state);
         assertThat(vars).containsKey("__scheduleAgent_pending_" + NODE_ID);
@@ -108,7 +108,7 @@ class TurScheduleAgentNodeExecutorTest {
         Outcome outcome = executor.execute(state,
                 scheduleAgentNode(ROUTINE_ID, null, OUTPUT_SLOT, null));
 
-        assertThat(outcome).isEqualTo(Outcome.WAITING);
+        assertThat(outcome).isEqualTo(Outcome.WAITING_POLL);
         verify(jms, never()).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE),
                 any(TurScheduleAgentMessage.class));
     }

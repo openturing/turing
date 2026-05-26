@@ -52,16 +52,27 @@ export type NodeType =
   | "formCapture"
   | "condition"
   | "functionCall"
+  | "scheduleAgent"
   | "subFlow"
+  | "subFlowSwitch"
   | "persona"
   | "switch"
   | "slot"
   | "writeSlot";
 
-/** One branch on a {@code switch} node — {@code id} is also the edge {@code sourceHandle}. */
+/**
+ * One branch on a {@code switch} or {@code subFlowSwitch} node —
+ * {@code id} is also the edge {@code sourceHandle}. {@link subFlowId} is
+ * only honored by {@code subFlowSwitch} nodes (T47): the engine descends
+ * into the linked sub-flow instead of routing to an outgoing edge.
+ */
 export interface SwitchOption {
   id: string;
   label: string;
+  /** T47 — id of the sub-flow this option enters. Ignored on plain switches. */
+  subFlowId?: string;
+  /** Cached display name of the linked sub-flow. */
+  subFlowName?: string;
 }
 
 /* ─────────────────────── Per-node DSL shapes ─────────────────────── */
@@ -141,6 +152,42 @@ export interface SwitchNode extends NodeBase {
   switchOptions: readonly SwitchOption[];
 }
 
+/**
+ * T47 — like {@link SwitchNode} but each matched option carries a
+ * {@code subFlowId} and the engine descends into the linked sub-flow
+ * instead of routing through an outgoing edge.
+ */
+export interface SubFlowSwitchNode extends NodeBase {
+  type: "subFlowSwitch";
+  switchVariable: string;
+  switchOptions: readonly SwitchOption[];
+}
+
+/**
+ * T48 — asynchronous routine dispatch. Fires the configured routine into
+ * the JMS queue and parks the flow on this node until the routine writes
+ * the {@link outputVariable} slot (or the timeout elapses). On timeout the
+ * engine takes the outgoing edge with {@code sourceHandle: "timeout"}
+ * (falls back to the first edge when none is wired).
+ */
+export interface ScheduleAgentNode extends NodeBase {
+  type: "scheduleAgent";
+  /** Id of the {@code TurRoutine} to fire. */
+  routineId: string;
+  /** Cached display name of the linked routine. */
+  routineName?: string;
+  /** Slot the routine result is written into. */
+  outputVariable?: string;
+  /**
+   * Tool input JSON template — {@code &#123;&#123;slotName&#125;&#125;}
+   * placeholders are interpolated from the conversation's slot map before
+   * the routine runs. Blank → {@code "{}"}.
+   */
+  aiInstruction?: string;
+  /** Per-node timeout (ms). Falls back to the routine's default when omitted. */
+  routineTimeoutMs?: number;
+}
+
 /** Sub-shape: SET writes {@code slotValue}; DELETE clears the slot. */
 interface SlotSetNode extends NodeBase {
   type: "slot";
@@ -172,7 +219,9 @@ export type FlowNode =
   | FormCaptureNode
   | ConditionNode
   | FunctionCallNode
+  | ScheduleAgentNode
   | SubFlowNode
+  | SubFlowSwitchNode
   | PersonaNode
   | SwitchNode
   | SlotNode

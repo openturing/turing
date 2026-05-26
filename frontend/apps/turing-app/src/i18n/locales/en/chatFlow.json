@@ -160,8 +160,9 @@
       "mcpServerHint": "All tools exposed by the selected MCP server will be available to the LLM.",
       "scheduleAgent": {
         "routineId": "Routine",
-        "routineIdPlaceholder": "Routine id",
-        "routineIdHint": "Id of the configured routine to run asynchronously. The flow pauses on this node until the routine writes the output slot (or the timeout expires).",
+        "routineIdPlaceholder": "Pick a routine…",
+        "routineIdEmpty": "No routines defined. Create one under Routines first.",
+        "routineIdHint": "Configured routine to run asynchronously. The flow pauses on this node until the routine writes the output slot (or the timeout expires).",
         "payloadTemplate": "Payload Template (JSON)",
         "payloadTemplateHint": "JSON template passed to the routine. {{slotName}} placeholders are interpolated from the conversation's slot map before dispatch. Leave blank to send {}.",
         "outputVariable": "Output Slot",

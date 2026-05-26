@@ -1,0 +1,41 @@
+{
+  "routine": {
+    "title": "Rotinas",
+    "newRoutine": "Nova Rotina",
+    "newInstance": "Criar Rotina",
+    "blankTitle": "Nenhuma rotina cadastrada",
+    "blankDescription": "Rotinas são jobs assíncronos disparados pelos nós scheduleAgent dos chat-flows. Crie uma para começar.",
+    "details": "Detalhes da Rotina",
+    "detailsDesc": "Nome estável e descrição. O nome é referenciado pelos nós scheduleAgent.",
+    "name": "Nome",
+    "nameDesc": "Identificador único — letras, dígitos, underscore, hífen, ponto. Não pode começar com dígito.",
+    "nameRequired": "O nome da rotina é obrigatório.",
+    "description": "Descrição",
+    "descriptionPlaceholder": "O que esta rotina faz? Aparece no dropdown do scheduleAgent.",
+    "execution": "Execução",
+    "executionDesc": "Defina como a rotina roda e o que ela executa.",
+    "kind": "Tipo",
+    "kindDesc": "NATIVE envolve um método @Tool do Spring AI (mesmo registry do functionCall). GROOVY executa um script inline.",
+    "kindOptions": {
+      "NATIVE": "Método @Tool nativo",
+      "GROOVY": "Script Groovy"
+    },
+    "nativeToolName": "Nome da Tool Nativa",
+    "nativeToolNameDesc": "Nome do método @Tool a invocar (ex.: get_current_time, search_site).",
+    "nativeToolNameRequired": "O nome da tool nativa é obrigatório quando o tipo é NATIVE.",
+    "groovyScript": "Script Groovy",
+    "groovyScriptDesc": "Bindings: args (payload parseado como Map + cada chave top-level), conversationId, routineName. A última expressão é gravada no slot de saída do scheduleAgent.",
+    "groovyScriptRequired": "O corpo do script Groovy é obrigatório quando o tipo é GROOVY.",
+    "defaultTimeoutMs": "Timeout Padrão (ms)",
+    "defaultTimeoutMsDesc": "Timeout fallback para nós scheduleAgent que não definem o próprio. O fluxo segue pela aresta 'timeout' ao expirar.",
+    "enabled": "Habilitada",
+    "enabledDesc": "Rotinas desabilitadas são puladas (o scheduleAgent loga warning e avança o fluxo).",
+    "created": "Rotina '{{name}}' criada",
+    "updated": "Rotina '{{name}}' atualizada",
+    "deleted": "Rotina '{{name}}' excluída",
+    "saveFailed": "Não foi possível salvar a rotina. Verifique os erros de validação.",
+    "deleteFailed": "Não foi possível excluir a rotina.",
+    "createDescription": "Crie uma nova rotina que os nós scheduleAgent podem disparar em qualquer chat flow.",
+    "editDescription": "Edite uma rotina — as mudanças se aplicam a todos os fluxos que a referenciam."
+  }
+}

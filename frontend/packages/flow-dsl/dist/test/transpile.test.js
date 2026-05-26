@@ -220,5 +220,81 @@ describe("transpileFlow", () => {
         assert.equal(yesEdge?.target, "end-corp");
         assert.equal(noEdge?.target, "end-personal");
     });
+    // T48 — scheduleAgent: routine fields copied, default label applied,
+    // timeout edge stays as-is so the engine can route via sourceHandle:"timeout".
+    it("transpiles scheduleAgent nodes with routine fields and timeout edge", () => {
+        const transpiled = transpileFlow({
+            name: "Proposal flow",
+            nodes: [
+                { id: "start", type: "start" },
+                {
+                    id: "fire-proposal",
+                    type: "scheduleAgent",
+                    routineId: "r-1",
+                    routineName: "generate_proposal_pdf",
+                    outputVariable: "proposta_pdf_url",
+                    aiInstruction: '{"cargo":"{{cargo}}"}',
+                    routineTimeoutMs: 120_000,
+                },
+                { id: "ok", type: "end" },
+                { id: "fallback", type: "end" },
+            ],
+            edges: [
+                { source: "start", target: "fire-proposal" },
+                { source: "fire-proposal", target: "ok" },
+                { source: "fire-proposal", target: "fallback", sourceHandle: "timeout" },
+            ],
+        });
+        const scheduleNode = transpiled.graph.nodes.find((n) => n.id === "fire-proposal");
+        assert.ok(scheduleNode, "scheduleAgent node present");
+        const data = scheduleNode.data;
+        assert.equal(data.label, "SCHEDULED ROUTINE");
+        assert.equal(data.routineId, "r-1");
+        assert.equal(data.routineName, "generate_proposal_pdf");
+        assert.equal(data.outputVariable, "proposta_pdf_url");
+        assert.equal(data.aiInstruction, '{"cargo":"{{cargo}}"}');
+        assert.equal(data.routineTimeoutMs, 120_000);
+        // Timeout edge preserved.
+        const timeoutEdge = transpiled.graph.edges.find((e) => e.source === "fire-proposal" && e.sourceHandle === "timeout");
+        assert.ok(timeoutEdge, "timeout edge preserved");
+        assert.equal(timeoutEdge?.target, "fallback");
+    });
+    // T47 — subFlowSwitch carries switchVariable + switchOptions with optional
+    // subFlowId/subFlowName per option (descent target, not edge target).
+    it("transpiles subFlowSwitch nodes with per-option subFlow links", () => {
+        const transpiled = transpileFlow({
+            name: "Lead router",
+            nodes: [
+                { id: "start", type: "start" },
+                {
+                    id: "route-by-segment",
+                    type: "subFlowSwitch",
+                    switchVariable: "segment",
+                    switchOptions: [
+                        { id: "opt-b2b", label: "B2B", subFlowId: "lead-b2b", subFlowName: "Lead B2B" },
+                        { id: "opt-b2c", label: "B2C", subFlowId: "lead-b2c" },
+                    ],
+                },
+                { id: "end", type: "end" },
+            ],
+            edges: [
+                { source: "start", target: "route-by-segment" },
+                { source: "route-by-segment", target: "end" },
+            ],
+        });
+        const sfsNode = transpiled.graph.nodes.find((n) => n.id === "route-by-segment");
+        assert.ok(sfsNode, "subFlowSwitch node present");
+        const data = sfsNode.data;
+        assert.equal(data.label, "SUB-FLOW SWITCH");
+        assert.equal(data.switchVariable, "segment");
+        const options = data.switchOptions;
+        assert.equal(options.length, 2);
+        const [optB2b, optB2c] = options;
+        assert.ok(optB2b, "B2B option present");
+        assert.ok(optB2c, "B2C option present");
+        assert.equal(optB2b.subFlowId, "lead-b2b");
+        assert.equal(optB2b.subFlowName, "Lead B2B");
+        assert.equal(optB2c.subFlowId, "lead-b2c");
+    });
 });
 //# sourceMappingURL=transpile.test.js.map

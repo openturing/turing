@@ -20,7 +20,7 @@ import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconMessageChatbot, IconRefresh, IconRobot } from "@tabler/icons-react"
+import { IconLoader2, IconMessageChatbot, IconRefresh, IconRobot } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
 import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, type ChatMessage, estimateTokens, generateId } from "./chat.types"
@@ -32,6 +32,7 @@ import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
 import { useLlmInstances } from "./hooks/use-llm-instances"
+import { useScheduleAgentWaiting } from "./hooks/use-schedule-agent-waiting"
 
 const turAIAgentService = new TurAIAgentService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
@@ -167,6 +168,17 @@ export default function ChatPage() {
   }, [llmInstances])
 
   const { sessions, activeSessionId, setActiveSessionId, ensureSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(turChatService, getLlmTitle)
+
+  // T48 — poll the agent's slot snapshot while a conversation is live so the
+  // input area can render an "Aguardando rotina…" banner whenever the engine
+  // parks on a scheduleAgent node. Polling (vs SSE) because the agent-side
+  // slot stream isn't wired in the console yet; a 2s cadence is plenty for
+  // routine durations measured in seconds-to-minutes.
+  const routineWaiting = useScheduleAgentWaiting({
+    agentId: activeAgentId ?? undefined,
+    conversationId: activeSessionId ?? undefined,
+    enabled: !!activeAgentId,
+  })
 
   // Reset the runtime state of the currently selected flow for this
   // conversation. Only meaningful when a *specific* flow is forced (not Auto)
@@ -476,6 +488,20 @@ export default function ChatPage() {
             </div>
             <div className="shrink-0 border-t bg-background">
               <div className="max-w-3xl mx-auto px-4 py-4">
+                {routineWaiting.waiting && (
+                  <div className="mb-2 flex items-center gap-2 rounded-md border border-lime-500/40 bg-lime-500/10 px-3 py-2 text-xs text-lime-900 dark:text-lime-100">
+                    <IconLoader2 className="size-3.5 animate-spin" />
+                    <span>
+                      {t("chat.scheduleAgent.waiting", {
+                        count: routineWaiting.routineIds.length,
+                        defaultValue:
+                          routineWaiting.routineIds.length > 1
+                            ? "Aguardando {{count}} rotinas…"
+                            : "Aguardando rotina…",
+                      })}
+                    </span>
+                  </div>
+                )}
                 <ChatInput
                   value={currentAgentState.input}
                   onChange={(v) => updateAgentState(activeAgentId, { input: v })}

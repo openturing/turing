@@ -86,6 +86,17 @@ public class TurRoutine implements Serializable {
     @Column(name = "defaultTimeoutMs", nullable = false)
     private int defaultTimeoutMs = 60_000;
 
+    /**
+     * Groovy script body executed when {@link #kind} is
+     * {@link TurRoutineKind#GROOVY}. The script receives the conversation
+     * slot map (read-only, as {@code slots}), the routine's input payload
+     * (as {@code args}), and a {@code conversationId} binding. The last
+     * expression is captured and written to the {@code scheduleAgent}
+     * node's {@code outputVariable}. Ignored for {@code NATIVE} routines.
+     */
+    @Column(name = "groovyScript", columnDefinition = "longtext")
+    private String groovyScript;
+
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
 

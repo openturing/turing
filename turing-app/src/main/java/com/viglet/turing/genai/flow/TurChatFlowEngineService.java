@@ -2254,8 +2254,23 @@ public class TurChatFlowEngineService {
                 TurScheduleAgentNodeExecutor.Outcome outcome =
                         scheduleAgentExecutor.execute(state, current);
                 switch (outcome) {
-                    case WAITING -> {
+                    case WAITING_FIRED -> {
                         state = stateRepository.save(state);
+                        // Fresh enqueue → publish so SSE subscribers (chat
+                        // UI's waiting indicator, slot inspector) see the
+                        // __scheduleAgent_pending_<nodeId> marker the
+                        // executor just wrote.
+                        slotEventBus.publish(state.getConversationId(),
+                                listSlotsForConversation(state.getConversationId()).slots());
+                        return state;
+                    }
+                    case WAITING_POLL -> {
+                        // Markers already set on a previous turn — no slot
+                        // changed, so do NOT republish. Re-publishing would
+                        // feed the auto-resume listener, which would call
+                        // resumeParkedScheduleAgents → re-enter here →
+                        // WAITING_POLL again → publish again, looping
+                        // forever.
                         return state;
                     }
                     case COMPLETED -> {

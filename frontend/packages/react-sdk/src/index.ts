@@ -92,6 +92,11 @@ export type {
   UseTuringSlotOptions,
   UseTuringSlotParseMode,
 } from "./hooks/use-turing-slot";
+export { useTuringRoutineWaiting } from "./hooks/use-turing-routine-waiting";
+export type {
+  UseTuringRoutineWaitingReturn,
+  UseTuringRoutineWaitingOptions,
+} from "./hooks/use-turing-routine-waiting";
 export { useTuringSlotWriter } from "./hooks/use-turing-slot-writer";
 export type {
   UseTuringSlotWriterReturn,

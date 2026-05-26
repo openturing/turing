@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
 import { useAiAgent } from "@/api/queries/ai-agent.queries";
 import { useChatFlows } from "@/api/queries/chat-flow.queries";
+import { useRoutines } from "@/api/queries/routine.queries";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,13 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
   // one of these so captured values land in a stable, typed schema.
   const { data: slots } = useAIAgentSlots(agentId);
   const slotOptions = useMemo(() => slots ?? [], [slots]);
+  // Routines catalog — populates the scheduleAgent node's routine dropdown.
+  // Deployment-wide, not agent-scoped (same routine usable across agents).
+  const { data: routines } = useRoutines();
+  const routineOptions = useMemo(
+    () => (routines ?? []).filter((r) => r.enabled !== false),
+    [routines],
+  );
 
   useEffect(() => {
     nativeToolService.query().then(setNativeToolGroups).catch(() => setNativeToolGroups([]));
@@ -429,18 +437,43 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
         {type === "scheduleAgent" && (
           <>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="flow-node-routine-id">
-                {t("chatFlow.properties.scheduleAgent.routineId")}
-              </Label>
-              <Input
-                id="flow-node-routine-id"
+              <Label>{t("chatFlow.properties.scheduleAgent.routineId")}</Label>
+              <Select
                 value={data.routineId ?? ""}
-                onChange={(e) => update({ routineId: e.target.value || undefined })}
-                placeholder={t("chatFlow.properties.scheduleAgent.routineIdPlaceholder")}
-              />
-              <span className="text-[11px] text-muted-foreground">
-                {t("chatFlow.properties.scheduleAgent.routineIdHint")}
-              </span>
+                onValueChange={(value) => {
+                  const picked = routineOptions.find((r) => r.id === value);
+                  update({
+                    routineId: value || undefined,
+                    routineName: picked?.name,
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t("chatFlow.properties.scheduleAgent.routineIdPlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {routineOptions.map((r) => (
+                    <SelectItem key={r.id} value={r.id ?? ""}>
+                      <span className="font-mono text-[12px]">{r.name}</span>
+                      {r.description && (
+                        <span className="ml-2 text-muted-foreground">— {r.description}</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {routineOptions.length === 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  {t("chatFlow.properties.scheduleAgent.routineIdEmpty")}
+                </span>
+              )}
+              {routineOptions.length > 0 && (
+                <span className="text-[11px] text-muted-foreground">
+                  {t("chatFlow.properties.scheduleAgent.routineIdHint")}
+                </span>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="flow-node-routine-payload">

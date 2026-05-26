@@ -79,6 +79,11 @@ export const queryKeys = {
     descriptor: () => [...queryKeys.customTools.all(), 'descriptor'] as const,
     draft: (id: string) => [...queryKeys.customTools.all(), 'draft', id] as const,
   },
+  routines: {
+    all: () => ['routines'] as const,
+    list: () => [...queryKeys.routines.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.routines.all(), 'detail', id] as const,
+  },
   intents: {
     all: () => ['intents'] as const,
     listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,

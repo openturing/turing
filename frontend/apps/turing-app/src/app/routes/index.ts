@@ -15,6 +15,7 @@ export { MarketplaceRoutes } from "./marketplace.routes";
 export { McpServerRoutes } from "./mcp-server.routes";
 export { PersonaRoutes } from "./persona.routes";
 export { CustomToolRoutes } from "./custom-tool.routes";
+export { RoutineRoutes } from "./routine.routes";
 export { SERoutes } from "./se.routes";
 export { SNRoutes } from "./sn.routes";
 export { StoreRoutes } from "./store.routes";
