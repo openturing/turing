@@ -49,6 +49,7 @@ public class TurGlobalSettingsAPI {
                 .defaultEmbeddingModelId(turGlobalSettingsService.getDefaultEmbeddingModelId())
                 .defaultEmbeddingStoreId(turGlobalSettingsService.getDefaultEmbeddingStoreId())
                 .defaultAiAgentId(turGlobalSettingsService.getDefaultAiAgentId())
+                .piiSlotTtlHours(turGlobalSettingsService.getPiiSlotTtlHours())
                 .build();
     }
 
@@ -88,6 +89,8 @@ public class TurGlobalSettingsAPI {
                         .updateDefaultEmbeddingStoreId(globalSettings.getDefaultEmbeddingStoreId()))
                 .defaultAiAgentId(turGlobalSettingsService
                         .updateDefaultAiAgentId(globalSettings.getDefaultAiAgentId()))
+                .piiSlotTtlHours(turGlobalSettingsService
+                        .updatePiiSlotTtlHours(globalSettings.getPiiSlotTtlHours()))
                 .build();
     }
 

@@ -25,4 +25,13 @@ export interface TurGlobalSettings {
   defaultEmbeddingModelId?: string;
   defaultEmbeddingStoreId?: string;
   defaultAiAgentId?: string;
+  /**
+   * T61 — retention TTL in hours for `pii_*` prefixed slots. The hourly
+   * cleanup job wipes PII slot values older than this. `0` disables
+   * retention enforcement (slots stay encrypted at rest and redacted in
+   * logs). Clamped server-side to [0, 8760] (one year).
+   *
+   * @since 2026.3.1
+   */
+  piiSlotTtlHours?: number;
 }

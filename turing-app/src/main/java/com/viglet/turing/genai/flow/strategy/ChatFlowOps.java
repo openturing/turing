@@ -1281,7 +1281,13 @@ public final class ChatFlowOps {
         }
         try {
             Map<String, String> parsed = OBJECT_MAPPER.readValue(json, VARIABLES_TYPE);
-            return parsed != null ? new LinkedHashMap<>(parsed) : new LinkedHashMap<>();
+            Map<String, String> result = parsed != null ? new LinkedHashMap<>(parsed) : new LinkedHashMap<>();
+            // T61: decrypt pii_* slots transparently. INSTANCE is null in
+            // pure unit tests, in which case the map is returned as-is.
+            com.viglet.turing.service.chatslots.TurPiiSlotService pii =
+                    com.viglet.turing.service.chatslots.TurPiiSlotService.getInstance();
+            if (pii != null) pii.decryptInPlace(result);
+            return result;
         } catch (JacksonException e) {
             log.warn("[FlowOps] Variables JSON is invalid; resetting");
             return new LinkedHashMap<>();
@@ -1291,8 +1297,15 @@ public final class ChatFlowOps {
     /** Serializes {@code variables} back into {@code state.variablesJson}. */
     public static void writeVariables(TurChatFlowState state, Map<String, String> variables) {
         try {
-            state.setVariablesJson(OBJECT_MAPPER.writeValueAsString(
-                    variables != null ? variables : Map.of()));
+            Map<String, String> toSerialize = variables != null
+                    ? new LinkedHashMap<>(variables) : new LinkedHashMap<>();
+            // T61: encrypt pii_* slots before they hit the persistence
+            // layer. INSTANCE is null in pure unit tests — the map is
+            // serialized as-is, preserving legacy semantics.
+            com.viglet.turing.service.chatslots.TurPiiSlotService pii =
+                    com.viglet.turing.service.chatslots.TurPiiSlotService.getInstance();
+            if (pii != null) pii.encryptInPlace(toSerialize);
+            state.setVariablesJson(OBJECT_MAPPER.writeValueAsString(toSerialize));
         } catch (JacksonException e) {
             log.warn("[FlowOps] Failed to serialize variables for state '{}'", state.getId());
             state.setVariablesJson("{}");

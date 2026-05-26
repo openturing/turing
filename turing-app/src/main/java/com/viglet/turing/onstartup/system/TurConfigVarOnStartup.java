@@ -64,6 +64,9 @@ public class TurConfigVarOnStartup {
 	public static final String DEFAULT_EMBEDDING_MODEL_ID = "GLOBAL_DEFAULT_EMBEDDING_MODEL";
 	public static final String DEFAULT_EMBEDDING_STORE_ID = "GLOBAL_DEFAULT_EMBEDDING_STORE";
 	public static final String DEFAULT_AI_AGENT_ID = "GLOBAL_DEFAULT_AI_AGENT";
+	/** T61 — PII slot retention TTL in hours; 0/negative disables cleanup. */
+	public static final String PII_SLOT_TTL_HOURS = "GLOBAL_PII_SLOT_TTL_HOURS";
+	public static final String PII_SLOT_TTL_HOURS_DEFAULT_VALUE = "24";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -102,6 +105,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(DEFAULT_EMBEDDING_MODEL_ID, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_EMBEDDING_STORE_ID, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_AI_AGENT_ID, GLOBAL_PATH, "");
+		ensureConfigVar(PII_SLOT_TTL_HOURS, GLOBAL_PATH, PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

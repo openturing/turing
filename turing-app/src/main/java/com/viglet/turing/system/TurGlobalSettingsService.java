@@ -157,6 +157,44 @@ public class TurGlobalSettingsService {
         return fresh.length() >= 8 ? fresh.substring(0, 8) : fresh;
     }
 
+    /**
+     * T61 — PII slot retention TTL in hours. Returns 24 as the default
+     * (matches the documented out-of-the-box compliance posture). Values
+     * &lt;= 0 disable the cleanup job; the UI exposes that as the
+     * "Never expire" toggle.
+     *
+     * @since 2026.3.1
+     */
+    public int getPiiSlotTtlHours() {
+        String raw = turConfigVarRepository.findById(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS)
+                .map(TurConfigVar::getValue)
+                .orElse(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return Integer.parseInt(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
+        }
+    }
+
+    /**
+     * Persists the PII retention TTL. Clamped to {@code [0, 8760]} (one
+     * year) so a typo in the admin form can't accidentally turn retention
+     * effectively-off (e.g. 100 years) and the UI sees a stable bound to
+     * validate against.
+     *
+     * @since 2026.3.1
+     */
+    public int updatePiiSlotTtlHours(int ttlHours) {
+        int clamped = Math.max(0, Math.min(ttlHours, 8760));
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(Integer.toString(clamped));
+        turConfigVarRepository.save(configVar);
+        return clamped;
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)

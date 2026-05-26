@@ -89,8 +89,15 @@ public class TurChatSlotAuditService {
             TurChatSlotAuditEntry entry = new TurChatSlotAuditEntry();
             entry.setConversationId(conversationId);
             entry.setSlotName(slotName);
-            entry.setOldValue(oldValue);
-            entry.setNewValue(newValue);
+            // T61: PII slots persist their before/after values as the
+            // redaction placeholder — the audit row still proves a write
+            // happened (and at what time) without storing the secret
+            // again, since plaintext would shortcut the encrypt-at-rest
+            // guarantee that ChatFlowOps.writeVariables enforces.
+            entry.setOldValue(com.viglet.turing.service.chatslots.TurPiiSlotService
+                    .redactValue(slotName, oldValue));
+            entry.setNewValue(com.viglet.turing.service.chatslots.TurPiiSlotService
+                    .redactValue(slotName, newValue));
             entry.setSource(source);
             entry.setOriginDetail(truncate(originDetail));
             entry.setTs(LocalDateTime.now());

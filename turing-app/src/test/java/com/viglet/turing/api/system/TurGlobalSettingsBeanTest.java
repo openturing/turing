@@ -29,7 +29,8 @@ class TurGlobalSettingsBeanTest {
                 null,  // defaultLlmId
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
-                false, null, null, null);
+                false, null, null, null,
+                24);  // piiSlotTtlHours (T61)
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
         assertThat(bean.getEmailProvider()).isEqualTo(TurEmailProviderType.BREVO);

@@ -38,4 +38,13 @@ public class TurGlobalSettingsBean {
     private String defaultEmbeddingModelId;
     private String defaultEmbeddingStoreId;
     private String defaultAiAgentId;
+    /**
+     * T61 — retention TTL in hours for {@code pii_*} prefixed slots.
+     * Hourly cleanup job wipes PII slot values older than this. {@code 0}
+     * disables enforcement (slots are still encrypted at rest and
+     * redacted in logs). Clamped server-side to {@code [0, 8760]}.
+     *
+     * @since 2026.3.1
+     */
+    private int piiSlotTtlHours;
 }
