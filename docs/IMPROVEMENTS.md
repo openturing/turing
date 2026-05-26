@@ -41,7 +41,7 @@ acting.
 - [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
 - [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
 - [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
-- [XI. Embedded LLM via llama.cpp — drop a GGUF, get an LLM](#xi-embedded-llm-via-llamacpp--drop-a-gguf-get-an-llm)
+- [XI. Embedded LLM via Jlama — pure-Java in-process inference](#xi-embedded-llm-via-jlama--pure-java-in-process-inference)
 
 ---
 
@@ -105,14 +105,20 @@ acting.
 >   capability flags. **18 weeks total** for committed (📋) work; 17
 >   long-shot (💭) tasks following on opportunity-cost basis. See §X
 >   for the strategic frame and X.16 for sequencing.
-> - **Block G** — **NEW (2026-05-25)**: embedded LLM via llama.cpp
->   binding (`de.kherud:llama:4.1.0+`, T193–T210). Lets an admin drop
->   a GGUF file into asset storage and create a `TurLLMInstance` that
->   runs **in-process** — no Ollama server, no cloud account. Two
->   non-trivial dependencies: a per-instance model cache the codebase
->   doesn't have today (§XI.4) and `TurStorageService.resolveLocalPath`
->   (§XI.5). See §XI for the audit (4.1.0 vs 3.0.0), capability gaps
->   (no native tool calling), and the Jlama parallel evaluation track.
+> - **Block G** — **NEW (2026-05-25)**: embedded LLM via **Jlama**
+>   (`com.github.tjake:jlama-core:0.8.4+`, T193–T218). Pure-Java
+>   in-process inference — no Ollama server, no cloud account, no
+>   JNI native libs to extract. Lets an admin import a model into
+>   asset storage and create a `TurLLMInstance` that serves chat /
+>   embedding from the same JVM. Three non-trivial dependencies:
+>   per-instance model cache (§XI.3), `TurStorageService.resolveLocalPath`
+>   (§XI.3), and JVM bootstrap with `--add-modules jdk.incubator.vector
+>   --enable-preview` for Project Panama (§XI.5). Major upside vs the
+>   earlier llama.cpp draft: **tool calling works** via
+>   `dev.langchain4j:langchain4j-jlama` for Llama 3.1 / Mistral /
+>   Mixtral (§XI.6); no JNI shutdown issues; clean Windows support
+>   out of the box. Tradeoff: SafeTensors format only (GGUF requires
+>   conversion via `jlama-cli`, addressed by T214).
 >
 > **Dependency rule of thumb** *(historical — kept for context):* "Safety
 > net" was supposed to land before §I.5 — in practice we shipped Block B
@@ -580,87 +586,99 @@ Remaining platform-relevant promotions:
 | T191 | 💭 | T169, T126 | **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if it beats the current model on every assertion it's auto-promoted. The customer's agent gets cheaper and better every week with zero engineering work. | §X.15.e |
 | T192 | 💭 | T138, T144, T146 | **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). Other tenants subscribe and add it to their agent's MCP allowlist. Network effect: every Turing customer that publishes makes every other customer's agents more useful. Long-tail moat. | §X.15.f |
 
-### Block G — Embedded LLM via llama.cpp (drop a GGUF, get an LLM)
+### Block G — Embedded LLM via Jlama (pure-Java in-process inference)
 
-> Triggered by a 2026-05-25 audit of `de.kherud:llama` (full mapping in
-> §XI). Goal: an admin uploads a `.gguf` file to asset storage, picks
-> it in the LLM Instance form, and the resulting `TurLLMInstance`
-> serves chat / embedding / rerank **in-process** — no Ollama, no
-> external API account, no second container. **Strategic value**:
-> (a) **air-gapped / regulated deployments** that forbid outbound
-> LLM calls, (b) **demo/dev installs** that don't need API credit,
-> (c) **local LlmJudge / local rerank** stages to cut cloud cost on
-> high-volume guardrail and retrieval paths.
+> Triggered by a 2026-05-25 evaluation of
+> [`com.github.tjake:jlama-core`](https://github.com/tjake/Jlama),
+> the pure-Java LLM inference engine using Project Panama Vector
+> API. Goal: an admin imports a model into asset storage and the
+> resulting `TurLLMInstance` serves chat / embedding **in-process**
+> — no Ollama, no cloud API account, no JNI native libs to extract,
+> no second container. **Strategic value**: (a) **air-gapped /
+> regulated deployments** that forbid outbound LLM calls,
+> (b) **demo/dev installs** that don't need API credit,
+> (c) **local LlmJudge / local embedding** stages to cut cloud cost
+> on high-volume guardrail and indexing paths, (d) **clean Windows
+> deployment** — no native CUDA missing, no `dll` extraction, no
+> path-of-libs surprises.
 >
 > **Two structural blockers** that don't exist yet:
 > (1) [`TurLlmModelFactory`](../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java)
 > creates a fresh `ChatModel` per request — fine for HTTP-stateless
-> providers, fatal for a provider where "instantiate" means "mmap
-> 5GB GGUF and warm a KV cache". T194 introduces a per-`TurLLMInstance`
-> model cache.
+> providers, fatal for a provider where "instantiate" means "load
+> SafeTensors weights and allocate the KV cache". T194 introduces a
+> per-`TurLLMInstance` model cache.
 > (2) [`TurStorageService`](../turing-app/src/main/java/com/viglet/turing/service/storage/TurStorageService.java)
 > exposes `downloadObject(key): InputStream` but no local-file path —
-> llama.cpp needs `mmap` on a real file. T195 adds a cross-backend
-> `resolveLocalPath(key): Path` that returns the direct path on
-> filesystem storage and a cached download on MinIO/S3.
+> Jlama reads `config.json`, `tokenizer.json`, and `*.safetensors`
+> from a real directory on disk. T195 adds a cross-backend
+> `resolveLocalPath(key): Path`.
 >
-> **Critical version note**: the user-suggested version `3.0.0` is the
-> JNI-refactor release from mid-2025 and was superseded fast.
-> **Pin `4.1.0+`** — `applyTemplate(...)` (chat-template helper),
-> `rerank(...)`, JSON-schema→grammar, and Llama 3.3 / Qwen 3 /
-> Gemma 3 model support all landed between 3.0.0 and 4.1.0. See
-> §XI.2 for the version-by-version breakdown.
+> **Critical operational requirement**: Jlama depends on **Project
+> Panama Vector API** (still incubator in JDK 21). The Turing JVM
+> must launch with `--add-modules jdk.incubator.vector
+> --enable-preview` — a single missing flag and inference fails at
+> first call. T216 enforces this at boot.
+>
+> **Critical format note**: Jlama reads **HuggingFace SafeTensors
+> directories** (containing `config.json` + `tokenizer.json` +
+> `model.safetensors`), **not GGUF directly**. Two acceptable
+> ingestion paths: (a) admin imports an HF model directory (the
+> normal path — `huggingface.co/tjake/*` ships pre-quantized models
+> ready for Jlama), or (b) admin uploads a `.gguf` and Turing runs
+> `jlama-cli convert` to produce the Jlama-friendly directory
+> (T214). See §XI.2 for the format reality.
 
 #### G.1 — Foundation (dependency + provider + cache + storage path)
 
 | #    | Status | Depends on | Task | Detail in |
 |------|--------|------------|------|-----------|
-| T193 | 📋 | — | **`de.kherud:llama:4.1.0+` dependency + `TurEmbeddedLlmProvider`** — new `@Component` implementing `TurGenAiLlmProvider` with `getPluginType()=="embedded-llamacpp"`. Reads `TurLLMInstance.providerOptionsJson` for `{ggufAssetKey, nLayersGpu, ctxSize, threads, role}`. `createChatModel` / `createEmbeddingModel` lookup the cached `LlamaModel` (T194) by `instance.id`, never construct on the hot path. `getPluginType` keeps it discoverable via `TurGenAiLlmProviderFactory` zero changes. **Why not 3.0.0**: missing `applyTemplate`, missing `rerank`, missing 9 months of llama.cpp upstream fixes (b3534 → b4831), missing Llama 3.3 / Qwen 3 / Gemma 3 templates. | §XI.2, §XI.4 |
-| T194 | 📋 | T193 | **`TurEmbeddedLlmModelCache`** — per-`TurLLMInstance.id` cache of loaded `LlamaModel`s. LRU eviction with `maxLoadedModels` (default 2) — when the limit is hit, the least-recently-used model gets `.close()`'d before the new one loads. Eviction also triggers on `LlmInstanceUpdatedEvent` (published in [TurLLMInstanceAPI.java:126-128](../turing-app/src/main/java/com/viglet/turing/api/llm/TurLLMInstanceAPI.java#L126-L128)). `@PreDestroy` walks the cache and closes every `LlamaModel` — addresses kherud issue #116 (non-daemon JNI thread blocks JVM shutdown). | §XI.4 |
-| T195 | 📋 | — | **`TurStorageService.resolveLocalPath(String key): Path`** — new method on the storage interface. Filesystem: returns `basePath.resolve(key)` directly. MinIO/S3: idempotent download to `./store/cache/llm-instances/{sha256(key)}/{filename}` and returns that path (skip download when the cache file matches the remote `etag`/size + last-modified). NoOp: throws `UnsupportedOperationException("Storage type 'none' does not support local file resolution")`. Liquibase migration not needed — pure runtime concern. | §XI.5 |
-| T196 | 📋 | T193 | **`EMBEDDED_LLAMACPP` vendor row** — extend [TurLLMVendorOnStartup.java](../turing-app/src/main/java/com/viglet/turing/onstartup/llm/TurLLMVendorOnStartup.java) with `vendor(id="EMBEDDED_LLAMACPP", plugin="embedded-llamacpp", title="Embedded (GGUF)", description="In-process llama.cpp, no external service required", website="https://github.com/kherud/java-llama.cpp")`. Idempotent insert (existing pattern). No Liquibase column changes — `TurLLMInstance` already has `providerOptionsJson` to carry `ggufAssetKey`. | §XI.4 |
-| T197 | 📋 | T193, T194, T195 | **`TurEmbeddedChatModel` + `TurEmbeddedStreamingChatModel`** — Spring AI `ChatModel` / `StreamingChatModel` adapters around `LlamaModel`. Translation: `Prompt` → `applyTemplate(...)` (kherud 4.1) → `LlamaModel.generate(InferenceParameters)` → map `LlamaIterable<LlamaOutput>` to `Flux<ChatResponse>` for streaming, or `complete(...)` for blocking. **Concurrency**: wrap each call in the per-instance `Semaphore(maxConcurrent=1)` from `TurEmbeddedLlmModelCache` — `LlamaModel` is not documented thread-safe, and llama.cpp upstream (#499) confirms single-context CUDA can race. | §XI.4 |
-| T198 | 📋 | T193, T194, T195 | **`TurEmbeddedEmbeddingModel`** — separate Spring AI `EmbeddingModel` adapter. A `LlamaModel` instance is *either* chat *or* embedding (llama.cpp constraint: weights load differently with `enableEmbedding()`). The cache treats embedding-role and chat-role of the same GGUF as two distinct cache entries with their own `LlamaModel`. UI must surface this: a single `TurLLMInstance` declares its role (`chat` / `embedding` / `rerank`) so the operator understands they need two instances to combine. | §XI.3 |
+| T193 | 📋 | — | **`com.github.tjake:jlama-core:0.8.4+` dependency + `TurEmbeddedLlmProvider`** — new `@Component` implementing `TurGenAiLlmProvider` with `getPluginType()=="embedded-jlama"`. Reads `TurLLMInstance.providerOptionsJson` for `{modelAssetKey, workingQuant, modelQuant, role, contextLength}`. `createChatModel` / `createEmbeddingModel` lookup the cached `AbstractModel` (T194) by `instance.id`, never construct on the hot path. Optional dependency on `com.github.tjake:jlama-native:0.8.4+` (SIMD acceleration via JNI; 2–3× speedup; classifier per OS+arch) controlled by a Maven profile so installs without the native jar still work pure-Java. | §XI.2, §XI.3 |
+| T194 | 📋 | T193 | **`TurEmbeddedModelCache`** — per-`TurLLMInstance.id` cache of loaded `AbstractModel`s. Unlike kherud's `LlamaModel`, Jlama's `AbstractModel` **is thread-safe** (stateless per request; KV-cache is per-`UUID` of session) — so the cache holds one shared instance per `TurLLMInstance` and serves concurrent requests directly. LRU eviction with `maxLoadedModels` (default 2) only fires on RAM pressure / explicit reconfiguration. Eviction triggers on `LlmInstanceUpdatedEvent` (published in [TurLLMInstanceAPI.java:126-128](../turing-app/src/main/java/com/viglet/turing/api/llm/TurLLMInstanceAPI.java#L126-L128)). `@PreDestroy` walks the cache and releases each `AbstractModel` — **clean JVM shutdown**, no JNI thread quirks. | §XI.3 |
+| T195 | 📋 | — | **`TurStorageService.resolveLocalPath(String key): Path`** — new method on the storage interface. Filesystem: returns `basePath.resolve(key)` directly. MinIO/S3: idempotent download to `./store/cache/llm-instances/{sha256(key)}/{filename}` (skips download when the cache file matches the remote `etag` / size + last-modified). For Jlama the `key` points at a *directory* (the SafeTensors model dir), so the backend recursively syncs `config.json` + `tokenizer.json` + every `*.safetensors` shard before returning the local dir path. NoOp: throws `UnsupportedOperationException("Storage type 'none' does not support local file resolution")`. | §XI.3 |
+| T196 | 📋 | T193 | **`EMBEDDED_JLAMA` vendor row** — extend [TurLLMVendorOnStartup.java](../turing-app/src/main/java/com/viglet/turing/onstartup/llm/TurLLMVendorOnStartup.java) with `vendor(id="EMBEDDED_JLAMA", plugin="embedded-jlama", title="Embedded (Jlama)", description="Pure-Java in-process inference, no external service required", website="https://github.com/tjake/Jlama")`. Idempotent insert (existing pattern). No Liquibase column changes — `TurLLMInstance` already has `providerOptionsJson` to carry `modelAssetKey`. | §XI.3 |
+| T197 | 📋 | T193, T194, T195 | **`TurEmbeddedChatModel` + `TurEmbeddedStreamingChatModel`** — Spring AI `ChatModel` / `StreamingChatModel` adapters. Implementation choice: either (a) call Jlama's `AbstractModel.generate(UUID, PromptContext, temperature, maxTokens, onToken)` directly and convert to `Flux<ChatResponse>`, or (b) reuse `dev.langchain4j:langchain4j-jlama:1.15.0-beta25+` (`JlamaChatModel` / `JlamaStreamingChatModel`) and bridge LangChain4j → Spring AI via a thin adapter. Option (b) is preferred — pulls in tool calling for free (T207). Per-conversation `UUID` is mapped to `conversationId` so the KV cache reuses across turns within one session. **No semaphore needed** — Jlama serves concurrent UUIDs natively. | §XI.3 |
+| T198 | 📋 | T193, T194, T195 | **`TurEmbeddedEmbeddingModel`** — separate Spring AI `EmbeddingModel` adapter via `JlamaEmbeddingModel`. Jlama supports BERT-family encoders (BGE, sentence-transformers, MiniLM) — the indexer specifies an encoder-only model for `role=embedding`. A single `TurLLMInstance` declares its role (`chat` / `embedding`) — combining requires two instances (Jlama loads encoder vs decoder weights differently). UI must surface this explicitly. | §XI.7 |
 
-#### G.2 — Frontend UX (the "drop a GGUF" experience)
-
-| #    | Status | Depends on | Task | Detail in |
-|------|--------|------------|------|-----------|
-| T199 | 📋 | T193, T195 | **`GgufAssetPicker` React component** — modal/dropdown that lists `.gguf` files under `models/` in `TurStorageService`. Calls a new `GET /api/llm/embedded/assets` endpoint that returns `[{key, sizeBytes, modifiedAt, ggufMetadata?}]`. Filter limited to `.gguf` extension server-side. Each row shows filename + size (MB/GB formatting) + modified date. Empty-state CTA: "No GGUF files yet — upload one in `/console/assets/models/`". | §XI.6 |
-| T200 | 📋 | T199 | **`applyVendorDefaults("EMBEDDED_LLAMACPP")`** in [llm.instance.form.tsx:139-195](../frontend/apps/turing-app/src/components/llm/llm.instance.form.tsx) — sets `apiKey=""` (greyed out / hidden), `url=""` (hidden), conditional fields revealed: `ggufAssetKey` (the `GgufAssetPicker`), `role` (chat/embedding/rerank radio), `ctxSize` (number, default 4096), `nLayersGpu` (number, default 0 = CPU only), `threads` (number, default `Runtime.availableProcessors()`), `eagerLoad` (checkbox: load on startup vs lazy on first call). i18n EN/PT for every label. | §XI.6 |
-| T201 | 📋 | T199 | **GGUF metadata pre-flight on selection** — when the picker selects a `.gguf`, frontend calls `GET /api/llm/embedded/gguf-info?key=...` → returns `{architecture, paramCount, quantization, contextLength, vocabSize, estimatedRamBytes}` (read from GGUF header via kherud's metadata API). UI displays a chip row: `Llama 3 · 8B · Q4_K_M · 8k ctx · ~5.4 GB RAM`. Warns when `estimatedRamBytes > 0.7 * Runtime.getRuntime().maxMemory()`. | §XI.6, §XI.7 |
-| T202 | 📋 | T193 | **Pre-flight RAM check on save** — `TurLLMInstanceAPI` PUT/POST validates that `ggufFileSize + currentLoadedTotal < 0.7 * Runtime.maxMemory()`; rejects with 422 + actionable message ("Loading this model would push memory beyond 70% — close another embedded instance first or increase JVM heap"). Prevents the JVM-OOM-mid-warmup failure mode. | §XI.7 |
-
-#### G.3 — Operational realities (concurrency, shutdown, memory)
+#### G.2 — Frontend UX (model picker + import)
 
 | #    | Status | Depends on | Task | Detail in |
 |------|--------|------------|------|-----------|
-| T203 | 📋 | T194 | **Per-instance concurrency policy** — `providerOptionsJson.maxConcurrent` (default 1). Cache holds a `Semaphore(maxConcurrent)` alongside the `LlamaModel`. Value > 1 is documented as best-effort — llama.cpp single-context concurrency is provider-dependent and CUDA-fragile. Frontend exposes a slider 1–8 with a tooltip explaining the trade-off. | §XI.7 |
-| T204 | 📋 | T194 | **Eager-load on startup** — when `eagerLoad=true` on a `TurLLMInstance`, a Spring `ApplicationReadyEvent` listener walks the embedded instances and pre-loads each into the cache. First chat turn skips the 1–3s mmap. Trade-off: longer Spring boot, locked RAM at startup. Per-instance opt-in. | §XI.7 |
-| T205 | 📋 | T193 | **Memory + load observability** — extend `TurChatPipelineObservation` (post-T32) with `turing.embedded.{modelLoadMs, modelEvictions, loadedModelCount, residentBytes, semaphoreWaitMs}` Micrometer gauges + timers, tagged by `instanceId`. Exposes the difference between cold-start latency and warm-call latency in `/actuator/prometheus`. | §XI.7 |
-| T206 | 📋 | T193 | **Status panel in LLM Instance details page** — per-embedded-instance card showing: load state (`unloaded` / `loading` / `ready` / `evicted`), resident RAM, last-used timestamp, semaphore queue depth, total inferences served, average tok/s. Operator can manually `Load` / `Evict` from the UI without restart. | §XI.7 |
+| T199 | 📋 | T193, T195 | **`JlamaModelPicker` React component** — modal/dropdown that lists candidate model directories under `models/` in `TurStorageService`. Calls a new `GET /api/llm/embedded/models` endpoint that recursively scans for directories containing both `config.json` AND at least one `*.safetensors` shard. Returns `[{key, name, sizeBytes, modelType?, paramCount?, quantization?}]` (last three derived from `config.json` when present). Each row shows directory name + total size + architecture chip (`llama`, `mistral`, `bert`, ...). Empty-state CTA: "No Jlama models yet — import one in `/console/llm-models/import`". | §XI.4 |
+| T200 | 📋 | T199 | **`applyVendorDefaults("EMBEDDED_JLAMA")`** in [llm.instance.form.tsx:139-195](../frontend/apps/turing-app/src/components/llm/llm.instance.form.tsx) — sets `apiKey=""` (hidden), `url=""` (hidden), conditional fields revealed: `modelAssetKey` (the `JlamaModelPicker`), `role` (chat/embedding radio), `workingQuant` (F16/I8 — default I8 for chat/embedding both, balances quality vs RAM), `modelQuant` (auto-detected from `config.json`), `contextLength` (default = config's `max_position_embeddings`, capped per agent), `eagerLoad` (checkbox), `useNativeSimd` (checkbox — only enabled if `jlama-native` is on the classpath). i18n EN/PT for every label. | §XI.4 |
+| T201 | 📋 | T199 | **Model metadata pre-flight on selection** — when the picker selects a model dir, frontend calls `GET /api/llm/embedded/model-info?key=...` → reads `config.json` and returns `{architecture, paramCount, hiddenSize, contextLength, vocabSize, quantization, estimatedRamBytes}`. UI displays a chip row: `Llama 3.1 · 8B · I8 · 8k ctx · ~4.5 GB RAM`. Warns when `estimatedRamBytes > 0.7 * Runtime.getRuntime().maxMemory()`. Also warns when `architecture` is **not in the Jlama-supported list** (`llama`, `llama2`, `llama3`, `llama3.1`, `mistral`, `mixtral`, `gemma`, `qwen2`, `gpt2`, `bert`) — refuses to save with a list of supported families. | §XI.4, §XI.7 |
+| T202 | 📋 | T193 | **Pre-flight RAM check on save** — `TurLLMInstanceAPI` PUT/POST validates that `estimatedModelRam + currentLoadedTotal < 0.7 * Runtime.maxMemory()`; rejects with 422 + actionable message ("Loading this model would push memory beyond 70% — evict an active embedded instance first or increase JVM heap"). Prevents the JVM-OOM-mid-warmup failure mode. | §XI.5 |
 
-#### G.4 — Capability hardening (tool-calling shim, rerank, judge)
+#### G.3 — Operational realities (Panama, lifecycle, observability)
 
 | #    | Status | Depends on | Task | Detail in |
 |------|--------|------------|------|-----------|
-| T207 | 💭 | T193 | **Tool-calling grammar shim** — biggest functional gap. kherud has no `ToolCallback` API. Approach: (a) inject a tool-calling preamble into the system prompt using each model's known calling convention (Llama 3.1 / Qwen / Mistral all differ), (b) generate a GBNF grammar from the Spring AI `ToolDefinition[]` JSON schema (kherud 4.0+ ships the JSON-schema→GBNF helper), (c) constrain `InferenceParameters.setGrammar(...)` to that GBNF, (d) parse the model's output for tool-call markers, (e) hand back to Spring AI's tool execution loop. **High value, medium-to-high effort, model-quality-dependent** — Q4 quantization degrades tool-call reliability noticeably. Document supported model families in the UI. | §XI.3, §XI.8 |
-| T208 | 💭 | T193, T198 | **Local LlmJudge** — route the guardrail's bilingual judge (today defaults to gpt-4o-mini, $0.15/1M in) to a local 3B Q4 model (~2 GB RAM, 15–25 tok/s on CPU). On high-volume Education-customer traffic the judge fires every turn; locally that's literally free after the GGUF download. Per-agent toggle `guardrailLocalEmbedded` + `guardrailLocalInstanceId`. Quality validation step: run the existing LlmJudge test suite against the local model before flipping. | §XI.8 |
-| T209 | 💭 | T193 | **Local rerank in T24 hybrid RAG** — wire kherud 4.1's `model.rerank(query, doc1, doc2, ...)` into the hybrid retrieval pipeline as the final reranker stage. Cost moves from "per-call cloud LLM" to "zero" after model load. Best for short-form rerank (10–50 retrieved chunks); long-context rerank still benefits from cloud. Per-`TurSNSiteGenAi` toggle `rerankLocalEmbedded`. | §XI.8 |
-| T210 | 💭 | T198 | **Local embedding for TurLuceneVectorStore** — when an agent's embedding provider is an embedded instance with `role=embedding`, the indexer pipes through the local model instead of OpenAI / Anthropic / Gemini. Avoids cloud bills on bulk re-embedding (where T158 Batch API isn't enough). Indexer batches into N-document chunks per call. | §XI.8 |
+| T203 | 📋 | T194 | **Per-conversation session UUID lifecycle** — Jlama's KV-cache is keyed by `UUID` per `AbstractModel.generate(...)` call. `TurEmbeddedChatModel` maintains a `Cache<String, UUID>` mapping `conversationId → sessionUuid` so KV-cache reuse survives across turns; eviction policy tied to chat memory retention + an idle TTL (default 30 min, configurable). Stale UUIDs trigger Jlama's `releaseSession(UUID)` to free KV memory. Surfaced in T205 metrics as `turing.embedded.sessionsActive`. | §XI.5 |
+| T204 | 📋 | T194 | **Eager-load on startup** — when `eagerLoad=true` on a `TurLLMInstance`, a Spring `ApplicationReadyEvent` listener walks the embedded instances and pre-loads each into the cache. First chat turn skips the SafeTensors load. Trade-off: longer Spring boot, locked RAM at startup. Per-instance opt-in. | §XI.5 |
+| T205 | 📋 | T193 | **Memory + load observability** — extend `TurChatPipelineObservation` (post-T32) with `turing.embedded.{modelLoadMs, modelEvictions, loadedModelCount, residentBytes, sessionsActive, tokensPerSecond}` Micrometer gauges + timers, tagged by `instanceId`. Exposes the difference between cold-start latency (~5–15s for 7B-I8) and warm-call latency (~50–200ms TTFT) in `/actuator/prometheus`. | §XI.5 |
+| T206 | 📋 | T193 | **Status panel in LLM Instance details page** — per-embedded-instance card showing: load state (`unloaded` / `loading` / `ready` / `evicted`), resident RAM, active session count, last-used timestamp, total inferences served, recent average tok/s, whether `jlama-native` SIMD is active. Operator can manually `Load` / `Evict` / `Drop sessions` from the UI without restart. | §XI.5 |
+
+#### G.4 — Capability completion (tool calling, judge, rerank, embedding)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T207 | 📋 | T193 | **Tool calling via LangChain4j-Jlama** — wire `JlamaChatModel`'s native tool-calling support (works with **Llama 3.1**, **Mistral**, **Mixtral** today; **JSON-mode not yet supported** — that's the LangChain4j gap, T173 strict JSON schemas don't apply to embedded yet). `TurEmbeddedChatModel` exposes a `LangChain4jToolCallback` bridge: Spring AI `ToolCallback[]` → LangChain4j `ToolSpecification[]` → `JlamaChatModel` request → response markers parsed → fed back to Spring AI's tool execution loop. UI surfaces a model-compatibility chip on T201 metadata ("tool calling: ✓ supported" only for the three families above). | §XI.6 |
+| T208 | 📋 | T193 | **Local LlmJudge** — route the guardrail's bilingual judge (today defaults to gpt-4o-mini, $0.15/1M in) to a local 3B I8 Jlama model (~2–3 GB RAM, 5–15 tok/s pure-Java, ~15–30 tok/s with `jlama-native`). On high-volume Education-customer traffic the judge fires every turn; locally that's literally free after the model import. Per-agent toggle `guardrailLocalEmbedded` + `guardrailLocalInstanceId`. Quality validation step: run the existing LlmJudge test suite against the local model before flipping. **Note**: LlmJudge today returns structured JSON; until LangChain4j-Jlama adds JSON mode, the local judge uses prompt-engineered parsing with the existing tolerant JSON extractor (`feedback_gpt4o_mini_json.md` extractor pattern is reusable). | §XI.6 |
+| T209 | 📋 | T198 | **Local embedding for `TurLuceneVectorStore` + RAG indexer** — when an agent's embedding provider is an embedded instance with `role=embedding`, the indexer pipes through the local Jlama BGE / MiniLM model instead of OpenAI / Anthropic / Gemini. Avoids cloud bills on bulk re-embedding (where T158 Batch API isn't enough). Indexer batches into N-document chunks per call. Recommended models: `BAAI/bge-small-en-v1.5`, `BAAI/bge-large-en-v1.5`, `sentence-transformers/all-MiniLM-L6-v2` (verified to work with Jlama). | §XI.6 |
+| T210 | 💭 | T193, T209 | **Local rerank stage in T24 hybrid RAG** — Jlama has **no native rerank API** (unlike kherud 4.1). Workaround: load a cross-encoder (e.g. `BAAI/bge-reranker-base`) as a BERT-family `AbstractModel` and score `(query, doc)` pairs via a custom adapter that pools the `[CLS]` token. Significant integration work (~1 week) vs zero-effort cloud rerank. Per-`TurSNSiteGenAi` toggle `rerankLocalEmbedded`. **Decision pending**: may be cheaper to stick with OpenAI-Cohere rerank for now and revisit if Jlama gains a rerank API upstream. | §XI.7 |
 
 #### G.5 — Bold creative bets
 
 | #    | Status | Depends on | Task | Detail in |
 |------|--------|------------|------|-----------|
-| T211 | 💭 | T193, T207 | **Zero-egress certification mode** — global flag `turing.network.outbound-llm=forbidden`. When set, the engine refuses to call any cloud LLM provider and asserts that every active agent's chat/embedding/rerank `TurLLMInstance` is `EMBEDDED_LLAMACPP`. Boot-time fails if not. Compliance pitch: "this Turing install can answer every customer query with zero external network calls — auditable in the startup log". For regulated industries (gov, defense, hospitals, banks). | §XI.8 |
-| T212 | 💭 | T193, T208 | **Hybrid orchestration — cheap-by-default, escalate when needed** — chat-flow node-level setting `llmTier`: `embedded` (default for `aiQuestion` / `formCapture` / `writeSlot`), `cloud` (for the final answer composition or complex RAG synthesis). Engine routes each turn through the appropriate `TurLLMInstance`. Material cost reduction at the per-turn level — heuristic-style nodes burn local tokens; only the high-value nodes touch cloud. Pairs naturally with T132 capability matrix. | §XI.8 |
-| T213 | 💭 | T193 | **Quantization auto-detect + recommended model gallery** — the GGUF metadata pre-flight (T201) reads quantization (Q2/Q3/Q4/Q5/Q6/Q8/F16). UI surfaces a quality chip (`good` for Q4_K_M+, `degraded` for Q2/Q3). A curated "Recommended Models" gallery (`/console/llm-models`) lets admins one-click download known-good GGUFs from HuggingFace into asset storage. | §XI.6 |
-| T214 | 💭 | T193 | **Parallel Jlama evaluation track** — extract `TurEmbeddedRuntime` abstraction (interface `loadModel(Path): EmbeddedModel`, `embed`, `chat`, `rerank`) with two implementations: `kherud` (default) and `jlama` (pure-Java, no JNI, no native lib extraction, ships tool calling via LangChain4j). Per-instance choice. Useful for environments where JNI is fragile (Windows-without-binaries, exotic JVMs, sandboxed containers). Long-term hedge — if kherud goes unmaintained, the switch is a config flip. | §XI.1 |
-| T215 | 💭 | T193 | **Custom-Tool `embedded` helper** — Custom Tool Groovy scripts get a new helper `embedded.complete(instanceId, prompt)` / `embedded.embed(instanceId, text)` / `embedded.rerank(instanceId, query, docs)`. Authors can compose multi-step local pipelines (extract entities locally → embed locally → semantic similarity → only then escalate to cloud for synthesis). Stitches naturally with `code`, `workspace`, `slots`, `turingSearch` helpers (T35–T38, T112). | §XI.8 |
-| T216 | 💭 | T211, T80 | **GGUF inside the Code Interpreter container** — when both T80 container sandbox and T193 embedded are live, optionally run the GGUF *inside* the per-tenant container instead of in the JVM. Trade-off: per-call cold start (container spin-up) vs total JVM-RAM isolation. Useful for very large models (~30B+) that would otherwise dominate the JVM heap. | §XI.8 |
-| T217 | 💭 | T193 | **Speculative decoding pair** — two GGUFs on the same instance: a small "draft" model (e.g. 1B Q4) that proposes tokens, a larger "target" model (e.g. 8B Q4) that verifies. llama.cpp upstream supports this; the binding exposes the primitive via `ModelParameters.setDraftModel(...)`. 2–3× speedup on CPU for the same quality. Configured per `TurLLMInstance` via two `ggufAssetKey` fields. | §XI.8 |
-| T218 | 💭 | T193, T208 | **"This conversation cost $0.00" badge** — when every LLM call in a conversation went through embedded instances, the chat UI surfaces a green "$0 — fully local" badge. Operator-visible proof that the local path is being used. Small UX touch, big perceived-trust win for regulated-industry pitches. | §XI.8 |
+| T211 | 💭 | T193, T207 | **Zero-egress certification mode** — global flag `turing.network.outbound-llm=forbidden`. When set, the engine refuses to call any cloud LLM provider and asserts that every active agent's chat/embedding `TurLLMInstance` is `EMBEDDED_JLAMA` (or another embedded vendor when added). Boot-time fails if not. Compliance pitch: "this Turing install can answer every customer query with zero external network calls — auditable in the startup log". For regulated industries (gov, defense, hospitals, banks). | §XI.7 |
+| T212 | 💭 | T193, T208 | **Hybrid orchestration — cheap-by-default, escalate when needed** — chat-flow node-level setting `llmTier`: `embedded` (default for `aiQuestion` / `formCapture` / `writeSlot`), `cloud` (for the final answer composition or complex RAG synthesis). Engine routes each turn through the appropriate `TurLLMInstance`. Material cost reduction at the per-turn level — heuristic-style nodes burn local tokens; only the high-value nodes touch cloud. Pairs naturally with T132 capability matrix. | §XI.7 |
+| T213 | 💭 | T193 | **Recommended Jlama model gallery** — curated list of `huggingface.co/tjake/*` pre-quantized models (and known-compatible community releases) at `/console/llm-models/recommended`. One-click "Import to assets" downloads the SafeTensors dir into `TurStorageService` and seeds a `TurLLMInstance` row. Models grouped by role (chat / embedding) and size (1B / 3B / 7B / 13B). Quality chip per model (`good` / `degraded` / `experimental`). | §XI.4 |
+| T214 | 💭 | T193 | **`.gguf` → Jlama converter UI** — addresses the user's original "drop a GGUF" intent. Admin uploads `.gguf` to assets; a "Convert to Jlama format" action shells out to `jlama-cli convert` (bundled via `com.github.tjake:jlama-cli:0.8.4+`) → output `model.safetensors` + `config.json` + `tokenizer.json` written back to assets in a new subdirectory. Async job with progress bar. Result is immediately pickable in T199's `JlamaModelPicker`. **Operationally important**: keeps the user-facing UX of "I have a GGUF, just use it" working despite the underlying engine swap. | §XI.4 |
+| T215 | 💭 | T193 | **Custom-Tool `embedded` helper** — Custom Tool Groovy scripts get a new helper `embedded.complete(instanceId, prompt, opts?)` / `embedded.embed(instanceId, text)`. Authors can compose multi-step local pipelines (extract entities locally → embed locally → semantic similarity → only then escalate to cloud for synthesis). Stitches naturally with `code`, `workspace`, `slots`, `turingSearch` helpers (T35–T38, T112). | §XI.7 |
+| T216 | 📋 | T193 | **JVM Panama Vector flag enforcement** — boot-time check that JVM was launched with `--add-modules jdk.incubator.vector --enable-preview`. If absent, log a precise error pointing at the documented startup snippet + the Docker image variants that ship the flags by default. Spring Boot launcher updated to include the flags in the executable jar's `Main-Class` wrapper + the Docker `ENTRYPOINT`. Required because Jlama's vector ops fail at first call without the modules — caught at boot, not at chat-turn time. | §XI.5 |
+| T217 | 💭 | T216 | **`jlama-native` SIMD opt-in** — per-deployment property `turing.embedded.jlama.native-simd=true` (default false). When enabled, the `com.github.tjake:jlama-native` jar (with OS/arch classifier) is loaded and Jlama's `OptimisedOperationsType` routes through hand-tuned SIMD kernels (AVX2 / AVX-512 / NEON). 2–3× speedup at the cost of a native dependency. Documented per platform: Linux/Mac x86_64+arm64 ship binaries; Windows x86_64 ships binary; Windows ARM falls through to pure-Java. T206 status panel surfaces whether SIMD is active for the loaded model. | §XI.5 |
+| T218 | 💭 | T193, T208 | **"This conversation cost $0.00" badge** — when every LLM call in a conversation went through embedded instances, the chat UI surfaces a green "$0 — fully local" badge. Operator-visible proof that the local path is being used. Small UX touch, big perceived-trust win for regulated-industry pitches. | §XI.7 |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -3642,150 +3660,168 @@ customer value — there is no monolithic "Block F is done" gate.
 
 ---
 
-## XI. Embedded LLM via llama.cpp — drop a GGUF, get an LLM
+## XI. Embedded LLM via Jlama — pure-Java in-process inference
 
 > Triggered by a 2026-05-25 evaluation of
-> [`de.kherud:llama`](https://github.com/kherud/java-llama.cpp), the
-> de-facto Java binding for llama.cpp. Goal: an admin uploads a
-> `.gguf` file to asset storage, picks it in the LLM Instance form,
-> and the resulting `TurLLMInstance` serves chat / embedding / rerank
-> **in-process** — no Ollama server, no cloud API account, no second
-> container.
+> [`com.github.tjake:jlama-core`](https://github.com/tjake/Jlama),
+> the pure-Java LLM inference engine using Project Panama Vector
+> API. Goal: an admin imports a model into asset storage, picks it
+> in the LLM Instance form, and the resulting `TurLLMInstance` serves
+> chat / embedding **in-process** — no Ollama server, no cloud API
+> account, no JNI native libs to extract, no second container.
 
 ### XI.1 Why this matters — three deployments it unlocks
 
 1. **Air-gapped / regulated deployments**. Government, defense,
    hospitals, banks that **cannot** call any cloud LLM. Today Turing's
    only real option is Ollama-as-sidecar; that's an extra service to
-   sell, deploy, monitor, and certify. Embedded llama.cpp turns
-   "deploy a separate inference server" into "drop a GGUF file in the
-   storage UI".
+   sell, deploy, monitor, and certify. Embedded Jlama turns
+   "deploy a separate inference server" into "import a model into the
+   storage UI" — pure-Java, no JNI, no sidecar.
 2. **Demo / dev installs**. The number of times a prospective customer
    bounces at "you need an OpenAI API key to try it" is non-trivial.
    With T193, a one-command `docker run openviglet/turing` and a
-   pre-bundled tiny GGUF gives a working chat agent in 60 seconds.
+   pre-bundled tiny model (e.g. `tjake/TinyLlama-1.1B-Chat-v1.0-Jlama-I8`)
+   gives a working chat agent in 60 seconds.
 3. **Cost arbitrage on high-frequency stages**. The LlmJudge
-   (T208) fires every turn under `LLM_JUDGE` guardrails; the
-   reranker (T209) fires every search; embedding generation (T210)
-   fires every indexed chunk. Routing those to a local 3B Q4 model
-   is **literally free** after the GGUF download. T212 layers the
-   chat-flow tier so cheap nodes go local, hard nodes escalate to
-   cloud — material cost reduction at the per-turn level.
+   (T208) fires every turn under `LLM_JUDGE` guardrails; embedding
+   generation (T209) fires every indexed chunk. Routing those to a
+   local 3B I8 model is **literally free** after the model import.
+   T212 layers the chat-flow tier so cheap nodes go local, hard nodes
+   escalate to cloud — material cost reduction at the per-turn level.
 
-### XI.2 The version audit — why pin 4.1.0+, not 3.0.0
+### XI.2 The version + format reality — what to pin and what to feed it
 
-The user-suggested `de.kherud:llama:3.0.0` is the JNI-refactor release
-from mid-2025 and was superseded fast. Concrete losses from pinning
-3.0.0:
+**Dependency**:
 
-| Release | What it added | Why Turing wants it |
-|---|---|---|
-| 3.1.0 | `LlamaModel.Output` → `LlamaOutput` rename; cancel-generation fix | Streaming reliability |
-| 3.2.1 / 3.3.0 | llama.cpp b3008 / b3534 bumps | Bug fixes |
-| 3.4.0 | Linux x86_64 **CUDA backend** | GPU on the SaaS deployment tier |
-| 3.4.1 | Pre-built Linux x86_64 hotfix | Setup-free Linux deploy |
-| **4.0.0** | b3534 → b4831 bump; **JSON-schema→GBNF grammar helper** | Foundation for T207 tool-calling shim |
-| **4.1.0** | Gemma 3 + Llama 3.3 + Qwen 3 templates; `applyTemplate(...)`; **`rerank(...)`** | T197 chat template; T209 local rerank |
+```xml
+<dependency>
+  <groupId>com.github.tjake</groupId>
+  <artifactId>jlama-core</artifactId>
+  <version>0.8.4</version>  <!-- verify latest at integration time -->
+</dependency>
+<!-- Optional native SIMD acceleration (T217): -->
+<dependency>
+  <groupId>com.github.tjake</groupId>
+  <artifactId>jlama-native</artifactId>
+  <version>0.8.4</version>
+  <classifier>${os.detected.classifier}</classifier>
+  <optional>true</optional>
+</dependency>
+<!-- For tool calling via LangChain4j bridge (T207): -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-jlama</artifactId>
+  <version>1.15.0-beta25</version>
+</dependency>
+```
 
-Pin 4.1.0+; treat 3.0.0 as "do not use". Re-check the latest at
-integration time — kherud ships fast (~release/month).
+The 0.x line is still current as of 2026-05 — no 1.x yet. Re-check
+Maven Central at integration time.
 
-### XI.3 The capability gaps that change the design
+**Format reality — Jlama is NOT a GGUF runtime**. Jlama reads
+**HuggingFace SafeTensors directories**, structured as:
 
-Three constraints from the kherud binding that the design must accept
-up front:
+```
+<model-dir>/
+  config.json           # architecture metadata
+  tokenizer.json        # HF tokenizer
+  model.safetensors     # quantized weights (or shards model-00001-of-N.safetensors)
+```
 
-1. **No first-class tool-calling API.** The Java binding does not
-   expose `ToolSpec` / `FunctionCall` / `ToolMessage`. llama.cpp
-   upstream supports tool calling in its `server` component, but the
-   Java surface doesn't bridge it. T207 is the grammar-shim approach:
-   inject a model-family-specific tool preamble + constrain output
-   via GBNF (from 4.0's JSON-schema→grammar helper) + parse tool-call
-   markers manually. **Works but model-quality dependent.** Q4
-   quantization degrades tool-call reliability noticeably; documented
-   in T207's UI. **Default `toolsEnabled=false` for embedded
-   instances** until T207 ships.
-2. **One role per loaded model.** llama.cpp must be loaded with
-   `enableEmbedding()` for embeddings or without for chat — you can't
-   serve both from the same in-memory model. A single GGUF file used
-   for both chat and embeddings means **two `TurLLMInstance` rows,
-   two cache entries, two RAM footprints**. T198 surfaces this in the
-   UI as an explicit `role` field. Same constraint applies to
-   `rerank(...)` (4.1+): separate role.
-3. **Not documented thread-safe.** The kherud README is silent on
-   thread-safety; llama.cpp upstream discussion #499 confirms
-   single-context CUDA is racy and even multi-context has caveats.
-   T197 wraps every call in a per-instance `Semaphore`; T203 lets
-   admins tune `maxConcurrent` with a warning that >1 is
-   best-effort.
+Quantizations supported internally: **F32 / F16 / BF16 / Q8 / Q4**.
+Two acceptable ingestion paths in Turing:
 
-### XI.4 Architecture — provider + model lifecycle cache
+1. **Direct import of HF SafeTensors** — admin clones a Jlama-ready
+   model into `models/` in asset storage. The canonical source is
+   [`huggingface.co/tjake/*`](https://huggingface.co/tjake) where the
+   maintainer ships pre-quantized models that load cleanly.
+2. **GGUF → Jlama conversion via `jlama-cli`** (T214) — admin uploads
+   a `.gguf`, Turing runs `jlama-cli convert` (bundled via
+   `com.github.tjake:jlama-cli`) → output SafeTensors dir → result
+   immediately pickable in the LLM Instance form. **This preserves
+   the user's original "drop a GGUF" intent** despite the engine
+   under the hood not consuming GGUF natively.
 
-The two structural pieces this whole block hinges on:
+**Architecture support is restricted.** Jlama supports
+**Llama / Llama2 / Llama3 / Llama3.1, Mistral, Mixtral, Gemma,
+Qwen2, GPT-2, BERT** — and that's it. Phi-3 mini variants,
+DeepSeek-V3 MoE, Mamba / state-space models, exotic vision-language
+models do **not** load. T201's metadata pre-flight reads
+`config.json`, asserts the `model_type` is in the supported list,
+and refuses to save with a helpful list of supported families.
 
-**`TurEmbeddedLlmProvider`** (T193):
+**Runtime requirement**: Jlama uses **Project Panama Vector API**
+which is still incubator in JDK 21. The JVM must launch with:
+
+```
+--add-modules jdk.incubator.vector --enable-preview
+```
+
+A single missing flag → inference fails at first call with a
+cryptic `NoClassDefFoundError`. T216 enforces this at boot — Spring
+Boot launcher updated, Docker `ENTRYPOINT` updated, boot-time check
+runs before any cache is touched.
+
+### XI.3 Architecture — provider + model cache + storage resolver
+
+The three structural pieces this whole block hinges on.
+
+**`TurEmbeddedLlmProvider`** (T193) is small — Jlama's
+thread-safety lets us hand out the cached model directly:
 
 ```java
 @Component
 public class TurEmbeddedLlmProvider implements TurGenAiLlmProvider {
-    @Override public String getPluginType() { return "embedded-llamacpp"; }
+    @Override public String getPluginType() { return "embedded-jlama"; }
 
     @Override public ChatModel createChatModel(TurLLMInstance i, String _ignored) {
         // _ignored = decrypted apiKey: always null for embedded; never used
-        return modelCache.getOrLoad(i).chatModel();
+        return new TurEmbeddedChatModel(modelCache.getOrLoad(i));
     }
 
     @Override public EmbeddingModel createEmbeddingModel(TurLLMInstance i, String _ignored) {
-        return modelCache.getOrLoad(i).embeddingModel();
+        return new TurEmbeddedEmbeddingModel(modelCache.getOrLoad(i));
     }
 }
 ```
 
-**`TurEmbeddedLlmModelCache`** (T194) — the heart of this block:
+**`TurEmbeddedModelCache`** (T194) is simpler than the kherud draft —
+no semaphores, no concurrency contortions:
 
 ```java
 @Service
-public class TurEmbeddedLlmModelCache {
-    private final Map<String, CachedModel> cache;        // instanceId → loaded model
-    private final LinkedHashSet<String> lruOrder;
-    private final int maxLoadedModels;                   // default 2
+public class TurEmbeddedModelCache {
+    private final Map<String, CachedModel> cache;        // instanceId → loaded AbstractModel
     private final TurStorageService storage;             // T195
+    private final int maxLoadedModels;                   // default 2, RAM-pressure eviction
 
     public CachedModel getOrLoad(TurLLMInstance i) {
         return cache.computeIfAbsent(i.getId(), id -> {
             evictLruIfNeeded();
-            Path ggufPath = storage.resolveLocalPath(ggufAssetKey(i));  // T195
-            return load(i, ggufPath);
+            Path modelDir = storage.resolveLocalPath(modelAssetKey(i));   // T195
+            AbstractModel model = ModelSupport.loadModel(
+                modelDir.toFile(),
+                workingQuant(i),    // DType.F32 default
+                modelQuant(i));     // DType.I8 default
+            return new CachedModel(model, i);
         });
     }
 
     @EventListener public void onUpdate(LlmInstanceUpdatedEvent ev) {
-        // existing event; published from TurLLMInstanceAPI:126-128
         evict(ev.instanceId());
     }
 
     @PreDestroy public void shutdown() {
-        // Addresses kherud issue #116: JNI thread blocks JVM exit
+        // Clean — Jlama doesn't have kherud's non-daemon thread quirk
         cache.values().forEach(CachedModel::close);
     }
 }
 ```
 
-The cache is **non-negotiable** because
-[`TurLlmModelFactory`](../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java)
-creates a fresh `ChatModel` per request. For HTTP-stateless providers
-(OpenAI, Anthropic, Ollama) that's cheap; for embedded llama.cpp,
-"create a ChatModel" means "mmap 5 GB and warm a KV cache" — adding
-seconds to every turn. The cache flips that cost to a one-time
-per-instance load.
-
-### XI.5 Storage integration — `resolveLocalPath(key)`
-
-llama.cpp needs `mmap` on a real file with a real path. The current
-[`TurStorageService`](../turing-app/src/main/java/com/viglet/turing/service/storage/TurStorageService.java)
-exposes `downloadObject(key): InputStream` only — not enough.
-
-T195 adds a single method:
+**`TurStorageService.resolveLocalPath(key)`** (T195) is unchanged
+from the earlier draft and is the only change to the storage
+interface:
 
 ```java
 public interface TurStorageService {
@@ -3794,78 +3830,166 @@ public interface TurStorageService {
 }
 ```
 
-Per-backend implementation:
+For Jlama specifically the `key` points at a *directory* — the
+backend must recursively sync `config.json` + `tokenizer.json` +
+every `*.safetensors` shard before returning the local dir path.
+MinIO/S3 caches the synced tree under `./store/cache/llm-instances/`.
 
-- **`TurFilesystemStorageService`** (filesystem backend): returns
-  `basePath.resolve(key)` directly. Zero copy, zero allocation.
-- **`TurMinioStorageService`** (MinIO/S3 backend): idempotent download
-  to `./store/cache/llm-instances/{sha256(key)}/{filename}`. Skip the
-  download when the local file's size + last-modified match the remote
-  object's `etag`. Returns the cache path.
-- **`TurNoOpStorageService`** (storage disabled): throws
-  `UnsupportedOperationException` with an actionable message
-  ("Embedded LLM requires `turing.storage.type=filesystem` or `=minio`
-  — current setting is `none`").
+### XI.4 Frontend UX — model picker + import paths
 
-This is a small, generally useful method that other future features
-will want too (e.g. T80 container sandbox needs local paths for Tool
-bind-mounts).
+The user's framing was "escolhendo o arquivo gguf em assets". With
+Jlama as the engine, that single GGUF file becomes a model
+*directory* (SafeTensors + config + tokenizer). The shipping-grade
+UX preserves the spirit of "pick from assets":
 
-### XI.6 Frontend UX — the "drop a GGUF" experience
+1. **Path A — import HF SafeTensors directly.** Admin uses
+   `/console/llm-models/import` (new page, T213) to clone a model
+   from HuggingFace. Picks from a curated gallery of `tjake/*`
+   pre-quantized models or pastes a custom HF model ID. Backend
+   verifies the architecture is supported and downloads to
+   `models/<name>/` in `TurStorageService`.
+2. **Path B — convert a GGUF (T214).** Admin uploads `.gguf` to
+   `/console/assets/models/`. Selecting it triggers a "Convert to
+   Jlama format" action that shells out to `jlama-cli convert` →
+   produces SafeTensors in a new subdirectory → result is
+   immediately pickable in T199's `JlamaModelPicker`.
+3. **Path C — pre-staged directory.** Ops drops a SafeTensors model
+   dir directly into the filesystem storage backend (no UI needed).
+   The picker finds it on next list call.
 
-The user's framing: "no frontend em llm instance permitira criar uma
-versao embedded, escolhendo o arquivo gguf em assets". This is the
-shipping-grade UX:
+Then the LLM Instance form flow:
 
-1. Admin uploads a `.gguf` into `/console/assets/models/` (existing
-   storage UI; no changes needed).
-2. Admin opens **LLM Instances → New** and picks vendor `Embedded (GGUF)`.
-3. The form replaces the API-key field with a `GgufAssetPicker` (T199)
-   that lists every `.gguf` in storage.
-4. On selection, the form **fetches GGUF metadata** (T201) and shows
-   a chip row: `Llama 3 · 8B · Q4_K_M · 8k ctx · ~5.4 GB RAM`.
-5. Form fields `role` (chat/embedding/rerank), `ctxSize`, `nLayersGpu`,
-   `threads`, `eagerLoad` get sensible defaults from
-   `applyVendorDefaults("EMBEDDED_LLAMACPP")` (T200).
-6. Save triggers a **pre-flight RAM check** (T202) — rejects with a
-   helpful message when the projected memory exceeds 70% of JVM heap.
-7. First chat turn (or boot, if `eagerLoad=true`) loads the model.
-   The instance details page (T206) shows live `load state` / `resident
-   RAM` / `tok/s` so the admin sees what's happening.
+1. Admin opens **LLM Instances → New** and picks vendor
+   `Embedded (Jlama)`.
+2. The form replaces the API-key field with a `JlamaModelPicker`
+   (T199) listing every supported model directory.
+3. On selection, the form **fetches model metadata** from
+   `config.json` (T201) and shows a chip row: `Llama 3.1 · 8B · I8 ·
+   8k ctx · ~4.5 GB RAM · tools: ✓`.
+4. Form fields `role` (chat/embedding radio), `workingQuant` (F32/I8),
+   `modelQuant` (auto-detected), `contextLength`, `eagerLoad`,
+   `useNativeSimd` get sensible defaults from
+   `applyVendorDefaults("EMBEDDED_JLAMA")` (T200).
+5. Save triggers a **pre-flight RAM check** (T202).
+6. First chat turn (or boot, if `eagerLoad=true`) loads the model.
+   The instance details page (T206) shows live `load state` /
+   `resident RAM` / `tok/s` / `SIMD active`.
 
-Empty-state guidance is critical: when the picker has no GGUFs, the
-modal shows a deep link to `/console/assets/models/` plus a "Browse
-recommended models" CTA pointing at T213's gallery.
+Empty-state guidance: when the picker has no models, modal links to
+T213's recommended gallery + T214's GGUF converter.
 
-### XI.7 Operational realities — what breaks if you don't plan for it
+### XI.5 Operational realities — what breaks if you don't plan for it
 
-Four failure modes the block design must cover:
+Four failure modes the block design must cover (different from the
+earlier kherud draft):
 
-1. **JVM OOM mid-warmup.** A 13B Q4 model is ~9 GB resident; the
+1. **Missing JVM flags.** Without `--add-modules jdk.incubator.vector
+   --enable-preview`, Jlama crashes at first vector op with a
+   confusing `NoClassDefFoundError`. T216 enforces at boot — Spring
+   `ApplicationReadyEvent` listener checks `ModuleLayer.boot()` for
+   `jdk.incubator.vector` and fails fast with a precise error message.
+   Spring Boot launcher updated to include the flags in the executable
+   jar's `Main-Class` wrapper + Docker `ENTRYPOINT` updated.
+2. **JVM OOM mid-warmup.** A 13B I8 model is ~7 GB resident; the
    default JVM heap is ~4 GB. Loading without a pre-flight check
    crashes the whole server. T202 + T201 prevent this; T204 lets
    admins choose lazy load if startup memory is tight.
-2. **JVM never exits cleanly.** kherud issue #116: the JNI thread is
-   non-daemon and prevents Spring's graceful shutdown. T194's
-   `@PreDestroy` closes every cached model first. If even one
-   `LlamaModel.close()` is missed, the JVM hangs at exit — admins
-   `kill -9`, and that masks the bug. Add a startup log line listing
-   loaded instances; add a shutdown log line confirming each is
-   closed. Operationally critical.
-3. **Concurrent requests hammer one model.** `LlamaModel` isn't
-   documented thread-safe. T197's per-instance semaphore serializes;
-   T203 lets admins increase concurrency with eyes open. Default 1
-   is safe.
-4. **The GGUF file changed under us.** Admin overwrites the file in
-   storage. T194 listens to `LlmInstanceUpdatedEvent`; if the storage
-   event bus (not yet built) ever surfaces "file rewritten", evict
-   then too. Today: rely on the explicit "Reload" button in T206's
-   status panel.
+3. **Unsupported model architecture.** Admin imports a Phi-3 or
+   Mamba SafeTensors. T201 reads `config.json` *before* selection is
+   committed — refuses with a list of supported families. **Catch at
+   import time, not at first chat turn.**
+4. **The model directory changed under us.** Admin re-imports a model
+   with the same name (different weights). T194 listens to
+   `LlmInstanceUpdatedEvent`; if the storage event bus (not yet built)
+   ever surfaces "directory updated", evict then too. Today: rely on
+   the explicit "Reload" button in T206's status panel.
+
+**What is NOT a concern any more (vs the kherud draft):**
+
+- **JVM shutdown hang.** Jlama is pure Java; there's no non-daemon
+  JNI thread to block exit. `@PreDestroy` cleanly releases models.
+- **Per-instance concurrency lock.** Jlama's `AbstractModel` is
+  documented thread-safe (stateless per request, KV-cache keyed by
+  `UUID`). The semaphore from the kherud draft goes away — the cache
+  hands out the single shared model and concurrent requests just
+  pass different UUIDs. T203 is now about **session UUID
+  lifecycle**, not concurrency throttling.
+- **Windows CUDA missing.** No JNI — no native lib mismatch story.
+  `jlama-native` (T217) is opt-in SIMD on top of pure-Java baseline;
+  Windows ARM falls back to pure Java gracefully.
 
 T205 wires all of this into `TurChatPipelineObservation` so
 `/actuator/prometheus` shows `loadedModelCount`, `residentBytes`,
-`semaphoreWaitMs` per instance. Operations team can spot a 95th-%
-queue depth blowup before users feel it.
+`sessionsActive`, `tokensPerSecond` per instance.
+
+### XI.6 Tool calling — via LangChain4j-Jlama bridge
+
+Biggest single improvement vs the earlier kherud draft: **tool
+calling works** through
+`dev.langchain4j:langchain4j-jlama:1.15.0-beta25+`. T207 is a 📋
+committed task, not a 💭 long-shot.
+
+```java
+// T197/T207 bridge sketch (illustrative):
+public class TurEmbeddedChatModel implements ChatModel {
+    private final JlamaChatModel lc4j;  // wraps AbstractModel from cache
+
+    @Override public ChatResponse call(Prompt prompt) {
+        List<ToolSpecification> tools = bridgeTools(prompt.getOptions());
+        var lc4jResponse = lc4j.chat(
+            ChatRequest.builder()
+                .messages(bridgeMessages(prompt))
+                .toolSpecifications(tools)
+                .build());
+        return bridgeResponse(lc4jResponse);
+    }
+}
+```
+
+**Caveats** — model-family-specific:
+
+- **Llama 3.1, Mistral, Mixtral**: tool calling works reliably.
+- **Llama 3 (pre-3.1), Gemma, Qwen2**: tool calling not supported by
+  Jlama (no upstream template). Force `toolsEnabled=false` in
+  T201's metadata pre-flight UI.
+- **JSON-mode (structured output)**: **not yet supported** in
+  LangChain4j-Jlama. T173/T174's strict JSON schemas don't apply to
+  embedded yet. Fall back to the existing tolerant-JSON extractor
+  pattern from `feedback_gpt4o_mini_json.md`.
+
+The model-family compatibility chip rendered by T201 (`tools: ✓` /
+`tools: ✗`) sets expectations at selection time.
+
+### XI.7 When NOT to use Jlama — `de.kherud:llama` as the alternative
+
+Jlama is the right primary choice for Turing's "drop-in install on
+any OS, zero engineering hours per deploy" pitch. But for a small
+class of use cases, **kherud/llama (`de.kherud:llama:4.1.0+`)** wins:
+
+| Dimension | Jlama (`com.github.tjake`) | kherud/llama (llama.cpp JNI) |
+|---|---|---|
+| Performance (CPU, 7B-Q4) | 5–10 tok/s pure Java, 10–20 with `jlama-native` | 6–12 tok/s |
+| GPU | Experimental WebGPU; no production path | CUDA on Linux x86_64 (3.4+) |
+| Native libs | Optional (Panama Vector default; SIMD opt-in via `jlama-native`) | Required (extracted automatically; Windows-CUDA missing) |
+| Tool calling | Works (T207, LangChain4j) | Not exposed (grammar-shim required) |
+| GGUF native | No (SafeTensors only; convert via `jlama-cli`) | Yes (direct `mmap`) |
+| Model coverage | Llama/Mistral/Mixtral/Gemma/Qwen2/GPT-2/BERT only | Everything llama.cpp supports (broader) |
+| JVM shutdown | Clean | Non-daemon thread (issue #116) |
+| Rerank API | Not built-in (T210 needs custom adapter) | Native `rerank(...)` since 4.1 |
+| JDK requirement | Java 21 + Panama Vector flags | Java 17+, no special flags |
+| Maintenance velocity | Slow (~yearly release on Central) | Fast (~monthly release) |
+
+**Decision rule for Turing**:
+
+- **Air-gapped Windows / Mac deployments where ops simplicity wins**: Jlama.
+- **Linux x86_64 servers with GPU and tool-heavy agents**: consider kherud.
+- **Customer wants to "drop a GGUF" and use exotic models**: kherud or convert via T214.
+
+T210's local rerank caveat (Jlama has no native rerank API) is the
+clearest case for routing some workloads through kherud anyway. A
+future `TurEmbeddedRuntime` abstraction with both implementations
+keeps the door open — but Block G ships Jlama first since the
+operational simplicity is the primary win.
 
 ### XI.8 Bold creative bets
 
@@ -3881,121 +4005,93 @@ Eight long-shot tasks that extend the block's reach well beyond
    embedded` on cheap nodes (`aiQuestion`, `formCapture`, `writeSlot`);
    `cloud` only on synthesis-heavy nodes. Per-turn cost falls
    substantially without quality drop on the boring nodes.
-3. **T207 — Tool-calling grammar shim.** The big functional gap; if
-   T207 lands, embedded instances can replace cloud LLMs in
-   tool-heavy flows (Semantic Navigation chat, Custom Tool agents).
-   Plausible-but-not-trivial.
+3. **T207 — Tool calling via LangChain4j-Jlama.** No longer a long
+   shot — committed and on the foundation track. Llama 3.1 / Mistral /
+   Mixtral give Turing local tool-calling agents out of the gate.
 4. **T208 — Local LlmJudge.** Routes the bilingual guardrail judge
-   to a local 3B Q4. Free per turn. Quality validation step required
+   to a local 3B I8. Free per turn. Quality validation step required
    before flipping (run the LlmJudge suite against the local model).
-5. **T209 — Local rerank in T24 hybrid RAG.** kherud 4.1's
-   `rerank(...)` plugs directly into the final reranker stage.
-6. **T210 — Local embedding for `TurLuceneVectorStore`.** Removes
+5. **T209 — Local embedding for `TurLuceneVectorStore`.** Removes
    cloud bills from bulk re-embedding workloads where T158 Batch
-   isn't enough.
-7. **T214 — Parallel Jlama evaluation.** Pure-Java alternative (no
-   JNI, no native lib extraction, ships tool calling via LangChain4j).
-   Slower but operationally simpler. Long-term hedge through a
-   `TurEmbeddedRuntime` abstraction with two implementations.
-8. **T217 — Speculative decoding pair.** Small "draft" model proposes
-   tokens, large "target" model verifies. 2–3× CPU speedup at same
-   quality. Two GGUFs on one `TurLLMInstance`.
-9. **T218 — "$0 conversation" badge.** Surfaces a green chip in the
+   isn't enough. Recommended models: `BAAI/bge-small-en-v1.5`,
+   `sentence-transformers/all-MiniLM-L6-v2`.
+6. **T214 — GGUF→Jlama converter UI.** Preserves the user's original
+   "drop a GGUF" UX intent. `jlama-cli convert` bundled in the Turing
+   container; admin's upload becomes a usable model in minutes.
+7. **T217 — `jlama-native` SIMD opt-in.** Drops a single-line
+   property + a native classifier jar to unlock 2–3× speedup. No code
+   change for the admin; clear opt-in for the deployment ops team.
+8. **T218 — "$0 conversation" badge.** Surfaces a green chip in the
    chat UI when every call in the conversation went through embedded
    instances. Tiny touch, big perceived-trust win.
 
-### XI.9 The Jlama alternative — should we even use kherud?
+### XI.9 Sequencing — what to ship first
 
-Long-term, the right answer might not be `de.kherud:llama` at all.
-**Jlama** (`com.github.tjake:jlama-core`) is a pure-Java GGUF
-inference engine integrated into LangChain4j with **working tool
-calling**. Trade-offs:
-
-| Dimension | kherud/llama (llama.cpp JNI) | Jlama (pure Java) |
-|---|---|---|
-| Performance (CPU) | 6–12 tok/s on 7B-Q4 | Roughly half |
-| Native libs | Pre-built for most platforms; Windows CUDA missing | None — pure Java |
-| Tool calling | Not exposed (T207 builds a shim) | Works via LangChain4j today |
-| JVM shutdown | Non-daemon thread (issue #116) | Clean |
-| Operational complexity | High (native libs, lib paths) | Low |
-| Maintenance velocity | Fast (~1 release/month, follows llama.cpp) | Slower |
-
-For Turing's "drop-in install on any OS, no engineering hours per
-deploy" pitch, Jlama is structurally a better fit. For raw inference
-throughput, kherud wins. **T214 keeps both doors open via the
-`TurEmbeddedRuntime` abstraction** — start with kherud (faster path
-to first usable embedded LLM), add Jlama later, let admins choose
-per-instance.
-
-### XI.10 Sequencing — what to ship first
-
-**Group 1 — Foundation (T193–T197, ~2.5 weeks)**. Nothing else
+**Group 1 — Foundation (T193–T198, T216, ~3 weeks)**. Nothing else
 ships without these:
 
-- T193 provider skeleton + dependency (2 days)
-- T194 model cache + LRU (3 days)
-- T195 `TurStorageService.resolveLocalPath` (2 days)
+- T216 JVM Panama Vector flag enforcement + Docker baseline (1 day)
+- T193 provider skeleton + Maven dependencies (2 days)
+- T194 model cache (3 days)
+- T195 `TurStorageService.resolveLocalPath` directory-aware (3 days)
 - T196 vendor row (half day)
-- T197 chat model + streaming adapter (3 days)
+- T197 chat model + streaming adapter via LangChain4j-Jlama (4 days)
+- T198 embedding adapter (2 days)
 
-**Group 2 — UX completion (T199–T202, ~1.5 weeks)**. Makes the
-foundation usable by admins:
+**Group 2 — UX completion (T199–T202, T213, T214, ~2.5 weeks)**.
+Makes the foundation usable + preserves "drop a GGUF" UX:
 
-- T199 GgufAssetPicker (3 days)
+- T199 `JlamaModelPicker` + scan endpoint (3 days)
 - T200 `applyVendorDefaults` (1 day)
-- T201 GGUF metadata pre-flight (2 days)
+- T201 model metadata + architecture-support pre-flight (3 days)
 - T202 RAM check on save (1 day)
+- T213 recommended model gallery + HF import (3 days)
+- T214 GGUF→Jlama converter UI + bundled `jlama-cli` (4 days)
 
 **Group 3 — Operational hardening (T203–T206, ~1.5 weeks)**.
-Production-grade observability + concurrency:
+Production-grade observability + session lifecycle:
 
-- T203 per-instance concurrency (2 days)
+- T203 per-conversation session UUID lifecycle (2 days)
 - T204 eager-load (1 day)
-- T205 observability (2 days)
-- T206 status panel (2 days)
+- T205 observability metrics (2 days)
+- T206 status panel (3 days)
 
-**Group 4 — Embedding + rerank (T198, T209, T210, ~1.5 weeks)**.
-Cost-cutting wins on the retrieval pipeline:
+**Group 4 — Capability completion (T207–T209, ~1 week)**. Tool
+calling + cost-cutting wins on the chat + retrieval pipeline:
 
-- T198 embedding adapter (2 days)
-- T209 local rerank wired into T24 (3 days)
-- T210 local embedding for `TurLuceneVectorStore` (3 days)
+- T207 tool calling via LangChain4j-Jlama bridge (3 days)
+- T208 local LlmJudge with quality validation (2 days)
+- T209 local embedding wired into `TurLuceneVectorStore` (2 days)
 
-**Group 5 — Local Judge + tier orchestration (T208, T212, ~1 week)**.
-Cost-cutting wins on the chat pipeline:
+**Group 5 — Zero-egress + bold bets (T210–T212, T215, T217, T218,
+~3 weeks parallel)**. Independent shipping items, mix of 📋 + 💭.
 
-- T208 local LlmJudge (3 days)
-- T212 per-flow `llmTier` (2 days)
-
-**Group 6 — Tool calling (T207, ~2 weeks)**. The big functional gap;
-quality-gated. Implement the shim, run the existing tool-calling
-suite against a 3B Q4 + 8B Q4 + 70B Q4 to set per-model
-recommendations.
-
-**Group 7 — Zero-egress + bold bets (T211, T213–T218, ~3 weeks
-parallel)**. Once foundations are in, these are independent shipping
-items.
-
-**Total Block G: ~10–12 weeks of focused work for committed (📋)
+**Total Block G: ~8–10 weeks of focused work for committed (📋)
 tasks; 8 long-shot (💭) tasks following on opportunity-cost basis.**
+Faster than the earlier kherud draft (~10–12 weeks) because Jlama's
+thread-safety + working tool-calling kills two whole capability
+hardening tracks.
 
-### XI.11 The narrative — one paragraph
+### XI.10 The narrative — one paragraph
 
 > "Turing's GenAI architecture treats LLM providers as plugins —
 > OpenAI, Anthropic, Ollama, Gemini, Azure are all just rows in
-> `tur_llm_vendor`. Embedded llama.cpp adds a sixth, but with a
+> `tur_llm_vendor`. **Embedded Jlama** adds a sixth, but with a
 > qualitatively different posture: **no external service required**,
-> not even a sidecar. The customer drops a 5 GB `.gguf` file into
-> asset storage and a chat agent starts answering. That is the
+> not even a sidecar; no JNI native libs to extract; no Windows-CUDA
+> missing; **pure Java**. The customer imports a SafeTensors model
+> into asset storage (or uploads a `.gguf` and runs the bundled
+> converter), picks it in the LLM Instance form, and a chat agent
+> with **working tool calling** starts answering. That is the
 > air-gapped-deployment story, the demo-without-API-keys story, the
 > cost-arbitrage story, the regulated-industry story — packaged as a
 > single dropdown choice in the LLM Instance form. The two
 > structural investments (per-instance model cache, cross-backend
-> local-path resolver) pay forward into Code Interpreter
-> container bind-mounts, future asset-driven providers, and the
-> Jlama hedge path. The work is contained — six weeks of foundation,
-> six weeks of capability hardening — but the strategic surface it
-> unlocks is broad. The first Turing customer that wins a defense or
-> hospital contract because we can ship zero-egress is the bet."
+> local-path resolver) pay forward into Code Interpreter container
+> bind-mounts, future asset-driven providers, and the kherud
+> fallback path. The work is contained — three weeks of foundation,
+> five weeks of capability hardening — but the strategic surface it
+> unlocks is broad. The first Turing customer that wins a defense
+> or hospital contract because we can ship zero-egress is the bet."
 
 ---
