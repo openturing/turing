@@ -248,6 +248,30 @@ public class TurAgentChatExecutor {
             String conversationId,
             String flowId,
             List<MultipartFile> files) {
+        return execute(agent, llmInstance, history, systemPromptOverride,
+                conversationId, flowId, files, 0);
+    }
+
+    /**
+     * Overload accepting the current {@code agent.invoke(...)} recursion
+     * depth. Published into the Spring AI {@code ToolContext} via
+     * {@link com.viglet.turing.genai.tool.TurCustomToolCallbackService#TOOL_CONTEXT_AGENT_INVOKE_DEPTH}
+     * so a Custom Tool spawned by the LLM in this child turn sees the
+     * accurate depth and can short-circuit at the configured cap. Public
+     * for use by {@link com.viglet.turing.genai.tool.TurCustomToolAgentHelper}.
+     *
+     * @param agentInvokeDepth the depth this child turn runs at (caller
+     *                         increments by 1 against the parent context).
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files,
+            int agentInvokeDepth) {
 
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown
@@ -312,7 +336,7 @@ public class TurAgentChatExecutor {
 
         // Build chat options + per-turn tool context map (drives Custom
         // Tool Groovy scripts: conversationId, agentId, agentPythonReqs).
-        ChatOptions chatOptions = buildChatOptions(agent, conversationId, callbacks);
+        ChatOptions chatOptions = buildChatOptions(agent, conversationId, callbacks, agentInvokeDepth);
 
         // Strip the toolset from the INITIAL LLM call when the active
         // node's declarative {@code toolsEnabled=false} forbids them
@@ -412,7 +436,7 @@ public class TurAgentChatExecutor {
      * Custom Tool Groovy scripts.
      */
     private static ChatOptions buildChatOptions(TurAIAgent agent, String conversationId,
-            ToolCallback[] callbacks) {
+            ToolCallback[] callbacks, int agentInvokeDepth) {
         // Map.of() doesn't accept nulls — build with a LinkedHashMap so
         // we can skip entries cleanly when their source value is absent.
         var toolContextMap = new java.util.LinkedHashMap<String, Object>();
@@ -445,6 +469,16 @@ public class TurAgentChatExecutor {
             toolContextMap.put(
                     com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_USERNAME,
                     username);
+        }
+        // T109 — publish the current agent.invoke(...) recursion depth so a
+        // Custom Tool spawned by the LLM in this turn (nested or not) sees
+        // the right depth and can short-circuit at the cap. Always
+        // published (even at depth 0) so a Custom Tool reading the value
+        // gets a stable presence-or-absence contract.
+        if (agentInvokeDepth > 0) {
+            toolContextMap.put(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_INVOKE_DEPTH,
+                    agentInvokeDepth);
         }
         var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
                 .toolCallbacks(callbacks)

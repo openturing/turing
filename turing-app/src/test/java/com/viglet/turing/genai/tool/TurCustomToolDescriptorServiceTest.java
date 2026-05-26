@@ -35,13 +35,13 @@ class TurCustomToolDescriptorServiceTest {
     private final TurCustomToolDescriptorService service = new TurCustomToolDescriptorService();
 
     @Test
-    void descriptor_listsAllFourHelpersByBindingName() {
+    void descriptor_listsAllHelpersByBindingName() {
         ToolEditorDescriptor descriptor = service.get();
 
         assertThat(descriptor.helpers())
                 .extracting(HelperDescriptor::name)
                 .as("binding names must match TurCustomToolCallbackService.executeGroovy")
-                .containsExactlyInAnyOrder("http", "slots", "turingSearch", "code");
+                .containsExactlyInAnyOrder("http", "slots", "turingSearch", "code", "agent");
     }
 
     @Test
@@ -83,6 +83,26 @@ class TurCustomToolDescriptorServiceTest {
         assertThat(turingSearch.methods())
                 .extracting(MethodDescriptor::name)
                 .containsExactlyInAnyOrder("ann", "sn");
+    }
+
+    @Test
+    void agentHelper_hasInvokeOverloads() {
+        HelperDescriptor agent = helper("agent");
+
+        // Both overloads share the name `invoke`; signatures must differ
+        // (2-arg form vs 3-arg with opts map).
+        List<MethodDescriptor> invokes = agent.methods().stream()
+                .filter(m -> m.name().equals("invoke"))
+                .toList();
+        assertThat(invokes).hasSize(2);
+        Set<String> signatures = invokes.stream()
+                .map(MethodDescriptor::signature)
+                .collect(java.util.stream.Collectors.toSet());
+        assertThat(signatures).hasSize(2);
+        assertThat(agent.description())
+                .as("the helper-level blurb should mention the recursion cap so authors "
+                        + "discover the depth limit without hunting through Javadoc")
+                .containsIgnoringCase("recursion");
     }
 
     @Test

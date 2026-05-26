@@ -53,7 +53,8 @@ public class TurCustomToolDescriptorService {
                 httpHelper(),
                 slotsHelper(),
                 turingSearchHelper(),
-                codeHelper());
+                codeHelper(),
+                agentHelper());
     }
 
     private List<GlobalDescriptor> buildGlobals() {
@@ -144,6 +145,25 @@ public class TurCustomToolDescriptorService {
                                 "Named-arg overload. JSON+base64 encodes `inputs` and prepends a prelude "
                                         + "exposing it as the Python global `INPUTS` — eliminates the brittle "
                                         + "heredoc-concat pattern.")));
+    }
+
+    private HelperDescriptor agentHelper() {
+        return new HelperDescriptor("agent", "TurCustomToolAgentHelper",
+                "Cross-agent delegation — invokes another Turing AI Agent in an isolated child conversation "
+                        + "and returns its final assistant text. Recursion capped at 3 levels. Failure modes "
+                        + "are returned as bracketed sentinels (e.g. `[agent.invoke timeout after 30000ms]`) — "
+                        + "never thrown, so the orchestrator LLM sees a stable failure shape.",
+                List.of(
+                        method("invoke", "invoke(agentId: String, message: String) -> String",
+                                "Send `message` to the target agent's first enabled LLM in a fresh child "
+                                        + "conversation. Default timeout 30s. The parent conversation id is "
+                                        + "carried in the child's first user turn for trace reconstruction."),
+                        method("invoke",
+                                "invoke(agentId: String, message: String, "
+                                        + "opts: Map [timeout: Long, llmInstanceId: String]) -> String",
+                                "Options form. `timeout` in ms (default 30000, capped at 300000). "
+                                        + "`llmInstanceId` overrides the auto-picked LLM — must be one of the "
+                                        + "target agent's configured LLMs.")));
     }
 
     private static MethodDescriptor method(String name, String signature, String description) {

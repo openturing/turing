@@ -31,8 +31,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.domain.customtool.TurCustomToolDomain;
 import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
+import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
+import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
+
+import org.springframework.context.annotation.Lazy;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
@@ -122,6 +127,18 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_USERNAME = "turing.username";
 
+    /**
+     * T109 — key under which {@link TurCustomToolAgentHelper} increments the
+     * current {@code agent.invoke(...)} recursion depth on each nested call.
+     * The entry tool runs at depth 0; a sub-call running inside a tool
+     * spawned by {@code agent.invoke(...)} sees depth 1; etc. Capped at
+     * {@link TurCustomToolAgentHelper#DEFAULT_DEPTH_CAP} (3). Absent
+     * → treated as 0.
+     *
+     * @since 2026.3.1
+     */
+    public static final String TOOL_CONTEXT_AGENT_INVOKE_DEPTH = "turing.agentInvokeDepth";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
@@ -129,6 +146,9 @@ public class TurCustomToolCallbackService {
     private final com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService;
     private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final TurCustomToolDraftRegistry draftRegistry;
+    private final TurAgentChatExecutor agentChatExecutor;
+    private final TurAIAgentRepository agentRepository;
+    private final TurLLMInstanceRepository llmRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
@@ -138,7 +158,14 @@ public class TurCustomToolCallbackService {
             com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus,
             com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService,
             TurCodeInterpreterToolService codeInterpreterToolService,
-            TurCustomToolDraftRegistry draftRegistry) {
+            TurCustomToolDraftRegistry draftRegistry,
+            // @Lazy breaks the cycle: TurAgentChatExecutor → TurChatToolResolver
+            // → TurCustomToolCallbackService → TurAgentChatExecutor (T109). Spring
+            // resolves the proxy lazily on first use, by which point both beans
+            // exist.
+            @Lazy TurAgentChatExecutor agentChatExecutor,
+            TurAIAgentRepository agentRepository,
+            TurLLMInstanceRepository llmRepository) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
@@ -146,6 +173,9 @@ public class TurCustomToolCallbackService {
         this.slotAuditService = slotAuditService;
         this.codeInterpreterToolService = codeInterpreterToolService;
         this.draftRegistry = draftRegistry;
+        this.agentChatExecutor = agentChatExecutor;
+        this.agentRepository = agentRepository;
+        this.llmRepository = llmRepository;
     }
 
     /**
@@ -389,6 +419,16 @@ public class TurCustomToolCallbackService {
         binding.setVariable("code",
                 new TurCustomToolCodeHelper(codeInterpreterToolService,
                         agentPythonRequirements, tenantAgentId, tenantConversationId));
+        // T109 — cross-agent delegation. The helper carries the current
+        // recursion depth (incremented by 1 against the parent context's
+        // value) so a nested agent.invoke(...) can short-circuit at
+        // DEFAULT_DEPTH_CAP without blowing the stack. The parent
+        // conversation id flows through so child invocations carry the
+        // parent linkage in their first user message (parsed later by T110).
+        int parentDepth = resolveAgentInvokeDepth(toolContext);
+        binding.setVariable("agent",
+                new TurCustomToolAgentHelper(agentChatExecutor, agentRepository,
+                        llmRepository, tenantConversationId, parentDepth + 1));
         Script script = scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
@@ -469,6 +509,28 @@ public class TurCustomToolCallbackService {
         if (value == null) return null;
         String text = value.toString();
         return text.isBlank() ? null : text;
+    }
+
+    /**
+     * T109 — extracts the current {@code agent.invoke(...)} recursion depth
+     * from the Spring AI {@code ToolContext} (published via
+     * {@link #TOOL_CONTEXT_AGENT_INVOKE_DEPTH}). Returns 0 when the context
+     * is absent, the key is missing, or the value cannot be parsed —
+     * matches the "entry tool runs at depth 0" semantics documented on
+     * {@link TurCustomToolAgentHelper}.
+     */
+    private static int resolveAgentInvokeDepth(ToolContext toolContext) {
+        if (toolContext == null) return 0;
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) return 0;
+        Object value = ctx.get(TOOL_CONTEXT_AGENT_INVOKE_DEPTH);
+        if (value == null) return 0;
+        if (value instanceof Number n) return Math.max(0, n.intValue());
+        try {
+            return Math.max(0, Integer.parseInt(value.toString().trim()));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private Map<String, Object> parseArgs(String toolInput) {
