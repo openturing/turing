@@ -12,7 +12,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    target-branch: "2026.2"
+    target-branch: "2026.3"
     open-pull-requests-limit: 15
     groups:
       java:
@@ -24,7 +24,7 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
-    target-branch: "2026.2"
+    target-branch: "2026.3"
     open-pull-requests-limit: 15
     ignore:
       # Pinned across the whole workspace — each bump here affected multiple apps
@@ -44,7 +44,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    target-branch: "2026.2"
+    target-branch: "2026.3"
     labels:
       - "dependencies"
     commit-message:
