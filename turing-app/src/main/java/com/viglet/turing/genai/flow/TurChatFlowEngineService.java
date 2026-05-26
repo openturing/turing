@@ -242,6 +242,7 @@ public class TurChatFlowEngineService {
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatSlotEventBus slotEventBus;
     private final CacheManager cacheManager;
+    private final TurFunctionCallNodeExecutor functionCallExecutor;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
@@ -250,6 +251,7 @@ public class TurChatFlowEngineService {
             TurChatAnalyticsService chatAnalyticsService,
             TurChatSlotEventBus slotEventBus,
             CacheManager cacheManager,
+            TurFunctionCallNodeExecutor functionCallExecutor,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
@@ -257,6 +259,7 @@ public class TurChatFlowEngineService {
         this.chatAnalyticsService = chatAnalyticsService;
         this.slotEventBus = slotEventBus;
         this.cacheManager = cacheManager;
+        this.functionCallExecutor = functionCallExecutor;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -2147,6 +2150,21 @@ public class TurChatFlowEngineService {
             // is fully resolved (consumers do not have to interpolate).
             if ("writeSlot".equals(current.type())) {
                 ChatFlowOps.applyWriteSlotNode(state, current);
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
+            // functionCall node (T46): deterministic tool invocation from the
+            // flow — NATIVE @Tool methods (incl. Custom Tools registered as
+            // such) executed with aiInstruction as the JSON input template
+            // ({{slot}} interpolated) and the result written to outputVariable.
+            // Errors are logged + the engine advances; a stricter
+            // continueOnFailure/onError mode is deferred to T49/T50.
+            if ("functionCall".equals(current.type())) {
+                functionCallExecutor.execute(state, current);
                 ChatFlowOps.advanceToFirstEdge(state, graph, current);
                 state = stateRepository.save(state);
                 slotEventBus.publish(state.getConversationId(),

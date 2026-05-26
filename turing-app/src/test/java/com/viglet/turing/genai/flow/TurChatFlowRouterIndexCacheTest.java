@@ -70,6 +70,7 @@ class TurChatFlowRouterIndexCacheTest {
     void setUp() {
         engine = new TurChatFlowEngineService(stateRepository, chatFlowRepository,
                 submissionRepository, chatAnalyticsService, slotEventBus, cacheManager,
+                org.mockito.Mockito.mock(TurFunctionCallNodeExecutor.class),
                 List.<TurChatFlowGuardrailStrategy>of());
     }
 

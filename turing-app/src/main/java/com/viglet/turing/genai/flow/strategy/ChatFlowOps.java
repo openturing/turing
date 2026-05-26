@@ -684,7 +684,7 @@ public final class ChatFlowOps {
      * string — same forgiving contract as the React-side interpolator the
      * portal uses on read.
      */
-    static String interpolateVariables(String template, Map<String, String> variables) {
+    public static String interpolateVariables(String template, Map<String, String> variables) {
         if (template == null || template.isEmpty()) return "";
         // Each match is replaced with the live value (or "" when missing).
         // No nested-template support — a single pass keeps the contract

@@ -65,7 +65,9 @@ class TurChatFlowLinterServiceTest {
     void setUp() {
         TurChatFlowEngineService engine = new TurChatFlowEngineService(stateRepository,
                 chatFlowRepository, submissionRepository, chatAnalyticsService,
-                slotEventBus, cacheManager, List.<TurChatFlowGuardrailStrategy>of());
+                slotEventBus, cacheManager,
+                org.mockito.Mockito.mock(TurFunctionCallNodeExecutor.class),
+                List.<TurChatFlowGuardrailStrategy>of());
         triggerConflictService = new TurTriggerConflictService(chatFlowRepository);
         linter = new TurChatFlowLinterService(chatFlowRepository, engine, triggerConflictService);
     }

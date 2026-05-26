@@ -101,6 +101,7 @@ class TurChatFlowPinFlowTest {
     void setUp() {
         engine = new TurChatFlowEngineService(stateRepository, chatFlowRepository,
                 submissionRepository, chatAnalyticsService, slotEventBus, cacheManager,
+                org.mockito.Mockito.mock(TurFunctionCallNodeExecutor.class),
                 List.<TurChatFlowGuardrailStrategy>of());
         // stateRepository.save returns the argument — production JPA would
         // populate the id, but the pin path doesn't rely on the id being
