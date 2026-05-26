@@ -100,6 +100,11 @@ export type {
   UseTuringRoutineWaitingReturn,
   UseTuringRoutineWaitingOptions,
 } from "./hooks/use-turing-routine-waiting";
+export { useTuringScheduleAgentWaiting } from "./hooks/use-turing-schedule-agent-waiting";
+export type {
+  UseTuringScheduleAgentWaitingReturn,
+  UseTuringScheduleAgentWaitingOptions,
+} from "./hooks/use-turing-schedule-agent-waiting";
 export { useTuringSlotWriter } from "./hooks/use-turing-slot-writer";
 export type {
   UseTuringSlotWriterReturn,
