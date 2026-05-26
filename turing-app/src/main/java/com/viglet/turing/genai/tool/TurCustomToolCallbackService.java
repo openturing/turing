@@ -110,11 +110,24 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_LOCALE = "turing.locale";
 
+    /**
+     * T41 — key under which the chat executor publishes the authenticated
+     * user's username (resolved from {@code SecurityContextHolder} on the
+     * HTTP thread). Consumed by {@link #executeGroovy(TurCustomToolDomain,
+     * String, ToolContext)} to look up an active Custom Tool draft for the
+     * caller, enabling live unsaved-script preview without affecting other
+     * sessions.
+     *
+     * @since 2026.3.1
+     */
+    public static final String TOOL_CONTEXT_USERNAME = "turing.username";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
     private final com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus;
     private final TurCodeInterpreterToolService codeInterpreterToolService;
+    private final TurCustomToolDraftRegistry draftRegistry;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
@@ -122,12 +135,14 @@ public class TurCustomToolCallbackService {
             TurCustomToolSearchHelper searchHelper,
             TurChatFlowStateRepository stateRepository,
             com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus,
-            TurCodeInterpreterToolService codeInterpreterToolService) {
+            TurCodeInterpreterToolService codeInterpreterToolService,
+            TurCustomToolDraftRegistry draftRegistry) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
         this.slotEventBus = slotEventBus;
         this.codeInterpreterToolService = codeInterpreterToolService;
+        this.draftRegistry = draftRegistry;
     }
 
     /**
@@ -312,7 +327,21 @@ public class TurCustomToolCallbackService {
     String executeGroovy(TurCustomToolDomain tool, String toolInput, ToolContext toolContext)
             throws ReflectiveOperationException {
         Map<String, Object> args = parseArgs(toolInput);
-        CachedScript cached = scriptFor(tool);
+        // T41 live-preview overlay — if the caller has an active draft for
+        // this tool in TurCustomToolDraftRegistry, execute the draft source
+        // instead of the persisted version. Per-admin scope: visitors and
+        // other admins still see the persisted tool. Falls through to the
+        // normal scriptFor(...) cache when no draft is active.
+        String username = resolveUsername(toolContext);
+        Class<? extends Script> scriptClass;
+        var draft = draftRegistry.find(username, tool.id());
+        if (draft.isPresent()) {
+            scriptClass = draft.get().scriptClass();
+            log.info("[CustomTool/draft] EXECUTING DRAFT username='{}' toolId='{}' (T41 live preview)",
+                    username, tool.id());
+        } else {
+            scriptClass = scriptFor(tool).scriptClass;
+        }
         Binding binding = new Binding(new HashMap<>(args));
         // Standard bindings every script receives:
         //   args         — the parsed LLM-supplied arguments as a Map (also each
@@ -329,10 +358,16 @@ public class TurCustomToolCallbackService {
         //                  how a tool feeds dynamic data into UI components
         //                  like the "Programas recomendados" card grid.
         binding.setVariable("args", args);
-        binding.setVariable("http", new TurCustomToolHttpHelper());
+        // Slot helper is constructed first so the http helper can take it as
+        // a credential source (T39 reserved __ prefix → auto Authorization
+        // header). When the conversation id is null the slot helper operates
+        // in no-op mode and auto-auth degrades to "no auth," which is what
+        // unit-test invocations rely on.
+        TurCustomToolSlotHelper slotHelper = new TurCustomToolSlotHelper(
+                resolveConversationId(toolContext), stateRepository, slotEventBus);
+        binding.setVariable("http", new TurCustomToolHttpHelper(slotHelper));
         binding.setVariable("turingSearch", searchHelper);
-        binding.setVariable("slots", new TurCustomToolSlotHelper(
-                resolveConversationId(toolContext), stateRepository, slotEventBus));
+        binding.setVariable("slots", slotHelper);
         // `code` — sandboxed Python execution via TurCodeInterpreterToolService.
         // Lets a Custom Tool offload heavy work (PDF rendering with reportlab,
         // matplotlib charts, data transforms) to the platform's Python runtime
@@ -350,10 +385,35 @@ public class TurCustomToolCallbackService {
         binding.setVariable("code",
                 new TurCustomToolCodeHelper(codeInterpreterToolService,
                         agentPythonRequirements, tenantAgentId, tenantConversationId));
-        Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
+        Script script = scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
         return result == null ? "" : result.toString();
+    }
+
+    /**
+     * Extracts the authenticated user's username published by
+     * {@code TurAgentChatExecutor.buildChatOptions} via
+     * {@link #TOOL_CONTEXT_USERNAME}. Drives the T41 draft-overlay lookup
+     * in {@link TurCustomToolDraftRegistry}. Returns {@code null} when no
+     * context or no username is available (e.g. anonymous chat session,
+     * unit-test invocation) — the registry treats null as "no draft," so
+     * the regular persisted script runs.
+     */
+    private static String resolveUsername(ToolContext toolContext) {
+        if (toolContext == null) {
+            return null;
+        }
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) {
+            return null;
+        }
+        Object value = ctx.get(TOOL_CONTEXT_USERNAME);
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString();
+        return text.isBlank() ? null : text;
     }
 
     /**

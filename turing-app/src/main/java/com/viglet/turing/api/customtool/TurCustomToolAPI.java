@@ -27,6 +27,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService.PreviewResult;
+import com.viglet.turing.genai.tool.TurCustomToolDescriptorService;
+import com.viglet.turing.genai.tool.TurCustomToolDescriptorService.ToolEditorDescriptor;
+import com.viglet.turing.genai.tool.TurCustomToolDraftRegistry;
+import com.viglet.turing.genai.tool.TurCustomToolDraftRegistry.DraftEntry;
+import com.viglet.turing.genai.tool.TurCustomToolDraftRegistry.PutResult;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.viglet.turing.persistence.dto.customtool.TurCustomToolDto;
 import com.viglet.turing.persistence.mapper.customtool.TurCustomToolMapper;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
@@ -52,15 +60,21 @@ public class TurCustomToolAPI {
     private final TurCustomToolMapper mapper;
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolCallbackService callbackService;
+    private final TurCustomToolDescriptorService descriptorService;
+    private final TurCustomToolDraftRegistry draftRegistry;
 
     public TurCustomToolAPI(TurCustomToolRepository repository,
             TurCustomToolMapper mapper,
             TurCustomToolRepositoryPort repositoryPort,
-            TurCustomToolCallbackService callbackService) {
+            TurCustomToolCallbackService callbackService,
+            TurCustomToolDescriptorService descriptorService,
+            TurCustomToolDraftRegistry draftRegistry) {
         this.repository = repository;
         this.mapper = mapper;
         this.repositoryPort = repositoryPort;
         this.callbackService = callbackService;
+        this.descriptorService = descriptorService;
+        this.draftRegistry = draftRegistry;
     }
 
     @Operation(summary = "Custom Tool List")
@@ -73,6 +87,21 @@ public class TurCustomToolAPI {
     @GetMapping("/structure")
     public TurCustomToolDto structure() {
         return mapper.toDto(new TurCustomTool());
+    }
+
+    /**
+     * Editor descriptor — enumerates every binding the runtime injects into a
+     * Custom Tool Groovy script ({@code http}, {@code slots}, {@code turingSearch},
+     * {@code code}, and the {@code args} global) along with method signatures
+     * and one-line descriptions. The admin's CodeMirror editor consumes this
+     * payload to power auto-complete and signature hints (T40); the shape is
+     * editor-agnostic so a future Monaco / LSP path can reuse the same
+     * endpoint.
+     */
+    @Operation(summary = "Editor descriptor for Custom Tool Groovy auto-complete")
+    @GetMapping("/descriptor")
+    public ToolEditorDescriptor descriptor() {
+        return descriptorService.get();
     }
 
     @Operation(summary = "Show a Custom Tool")
@@ -200,5 +229,112 @@ public class TurCustomToolAPI {
     }
 
     public record ExecuteToolResponse(boolean ok, String result, String error, long elapsedMs) {
+    }
+
+    /* ─────────────────────────  T41 live-preview draft API  ─────────────────────────
+     *
+     * Admin pushes the in-editor Groovy as a "draft" — the same admin's chat
+     * conversations will then execute the draft for that tool, while every
+     * other session keeps seeing the persisted version. Lets authors iterate
+     * against real LLM + RAG without persisting half-baked scripts.
+     *
+     * The "WebSocket" in T41's spec is loose — this codebase has no
+     * spring-boot-starter-websocket on the classpath and standardises on
+     * REST + SSE (see TurChatSlotEventBus / TurSNSiteGenAiAPI streamSlots).
+     * One-way client→server push doesn't need duplex, so plain REST PUT/DELETE
+     * matches the convention while delivering the same UX. The chat side
+     * still uses the existing SSE for token streaming.
+     */
+
+    /**
+     * Stores or replaces the calling admin's draft Groovy source for tool
+     * {@code id}. Compiled synchronously; a compile error returns 200 with
+     * {@code success=false} and the offending line/column so the editor can
+     * highlight in place. Subsequent chat invocations by the same admin run
+     * the draft until {@link #deleteDraft(String)} or the registry TTL
+     * expires the entry.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Push live-preview draft Groovy for this admin (T41)")
+    @PutMapping("/{id}/draft")
+    public DraftPutResponse putDraft(@PathVariable String id, @RequestBody DraftPutRequest body) {
+        String username = currentUsername();
+        if (username == null) {
+            return new DraftPutResponse(false, "Anonymous sessions cannot push drafts.", null, null, null);
+        }
+        if (repositoryPort.findById(id).isEmpty()) {
+            return new DraftPutResponse(false, "Custom tool '" + id + "' not found.", null, null, null);
+        }
+        PutResult put = draftRegistry.put(username, id, body == null ? "" : body.groovyScript());
+        if (!put.success()) {
+            return new DraftPutResponse(false, put.error(), put.line(), put.column(), null);
+        }
+        return new DraftPutResponse(true, null, null, null, put.entry().createdAt().toString());
+    }
+
+    /**
+     * Clears the calling admin's draft for tool {@code id} (if any). Chat
+     * sessions immediately revert to the persisted tool source on the next
+     * invocation. Idempotent — clearing a non-existent draft returns
+     * {@code cleared=false} without error.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Clear this admin's live-preview draft (T41)")
+    @DeleteMapping("/{id}/draft")
+    public DraftClearResponse deleteDraft(@PathVariable String id) {
+        String username = currentUsername();
+        if (username == null) {
+            return new DraftClearResponse(false);
+        }
+        return new DraftClearResponse(draftRegistry.clear(username, id));
+    }
+
+    /**
+     * Reports whether the calling admin currently has an active draft for
+     * tool {@code id}. Used by the editor to show a "draft active" banner
+     * and to restore the in-flight source on page reload (the draft survives
+     * a navigation, the unsaved-form-state in React does not).
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Fetch this admin's live-preview draft status (T41)")
+    @GetMapping("/{id}/draft")
+    public DraftStatusResponse getDraft(@PathVariable String id) {
+        String username = currentUsername();
+        if (username == null) {
+            return new DraftStatusResponse(false, null, null, null);
+        }
+        return draftRegistry.find(username, id)
+                .map((DraftEntry e) -> new DraftStatusResponse(true, e.groovySource(),
+                        e.createdAt().toString(), e.lastTouched().toString()))
+                .orElseGet(() -> new DraftStatusResponse(false, null, null, null));
+    }
+
+    private static String currentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return null;
+        }
+        String name = auth.getName();
+        if (name == null || name.isBlank() || "anonymousUser".equals(name)) {
+            return null;
+        }
+        return name;
+    }
+
+    public record DraftPutRequest(String groovyScript) {
+    }
+
+    public record DraftPutResponse(boolean success, String error, Integer line, Integer column,
+            String createdAt) {
+    }
+
+    public record DraftClearResponse(boolean cleared) {
+    }
+
+    public record DraftStatusResponse(boolean active, String groovyScript, String createdAt,
+            String lastTouched) {
     }
 }

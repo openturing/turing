@@ -19,20 +19,25 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import {
+  useClearCustomToolDraft,
   useCreateCustomTool,
+  useCustomToolDescriptor,
+  useCustomToolDraftStatus,
   useDeleteCustomTool,
+  usePushCustomToolDraft,
   useUpdateCustomTool,
 } from "@/api/queries/custom-tool.queries"
 import type { CustomToolParameter, CustomToolPrimitive, TurCustomTool } from "@/models/customtool/custom-tool.model.ts"
 import { TurCustomToolService, type ValidateScriptResponse } from "@/services/customtool/custom-tool.service"
 import { VibeCodingButton } from "@/components/custom-tool/vibe-coding-button"
+import { groovyAutocomplete } from "@/components/custom-tool/groovy-autocomplete"
 import { StreamLanguage } from "@codemirror/language"
 import { groovy } from "@codemirror/legacy-modes/mode/groovy"
 import { oneDark } from "@codemirror/theme-one-dark"
-import { IconAlertTriangle, IconBraces, IconCheck, IconCode, IconList, IconLoader2, IconPlayerPlay, IconSettings, IconToggleLeft, IconTrash, IconX } from "@tabler/icons-react"
+import { IconAlertTriangle, IconBolt, IconBoltOff, IconBraces, IconCheck, IconCode, IconList, IconLoader2, IconPlayerPlay, IconSettings, IconToggleLeft, IconTrash, IconX } from "@tabler/icons-react"
 import CodeMirror from "@uiw/react-codemirror"
 import { toast } from "@viglet/viglet-design-system"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -139,6 +144,21 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
   const createMutation = useCreateCustomTool();
   const updateMutation = useUpdateCustomTool();
   const deleteMutation = useDeleteCustomTool();
+  // T40: editor descriptor drives CodeMirror auto-complete for the helper
+  // bindings (`http`, `slots`, `turingSearch`, `code`) + `args`. Cached for
+  // the session via useCustomToolDescriptor.
+  const { data: editorDescriptor } = useCustomToolDescriptor();
+  const groovyExtensions = useMemo(() => {
+    const base = [StreamLanguage.define(groovy)];
+    return editorDescriptor ? [...base, groovyAutocomplete(editorDescriptor)] : base;
+  }, [editorDescriptor]);
+  // T41: live-preview draft — push the in-editor Groovy as an admin-scoped
+  // overlay so the same admin's chat sessions execute the draft for this
+  // tool. Disabled for new (unsaved) tools — needs the persisted id.
+  const draftToolId = isNew ? undefined : value.id;
+  const { data: draftStatus } = useCustomToolDraftStatus(draftToolId);
+  const pushDraftMutation = usePushCustomToolDraft(draftToolId);
+  const clearDraftMutation = useClearCustomToolDraft(draftToolId);
 
   const form = useForm<FormShape>({
     defaultValues: {
@@ -477,7 +497,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                               value={field.value ?? ""}
                               height="360px"
                               theme={oneDark}
-                              extensions={[StreamLanguage.define(groovy)]}
+                              extensions={groovyExtensions}
                               onChange={(val) => {
                                 field.onChange(val);
                                 if (validation) setValidation(null);
@@ -521,6 +541,71 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                               returnType: form.watch("returnType"),
                             })}
                           />
+                          {/* T41 — live-preview draft controls. Only available for saved tools (needs an id). */}
+                          {draftToolId && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => pushDraftMutation.mutate(field.value ?? "")}
+                                disabled={pushDraftMutation.isPending || !field.value?.trim()}
+                                className="gap-2 sm:w-auto"
+                                title={t("forms.customTool.draftPushHint", {
+                                  defaultValue: "Push this script as your live draft — your chat sessions will run it instead of the saved version.",
+                                })}
+                              >
+                                {pushDraftMutation.isPending
+                                  ? <IconLoader2 className="size-4 animate-spin" />
+                                  : <IconBolt className="size-4" />}
+                                {t("forms.customTool.draftPushButton", { defaultValue: "Push live draft" })}
+                              </Button>
+                              {draftStatus?.active && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => clearDraftMutation.mutate()}
+                                  disabled={clearDraftMutation.isPending}
+                                  className="gap-2 sm:w-auto"
+                                >
+                                  {clearDraftMutation.isPending
+                                    ? <IconLoader2 className="size-4 animate-spin" />
+                                    : <IconBoltOff className="size-4" />}
+                                  {t("forms.customTool.draftClearButton", { defaultValue: "Clear draft" })}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {pushDraftMutation.data && !pushDraftMutation.data.success && (
+                            <div className="flex flex-1 items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                              <IconX className="size-3.5 mt-0.5 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold">
+                                  {t("forms.customTool.draftPushError", { defaultValue: "Draft failed to compile" })}
+                                  {pushDraftMutation.data.line != null && (
+                                    <span className="ml-1 font-normal opacity-80">
+                                      ({t("forms.customTool.validateLineCol", {
+                                        line: pushDraftMutation.data.line,
+                                        col: pushDraftMutation.data.column ?? 1,
+                                      })})
+                                    </span>
+                                  )}
+                                </div>
+                                <pre className="mt-1 whitespace-pre-wrap wrap-break-word font-mono text-[11px] opacity-90">
+                                  {pushDraftMutation.data.error}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                          {draftStatus?.active && !pushDraftMutation.data?.success && (
+                            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-700 dark:text-amber-300">
+                              <IconBolt className="size-3.5" />
+                              {t("forms.customTool.draftActiveBanner", {
+                                defaultValue: "Live draft active — your chat sessions run this version.",
+                              })}
+                            </span>
+                          )}
                           {validation?.valid && (
                             <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-300">
                               <IconCheck className="size-3.5" />

@@ -392,6 +392,17 @@ public class TurAgentChatExecutor {
                     com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS,
                     agentPythonRequirements);
         }
+        // T41 — publish the authenticated user's username so a Custom Tool
+        // invocation can look up an active draft for the same admin in
+        // TurCustomToolDraftRegistry. Resolved at this point on the HTTP
+        // thread (before the reactive Flux starts) so SecurityContextHolder
+        // is still populated. Anonymous sessions skip — no draft can apply.
+        String username = resolveUsername();
+        if (username != null && !"anonymous".equals(username)) {
+            toolContextMap.put(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_USERNAME,
+                    username);
+        }
         var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
                 .toolCallbacks(callbacks)
                 .internalToolExecutionEnabled(true);
