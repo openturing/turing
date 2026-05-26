@@ -34,6 +34,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type TurChatFlow,
+  type TurChatFlowCaptureMode,
   type TurChatFlowGuardrailMethod,
   type TurChatFlowTriggerLanguage,
   type TurChatFlowTriggerMode,
@@ -120,6 +121,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [description, setDescription] = useState(flow.description ?? "");
   const [guardrailMethod, setGuardrailMethod] = useState<TurChatFlowGuardrailMethod>(
     flow.guardrailMethod ?? "LLM_JUDGE",
+  );
+  const [captureMode, setCaptureMode] = useState<TurChatFlowCaptureMode>(
+    flow.captureMode ?? "VALIDATE_THEN_CAPTURE",
   );
   const [triggerDescription, setTriggerDescription] = useState(flow.triggerDescription ?? "");
   const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
@@ -219,6 +223,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       definitionJson: serializeGraph(nodes, edges),
       enabled: flow.enabled ?? 1,
       guardrailMethod,
+      captureMode,
       triggerDescription: triggerDescription.trim() || null,
       triggerMode,
       triggerLanguage,
@@ -246,7 +251,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     } finally {
       setSaving(false);
     }
-  }, [name, description, guardrailMethod, triggerDescription, triggerMode, triggerLanguage,
+  }, [name, description, guardrailMethod, captureMode, triggerDescription, triggerMode, triggerLanguage,
       experimentKey, variantLabel, trafficWeight, banditEnabled, slotInheritanceJson,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
@@ -436,6 +441,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setDescription={setDescription}
           guardrailMethod={guardrailMethod}
           setGuardrailMethod={setGuardrailMethod}
+          captureMode={captureMode}
+          setCaptureMode={setCaptureMode}
           triggerDescription={triggerDescription}
           setTriggerDescription={setTriggerDescription}
           triggerMode={triggerMode}

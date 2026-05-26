@@ -15,9 +15,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 
 import {
+  CHAT_FLOW_CAPTURE_MODES,
   CHAT_FLOW_GUARDRAIL_METHODS,
   CHAT_FLOW_TRIGGER_LANGUAGES,
   CHAT_FLOW_TRIGGER_MODES,
+  type TurChatFlowCaptureMode,
   type TurChatFlowGuardrailMethod,
   type TurChatFlowTriggerLanguage,
   type TurChatFlowTriggerMode,
@@ -72,6 +74,8 @@ interface SettingsTabProps {
   setDescription: (value: string) => void;
   guardrailMethod: TurChatFlowGuardrailMethod;
   setGuardrailMethod: (value: TurChatFlowGuardrailMethod) => void;
+  captureMode: TurChatFlowCaptureMode;
+  setCaptureMode: (value: TurChatFlowCaptureMode) => void;
   triggerDescription: string;
   setTriggerDescription: (value: string) => void;
   triggerMode: TurChatFlowTriggerMode;
@@ -99,6 +103,8 @@ export function ChatFlowSettingsTab({
   setDescription,
   guardrailMethod,
   setGuardrailMethod,
+  captureMode,
+  setCaptureMode,
   triggerDescription,
   setTriggerDescription,
   triggerMode,
@@ -187,6 +193,36 @@ export function ChatFlowSettingsTab({
                     {CHAT_FLOW_GUARDRAIL_METHODS.map((method) => (
                       <SelectItem key={method} value={method}>
                         {t(`chatFlow.guardrailMethods.${method}.label`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormRow>
+
+              {/* T51 / §VII.4.e — capture-first inversion. Only the LLM_JUDGE
+                  guardrail has a judge to invert, so the picker is disabled
+                  (and explained) for the other methods. */}
+              <FormRow
+                htmlFor="chat-flow-capture-mode"
+                label={t("chatFlow.fields.captureMode")}
+                description={
+                  guardrailMethod === "LLM_JUDGE"
+                    ? t(`chatFlow.captureModes.${captureMode}.description`)
+                    : t("chatFlow.fields.captureModeJudgeOnly")
+                }
+              >
+                <Select
+                  value={captureMode}
+                  onValueChange={(value) => setCaptureMode(value as TurChatFlowCaptureMode)}
+                  disabled={guardrailMethod !== "LLM_JUDGE"}
+                >
+                  <SelectTrigger id="chat-flow-capture-mode" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHAT_FLOW_CAPTURE_MODES.map((cmode) => (
+                      <SelectItem key={cmode} value={cmode}>
+                        {t(`chatFlow.captureModes.${cmode}.label`)}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -528,6 +528,9 @@ public class TurChatFlowAPI {
                     if (incoming.getGuardrailMethod() != null) {
                         existing.setGuardrailMethod(incoming.getGuardrailMethod());
                     }
+                    if (incoming.getCaptureMode() != null) {
+                        existing.setCaptureMode(incoming.getCaptureMode());
+                    }
                     existing.setTriggerDescription(incoming.getTriggerDescription());
                     if (incoming.getTriggerMode() != null) {
                         existing.setTriggerMode(incoming.getTriggerMode());

@@ -89,6 +89,18 @@ public class TurChatFlow implements Serializable {
     private TurChatFlowGuardrailMethod guardrailMethod = TurChatFlowGuardrailMethod.HEURISTIC;
 
     /**
+     * T51 / §VII.4.e — capture-first inversion mode. Decides when a
+     * slot-collecting {@code aiQuestion} node persists the user reply (before
+     * vs. after the judge) and what gates the advance. Only honoured by the
+     * {@code LLM_JUDGE} guardrail. Defaults to {@link
+     * TurChatFlowCaptureMode#VALIDATE_THEN_CAPTURE} so existing flows keep
+     * their pre-T51 behaviour.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "captureMode", nullable = false, length = 32)
+    private TurChatFlowCaptureMode captureMode = TurChatFlowCaptureMode.VALIDATE_THEN_CAPTURE;
+
+    /**
      * Natural-language description that the LLM router uses to decide whether
      * a user message should auto-trigger this flow. Empty/blank disables
      * auto-trigger — the flow can still be picked manually from the chat

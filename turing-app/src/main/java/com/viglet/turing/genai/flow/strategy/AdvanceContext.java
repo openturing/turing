@@ -13,6 +13,7 @@ import org.springframework.ai.chat.model.ChatModel;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
 /**
@@ -35,6 +36,11 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  * @param auxiliaryModel  a {@link ChatModel} a strategy may invoke for a
  *                        secondary call (LLM_JUDGE uses it). May be null
  *                        for strategies that don't need one.
+ * @param flow            the active flow being walked. Carries flow-level
+ *                        runtime settings a strategy may read — notably the
+ *                        T51 {@code captureMode}. May be {@code null} in
+ *                        unit tests that exercise a strategy without a
+ *                        persisted flow; strategies must null-default it.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.5
@@ -45,5 +51,6 @@ public record AdvanceContext(
         ChatFlowNode currentNode,
         String userMessage,
         String assistantMessage,
-        ChatModel auxiliaryModel) {
+        ChatModel auxiliaryModel,
+        TurChatFlow flow) {
 }

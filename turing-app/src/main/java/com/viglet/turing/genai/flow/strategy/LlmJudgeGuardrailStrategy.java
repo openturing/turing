@@ -22,6 +22,7 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowStaticPromptCache;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.agent.TurChatFlowCaptureMode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -61,6 +62,19 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     private static final String REJECT_REPROMPT = "reprompt";
     private static final String REJECT_BLOCK = "block";
 
+    /**
+     * T51 / §VII.4.e — capture-first inversion. The confidence grade the
+     * advisory judge writes into a parallel {@code <slot>__confidence} slot
+     * (e.g. {@code email} → {@code email__confidence}). Downstream
+     * switch/condition nodes can branch on it; a {@code low} grade also marks
+     * a provisional capture as replaceable on the next re-prompt turn.
+     *
+     * @since 2026.3.1
+     */
+    static final String CONFIDENCE_SUFFIX = "__confidence";
+    static final String CONFIDENCE_HIGH = "high";
+    static final String CONFIDENCE_LOW = "low";
+
     // §I.5 step 6 / T16 — deleted: RETRY_MIN_USER_MESSAGE_LENGTH constant
     // and the judgeRetryEnabled flag. The second-opinion retry block they
     // gated was removed entirely; onJudgeReject (#22) is the sole driver
@@ -95,6 +109,14 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         ChatFlowNode node = ctx.currentNode();
         if ("end".equals(node.type())) {
             return null;
+        }
+        // T51 / §VII.4.e — capture-first inversion. When the flow opts into
+        // CAPTURE_THEN_GATE / CAPTURE_THEN_GRADE the slot is written BEFORE the
+        // judge runs (the judge becomes advisory). VALIDATE_THEN_CAPTURE keeps
+        // the legacy gate-then-capture body below untouched.
+        TurChatFlowCaptureMode captureMode = resolveCaptureMode(ctx);
+        if (captureMode != TurChatFlowCaptureMode.VALIDATE_THEN_CAPTURE) {
+            return advanceCaptureFirst(ctx, captureMode);
         }
         ChatModel judgeModel = ctx.auxiliaryModel();
         if (judgeModel == null) {
@@ -321,6 +343,190 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     // §I.5 step 6 / T16 — deleted: shouldRetryVerdict + isNonBlankRedirect.
     // The retry block they served has been removed; reject policy is now
     // entirely declarative via ChatFlowNode.onJudgeReject (#22).
+
+    // ───────────────────── T51 capture-first inversion ─────────────────────
+
+    /**
+     * Reads the flow's {@link TurChatFlowCaptureMode}, defaulting to
+     * {@link TurChatFlowCaptureMode#VALIDATE_THEN_CAPTURE} when no flow is
+     * present (unit tests) or the column is null (pre-T51 rows that predate
+     * the default-backfill).
+     *
+     * @since 2026.3.1
+     */
+    static TurChatFlowCaptureMode resolveCaptureMode(AdvanceContext ctx) {
+        TurChatFlow flow = ctx.flow();
+        if (flow == null || flow.getCaptureMode() == null) {
+            return TurChatFlowCaptureMode.VALIDATE_THEN_CAPTURE;
+        }
+        return flow.getCaptureMode();
+    }
+
+    /**
+     * Capture-then-grade turn. The user reply is persisted into the slot
+     * BEFORE the judge runs, so a slot-collecting node never ends a turn with
+     * {@code slot=null}. The judge is advisory: it refines the captured value
+     * and writes a {@code <slot>__confidence} grade, but cannot block a value.
+     *
+     * <ul>
+     *   <li>{@code CAPTURE_THEN_GATE} — a failing deterministic
+     *       {@code validationRule} still parks the cursor for a re-prompt
+     *       (now with the value captured + {@code confidence=low}).</li>
+     *   <li>{@code CAPTURE_THEN_GRADE} — the flow always advances unless the
+     *       user abandoned; validation + judge only set the grade.</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    private String advanceCaptureFirst(AdvanceContext ctx, TurChatFlowCaptureMode mode) {
+        ChatFlowNode node = ctx.currentNode();
+        TurChatFlowState state = ctx.state();
+        Map<String, String> variables = ChatFlowOps.readVariables(state);
+
+        String slot = hasOutputVar(node) ? node.outputVariable().trim() : null;
+        String userMsg = ctx.userMessage() == null ? "" : ctx.userMessage().trim();
+
+        // No answer yet on a slot-collecting node — the question was just asked
+        // and we're waiting. Nothing to capture or grade; stay put (mirrors the
+        // legacy "collected==null → stay"). Guards CAPTURE_THEN_GRADE from
+        // advancing past an unanswered question on a no-op trigger turn.
+        if (slot != null && userMsg.isBlank()) {
+            return null;
+        }
+
+        // Decide write-eligibility ONCE on the ORIGINAL slot state, before any
+        // mutation — so both the provisional and the refined write share the
+        // same "don't clobber a protected out-of-band value" rule.
+        boolean mayWrite = slot != null && mayWriteSlot(node, slot, variables);
+
+        // ── 1. Capture-first: provisional raw write ──
+        if (mayWrite && !userMsg.isBlank()) {
+            variables.put(slot, userMsg);
+            log.info("[LlmJudge/captureFirst] Provisional capture '{}' = '{}' (pre-judge)", slot, userMsg);
+        }
+
+        // ── 2. Run the judge (advisory) ──
+        JudgeVerdict verdict = runJudgeAdvisory(ctx);
+
+        // Abandon still ends the flow — a user-driven exit, not the slot=null
+        // stall T51 targets. Persist whatever was captured so far.
+        if (verdict != null && verdict.abandoned()) {
+            log.info("[LlmJudge/captureFirst] Abandon detected on node '{}' — ending flow", node.id());
+            ChatFlowOps.writeVariables(state, variables);
+            ChatFlowOps.transitionToEnd(state, ctx.graph());
+            String farewell = verdict.redirectMessage();
+            return (farewell != null && !farewell.isBlank()) ? farewell.trim() : null;
+        }
+
+        // ── 3. Refine: prefer the judge's cleaner extraction over the raw reply ──
+        refineCapture(node, slot, mayWrite, verdict, variables);
+
+        // ── 4. Grade confidence into the parallel slot ──
+        String finalValue = slot == null ? null : variables.get(slot);
+        boolean valid = slot == null
+                || ChatFlowOps.valueMatchesRule(node.validationRule(), finalValue);
+        boolean judgeEndorses = verdict != null && verdict.onTopic() && verdict.readyToAdvance();
+        boolean highConfidence = valid && judgeEndorses;
+        if (slot != null) {
+            variables.put(slot + CONFIDENCE_SUFFIX, highConfidence ? CONFIDENCE_HIGH : CONFIDENCE_LOW);
+        }
+
+        // ── 5. Advance decision ──
+        if (!decideCaptureFirstAdvance(slot != null, mode, valid, verdict)) {
+            ChatFlowOps.writeVariables(state, variables);
+            log.info("[LlmJudge/captureFirst] GATE stay on '{}' (value='{}', confidence=low) — re-prompt",
+                    node.id(), finalValue);
+            return offTopicRedirect(verdict);
+        }
+        String previous = node.id();
+        String next = ChatFlowOps.advanceToFirstEdge(state, ctx.graph(), node);
+        ChatFlowOps.writeVariables(state, variables);
+        if (!previous.equals(next)) {
+            log.info("[LlmJudge/captureFirst] Advanced '{}' → '{}' (mode={}, confidence={})",
+                    previous, next, mode, highConfidence ? CONFIDENCE_HIGH : CONFIDENCE_LOW);
+        }
+        // Advanced regardless of on_topic: the judge's redirect targets the OLD
+        // goal which is now satisfied, so don't surface it — the next turn
+        // produces the right prompt for the new node.
+        return null;
+    }
+
+    private static boolean hasOutputVar(ChatFlowNode node) {
+        return node.outputVariable() != null && !node.outputVariable().isBlank();
+    }
+
+    /**
+     * Write-eligibility for capture-first, evaluated on the ORIGINAL slot
+     * state. Writable when the slot is empty, the node opts into override, or
+     * the existing value carries a {@code low} confidence grade — the last
+     * case lets a re-prompt answer replace our own provisional capture from a
+     * prior failed attempt on the same node, while still protecting a genuine
+     * out-of-band high-confidence value (e.g. a CV-extracted name).
+     */
+    private static boolean mayWriteSlot(ChatFlowNode node, String slot,
+            Map<String, String> originalVariables) {
+        String existing = originalVariables.get(slot);
+        if (existing == null || existing.isBlank()) {
+            return true;
+        }
+        if (Boolean.TRUE.equals(node.overrideExistingValue())) {
+            return true;
+        }
+        return CONFIDENCE_LOW.equals(originalVariables.get(slot + CONFIDENCE_SUFFIX));
+    }
+
+    /** Overwrites the provisional capture with the judge's normalized/canonicalized value. */
+    private static void refineCapture(ChatFlowNode node, String slot, boolean mayWrite,
+            JudgeVerdict verdict, Map<String, String> variables) {
+        if (slot == null || !mayWrite || verdict == null) {
+            return;
+        }
+        String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
+        if (collected == null || collected.isBlank()) {
+            return;
+        }
+        collected = ChatFlowOps.normalizeYesNo(collected);
+        collected = ChatFlowOps.canonicalizeAgainstInlineOptions(collected, node.inlineOptions());
+        variables.put(slot, collected);
+        log.info("[LlmJudge/captureFirst] Refined capture '{}' = '{}' (judge extraction)", slot, collected);
+    }
+
+    private JudgeVerdict runJudgeAdvisory(AdvanceContext ctx) {
+        ChatModel model = ctx.auxiliaryModel();
+        if (model == null) {
+            log.warn("[LlmJudge/captureFirst] No model available — capturing without a grade");
+            return null;
+        }
+        return askJudge(model, ctx.currentNode(), ctx.userMessage(), ctx.assistantMessage());
+    }
+
+    /**
+     * Capture-first advance rule. Informational nodes (no output var) keep the
+     * legacy "advance when the judge says the goal is addressed" (and never
+     * stall when no judge is available). For slot-collecting nodes,
+     * {@code CAPTURE_THEN_GRADE} always advances; {@code CAPTURE_THEN_GATE}
+     * advances only when the deterministic {@code validationRule} passes.
+     */
+    private static boolean decideCaptureFirstAdvance(boolean hasOutputVar,
+            TurChatFlowCaptureMode mode, boolean valid, JudgeVerdict verdict) {
+        if (!hasOutputVar) {
+            return verdict == null || verdict.readyToAdvance();
+        }
+        if (mode == TurChatFlowCaptureMode.CAPTURE_THEN_GRADE) {
+            return true;
+        }
+        return valid;
+    }
+
+    private static String offTopicRedirect(JudgeVerdict verdict) {
+        if (verdict != null && !verdict.onTopic()) {
+            String redirect = verdict.redirectMessage();
+            if (redirect != null && !redirect.isBlank()) {
+                return redirect.trim();
+            }
+        }
+        return null;
+    }
 
     // ─────────────────────────── Judge call ───────────────────────────
 

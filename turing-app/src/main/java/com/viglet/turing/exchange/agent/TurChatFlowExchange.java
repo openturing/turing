@@ -13,6 +13,7 @@ import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.agent.TurChatFlowCaptureMode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode;
 
@@ -39,6 +40,8 @@ public class TurChatFlowExchange {
     private String description;
     private int enabled;
     private TurChatFlowGuardrailMethod guardrailMethod;
+    /** T51 — capture-first inversion mode; null on pre-T51 exports. */
+    private TurChatFlowCaptureMode captureMode;
     private String triggerDescription;
     private TurChatFlowTriggerMode triggerMode;
     private String experimentKey;
@@ -58,6 +61,7 @@ public class TurChatFlowExchange {
         e.description = flow.getDescription();
         e.enabled = flow.getEnabled();
         e.guardrailMethod = flow.getGuardrailMethod();
+        e.captureMode = flow.getCaptureMode();
         e.triggerDescription = flow.getTriggerDescription();
         e.triggerMode = flow.getTriggerMode();
         e.experimentKey = flow.getExperimentKey();

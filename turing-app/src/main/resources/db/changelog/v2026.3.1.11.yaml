@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T51 / §VII.4.e — capture-first inversion mode on a chat flow.
+  #
+  # captureMode VARCHAR(32) (default VALIDATE_THEN_CAPTURE):
+  #   VALIDATE_THEN_CAPTURE — legacy: judge gates, capture only on accept.
+  #   CAPTURE_THEN_GATE     — capture-first; validationRule still gates advance.
+  #   CAPTURE_THEN_GRADE    — capture-first; always advance (judge advisory).
+  #
+  # Default preserves pre-T51 behaviour so existing flows are unaffected.
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.11-add-capture-mode
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: captureMode
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: captureMode
+                  type: varchar(32)
+                  defaultValue: VALIDATE_THEN_CAPTURE
+                  constraints:
+                    nullable: false

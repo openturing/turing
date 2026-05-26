@@ -460,7 +460,7 @@ public class TurChatFlowEngineService {
                 flow.getGuardrailMethod(),
                 userMessage == null ? "" : truncate(userMessage, 80));
         AdvanceContext ctx = new AdvanceContext(state, graph, nodeOpt.get(),
-                userMessage, assistantMessage, auxiliaryModel);
+                userMessage, assistantMessage, auxiliaryModel, flow);
         String override = resolveStrategy(flow).advance(ctx);
         // Condition nodes are transparent to the chat — the LLM never sees them
         // as a "Goal" because they have none. Walk through any chain of

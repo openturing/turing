@@ -32,6 +32,8 @@
       "description": "Description",
       "descriptionPlaceholder": "Optional summary of what this flow does.",
       "guardrailMethod": "Guard Rail Method",
+      "captureMode": "Capture Mode",
+      "captureModeJudgeOnly": "Capture Mode only applies when the Guard Rail Method is LLM as judge — the other methods have no judge to invert.",
       "triggerDescription": "Trigger Description",
       "triggerDescriptionPlaceholder": "e.g. Use this flow when the user wants to schedule a meeting or asks about appointment availability.",
       "triggerDescriptionHint": "Natural-language hint the LLM router uses to decide whether a user message should activate this flow. Leave blank to disable auto-trigger.",
@@ -80,6 +82,20 @@
       "STRUCTURED_OUTPUT": {
         "label": "Structured output (single call)",
         "description": "Tries to bundle the user-facing reply and the verdict in one JSON call. Sounds ideal, but smaller models (GPT-4o-mini) often ignore the JSON contract when chat history grows or many tools are active, and fall back to a judge call anyway — costing more than LLM as judge alone. Worth picking only with top-tier models (GPT-4o full, Claude 3.7 Sonnet)."
+      }
+    },
+    "captureModes": {
+      "VALIDATE_THEN_CAPTURE": {
+        "label": "Validate then capture (default)",
+        "description": "Legacy behaviour. The judge runs first and gates the capture — the slot is written only when the judge accepts the value. A rejected reply leaves the slot empty and keeps the cursor on the step (the classic 'flow stuck on a null slot'). Use onJudgeReject on a step to soften this per-node."
+      },
+      "CAPTURE_THEN_GATE": {
+        "label": "Capture first, validation gates",
+        "description": "The user reply is written to the slot before the judge runs, so the slot is never empty after an answer. The judge becomes advisory — it refines the value and writes a <slot>__confidence grade but can no longer block a value that passes the step's validation rule. A failing validation rule (email, phone, CPF…) still re-prompts, now with the attempt captured and confidence=low."
+      },
+      "CAPTURE_THEN_GRADE": {
+        "label": "Capture first, always advance",
+        "description": "Capture-then-grade: the reply is written to the slot and the flow always advances unless the user abandons. Both the validation rule and the judge are purely advisory — they only set the <slot>__confidence grade. Maximum 'never stall', but a downstream step must decide what to do with low-confidence captures."
       }
     },
     "errors": {

@@ -32,6 +32,8 @@
       "description": "Descrição",
       "descriptionPlaceholder": "Resumo opcional do que este fluxo faz.",
       "guardrailMethod": "Método de Guard Rail",
+      "captureMode": "Modo de Captura",
+      "captureModeJudgeOnly": "O Modo de Captura só se aplica quando o Método de Guard Rail é LLM como juiz — os outros métodos não têm juiz para inverter.",
       "triggerDescription": "Condição de Disparo",
       "triggerDescriptionPlaceholder": "ex.: Use este fluxo quando o usuário quiser agendar uma reunião ou perguntar sobre disponibilidade.",
       "triggerDescriptionHint": "Descrição em linguagem natural que o roteador LLM usa para decidir se uma mensagem do usuário deve ativar este fluxo. Deixe em branco para desativar o disparo automático.",
@@ -80,6 +82,20 @@
       "STRUCTURED_OUTPUT": {
         "label": "Saída estruturada (uma chamada)",
         "description": "Tenta unir a resposta para o usuário e o veredito numa única chamada JSON. Soa ideal, mas modelos menores (GPT-4o-mini) costumam ignorar o contrato JSON quando o histórico cresce ou há muitas tools ativas, caindo no juiz como fallback mesmo assim — saindo mais caro que o LLM como juiz puro. Vale a pena apenas com modelos topo de linha (GPT-4o completo, Claude 3.7 Sonnet)."
+      }
+    },
+    "captureModes": {
+      "VALIDATE_THEN_CAPTURE": {
+        "label": "Validar e depois capturar (padrão)",
+        "description": "Comportamento legado. O juiz roda primeiro e controla a captura — o slot só é gravado quando o juiz aceita o valor. Uma resposta rejeitada deixa o slot vazio e mantém o cursor no passo (o clássico 'fluxo travado num slot nulo'). Use onJudgeReject num passo para suavizar isso por nó."
+      },
+      "CAPTURE_THEN_GATE": {
+        "label": "Capturar primeiro, validação controla",
+        "description": "A resposta do usuário é gravada no slot antes do juiz rodar, então o slot nunca fica vazio depois de uma resposta. O juiz passa a ser consultivo — refina o valor e grava uma nota em <slot>__confidence, mas não pode mais bloquear um valor que passa na regra de validação do passo. Uma regra de validação que falha (e-mail, telefone, CPF…) ainda repergunta, agora com a tentativa capturada e confiança=baixa."
+      },
+      "CAPTURE_THEN_GRADE": {
+        "label": "Capturar primeiro, sempre avançar",
+        "description": "Capturar e avaliar: a resposta é gravada no slot e o fluxo sempre avança, a menos que o usuário desista. Tanto a regra de validação quanto o juiz são puramente consultivos — apenas definem a nota em <slot>__confidence. Máximo 'nunca travar', mas um passo seguinte precisa decidir o que fazer com capturas de baixa confiança."
       }
     },
     "errors": {

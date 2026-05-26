@@ -28,6 +28,31 @@ export const CHAT_FLOW_GUARDRAIL_METHODS: TurChatFlowGuardrailMethod[] = [
 ];
 
 /**
+ * T51 / §VII.4.e — capture-first inversion mode. Only the LLM_JUDGE guardrail
+ * honours it (the other methods have no judge to invert).
+ *   VALIDATE_THEN_CAPTURE — legacy default: the judge gates the capture; a
+ *                           rejected reply leaves the slot null and parks the
+ *                           cursor (the "flow stuck with slot=null" pattern).
+ *   CAPTURE_THEN_GATE     — capture-first: the reply is written to the slot
+ *                           before the judge runs (so it's never null); the
+ *                           judge only grades confidence, but a failing
+ *                           deterministic validationRule still re-prompts.
+ *   CAPTURE_THEN_GRADE    — capture-first and always advance (unless the user
+ *                           abandons); validation + judge only set the grade.
+ */
+export type TurChatFlowCaptureMode =
+  | "VALIDATE_THEN_CAPTURE"
+  | "CAPTURE_THEN_GATE"
+  | "CAPTURE_THEN_GRADE";
+
+/** Display order for the capture-mode picker — legacy/default first. */
+export const CHAT_FLOW_CAPTURE_MODES: TurChatFlowCaptureMode[] = [
+  "VALIDATE_THEN_CAPTURE",
+  "CAPTURE_THEN_GATE",
+  "CAPTURE_THEN_GRADE",
+];
+
+/**
  * How often the LLM router may auto-trigger a flow within a conversation.
  *   ONCE   — at most once per conversation (re-trigger only after manual reset)
  *   ALWAYS — re-trigger whenever the user message matches the trigger description
@@ -57,6 +82,14 @@ export interface TurChatFlow {
   definitionJson?: string | null;
   enabled: number;
   guardrailMethod: TurChatFlowGuardrailMethod;
+  /**
+   * T51 / §VII.4.e — capture-first inversion mode (LLM_JUDGE only). Defaults
+   * to {@code "VALIDATE_THEN_CAPTURE"} server-side, preserving pre-T51
+   * behaviour for existing flows.
+   *
+   * @since 2026.3.1
+   */
+  captureMode?: TurChatFlowCaptureMode;
   /** Natural-language description used by the LLM router. Empty disables auto-trigger. */
   triggerDescription?: string | null;
   triggerMode: TurChatFlowTriggerMode;

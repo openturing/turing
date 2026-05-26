@@ -457,6 +457,9 @@ public class TurAIAgentImportService {
             flow.setDescription(fe.getDescription());
             flow.setEnabled(fe.getEnabled());
             flow.setGuardrailMethod(fe.getGuardrailMethod());
+            if (fe.getCaptureMode() != null) {
+                flow.setCaptureMode(fe.getCaptureMode());
+            }
             flow.setTriggerDescription(fe.getTriggerDescription());
             flow.setTriggerMode(fe.getTriggerMode());
             flow.setExperimentKey(fe.getExperimentKey());
