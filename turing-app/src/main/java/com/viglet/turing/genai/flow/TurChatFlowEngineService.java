@@ -2231,11 +2231,18 @@ public class TurChatFlowEngineService {
             // flow — NATIVE @Tool methods (incl. Custom Tools registered as
             // such) executed with aiInstruction as the JSON input template
             // ({{slot}} interpolated) and the result written to outputVariable.
-            // Errors are logged + the engine advances; a stricter
-            // continueOnFailure/onError mode is deferred to T49/T50.
+            // T49: when the node opts in via continueOnFailure=true, a failed
+            // invocation routes the flow along the 'failure' outgoing edge for
+            // graceful recovery; otherwise the engine advances to the first
+            // edge as before (legacy lenient default).
             if ("functionCall".equals(current.type())) {
-                functionCallExecutor.execute(state, current);
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                TurFunctionCallNodeExecutor.ExecutionResult fnResult =
+                        functionCallExecutor.execute(state, current);
+                if (!fnResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
+                    ChatFlowOps.advanceOnFailure(state, graph, current);
+                } else {
+                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                }
                 state = stateRepository.save(state);
                 slotEventBus.publish(state.getConversationId(),
                         listSlotsForConversation(state.getConversationId()).slots());
@@ -2286,7 +2293,11 @@ public class TurChatFlowEngineService {
                                 listSlotsForConversation(state.getConversationId()).slots());
                     }
                     case FAILED -> {
-                        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                        if (Boolean.TRUE.equals(current.continueOnFailure())) {
+                            ChatFlowOps.advanceOnFailure(state, graph, current);
+                        } else {
+                            ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                        }
                         state = stateRepository.save(state);
                     }
                 }

@@ -503,6 +503,50 @@ public final class ChatFlowOps {
         return targetNode.get().id();
     }
 
+    /**
+     * Outgoing-edge {@code sourceHandle} the engine reads to route the
+     * {@code continueOnFailure} branch of a {@code functionCall} or
+     * {@code scheduleAgent} node (T49). Visualised as a red try/catch edge
+     * by the editor in T50.
+     *
+     * @since 2026.3.1
+     */
+    public static final String FAILURE_HANDLE = "failure";
+
+    /**
+     * Routes {@code state} along the {@link #FAILURE_HANDLE failure}-handled
+     * outgoing edge of {@code current}; falls back to
+     * {@link #advanceToFirstEdge} when no edge is wired to the failure
+     * handle. Used by T49 — node-level failure-recovery branching for
+     * {@code functionCall} and {@code scheduleAgent} nodes that opt in via
+     * {@link ChatFlowNode#continueOnFailure()}.
+     *
+     * @return the new current node id (whether or not it changed).
+     * @since 2026.3.1
+     */
+    public static String advanceOnFailure(TurChatFlowState state,
+            ChatFlowGraph graph,
+            ChatFlowNode current) {
+        List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
+        for (ChatFlowEdge edge : outgoing) {
+            if (!FAILURE_HANDLE.equalsIgnoreCase(edge.sourceHandle())) {
+                continue;
+            }
+            Optional<ChatFlowNode> targetNode = graph.nodeById(edge.target());
+            if (targetNode.isPresent()) {
+                state.setCurrentNodeId(targetNode.get().id());
+                log.info("[FlowOps] Node '{}' failure path → '{}'",
+                        current.id(), targetNode.get().id());
+                return targetNode.get().id();
+            }
+            log.warn("[FlowOps] Failure edge from '{}' points at missing node '{}'",
+                    current.id(), edge.target());
+        }
+        log.info("[FlowOps] Node '{}' continueOnFailure=true but no '{}' edge wired — falling back to first outgoing edge",
+                current.id(), FAILURE_HANDLE);
+        return advanceToFirstEdge(state, graph, current);
+    }
+
     /** Whether {@code nodeId} represents a terminal state (real end or abandon). */
     public static boolean isTerminalNodeId(String nodeId, ChatFlowGraph graph) {
         if (ABANDONED_NODE_ID.equals(nodeId)) {

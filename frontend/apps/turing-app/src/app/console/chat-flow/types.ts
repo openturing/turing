@@ -190,6 +190,21 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   routineTimeoutMs?: number;
+  /**
+   * When `true` on a `functionCall` or `scheduleAgent` node (T49), a
+   * tool/routine failure routes the flow along the outgoing edge whose
+   * `sourceHandle` is `"failure"` — authors wire an alternative path for
+   * graceful recovery (apologize-then-retry, ask user to re-input,
+   * escalate to handoff). When `false`/`undefined`, the engine logs the
+   * failure and advances to the first outgoing edge (legacy behavior).
+   *
+   * Without a wired `failure` edge, the engine falls back to the first
+   * outgoing edge — same lenient default the rest of the flow ops use
+   * (subFlowSwitch wildcard, scheduleAgent timeout fallback). The editor
+   * surfaces this branch as a red try/catch edge in T50.
+   * @since 2026.3.1
+   */
+  continueOnFailure?: boolean;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {

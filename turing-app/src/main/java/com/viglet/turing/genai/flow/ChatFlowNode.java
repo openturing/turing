@@ -269,6 +269,28 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.routineTimeoutMs();
     }
 
+    /**
+     * When {@link Boolean#TRUE TRUE} on a {@code functionCall} or
+     * {@code scheduleAgent} node (T49), a tool/routine failure routes the
+     * flow along the outgoing edge whose {@code sourceHandle} is
+     * {@code "failure"} — authors wire an alternative path for graceful
+     * recovery (apologize-then-retry, ask user to re-input, escalate to
+     * handoff). When {@link Boolean#FALSE FALSE} or {@code null}, the
+     * engine logs the failure and advances to the first outgoing edge
+     * (legacy behavior preserved for existing flows).
+     *
+     * <p>Without a wired {@code "failure"} sourceHandle, the engine falls
+     * back to the first outgoing edge — same lenient default the rest of
+     * the flow ops use ({@link ChatFlowNode.SwitchOption} wildcard,
+     * {@code scheduleAgent} timeout fallback). T50 will surface this in
+     * the editor as a red try/catch edge.
+     *
+     * @since 2026.3.1
+     */
+    public Boolean continueOnFailure() {
+        return data.continueOnFailure();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -294,7 +316,27 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             Boolean toolsEnabled,
             List<String> requiredTools,
             String routineId,
-            Integer routineTimeoutMs) {
+            Integer routineTimeoutMs,
+            Boolean continueOnFailure) {
+
+        /**
+         * Back-compat constructor for callers/tests predating
+         * {@link #continueOnFailure()} (T49). Delegates to the canonical
+         * constructor with {@code continueOnFailure = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, null);
+        }
     }
 
     /**

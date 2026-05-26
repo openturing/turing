@@ -169,6 +169,8 @@
         "timeoutMs": "Timeout (ms)",
         "timeoutMsHint": "Per-node override (milliseconds). Leave blank to use the routine's default. On expiry the engine takes the 'timeout' outgoing edge (or the first edge if none is wired)."
       },
+      "continueOnFailure": "Continue on failure (try/catch)",
+      "continueOnFailureHint": "When checked, a tool/routine failure routes the flow along the outgoing edge whose handle is 'failure' — wire an alternative path for graceful recovery (apologize, ask user to re-input, escalate to handoff). When unchecked, the engine logs the error and advances to the first outgoing edge (legacy behavior).",
       "condition": "Condition Expression",
       "subFlow": "Sub Flow",
       "subFlowPlaceholder": "Pick a chat flow",

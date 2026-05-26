@@ -169,6 +169,8 @@
         "timeoutMs": "Timeout (ms)",
         "timeoutMsHint": "Override por nó (em milissegundos). Em branco usa o timeout padrão da rotina. Ao expirar, o engine segue pela aresta 'timeout' (ou pela primeira aresta se não houver)."
       },
+      "continueOnFailure": "Continuar em caso de falha (try/catch)",
+      "continueOnFailureHint": "Quando marcado, uma falha de tool/rotina roteia o fluxo pela aresta de saída cujo handle é 'failure' — desenhe um caminho alternativo para recuperação graciosa (pedir desculpa, repergunta ao usuário, escalar para handoff). Quando desmarcado, o engine registra o erro e avança pela primeira aresta de saída (comportamento legado).",
       "condition": "Expressão da Condição",
       "subFlow": "Sub Fluxo",
       "subFlowPlaceholder": "Escolha um chat flow",

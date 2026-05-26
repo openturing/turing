@@ -418,6 +418,8 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </span>
               </div>
             )}
+
+            <ContinueOnFailureField data={data} onChange={update} />
           </>
         )}
 
@@ -521,6 +523,8 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 {t("chatFlow.properties.scheduleAgent.timeoutMsHint")}
               </span>
             </div>
+
+            <ContinueOnFailureField data={data} onChange={update} />
           </>
         )}
 
@@ -858,6 +862,47 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Shared try/catch toggle for {@code functionCall} and {@code scheduleAgent}
+ * nodes (T49). Renders a checkbox + hint that flips the
+ * {@link FlowNodeData.continueOnFailure} flag. When checked, the engine
+ * routes a tool/routine failure along the outgoing edge whose
+ * {@code sourceHandle} is {@code "failure"} (visualised by T50 as a red
+ * edge); when unchecked, the legacy lenient default applies — log + advance
+ * to the first edge.
+ */
+function ContinueOnFailureField({
+  data,
+  onChange,
+}: {
+  readonly data: FlowNodeData;
+  readonly onChange: (patch: Partial<FlowNodeData>) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor="flow-node-continue-on-failure" className="flex items-start gap-2 cursor-pointer">
+        <Checkbox
+          id="flow-node-continue-on-failure"
+          checked={data.continueOnFailure ?? false}
+          onCheckedChange={(checked) =>
+            onChange({ continueOnFailure: checked === true ? true : undefined })
+          }
+          className="mt-0.5"
+        />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">
+            {t("chatFlow.properties.continueOnFailure")}
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {t("chatFlow.properties.continueOnFailureHint")}
+          </span>
+        </div>
+      </label>
+    </div>
   );
 }
 

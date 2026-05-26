@@ -114,6 +114,18 @@ export function FunctionCallNode({ data }: ChatFlowNodeProps) {
       </div>
       <Handle type="target" position={Position.Left} className="size-2.5! bg-orange-600!" />
       <Handle type="source" position={Position.Right} className="size-2.5! bg-orange-600!" />
+      {/* T49: failure edge — only exposed when continueOnFailure is checked.
+          Wired by sourceHandle="failure"; T50 will render this as a red
+          try/catch edge in the editor canvas. */}
+      {data.continueOnFailure === true && (
+        <Handle
+          type="source"
+          id="failure"
+          position={Position.Bottom}
+          style={{ bottom: "-4px", left: "50%" }}
+          className="size-2.5! bg-rose-500!"
+        />
+      )}
     </div>
   );
 }
@@ -486,6 +498,18 @@ export function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
         style={{ bottom: "-4px", left: "50%" }}
         className="size-2.5! bg-rose-500!"
       />
+      {/* T49: failure edge — only exposed when continueOnFailure is checked.
+          Wired by sourceHandle="failure"; sits next to the timeout handle so
+          authors can distinguish "deadline expired" from "routine error". */}
+      {data.continueOnFailure === true && (
+        <Handle
+          type="source"
+          id="failure"
+          position={Position.Bottom}
+          style={{ bottom: "-4px", left: "70%" }}
+          className="size-2.5! bg-red-600!"
+        />
+      )}
     </div>
   );
 }
