@@ -35,6 +35,16 @@ export interface TurChatAnalyticsSession {
   totalToolLatencyMs?: number | null;
   durationMs?: number | null;
   firstUserMessage?: string | null;
+  /**
+   * Conversation id of the orchestrator session that spawned this one via a
+   * Custom Tool `agent.invoke(...)` call (T109). {@code null} for top-level
+   * (visitor-initiated) sessions. Drives the "Parent conversation"
+   * group-by dimension on the scorecard so admins can see how many
+   * sub-tasks an orchestrator agent dispatches per turn.
+   *
+   * @since 2026.3.1 (T110)
+   */
+  parentConversationId?: string | null;
   // Enrichment columns — null until the scheduled enricher classifies the session.
   intentLabel?: string | null;
   intentConfidence?: number | null;
@@ -119,7 +129,11 @@ export interface TurChatAnalyticsTimeseriesParams {
  * Dimensions accepted by the {@code /scorecard} endpoint. {@code agentId}
  * and {@code personaId} pivot on identity for head-to-head agent/persona
  * comparison; {@code experimentKey} and {@code variantLabel} pivot on the
- * A/B test arm so you can see which variant lifts the metric.
+ * A/B test arm so you can see which variant lifts the metric;
+ * {@code parentConversationId} (T110) pivots on the orchestrator that
+ * spawned the session via Custom Tool {@code agent.invoke(...)} so a
+ * drill-down can answer "orchestrator agent X invoked specialist Y in
+ * N sessions, average sub-task duration M ms."
  *
  * @since 2026.2.7
  */
@@ -127,7 +141,8 @@ export type TurChatAnalyticsScorecardDimension =
   | "agentId"
   | "personaId"
   | "experimentKey"
-  | "variantLabel";
+  | "variantLabel"
+  | "parentConversationId";
 
 /**
  * One row of the {@code /scorecard} response. {@code bucket} is the raw

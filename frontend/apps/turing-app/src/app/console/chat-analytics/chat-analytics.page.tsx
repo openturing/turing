@@ -513,10 +513,11 @@ interface DimensionOption {
 }
 
 const DIMENSION_OPTIONS: readonly DimensionOption[] = [
-  { value: "agentId",       label: "Agent" },
-  { value: "personaId",     label: "Persona" },
-  { value: "experimentKey", label: "Experiment key" },
-  { value: "variantLabel",  label: "A/B variant" },
+  { value: "agentId",              label: "Agent" },
+  { value: "personaId",            label: "Persona" },
+  { value: "experimentKey",        label: "Experiment key" },
+  { value: "variantLabel",         label: "A/B variant" },
+  { value: "parentConversationId", label: "Parent conversation" },
 ];
 
 function ScorecardPanel() {
@@ -526,6 +527,15 @@ function ScorecardPanel() {
     limit: 20,
   });
   const isExperimentDim = dimension === "experimentKey" || dimension === "variantLabel";
+  const isParentConvDim = dimension === "parentConversationId";
+  let description: string;
+  if (isExperimentDim) {
+    description = "A/B variants compared head-to-head — pick a row to see which arm lifts conversion.";
+  } else if (isParentConvDim) {
+    description = "Orchestrator agents grouped by parent conversation — each row is one orchestrator + its sub-task sessions (T109/T110).";
+  } else {
+    description = "Per-bucket session counts + AI-enriched signals. Pick a dimension to pivot.";
+  }
   return (
     <Card>
       <CardHeader>
@@ -535,11 +545,7 @@ function ScorecardPanel() {
               <IconFlask className="size-4" />
               Scorecard
             </CardTitle>
-            <CardDescription>
-              {isExperimentDim
-                ? "A/B variants compared head-to-head — pick a row to see which arm lifts conversion."
-                : "Per-bucket session counts + AI-enriched signals. Pick a dimension to pivot."}
-            </CardDescription>
+            <CardDescription>{description}</CardDescription>
           </div>
           <Select
             value={dimension}
@@ -567,9 +573,7 @@ function ScorecardPanel() {
         )}
         {!isLoading && !isError && rows.length === 0 && (
           <p className="text-muted-foreground py-8 text-center text-sm">
-            {isExperimentDim
-              ? "No experiments declared yet — set an experimentKey on at least two chat flows to enable A/B routing."
-              : "No data for this dimension in the selected window."}
+            {emptyStateMessage(isExperimentDim, isParentConvDim)}
           </p>
         )}
         {rows.length > 0 && (
@@ -618,6 +622,16 @@ function ScorecardPanel() {
 function formatRate(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function emptyStateMessage(isExperimentDim: boolean, isParentConvDim: boolean): string {
+  if (isExperimentDim) {
+    return "No experiments declared yet — set an experimentKey on at least two chat flows to enable A/B routing.";
+  }
+  if (isParentConvDim) {
+    return "No orchestrator sessions yet — child sessions get this dimension populated only when a Custom Tool calls agent.invoke(...).";
+  }
+  return "No data for this dimension in the selected window.";
 }
 
 function SessionRow({
