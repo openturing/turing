@@ -2,7 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
-import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service";
+import { postLlmChat, type TurChatConversationMessage } from "@viglet/turing-react-sdk";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { Icon } from "@iconify/react";
 import { IconLoader2, IconSearch, IconSparkles, IconTrash } from "@tabler/icons-react";
@@ -13,7 +13,6 @@ const COLLECTIONS = ["lucide", "tabler", "mdi", "ph", "solar", "heroicons"];
 const ICONIFY_PREFIXES = COLLECTIONS.join(",");
 
 const globalSettingsService = new TurGlobalSettingsService();
-const chatService = new TurChatService();
 
 async function searchIconify(query: string, limit: number): Promise<string[]> {
   try {
@@ -141,21 +140,19 @@ export function IconPickerDialog({
 Suggest 5 single English keywords (nouns) that best represent this concept as an icon search term.
 Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calendar","target","rocket","chart"]`;
 
-    const messages: ChatMessageItem[] = [{ role: "user", content: prompt }];
-    let fullResponse = "";
+    const messages: TurChatConversationMessage[] = [{ role: "user", content: prompt }];
 
-    await chatService.sendStream(
-      defaultLlmId,
-      messages,
-      (token) => { fullResponse += token; },
-      async () => {
-        const groups = await resolveAiKeywords(fullResponse);
-        setAiGroups(groups);
-        setActiveKeyword(null);
-        setAiLoading(false);
-      },
-      () => { setAiLoading(false); },
-    );
+    try {
+      const res = await postLlmChat(defaultLlmId, messages);
+      const groups = await resolveAiKeywords(res.content);
+      setAiGroups(groups);
+      setActiveKeyword(null);
+    } catch {
+      // Generation failed — surface a clear empty state instead of stale results.
+      setAiGroups([]);
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   const visibleAiIcons = activeKeyword

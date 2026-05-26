@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service"
+import { postLlmChat, type TurChatConversationMessage } from "@viglet/turing-react-sdk"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 
 /**
@@ -41,7 +41,6 @@ import { TurGlobalSettingsService } from "@/services/system/global-settings.serv
  * @since 2026.2.5
  */
 
-const chatService = new TurChatService()
 const globalSettingsService = new TurGlobalSettingsService()
 
 export type MetaPromptTone = "violet" | "fuchsia" | "blue" | "emerald"
@@ -187,24 +186,27 @@ export function MetaPromptSheet({
       maxLength,
     })
 
-    const messages: ChatMessageItem[] = [
+    const messages: TurChatConversationMessage[] = [
       { role: "system", content: fieldInstruction },
       { role: "user", content: userContent },
     ]
 
     let result = ""
     const apply = postProcess ?? identity
-    await chatService.sendStream(
-      defaultLlmId,
-      messages,
-      (token) => {
-        result += token
-        const processed = apply(result)
-        onChange(maxLength ? processed.slice(0, maxLength) : processed)
-      },
-      () => { setRunning(false); setOpen(false) },
-      () => { setRunning(false) },
-    )
+    try {
+      await postLlmChat(defaultLlmId, messages, {
+        onToken: (token) => {
+          result += token
+          const processed = apply(result)
+          onChange(maxLength ? processed.slice(0, maxLength) : processed)
+        },
+      })
+      setOpen(false)
+    } catch {
+      // leave whatever tokens already streamed; the sheet stays open so the user can retry
+    } finally {
+      setRunning(false)
+    }
   }
 
   const triggerToneClass = triggerClassName ?? TONE_CHIP_CLASSES[tone]

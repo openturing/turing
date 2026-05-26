@@ -194,7 +194,15 @@ export interface TurChatResponse {
 }
 
 export interface TurChatConversationMessage {
-  role: "user" | "assistant";
+  /**
+   * Conversation role. {@code "user"} and {@code "assistant"} cover the
+   * normal turn-taking; {@code "system"} is accepted by
+   * {@link postLlmChat} for callers that want to inject a per-request
+   * directive on top of the backend's base/tools/render prompts (the
+   * site RAG + agent endpoints ignore it — they manage system prompts
+   * server-side via the agent's persona + flow context).
+   */
+  role: "user" | "assistant" | "system";
   content: string;
 }
 

@@ -164,13 +164,25 @@ acting.
 >   generator migration to `postLlmChat`) ✅ shipped 2026-05-26 —
 >   `useChatSession.generateAITitle` now calls the SDK directly behind a
 >   shared `AbortController` timeout; the now-unused `turChatService`
->   param dropped from the hook signature. 1 of 5 admin-side
->   `TurChatService` callers retired. Still 📋:
+>   param dropped from the hook signature. T230 cross-module prep ✅
+>   shipped 2026-05-26 — the 4 admin component-level `TurChatService`
+>   consumers outside `chat.page.tsx` (`icon-picker-dialog.tsx`,
+>   `smart-description.tsx`, `meta-prompt-sheet.tsx`,
+>   `sn.site.genai.form.tsx`) now talk to the SDK's `postLlmChat`
+>   directly. To unblock the migration, `TurChatConversationMessage.role`
+>   was widened in the SDK from `"user" | "assistant"` to
+>   `"user" | "assistant" | "system"` so callers that needed a
+>   per-request `system` directive (e.g. `smart-description`'s
+>   field-level instruction, `meta-prompt-sheet`'s "vibe" briefs) keep
+>   working. Hook code paths (`useTuringChat`, `useTuringLlmChat`) still
+>   only produce `user`/`assistant` so no observable change for chat UIs.
+>   5 of 5 admin-side `TurChatService.sendStream` callers retired; the
+>   service still survives for `chat.page.tsx`'s `sendAgentStream` ×2 +
+>   `resetAgentFlowState` (covered by T227 + T230). Still 📋:
 >   T227 (per-tab `useTuringChat` rewrite, depends on T222 ✅ + T223 ✅
->   + T224 ✅), T230 (`TurChatService` deletion — 4 admin call sites
->   left: `sendAgentStream` × 2, `resetAgentFlowState`, and the residual
->   `sendSemanticStream` usage elsewhere), T231–T232 (`chat.page.tsx`
->   extract + smoke ITs).
+>   + T224 ✅), T230 (`TurChatService` final deletion — gated on T227's
+>   `chat.page.tsx` migration), T231–T232 (`chat.page.tsx` extract +
+>   smoke ITs).
 >
 > **Dependency rule of thumb** *(historical — kept for context):* "Safety
 > net" was supposed to land before §I.5 — in practice we shipped Block B

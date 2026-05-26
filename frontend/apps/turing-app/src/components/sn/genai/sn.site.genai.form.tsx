@@ -34,7 +34,7 @@ import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { TurChatService } from "@/services/chat/chat.service"
+import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
@@ -53,7 +53,6 @@ const turSNSiteService = new TurSNSiteService();
 const turAIAgentService = new TurAIAgentService();
 const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
-const turChatService = new TurChatService();
 
 const NONE_VALUE = "__none__";
 
@@ -163,33 +162,34 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         setIsGenerating(true);
         let generated = "";
 
-        await turChatService.sendStream(
-            defaultLlmId,
-            [{
-                role: "user",
-                content:
-                    "Based on the following site description, generate a detailed prompt that describes what this site is about, " +
-                    "its purpose, target audience, content types, and any relevant context. " +
-                    "The prompt should be written as instructions for an AI assistant that will use it to generate reports, insights, and emails about this site. " +
-                    "Write only the prompt text, no explanations or formatting.\n\n" +
-                    `Site name: ${snSite.name}\n` +
-                    `Site description: ${snSite.description}`,
-            }],
-            (token) => {
-                generated += token;
-                form.setValue("sitePrompt", generated);
-            },
-            () => {
-                setIsGenerating(false);
-                toast.success(t("forms.snGenai.promptGenerated"));
-            },
-            (error) => {
-                setIsGenerating(false);
-                console.error("Failed to generate site prompt", error);
-                toast.error(t("forms.snGenai.promptGenerateFailed"));
-            },
-        );
-    }, [defaultLlmId, snSite.name, snSite.description, form]);
+        try {
+            await postLlmChat(
+                defaultLlmId,
+                [{
+                    role: "user",
+                    content:
+                        "Based on the following site description, generate a detailed prompt that describes what this site is about, " +
+                        "its purpose, target audience, content types, and any relevant context. " +
+                        "The prompt should be written as instructions for an AI assistant that will use it to generate reports, insights, and emails about this site. " +
+                        "Write only the prompt text, no explanations or formatting.\n\n" +
+                        `Site name: ${snSite.name}\n` +
+                        `Site description: ${snSite.description}`,
+                }],
+                {
+                    onToken: (token) => {
+                        generated += token;
+                        form.setValue("sitePrompt", generated);
+                    },
+                },
+            );
+            toast.success(t("forms.snGenai.promptGenerated"));
+        } catch (error) {
+            console.error("Failed to generate site prompt", error);
+            toast.error(t("forms.snGenai.promptGenerateFailed"));
+        } finally {
+            setIsGenerating(false);
+        }
+    }, [defaultLlmId, snSite.name, snSite.description, form, t]);
 
     function handleGenerateClick() {
         const currentPrompt = form.getValues("sitePrompt") ?? "";

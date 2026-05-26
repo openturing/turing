@@ -5,11 +5,10 @@ import { IconLoader2, IconPencil, IconArrowsMaximize, IconCut, IconAbc, IconSpar
 import { MetaPromptSheet } from "@/components/ui/meta-prompt-sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service"
+import { postLlmChat, type TurChatConversationMessage } from "@viglet/turing-react-sdk"
 import { cn } from "@/lib/utils"
 
 const globalSettingsService = new TurGlobalSettingsService()
-const chatService = new TurChatService()
 
 type AiAction = "refine" | "expand" | "summarize" | "fix" | "generate"
 
@@ -145,8 +144,8 @@ function SmartDescriptionComponent({
   const contextLabel = [entityType, title].filter(Boolean).join(" called ") || "item"
 
   /** Prepends a system message with the field-level instruction (if any). */
-  function buildMessages(userContent: string): ChatMessageItem[] {
-    const messages: ChatMessageItem[] = []
+  function buildMessages(userContent: string): TurChatConversationMessage[] {
+    const messages: TurChatConversationMessage[] = []
     const instruction = fieldInstruction?.trim()
     if (instruction) {
       messages.push({ role: "system", content: instruction })
@@ -166,16 +165,18 @@ function SmartDescriptionComponent({
 
     let result = ""
 
-    await chatService.sendStream(
-      defaultLlmId,
-      buildMessages(promptText),
-      (token) => {
-        result += token
-        onChange(maxLength ? result.slice(0, maxLength) : result)
-      },
-      () => { setActiveAction(null) },
-      () => { setActiveAction(null) },
-    )
+    try {
+      await postLlmChat(defaultLlmId, buildMessages(promptText), {
+        onToken: (token) => {
+          result += token
+          onChange(maxLength ? result.slice(0, maxLength) : result)
+        },
+      })
+    } catch {
+      // streaming failure leaves whatever tokens already arrived in place
+    } finally {
+      setActiveAction(null)
+    }
   }
 
   function buildMetaPromptUserMessage({ value, brief }: { value: string; brief: string; maxLength?: number }): string {
