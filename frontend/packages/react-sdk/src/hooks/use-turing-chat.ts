@@ -150,6 +150,16 @@ function newId(): string {
  * {@code findIndex} + the mutator inside a {@code setMessages} closure inside
  * an {@code async} arrow inside {@code useCallback} crosses the line.
  */
+/**
+ * `fetch` reports an aborted request as a {@link DOMException} with
+ * {@code name === "AbortError"}. Some runtimes (older Node test envs) raise
+ * a plain {@code Error}, so we also accept that name as a fallback.
+ */
+function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  return err instanceof Error && err.name === "AbortError";
+}
+
 function patchMessage(
   messages: ChatMessage[],
   id: string,
@@ -266,6 +276,11 @@ export function useTuringChat(
 
   const requestRef = useRef(0);
   const abortedRef = useRef(false);
+  // Per-send AbortController so `stop()` actually cancels the in-flight
+  // fetch (and stops the backend from generating tokens we throw away)
+  // instead of just gating state mutations on a counter. Replaced on every
+  // `send`; `stop()`/`reset()` call `.abort()` on the latest.
+  const abortControllerRef = useRef<AbortController | null>(null);
   // Keep a synchronous mirror of the latest messages so `send` can read the
   // newest history without depending on `messages` (which would re-create the
   // callback on every turn) and without relying on the setState updater fn
@@ -313,6 +328,20 @@ export function useTuringChat(
     if (persistKey) savePersisted(persistKey, { conversationId, messages });
   }, [persistKey, messages, conversationId]);
 
+  // Extracted out of `send`'s try/catch so the streaming path stays under
+  // the cognitive-complexity threshold. Drops the result when a newer send
+  // is in flight, swallows AbortError as an intentional stop, and surfaces
+  // everything else as an error.
+  const handleSendError = useCallback((err: unknown, requestId: number) => {
+    if (requestId !== requestRef.current || abortedRef.current) return;
+    if (isAbortError(err)) {
+      setStatus("idle");
+      return;
+    }
+    setError(err instanceof Error ? err.message : "Chat request failed");
+    setStatus("error");
+  }, []);
+
   const send = useCallback(
     async (rawContent: string) => {
       const content = rawContent.trim();
@@ -327,6 +356,12 @@ export function useTuringChat(
 
       const requestId = ++requestRef.current;
       abortedRef.current = false;
+      // Drop any prior in-flight request — `stop()`/`reset()` should have
+      // already aborted, but a fast caller can chain `send → send` without
+      // touching either. Mint a fresh controller per send.
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
       setError(null);
       setStatus("loading");
 
@@ -401,11 +436,13 @@ export function useTuringChat(
               conversationId: activeConversationId,
               flowId,
               onToken,
+              signal: controller.signal,
             })
           : await postChatConversation(config.site, wire, effectiveLocale, {
               conversationId: activeConversationId,
               flowId,
               onToken,
+              signal: controller.signal,
             });
 
         if (requestId !== requestRef.current || abortedRef.current) return;
@@ -424,23 +461,25 @@ export function useTuringChat(
         })));
         setStatus("success");
       } catch (err) {
-        if (requestId !== requestRef.current || abortedRef.current) return;
-        setError(err instanceof Error ? err.message : "Chat request failed");
-        setStatus("error");
+        handleSendError(err, requestId);
       }
     },
-    [config.site, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId],
+    [config.site, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, handleSendError],
   );
 
   const stop = useCallback(() => {
     abortedRef.current = true;
     requestRef.current++;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     setStatus("idle");
   }, []);
 
   const reset = useCallback(() => {
     abortedRef.current = true;
     requestRef.current++;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     messagesRef.current = [];
     setMessages([]);
     setError(null);
