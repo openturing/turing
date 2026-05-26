@@ -1,0 +1,289 @@
+/**
+ * Thrown by {@link transpileFlow} when the DSL spec has a structural
+ * problem the runtime engine cannot recover from (duplicate ids, missing
+ * start node, dangling edge, condition node without two branches, switch
+ * branch pointing at an undeclared {@link SwitchNode#switchOptions} id).
+ *
+ * <p>Compile-time enum typos are caught by TypeScript first; this error
+ * is for the structural rules a static type system can't express.
+ *
+ * @since 2026.3.1
+ */
+export class FlowSpecError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "FlowSpecError";
+    }
+}
+/** Default uppercase card title per node type — matches the editor's `DEFAULT_LABEL`. */
+const DEFAULT_LABEL = {
+    start: "START",
+    end: "END",
+    aiQuestion: "AI QUESTION",
+    formCapture: "FORM CAPTURE",
+    condition: "CONDITION",
+    functionCall: "FUNCTION CALL",
+    subFlow: "SUB FLOW",
+    persona: "PERSONA SWITCH",
+    switch: "SWITCH",
+    slot: "SLOT",
+    writeSlot: "WRITE SLOT",
+};
+/**
+ * Vertical waterfall spacing. The editor recomputes layout on first open
+ * via {@code dagre}; these positions just guarantee the canvas isn't a
+ * jumbled stack of overlapping cards if the author opens the flow before
+ * running an auto-layout.
+ */
+const LAYOUT_Y_STEP = 120;
+const LAYOUT_X_ORIGIN = 0;
+const LAYOUT_Y_ORIGIN = 0;
+/**
+ * Translate a typed {@link FlowSpec} into the editor's wire JSON shape
+ * ({@link TranspiledFlow}).
+ *
+ * <p>What the transpiler does:
+ * <ul>
+ *   <li>Fills the {@code label} default per node type when omitted.</li>
+ *   <li>Lays nodes out in a vertical waterfall (x=0, y=index*120) so an
+ *       author opening the file in the editor gets a readable canvas
+ *       before running an auto-layout.</li>
+ *   <li>Synthesizes edge ids ({@code e1}, {@code e2}, …) when the author
+ *       didn't supply one.</li>
+ *   <li>Coerces empty optional fields ({@code description},
+ *       {@code triggerDescription}) to {@code null} so the output matches
+ *       what {@code buildImportPayloadFromExport} expects.</li>
+ *   <li>Sets defaults for the three trigger-related enums
+ *       ({@code guardrailMethod=LLM_JUDGE}, {@code triggerMode=ONCE},
+ *       {@code triggerLanguage=AUTO}) — same defaults the import endpoint
+ *       falls back to when the field is missing or invalid.</li>
+ * </ul>
+ *
+ * <p>What it validates:
+ * <ul>
+ *   <li>Exactly one {@code start} node, no duplicate node ids.</li>
+ *   <li>Every edge {@code source}/{@code target} matches a declared node.</li>
+ *   <li>Every {@code condition} node has exactly one outgoing edge with
+ *       {@code sourceHandle="yes"} and one with {@code sourceHandle="no"}.</li>
+ *   <li>Every outgoing edge of a {@code switch} node has a
+ *       {@code sourceHandle} matching one of the node's
+ *       {@code switchOptions} ids.</li>
+ * </ul>
+ *
+ * <p>Throws {@link FlowSpecError} on any of the above. Anything else
+ * (unreachable nodes, dead-end {@code aiQuestion} nodes) is the chat-flow
+ * linter's job at edit time, not the transpiler's at build time.
+ *
+ * @since 2026.3.1
+ */
+export function transpileFlow(spec) {
+    const nodes = spec.nodes ?? [];
+    const edges = spec.edges ?? [];
+    validate(nodes, edges);
+    const transpiledNodes = nodes.map((node, index) => buildNode(node, index));
+    const transpiledEdges = edges.map((edge, index) => buildEdge(edge, index));
+    const result = {
+        name: spec.name,
+        description: trimOrNull(spec.description),
+        guardrailMethod: spec.guardrailMethod ?? "LLM_JUDGE",
+        triggerDescription: trimOrNull(spec.triggerDescription),
+        triggerMode: spec.triggerMode ?? "ONCE",
+        triggerLanguage: spec.triggerLanguage ?? "AUTO",
+        graph: {
+            nodes: transpiledNodes,
+            edges: transpiledEdges,
+        },
+    };
+    if (spec.id !== undefined) {
+        result.id = spec.id;
+    }
+    if (spec.slots && spec.slots.length > 0) {
+        result.slots = dedupeSlots(spec.slots, nodes);
+    }
+    if (spec.personas && spec.personas.length > 0) {
+        result.personas = [...spec.personas];
+    }
+    return result;
+}
+/* ─────────────────────── Validation ─────────────────────── */
+function validate(nodes, edges) {
+    if (nodes.length === 0) {
+        throw new FlowSpecError("Flow has no nodes.");
+    }
+    const ids = new Set();
+    for (const node of nodes) {
+        if (!node.id) {
+            throw new FlowSpecError(`Node of type '${node.type}' is missing an id.`);
+        }
+        if (ids.has(node.id)) {
+            throw new FlowSpecError(`Duplicate node id: '${node.id}'.`);
+        }
+        ids.add(node.id);
+    }
+    const startCount = nodes.filter((n) => n.type === "start").length;
+    if (startCount === 0) {
+        throw new FlowSpecError("Flow has no 'start' node.");
+    }
+    if (startCount > 1) {
+        throw new FlowSpecError(`Flow has ${startCount} 'start' nodes; expected exactly one.`);
+    }
+    for (const edge of edges) {
+        if (!ids.has(edge.source)) {
+            throw new FlowSpecError(`Edge source '${edge.source}' does not match any node id.`);
+        }
+        if (!ids.has(edge.target)) {
+            throw new FlowSpecError(`Edge target '${edge.target}' does not match any node id.`);
+        }
+    }
+    // Per-source-node structural rules.
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const outgoingByNodeId = new Map();
+    for (const edge of edges) {
+        const list = outgoingByNodeId.get(edge.source) ?? [];
+        list.push(edge);
+        outgoingByNodeId.set(edge.source, list);
+    }
+    for (const [nodeId, outgoing] of outgoingByNodeId) {
+        const node = byId.get(nodeId);
+        if (!node)
+            continue;
+        if (node.type === "condition") {
+            validateConditionBranches(node.id, outgoing);
+        }
+        else if (node.type === "switch") {
+            validateSwitchBranches(node, outgoing);
+        }
+    }
+    // Non-start nodes must have at least one incoming edge, otherwise the
+    // engine can never reach them. Catching this here is friendlier than
+    // discovering it in production.
+    const incomingTargets = new Set(edges.map((e) => e.target));
+    for (const node of nodes) {
+        if (node.type !== "start" && !incomingTargets.has(node.id)) {
+            throw new FlowSpecError(`Node '${node.id}' (${node.type}) has no incoming edge — it is unreachable.`);
+        }
+    }
+}
+function validateConditionBranches(nodeId, outgoing) {
+    const handles = outgoing.map((e) => e.sourceHandle);
+    const yesCount = handles.filter((h) => h === "yes").length;
+    const noCount = handles.filter((h) => h === "no").length;
+    if (yesCount !== 1 || noCount !== 1 || outgoing.length !== 2) {
+        throw new FlowSpecError(`Condition node '${nodeId}' must have exactly two outgoing edges with sourceHandle "yes" and "no" (got yes=${yesCount}, no=${noCount}, total=${outgoing.length}).`);
+    }
+}
+function validateSwitchBranches(node, outgoing) {
+    const optionIds = new Set(node.switchOptions.map((o) => o.id));
+    for (const edge of outgoing) {
+        if (!edge.sourceHandle || !optionIds.has(edge.sourceHandle)) {
+            throw new FlowSpecError(`Switch node '${node.id}' outgoing edge to '${edge.target}' uses sourceHandle '${edge.sourceHandle ?? "(none)"}' — must match one of: ${[...optionIds].join(", ")}.`);
+        }
+    }
+}
+/* ─────────────────────── Per-node materialization ─────────────────────── */
+function buildNode(node, index) {
+    const label = node.label ?? DEFAULT_LABEL[node.type];
+    const data = { label, type: node.type };
+    copyDefinedFields(data, node, NODE_DATA_KEYS_BY_TYPE[node.type]);
+    return {
+        id: node.id,
+        type: node.type,
+        position: { x: LAYOUT_X_ORIGIN, y: LAYOUT_Y_ORIGIN + index * LAYOUT_Y_STEP },
+        data,
+    };
+}
+function buildEdge(edge, index) {
+    return {
+        id: edge.id ?? `e${index + 1}`,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle ?? null,
+        targetHandle: edge.targetHandle ?? null,
+        label: edge.label ?? null,
+    };
+}
+/**
+ * Whitelist of fields the transpiler copies into {@code data} per node
+ * type. Anything not in the list is dropped — keeps the output JSON minimal
+ * and prevents authors from accidentally smuggling fields the engine
+ * doesn't understand (which would silently rot at deserialize time).
+ */
+const NODE_DATA_KEYS_BY_TYPE = {
+    start: [],
+    end: [],
+    aiQuestion: [
+        "aiInstruction",
+        "outputVariable",
+        "validationRule",
+        "overrideExistingValue",
+        "inlineOptions",
+        "onJudgeReject",
+        "toolsEnabled",
+        "requiredTools",
+    ],
+    formCapture: ["aiInstruction", "outputVariable", "validationRule"],
+    condition: ["conditionExpression"],
+    functionCall: ["toolSource", "functionName", "mcpServerId", "aiInstruction"],
+    subFlow: ["subFlowId", "subFlowName"],
+    persona: ["personaId", "personaName"],
+    switch: ["switchVariable", "switchOptions"],
+    slot: ["slotName", "slotOperation", "slotValue", "overrideExistingValue"],
+    writeSlot: ["slotName", "slotValue"],
+};
+function copyDefinedFields(target, source, keys) {
+    // FlowNode is a discriminated union; the typed indexer below is safe
+    // because every key in NODE_DATA_KEYS_BY_TYPE is guaranteed by the
+    // matching branch of the union.
+    const indexed = source;
+    for (const key of keys) {
+        const value = indexed[key];
+        if (value !== undefined && value !== null) {
+            // Defensive copy of arrays so the transpiled output cannot share
+            // mutable references with the author's source spec.
+            target[key] = Array.isArray(value) ? [...value] : value;
+        }
+    }
+}
+/* ─────────────────────── Misc helpers ─────────────────────── */
+function trimOrNull(value) {
+    if (value === undefined)
+        return null;
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+}
+/**
+ * Deduplicate slot declarations by name (case-sensitive — backend treats
+ * slot names as exact identifiers) and warn if a slot referenced by an
+ * {@code outputVariable}/{@code slotName} on a node is missing. The warning
+ * surfaces as an additional empty declaration so the import endpoint
+ * auto-creates the slot at install time — fail-soft is friendlier than
+ * blocking the build on a forgotten slot row.
+ */
+function dedupeSlots(declared, nodes) {
+    const byName = new Map();
+    for (const slot of declared) {
+        if (!byName.has(slot.name)) {
+            byName.set(slot.name, { ...slot });
+        }
+    }
+    for (const node of nodes) {
+        const referenced = slotReferencedBy(node);
+        if (referenced && !byName.has(referenced)) {
+            byName.set(referenced, { name: referenced });
+        }
+    }
+    return [...byName.values()];
+}
+function slotReferencedBy(node) {
+    switch (node.type) {
+        case "aiQuestion":
+        case "formCapture":
+            return node.outputVariable ?? null;
+        case "slot":
+        case "writeSlot":
+            return node.slotName;
+        default:
+            return null;
+    }
+}
+//# sourceMappingURL=transpile.js.map

@@ -40,6 +40,8 @@ acting.
 - [VII. Education customer engagement — platform synthesis](#vii-education-customer-engagement--platform-synthesis)
 - [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
 - [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
+- [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
+- [XI. Embedded LLM via llama.cpp — drop a GGUF, get an LLM](#xi-embedded-llm-via-llamacpp--drop-a-gguf-get-an-llm)
 
 ---
 
@@ -91,6 +93,26 @@ acting.
 >   Before: running 2+ IT classes back-to-back hung indefinitely on
 >   Spring context startup with no error logged. After: 3 IT classes
 >   coexist cleanly.
+> - **Block D** — Education customer engagement promotions (T35–T107).
+>   T35–T59, T67–T69, T76–T79, T84, T91–T97, T104 all ✅ (see §VII).
+>   Remaining T-codes are 📋/💭 backlog of platform-level features
+>   distilled from the customer engagement.
+> - **Block E** — Deep Agents competitive parity (T108–T129) — all
+>   📋/💭. Workspace primitive (T111–T115) gates the rest. See §IX.
+> - **Block F** — **NEW (2026-05-25)**: native LLM SDK exploitation
+>   beyond Spring AI 2.0 (T130–T192). T130–T132 are the foundation
+>   seam; downstream tasks ship one-at-a-time guarded by per-LLM
+>   capability flags. **18 weeks total** for committed (📋) work; 17
+>   long-shot (💭) tasks following on opportunity-cost basis. See §X
+>   for the strategic frame and X.16 for sequencing.
+> - **Block G** — **NEW (2026-05-25)**: embedded LLM via llama.cpp
+>   binding (`de.kherud:llama:4.1.0+`, T193–T210). Lets an admin drop
+>   a GGUF file into asset storage and create a `TurLLMInstance` that
+>   runs **in-process** — no Ollama server, no cloud account. Two
+>   non-trivial dependencies: a per-instance model cache the codebase
+>   doesn't have today (§XI.4) and `TurStorageService.resolveLocalPath`
+>   (§XI.5). See §XI for the audit (4.1.0 vs 3.0.0), capability gaps
+>   (no native tool calling), and the Jlama parallel evaluation track.
 >
 > **Dependency rule of thumb** *(historical — kept for context):* "Safety
 > net" was supposed to land before §I.5 — in practice we shipped Block B
@@ -279,7 +301,7 @@ acting.
 | T95 | ✅ | — | **Live preview of flow in editor** — `ChatFlowLivePreviewPanel` (toggled by the `IconBolt` action) shows the selected node rendered as the visitor would see it, with `{{slot}}` references interpolated from a `key=value` mock textarea persisted in `localStorage` per flow id. Per-node rendering covers every node type (aiQuestion/formCapture/start/end/condition/switch/slot/writeSlot/subFlow/persona/functionCall); unresolved slots highlight in amber so authors notice missing mocks. All client-side — instant updates, no LLM round-trip. | §VII.11.e |
 | T96 | ✅ | — | **Flow Recipes — unified marketplace** — recipes are bundled JSON in `resources/flow-recipes/*.json` (3 shipped: `lead-capture-b2c`, `in-company-quote-b2b`, `micro-lesson-educational`) carrying flow(s)+personas+slots; reuses `/import-bundle` machinery. Catalog at `GET /api/chat-flow-recipes`, full payload at `/{id}`, install at `POST /ai-agent/{agentId}/chat-flow/install-recipe/{id}` with `installedFromRecipe` + `installedRecipeVersion` audit columns on `chat_flow`. Marketplace UI **unified** with Sites: filter chips for `kind` (All / Sites / Flow Recipes — extensible for future Skills) and `vertical` (Education / Finance / Healthcare / General); FlowRecipeCard shows vertical chip + flow/slot/persona counts; install dialog has agent picker + preview of bundled assets + post-install navigation to the editor. The B2B recipe pre-wires T93 inheritance from the B2C lead-capture so chained installs "just work". | §VII.11.f |
 | T97 | ✅ | — | **Variant generator via LLM** — `TurChatFlowVariantService` parses the source `definitionJson`, extracts a node-by-node copy table (`label` / `aiInstruction` / `conditionExpression` / `slotValue`) and asks the default LLM (via `TurLlmSummaryService`) to rewrite it per a free-text directive (`"more casual tone, 30% shorter"`, `"translate to Portuguese"`). Structural fields (ids, edges, types, `outputVariable`, `validationRule`, tool wiring, slot ops) round-trip verbatim. `POST /api/ai-agent/{agentId}/chat-flow/{id}/variant` returns an UNPERSISTED candidate (`id == null`, `enabled = 0`) so the author can iterate without polluting the flow list; the editor's `IconSparkles` action opens `ChatFlowVariantDialog` (instructions + optional name → generate → review summary + rewritten-node count → save via standard create endpoint and navigate to the new flow). Recipe lineage is wiped on the candidate. | §VII.11.g |
-| T98 | 💭 | — | **TypeScript DSL** for chat-flow (`@viglet/turing-flow-dsl`) — `flows/foo.ts` with types imported from backend enums; transpiles to JSON at build time; back-compat reading raw JSON. Catches `tone=PROFESSIONAL` typos at compile time. | §VII.11.h |
+| T98 | ✅ | — | **TypeScript DSL** for chat-flow — new monorepo package [`@viglet/turing-flow-dsl`](../frontend/packages/flow-dsl/) with literal-union types mirroring every backend enum (`GuardrailMethod`, `TriggerMode`/`Language`, `NodeType`, `ToolSource`, `SlotOperation`, `OnJudgeReject`, `ValidationRule`) plus a discriminated `FlowNode` union covering all 11 node types. `defineFlow()` is an identity helper preserving literal inference so `triggerMode: "ONCEE"` fails at `tsc` time; `transpileFlow()` validates structure (single start, no dup ids, reachable nodes, condition has yes/no, switch handles match `switchOptions.id`), auto-fills `data.label` defaults, lays nodes in a vertical waterfall, synthesizes `e1/e2/…` edge ids, and emits the editor's wire shape (matches `ChatFlowExportEntry` consumed by `buildImportPayloadFromExport`). Zero-dep CLI `turing-flow-dsl build <dir> --out <dir>` ingests both `*.flow.mjs/.js` (dynamic-imported compiled DSL modules) and `*.flow.json` (raw editor exports, normalized via `reverseTranspile` → `transpileFlow`) — the JSON path satisfies the "back-compat reading raw JSON" requirement so a team can mix hand-authored JSON and typed DSL in one `flows/` directory. 10 `node:test` tests; canonical lead-capture example mirrors the shipped `lead-capture-b2c.json` recipe. | §VII.11.h |
 
 #### D.8 — Document extraction & document AI
 
@@ -392,6 +414,253 @@ Remaining platform-relevant promotions:
 |------|--------|------------|------|-----------|
 | T128 | 💭 | T32 | **LangSmith-compatible export** — `TurChatPipelineObservation` events can be optionally mirrored to a LangSmith project via the public LangSmith API. Customers already invested in LangSmith dashboards see Turing traces without giving up Turing's auditability. Interop, not lock-out. | §IX.9.a |
 | T129 | 💭 | T32 | **OpenTelemetry trace export** — wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP-compatible backend (Honeycomb, Datadog, Jaeger). Standard transport instead of provider-specific. | §IX.9.b |
+
+### Block F — Native LLM SDK exploitation (beyond Spring AI 2.0)
+
+> Triggered by a 2026-05-25 audit of OpenAI Java SDK + Anthropic Java SDK
+> vs. Spring AI 2.0.0-M2/M3/M4 (full mapping in §X). Spring AI 2.0 covers
+> chat / tool calling / structured output / vector stores / observability
+> very well; what it does **not** cover (no public ETA inside 2.0) is the
+> entire post-Chat-Completions stack: OpenAI Responses API + built-in
+> server-side tools (`web_search`, `file_search`, `code_interpreter`,
+> `computer_use`, `image_generation`, remote `mcp`), the Realtime API,
+> the Batch APIs of both vendors, OpenAI Predicted Outputs / Stored
+> Completions / Evals / Distillation / Vector Stores hospedados / safety
+> identifier, Anthropic Citations + Search Results content type + Memory
+> tool + Context editing + Compaction + MCP Connector + Files API +
+> Token Counting + server-side `bash`/`text_editor`/`web_search`/
+> `web_fetch`/`code_execution`/`advisor` tools.
+>
+> **Strategic frame**: keep Spring AI as the portable layer for the
+> features it ships well; introduce a `TurNativeProviderClient` seam
+> that exposes the official SDK clients (`openai-java`, `anthropic-java`)
+> per `TurLLMInstance`, gated by a per-agent capability matrix. The
+> existing `TurGenAiLlmProvider` factory grows two parallel paths
+> (`createNativeOpenAiClient()`, `createNativeAnthropicClient()`)
+> alongside `createChatModel()` so individual features migrate without
+> ripping the platform off Spring AI.
+>
+> Block F is **the largest single capability bet** on this roadmap.
+> It is structured so each subsection is independently shippable —
+> any single T-task delivers customer-visible value without waiting
+> for the rest. Dependency anchor: T130 (the native seam) and T131
+> (executor variant that consumes it) are the only true prerequisites
+> for everything downstream.
+
+#### F.1 — Foundation (the seam itself)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T130 | 📋 | — | **`TurNativeProviderClient` seam** — interface exposing per-`TurLLMInstance` access to the official OpenAI (`com.openai:openai-java`) and Anthropic (`com.anthropic:anthropic-java`) SDK clients. `TurGenAiLlmProvider` gains `createNativeOpenAiClient()` / `createNativeAnthropicClient()` defaulting to `Optional.empty()`. Per-agent capability matrix on `TurAIAgent.nativeCapabilitiesJson` declares which native features the agent opts into. Decryption / resilience / pipeline decoration reuse `TurLlmModelFactory` so audit trail stays unified. | §X.2 |
+| T131 | 📋 | T130 | **`TurNativeChatExecutor` variant** — sibling to `TurAgentChatExecutor` (post-T33 decomposition). Routes a turn through Responses API (OpenAI) or native Messages API with full feature set (Anthropic) when the active LLM + agent capability matrix declares native support; falls back to the Spring-AI executor otherwise. Reuses `TurChatToolResolver` / `TurChatPromptAssembler` / `TurChatStreamingDispatcher` collaborators verbatim — only the LLM dispatch leg differs. `STAGE_CHAT_*` meter shape preserved, with a new `[Native]` tag on every emission so dashboards can A/B native-vs-spring at observation time. | §X.2 |
+| T132 | 📋 | T131 | **Per-LLM-instance feature flags table** — `tur_llm_instance_capability` (instanceId, capabilityKey, enabled, configJson). Capability keys: `openai-responses`, `openai-web-search-tool`, `openai-file-search-tool`, `openai-code-interpreter-tool`, `openai-computer-use`, `openai-image-gen-tool`, `openai-realtime`, `openai-mcp-connector`, `openai-predicted-outputs`, `openai-stored-completions`, `openai-evals`, `openai-safety-identifier`, `openai-omni-moderation`, `openai-batch`, `openai-service-tier`, `anthropic-web-search`, `anthropic-web-fetch`, `anthropic-code-execution`, `anthropic-bash-tool`, `anthropic-text-editor-tool`, `anthropic-computer-use`, `anthropic-mcp-connector`, `anthropic-memory-tool`, `anthropic-context-editing`, `anthropic-compaction`, `anthropic-citations`, `anthropic-search-results`, `anthropic-files-api`, `anthropic-token-counting`, `anthropic-batch`, `anthropic-service-tier`. Liquibase `v2026.3.2.0.yaml`. Frontend: per-LLM instance settings page gains a capability matrix grid (one row per key, toggle + config drawer). | §X.2 |
+
+#### F.2 — OpenAI Responses API + built-in tools
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T133 | 📋 | T131 | **OpenAI `web_search` built-in tool** — wires the `web_search_preview` tool into the Responses path. Per-agent toggle `webSearchEnabled` + `webSearchAllowedDomains` (allowlist) + `webSearchBlockedDomains` (denylist). UI: "Live answers" mode in the chat — answer mixes SN index hits with fresh web context, each web claim carrying a citation chip linked back to the source URL. **Differentiation**: enterprise-search platforms typically can't answer "what changed since indexing?" — this closes the gap inside the same answer. | §X.3.a |
+| T134 | 📋 | T131 | **OpenAI `file_search` built-in tool** — provisions OpenAI-hosted vector stores per agent/tenant. New `TurOpenAiVectorStoreSync` mirrors `TurStorageService` blobs into per-tenant vector stores with attribute filters (`tenantId`, `agentId`, `kind`, `locale`) so retrieval is sandboxed. Complementary tier to T19/T24/T24b — admins choose embedded Lucene, dedicated Solr/ES BM25 cores, OR OpenAI-hosted vector store per `TurSNSiteGenAi`. Useful for ad-hoc per-user knowledge ("uploaded a CV mid-chat, search just within it") without round-tripping Solr. | §X.3.b |
+| T135 | 📋 | T131, T80 | **OpenAI `code_interpreter` built-in tool** — alternative path to T80's in-process Code Interpreter for installs that prefer OpenAI's managed Container sandbox. Per-agent toggle `codeInterpreterRuntime` (`embedded` / `openai-container`); embedded keeps the customer-authored Custom Tool Python ecosystem (matplotlib + reportlab + the per-agent `pip install` list from T77), OpenAI Container runs `gpt-image-1` / `gpt-4o` against the model's own sandbox. Charged at $0.03/container. Pairs naturally with T80 — `embedded` for tools with deps, `openai-container` for one-shot analytical answers in chat. | §X.3.c |
+| T136 | 💭 | T131 | **OpenAI `computer_use` built-in tool** — agentic browser. Two concrete enterprise-search uses worth pitching: (1) **connector-setup wizard** — admin says "connect my Confluence" → agent navigates to Confluence admin UI, generates an API token, pastes it into Turing; (2) **crawler debugging** — admin says "why didn't this site indexed?" → agent opens the URL, inspects rendered DOM, identifies the JS gate / paywall. Sandbox runs in a managed Container. **High wow-factor for demos**, low to mid leverage for steady-state use. | §X.3.d |
+| T137 | 📋 | T131 | **OpenAI `image_generation` as inline tool** — `gpt-image-1`/`gpt-image-1.5` invoked inside the Responses turn. Wired into the marketing / site-authoring Custom Tools — the chat asks "rewrite this hero text and generate a matching banner" and the response embeds both. Auto-stored in `TurAgentWorkspace` (T111) as `images/{ts}-{hash}.png` with HMAC-signed URL surfaced in the SDK workspace bus (T113). | §X.3.e |
+| T138 | 💭 | T131 | **OpenAI `mcp` tool (remote MCP connector)** — Responses API gains a first-class `mcp` tool that points at a remote MCP server URL (Streamable HTTP / SSE). Turing's chat exposes the existing Turing MCP server **to its own LLM** through this entry, eliminating the duplicate `MethodToolCallbackProvider` wiring on `/api/v2/llm/{id}/semantic-chat`. Allow-list per agent (`mcpServerAllowlist`) of (a) the local Turing MCP, (b) customer-configured third-party MCP servers (Confluence, Jira, GitHub, Notion). Federated enterprise search across systems **without** writing a Java tool callback per source. | §X.3.f |
+
+#### F.3 — Anthropic server-side tools
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T139 | 📋 | T131 | **Anthropic `web_search_20250305` server tool** — analog to T133 but on Claude models. Spring AI 1.1.7 / M4 added the option for the new module, but the platform is on 2.0.0-M2 — short of upgrading Spring AI, the native SDK is the path. Same UX as T133 (per-agent toggle + allow/deny domains + citation chips). At $10 / 1k searches, surface usage gauge in System Info AI Spend (T172). | §X.4.a |
+| T140 | 📋 | T131 | **Anthropic `web_fetch` server tool** — Claude pulls a URL or PDF directly (no Turing crawler needed). Two concrete uses: (1) **ad-hoc URL in chat** ("summarize this page: <url>"), (2) **drift detection** ("is the Wikipedia article about X consistent with our indexed copy?"). ZDR-eligible. Domain allow/deny inherited from T139 settings. | §X.4.b |
+| T141 | 📋 | T131 | **Anthropic `code_execution` server tool** — Python sandbox, **free** when paired with web_search/web_fetch. Enables "ask a question of the SN corpus, get a chart back" — combine with T133/T139 web search + T134/T165 file search, Claude composes Python that reads the retrieved JSON / CSV and emits a matplotlib chart. Result file URL routed into `TurAgentWorkspace` (T111). Eliminates the Custom-Tool Groovy-→-Python plumbing for one-shot analytics. | §X.4.c |
+| T142 | 💭 | T131 | **Anthropic `bash_20250124` + `text_editor_20250728` tools** — Claude edits markdown files persisted in `TurAgentWorkspace` (T111). Concrete uses: (1) **agentic content authoring** — chat says "draft a 10-page playbook" → Claude `text_editor.create("playbook.md")` then `str_replace` over multiple turns, (2) **indexer maintenance** — admin says "regenerate the synonym dictionary from these conversations" → Claude `bash` runs a script in a tenant-isolated container. Pairs with T80 container sandbox so `bash` doesn't have host access. | §X.4.d |
+| T143 | 💭 | T131 | **Anthropic `computer_use_20251124` tool with built-in prompt-injection classifier** — same use cases as T136 but on Claude with the server-side screenshot-level prompt-injection classifier that ships with the tool. Higher-trust path for production computer-use deployment than the OpenAI variant. | §X.4.e |
+
+#### F.4 — MCP Connector (both vendors)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T144 | 📋 | T131 | **Anthropic MCP Connector** (`mcp-client-2025-11-20` beta) — `messages.create(mcp_servers=[…])` lets Claude call any remote MCP server with no client code. Per-agent allow-list with OAuth bearer tokens. Same federation story as T138 (OpenAI side) but on Claude. **Not ZDR-eligible** — surface that constraint in the UI when enabling. | §X.5.a |
+| T145 | 💭 | T138, T144 | **Cross-vendor MCP federation layer** — a thin `TurMcpFederationDirectory` keeps a single per-agent allow-list of MCP server URLs; the `TurNativeChatExecutor` passes the matching subset to whichever vendor handles the turn (OpenAI via T138 `mcp` tool entry, Anthropic via T144 connector). Customer authors the list once; works across LLM swaps. | §X.5.b |
+| T146 | 💭 | T144 | **Turing-as-MCP-Server for Claude Desktop / Cursor / OpenAI Responses** — promote the existing Turing MCP server from "internal feature" to a **public consumption surface**: API-key-gated, OAuth optional, hosted at `https://<turing-host>/mcp` with the standard MCP discovery manifest. A customer's Claude Desktop sees Turing's SN search as a first-class tool. Inverts the integration — instead of customers integrating Turing into their app, their LLM clients integrate Turing themselves. | §X.5.c |
+
+#### F.5 — Voice agents (Realtime API)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T147 | 📋 | T131 | **`TurRealtimeVoiceProvider`** — WebSocket transport against `gpt-realtime` / `gpt-realtime-mini` / `gpt-realtime-1.5`. Server-side bridge so the browser doesn't carry the OpenAI key. Same `TurChatToolResolver` pipeline injects the SN search tools into the Realtime session — voice queries hit the index live. Per-LLM-instance capability gated by T132. | §X.6.a |
+| T148 | 📋 | T147 | **`/chat/voice` endpoint + React hook `useTuringVoice`** — already shipped as a stub in T104; this expands it to full duplex. Mic → WebSocket → Realtime → audio playback. Falls back to text TTS (T156) when Realtime cap is off. | §X.6.b |
+| T149 | 💭 | T147 | **Voice-first kiosk mode** — `/console/voice-kiosk?agent=X` — full-screen voice UI for trade-show booths, lobby kiosks, accessibility deployments. Background brand colors, large captions of what the user/agent just said, no keyboard required. **Demo-heavy differentiator**: enterprise-search platforms are typed-input-only. | §X.6.c |
+| T150 | 💭 | T147 | **`gpt-realtime-translate` simultaneous interpretation** — visitor speaks Portuguese, agent answers Portuguese AND the operator sees a live English translation in spectator mode (T120). Or vice versa for multilingual customer support. | §X.6.d |
+| T151 | 💭 | T147 | **Voice authoring of chat-flows** — admin says "add an `aiQuestion` node asking for the lead's cargo, then route by role" → Realtime parses → emits chat-flow JSON patch → applies via the editor's existing event bus. Pairs with the existing chat-flow live preview (T95) for "voice → graph appears" demo flow. | §X.6.e |
+
+#### F.6 — Citations & verifiable RAG
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T152 | 📋 | T131 | **Anthropic Citations (`citations: enabled`)** — every passage in `TurSNDocument` payload added to the prompt as a `document` content block; Claude responses come back with per-sentence citation arrays pointing to `(document_id, char_start, char_end)` for text and `(page)` for PDFs. Backend persists the citation map in `chat_message.citationsJson`. | §X.7.a |
+| T153 | 📋 | T152 | **Anthropic Search Results content type** — Turing's vector / hybrid retrieval (T19/T24/T24b) wraps its hits in the new `search_result` content block (encyclopedia-quality citation format) instead of the older `document` block. Cleaner UI mapping than free-form documents — Claude treats them as "this is web-search-tier provenance" by default. | §X.7.b |
+| T154 | 📋 | T152 | **Citation-aware chat UI** — React message renderer underlines the exact span Claude derived each claim from, with a hover popover showing the source chunk + deep link `/sn/{site}/document/{id}#chunk={index}`. PDF citations show `(p. 3)` chips. Backend exposes `GET /chat/message/{id}/citation/{i}` to resolve a single citation lazily. Eliminates the "the LLM said this but where did it come from?" trust gap. | §X.7.c |
+| T155 | 💭 | T154 | **Citation drift detection** — async job re-resolves recent citations; flags messages where the cited chunk has been re-indexed since the answer (`citationStale=true`). Operator gets a "this answer references outdated content" warning in the conversation replay UI (T86). LGPD / compliance angle: provable provenance. | §X.7.d |
+
+#### F.7 — Batch + token economics
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T156 | 📋 | T131 | **`TurBatchInferenceService`** — unified abstraction over OpenAI Batch API (`client.batches()`) and Anthropic Message Batches (`POST /v1/messages/batches`). Submit a `BatchJob(jobId, kind, payload, callback)` → service writes JSONL → submits → polls for completion → routes results back to the originating service. Persists job state in `tur_batch_job` (Liquibase `v2026.3.2.1.yaml`). | §X.8.a |
+| T157 | 📋 | T156 | **Nightly batch summarization** — the per-site AI Insights cron + per-SN-document summary now run through `TurBatchInferenceService` at the **50% Batch discount** instead of synchronous Spring AI calls. Cache TTL extended to 24h to match the batch latency budget. Cost-cutting move on the bulk insight workload. | §X.8.b |
+| T158 | 📋 | T156 | **Bulk re-embedding via Batch** — when an admin switches the embedding model on a site (`text-embedding-3-small` → `text-embedding-3-large`), Turing now schedules the re-embedding as a Batch job (50% off, 24h SLA) instead of a synchronous re-index that locks the indexer thread pool. Progress visible in the existing reindex UI (T24b Phase 4). | §X.8.c |
+| T159 | 📋 | T156 | **LLM Judge eval at batch tier** — the LLM Judge bilingual prompt over a regression set (T126 eval suite, when present) runs as Batch by default — eval CI pipelines finish overnight at half cost. | §X.8.d |
+| T160 | 📋 | T131 | **Service tier routing** — per-stage `service_tier` selection (`flex` / `priority` / `default` / `auto`). Mapping: `chat.live` → `priority` (SLA-protected, interactive), `chat.background` (AI Insights, summaries, classifier reindex) → `flex` (near-batch rates, sync), unknown / fallback → `auto`. Wired through `TurNativeChatExecutor` and `TurBatchInferenceService`. Per-LLM cap from T132. | §X.8.e |
+| T161 | 📋 | T131 | **Anthropic token counting (`/v1/messages/count_tokens`)** — pre-flight token estimator. Wired into `TurChatPromptAssembler` so the executor can refuse to call Claude when predicted prompt would exceed the agent's `maxPromptTokens` (T123) — replaces the current `cl100k_base`-tiktoken heuristic that misestimates Claude tokens. Cached for 60s per prompt fingerprint to avoid per-turn round-trips on identical-prefix conversations. | §X.8.f |
+| T162 | 💭 | T161 | **Pre-flight cost quote in chat UI** — when token-counting estimate × model price exceeds `softCostBudgetPerTurnUsd`, the SDK shows a "this turn will cost $X.XX, confirm?" gate. Per-agent off by default; enabled by enterprise customers who want hard cost ceilings on agent answers (research / report-generation use cases). | §X.8.g |
+
+#### F.8 — Memory tool + context editing
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T163 | 📋 | T131, T111 | **Anthropic Memory tool (`memory_20250818`)** — Claude gets six file commands (`view`/`create`/`str_replace`/`insert`/`delete`/`rename`); the implementation is backed by `TurAgentWorkspace` at path `memory/` (per-conversation by default; opt-in per-user via `memoryScope=user` flag). Persistent cross-session knowledge. Beta header `context-management-2025-06-27`. | §X.9.a |
+| T164 | 📋 | T131 | **Context editing (`clear_tool_uses_20250919`)** — Claude server-side auto-evicts old tool results when the window saturates, replacing them with a placeholder. Up to 84% token savings on long agent loops. Pairs with T29 tool pre-filter and T30 BM25 memory retrieval — Anthropic handles the trim of inline tool outputs, Turing handles the retrieve-the-right-old-turn problem. | §X.9.b |
+| T165 | 📋 | T131 | **Anthropic Compaction** (beta) — server-side summarization of older turns when the window fills. Per-agent toggle `compactionEnabled`; threshold inherited from `chatMemoryCompressionThresholdTokens` (T115). When both Turing-side compression (T115) and Anthropic compaction are on, Turing wins precedence (artifact stored in workspace), Anthropic disabled to prevent double-summarization. | §X.9.c |
+| T166 | 💭 | T163 | **Per-user persistent persona memory** — `memoryScope=user` + the Memory tool gives Claude a per-Keycloak-`sub` file area where it stores stable user preferences ("Alex prefers terse answers", "Alex's preferred locale is pt-BR"). Surfaced in the chat UI as a "What this agent remembers about you" disclosure, with a "Forget all" button (LGPD ready). | §X.9.d |
+
+#### F.9 — Stored Completions + Evals + Distillation flywheel
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T167 | 📋 | T131 | **`TurStoredCompletionsService`** — when an agent has `storedCompletions=true`, every Responses API call sets `store: true` + structured `metadata` (`agentId`, `conversationId`, `flowId`, `nodeId`, `experimentKey`, `variantLabel`). OpenAI retains the request/response pair under that metadata, queryable from the OpenAI dashboard or Evals API. Per-agent opt-in (privacy default off); LGPD review hook tied to the existing `SubmissionRetention` config (T66). | §X.10.a |
+| T168 | 📋 | T167 | **OpenAI Evals API integration** — Turing's eval suite (T126) optionally pushes fixtures to OpenAI Evals + runs server-side graders. Result: customer eval CI runs on every PR but the grading uses OpenAI's harness, freeing the customer from building their own LLM-judge stack. Per-eval choice (`localGrader` vs `openaiGrader`). | §X.10.b |
+| T169 | 💭 | T167, T168 | **Distillation pipeline** — admin clicks "Distill last 30 days" on an agent → Turing exports Stored Completions for that agent → submits as a fine-tuning job against `gpt-4o-mini` → swaps the `TurLLMInstance.modelId` after the eval passes. Net effect: gpt-4o-quality answers at gpt-4o-mini cost on this customer's specific traffic. **Production flywheel that compounds with usage.** | §X.10.c |
+| T170 | 💭 | T169 | **DPO loop from operator feedback** — operators thumb-up / thumb-down assistant turns; the DPO dataset is built incrementally from the binary preferences. Quarterly fine-tune pulls in the latest preferences. Turning everyday conversational moderation into model improvement. | §X.10.d |
+
+#### F.10 — Predicted Outputs + strict structured outputs
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T171 | 📋 | T131 | **OpenAI Predicted Outputs (`prediction`)** — 3-5× latency drop when the output mostly overlaps an input string. Wired into the chat-flow editor's variant generator (T97 — the original definitionJson IS the prediction), the persona-prompt editor, the locale-string editor. Symptom: regenerate-with-tweak feels instant instead of 3-5 seconds. | §X.11.a |
+| T172 | 📋 | T171 | **Predicted Outputs in T19/T24 RAG answer re-rank** — when the LLM answers an SN question and the user clicks "rephrase shorter", the previous answer is the `prediction`. Massive latency win on the conversational refinement loop. | §X.11.b |
+| T173 | 📋 | T131 | **OpenAI Strict Structured Outputs (`response_format: json_schema, strict: true`)** — replaces the gpt-4o-mini JSON-truncation workarounds documented in `feedback_gpt4o_mini_json.md`. Every Turing path that parses LLM JSON (LLM Judge, T28 LLM intent classifier, T97 variant generator, chat-flow router decision) switches to strict schemas. Per-LLM cap from T132 toggles whether the strict path or the legacy json_object path is used. | §X.11.c |
+| T174 | 📋 | T131 | **Anthropic structured outputs (ZDR-cached schemas)** — analog to T173 on Claude. Schemas cached server-side 24h → second use is free. Wire `LlmJudge` + classifier + variant generator + router decision; switch via `structuredOutputProvider=anthropic` on `TurLLMInstance`. | §X.11.d |
+
+#### F.11 — Files API + native PDF
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T175 | 📋 | T131 | **`TurFilesApiBridge`** — on the indexer write path, when a file is queued for an OpenAI- or Anthropic-backed agent, the binary is also uploaded to the vendor's Files API and the returned `file_id` cached in `TurStorageObjectStat` metadata. Spring AI inlines media bytes per request — this bypasses that for repeat references. | §X.12.a |
+| T176 | 📋 | T175 | **Crawler / Connector integration** — Tika-extracted text **stops being the only input**: the vendor `file_id` is passed alongside as a citation-bearing PDF/DOCX. Claude's native PDF support (preserves tables, layout, figures) is now Turing's default for any document indexed against a Claude agent. | §X.12.b |
+| T177 | 💭 | T175 | **Vendor-side chunk reuse across agents in the same tenant** — when N agents on the same tenant cite the same PDF (e.g. company handbook), one `file_id` is shared (single upload, multiple references). Track via `TurStorageObjectStat.metadata.openaiFileId` / `.anthropicFileId`. | §X.12.c |
+
+#### F.12 — Reasoning summary + observability hardening
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T178 | 📋 | T131 | **Reasoning summary surfacing** — for o1 / o3 / o4-mini / GPT-5 reasoning models, capture `reasoning.summary` from the Responses API and render as a collapsible "Why this answer" panel in the chat UI. Elevates trust ("here's how I got there") without exposing raw chain-of-thought. Per-agent toggle `showReasoning`. | §X.13.a |
+| T179 | 💭 | T131 | **Reasoning effort budget** — `reasoning.effort` (`minimal` / `low` / `medium` / `high`) plumbed per-stage. `chat.live` → `low` (latency); `chat.background` for AI Insights → `high` (quality matters more than latency); `LlmJudge` → `medium`. Default policy editable per agent. | §X.13.b |
+| T180 | 📋 | T131 | **Logprobs in T19/T24/T28 reranker as confidence signal** — capture `logprobs` + `top_logprobs` on Responses calls; reranker / classifier mixes the LLM token-level confidence into the existing BM25 / vector scores. Fixes the long-standing "the LLM hedged but we ranked it #1" failure mode. | §X.13.c |
+
+#### F.13 — Safety, compliance, multi-tenant cost
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T181 | 📋 | T131 | **`safety_identifier` propagation** — hashed Keycloak `sub` (`SHA-256(sub + tenant-salt)`) sent on every OpenAI Responses call as `safety_identifier`. OpenAI absorbs abuse-detection for the customer's end users instead of Turing carrying the burden. Per-tenant salt makes the identifier non-reversible across customers. | §X.14.a |
+| T182 | 📋 | T131 | **OpenAI `omni-moderation-latest` pre-filter** — every user query (and every crawler-discovered document chunk over a configurable size) passes through `omni-moderation` before reaching the LLM / index. Per-agent toggle + per-category sensitivity (sexual, violence, hate, self-harm, illegal). Free at the API tier. Pairs with the multimodal moderation path so image attachments are filtered too. | §X.14.b |
+| T183 | 📋 | T131 | **Anthropic Admin + Usage API integration** — `TurAnthropicUsageImporter` runs nightly, pulls per-workspace / per-model / per-service-tier token consumption + USD cost from the Anthropic Admin/Usage API, persists to `tur_ai_usage_daily` (Liquibase `v2026.3.2.2.yaml`). Same shape for OpenAI via `client.organizations().usage()`. | §X.14.c |
+| T184 | 📋 | T183 | **Per-tenant AI Spend widget** — System Info gains an "AI Spend" card showing 30-day spend per LLM / per agent / per stage (chat.live vs chat.background) with budget alert thresholds. Drill-down: which conversationId burned the most tokens. | §X.14.d |
+| T185 | 💭 | T183, T184 | **Soft budget caps per agent** — agent setting `monthlyBudgetUsd`; when projected spend (based on rolling 7-day average) would breach the cap, the engine downgrades to a cheaper tier (e.g. gpt-4o → gpt-4o-mini) or routes through Batch (T156). Operator gets a "budget guardrail tripped" notification. | §X.14.e |
+| T186 | 💭 | T132 | **Capability matrix UI heatmap** — admin dashboard heatmap of (LLM instance × capability) showing which natives are wired and which are pending. Visual aid for the "how full is my Block F?" question. | §X.14.f |
+
+#### F.14 — Bold creative bets (the long shots)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T187 | 💭 | T133, T139, T141 | **"Live answers" hybrid mode** — single chat answer fuses (a) SN index hits, (b) web_search citations, (c) live data via web_fetch, (d) computed analytics via code_execution — composed in one Responses turn. Each fact carries its origin chip (`📚 indexed`, `🌐 web`, `🧮 computed`). The category killer for "ask one question, get the full picture" enterprise search. | §X.15.a |
+| T188 | 💭 | T146, T138, T144 | **Turing as the "headless" enterprise-search MCP backbone** — abandon the chat UI as the only consumption surface. Turing's MCP server (T146) becomes the canonical way for Claude Desktop / Cursor / OpenAI Responses / any MCP-compatible client to search and reason over the customer's index. Customer-facing chat UI continues; but the **bigger market** is "Turing is the search infrastructure inside other AI products." | §X.15.b |
+| T189 | 💭 | T147, T150, T55 | **Real-time multilingual call center augmentation** — operator's headset audio goes through `gpt-realtime-translate` (T150), agent's screen shows live cited answers (T154) sourced from the customer's index, escalation paths via T55 handoff. Replaces the "expensive multilingual support staff" line item for customers with global presence. Voice + citations + handoff in one product. | §X.15.c |
+| T190 | 💭 | T136, T142, T78 | **"Self-installing" enterprise connectors via computer_use** — customer says "connect my company's Notion" → Turing's computer-use agent navigates to Notion → guides them through API token generation → tests the connection → enables the connector. **Zero engineer hours per integration**, infinite-tail SaaS connector library on demand. The acquisition story for the SMB tier of the market. | §X.15.d |
+| T191 | 💭 | T169, T126 | **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if it beats the current model on every assertion it's auto-promoted. The customer's agent gets cheaper and better every week with zero engineering work. | §X.15.e |
+| T192 | 💭 | T138, T144, T146 | **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). Other tenants subscribe and add it to their agent's MCP allowlist. Network effect: every Turing customer that publishes makes every other customer's agents more useful. Long-tail moat. | §X.15.f |
+
+### Block G — Embedded LLM via llama.cpp (drop a GGUF, get an LLM)
+
+> Triggered by a 2026-05-25 audit of `de.kherud:llama` (full mapping in
+> §XI). Goal: an admin uploads a `.gguf` file to asset storage, picks
+> it in the LLM Instance form, and the resulting `TurLLMInstance`
+> serves chat / embedding / rerank **in-process** — no Ollama, no
+> external API account, no second container. **Strategic value**:
+> (a) **air-gapped / regulated deployments** that forbid outbound
+> LLM calls, (b) **demo/dev installs** that don't need API credit,
+> (c) **local LlmJudge / local rerank** stages to cut cloud cost on
+> high-volume guardrail and retrieval paths.
+>
+> **Two structural blockers** that don't exist yet:
+> (1) [`TurLlmModelFactory`](../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java)
+> creates a fresh `ChatModel` per request — fine for HTTP-stateless
+> providers, fatal for a provider where "instantiate" means "mmap
+> 5GB GGUF and warm a KV cache". T194 introduces a per-`TurLLMInstance`
+> model cache.
+> (2) [`TurStorageService`](../turing-app/src/main/java/com/viglet/turing/service/storage/TurStorageService.java)
+> exposes `downloadObject(key): InputStream` but no local-file path —
+> llama.cpp needs `mmap` on a real file. T195 adds a cross-backend
+> `resolveLocalPath(key): Path` that returns the direct path on
+> filesystem storage and a cached download on MinIO/S3.
+>
+> **Critical version note**: the user-suggested version `3.0.0` is the
+> JNI-refactor release from mid-2025 and was superseded fast.
+> **Pin `4.1.0+`** — `applyTemplate(...)` (chat-template helper),
+> `rerank(...)`, JSON-schema→grammar, and Llama 3.3 / Qwen 3 /
+> Gemma 3 model support all landed between 3.0.0 and 4.1.0. See
+> §XI.2 for the version-by-version breakdown.
+
+#### G.1 — Foundation (dependency + provider + cache + storage path)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T193 | 📋 | — | **`de.kherud:llama:4.1.0+` dependency + `TurEmbeddedLlmProvider`** — new `@Component` implementing `TurGenAiLlmProvider` with `getPluginType()=="embedded-llamacpp"`. Reads `TurLLMInstance.providerOptionsJson` for `{ggufAssetKey, nLayersGpu, ctxSize, threads, role}`. `createChatModel` / `createEmbeddingModel` lookup the cached `LlamaModel` (T194) by `instance.id`, never construct on the hot path. `getPluginType` keeps it discoverable via `TurGenAiLlmProviderFactory` zero changes. **Why not 3.0.0**: missing `applyTemplate`, missing `rerank`, missing 9 months of llama.cpp upstream fixes (b3534 → b4831), missing Llama 3.3 / Qwen 3 / Gemma 3 templates. | §XI.2, §XI.4 |
+| T194 | 📋 | T193 | **`TurEmbeddedLlmModelCache`** — per-`TurLLMInstance.id` cache of loaded `LlamaModel`s. LRU eviction with `maxLoadedModels` (default 2) — when the limit is hit, the least-recently-used model gets `.close()`'d before the new one loads. Eviction also triggers on `LlmInstanceUpdatedEvent` (published in [TurLLMInstanceAPI.java:126-128](../turing-app/src/main/java/com/viglet/turing/api/llm/TurLLMInstanceAPI.java#L126-L128)). `@PreDestroy` walks the cache and closes every `LlamaModel` — addresses kherud issue #116 (non-daemon JNI thread blocks JVM shutdown). | §XI.4 |
+| T195 | 📋 | — | **`TurStorageService.resolveLocalPath(String key): Path`** — new method on the storage interface. Filesystem: returns `basePath.resolve(key)` directly. MinIO/S3: idempotent download to `./store/cache/llm-instances/{sha256(key)}/{filename}` and returns that path (skip download when the cache file matches the remote `etag`/size + last-modified). NoOp: throws `UnsupportedOperationException("Storage type 'none' does not support local file resolution")`. Liquibase migration not needed — pure runtime concern. | §XI.5 |
+| T196 | 📋 | T193 | **`EMBEDDED_LLAMACPP` vendor row** — extend [TurLLMVendorOnStartup.java](../turing-app/src/main/java/com/viglet/turing/onstartup/llm/TurLLMVendorOnStartup.java) with `vendor(id="EMBEDDED_LLAMACPP", plugin="embedded-llamacpp", title="Embedded (GGUF)", description="In-process llama.cpp, no external service required", website="https://github.com/kherud/java-llama.cpp")`. Idempotent insert (existing pattern). No Liquibase column changes — `TurLLMInstance` already has `providerOptionsJson` to carry `ggufAssetKey`. | §XI.4 |
+| T197 | 📋 | T193, T194, T195 | **`TurEmbeddedChatModel` + `TurEmbeddedStreamingChatModel`** — Spring AI `ChatModel` / `StreamingChatModel` adapters around `LlamaModel`. Translation: `Prompt` → `applyTemplate(...)` (kherud 4.1) → `LlamaModel.generate(InferenceParameters)` → map `LlamaIterable<LlamaOutput>` to `Flux<ChatResponse>` for streaming, or `complete(...)` for blocking. **Concurrency**: wrap each call in the per-instance `Semaphore(maxConcurrent=1)` from `TurEmbeddedLlmModelCache` — `LlamaModel` is not documented thread-safe, and llama.cpp upstream (#499) confirms single-context CUDA can race. | §XI.4 |
+| T198 | 📋 | T193, T194, T195 | **`TurEmbeddedEmbeddingModel`** — separate Spring AI `EmbeddingModel` adapter. A `LlamaModel` instance is *either* chat *or* embedding (llama.cpp constraint: weights load differently with `enableEmbedding()`). The cache treats embedding-role and chat-role of the same GGUF as two distinct cache entries with their own `LlamaModel`. UI must surface this: a single `TurLLMInstance` declares its role (`chat` / `embedding` / `rerank`) so the operator understands they need two instances to combine. | §XI.3 |
+
+#### G.2 — Frontend UX (the "drop a GGUF" experience)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T199 | 📋 | T193, T195 | **`GgufAssetPicker` React component** — modal/dropdown that lists `.gguf` files under `models/` in `TurStorageService`. Calls a new `GET /api/llm/embedded/assets` endpoint that returns `[{key, sizeBytes, modifiedAt, ggufMetadata?}]`. Filter limited to `.gguf` extension server-side. Each row shows filename + size (MB/GB formatting) + modified date. Empty-state CTA: "No GGUF files yet — upload one in `/console/assets/models/`". | §XI.6 |
+| T200 | 📋 | T199 | **`applyVendorDefaults("EMBEDDED_LLAMACPP")`** in [llm.instance.form.tsx:139-195](../frontend/apps/turing-app/src/components/llm/llm.instance.form.tsx) — sets `apiKey=""` (greyed out / hidden), `url=""` (hidden), conditional fields revealed: `ggufAssetKey` (the `GgufAssetPicker`), `role` (chat/embedding/rerank radio), `ctxSize` (number, default 4096), `nLayersGpu` (number, default 0 = CPU only), `threads` (number, default `Runtime.availableProcessors()`), `eagerLoad` (checkbox: load on startup vs lazy on first call). i18n EN/PT for every label. | §XI.6 |
+| T201 | 📋 | T199 | **GGUF metadata pre-flight on selection** — when the picker selects a `.gguf`, frontend calls `GET /api/llm/embedded/gguf-info?key=...` → returns `{architecture, paramCount, quantization, contextLength, vocabSize, estimatedRamBytes}` (read from GGUF header via kherud's metadata API). UI displays a chip row: `Llama 3 · 8B · Q4_K_M · 8k ctx · ~5.4 GB RAM`. Warns when `estimatedRamBytes > 0.7 * Runtime.getRuntime().maxMemory()`. | §XI.6, §XI.7 |
+| T202 | 📋 | T193 | **Pre-flight RAM check on save** — `TurLLMInstanceAPI` PUT/POST validates that `ggufFileSize + currentLoadedTotal < 0.7 * Runtime.maxMemory()`; rejects with 422 + actionable message ("Loading this model would push memory beyond 70% — close another embedded instance first or increase JVM heap"). Prevents the JVM-OOM-mid-warmup failure mode. | §XI.7 |
+
+#### G.3 — Operational realities (concurrency, shutdown, memory)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T203 | 📋 | T194 | **Per-instance concurrency policy** — `providerOptionsJson.maxConcurrent` (default 1). Cache holds a `Semaphore(maxConcurrent)` alongside the `LlamaModel`. Value > 1 is documented as best-effort — llama.cpp single-context concurrency is provider-dependent and CUDA-fragile. Frontend exposes a slider 1–8 with a tooltip explaining the trade-off. | §XI.7 |
+| T204 | 📋 | T194 | **Eager-load on startup** — when `eagerLoad=true` on a `TurLLMInstance`, a Spring `ApplicationReadyEvent` listener walks the embedded instances and pre-loads each into the cache. First chat turn skips the 1–3s mmap. Trade-off: longer Spring boot, locked RAM at startup. Per-instance opt-in. | §XI.7 |
+| T205 | 📋 | T193 | **Memory + load observability** — extend `TurChatPipelineObservation` (post-T32) with `turing.embedded.{modelLoadMs, modelEvictions, loadedModelCount, residentBytes, semaphoreWaitMs}` Micrometer gauges + timers, tagged by `instanceId`. Exposes the difference between cold-start latency and warm-call latency in `/actuator/prometheus`. | §XI.7 |
+| T206 | 📋 | T193 | **Status panel in LLM Instance details page** — per-embedded-instance card showing: load state (`unloaded` / `loading` / `ready` / `evicted`), resident RAM, last-used timestamp, semaphore queue depth, total inferences served, average tok/s. Operator can manually `Load` / `Evict` from the UI without restart. | §XI.7 |
+
+#### G.4 — Capability hardening (tool-calling shim, rerank, judge)
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T207 | 💭 | T193 | **Tool-calling grammar shim** — biggest functional gap. kherud has no `ToolCallback` API. Approach: (a) inject a tool-calling preamble into the system prompt using each model's known calling convention (Llama 3.1 / Qwen / Mistral all differ), (b) generate a GBNF grammar from the Spring AI `ToolDefinition[]` JSON schema (kherud 4.0+ ships the JSON-schema→GBNF helper), (c) constrain `InferenceParameters.setGrammar(...)` to that GBNF, (d) parse the model's output for tool-call markers, (e) hand back to Spring AI's tool execution loop. **High value, medium-to-high effort, model-quality-dependent** — Q4 quantization degrades tool-call reliability noticeably. Document supported model families in the UI. | §XI.3, §XI.8 |
+| T208 | 💭 | T193, T198 | **Local LlmJudge** — route the guardrail's bilingual judge (today defaults to gpt-4o-mini, $0.15/1M in) to a local 3B Q4 model (~2 GB RAM, 15–25 tok/s on CPU). On high-volume Education-customer traffic the judge fires every turn; locally that's literally free after the GGUF download. Per-agent toggle `guardrailLocalEmbedded` + `guardrailLocalInstanceId`. Quality validation step: run the existing LlmJudge test suite against the local model before flipping. | §XI.8 |
+| T209 | 💭 | T193 | **Local rerank in T24 hybrid RAG** — wire kherud 4.1's `model.rerank(query, doc1, doc2, ...)` into the hybrid retrieval pipeline as the final reranker stage. Cost moves from "per-call cloud LLM" to "zero" after model load. Best for short-form rerank (10–50 retrieved chunks); long-context rerank still benefits from cloud. Per-`TurSNSiteGenAi` toggle `rerankLocalEmbedded`. | §XI.8 |
+| T210 | 💭 | T198 | **Local embedding for TurLuceneVectorStore** — when an agent's embedding provider is an embedded instance with `role=embedding`, the indexer pipes through the local model instead of OpenAI / Anthropic / Gemini. Avoids cloud bills on bulk re-embedding (where T158 Batch API isn't enough). Indexer batches into N-document chunks per call. | §XI.8 |
+
+#### G.5 — Bold creative bets
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T211 | 💭 | T193, T207 | **Zero-egress certification mode** — global flag `turing.network.outbound-llm=forbidden`. When set, the engine refuses to call any cloud LLM provider and asserts that every active agent's chat/embedding/rerank `TurLLMInstance` is `EMBEDDED_LLAMACPP`. Boot-time fails if not. Compliance pitch: "this Turing install can answer every customer query with zero external network calls — auditable in the startup log". For regulated industries (gov, defense, hospitals, banks). | §XI.8 |
+| T212 | 💭 | T193, T208 | **Hybrid orchestration — cheap-by-default, escalate when needed** — chat-flow node-level setting `llmTier`: `embedded` (default for `aiQuestion` / `formCapture` / `writeSlot`), `cloud` (for the final answer composition or complex RAG synthesis). Engine routes each turn through the appropriate `TurLLMInstance`. Material cost reduction at the per-turn level — heuristic-style nodes burn local tokens; only the high-value nodes touch cloud. Pairs naturally with T132 capability matrix. | §XI.8 |
+| T213 | 💭 | T193 | **Quantization auto-detect + recommended model gallery** — the GGUF metadata pre-flight (T201) reads quantization (Q2/Q3/Q4/Q5/Q6/Q8/F16). UI surfaces a quality chip (`good` for Q4_K_M+, `degraded` for Q2/Q3). A curated "Recommended Models" gallery (`/console/llm-models`) lets admins one-click download known-good GGUFs from HuggingFace into asset storage. | §XI.6 |
+| T214 | 💭 | T193 | **Parallel Jlama evaluation track** — extract `TurEmbeddedRuntime` abstraction (interface `loadModel(Path): EmbeddedModel`, `embed`, `chat`, `rerank`) with two implementations: `kherud` (default) and `jlama` (pure-Java, no JNI, no native lib extraction, ships tool calling via LangChain4j). Per-instance choice. Useful for environments where JNI is fragile (Windows-without-binaries, exotic JVMs, sandboxed containers). Long-term hedge — if kherud goes unmaintained, the switch is a config flip. | §XI.1 |
+| T215 | 💭 | T193 | **Custom-Tool `embedded` helper** — Custom Tool Groovy scripts get a new helper `embedded.complete(instanceId, prompt)` / `embedded.embed(instanceId, text)` / `embedded.rerank(instanceId, query, docs)`. Authors can compose multi-step local pipelines (extract entities locally → embed locally → semantic similarity → only then escalate to cloud for synthesis). Stitches naturally with `code`, `workspace`, `slots`, `turingSearch` helpers (T35–T38, T112). | §XI.8 |
+| T216 | 💭 | T211, T80 | **GGUF inside the Code Interpreter container** — when both T80 container sandbox and T193 embedded are live, optionally run the GGUF *inside* the per-tenant container instead of in the JVM. Trade-off: per-call cold start (container spin-up) vs total JVM-RAM isolation. Useful for very large models (~30B+) that would otherwise dominate the JVM heap. | §XI.8 |
+| T217 | 💭 | T193 | **Speculative decoding pair** — two GGUFs on the same instance: a small "draft" model (e.g. 1B Q4) that proposes tokens, a larger "target" model (e.g. 8B Q4) that verifies. llama.cpp upstream supports this; the binding exposes the primitive via `ModelParameters.setDraftModel(...)`. 2–3× speedup on CPU for the same quality. Configured per `TurLLMInstance` via two `ggufAssetKey` fields. | §XI.8 |
+| T218 | 💭 | T193, T208 | **"This conversation cost $0.00" badge** — when every LLM call in a conversation went through embedded instances, the chat UI surfaces a green "$0 — fully local" badge. Operator-visible proof that the local path is being used. Small UX touch, big perceived-trust win for regulated-industry pitches. | §XI.8 |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -2940,5 +3209,793 @@ separate product launch, not a feature.
 > versioned skills marketplace. Self-host or cloud. Engineer or
 > marketer can author. The customer's ops team can read every trace.
 > Deep Agents is what you write; Turing is what you run."
+
+---
+
+## X. Native LLM SDK exploitation — beyond Spring AI 2.0
+
+> Triggered by a 2026-05-25 audit (see Block F at §0) of the official
+> **OpenAI Java SDK** (`com.openai:openai-java`, 4.36.0 series) and
+> **Anthropic Java SDK** (`com.anthropic:anthropic-java`, 2.34.0
+> series) against the surface area Spring AI 2.0 exposes (M2 in
+> production today, M3/M4 on the branch). Block F is the executable
+> task list; §X is the narrative companion that explains *what each
+> SDK feature is, why Spring AI 2.0 doesn't ship it, and how Turing
+> can exploit it for differentiation*.
+
+### X.1 Why bypass Spring AI for some features (and not others)
+
+Spring AI is a great portable layer for the **stable middle 60%** of
+the LLM API surface: chat completions, streaming, tool calling,
+structured output (basic), embeddings, vector stores, RAG advisors,
+chat memory, observability via Micrometer. Turing should keep that —
+all the existing `ChatModel` plumbing, `TurToolCallbackPipeline`,
+`TurChatPromptAssembler`, `TurAgentChatExecutor` keep working
+unchanged.
+
+The audit found three classes of features Spring AI 2.0 does **not**
+cover and where the official Java SDKs ship richer surface:
+
+1. **Whole-new endpoints that didn't exist when Spring AI 1.x
+   shipped**: OpenAI Responses API, Realtime API, Batch APIs of both
+   vendors, OpenAI Evals / Stored Completions / Distillation, Anthropic
+   MCP Connector / Files API / Token Counting. Spring AI 2.0
+   milestones M3/M4 added some of these — most stay open issues.
+2. **Server-side built-in tools**: every "the model executes a tool
+   in the vendor's infrastructure with no client code" feature
+   (OpenAI `web_search` / `file_search` / `code_interpreter` /
+   `computer_use` / remote `mcp`; Anthropic `web_search` /
+   `web_fetch` / `code_execution` / `bash` / `text_editor` /
+   `memory_20250818` / `computer_use_20251124`). Spring AI's tool
+   surface is client-side `MethodToolCallback`-only.
+3. **Provider-specific governance**: `safety_identifier`,
+   `omni-moderation-latest`, `service_tier`, `reasoning.summary`,
+   `predicted output`, Anthropic Citations with the Search Results
+   content type, Admin API / Usage API for per-tenant cost tracking.
+
+For these three classes Turing introduces a **`TurNativeProviderClient`**
+seam (T130). The existing `TurGenAiLlmProvider` gains two parallel
+factory methods — `createNativeOpenAiClient()` and
+`createNativeAnthropicClient()` — returning `Optional<NativeClient>`
+that defaults to `empty()` and gets populated by the OpenAI / Anthropic
+providers only. A sibling executor `TurNativeChatExecutor` (T131)
+routes a turn through the native client when both `TurLLMInstance.vendor`
+and `TurAIAgent.nativeCapabilitiesJson` agree on a feature; otherwise
+it delegates to the post-T33 collaborator graph (resolver / assembler
+/ dispatcher) verbatim, with one `[Native]` tag added to every
+`STAGE_CHAT_*` meter so dashboards can A/B the two paths at observation
+time.
+
+**Migration philosophy**: this is **not** "rip out Spring AI". It's
+"keep Spring AI as the default, opt into native paths per capability
+per agent per LLM instance." The per-LLM-instance capability matrix
+(T132) makes that opt-in explicit: an admin enabling `openai-web-search-tool`
+on instance X turns on T133 for that instance only, every other
+instance keeps falling through to the Spring AI executor. Block F has
+**no monolithic flag day** — features ship one at a time, each guarded
+by its own capability row.
+
+### X.2 The seam — `TurNativeProviderClient` (T130, T131, T132)
+
+```java
+public interface TurNativeProviderClient {
+    Optional<OpenAIClient> openAi();           // com.openai:openai-java
+    Optional<AnthropicClient> anthropic();     // com.anthropic:anthropic-java
+
+    /** Capability lookup for the agent + instance pair. */
+    boolean hasCapability(String agentId, String instanceId, String key);
+
+    /** Decrypted runtime credentials, audit-trail-logged. */
+    NativeCredentials credentials(String instanceId);
+}
+```
+
+- Decryption / resilience / pipeline decoration reuse
+  `TurLlmModelFactory` (no parallel security path).
+- Capability lookups are `@Cacheable("turNativeCapability")` with
+  eviction tied to `TurLLMInstance.save/delete` and
+  `TurAIAgent.save/delete` — keeps the per-turn lookup ~free.
+- `TurNativeChatExecutor` is **a thin variant of `TurAgentChatExecutor`,
+  not a replacement** — the three collaborators
+  (`TurChatToolResolver` / `TurChatPromptAssembler` /
+  `TurChatStreamingDispatcher`, all post-T33) are reused; only the
+  LLM dispatch leg differs. Token observability, slot/workspace SSE,
+  chat memory, tool pre-filter, prompt caching all stay identical.
+
+### X.3 OpenAI Responses API + built-in tools (T133–T138)
+
+The Responses API (`/v1/responses`) is OpenAI's new primary endpoint.
+Built-in tools (`web_search`, `file_search`, `code_interpreter`,
+`computer_use`, `image_generation`, remote `mcp`) execute server-side
+— Turing pays for compute via OpenAI but writes **zero** Java tool
+callbacks for any of them.
+
+**Killer use cases**:
+
+- **T133 `web_search` — "Live answers" mode** (foundational for T187).
+  Today an enterprise-search platform can only answer questions where
+  the index already has the answer. With `web_search` enabled, the
+  chat fuses SN hits with fresh web context **inside one answer**, each
+  web claim carrying a clickable citation chip. Solves the long-standing
+  "what about news after the last reindex?" gap that drives users back
+  to Google.
+
+- **T134 `file_search` — managed vector store tier**. Alongside the
+  existing embedded Lucene (T19/T24) and dedicated Solr/ES BM25 cores
+  (T24b), OpenAI-hosted vector stores become a third option, selected
+  per `TurSNSiteGenAi`. Ideal for ad-hoc per-user data that doesn't
+  warrant a permanent indexer pipeline: a CV uploaded mid-chat, an
+  RFP document in a sales conversation, an attached PDF in an email
+  thread. Per-tenant attribute filters guarantee isolation.
+
+- **T135 `code_interpreter` — managed analytics sandbox**. Today's
+  T80 container path keeps the customer-authored Python ecosystem
+  (T77 per-agent `pip install`, matplotlib, reportlab) — that
+  ecosystem matters and isn't going away. But for one-shot "give me
+  a chart of these numbers" answers in chat, the OpenAI Container
+  path is one less moving part. Admins choose per agent.
+
+- **T136 `computer_use` — connector self-installation** (T190). The
+  market-changing application: "Connect my Confluence" → an agent
+  navigates the customer's Confluence admin UI, generates a token,
+  configures Turing's connector. Per integration the engineering
+  cost drops from "days" to "zero." Long-tail SaaS connector library
+  on demand. **High-leverage demo material; production-grade reliability
+  is medium-term.**
+
+- **T138 remote `mcp` tool** — Responses calls a Streamable HTTP / SSE
+  MCP server URL directly. Turing's own MCP server becomes a first-class
+  consumer (no more `MethodToolCallbackProvider` duplication on
+  `/api/v2/llm/{id}/semantic-chat`). Customer-facing payoff: add
+  third-party MCP servers (Confluence, Jira, GitHub, Notion) to the
+  agent's allow-list and **the agent searches them all in one turn,
+  no Java written**. The federation story (T145) generalizes this
+  across vendors.
+
+### X.4 Anthropic server-side tools (T139–T143)
+
+Same shape, different vendor. Important wins specific to Anthropic:
+
+- **T141 `code_execution` is FREE when paired with web_search /
+  web_fetch.** Anthropic's pricing has a deliberate carrot for the
+  retrieve-then-compute pattern. Combine with T139 / T140 and Claude
+  composes Python that reads retrieved JSON / CSV → emits a chart →
+  Turing stores it in `TurAgentWorkspace` (T111) and surfaces via
+  the workspace SSE bus (T113). All in a single Anthropic turn.
+- **T143 `computer_use_20251124` ships a server-side
+  prompt-injection classifier** that scores every screenshot
+  before passing it back to the model. Higher trust than T136
+  (OpenAI variant has no equivalent classifier). For customers
+  with stringent security review, this is the production-grade
+  computer-use path.
+- **T142 `bash` + `text_editor` enable agentic content authoring.**
+  Pair with `TurAgentWorkspace` (T111) and Claude can iteratively
+  edit a markdown playbook across multiple turns (`text_editor.create`
+  → `text_editor.str_replace` → `text_editor.view`), with the workspace
+  surfacing the live draft to the operator (T120 spectator mode).
+
+### X.5 MCP Connector — both vendors (T144–T146)
+
+OpenAI's remote `mcp` tool (T138) and Anthropic's MCP Connector (T144)
+both let the model call MCP servers directly. **T146 inverts the
+integration story** — Turing's MCP server, hosted at
+`https://<turing-host>/mcp`, becomes a **public consumption surface**
+for any MCP-compatible client (Claude Desktop, Cursor, OpenAI
+Responses agents, future ones). Instead of customers integrating
+Turing's API into their app, their LLM clients integrate Turing.
+
+The strategic shift: **Turing competes for being the search
+infrastructure inside other AI products**, not only for being the
+customer-facing chat UI. Both markets coexist; the MCP route adds a
+second.
+
+**T192 inter-tenant federation directory** at `directory.turing.io`
+is the long-shot network-effect bet. Tenants opt-in publish a
+redacted MCP server (public docs, public catalog). Subscribers add
+it to their agent's allow-list. Every customer that publishes makes
+every other customer's agents more useful. Long-tail moat.
+
+### X.6 Voice agents (T147–T151)
+
+OpenAI Realtime is bidirectional speech with native tool calling and
+reasoning. The hosted infrastructure handles the audio; Turing
+provides the tool callbacks (the same SN search tools the text chat
+uses) and the conversation orchestration. **T149 voice-first kiosk
+mode** is a high-impact demo for trade shows, lobby kiosks,
+accessibility deployments — Turing differentiates with "voice +
+enterprise search + persona-tone + citations" in one product.
+
+**T150 `gpt-realtime-translate`** is the asymmetric win: a single
+operator can serve multilingual customers in real time. Visitor speaks
+PT, agent answers PT, operator's spectator panel shows live EN
+translation. Cuts the "multilingual support staff" line item for
+customers with global footprints.
+
+**T151 voice authoring of chat-flows** ties Realtime to the existing
+chat-flow live preview (T95): admin says "add an `aiQuestion` for
+cargo, then route by role" → Realtime parses → emits JSON patch →
+graph updates live in the editor. **Authoring with voice is a
+demo-grade differentiator** in a market where everyone authors with
+forms.
+
+### X.7 Citations & verifiable RAG (T152–T155)
+
+Anthropic Citations + the new Search Results content type close the
+biggest single trust gap in enterprise RAG: **provability**. T154's
+chat UI underlines the exact span Claude derived each claim from,
+with a hover popover linking to `TurSNDocument` and a deep-link to
+the chunk position. PDF citations show `(p. 3)` chips. Combine with
+T155 citation drift detection and Turing answers the compliance
+question "can you prove what document this answer came from, and
+whether that document has changed since the answer?" with a recorded
+yes.
+
+This is **the single highest-leverage UX move in Block F** for
+enterprise-search customers. Every other RAG platform shows source
+docs separately; Turing underlines the sentence.
+
+### X.8 Batch processing + token economics (T156–T162)
+
+Both vendors offer Batch APIs at **50% off**. The candidates inside
+Turing are obvious — every workload that's bulk + non-interactive
+should go batch:
+
+- T157 nightly AI Insights generation (already shipped via
+  `TurLlmSummaryService`, just needs Batch routing).
+- T158 bulk re-embedding on model upgrade.
+- T159 eval runs (T126 regression suites).
+
+T160 service tier routing maps stages: `chat.live` → `priority`
+(interactive SLA), `chat.background` → `flex` (near-batch sync),
+default `auto`. T161 Anthropic token counting replaces the
+`cl100k_base` heuristic with the vendor's exact count, plumbed into
+the T123 budget-enforcement check. T162 surfaces a pre-flight cost
+quote in the UI for cost-sensitive deployments.
+
+**Economic impact** of Block F's batch path alone: the AI Insights
++ classification + LLM-Judge eval workloads roughly halve in cost at
+zero quality loss. The customer doesn't notice; the bill drops.
+
+### X.9 Memory tool + context editing (T163–T166)
+
+Anthropic ships three independent context-management features that
+each solve a different long-conversation pain:
+
+- **Memory tool (T163)** — Claude gets a six-command file API
+  (view/create/str_replace/insert/delete/rename) backed by
+  `TurAgentWorkspace`. Persistent **per-conversation** memory by
+  default; per-user via `memoryScope=user` (T166). The agent learns
+  stable preferences ("Alex prefers terse answers") and surfaces them
+  via "What this agent remembers about you" disclosure with a "Forget
+  all" button (LGPD ready).
+- **Context editing (T164)** — server-side auto-evicts old tool
+  results when the window saturates, replacing them with placeholders.
+  84% token savings on long agent loops. Composes with T29
+  (Turing-side tool pre-filter) and T30 (BM25 memory retrieval) —
+  Anthropic trims inline tool outputs, Turing surfaces the right
+  retrievable older turn.
+- **Compaction (T165)** — server-side summarization of older turns.
+  Coordinates with Turing's T115 (workspace-stored compression):
+  when both are enabled, Turing wins precedence (audit trail), Anthropic
+  disabled to avoid double-summarization.
+
+### X.10 Stored Completions + Evals + Distillation flywheel (T167–T170)
+
+This is the **production self-improvement loop**:
+
+1. `storedCompletions=true` per agent → every call stored on OpenAI
+   side with structured metadata (T167).
+2. T126 eval suite + T168 server-side OpenAI graders catch regressions
+   automatically.
+3. T169 distillation: monthly export → fine-tune `gpt-4o-mini` against
+   prod-traffic-quality answers → swap `TurLLMInstance.modelId` if
+   evals pass.
+4. T170 closes the loop: operator thumb-up/down feedback feeds a
+   DPO dataset → next fine-tune incorporates the preferences.
+
+**Compounding effect**: the agent gets cheaper and better every week
+with zero engineering work. T191 explicitly wires the three together
+into "self-improving agent overnight" — the long-shot bet that's a
+genuine moat.
+
+### X.11 Predicted Outputs + strict structured outputs (T171–T174)
+
+T171 + T172 make the "regenerate-with-tweak" loop in the chat-flow
+editor (T97 variant generator), persona-prompt editor, locale-string
+editor, and the user-facing "rephrase shorter" feel **instant** instead
+of 3–5 seconds. Wherever the output mostly overlaps an input string,
+the speedup is 3–5×.
+
+T173 + T174 replace the legacy `json_object` JSON-mode workarounds
+(remembered explicitly as `feedback_gpt4o_mini_json.md` in agent
+memory) with **strict schema-validated structured outputs**. Every
+Turing path that parses LLM JSON — `LlmJudge`, T28 LLM intent
+classifier, T97 variant generator, chat-flow router decision —
+becomes deterministic by construction. The class of "the model
+returned truncated JSON, the parser exploded" bugs is gone.
+
+### X.12 Files API + native PDF (T175–T177)
+
+T175 mirrors `TurStorageService` entries into vendor Files APIs and
+caches `file_id`s. The crawler integration (T176) makes Claude's
+native PDF understanding the default for any PDF indexed against a
+Claude agent — tables, layout, figures preserved. Pair with T152
+citations and you get page-level provenance on PDF answers
+out-of-the-box. T177 dedupes across agents in the same tenant —
+one upload, many references.
+
+### X.13 Reasoning surfacing + logprobs (T178–T180)
+
+T178's "Why this answer" panel surfaces `reasoning.summary` (not raw
+chain-of-thought) for o1 / o3 / o4-mini / GPT-5 reasoning models.
+Elevates trust without exposing reasoning internals. T179 plumbs
+`reasoning.effort` per-stage (live=low, background=high, judge=medium)
+as a per-agent policy. T180 mixes `logprobs` into the T19/T24/T28
+reranker confidence score — fixes the "the LLM hedged but we still
+ranked it #1" failure mode.
+
+### X.14 Safety, compliance, multi-tenant cost (T181–T186)
+
+`safety_identifier` (T181) outsources abuse detection to OpenAI's
+edge — Turing carries less compliance burden per tenant. T182
+omni-moderation pre-filter blocks bad queries / bad indexed content
+at the multimodal level (text + image), **free at the API tier**.
+T183 + T184 + T185 build the per-tenant AI Spend dashboard backed
+by both vendors' Usage APIs, with soft budget caps that
+auto-downgrade to cheaper tiers when projections breach. **Compliance
++ FinOps + governance, packaged as part of the chat platform** —
+the kind of "platform" attribute Deep Agents fundamentally can't
+match because it's an SDK harness.
+
+### X.15 The bold creative bets (T187–T192)
+
+Six long-shot tasks that, taken together, redefine what an
+enterprise-search-meets-AI platform looks like:
+
+1. **T187 Live answers (hybrid)** — every answer can fuse indexed,
+   web, fetched, and computed sources in one turn. Category killer.
+2. **T188 Headless MCP backbone** — Turing as the search
+   infrastructure inside other AI products. Doubles the market.
+3. **T189 Real-time multilingual call center** — voice + citations +
+   handoff. Replaces multilingual support staff.
+4. **T190 Self-installing connectors** — `computer_use` agent does
+   the integration setup. Long-tail SaaS connectors on demand.
+5. **T191 Self-improving agents overnight** — distillation + evals +
+   prod replay. Compounds with usage.
+6. **T192 Inter-tenant MCP federation** — opt-in directory at
+   `directory.turing.io`. Network effect moat.
+
+### X.16 Sequencing — what to ship first
+
+Block F orders into seven groups by leverage × infrastructure reuse.
+**Group 1 gates everything else**; the rest can ship in parallel
+streams.
+
+**Group 1 — Foundation (T130–T132, ~3 weeks)**
+
+- T130 `TurNativeProviderClient` seam (1.5 wk, reuses
+  `TurLlmModelFactory` decryption/resilience)
+- T131 `TurNativeChatExecutor` variant (1 wk, reuses post-T33
+  collaborators)
+- T132 capability matrix table + UI (3 days)
+
+**Group 2 — Citations + RAG verifiability (T152–T155, ~2 weeks)**
+
+Highest customer-visible UX win for enterprise-search positioning.
+Anthropic-only initially (OpenAI doesn't have an equivalent yet);
+generalizable later if OpenAI ships citations.
+
+**Group 3 — Built-in server tools (T133–T138, T139–T143, ~4 weeks
+parallel)**
+
+T133/T139 (web_search both vendors), T141 (Anthropic code_execution
+— FREE with web_search), T134 (OpenAI file_search). Drives T187
+"Live answers" mode. T136/T142/T143 (computer_use + bash + text_editor)
+later — high demo value, medium production priority.
+
+**Group 4 — MCP federation (T138, T144, T146, ~3 weeks)**
+
+T146 publishes Turing as MCP server (smallest, biggest market
+expansion). T138 + T144 wire vendors to call any MCP. T145 unifies
+the allow-list across vendors.
+
+**Group 5 — Batch + cost economics (T156–T162, ~2 weeks)**
+
+Pure cost-cutting; no UX surface. Roughly halves the bulk-AI bill.
+
+**Group 6 — Memory + structured outputs + predicted outputs
+(T163–T174, ~3 weeks)**
+
+Foundational for the long-running chat experience + replaces JSON
+guardrails.
+
+**Group 7 — Stored completions + distillation flywheel (T167–T170,
+~3 weeks)**
+
+Production self-improvement loop. Wait until ~6 months of stored
+traffic exists before triggering the first distillation cycle.
+
+**Voice (T147–T151, ~3 weeks)** runs in a parallel track —
+demo-heavy, ships best alongside Group 2 citations for the marquee
+demo: "the agent answers your voice question with cited search
+results."
+
+**Total Block F: ~18 weeks focused work to ship every committed
+(📋) task**, with 17 💭 long-shot tasks following on opportunity-cost
+basis. Block F is structured so any single shipped task delivers
+customer value — there is no monolithic "Block F is done" gate.
+
+### X.17 The narrative — one paragraph
+
+> "Spring AI is what Turing uses when the standard works. The official
+> OpenAI and Anthropic Java SDKs are what Turing uses when the standard
+> doesn't ship the feature yet. The seam between the two
+> (`TurNativeProviderClient`) is small, observable, and per-LLM-per-agent
+> opt-in. Block F is not a bet on bypassing Spring AI — it's a bet
+> that the **next two years of LLM differentiation happens at the
+> vendor surface**, not at the abstraction layer, and Turing is the
+> first enterprise-search platform that exposes that surface to
+> non-engineer authors through the chat-flow DSL, the agent settings
+> UI, and the per-LLM capability matrix. The customer flips a toggle;
+> Claude starts citing; OpenAI starts batching; the bill drops 50%.
+> That is the platform pitch."
+
+---
+
+## XI. Embedded LLM via llama.cpp — drop a GGUF, get an LLM
+
+> Triggered by a 2026-05-25 evaluation of
+> [`de.kherud:llama`](https://github.com/kherud/java-llama.cpp), the
+> de-facto Java binding for llama.cpp. Goal: an admin uploads a
+> `.gguf` file to asset storage, picks it in the LLM Instance form,
+> and the resulting `TurLLMInstance` serves chat / embedding / rerank
+> **in-process** — no Ollama server, no cloud API account, no second
+> container.
+
+### XI.1 Why this matters — three deployments it unlocks
+
+1. **Air-gapped / regulated deployments**. Government, defense,
+   hospitals, banks that **cannot** call any cloud LLM. Today Turing's
+   only real option is Ollama-as-sidecar; that's an extra service to
+   sell, deploy, monitor, and certify. Embedded llama.cpp turns
+   "deploy a separate inference server" into "drop a GGUF file in the
+   storage UI".
+2. **Demo / dev installs**. The number of times a prospective customer
+   bounces at "you need an OpenAI API key to try it" is non-trivial.
+   With T193, a one-command `docker run openviglet/turing` and a
+   pre-bundled tiny GGUF gives a working chat agent in 60 seconds.
+3. **Cost arbitrage on high-frequency stages**. The LlmJudge
+   (T208) fires every turn under `LLM_JUDGE` guardrails; the
+   reranker (T209) fires every search; embedding generation (T210)
+   fires every indexed chunk. Routing those to a local 3B Q4 model
+   is **literally free** after the GGUF download. T212 layers the
+   chat-flow tier so cheap nodes go local, hard nodes escalate to
+   cloud — material cost reduction at the per-turn level.
+
+### XI.2 The version audit — why pin 4.1.0+, not 3.0.0
+
+The user-suggested `de.kherud:llama:3.0.0` is the JNI-refactor release
+from mid-2025 and was superseded fast. Concrete losses from pinning
+3.0.0:
+
+| Release | What it added | Why Turing wants it |
+|---|---|---|
+| 3.1.0 | `LlamaModel.Output` → `LlamaOutput` rename; cancel-generation fix | Streaming reliability |
+| 3.2.1 / 3.3.0 | llama.cpp b3008 / b3534 bumps | Bug fixes |
+| 3.4.0 | Linux x86_64 **CUDA backend** | GPU on the SaaS deployment tier |
+| 3.4.1 | Pre-built Linux x86_64 hotfix | Setup-free Linux deploy |
+| **4.0.0** | b3534 → b4831 bump; **JSON-schema→GBNF grammar helper** | Foundation for T207 tool-calling shim |
+| **4.1.0** | Gemma 3 + Llama 3.3 + Qwen 3 templates; `applyTemplate(...)`; **`rerank(...)`** | T197 chat template; T209 local rerank |
+
+Pin 4.1.0+; treat 3.0.0 as "do not use". Re-check the latest at
+integration time — kherud ships fast (~release/month).
+
+### XI.3 The capability gaps that change the design
+
+Three constraints from the kherud binding that the design must accept
+up front:
+
+1. **No first-class tool-calling API.** The Java binding does not
+   expose `ToolSpec` / `FunctionCall` / `ToolMessage`. llama.cpp
+   upstream supports tool calling in its `server` component, but the
+   Java surface doesn't bridge it. T207 is the grammar-shim approach:
+   inject a model-family-specific tool preamble + constrain output
+   via GBNF (from 4.0's JSON-schema→grammar helper) + parse tool-call
+   markers manually. **Works but model-quality dependent.** Q4
+   quantization degrades tool-call reliability noticeably; documented
+   in T207's UI. **Default `toolsEnabled=false` for embedded
+   instances** until T207 ships.
+2. **One role per loaded model.** llama.cpp must be loaded with
+   `enableEmbedding()` for embeddings or without for chat — you can't
+   serve both from the same in-memory model. A single GGUF file used
+   for both chat and embeddings means **two `TurLLMInstance` rows,
+   two cache entries, two RAM footprints**. T198 surfaces this in the
+   UI as an explicit `role` field. Same constraint applies to
+   `rerank(...)` (4.1+): separate role.
+3. **Not documented thread-safe.** The kherud README is silent on
+   thread-safety; llama.cpp upstream discussion #499 confirms
+   single-context CUDA is racy and even multi-context has caveats.
+   T197 wraps every call in a per-instance `Semaphore`; T203 lets
+   admins tune `maxConcurrent` with a warning that >1 is
+   best-effort.
+
+### XI.4 Architecture — provider + model lifecycle cache
+
+The two structural pieces this whole block hinges on:
+
+**`TurEmbeddedLlmProvider`** (T193):
+
+```java
+@Component
+public class TurEmbeddedLlmProvider implements TurGenAiLlmProvider {
+    @Override public String getPluginType() { return "embedded-llamacpp"; }
+
+    @Override public ChatModel createChatModel(TurLLMInstance i, String _ignored) {
+        // _ignored = decrypted apiKey: always null for embedded; never used
+        return modelCache.getOrLoad(i).chatModel();
+    }
+
+    @Override public EmbeddingModel createEmbeddingModel(TurLLMInstance i, String _ignored) {
+        return modelCache.getOrLoad(i).embeddingModel();
+    }
+}
+```
+
+**`TurEmbeddedLlmModelCache`** (T194) — the heart of this block:
+
+```java
+@Service
+public class TurEmbeddedLlmModelCache {
+    private final Map<String, CachedModel> cache;        // instanceId → loaded model
+    private final LinkedHashSet<String> lruOrder;
+    private final int maxLoadedModels;                   // default 2
+    private final TurStorageService storage;             // T195
+
+    public CachedModel getOrLoad(TurLLMInstance i) {
+        return cache.computeIfAbsent(i.getId(), id -> {
+            evictLruIfNeeded();
+            Path ggufPath = storage.resolveLocalPath(ggufAssetKey(i));  // T195
+            return load(i, ggufPath);
+        });
+    }
+
+    @EventListener public void onUpdate(LlmInstanceUpdatedEvent ev) {
+        // existing event; published from TurLLMInstanceAPI:126-128
+        evict(ev.instanceId());
+    }
+
+    @PreDestroy public void shutdown() {
+        // Addresses kherud issue #116: JNI thread blocks JVM exit
+        cache.values().forEach(CachedModel::close);
+    }
+}
+```
+
+The cache is **non-negotiable** because
+[`TurLlmModelFactory`](../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java)
+creates a fresh `ChatModel` per request. For HTTP-stateless providers
+(OpenAI, Anthropic, Ollama) that's cheap; for embedded llama.cpp,
+"create a ChatModel" means "mmap 5 GB and warm a KV cache" — adding
+seconds to every turn. The cache flips that cost to a one-time
+per-instance load.
+
+### XI.5 Storage integration — `resolveLocalPath(key)`
+
+llama.cpp needs `mmap` on a real file with a real path. The current
+[`TurStorageService`](../turing-app/src/main/java/com/viglet/turing/service/storage/TurStorageService.java)
+exposes `downloadObject(key): InputStream` only — not enough.
+
+T195 adds a single method:
+
+```java
+public interface TurStorageService {
+    // ...existing methods...
+    Path resolveLocalPath(String key);
+}
+```
+
+Per-backend implementation:
+
+- **`TurFilesystemStorageService`** (filesystem backend): returns
+  `basePath.resolve(key)` directly. Zero copy, zero allocation.
+- **`TurMinioStorageService`** (MinIO/S3 backend): idempotent download
+  to `./store/cache/llm-instances/{sha256(key)}/{filename}`. Skip the
+  download when the local file's size + last-modified match the remote
+  object's `etag`. Returns the cache path.
+- **`TurNoOpStorageService`** (storage disabled): throws
+  `UnsupportedOperationException` with an actionable message
+  ("Embedded LLM requires `turing.storage.type=filesystem` or `=minio`
+  — current setting is `none`").
+
+This is a small, generally useful method that other future features
+will want too (e.g. T80 container sandbox needs local paths for Tool
+bind-mounts).
+
+### XI.6 Frontend UX — the "drop a GGUF" experience
+
+The user's framing: "no frontend em llm instance permitira criar uma
+versao embedded, escolhendo o arquivo gguf em assets". This is the
+shipping-grade UX:
+
+1. Admin uploads a `.gguf` into `/console/assets/models/` (existing
+   storage UI; no changes needed).
+2. Admin opens **LLM Instances → New** and picks vendor `Embedded (GGUF)`.
+3. The form replaces the API-key field with a `GgufAssetPicker` (T199)
+   that lists every `.gguf` in storage.
+4. On selection, the form **fetches GGUF metadata** (T201) and shows
+   a chip row: `Llama 3 · 8B · Q4_K_M · 8k ctx · ~5.4 GB RAM`.
+5. Form fields `role` (chat/embedding/rerank), `ctxSize`, `nLayersGpu`,
+   `threads`, `eagerLoad` get sensible defaults from
+   `applyVendorDefaults("EMBEDDED_LLAMACPP")` (T200).
+6. Save triggers a **pre-flight RAM check** (T202) — rejects with a
+   helpful message when the projected memory exceeds 70% of JVM heap.
+7. First chat turn (or boot, if `eagerLoad=true`) loads the model.
+   The instance details page (T206) shows live `load state` / `resident
+   RAM` / `tok/s` so the admin sees what's happening.
+
+Empty-state guidance is critical: when the picker has no GGUFs, the
+modal shows a deep link to `/console/assets/models/` plus a "Browse
+recommended models" CTA pointing at T213's gallery.
+
+### XI.7 Operational realities — what breaks if you don't plan for it
+
+Four failure modes the block design must cover:
+
+1. **JVM OOM mid-warmup.** A 13B Q4 model is ~9 GB resident; the
+   default JVM heap is ~4 GB. Loading without a pre-flight check
+   crashes the whole server. T202 + T201 prevent this; T204 lets
+   admins choose lazy load if startup memory is tight.
+2. **JVM never exits cleanly.** kherud issue #116: the JNI thread is
+   non-daemon and prevents Spring's graceful shutdown. T194's
+   `@PreDestroy` closes every cached model first. If even one
+   `LlamaModel.close()` is missed, the JVM hangs at exit — admins
+   `kill -9`, and that masks the bug. Add a startup log line listing
+   loaded instances; add a shutdown log line confirming each is
+   closed. Operationally critical.
+3. **Concurrent requests hammer one model.** `LlamaModel` isn't
+   documented thread-safe. T197's per-instance semaphore serializes;
+   T203 lets admins increase concurrency with eyes open. Default 1
+   is safe.
+4. **The GGUF file changed under us.** Admin overwrites the file in
+   storage. T194 listens to `LlmInstanceUpdatedEvent`; if the storage
+   event bus (not yet built) ever surfaces "file rewritten", evict
+   then too. Today: rely on the explicit "Reload" button in T206's
+   status panel.
+
+T205 wires all of this into `TurChatPipelineObservation` so
+`/actuator/prometheus` shows `loadedModelCount`, `residentBytes`,
+`semaphoreWaitMs` per instance. Operations team can spot a 95th-%
+queue depth blowup before users feel it.
+
+### XI.8 Bold creative bets
+
+Eight long-shot tasks that extend the block's reach well beyond
+"another LLM provider":
+
+1. **T211 — Zero-egress certification mode.** A boot-time check that
+   refuses to start if any active agent has a cloud LLM bound. Single
+   line in the admin log: "All N agents resolve to embedded
+   instances. Outbound LLM calls blocked." For regulated industries,
+   this is sales-grade proof.
+2. **T212 — Hybrid orchestration by chat-flow tier.** `llmTier:
+   embedded` on cheap nodes (`aiQuestion`, `formCapture`, `writeSlot`);
+   `cloud` only on synthesis-heavy nodes. Per-turn cost falls
+   substantially without quality drop on the boring nodes.
+3. **T207 — Tool-calling grammar shim.** The big functional gap; if
+   T207 lands, embedded instances can replace cloud LLMs in
+   tool-heavy flows (Semantic Navigation chat, Custom Tool agents).
+   Plausible-but-not-trivial.
+4. **T208 — Local LlmJudge.** Routes the bilingual guardrail judge
+   to a local 3B Q4. Free per turn. Quality validation step required
+   before flipping (run the LlmJudge suite against the local model).
+5. **T209 — Local rerank in T24 hybrid RAG.** kherud 4.1's
+   `rerank(...)` plugs directly into the final reranker stage.
+6. **T210 — Local embedding for `TurLuceneVectorStore`.** Removes
+   cloud bills from bulk re-embedding workloads where T158 Batch
+   isn't enough.
+7. **T214 — Parallel Jlama evaluation.** Pure-Java alternative (no
+   JNI, no native lib extraction, ships tool calling via LangChain4j).
+   Slower but operationally simpler. Long-term hedge through a
+   `TurEmbeddedRuntime` abstraction with two implementations.
+8. **T217 — Speculative decoding pair.** Small "draft" model proposes
+   tokens, large "target" model verifies. 2–3× CPU speedup at same
+   quality. Two GGUFs on one `TurLLMInstance`.
+9. **T218 — "$0 conversation" badge.** Surfaces a green chip in the
+   chat UI when every call in the conversation went through embedded
+   instances. Tiny touch, big perceived-trust win.
+
+### XI.9 The Jlama alternative — should we even use kherud?
+
+Long-term, the right answer might not be `de.kherud:llama` at all.
+**Jlama** (`com.github.tjake:jlama-core`) is a pure-Java GGUF
+inference engine integrated into LangChain4j with **working tool
+calling**. Trade-offs:
+
+| Dimension | kherud/llama (llama.cpp JNI) | Jlama (pure Java) |
+|---|---|---|
+| Performance (CPU) | 6–12 tok/s on 7B-Q4 | Roughly half |
+| Native libs | Pre-built for most platforms; Windows CUDA missing | None — pure Java |
+| Tool calling | Not exposed (T207 builds a shim) | Works via LangChain4j today |
+| JVM shutdown | Non-daemon thread (issue #116) | Clean |
+| Operational complexity | High (native libs, lib paths) | Low |
+| Maintenance velocity | Fast (~1 release/month, follows llama.cpp) | Slower |
+
+For Turing's "drop-in install on any OS, no engineering hours per
+deploy" pitch, Jlama is structurally a better fit. For raw inference
+throughput, kherud wins. **T214 keeps both doors open via the
+`TurEmbeddedRuntime` abstraction** — start with kherud (faster path
+to first usable embedded LLM), add Jlama later, let admins choose
+per-instance.
+
+### XI.10 Sequencing — what to ship first
+
+**Group 1 — Foundation (T193–T197, ~2.5 weeks)**. Nothing else
+ships without these:
+
+- T193 provider skeleton + dependency (2 days)
+- T194 model cache + LRU (3 days)
+- T195 `TurStorageService.resolveLocalPath` (2 days)
+- T196 vendor row (half day)
+- T197 chat model + streaming adapter (3 days)
+
+**Group 2 — UX completion (T199–T202, ~1.5 weeks)**. Makes the
+foundation usable by admins:
+
+- T199 GgufAssetPicker (3 days)
+- T200 `applyVendorDefaults` (1 day)
+- T201 GGUF metadata pre-flight (2 days)
+- T202 RAM check on save (1 day)
+
+**Group 3 — Operational hardening (T203–T206, ~1.5 weeks)**.
+Production-grade observability + concurrency:
+
+- T203 per-instance concurrency (2 days)
+- T204 eager-load (1 day)
+- T205 observability (2 days)
+- T206 status panel (2 days)
+
+**Group 4 — Embedding + rerank (T198, T209, T210, ~1.5 weeks)**.
+Cost-cutting wins on the retrieval pipeline:
+
+- T198 embedding adapter (2 days)
+- T209 local rerank wired into T24 (3 days)
+- T210 local embedding for `TurLuceneVectorStore` (3 days)
+
+**Group 5 — Local Judge + tier orchestration (T208, T212, ~1 week)**.
+Cost-cutting wins on the chat pipeline:
+
+- T208 local LlmJudge (3 days)
+- T212 per-flow `llmTier` (2 days)
+
+**Group 6 — Tool calling (T207, ~2 weeks)**. The big functional gap;
+quality-gated. Implement the shim, run the existing tool-calling
+suite against a 3B Q4 + 8B Q4 + 70B Q4 to set per-model
+recommendations.
+
+**Group 7 — Zero-egress + bold bets (T211, T213–T218, ~3 weeks
+parallel)**. Once foundations are in, these are independent shipping
+items.
+
+**Total Block G: ~10–12 weeks of focused work for committed (📋)
+tasks; 8 long-shot (💭) tasks following on opportunity-cost basis.**
+
+### XI.11 The narrative — one paragraph
+
+> "Turing's GenAI architecture treats LLM providers as plugins —
+> OpenAI, Anthropic, Ollama, Gemini, Azure are all just rows in
+> `tur_llm_vendor`. Embedded llama.cpp adds a sixth, but with a
+> qualitatively different posture: **no external service required**,
+> not even a sidecar. The customer drops a 5 GB `.gguf` file into
+> asset storage and a chat agent starts answering. That is the
+> air-gapped-deployment story, the demo-without-API-keys story, the
+> cost-arbitrage story, the regulated-industry story — packaged as a
+> single dropdown choice in the LLM Instance form. The two
+> structural investments (per-instance model cache, cross-backend
+> local-path resolver) pay forward into Code Interpreter
+> container bind-mounts, future asset-driven providers, and the
+> Jlama hedge path. The work is contained — six weeks of foundation,
+> six weeks of capability hardening — but the strategic surface it
+> unlocks is broad. The first Turing customer that wins a defense or
+> hospital contract because we can ship zero-egress is the bet."
 
 ---
