@@ -7,7 +7,7 @@ import {
 } from "../core/api";
 import { readTurSession, TUR_SESSION_DEFAULT_COOKIE_NAME } from "../core/session";
 import { subscribeSlotsSse } from "../core/slots-sse-multiplexer";
-import { useTuringContext } from "../core/use-turing-context";
+import { useOptionalTuringContext } from "../core/use-turing-context";
 
 export type SlotsStatus = "idle" | "loading" | "success" | "error";
 
@@ -113,7 +113,11 @@ const EMPTY_SLOTS: Readonly<Record<string, string>> = Object.freeze({});
  * @since 2026.2.7
  */
 export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSlotsReturn {
-  const { config } = useTuringContext();
+  // Site mode requires the provider for `config.site`; agent mode never
+  // reads from it. Use the optional context so an admin console that has
+  // no real "site" can still mount the agent-mode variant of this hook
+  // without wrapping the whole app in a placeholder <TuringProvider>.
+  const ctx = useOptionalTuringContext();
   const {
     conversationId: explicitConversationId,
     sessionCookieName = TUR_SESSION_DEFAULT_COOKIE_NAME,
@@ -123,6 +127,13 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     transport = "polling",
   } = options;
   const agentId = agent?.id;
+  if (!ctx && !agentId) {
+    throw new Error(
+      "useTuringSlots in site mode requires a <TuringProvider> ancestor. " +
+      "Either mount the provider or pass `options.agent` to use agent mode.",
+    );
+  }
+  const siteName = ctx?.config.site;
   // SSE only works on site mode for now — agent mode falls back to polling
   // even when the caller asks for "sse" so behavior stays predictable.
   const useSse = transport === "sse" && !agentId;
@@ -169,7 +180,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
 
     const fetcher: Promise<TurChatSessionSlots> = agentId
       ? fetchAgentChatSlots(agentId, conversationId)
-      : fetchSiteChatSlots(config.site, conversationId);
+      : fetchSiteChatSlots(siteName as string, conversationId);
 
     fetcher
       .then((res) => {
@@ -187,7 +198,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       alive = false;
     };
-  }, [enabled, conversationId, agentId, config.site, tick, sseActive]);
+  }, [enabled, conversationId, agentId, siteName, tick, sseActive]);
 
   // SSE branch: subscribe via the module-level multiplexer keyed on
   // (baseURL, site, conversationId). Multiple useTuringSlots instances
@@ -206,7 +217,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     setStatus("loading");
     setError(null);
     const baseURL = axios.defaults.baseURL ?? "";
-    const subscription = subscribeSlotsSse(baseURL, config.site, conversationId, {
+    const subscription = subscribeSlotsSse(baseURL, siteName as string, conversationId, {
       onMessage: (payload) => {
         lastFetchedConversationRef.current = conversationId;
         setSlots(Object.freeze({ ...(payload?.slots ?? {}) }));
@@ -222,7 +233,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       subscription.close();
     };
-  }, [enabled, sseActive, conversationId, config.site]);
+  }, [enabled, sseActive, conversationId, siteName]);
 
   // Drop cached slots when the conversation id flips to a different visitor
   // session — otherwise stale data leaks across logins / TUR_SESSION resets.

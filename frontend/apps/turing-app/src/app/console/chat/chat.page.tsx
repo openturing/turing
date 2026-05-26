@@ -32,7 +32,7 @@ import { ChatMessageList } from "./components/chat-message-list"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
-import { useScheduleAgentWaiting } from "./hooks/use-schedule-agent-waiting"
+import { useTuringScheduleAgentWaiting as useScheduleAgentWaiting } from "@viglet/turing-react-sdk"
 
 const turAIAgentService = new TurAIAgentService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
