@@ -93,7 +93,7 @@ class TurAnalyticsIntentIndexerTest {
         boolean ok = indexer.indexRow(row);
 
         assertThat(ok).isTrue();
-        ArgumentCaptor<Map<String, Object>> docCaptor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Map<String, Object>> docCaptor = ArgumentCaptor.captor();
         verify(plugin).indexStandaloneDocument(eq(seInstance), eq("intent_agent1"),
                 docCaptor.capture());
         Map<String, Object> doc = docCaptor.getValue();

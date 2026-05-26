@@ -12,7 +12,7 @@ package com.viglet.turing.persistence.model.agent;
 /**
  * T123 / §IX.7 — what the executor does when the predicted prompt for a
  * chat turn exceeds the agent's {@code maxPromptTokens} budget. Stored as
- * a string column (see {@link TurAIAgent#getOverBudgetBehavior()}) so
+ * a string column (see {@link TurAIAgent#overBudgetBehavior}) so
  * adding new modes later doesn't risk ordinal drift.
  *
  * <p>{@link #COMPACT} is reserved for a future revision that auto-triggers

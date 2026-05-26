@@ -45,10 +45,11 @@ import lombok.extern.slf4j.Slf4j;
  * </ol>
  *
  * <p>The service is wired into the static utility {@code ChatFlowOps} via a
- * Spring-managed {@link #INSTANCE} reference set on {@code @PostConstruct}.
- * Pure unit tests that don't bootstrap Spring see {@code INSTANCE = null}
- * and the helpers degrade to identity functions — preserves the existing
- * behaviour of tests that operate on slot maps directly.
+ * Spring-managed singleton accessed through {@link #getInstance()}, with the
+ * underlying reference set on {@code @PostConstruct}. Pure unit tests that
+ * don't bootstrap Spring see {@code getInstance() == null} and the helpers
+ * degrade to identity functions — preserves the existing behaviour of tests
+ * that operate on slot maps directly.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1

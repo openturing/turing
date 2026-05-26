@@ -20,7 +20,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
  * implementation.
  *
  * <p><b>Provider options contract</b> — read from
- * {@link TurLLMInstance#getProviderOptionsJson()}:
+ * {@link TurLLMInstance#providerOptionsJson}:
  * <ul>
  *   <li>{@code modelAssetKey} — path to the SafeTensors model directory in
  *   {@code TurStorageService} (required).</li>
