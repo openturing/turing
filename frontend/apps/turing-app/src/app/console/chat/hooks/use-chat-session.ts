@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { postLlmChat } from "@viglet/turing-react-sdk"
 import { type ChatSession, saveSession, getSession, getAllSessions, deleteSession } from "@/services/chat/chat-session.service"
-import { TurChatService } from "@/services/chat/chat.service"
 import { type ChatMessage, generateId, generateFallbackTitle, TITLE_TIMEOUT_MS } from "../chat.types"
 
-export function useChatSession(turChatService: TurChatService, getLlmTitle: (llmId: string) => { title?: string; modelName?: string } | undefined) {
+export function useChatSession(getLlmTitle: (llmId: string) => { title?: string; modelName?: string } | undefined) {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   // Synchronous mirrors so `ensureSessionId` and `saveAfterResponse` can read
@@ -39,26 +39,23 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
 
   const generateAITitle = useCallback(async (msgs: ChatMessage[], llmId: string): Promise<string> => {
     const text = msgs.slice(0, 4).map((m) => `${m.role}: ${m.content}`).join("\n")
-    return new Promise<string>((resolve) => {
-      let title = ""
-      const timeout = setTimeout(() => resolve(generateFallbackTitle(msgs)), TITLE_TIMEOUT_MS)
-
-      turChatService.sendStream(
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), TITLE_TIMEOUT_MS)
+    try {
+      const res = await postLlmChat(
         llmId,
         [{ role: "user", content: `Generate a very short title (max 6 words, no quotes, no punctuation at end) for this conversation. Reply ONLY with the title, nothing else.\n\n${text}` }],
-        (token) => { title += token },
-        () => {
-          clearTimeout(timeout)
-          const cleaned = title.trim().replace(/^["']|["']$/g, "").trim()
-          resolve(cleaned || generateFallbackTitle(msgs))
-        },
-        () => {
-          clearTimeout(timeout)
-          resolve(generateFallbackTitle(msgs))
-        },
+        { signal: controller.signal },
       )
-    })
-  }, [turChatService])
+      const cleaned = res.content.trim().replace(/^["']|["']$/g, "").trim()
+      return cleaned || generateFallbackTitle(msgs)
+    } catch {
+      // timeout, abort, network error — every branch falls back to a heuristic title
+      return generateFallbackTitle(msgs)
+    } finally {
+      clearTimeout(timeout)
+    }
+  }, [])
 
   const saveAfterResponse = useCallback(async (tab: string, msgs: ChatMessage[], llmId: string) => {
     if (msgs.length === 0) return

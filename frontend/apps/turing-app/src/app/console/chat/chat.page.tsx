@@ -178,7 +178,7 @@ export default function ChatPage() {
     return inst ? { title: inst.title, modelName: inst.modelName } : undefined
   }, [llmInstances])
 
-  const { sessions, activeSessionId, setActiveSessionId, ensureSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(turChatService, getLlmTitle)
+  const { sessions, activeSessionId, setActiveSessionId, ensureSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(getLlmTitle)
 
   // T48 — poll the agent's slot snapshot while a conversation is live so the
   // input area can render an "Aguardando rotina…" banner whenever the engine
