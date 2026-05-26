@@ -1,11 +1,21 @@
 import { Icon } from "@iconify/react"
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import { IconCompass, IconCpu2, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 
+/**
+ * Subset of {@link TurLLMInstance} (admin model) / `TurLlmInstance` (SDK)
+ * that this empty-state actually reads. Keeping it minimal lets us accept
+ * either source without forcing a wider migration.
+ */
+interface DisplayInstance {
+  title: string
+  modelName?: string
+  turLLMVendor?: { id: string } | null
+}
+
 interface ChatEmptyStateProps {
   variant: "chat" | "semantic" | "agent"
-  selectedInstance?: TurLLMInstance
+  selectedInstance?: DisplayInstance
   agentTitle?: string
   agentIcon?: string | null
 }

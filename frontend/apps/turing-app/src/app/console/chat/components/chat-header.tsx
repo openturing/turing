@@ -3,7 +3,12 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
+/** Picker-shape consumed by this header — accepts both admin's `TurLLMInstance`
+ *  and the SDK's `TurLlmInstance` since only `id` and `title` are read here. */
+interface PickerInstance {
+  id: string
+  title: string
+}
 import { IconHistory, IconPlus, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { ChatSessionInfoSheet } from "./chat-session-info-sheet"
@@ -11,7 +16,7 @@ import { ChatSessionInfoSheet } from "./chat-session-info-sheet"
 interface ChatHeaderProps {
   activeTab: string
   onTabChange: (tab: string) => void
-  llmInstances: TurLLMInstance[]
+  llmInstances: PickerInstance[]
   selectedLlmId: string
   onModelChange: (id: string) => void
   onToggleSidebar: () => void

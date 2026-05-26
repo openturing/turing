@@ -18,12 +18,13 @@ import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
-import type { ChatMessageItem } from "@/services/chat/chat.service"
+import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconLoader2, IconMessageChatbot, IconRefresh, IconRobot } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
-import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, type ChatMessage, estimateTokens, generateId } from "./chat.types"
+import { useTuringLlmInstances } from "@viglet/turing-react-sdk"
+import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, DEFAULT_CONTEXT_WINDOW, LLM_STORAGE_KEY, type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
 import { ChatHeader } from "./components/chat-header"
 import { ChatInput } from "./components/chat-input"
@@ -31,12 +32,12 @@ import { ChatMessageList } from "./components/chat-message-list"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
-import { useLlmInstances } from "./hooks/use-llm-instances"
 import { useScheduleAgentWaiting } from "./hooks/use-schedule-agent-waiting"
 
 const turAIAgentService = new TurAIAgentService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
 const turChatFlowService = new TurChatFlowService()
+const turChatService = new TurChatService()
 
 /** Sentinel: dropdown option that lets the backend's LLM router decide.
  *  Selecting a specific flow forces it; there's no "no flow" override —
@@ -74,7 +75,17 @@ export default function ChatPage() {
   agentStatesRef.current = agentStates
 
   // Hooks
-  const { llmInstances, loaded, selectedLlmId, selectedInstance, contextWindow, selectLlm, turChatService } = useLlmInstances()
+  const {
+    instances: llmInstances,
+    loaded,
+    selectedId: selectedLlmId,
+    selectedInstance,
+    contextWindow,
+    select: selectLlm,
+  } = useTuringLlmInstances({
+    persistKey: LLM_STORAGE_KEY,
+    defaultContextWindow: DEFAULT_CONTEXT_WINDOW,
+  })
 
   // Load AI Agents + global default agent. Sort enabled agents so the default
   // appears first; this is what powers the tab order in the header.
