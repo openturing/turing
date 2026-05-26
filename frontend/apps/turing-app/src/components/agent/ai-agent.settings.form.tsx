@@ -160,6 +160,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryRelevanceEnabled: value.chatMemoryRelevanceEnabled ?? false,
       chatMemoryRelevanceTopK: value.chatMemoryRelevanceTopK ?? 5,
       chatMemoryRecentN: value.chatMemoryRecentN ?? 10,
+      // T123 / §IX.7 — defaults: 0 disables the check; WARN is the
+      // backend enum default. Existing agents keep their pre-T123
+      // behaviour (no enforcement) until the operator opts in.
+      maxPromptTokens: value.maxPromptTokens ?? 0,
+      overBudgetBehavior: value.overBudgetBehavior ?? "WARN",
       pythonRequirements: value.pythonRequirements ?? "",
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
@@ -737,6 +742,88 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           name={field.name}
                           disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryRelevanceEnabled}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              {/* T123 / §IX.7 — enforceable per-turn token budget. The
+                  executor estimates the prompt size before calling the
+                  LLM and applies the configured behaviour when the
+                  estimate exceeds maxPromptTokens. 0 disables the check. */}
+              <FormField
+                control={form.control}
+                name="maxPromptTokens"
+                rules={{
+                  min: { value: 0, message: t("forms.agentSettings.maxPromptTokensMinValue", { defaultValue: "Must be ≥ 0." }) },
+                  max: { value: 1_000_000, message: t("forms.agentSettings.maxPromptTokensMaxValue", { defaultValue: "Must be ≤ 1,000,000." }) },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.maxPromptTokens", { defaultValue: "Max prompt tokens" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.maxPromptTokensDesc", {
+                          defaultValue:
+                            "Estimated upper bound on the per-turn prompt size (chars/4 heuristic). 0 disables the check. Pair with the over-budget behaviour below to decide what happens when the estimate exceeds the budget.",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={1_000_000}
+                          step={500}
+                          placeholder="0 (disabled)"
+                          value={field.value ?? 0}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="overBudgetBehavior"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.overBudgetBehavior", { defaultValue: "Over-budget behaviour" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.overBudgetBehaviorDesc", {
+                          defaultValue:
+                            "WARN: log and proceed. ERROR: short-circuit the LLM call with an error reply. COMPACT: reserved for future workspace-backed compression (V1 degrades to WARN).",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <select
+                          aria-label={t("forms.agentSettings.overBudgetBehavior", { defaultValue: "Over-budget behaviour" })}
+                          className="border rounded-md px-3 py-2 text-sm bg-background"
+                          value={field.value ?? "WARN"}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={(form.watch("maxPromptTokens") ?? 0) === 0}
+                        >
+                          <option value="WARN">WARN</option>
+                          <option value="ERROR">ERROR</option>
+                          <option value="COMPACT">COMPACT (V1: degrades to WARN)</option>
+                        </select>
                       </FormControl>
                       <FormMessage />
                     </FormItemTwoColumns.Right>

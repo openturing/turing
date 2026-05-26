@@ -98,6 +98,7 @@ public class TurAgentChatExecutor {
     private final TurChatToolResolver toolResolver;
     private final TurChatPromptAssembler promptAssembler;
     private final TurChatStreamingDispatcher streamingDispatcher;
+    private final TurTokenBudgetService tokenBudgetService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurAgentPersonaResolver personaResolver;
@@ -109,6 +110,7 @@ public class TurAgentChatExecutor {
             TurChatToolResolver toolResolver,
             TurChatPromptAssembler promptAssembler,
             TurChatStreamingDispatcher streamingDispatcher,
+            TurTokenBudgetService tokenBudgetService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
             TurAgentPersonaResolver personaResolver,
@@ -119,6 +121,7 @@ public class TurAgentChatExecutor {
         this.toolResolver = toolResolver;
         this.promptAssembler = promptAssembler;
         this.streamingDispatcher = streamingDispatcher;
+        this.tokenBudgetService = tokenBudgetService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaResolver = personaResolver;
@@ -310,6 +313,21 @@ public class TurAgentChatExecutor {
         List<Message> messages = promptAssembler.assemble(agent, history, conversationId,
                 flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt);
         final long tAfterCompose = System.currentTimeMillis();
+
+        // T123 / §IX.7 — enforceable token-budget check. Disabled when
+        // agent.maxPromptTokens == 0 (the default). ERROR mode short-
+        // circuits the LLM call with a single ASSISTANT_TURN error event
+        // so the SSE consumer sees a structured failure rather than a
+        // dangling stream; WARN/COMPACT log + proceed.
+        TurTokenBudgetService.CheckResult budgetCheck = tokenBudgetService.check(agent, messages);
+        if (budgetCheck.decision() == TurTokenBudgetService.Decision.ERROR) {
+            log.warn("[AgentExec] Token budget exceeded for agent '{}' — estimate={} max={} — aborting",
+                    agent.getId(), budgetCheck.estimatedTokens(), budgetCheck.budget());
+            String errMsg = String.format(
+                    "Prompt over budget (estimated %d tokens, limit %d). Trim the conversation or raise the agent's maxPromptTokens.",
+                    budgetCheck.estimatedTokens(), budgetCheck.budget());
+            return Flux.just(new ChatResponse("assistant", errMsg));
+        }
 
         String username = resolveUsername();
 

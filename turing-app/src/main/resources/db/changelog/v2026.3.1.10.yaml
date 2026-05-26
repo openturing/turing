@@ -1,0 +1,57 @@
+databaseChangeLog:
+  # T123 / §IX.7 — per-agent enforceable token budget.
+  #
+  # Two columns on ai_agent:
+  #   - max_prompt_tokens INT (default 0 = disabled)
+  #   - over_budget_behavior VARCHAR(16) (WARN | ERROR | COMPACT, default WARN)
+  #
+  # When max_prompt_tokens > 0, the executor estimates the prompt size
+  # before the LLM call. If the estimate exceeds the budget, the configured
+  # behavior decides whether to error out, warn-and-proceed, or compact
+  # (reserved for T115; v1 degrades to WARN with a notice log line).
+  #
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.10-add-max-prompt-tokens
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: max_prompt_tokens
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: max_prompt_tokens
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.10-add-over-budget-behavior
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: over_budget_behavior
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: over_budget_behavior
+                  type: varchar(16)
+                  defaultValue: WARN
+                  constraints:
+                    nullable: false

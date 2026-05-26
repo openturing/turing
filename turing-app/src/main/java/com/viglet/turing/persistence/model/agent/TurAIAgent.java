@@ -136,6 +136,38 @@ public class TurAIAgent implements Serializable {
     @Column(name = "chat_memory_recent_n", nullable = false)
     private int chatMemoryRecentN = 10;
 
+    /**
+     * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
+     * {@code 0} (default) disables enforcement: the executor never
+     * estimates tokens and never short-circuits the LLM call. Positive
+     * values are the upper bound on the estimated prompt size; when the
+     * estimate exceeds the budget, {@link #overBudgetBehavior} decides
+     * what happens.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "max_prompt_tokens", nullable = false)
+    private int maxPromptTokens = 0;
+
+    /**
+     * T123 / §IX.7 — failure mode when the predicted prompt exceeds
+     * {@link #maxPromptTokens}:
+     * <ul>
+     *   <li>{@code WARN} — log + proceed (no behaviour change for the
+     *       end user; surfaces budget pressure to operators).</li>
+     *   <li>{@code ERROR} — short-circuit the LLM call and surface an
+     *       error response so the caller can retry / fall back.</li>
+     *   <li>{@code COMPACT} — placeholder for the future T115
+     *       workspace-backed history compression; v1 degrades to WARN
+     *       (logs a "compact-not-implemented" notice and proceeds).</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "over_budget_behavior", length = 16, nullable = false)
+    private TurAgentOverBudgetBehavior overBudgetBehavior = TurAgentOverBudgetBehavior.WARN;
+
     @Column(length = 2000)
     private String nativeTools;
 

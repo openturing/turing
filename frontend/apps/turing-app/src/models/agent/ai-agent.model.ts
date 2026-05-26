@@ -45,6 +45,21 @@ export interface TurAIAgent {
   chatMemoryRelevanceTopK: number;
   /** Size of the recent FIFO window kept verbatim; the retriever only scores turns OLDER than this. @since 2026.3.1 */
   chatMemoryRecentN: number;
+  /**
+   * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
+   * `0` (default) disables the check; the executor estimates the prompt
+   * size before the LLM call and applies {@link overBudgetBehavior} when
+   * the estimate exceeds this value. @since 2026.3.1
+   */
+  maxPromptTokens?: number;
+  /**
+   * T123 / §IX.7 — failure mode when the predicted prompt exceeds
+   * {@link maxPromptTokens}. `WARN` logs and proceeds; `ERROR` short-
+   * circuits the LLM call with a structured error reply; `COMPACT` is
+   * reserved for the future T115 history compression (V1 degrades to
+   * WARN with a logged notice). @since 2026.3.1
+   */
+  overBudgetBehavior?: "WARN" | "ERROR" | "COMPACT";
   nativeTools?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
