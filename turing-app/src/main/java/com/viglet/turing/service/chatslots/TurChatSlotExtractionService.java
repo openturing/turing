@@ -31,6 +31,7 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
+import com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -171,10 +172,12 @@ public class TurChatSlotExtractionService {
         Map<String, String> extracted = parseJsonReply(reply, targetSlots);
 
         int written = 0;
+        String originDetail = "agent=" + agent.getId();
         for (Map.Entry<String, String> entry : extracted.entrySet()) {
             String value = entry.getValue();
             if (value == null || value.isBlank()) continue;
-            int touched = engineService.writeSlot(conversationId, entry.getKey(), value);
+            int touched = engineService.writeSlot(conversationId, entry.getKey(), value,
+                    TurChatSlotAuditSource.EXTRACT, originDetail);
             if (touched > 0) written++;
         }
         log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",

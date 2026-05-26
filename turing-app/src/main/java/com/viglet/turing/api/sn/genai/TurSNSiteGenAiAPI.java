@@ -400,7 +400,9 @@ public class TurSNSiteGenAiAPI {
 			return new ChatSlotWriteResponse(0);
 		}
 		int touched = chatFlowEngineService.writeSlot(
-				body.conversationId(), body.name(), body.value());
+				body.conversationId(), body.name(), body.value(),
+				com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+				"site=" + siteName);
 		return new ChatSlotWriteResponse(touched);
 	}
 

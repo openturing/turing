@@ -126,6 +126,7 @@ public class TurCustomToolCallbackService {
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
     private final com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus;
+    private final com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService;
     private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final TurCustomToolDraftRegistry draftRegistry;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -135,12 +136,14 @@ public class TurCustomToolCallbackService {
             TurCustomToolSearchHelper searchHelper,
             TurChatFlowStateRepository stateRepository,
             com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus,
+            com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService,
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurCustomToolDraftRegistry draftRegistry) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
         this.slotEventBus = slotEventBus;
+        this.slotAuditService = slotAuditService;
         this.codeInterpreterToolService = codeInterpreterToolService;
         this.draftRegistry = draftRegistry;
     }
@@ -364,7 +367,8 @@ public class TurCustomToolCallbackService {
         // in no-op mode and auto-auth degrades to "no auth," which is what
         // unit-test invocations rely on.
         TurCustomToolSlotHelper slotHelper = new TurCustomToolSlotHelper(
-                resolveConversationId(toolContext), stateRepository, slotEventBus);
+                resolveConversationId(toolContext), stateRepository, slotEventBus,
+                slotAuditService, tool == null ? null : tool.title());
         binding.setVariable("http", new TurCustomToolHttpHelper(slotHelper));
         binding.setVariable("turingSearch", searchHelper);
         binding.setVariable("slots", slotHelper);

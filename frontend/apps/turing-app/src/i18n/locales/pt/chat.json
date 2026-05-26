@@ -53,7 +53,19 @@
       "copied": "ID da conversa copiado para a área de transferência",
       "slots": "Slots",
       "slotsEmpty": "Nenhum slot foi capturado ainda nesta conversa.",
-      "slotsError": "Falha ao carregar os valores dos slots desta conversa."
+      "slotsError": "Falha ao carregar os valores dos slots desta conversa.",
+      "auditTitle": "Linha do tempo de escritas",
+      "auditEmpty": "Nenhuma escrita de slot foi registrada para esta conversa.",
+      "auditError": "Falha ao carregar o histórico de auditoria de slots.",
+      "auditSource": {
+        "NODE": "Nó",
+        "TOOL": "Ferramenta",
+        "ENDPOINT": "Endpoint",
+        "EXTRACT": "Extração"
+      },
+      "auditFromTo": "{{from}} → {{to}}",
+      "auditEmptyValue": "(vazio)",
+      "auditCleared": "(limpo)"
     }
   }
 }

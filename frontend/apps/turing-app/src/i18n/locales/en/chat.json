@@ -53,7 +53,19 @@
       "copied": "Conversation ID copied to clipboard",
       "slots": "Slots",
       "slotsEmpty": "No slots have been captured yet for this conversation.",
-      "slotsError": "Failed to load slot values for this conversation."
+      "slotsError": "Failed to load slot values for this conversation.",
+      "auditTitle": "Slot write timeline",
+      "auditEmpty": "No slot writes have been recorded for this conversation.",
+      "auditError": "Failed to load slot audit trail.",
+      "auditSource": {
+        "NODE": "Node",
+        "TOOL": "Tool",
+        "ENDPOINT": "Endpoint",
+        "EXTRACT": "Extract"
+      },
+      "auditFromTo": "{{from}} → {{to}}",
+      "auditEmptyValue": "(empty)",
+      "auditCleared": "(cleared)"
     }
   }
 }

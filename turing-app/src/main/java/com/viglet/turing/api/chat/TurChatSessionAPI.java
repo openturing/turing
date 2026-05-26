@@ -20,7 +20,10 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessagesDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
+import com.viglet.turing.persistence.dto.agent.TurChatSlotAuditDto;
+import com.viglet.turing.persistence.model.agent.TurChatSlotAuditEntry;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
+import com.viglet.turing.service.chatslots.TurChatSlotAuditService;
 import com.viglet.turing.system.TurLlmSummaryService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,13 +70,16 @@ public class TurChatSessionAPI {
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurChatMemoryService chatMemoryService;
     private final TurLlmSummaryService llmSummaryService;
+    private final TurChatSlotAuditService slotAuditService;
 
     public TurChatSessionAPI(TurChatFlowEngineService chatFlowEngineService,
             TurChatMemoryService chatMemoryService,
-            TurLlmSummaryService llmSummaryService) {
+            TurLlmSummaryService llmSummaryService,
+            TurChatSlotAuditService slotAuditService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatMemoryService = chatMemoryService;
         this.llmSummaryService = llmSummaryService;
+        this.slotAuditService = slotAuditService;
     }
 
     @Operation(summary = "List slots captured during a chat session, merged into a "
@@ -114,6 +120,24 @@ public class TurChatSessionAPI {
                 base.enabled(),
                 base.messages(),
                 memory);
+    }
+
+    @Operation(summary = "T60 — slot write audit trail. Returns every slot mutation "
+            + "captured for this conversation across the four production write paths "
+            + "(NODE, TOOL, ENDPOINT, EXTRACT), oldest first. The SlotInspector renders "
+            + "this as a timeline with source badges + (old → new) deltas for LGPD/"
+            + "GDPR auditing and flow debugging.")
+    @GetMapping("/{conversationId}/slot-audit")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurChatSlotAuditDto slotAudit(@PathVariable String conversationId) {
+        java.util.List<TurChatSlotAuditEntry> rows = slotAuditService.list(conversationId);
+        java.util.List<TurChatSlotAuditDto.Entry> entries = rows.stream()
+                .map(r -> new TurChatSlotAuditDto.Entry(
+                        r.getId(), r.getSlotName(), r.getOldValue(), r.getNewValue(),
+                        r.getSource() == null ? null : r.getSource().name(),
+                        r.getOriginDetail(), r.getTs()))
+                .toList();
+        return new TurChatSlotAuditDto(conversationId, entries);
     }
 
     private static String renderTranscript(java.util.List<TurChatSessionMessageDto> messages) {

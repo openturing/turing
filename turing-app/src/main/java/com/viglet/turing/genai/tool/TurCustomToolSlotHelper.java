@@ -16,7 +16,9 @@ import java.util.Map;
 
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
+import com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
+import com.viglet.turing.service.chatslots.TurChatSlotAuditService;
 import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,13 +53,34 @@ public class TurCustomToolSlotHelper {
     private final String conversationId;
     private final TurChatFlowStateRepository stateRepository;
     private final TurChatSlotEventBus slotEventBus;
+    private final TurChatSlotAuditService slotAuditService;
+    private final String toolName;
 
     public TurCustomToolSlotHelper(String conversationId,
             TurChatFlowStateRepository stateRepository,
             TurChatSlotEventBus slotEventBus) {
+        this(conversationId, stateRepository, slotEventBus, null, null);
+    }
+
+    /**
+     * Audit-aware constructor. The {@code slotAuditService} + {@code toolName}
+     * pair lets the helper record a T60 audit row tagged with the originating
+     * Custom Tool so the SlotInspector timeline shows "tool: my-script" on
+     * each write. {@code TurCustomToolCallbackService.executeGroovy} threads
+     * the active tool name in.
+     *
+     * @since 2026.3.1
+     */
+    public TurCustomToolSlotHelper(String conversationId,
+            TurChatFlowStateRepository stateRepository,
+            TurChatSlotEventBus slotEventBus,
+            TurChatSlotAuditService slotAuditService,
+            String toolName) {
         this.conversationId = conversationId;
         this.stateRepository = stateRepository;
         this.slotEventBus = slotEventBus;
+        this.slotAuditService = slotAuditService;
+        this.toolName = toolName;
     }
 
     /**
@@ -87,6 +110,15 @@ public class TurCustomToolSlotHelper {
         }
         String coerced = value == null ? "" : value;
         int valueLen = coerced.length();
+        // Snapshot the pre-write merged value so the T60 audit row carries
+        // the accurate "before" — null when the slot was previously unset.
+        String previousValue = null;
+        for (TurChatFlowState state : states) {
+            String v = ChatFlowOps.readVariables(state).get(name);
+            if (v != null) {
+                previousValue = v;
+            }
+        }
         Map<String, String> mergedAfterWrite = new LinkedHashMap<>();
         for (TurChatFlowState state : states) {
             Map<String, String> vars = new LinkedHashMap<>(ChatFlowOps.readVariables(state));
@@ -100,6 +132,11 @@ public class TurCustomToolSlotHelper {
         // SSE notification — same merged-map contract as the writeSlot
         // endpoint, so subscribers don't have to special-case the source.
         slotEventBus.publish(conversationId, mergedAfterWrite);
+        if (slotAuditService != null) {
+            slotAuditService.record(conversationId, name, previousValue, coerced,
+                    TurChatSlotAuditSource.TOOL,
+                    toolName != null ? "tool=" + toolName : null);
+        }
     }
 
     /**

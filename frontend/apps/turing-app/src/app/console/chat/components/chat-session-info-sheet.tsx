@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { IconCopy, IconInfoCircle } from "@tabler/icons-react"
 
-import { useChatSessionSlots } from "@/api/queries/chat-session.queries"
+import { useChatSessionSlots, useChatSlotAudit } from "@/api/queries/chat-session.queries"
+import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -40,6 +41,10 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
   const { data, isError } = useChatSessionSlots(conversationId, {
     enabled: open,
     refetchInterval: 3000,
+  })
+  const { data: auditData, isError: auditError } = useChatSlotAudit(conversationId, {
+    enabled: open,
+    refetchInterval: 5000,
   })
 
   const copyId = async () => {
@@ -126,9 +131,83 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
                 )}
               </section>
             )}
+
+            {conversationId && (
+              <section className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t("chat.sessionInfo.auditTitle")}
+                </div>
+                {auditError ? (
+                  <p className="text-sm text-destructive">
+                    {t("chat.sessionInfo.auditError")}
+                  </p>
+                ) : !auditData || auditData.entries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("chat.sessionInfo.auditEmpty")}
+                  </p>
+                ) : (
+                  <ol className="space-y-1.5">
+                    {auditData.entries.map(entry => (
+                      <SlotAuditRow key={entry.id} entry={entry} />
+                    ))}
+                  </ol>
+                )}
+              </section>
+            )}
           </div>
         </SheetContent>
       </Sheet>
     </>
+  )
+}
+
+/**
+ * One row of the slot audit timeline. Renders the slot name + source badge
+ * on top, then the (old → new) delta inline so the operator reads the
+ * change at a glance. {@code originDetail} (node id / tool title / site
+ * name / agent id) appears as a subtle subtitle.
+ */
+function SlotAuditRow({ entry }: { readonly entry: TurChatSlotAuditEntry }) {
+  const { t } = useTranslation()
+  const sourceLabel = t(`chat.sessionInfo.auditSource.${entry.source}`, {
+    defaultValue: entry.source,
+  })
+  const renderValue = (value: string | null, cleared = false) => {
+    if (value === null || value === undefined) return <em className="text-muted-foreground/70">{t("chat.sessionInfo.auditEmptyValue")}</em>
+    if (value === "" && cleared) return <em className="text-muted-foreground/70">{t("chat.sessionInfo.auditCleared")}</em>
+    if (value === "") return <em className="text-muted-foreground/70">{t("chat.sessionInfo.auditEmptyValue")}</em>
+    return <span className="break-all">{value}</span>
+  }
+  const sourceColor: Record<string, string> = {
+    NODE: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    TOOL: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+    ENDPOINT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+    EXTRACT: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  }
+  const badgeClass = sourceColor[entry.source] ?? "bg-muted text-muted-foreground"
+  return (
+    <li className="rounded-md border bg-muted/10 px-3 py-2 text-xs space-y-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${badgeClass}`}>
+          {sourceLabel}
+        </span>
+        <span className="font-mono font-medium truncate" title={entry.slotName}>
+          {entry.slotName}
+        </span>
+        <span className="text-muted-foreground/60 ml-auto shrink-0">
+          {new Date(entry.ts).toLocaleString()}
+        </span>
+      </div>
+      <div className="font-mono leading-relaxed">
+        {renderValue(entry.oldValue)}
+        <span className="mx-1.5 text-muted-foreground/60">→</span>
+        {renderValue(entry.newValue, true)}
+      </div>
+      {entry.originDetail && (
+        <div className="text-muted-foreground/70 truncate" title={entry.originDetail}>
+          {entry.originDetail}
+        </div>
+      )}
+    </li>
   )
 }

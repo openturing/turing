@@ -144,6 +144,8 @@ export const queryKeys = {
     all: () => ['chat-sessions'] as const,
     slots: (conversationId: string) =>
       [...queryKeys.chatSessions.all(), 'slots', conversationId] as const,
+    slotAudit: (conversationId: string) =>
+      [...queryKeys.chatSessions.all(), 'slot-audit', conversationId] as const,
   },
   chatAnalytics: {
     all: () => ['chat-analytics'] as const,

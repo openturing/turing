@@ -242,6 +242,7 @@ public class TurChatFlowEngineService {
     private final TurChatFlowSubmissionRepository submissionRepository;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatSlotEventBus slotEventBus;
+    private final com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService;
     private final CacheManager cacheManager;
     private final TurFunctionCallNodeExecutor functionCallExecutor;
     private final TurScheduleAgentNodeExecutor scheduleAgentExecutor;
@@ -252,6 +253,7 @@ public class TurChatFlowEngineService {
             TurChatFlowSubmissionRepository submissionRepository,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatSlotEventBus slotEventBus,
+            com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService,
             CacheManager cacheManager,
             TurFunctionCallNodeExecutor functionCallExecutor,
             TurScheduleAgentNodeExecutor scheduleAgentExecutor,
@@ -261,6 +263,7 @@ public class TurChatFlowEngineService {
         this.submissionRepository = submissionRepository;
         this.chatAnalyticsService = chatAnalyticsService;
         this.slotEventBus = slotEventBus;
+        this.slotAuditService = slotAuditService;
         this.cacheManager = cacheManager;
         this.functionCallExecutor = functionCallExecutor;
         this.scheduleAgentExecutor = scheduleAgentExecutor;
@@ -498,6 +501,23 @@ public class TurChatFlowEngineService {
         if (!Objects.equals(previousVariablesJson, leaf.getVariablesJson())) {
             slotEventBus.publish(leaf.getConversationId(),
                     listSlotsForConversation(leaf.getConversationId()).slots());
+            // T60 audit log: diff the persisted variables before/after the
+            // advance + transparent walk and record each changed slot with
+            // source=NODE. originDetail carries the previous/current node
+            // ids so the timeline can show which step produced the write.
+            try {
+                Map<String, String> before = ChatFlowOps.readVariablesJson(previousVariablesJson);
+                Map<String, String> after = ChatFlowOps.readVariablesJson(leaf.getVariablesJson());
+                String detail = "node=" + previousNodeId
+                        + (Objects.equals(previousNodeId, leaf.getCurrentNodeId())
+                                ? "" : "->" + leaf.getCurrentNodeId());
+                slotAuditService.recordDiff(leaf.getConversationId(), before, after,
+                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.NODE,
+                        detail);
+            } catch (RuntimeException auditEx) {
+                log.debug("[FlowEngine] slot-audit skipped for conv={}: {}",
+                        leaf.getConversationId(), auditEx.getMessage());
+            }
         }
         return new AdvanceResult(leaf, override);
     }
@@ -698,6 +718,21 @@ public class TurChatFlowEngineService {
      * @since 2026.2.7
      */
     public int writeSlot(String conversationId, String name, String value) {
+        return writeSlot(conversationId, name, value,
+                com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT, null);
+    }
+
+    /**
+     * Source-aware overload: the audit log captures which subsystem produced
+     * the write so the SlotInspector timeline can render a source badge. The
+     * 3-arg overload defaults to {@code ENDPOINT} for backwards compatibility
+     * with the public {@code POST /chat/slots} caller.
+     *
+     * @since 2026.3.1
+     */
+    public int writeSlot(String conversationId, String name, String value,
+            com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource source,
+            String originDetail) {
         if (conversationId == null || conversationId.isBlank()
                 || name == null || name.isBlank()) {
             return 0;
@@ -710,6 +745,10 @@ public class TurChatFlowEngineService {
         }
         String coerced = value == null ? "" : value;
         int touched = 0;
+        // Capture pre-write merged value so the audit row carries the
+        // accurate "before" — reads the same listSlotsForConversation()
+        // call shape the SSE publish at the end uses.
+        String previousValue = listSlotsForConversation(conversationId).slots().get(name);
         for (TurChatFlowState state : states) {
             Map<String, String> vars = new LinkedHashMap<>(ChatFlowOps.readVariables(state));
             vars.put(name, coerced);
@@ -723,6 +762,9 @@ public class TurChatFlowEngineService {
         // never have to diff, and the cost of recomputing is one extra
         // query (typically <1 ms).
         slotEventBus.publish(conversationId, listSlotsForConversation(conversationId).slots());
+        slotAuditService.record(conversationId, name, previousValue, coerced,
+                source != null ? source : com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+                originDetail);
         return touched;
     }
 

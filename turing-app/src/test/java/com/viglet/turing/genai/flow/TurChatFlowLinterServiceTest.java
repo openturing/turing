@@ -65,7 +65,10 @@ class TurChatFlowLinterServiceTest {
     void setUp() {
         TurChatFlowEngineService engine = new TurChatFlowEngineService(stateRepository,
                 chatFlowRepository, submissionRepository, chatAnalyticsService,
-                slotEventBus, cacheManager,
+                slotEventBus,
+                org.mockito.Mockito.mock(
+                        com.viglet.turing.service.chatslots.TurChatSlotAuditService.class),
+                cacheManager,
                 org.mockito.Mockito.mock(TurFunctionCallNodeExecutor.class),
                 org.mockito.Mockito.mock(
                         com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor.class),

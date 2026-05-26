@@ -1,0 +1,74 @@
+databaseChangeLog:
+  # T60 / §VII.6.a — chat_slot_write_log audit table.
+  #
+  # Append-only log of every slot mutation captured across the four write
+  # paths the engine recognises: chat-flow node executors (NODE), Custom
+  # Tool Groovy slots.set (TOOL), POST /chat/slots endpoint (ENDPOINT),
+  # and the document-to-slot extraction service (EXTRACT). Powers the
+  # SlotInspector timeline + LGPD/GDPR forensic audit.
+  #
+  # Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.8-create-chat_slot_write_log
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_slot_write_log
+      changes:
+        - createTable:
+            tableName: chat_slot_write_log
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slotName
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: oldValue
+                  type: longtext
+              - column:
+                  name: newValue
+                  type: longtext
+              - column:
+                  name: source
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: originDetail
+                  type: varchar(256)
+              - column:
+                  name: ts
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: chat_slot_write_log
+            indexName: ix_chat_slot_write_log_conversation_ts
+            columns:
+              - column:
+                  name: conversationId
+              - column:
+                  name: ts
+        - createIndex:
+            tableName: chat_slot_write_log
+            indexName: ix_chat_slot_write_log_slot
+            columns:
+              - column:
+                  name: slotName
+              - column:
+                  name: ts
