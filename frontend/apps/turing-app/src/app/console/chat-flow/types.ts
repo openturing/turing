@@ -18,7 +18,8 @@ export type FlowNodeType =
   | "persona"
   | "switch"
   | "slot"
-  | "writeSlot";
+  | "writeSlot"
+  | "suspend";
 
 export type FlowToolSource = "NATIVE" | "MCP";
 
@@ -283,5 +284,14 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-lime-50 dark:bg-lime-950/40",
     border: "border-lime-500",
     text: "text-lime-900 dark:text-lime-100",
+  },
+  suspend: {
+    // T121 — slate signals "paused, awaiting external trigger". Distinct
+    // from scheduleAgent's lime (active waiting on a known routine) — a
+    // suspend node parks the conversation indefinitely until an external
+    // POST /chat/resume call moves it forward.
+    bg: "bg-slate-50 dark:bg-slate-900/40",
+    border: "border-slate-500",
+    text: "text-slate-900 dark:text-slate-100",
   },
 };

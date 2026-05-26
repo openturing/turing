@@ -118,7 +118,8 @@
       "switch": "Seletor",
       "slot": "Slot",
       "writeSlot": "Gravar Slot (com template)",
-      "scheduleAgent": "Rotina Agendada"
+      "scheduleAgent": "Rotina Agendada",
+      "suspend": "Suspender"
     },
     "properties": {
       "header": "Propriedades do Nó",

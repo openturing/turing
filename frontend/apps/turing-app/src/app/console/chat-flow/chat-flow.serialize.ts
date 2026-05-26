@@ -16,6 +16,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   switch: "SWITCH",
   slot: "SLOT",
   writeSlot: "WRITE SLOT",
+  suspend: "SUSPEND",
 };
 
 /**

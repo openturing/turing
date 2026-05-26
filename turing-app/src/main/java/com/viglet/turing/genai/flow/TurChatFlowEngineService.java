@@ -531,6 +531,98 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * T121 — outcome of a {@link #resumeSuspendedFlow} call. {@code resumed}
+     * is the number of state rows that were parked on a {@code suspend}
+     * node and advanced past it; {@code nothingToResume} means the
+     * conversation had no states parked at suspend.
+     *
+     * @since 2026.3.1
+     */
+    public record ResumeResult(int resumed, boolean nothingToResume) {
+    }
+
+    /**
+     * T121 / §IX.6.a — resume every chat-flow state for {@code conversationId}
+     * whose cursor currently sits on a {@code suspend} node. Optionally
+     * applies {@code slotUpdates} BEFORE advancing so a webhook callback
+     * can carry the result of whatever external work was awaited (e.g.
+     * an approval decision, a CRM enrichment, a scheduled job's output).
+     *
+     * <p>Safe to call any number of times: states not parked on a
+     * {@code suspend} node are skipped. The chat path treats a state
+     * parked at a {@code suspend} node as "no LLM turn this round" via
+     * the executor short-circuit; this method walks past the suspend
+     * node and advances to the next interactive node, fan-out into
+     * sub-flows or condition walks as usual.
+     *
+     * @since 2026.3.1
+     */
+    @Transactional
+    public ResumeResult resumeSuspendedFlow(String conversationId,
+            Map<String, String> slotUpdates, String resumeReason) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return new ResumeResult(0, true);
+        }
+        // Apply slot updates first so the post-advance walker reads the
+        // freshest values (a condition node downstream of the suspend
+        // node may branch on what the webhook just delivered).
+        if (slotUpdates != null && !slotUpdates.isEmpty()) {
+            for (Map.Entry<String, String> e : slotUpdates.entrySet()) {
+                writeSlot(conversationId, e.getKey(), e.getValue(),
+                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+                        resumeReason == null ? "resume" : "resume=" + resumeReason);
+            }
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        int resumed = 0;
+        for (TurChatFlowState state : states) {
+            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+            if (graph == null) continue;
+            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty()) continue;
+            if (!"suspend".equals(currentOpt.get().type())) continue;
+            log.info("[FlowEngine] resume: conv='{}' walking past suspend node '{}' (reason='{}')",
+                    conversationId, state.getCurrentNodeId(), resumeReason);
+            ChatFlowOps.advanceToFirstEdge(state, graph, currentOpt.get());
+            state = stateRepository.save(state);
+            TurChatFlowState leaf = walkTransparentNodes(state, null);
+            if (leaf != state) {
+                stateRepository.save(leaf);
+            }
+            resumed++;
+        }
+        return new ResumeResult(resumed, resumed == 0);
+    }
+
+    /**
+     * T121 — returns true when any state attached to {@code conversationId}
+     * is currently parked at a {@code suspend} node. The chat executor
+     * checks this to short-circuit the LLM call and reply with a parked
+     * banner instead of running the strategy against a non-interactive
+     * node.
+     *
+     * @since 2026.3.1
+     */
+    public Optional<String> findSuspendedReason(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) return Optional.empty();
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        for (TurChatFlowState state : states) {
+            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+            if (graph == null) continue;
+            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty()) continue;
+            ChatFlowNode current = currentOpt.get();
+            if ("suspend".equals(current.type())) {
+                String label = current.label();
+                return Optional.of(label == null || label.isBlank()
+                        ? "suspended"
+                        : label);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * T48 — re-walks every chat-flow state for {@code conversationId} whose
      * cursor currently sits on a {@code scheduleAgent} node, so a routine
      * completion delivered through the slot bus advances the flow without
@@ -600,7 +692,14 @@ public class TurChatFlowEngineService {
             String currentNodeId,
             String guardrailMethod,
             String experimentKey,
-            String variantLabel) {
+            String variantLabel,
+            /**
+             * T121 — non-null when the leaf state's cursor sits on a
+             * {@code suspend} node; carries the node's label/reason so
+             * the portal can render a "Waiting for external system..."
+             * banner. {@code null} means the conversation is not parked.
+             */
+            String suspendedReason) {
     }
 
     /**
@@ -614,11 +713,11 @@ public class TurChatFlowEngineService {
      */
     public ConversationStateDto getConversationState(String conversationId) {
         if (conversationId == null || conversationId.isBlank()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
         }
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         if (states.isEmpty()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
         }
         // Skip rows that point at other rows as parent — we want the leaf.
         Set<String> hasDescendant = states.stream()
@@ -632,6 +731,19 @@ public class TurChatFlowEngineService {
                 .findFirst()
                 .orElse(states.get(0));
         TurChatFlow flow = leaf.getFlow();
+        // T121 — surface the parked reason when the leaf cursor sits on a
+        // suspend node. The portal renders this as a "Waiting..." banner.
+        String suspendedReason = null;
+        if (flow != null) {
+            ChatFlowGraph leafGraph = parseGraph(flow).orElse(null);
+            if (leafGraph != null) {
+                Optional<ChatFlowNode> currentOpt = leafGraph.nodeById(leaf.getCurrentNodeId());
+                if (currentOpt.isPresent() && "suspend".equals(currentOpt.get().type())) {
+                    String label = currentOpt.get().label();
+                    suspendedReason = label == null || label.isBlank() ? "suspended" : label;
+                }
+            }
+        }
         return new ConversationStateDto(
                 conversationId,
                 flow == null ? null : flow.getId(),
@@ -640,7 +752,8 @@ public class TurChatFlowEngineService {
                 flow == null || flow.getGuardrailMethod() == null
                         ? null : flow.getGuardrailMethod().name(),
                 flow == null ? null : flow.getExperimentKey(),
-                flow == null ? null : flow.getVariantLabel());
+                flow == null ? null : flow.getVariantLabel(),
+                suspendedReason);
     }
 
     /**
@@ -2362,6 +2475,16 @@ public class TurChatFlowEngineService {
                 }
                 state = parent;
                 continue;
+            }
+
+            // T121 — `suspend` node parks the cursor indefinitely. The
+            // walker stops here; the chat path replies with a "parked"
+            // override (handled by the executor branch) and the cursor
+            // doesn't move until POST /api/chat/resume/{conversationId}
+            // is invoked by an external system / human approval click /
+            // scheduled job.
+            if ("suspend".equals(current.type())) {
+                return state;
             }
 
             return state;

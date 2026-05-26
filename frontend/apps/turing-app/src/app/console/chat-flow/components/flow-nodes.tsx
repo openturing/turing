@@ -7,6 +7,7 @@ import {
   IconDatabase,
   IconFlag3,
   IconForms,
+  IconHandStop,
   IconPencilPlus,
   IconPlayerPlayFilled,
   IconBell,
@@ -514,6 +515,39 @@ export function ScheduleAgentNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+/**
+ * T121 / §IX.6.a — suspend node. Parks the conversation indefinitely; the
+ * cursor stops here until an external system calls
+ * {@code POST /api/sn/{site}/chat/resume} with the matching
+ * {@code conversationId}. Common uses: human approval workflow, webhook
+ * callback (Salesforce / Stripe / scheduled job), long-running async task.
+ *
+ * @since 2026.3.1
+ */
+export function SuspendNode({ data }: ChatFlowNodeProps) {
+  const reason =
+    typeof data.label === "string" && data.label.trim().length > 0
+      ? data.label
+      : null;
+  return (
+    <div className="w-56 overflow-hidden rounded-lg border-2 border-slate-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-slate-600 px-3 py-2 text-white">
+        <IconHandStop className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">
+          {reason || "Suspend"}
+        </div>
+      </div>
+      <div className="bg-slate-50 p-3 text-xs leading-relaxed text-slate-900 dark:bg-slate-900/40 dark:text-slate-100">
+        <div className="opacity-80">
+          Conversation parked here until <code>POST /chat/resume</code>.
+        </div>
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-slate-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-slate-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -528,4 +562,5 @@ export const nodeTypes = {
   switch: SwitchNode,
   slot: SlotNode,
   writeSlot: WriteSlotNode,
+  suspend: SuspendNode,
 };

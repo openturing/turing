@@ -934,6 +934,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.writeSlot";
     case "scheduleAgent":
       return "chatFlow.palette.scheduleAgent";
+    case "suspend":
+      return "chatFlow.palette.suspend";
   }
 }
 

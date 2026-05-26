@@ -393,6 +393,34 @@ public class TurSNSiteGenAiAPI {
 	 *
 	 * @since 2026.2.7
 	 */
+	/**
+	 * T121 / §IX.6.a — resume a conversation parked at a {@code suspend}
+	 * node. Optionally carries {@code slotUpdates} (a webhook payload, an
+	 * approval decision, the result of a scheduled job) which are applied
+	 * BEFORE the engine walks past the suspend node so downstream
+	 * condition / switch nodes branch on the freshest values.
+	 *
+	 * @since 2026.3.1
+	 */
+	@PostMapping("/chat/resume")
+	public ChatResumeResponse resumeChat(@PathVariable String siteName,
+			@RequestBody ChatResumeRequest body) {
+		if (body == null || body.conversationId() == null || body.conversationId().isBlank()) {
+			return new ChatResumeResponse(0, false, "conversationId is required");
+		}
+		TurChatFlowEngineService.ResumeResult result =
+				chatFlowEngineService.resumeSuspendedFlow(body.conversationId(),
+						body.slotUpdates(), body.resumeReason());
+		return new ChatResumeResponse(result.resumed(), !result.nothingToResume(), null);
+	}
+
+	public record ChatResumeRequest(String conversationId,
+			java.util.Map<String, String> slotUpdates, String resumeReason) {
+	}
+
+	public record ChatResumeResponse(int resumed, boolean wasParked, String error) {
+	}
+
 	@PostMapping("/slots")
 	public ChatSlotWriteResponse writeChatSlot(@PathVariable String siteName,
 			@RequestBody ChatSlotWriteRequest body) {

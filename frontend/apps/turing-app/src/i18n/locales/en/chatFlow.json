@@ -118,7 +118,8 @@
       "switch": "Switch",
       "slot": "Slot",
       "writeSlot": "Write Slot (templated)",
-      "scheduleAgent": "Scheduled Routine"
+      "scheduleAgent": "Scheduled Routine",
+      "suspend": "Suspend"
     },
     "properties": {
       "header": "Node Properties",
