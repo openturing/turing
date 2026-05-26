@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.api.llm.chat.TurLLMChatAPI;
 import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
@@ -105,7 +107,21 @@ public class TurAIAgentChatAPI {
             @PathVariable String agentId,
             @org.springframework.web.bind.annotation.RequestBody AgentChatRequest request,
             HttpServletResponse response) {
+        return doChat(agentId, request, null, response);
+    }
 
+    @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Flux<ChatResponse> chatMultipart(
+            @PathVariable String agentId,
+            @RequestPart("request") AgentChatRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            HttpServletResponse response) {
+        return doChat(agentId, request, files, response);
+    }
+
+    private Flux<ChatResponse> doChat(String agentId, AgentChatRequest request,
+            List<MultipartFile> files, HttpServletResponse response) {
         TurAIAgent agent = turAIAgentRepository.findById(agentId)
                 .orElseThrow(() -> new IllegalArgumentException("AI Agent not found: " + agentId));
 
@@ -124,8 +140,9 @@ public class TurAIAgentChatAPI {
                     "LLM instance '" + llmInstanceId + "' is not configured for agent '" + agentId + "'");
         }
 
-        log.info("[AgentChat] Agent '{}' received request with {} messages, LLM: {}",
-                agent.getTitle(), request.messages().size(), turLLMInstance.getTitle());
+        int fileCount = files == null ? 0 : files.size();
+        log.info("[AgentChat] Agent '{}' received request with {} messages, {} files, LLM: {}",
+                agent.getTitle(), request.messages().size(), fileCount, turLLMInstance.getTitle());
 
         // Cookie-binding for /api/v2/code-interpreter/ signed URLs. Path-
         // scoped so the cookie never travels to unrelated endpoints, and
@@ -152,7 +169,7 @@ public class TurAIAgentChatAPI {
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
                 .toList();
         return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
-                        request.conversationId(), request.flowId())
+                        request.conversationId(), request.flowId(), files)
                 .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
     }
 

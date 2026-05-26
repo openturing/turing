@@ -21,6 +21,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
@@ -59,15 +60,18 @@ public class TurChatPromptAssembler {
     private final TurPersonaPromptComposer personaPromptComposer;
     private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
     private final TurChatPipelineObservation chatPipelineObservation;
+    private final TurChatAttachmentService chatAttachmentService;
 
     public TurChatPromptAssembler(TurChatFlowEngineService chatFlowEngineService,
             TurPersonaPromptComposer personaPromptComposer,
             TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
-            TurChatPipelineObservation chatPipelineObservation) {
+            TurChatPipelineObservation chatPipelineObservation,
+            TurChatAttachmentService chatAttachmentService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
         this.chatPipelineObservation = chatPipelineObservation;
+        this.chatAttachmentService = chatAttachmentService;
     }
 
     /**
@@ -88,6 +92,30 @@ public class TurChatPromptAssembler {
             TurPersona effectivePersona,
             String lastUserMessage,
             String baseSystemPrompt) {
+        return assemble(agent, history, conversationId, flowContext, effectivePersona,
+                lastUserMessage, baseSystemPrompt, null);
+    }
+
+    /**
+     * Same as {@link #assemble(TurAIAgent, List, String, TurAgentChatFlowContext,
+     * TurPersona, String, String)} but additionally attaches the supplied
+     * {@code files} as Spring AI {@link org.springframework.ai.content.Media}
+     * blocks (images) plus Tika-extracted text on the LAST user message in
+     * the post-enrichment history. When {@code files} is null/empty the
+     * behaviour is identical to the no-files overload.
+     *
+     * @param files attachments uploaded with the current turn; null/empty
+     *              leaves the user message untouched
+     * @since 2026.3.1
+     */
+    public List<Message> assemble(TurAIAgent agent,
+            List<ChatMessageItem> history,
+            String conversationId,
+            TurAgentChatFlowContext flowContext,
+            TurPersona effectivePersona,
+            String lastUserMessage,
+            String baseSystemPrompt,
+            List<MultipartFile> files) {
         long t0 = System.currentTimeMillis();
         String flowAugmented = flowContext == null
                 ? baseSystemPrompt
@@ -116,14 +144,28 @@ public class TurChatPromptAssembler {
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));
-        for (ChatMessageItem item : effectiveHistory) {
+        int lastUserIdx = lastUserIndex(effectiveHistory);
+        boolean hasFiles = files != null && !files.isEmpty();
+        for (int i = 0; i < effectiveHistory.size(); i++) {
+            ChatMessageItem item = effectiveHistory.get(i);
             String content = item.content() == null ? "" : item.content();
             if ("assistant".equals(item.role())) {
                 messages.add(new AssistantMessage(content));
+            } else if (hasFiles && i == lastUserIdx) {
+                messages.add(chatAttachmentService.buildUserMessageWithFiles(content, files));
             } else {
                 messages.add(new UserMessage(content));
             }
         }
         return messages;
+    }
+
+    private static int lastUserIndex(List<ChatMessageItem> items) {
+        for (int i = items.size() - 1; i >= 0; i--) {
+            if ("user".equals(items.get(i).role())) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

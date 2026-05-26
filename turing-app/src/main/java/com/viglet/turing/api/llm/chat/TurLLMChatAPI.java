@@ -1,36 +1,25 @@
 package com.viglet.turing.api.llm.chat;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.Set;
 
 import jakarta.annotation.PostConstruct;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.HttpHeaders;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.content.Media;
 import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.MimeType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,10 +27,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.SAXException;
 
 import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
+import com.viglet.turing.genai.TurChatAttachmentService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
@@ -76,9 +65,6 @@ public class TurLLMChatAPI {
 
     private static final String ROLE_ASSISTANT = "assistant";
     private static final String ROLE_SYSTEM = "system";
-
-    private static final Set<String> IMAGE_MIME_TYPES = Set.of(
-            "image/png", "image/jpeg", "image/gif", "image/webp");
 
     @org.springframework.beans.factory.annotation.Value("classpath:prompts/base.md")
     private org.springframework.core.io.Resource basePromptResource;
@@ -123,6 +109,7 @@ public class TurLLMChatAPI {
     private final TurIntegrationMonitoringToolService integrationMonitoringToolService;
     private final TurSystemInfoToolService systemInfoToolService;
     private final TurIconifyToolService iconifyToolService;
+    private final TurChatAttachmentService chatAttachmentService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort,
@@ -141,7 +128,8 @@ public class TurLLMChatAPI {
             TurLoggingToolService loggingToolService,
             TurIntegrationMonitoringToolService integrationMonitoringToolService,
             TurSystemInfoToolService systemInfoToolService,
-            TurIconifyToolService iconifyToolService) {
+            TurIconifyToolService iconifyToolService,
+            TurChatAttachmentService chatAttachmentService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceRepositoryPort = turLLMInstanceRepositoryPort;
         this.llmProviderFactory = llmProviderFactory;
@@ -160,6 +148,7 @@ public class TurLLMChatAPI {
         this.integrationMonitoringToolService = integrationMonitoringToolService;
         this.systemInfoToolService = systemInfoToolService;
         this.iconifyToolService = iconifyToolService;
+        this.chatAttachmentService = chatAttachmentService;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -326,70 +315,12 @@ public class TurLLMChatAPI {
             } else {
                 boolean isLast = (i == items.size() - 1);
                 if (isLast && files != null && !files.isEmpty()) {
-                    messages.add(buildUserMessageWithFiles(item.content(), files));
+                    messages.add(chatAttachmentService.buildUserMessageWithFiles(item.content(), files));
                 } else {
                     messages.add(new UserMessage(item.content()));
                 }
             }
         }
         return messages;
-    }
-
-    private UserMessage buildUserMessageWithFiles(String text, List<MultipartFile> files) {
-        List<Media> imageMedia = new ArrayList<>();
-        StringBuilder extractedText = new StringBuilder();
-
-        for (MultipartFile file : files) {
-            String contentType = file.getContentType() != null
-                    ? file.getContentType()
-                    : "application/octet-stream";
-
-            // Always extract text from all files (works for PDF, DOCX, and images via OCR)
-            String content = extractTextFromFile(file);
-            if (!content.isBlank()) {
-                extractedText.append("\n\n--- File: ")
-                        .append(file.getOriginalFilename())
-                        .append(" ---\n")
-                        .append(content);
-            }
-
-            // Also attach images as Media for vision-capable models
-            if (IMAGE_MIME_TYPES.contains(contentType)) {
-                try {
-                    imageMedia.add(Media.builder()
-                            .mimeType(MimeType.valueOf(contentType))
-                            .data(new ByteArrayResource(file.getBytes()))
-                            .name(file.getOriginalFilename())
-                            .build());
-                } catch (IOException e) {
-                    log.warn("Failed to read image file: {}", file.getOriginalFilename(), e);
-                }
-            }
-        }
-
-        String fullText = extractedText.isEmpty()
-                ? text
-                : text + extractedText;
-
-        if (!imageMedia.isEmpty()) {
-            return UserMessage.builder()
-                    .text(fullText)
-                    .media(imageMedia)
-                    .build();
-        }
-        return new UserMessage(fullText);
-    }
-
-    private String extractTextFromFile(MultipartFile file) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(file.getBytes())) {
-            BodyContentHandler handler = new BodyContentHandler(-1);
-            Metadata metadata = new Metadata();
-            metadata.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
-            new AutoDetectParser().parse(inputStream, handler, metadata, new ParseContext());
-            return handler.toString().strip();
-        } catch (IOException | TikaException | SAXException e) {
-            log.warn("Failed to extract text from file: {}", file.getOriginalFilename(), e);
-            return "";
-        }
     }
 }

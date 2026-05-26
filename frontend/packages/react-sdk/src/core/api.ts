@@ -381,6 +381,17 @@ export interface PostAgentChatOptions {
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
+  /**
+   * Optional file attachments. When non-empty, the request is sent as
+   * {@code multipart/form-data} with a {@code request} part (the existing
+   * JSON body as an {@code application/json} blob) plus one {@code files}
+   * part per file — mirrors the multipart variant exposed by
+   * {@code TurAIAgentChatAPI.chatMultipart}. When omitted or empty, the
+   * request is sent as plain {@code application/json}.
+   *
+   * @since 2026.3.1
+   */
+  readonly files?: ReadonlyArray<File>;
 }
 
 /**
@@ -403,21 +414,39 @@ export async function postAgentChat(
 
   const headers: Record<string, string> = {
     Accept: "text/event-stream",
-    "Content-Type": "application/json",
   };
   const xsrf = readXsrfCookie();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  const requestPayload = {
+    llmInstanceId,
+    messages,
+    conversationId: options?.conversationId,
+    flowId: options?.flowId,
+  };
+
+  let body: BodyInit;
+  if (options?.files && options.files.length > 0) {
+    const form = new FormData();
+    form.append(
+      "request",
+      new Blob([JSON.stringify(requestPayload)], { type: "application/json" }),
+    );
+    for (const file of options.files) {
+      form.append("files", file);
+    }
+    body = form;
+    // FormData → browser sets multipart Content-Type + boundary; don't set it manually.
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(requestPayload);
+  }
 
   const response = await fetch(url, {
     method: "POST",
     headers,
     credentials: "include",
-    body: JSON.stringify({
-      llmInstanceId,
-      messages,
-      conversationId: options?.conversationId,
-      flowId: options?.flowId,
-    }),
+    body,
     signal: options?.signal,
   });
 

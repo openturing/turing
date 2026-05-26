@@ -24,6 +24,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
@@ -223,6 +224,30 @@ public class TurAgentChatExecutor {
             String systemPromptOverride,
             String conversationId,
             String flowId) {
+        return execute(agent, llmInstance, history, systemPromptOverride,
+                conversationId, flowId, null);
+    }
+
+    /**
+     * Overload accepting visitor-uploaded attachments. The latest user
+     * message in {@code history} gets enriched with the attachments' image
+     * {@link org.springframework.ai.content.Media} blocks (vision-capable
+     * models can read them directly) plus Tika-extracted text for documents,
+     * via the shared {@link TurChatAttachmentService} that the plain-LLM
+     * chat endpoint already uses. All other behaviour matches the no-files
+     * overload.
+     *
+     * @param files attachments uploaded with the current turn; null/empty
+     *              behaves identically to the no-files overload
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files) {
 
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown
@@ -311,7 +336,7 @@ public class TurAgentChatExecutor {
         // call (matches the pre-T33 substage boundary).
         final long tBeforeCompose = System.currentTimeMillis();
         List<Message> messages = promptAssembler.assemble(agent, history, conversationId,
-                flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt);
+                flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt, files);
         final long tAfterCompose = System.currentTimeMillis();
 
         // T123 / §IX.7 — enforceable token-budget check. Disabled when
