@@ -410,7 +410,7 @@ Remaining platform-relevant promotions:
 |------|--------|------|-----------|
 | TK1 | 📋 | Deprecate `HeuristicGuardrailStrategy` (default → `LLM_JUDGE` for new flows; kept for back-compat) | Regex-only. `LLM_JUDGE` + tool-calling with provider schema does the job better. Third option that nobody picks pollutes the UI. |
 | TK2 | 📋 | Remove slot types `INTEGER` / `BOOLEAN` from the DSL | Client-side parser via `useTuringSlot<T>` does the coercion better. Schema-level types only generate coercion bugs. |
-| TK3 | 📋 | Remove `forbidsToolCalls(String)` substring overload (T16 left only the node-aware path; the bilingual substring matcher is still inside `@Nested` unit tests but not in production) | Already 95% gone post-T16. Finish the job. |
+| TK3 | ✅ | Remove `forbidsToolCalls(String)` substring overload | Already shipped — T16 deleted the bilingual-substring overload alongside the regen helpers (`forbidsToolCalls(String)`, `regenerateReplyForNewNode`, `buildRegenOverride`, `trimToRecentTurns`, `REGEN_HISTORY_TURN_BUDGET`). Verified 2026-05-26: only `forbidsToolCalls(ChatFlowNode)` survives in [`TurChatToolResolver.java:160`](../turing-app/src/main/java/com/viglet/turing/genai/TurChatToolResolver.java#L160), reading `node.toolsEnabled()` declaratively. The `@Nested ForbidsToolCallsUnitTests` block in [`TurAgentChatExecutorStructuralIT`](../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorStructuralIT.java) only exercises the surviving node-aware overload (4 tests pin: null node → false; `toolsEnabled=TRUE` overrides legacy sentinel; `toolsEnabled=FALSE` strips tools; null + sentinel → false, asserting the substring fallback is gone). No production code path scans `aiInstruction` for bilingual sentinels anymore. |
 | TK4 | 📋 | Extend `functionCall` node runtime to support `toolSource=MCP` | T46 shipped the NATIVE path; MCP is currently acknowledged + skipped with a warning. Either wire `TurMcpToolCallbackService.getToolCallbacks(...)` into `TurFunctionCallNodeExecutor` (needs an MCP-server resolution by `mcpServerId`) OR drop `"MCP"` from the schema enum. |
 | TK5 | 💭 | Replace Brevo email integration with Resend or Postmark | Modern provider, smaller footprint, better deliverability. Email-out is the feature; the provider is a swappable detail. |
 | TK6 | 💭 | Audit Custom Solr admin UI usage; if zero customers depend on it, fold into Solr native admin URL | TurSN legacy. Maintaining two admin surfaces dilutes. |
@@ -2691,7 +2691,7 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 | `functionCall` node type (TK4) | Vapor — engine doesn't execute it. Either ship T46 or kill the type. | Decision in 1 sprint |
 | Brevo integration (TK5) | Modern alternatives (Resend, Postmark) have better deliverability + simpler API. | Replace within 6 months |
 | Custom Solr admin UI (TK6) | TurSN heritage; Solr has native admin. | Audit usage, kill if zero customers depend |
-| `forbidsToolCalls(String)` substring overload (TK3) | T16 left only node-aware path; finish the job. | 1 sprint |
+| ~~`forbidsToolCalls(String)` substring overload (TK3)~~ | ✅ Shipped in T16 — only the node-aware overload survives, reading `ChatFlowNode.toolsEnabled` declaratively. | Done |
 
 ### VIII.7 Sequencing — what to start this quarter
 
