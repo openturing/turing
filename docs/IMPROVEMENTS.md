@@ -139,6 +139,27 @@ acting.
 >   days focused work; T231 (the actual `chat.page.tsx` rewrite) is
 >   gated on T219–T225. See §XII.
 >
+>   **Status snapshot (2026-05-26 PM)**: SDK plumbing — T219 (LLM
+>   listing + context-info API), T220 (`useTuringLlmInstances`),
+>   T222 (per-turn LLM override on `useTuringChat`), T223 (real
+>   `AbortController` for `stop()`), T225 (`useTuringScheduleAgentWaiting`)
+>   all ✅. Admin migration — T226 (admin's local `useLlmInstances`
+>   replaced with the SDK hook) ✅. Two tasks deferred with documented
+>   prereqs: **T221** (multipart agent chat) blocked on **T221a** —
+>   backend prereq adding a multipart variant to `TurAIAgentChatAPI`
+>   `/chat` + threading `MultipartFile` through `TurAgentChatExecutor.execute`;
+>   **T228** (admin `useScheduleAgentWaiting` swap) blocked on
+>   **T228a** — the SDK's `useTuringSlots` calls `useTuringContext()`
+>   unconditionally, but the admin console doesn't mount a
+>   `<TuringProvider>`, so adopting the SDK hook crashes at runtime
+>   (resolution: either mount a placeholder provider at the admin
+>   App root, or drop the context dependency for agent-mode hooks).
+>   Still 📋: T224 (`useTuringLlmChat` — requires extracting a shared
+>   `useStreamingChatCore` from `useTuringChat`), T227 (per-tab
+>   `useTuringChat` rewrite, depends on T222 ✅ + T223 ✅ + T224),
+>   T229–T232 (title generator migration, `TurChatService` deletion,
+>   `chat.page.tsx` extract, smoke ITs).
+>
 > **Dependency rule of thumb** *(historical — kept for context):* "Safety
 > net" was supposed to land before §I.5 — in practice we shipped Block B
 > against the smoke ITs (T1+T5) and impacted unit tests, with the
