@@ -14,6 +14,7 @@ export {
   fetchAgentContextInfo,
   postChatConversation,
   postAgentChat,
+  postLlmChat,
   deleteSiteConversationState,
   deleteAgentFlowState,
   fetchAutoComplete,
@@ -33,6 +34,7 @@ export type {
   SearchParams,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostLlmChatOptions,
   ChatEnabledResponse,
   ChatDisabledReason,
   ClickTrackParams,
@@ -80,6 +82,12 @@ export { useTuringTabs } from "./hooks/use-turing-tabs";
 export type { UseTuringTabsReturn, UseTuringTabsOptions, TabDefinition, EnrichedTab } from "./hooks/use-turing-tabs";
 export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus, SendOverrides } from "./hooks/use-turing-chat";
+export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
+export type {
+  UseTuringLlmChatReturn,
+  UseTuringLlmChatOptions,
+  LlmSendOverrides,
+} from "./hooks/use-turing-llm-chat";
 export { useTuringIntents } from "./hooks/use-turing-intents";
 export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
 export { useTuringSlots } from "./hooks/use-turing-slots";

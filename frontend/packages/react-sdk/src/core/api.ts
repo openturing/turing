@@ -434,6 +434,98 @@ export async function postAgentChat(
 }
 
 /**
+ * Options for {@link postLlmChat}. The plain-LLM endpoint has no chat-flow
+ * runtime attached — there is no {@code conversationId}, no {@code flowId},
+ * and no {@code options} (chip) events to forward. Only {@code onToken} and
+ * {@code signal} carry over from the conversation/agent variants.
+ *
+ * @since 2026.3.1
+ */
+export interface PostLlmChatOptions {
+  /**
+   * Called once per SSE chunk with the chunk's {@code content} field. The
+   * same content is also accumulated and returned in the resolved promise
+   * as a single {@link TurChatConversationResponse}.
+   */
+  readonly onToken?: (token: string) => void;
+  /** Aborts the in-flight SSE request when triggered. */
+  readonly signal?: AbortSignal;
+  /**
+   * Optional file attachments. When non-empty, the request is sent as
+   * {@code multipart/form-data} with a {@code request} part (JSON body) plus
+   * one {@code files} part per file — mirrors the multipart variant exposed
+   * by {@code TurLLMChatAPI.chat}. When omitted or empty, the request is
+   * sent as plain {@code application/json}.
+   */
+  readonly files?: ReadonlyArray<File>;
+}
+
+/**
+ * Streams a turn against an explicit {@code TurLLMInstance} with no agent,
+ * no site, and no chat-flow context — {@code POST /v2/llm/{id}/chat}. The
+ * backend prepends its own base + tools + ops + render prompts; the caller
+ * just supplies the message history.
+ *
+ * <p>When {@code options.files} is non-empty, the request is sent as
+ * multipart so the LLM can attach the documents as {@code Media} parts on
+ * the user message (PDF / image / etc.). Without files, the request is
+ * plain JSON.
+ *
+ * <p>Returns the aggregated assistant text once the SSE stream closes; the
+ * {@code options} field is always an empty array (no chat-flow → no chip
+ * suggestions), preserved for shape parity with
+ * {@link postChatConversation} / {@link postAgentChat}.
+ *
+ * @since 2026.3.1
+ */
+export async function postLlmChat(
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostLlmChatOptions,
+): Promise<TurChatConversationResponse> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/llm/${llmInstanceId}/chat`;
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+  };
+  const xsrf = readXsrfCookie();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  let body: BodyInit;
+  if (options?.files && options.files.length > 0) {
+    const form = new FormData();
+    form.append(
+      "request",
+      new Blob([JSON.stringify({ messages })], { type: "application/json" }),
+    );
+    for (const file of options.files) {
+      form.append("files", file);
+    }
+    body = form;
+    // FormData → browser sets multipart Content-Type + boundary; don't set it manually.
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify({ messages });
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body,
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const { text } = await consumeAssistantStream(response, options?.onToken);
+  return { role: "assistant", content: text, options: [] };
+}
+
+/**
  * Drops every chat-flow runtime state for {@code conversationId} on the
  * site's agent. Use to wire a "New chat" button on public search UIs —
  * client-side `reset()` only clears local state; this clears the server-side
