@@ -79,7 +79,7 @@ export type { UseTuringPaginationReturn, PaginationPage } from "./hooks/use-turi
 export { useTuringTabs } from "./hooks/use-turing-tabs";
 export type { UseTuringTabsReturn, UseTuringTabsOptions, TabDefinition, EnrichedTab } from "./hooks/use-turing-tabs";
 export { useTuringChat } from "./hooks/use-turing-chat";
-export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus } from "./hooks/use-turing-chat";
+export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus, SendOverrides } from "./hooks/use-turing-chat";
 export { useTuringIntents } from "./hooks/use-turing-intents";
 export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
 export { useTuringSlots } from "./hooks/use-turing-slots";

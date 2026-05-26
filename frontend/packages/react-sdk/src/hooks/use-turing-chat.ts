@@ -44,6 +44,34 @@ export interface ChatMessage extends TurChatConversationMessage {
 export interface UseTuringChatAgent {
   readonly id: string;
   readonly llmInstanceId: string;
+  /**
+   * Hint that the host UI may pass a per-turn {@code llmInstanceId}
+   * override to {@link UseTuringChatReturn#send}. Purely documentary on
+   * the hook — the override is always honoured when supplied; this flag
+   * exists so the host's typed surface can advertise the capability to
+   * UI authors. Defaults to {@code false}.
+   *
+   * @since 2026.3.1
+   */
+  readonly allowOverride?: boolean;
+}
+
+/**
+ * Per-call overrides accepted by {@link UseTuringChatReturn#send}. Today
+ * only the LLM-instance override matters; structuring it as an options bag
+ * keeps the door open for future per-turn flags (forced flow, structured
+ * tool overrides) without another signature change.
+ *
+ * @since 2026.3.1
+ */
+export interface SendOverrides {
+  /**
+   * Routes this turn through a different {@code TurLLMInstance} than the
+   * one pinned via {@code agent.llmInstanceId}. Ignored when the hook is
+   * in site mode (no agent endpoint to point at). The hook does not
+   * persist the override — the caller controls the "sticky" semantics.
+   */
+  readonly llmInstanceId?: string;
 }
 
 export interface UseTuringChatOptions {
@@ -115,8 +143,15 @@ export interface UseTuringChatReturn {
   /**
    * Send a user message. Appends it to the conversation, calls the API
    * with full history, and appends the assistant reply on success.
+   *
+   * <p>In agent mode, an optional {@code overrides.llmInstanceId} swaps the
+   * LLM for this turn only — the hook does NOT mutate
+   * {@code agent.llmInstanceId}, so the host UI decides whether the change
+   * is "sticky" (re-render with a new option) or per-turn (one-shot picker).
+   *
+   * @since 2026.3.1 (overrides param)
    */
-  send: (content: string) => Promise<void>;
+  send: (content: string, overrides?: SendOverrides) => Promise<void>;
   /** Abort the in-flight assistant turn (rolls back the pending user message). */
   stop: () => void;
   /** Clear all messages and reset error state. */
@@ -343,9 +378,18 @@ export function useTuringChat(
   }, []);
 
   const send = useCallback(
-    async (rawContent: string) => {
+    async (rawContent: string, overrides?: SendOverrides) => {
       const content = rawContent.trim();
       if (!content) return;
+      // Per-turn LLM override — only meaningful in agent mode where the
+      // endpoint accepts an explicit `llmInstanceId`. In site mode the
+      // override is silently ignored (the site picks its agent + LLM
+      // server-side). The hook never mutates `agentLlmInstanceId`; the
+      // caller owns the "sticky" decision.
+      const effectiveLlmInstanceId =
+        overrides?.llmInstanceId && agentId
+          ? overrides.llmInstanceId
+          : agentLlmInstanceId;
 
       const userMsg: ChatMessage = {
         id: newId(),
@@ -431,8 +475,8 @@ export function useTuringChat(
               (m) => ({ ...m, content: m.content + token })));
         };
 
-        const res = agentId && agentLlmInstanceId
-          ? await postAgentChat(agentId, agentLlmInstanceId, wire, {
+        const res = agentId && effectiveLlmInstanceId
+          ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
               conversationId: activeConversationId,
               flowId,
               onToken,
