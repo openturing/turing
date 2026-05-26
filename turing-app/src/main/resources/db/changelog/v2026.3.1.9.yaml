@@ -1,0 +1,28 @@
+databaseChangeLog:
+  # T70 / §VII.8.a — banditEnabled flag on chat_flow.
+  #
+  # When at least one variant under the same experimentKey has banditEnabled=true,
+  # the engine ignores trafficWeight and routes via Thompson sampling on the
+  # observed conversion data. The flag is per-flow rather than per-experimentKey
+  # so champion-challenger setups can pin one arm fixed-weight while the other
+  # opts into bandit traffic.
+
+  - changeSet:
+      id: v2026.3.1.9-add-banditEnabled-to-chat_flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: banditEnabled
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: banditEnabled
+                  type: boolean
+                  remarks: "T70 — when TRUE, route via Thompson sampling instead of trafficWeight."

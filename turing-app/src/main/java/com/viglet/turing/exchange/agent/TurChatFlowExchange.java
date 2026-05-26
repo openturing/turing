@@ -46,6 +46,7 @@ public class TurChatFlowExchange {
     private Integer trafficWeight;
     private Instant experimentStartsAt;
     private Instant experimentEndsAt;
+    private Boolean banditEnabled;
 
     /** Relative path inside the ZIP to the chat-flow definition JSON. */
     private String definitionFile;
@@ -64,6 +65,7 @@ public class TurChatFlowExchange {
         e.trafficWeight = flow.getTrafficWeight();
         e.experimentStartsAt = flow.getExperimentStartsAt();
         e.experimentEndsAt = flow.getExperimentEndsAt();
+        e.banditEnabled = flow.getBanditEnabled();
         e.definitionFile = definitionFile;
         return e;
     }

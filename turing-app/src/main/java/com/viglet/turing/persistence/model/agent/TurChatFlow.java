@@ -202,6 +202,26 @@ public class TurChatFlow implements Serializable {
     private Instant experimentEndsAt;
 
     /**
+     * T70 / §VII.8.a — bandit mode for A/B assignment. When at least one
+     * variant in the experimentKey has this set to {@code TRUE}, the
+     * engine ignores {@code trafficWeight} and selects the variant via
+     * Thompson sampling on the observed conversion data (Beta-Bernoulli
+     * posterior, success metric configured per experiment).
+     *
+     * <p>The toggle is per-flow rather than per-experimentKey so a single
+     * arm can opt into bandit assignment incrementally (e.g. a champion-
+     * challenger setup where the champion stays fixed-weight while the
+     * challenger gets bandit traffic until it earns a fixed slot).
+     *
+     * <p>{@code null} / {@code FALSE} → legacy deterministic
+     * weighted-hash assignment (current production behaviour).
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "banditEnabled")
+    private Boolean banditEnabled;
+
+    /**
      * T93 / §VII.11.c — cross-flow slot inheritance. JSON object whose keys
      * are slot names this (receiving) flow expects to inherit from earlier
      * flows on the same conversation, and whose values are the source-slot

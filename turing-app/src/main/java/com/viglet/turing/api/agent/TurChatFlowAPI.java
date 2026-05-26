@@ -533,6 +533,7 @@ public class TurChatFlowAPI {
                     existing.setTrafficWeight(incoming.getTrafficWeight());
                     existing.setExperimentStartsAt(incoming.getExperimentStartsAt());
                     existing.setExperimentEndsAt(incoming.getExperimentEndsAt());
+                    existing.setBanditEnabled(incoming.getBanditEnabled());
                     existing.setSlotInheritanceJson(incoming.getSlotInheritanceJson());
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);

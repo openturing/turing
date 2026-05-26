@@ -103,6 +103,8 @@ class TurChatFlowPinFlowTest {
                 submissionRepository, chatAnalyticsService, slotEventBus,
                 org.mockito.Mockito.mock(
                         com.viglet.turing.service.chatslots.TurChatSlotAuditService.class),
+                org.mockito.Mockito.mock(
+                        com.viglet.turing.service.chatanalytics.TurAbBanditService.class),
                 cacheManager,
                 org.mockito.Mockito.mock(TurFunctionCallNodeExecutor.class),
                 org.mockito.Mockito.mock(

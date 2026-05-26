@@ -100,6 +100,16 @@ export interface TurChatFlow {
    */
   trafficWeight?: number | null;
   /**
+   * T70 / §VII.8.a — when true (on at least one variant under the same
+   * experimentKey), the engine ignores `trafficWeight` and routes via
+   * Thompson sampling on the observed conversion data. Per-flow so a
+   * champion-challenger setup can pin one arm fixed-weight while the
+   * other opts in.
+   *
+   * @since 2026.3.1
+   */
+  banditEnabled?: boolean | null;
+  /**
    * T93 / §VII.11.c — JSON mapping {@code {receivingSlot: sourceSlot}} of
    * slots this flow inherits from earlier flows on the same conversation.
    * {@code {"*":"*"}} = pass every captured slot through. Null/blank

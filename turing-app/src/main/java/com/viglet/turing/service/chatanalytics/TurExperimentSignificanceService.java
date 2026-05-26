@@ -171,8 +171,13 @@ public class TurExperimentSignificanceService {
      * Pulls per-variant counts from the analytics store. Uses the same
      * scorecard endpoint that the dashboard uses with {@code dimension=variantLabel}
      * filtered by {@code experimentKey}, then layers the success metric on top.
+     *
+     * <p>Public to support T70 — the bandit picker reuses this exact shape
+     * so the same conversions that decide significance also feed Thompson
+     * sampling. Keeping ONE source of truth for "what counts as a success"
+     * avoids two paths drifting apart.
      */
-    private List<VariantStat> collectVariantStats(String experimentKey, SuccessMetric metric,
+    public List<VariantStat> collectVariantStats(String experimentKey, SuccessMetric metric,
             Instant from, Instant to) {
         Instant fromInstant = from == null ? Instant.now().minusSeconds(30L * 24 * 3600) : from;
         Instant toInstant   = to   == null ? Instant.now() : to;

@@ -243,6 +243,7 @@ public class TurChatFlowEngineService {
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatSlotEventBus slotEventBus;
     private final com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService;
+    private final com.viglet.turing.service.chatanalytics.TurAbBanditService abBanditService;
     private final CacheManager cacheManager;
     private final TurFunctionCallNodeExecutor functionCallExecutor;
     private final TurScheduleAgentNodeExecutor scheduleAgentExecutor;
@@ -254,6 +255,7 @@ public class TurChatFlowEngineService {
             TurChatAnalyticsService chatAnalyticsService,
             TurChatSlotEventBus slotEventBus,
             com.viglet.turing.service.chatslots.TurChatSlotAuditService slotAuditService,
+            com.viglet.turing.service.chatanalytics.TurAbBanditService abBanditService,
             CacheManager cacheManager,
             TurFunctionCallNodeExecutor functionCallExecutor,
             TurScheduleAgentNodeExecutor scheduleAgentExecutor,
@@ -264,6 +266,7 @@ public class TurChatFlowEngineService {
         this.chatAnalyticsService = chatAnalyticsService;
         this.slotEventBus = slotEventBus;
         this.slotAuditService = slotAuditService;
+        this.abBanditService = abBanditService;
         this.cacheManager = cacheManager;
         this.functionCallExecutor = functionCallExecutor;
         this.scheduleAgentExecutor = scheduleAgentExecutor;
@@ -1317,7 +1320,13 @@ public class TurChatFlowEngineService {
         TurChatFlow finalFlow = routerFlow;
         ChatFlowGraph finalGraph = routerGraph;
         if (variants.size() > 1 || !variants.get(0).getId().equals(routerFlow.getId())) {
-            TurChatFlow assigned = assignVariant(variants, conversationId, experimentKey);
+            // T70: if any variant has banditEnabled, route via Thompson
+            // sampling on the observed conversion data instead of the
+            // deterministic fixed-weight hash.
+            TurChatFlow assigned = com.viglet.turing.service.chatanalytics.TurAbBanditService
+                            .isBanditExperiment(variants)
+                    ? abBanditService.pickVariant(variants, experimentKey)
+                    : assignVariant(variants, conversationId, experimentKey);
             if (!assigned.getId().equals(routerFlow.getId())) {
                 Optional<ChatFlowGraph> assignedGraph = parseGraph(assigned);
                 if (assignedGraph.isPresent()) {

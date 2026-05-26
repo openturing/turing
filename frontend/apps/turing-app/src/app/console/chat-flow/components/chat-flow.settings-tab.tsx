@@ -83,6 +83,8 @@ interface SettingsTabProps {
   setVariantLabel: (value: string) => void;
   trafficWeight: number | null;
   setTrafficWeight: (value: number | null) => void;
+  banditEnabled: boolean;
+  setBanditEnabled: (value: boolean) => void;
   slotInheritanceJson: string;
   setSlotInheritanceJson: (value: string) => void;
 }
@@ -108,6 +110,8 @@ export function ChatFlowSettingsTab({
   setVariantLabel,
   trafficWeight,
   setTrafficWeight,
+  banditEnabled,
+  setBanditEnabled,
   slotInheritanceJson,
   setSlotInheritanceJson,
 }: Readonly<SettingsTabProps>) {
@@ -347,6 +351,27 @@ export function ChatFlowSettingsTab({
                     }
                   }}
                   placeholder="50"
+                  disabled={!experimentKey.trim() || banditEnabled}
+                />
+              </FormRow>
+
+              {/* T70 / §VII.8.a — Bandit (Thompson sampling) toggle. When
+                  ANY variant in the experimentKey has this on, the engine
+                  ignores traffic weights and routes via Thompson sampling
+                  on observed conversion data. Disabled until the flow is
+                  inside an experimentKey. */}
+              <FormRow
+                htmlFor="chat-flow-bandit-enabled"
+                label={t("chatFlow.fields.banditEnabled", { defaultValue: "Bandit (Thompson sampling)" })}
+                description={t("chatFlow.fields.banditEnabledHint", {
+                  defaultValue:
+                    "When enabled, the engine ignores traffic weight and adapts to observed conversion using Thompson sampling on the goal-achieved rate. Activate on at least one variant under the same experiment key to enable bandit mode.",
+                })}
+              >
+                <Switch
+                  id="chat-flow-bandit-enabled"
+                  checked={banditEnabled}
+                  onCheckedChange={setBanditEnabled}
                   disabled={!experimentKey.trim()}
                 />
               </FormRow>
