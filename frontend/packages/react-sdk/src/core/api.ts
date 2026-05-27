@@ -858,6 +858,56 @@ export async function postSiteHandoff(
 }
 
 /**
+ * Server response for the flow-chooser endpoint. {@code success} is false
+ * when the site has no GenAI agent, the conversation could not be pinned,
+ * or the requested {@code flow} did not resolve — {@code reason} carries the
+ * human-readable explanation in that case. On success, {@code pinnedFlowId}
+ * and {@code pinnedFlowName} echo the flow the engine locked onto.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatFlowSelectResponse {
+  readonly success: boolean;
+  readonly pinnedFlowId: string | null;
+  readonly pinnedFlowName: string | null;
+  readonly reason: string | null;
+}
+
+/**
+ * Pins a specific chat-flow for the conversation, overriding the LLM
+ * trigger router. {@code flow} resolves by UUID first, then by
+ * case-insensitive name — so a deep link can land the visitor on the
+ * right persona (e.g. {@code ?flow=in-company}). The server snapshots
+ * the conversation's existing slots, resets prior in-progress states on
+ * the agent, pre-creates the chosen flow's state with that snapshot
+ * seeded in, and walks transparent/satisfied nodes so the next chat turn
+ * starts at the right cursor. Subsequent chat calls need no {@code flowId}
+ * plumbing — the engine continuation rule keeps the pin sticky.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/flow-select}.
+ *
+ * @since 2026.3.1
+ */
+export async function postSiteFlowSelect(
+  site: string,
+  conversationId: string,
+  flow: string,
+): Promise<TurChatFlowSelectResponse> {
+  const { data } = await axios.post<TurChatFlowSelectResponse>(
+    `/sn/${site}/chat/flow-select`,
+    { conversationId, flow },
+  );
+  return (
+    data ?? {
+      success: false,
+      pinnedFlowId: null,
+      pinnedFlowName: null,
+      reason: "empty response",
+    }
+  );
+}
+
+/**
  * Lists the LLM instances visible to the current session. Mirror of the
  * admin's `GET /api/llm` listing — used by chat consumers that let the user
  * pick which model to talk to (admin chat, future SDK pickers).

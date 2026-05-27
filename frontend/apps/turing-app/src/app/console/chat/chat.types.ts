@@ -1,4 +1,7 @@
-import type { ChatMessageItem } from "@/services/chat/chat.service"
+import type {
+  TurChatConversationMessage,
+  ChatMessage as TuringChatMessage,
+} from "@viglet/turing-react-sdk"
 
 export const DEFAULT_CONTEXT_WINDOW = 128000
 export const LLM_STORAGE_KEY = "turing-chat-selected-llm"
@@ -12,7 +15,7 @@ export interface ChatAttachment {
   size: number
 }
 
-export interface ChatMessage extends ChatMessageItem {
+export interface ChatMessage extends TurChatConversationMessage {
   id: string
   attachments?: ChatAttachment[]
   /**
@@ -26,6 +29,31 @@ export interface ChatMessage extends ChatMessageItem {
 }
 
 export const generateId = () => crypto.randomUUID()
+
+/**
+ * Admin session transcript → SDK `useTuringChat` message shape. Chip labels
+ * live under `suggestedOptions` in the admin model and `options` in the SDK;
+ * `timestamp` is synthesized (the admin store doesn't persist it).
+ */
+export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
+  return msgs.map((m) => ({
+    id: m.id,
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: m.content,
+    timestamp: Date.now(),
+    options: m.suggestedOptions,
+  }))
+}
+
+/** SDK `useTuringChat` message shape → admin transcript shape (for the store). */
+export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
+  return msgs.map((m) => ({
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    suggestedOptions: m.options,
+  }))
+}
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`

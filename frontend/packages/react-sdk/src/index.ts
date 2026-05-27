@@ -24,6 +24,7 @@ export {
   postSiteChatSlot,
   postSiteSlotExtract,
   postSiteHandoff,
+  postSiteFlowSelect,
   fetchSiteChatState,
   fetchSortOptions,
   parseHrefToParams,
@@ -43,6 +44,7 @@ export type {
   TurChatSlotExtractResponse,
   TurChatHandoffChannel,
   TurChatHandoffResponse,
+  TurChatFlowSelectResponse,
   TurChatConversationState,
 } from "./core/api";
 
@@ -148,6 +150,12 @@ export type {
 } from "./hooks/use-turing-flow-state";
 export { useTuringExperiment } from "./hooks/use-turing-experiment";
 export type { UseTuringExperimentReturn } from "./hooks/use-turing-experiment";
+export { useTuringFlowChooser } from "./hooks/use-turing-flow-chooser";
+export type {
+  UseTuringFlowChooserReturn,
+  UseTuringFlowChooserOptions,
+  FlowChooserStatus,
+} from "./hooks/use-turing-flow-chooser";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 

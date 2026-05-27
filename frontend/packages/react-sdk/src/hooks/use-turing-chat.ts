@@ -110,6 +110,32 @@ export interface UseTuringChatOptions {
    * @since 2026.2.16
    */
   readonly locale?: string;
+  /**
+   * Controlled conversation id. When set, the hook uses this value verbatim
+   * as the backend {@code conversationId} for every turn and skips minting
+   * one from the {@code TUR_SESSION} cookie. Lets a host that owns the
+   * session lifecycle (e.g. the admin console keying chats by IndexedDB
+   * session id) keep the backend conversation and its own persisted
+   * transcript on the same id. When unset (default), the cookie-minted id
+   * is used exactly as before — existing consumers are unaffected.
+   *
+   * <p>Treated as the source of truth on each {@code send}; pair with a
+   * remount (e.g. {@code key={conversationId}}) when switching sessions so
+   * {@link initialMessages} re-seeds cleanly.
+   *
+   * @since 2026.3.1
+   */
+  readonly conversationId?: string;
+  /**
+   * Seeds the message list at mount — typically a transcript restored from
+   * the host's own store (IndexedDB session, server snapshot). Read once on
+   * first render only; change it together with a remount (keyed on
+   * {@link conversationId}) to swap transcripts. Ignored when {@code persist}
+   * loads a saved conversation from {@code sessionStorage}.
+   *
+   * @since 2026.3.1
+   */
+  readonly initialMessages?: ChatMessage[];
 }
 
 export interface UseTuringChatReturn {
@@ -290,7 +316,15 @@ export function useTuringChat(
   // admin console with no real "site" can mount the agent-mode variant
   // without wrapping the world in a placeholder <TuringProvider>.
   const ctx = useOptionalTuringContext();
-  const { persist = false, maxMessages = DEFAULT_MAX_MESSAGES, flowId, agent, locale: localeOverride } = options;
+  const {
+    persist = false,
+    maxMessages = DEFAULT_MAX_MESSAGES,
+    flowId,
+    agent,
+    locale: localeOverride,
+    conversationId: controlledConversationId,
+    initialMessages,
+  } = options;
   const agentId = agent?.id;
   const agentLlmInstanceId = agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
@@ -305,7 +339,9 @@ export function useTuringChat(
 
   const persistKey = persist && siteName ? storageKey(siteName, persist) : null;
 
-  const initialPersisted = persistKey ? loadPersisted(persistKey) : { conversationId: null, messages: [] };
+  const initialPersisted = persistKey
+    ? loadPersisted(persistKey)
+    : { conversationId: controlledConversationId ?? null, messages: initialMessages ?? [] };
 
   // In agent mode the site's RAG flag doesn't gate access — the consumer
   // already chose an agent — so default to enabled and skip the fetch.
@@ -375,6 +411,17 @@ export function useTuringChat(
     if (persistKey) savePersisted(persistKey, { conversationId, messages });
   }, [persistKey, messages, conversationId]);
 
+  // Controlled-id sync: when the host supplies (or later resolves) a
+  // `conversationId` prop, adopt it into state + ref so reads like
+  // `resetFlow()` see the right id even before the first `send`. No-op for
+  // uncontrolled consumers (prop undefined).
+  useEffect(() => {
+    if (controlledConversationId && controlledConversationId !== conversationIdRef.current) {
+      conversationIdRef.current = controlledConversationId;
+      setConversationId(controlledConversationId);
+    }
+  }, [controlledConversationId]);
+
   // Extracted out of `send`'s try/catch so the streaming path stays under
   // the cognitive-complexity threshold. Drops the result when a newer send
   // is in flight, swallows AbortError as an intentional stop, and surfaces
@@ -435,7 +482,11 @@ export function useTuringChat(
       // cookie API is unavailable (SSR, cookies disabled). Without an id the
       // backend skips chat-flow routing for turn 1 entirely (the executor
       // early-returns when `conversationId` is blank).
+      // A controlled `conversationId` (host owns the session lifecycle) always
+      // wins — we never mint a cookie id over it. Otherwise fall back to the
+      // cookie-minted id exactly as before.
       let activeConversationId =
+        controlledConversationId ??
         getOrCreateTurSession({
           name: sessionCookieNameRef.current,
           ttlSeconds: sessionTtlSecondsRef.current,
@@ -520,7 +571,7 @@ export function useTuringChat(
         handleSendError(err, requestId);
       }
     },
-    [siteName, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, handleSendError],
+    [siteName, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, controlledConversationId, handleSendError],
   );
 
   const stop = useCallback(() => {

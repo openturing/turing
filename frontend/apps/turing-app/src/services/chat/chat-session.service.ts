@@ -1,4 +1,4 @@
-import type { ChatMessageItem } from "./chat.service"
+import type { TurChatConversationMessage } from "@viglet/turing-react-sdk"
 
 const DB_NAME = "turing-chat-sessions"
 const DB_VERSION = 1
@@ -13,7 +13,7 @@ export interface ChatSession {
   modelName?: string
   agentId?: string
   agentTitle?: string
-  messages: (ChatMessageItem & { id: string; attachments?: { name: string; type: string; size: number }[] })[]
+  messages: (TurChatConversationMessage & { id: string; attachments?: { name: string; type: string; size: number }[] })[]
   createdAt: number
   updatedAt: number
 }
