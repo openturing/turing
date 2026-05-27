@@ -190,6 +190,36 @@ function readXsrfCookie(): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
+/**
+ * Resolves the CSRF token for the fetch-based SSE POSTs (which bypass axios'
+ * built-in CSRF handling). Returns the {@code XSRF-TOKEN} cookie when present;
+ * otherwise primes it with a `GET {baseURL}/csrf` and re-reads.
+ *
+ * <p>Spring Security 6 writes the CSRF cookie <em>lazily</em> — only once the
+ * token is accessed — so an authenticated console that merely loaded the page
+ * (all GETs) may not have the cookie yet. Without this prime, the first chat
+ * POST goes out with no {@code X-XSRF-TOKEN} header and the server answers
+ * 403. The {@code /csrf} fetch is best-effort: on a public/anonymous SPA where
+ * the endpoint is absent or CSRF is disabled, it fails quietly and the request
+ * proceeds tokenless (the CSRF-exempt endpoint still succeeds).
+ *
+ * @since 2026.3.1
+ */
+async function ensureXsrfToken(): Promise<string | undefined> {
+  const existing = readXsrfCookie();
+  if (existing) return existing;
+  try {
+    const baseURL = axios.defaults.baseURL ?? "";
+    const res = await fetch(`${baseURL}/csrf`, { credentials: "include" });
+    if (res.ok) {
+      return res.headers.get("X-XSRF-TOKEN") ?? readXsrfCookie();
+    }
+  } catch {
+    // /csrf unavailable (anonymous SPA, CSRF disabled, CORS) — fall through.
+  }
+  return readXsrfCookie();
+}
+
 export interface PostChatConversationOptions {
   /**
    * Called once per SSE chunk with the chunk's `content` field. Use it to
@@ -335,7 +365,7 @@ export async function postChatConversation(
     Accept: "text/event-stream",
     "Content-Type": "application/json",
   };
-  const xsrf = readXsrfCookie();
+  const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
   const response = await fetch(url, {
@@ -415,7 +445,7 @@ export async function postAgentChat(
   const headers: Record<string, string> = {
     Accept: "text/event-stream",
   };
-  const xsrf = readXsrfCookie();
+  const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
   const requestPayload = {
@@ -518,7 +548,7 @@ export async function postLlmChat(
   const headers: Record<string, string> = {
     Accept: "text/event-stream",
   };
-  const xsrf = readXsrfCookie();
+  const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
 
   let body: BodyInit;

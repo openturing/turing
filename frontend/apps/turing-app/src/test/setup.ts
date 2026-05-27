@@ -8,6 +8,11 @@ afterEach(() => {
   cleanup();
 });
 
+// Seed a readable CSRF cookie so the SDK's `ensureXsrfToken()` short-circuits
+// (returns the cookie) instead of prefetching `/csrf` — keeps `fetch` call
+// counts in the SSE tests equal to the number of chat turns.
+document.cookie = "XSRF-TOKEN=test-csrf";
+
 // ── jsdom gaps the chat UI relies on ──
 // AgentChatTab auto-scrolls via endRef.scrollIntoView; jsdom has no impl.
 if (!Element.prototype.scrollIntoView) {

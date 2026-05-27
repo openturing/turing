@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentChatTab } from "../components/agent-chat-tab";
-import { makeAgent, makeSseFetch } from "./test-utils";
+import { makeAgent, makeSseFetch, sseStream } from "./test-utils";
 
 /**
  * T232.1 — send + stream + chip-options.
@@ -19,6 +19,8 @@ describe("AgentChatTab — send, stream, chip options (T232.1)", () => {
     vi.mocked(axios.get).mockResolvedValue({
       data: { conversationId: "conv-1", slots: {} },
     });
+    // Re-seed the readable CSRF cookie each test (one test clears it).
+    document.cookie = "XSRF-TOKEN=test-csrf";
   });
 
   function renderTab() {
@@ -76,5 +78,38 @@ describe("AgentChatTab — send, stream, chip options (T232.1)", () => {
     const secondInit = fetchMock.mock.calls[1][1] as RequestInit;
     const body = JSON.parse(secondInit.body as string) as { messages: { content: string }[] };
     expect(body.messages.some((m) => m.content === "Pricing")).toBe(true);
+  });
+
+  // Regression for the post-T227 403: the SDK's fetch-based POSTs must prime
+  // the CSRF token via /csrf when the (HttpOnly) cookie isn't JS-readable, and
+  // send it as X-XSRF-TOKEN — otherwise Spring rejects the agent chat with 403.
+  it("primes the CSRF token via /csrf when the cookie is absent and sends X-XSRF-TOKEN", async () => {
+    document.cookie = "XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    const fetchMock = vi.fn(async (input: unknown, _init?: RequestInit) => {
+      if (String(input).endsWith("/csrf")) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ "X-XSRF-TOKEN": "minted-token" }),
+        } as unknown as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        body: sseStream([{ type: "token", content: "ok" }]),
+      } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderTab();
+    await userEvent.type(screen.getByRole("textbox"), "hi{Enter}");
+    await screen.findByText("ok");
+
+    const csrfCall = fetchMock.mock.calls.find((c) => String(c[0]).endsWith("/csrf"));
+    expect(csrfCall).toBeTruthy();
+    const chatCall = fetchMock.mock.calls.find((c) => String(c[0]).includes("/v2/ai-agent/"));
+    const headers = chatCall?.[1]?.headers as Record<string, string>;
+    expect(headers["X-XSRF-TOKEN"]).toBe("minted-token");
   });
 });
