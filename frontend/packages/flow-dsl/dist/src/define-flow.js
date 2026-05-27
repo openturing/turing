@@ -26,4 +26,23 @@
 export function defineFlow(spec) {
     return spec;
 }
+/**
+ * Identity helper for a multi-flow bundle (a main flow plus the sub-flows
+ * it descends into). Same inference trick as {@link defineFlow}, but for an
+ * array — preserves each element's literal-typed shape so node/enum typos
+ * across the whole bundle fail at {@code tsc} time. Feed the result to
+ * {@code transpileBundle} to emit the import-bundle JSON array.
+ *
+ * <pre>{@code
+ *   export const flows = defineBundle([
+ *     defineFlow({ id: "main", name: "Main", nodes: [...], edges: [...] }),
+ *     defineFlow({ id: "sub",  name: "Sub",  nodes: [...], edges: [...] }),
+ *   ]);
+ * }</pre>
+ *
+ * @since 2026.3.1
+ */
+export function defineBundle(specs) {
+    return specs;
+}
 //# sourceMappingURL=define-flow.js.map

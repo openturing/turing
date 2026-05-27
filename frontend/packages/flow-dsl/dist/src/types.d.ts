@@ -30,14 +30,21 @@ export type SlotOperation = "SET" | "DELETE";
 export type OnJudgeReject = "advance_with_literal" | "reprompt" | "block";
 /**
  * Validation rule applied to an aiQuestion's captured answer before the
- * engine advances. Mirrors the validators wired into the runtime.
+ * engine advances. Mirrors the validators wired into the runtime. The
+ * backend additionally accepts the Brazilian-document rules {@code cpf},
+ * {@code cnpj} and {@code cep} — kept in the union so a {@code formCapture}
+ * node can validate those without losing compile-time safety.
  */
-export type ValidationRule = "email" | "phone" | "url" | "number" | "date" | "none";
+export type ValidationRule = "email" | "phone" | "url" | "number" | "date" | "cpf" | "cnpj" | "cep" | "none";
+/** {@code TurPersonaTone} on the backend (persona voice register). */
+export type PersonaTone = "FORMAL" | "CASUAL" | "TECHNICAL" | "EXECUTIVE";
+/** {@code TurPersonaLanguageStyle} on the backend (sentence construction). */
+export type PersonaLanguageStyle = "NEUTRAL" | "DIRECT" | "NARRATIVE" | "PERSUASIVE" | "INSTRUCTIONAL";
 /**
  * All node kinds the editor (and engine) understand. New types added on
  * the backend must be listed here for the DSL to compile-check them.
  */
-export type NodeType = "start" | "end" | "aiQuestion" | "formCapture" | "condition" | "functionCall" | "scheduleAgent" | "subFlow" | "subFlowSwitch" | "persona" | "switch" | "slot" | "writeSlot";
+export type NodeType = "start" | "end" | "aiQuestion" | "formCapture" | "condition" | "functionCall" | "scheduleAgent" | "subFlow" | "subFlowSwitch" | "persona" | "switch" | "slot" | "writeSlot" | "suspend";
 /**
  * One branch on a {@code switch} or {@code subFlowSwitch} node —
  * {@code id} is also the edge {@code sourceHandle}. {@link subFlowId} is
@@ -90,7 +97,17 @@ interface FunctionCallNativeNode extends NodeBase {
     type: "functionCall";
     toolSource: "NATIVE";
     functionName: string;
+    /** JSON input template — {@code {{slot}}} placeholders interpolated before the call. */
     aiInstruction?: string;
+    /** Slot the tool's String result is written into. Omit for a side-effect-only call. */
+    outputVariable?: string;
+    /**
+     * T49 — when {@code true}, a failed invocation routes the flow along the
+     * outgoing edge whose {@code sourceHandle} is {@code "failure"} (wire one with
+     * {@link FlowEdge#sourceHandle} = {@code "failure"}). When omitted, the engine
+     * advances on the first outgoing edge as before.
+     */
+    continueOnFailure?: boolean;
 }
 /** Sub-shape: MCP-server-hosted tool. */
 interface FunctionCallMcpNode extends NodeBase {
@@ -98,6 +115,8 @@ interface FunctionCallMcpNode extends NodeBase {
     toolSource: "MCP";
     mcpServerId: string;
     aiInstruction?: string;
+    outputVariable?: string;
+    continueOnFailure?: boolean;
 }
 export type FunctionCallNode = FunctionCallNativeNode | FunctionCallMcpNode;
 export interface SubFlowNode extends NodeBase {
@@ -148,6 +167,23 @@ export interface ScheduleAgentNode extends NodeBase {
     aiInstruction?: string;
     /** Per-node timeout (ms). Falls back to the routine's default when omitted. */
     routineTimeoutMs?: number;
+    /**
+     * T49 — when {@code true}, an enqueue/resolution failure (missing routine,
+     * disabled routine, JMS error) routes the flow along the {@code "failure"}
+     * outgoing edge. Independent of the {@code "timeout"} edge, which still
+     * handles the deadline-elapsed case.
+     */
+    continueOnFailure?: boolean;
+}
+/**
+ * T121 — parks the flow cursor indefinitely. The engine stops walking on
+ * this node; an external system / human-approval click / scheduled job
+ * must call {@code POST /api/sn/{site}/genai/chat/resume} to pop it and
+ * advance. Reads only {@link NodeBase#label} (surfaced as the parked
+ * reason); no other fields.
+ */
+export interface SuspendNode extends NodeBase {
+    type: "suspend";
 }
 /** Sub-shape: SET writes {@code slotValue}; DELETE clears the slot. */
 interface SlotSetNode extends NodeBase {
@@ -169,7 +205,7 @@ export interface WriteSlotNode extends NodeBase {
     slotValue: string;
 }
 /** Discriminated union of every node type the DSL accepts. */
-export type FlowNode = StartNode | EndNode | AiQuestionNode | FormCaptureNode | ConditionNode | FunctionCallNode | ScheduleAgentNode | SubFlowNode | SubFlowSwitchNode | PersonaNode | SwitchNode | SlotNode | WriteSlotNode;
+export type FlowNode = StartNode | EndNode | AiQuestionNode | FormCaptureNode | ConditionNode | FunctionCallNode | ScheduleAgentNode | SubFlowNode | SubFlowSwitchNode | PersonaNode | SwitchNode | SlotNode | WriteSlotNode | SuspendNode;
 /**
  * Edge from {@code source} to {@code target}. The {@code sourceHandle} is
  * required when {@code source} is a {@code condition} ({@code "yes" | "no"})
@@ -184,8 +220,13 @@ export interface FlowEdge {
     targetHandle?: string;
     label?: string;
 }
-/** Slot type supported by the runtime. Must match {@code TurAIAgentSlotType}. */
-export type SlotType = "STRING" | "NUMBER" | "BOOLEAN" | "DATE" | "EMAIL" | "PHONE" | "URL" | "JSON";
+/**
+ * Slot type supported by the runtime — mirrors the backend
+ * {@code TurAIAgentSlotType} enum exactly. (Email / phone / URL / number /
+ * date are NOT slot types; they are {@link ValidationRule}s applied on the
+ * capturing node — keep the two concepts separate.)
+ */
+export type SlotType = "STRING" | "INTEGER" | "BOOLEAN" | "FLOAT" | "TEXT";
 /**
  * Slot the flow references via {@code outputVariable} or {@code slotName}.
  * The import endpoint auto-creates any slot whose name is not yet declared
@@ -196,11 +237,38 @@ export interface SlotDeclaration {
     description?: string;
     type?: SlotType;
 }
-/** Persona embedded in the export bundle — auto-created on import by name. */
+/**
+ * Persona embedded in the export bundle — upserted on import (looked up
+ * case-insensitively by {@link name}). Mirrors the backend
+ * {@code TurPersona} export shape so a DSL-authored persona round-trips
+ * through {@code POST /chat-flow/import-bundle} with all its voice fields
+ * intact.
+ *
+ * <p>{@link id} is the transient handle a {@code persona} node's
+ * {@code personaId} points at; the import endpoint rewrites it to the
+ * persisted UUID. Give every persona a stable {@code id} when any
+ * {@code persona} node references it.
+ *
+ * <p><strong>Note:</strong> the prompt field is {@code systemInstruction}
+ * (matching the backend column), not {@code systemPrompt} — the latter was
+ * silently dropped on import in earlier DSL builds.
+ */
 export interface PersonaDeclaration {
+    /** Transient id referenced by a {@code persona} node's {@code personaId}. */
+    id?: string;
     name: string;
     description?: string;
-    systemPrompt?: string;
+    /** The persona's system prompt. Backend column: {@code systemInstruction}. */
+    systemInstruction?: string;
+    tone?: PersonaTone;
+    /** 1–5 register dial; the backend coerces 0 → 3. */
+    verbosity?: number;
+    languageStyle?: PersonaLanguageStyle;
+    /** Pipe-separated terms the voice must include (regex alternation). */
+    mandatoryTerms?: string;
+    /** Pipe-separated terms the voice must avoid. */
+    forbiddenTerms?: string;
+    enabled?: 0 | 1;
 }
 /**
  * The DSL author writes one of these per `.flow.ts` file and exports it

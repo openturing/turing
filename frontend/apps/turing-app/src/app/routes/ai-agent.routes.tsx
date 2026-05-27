@@ -8,6 +8,7 @@ const AIAgentListPage = lazy(() => import("../console/ai-agent/ai-agent.list.pag
 const AIAgentPage = lazy(() => import("../console/ai-agent/ai-agent.page"))
 const AIAgentRootPage = lazy(() => import("../console/ai-agent/ai-agent.root.page"))
 const AIAgentSettingsPage = lazy(() => import("../console/ai-agent/settings/ai-agent.settings.page"))
+const AIAgentSystemPromptPage = lazy(() => import("../console/ai-agent/system-prompt/ai-agent.system-prompt.page"))
 const AIAgentLlmPage = lazy(() => import("../console/ai-agent/llm/ai-agent.llm.page"))
 const AIAgentPersonaPage = lazy(() => import("../console/ai-agent/persona/ai-agent.persona.page"))
 const AIAgentMcpPage = lazy(() => import("../console/ai-agent/mcp/ai-agent.mcp.page"))
@@ -40,6 +41,7 @@ export const AIAgentRoutes = (
         <Route path={`${ROUTES.AI_AGENT_INSTANCE}/:id`} element={<AIAgentPage />}>
             <Route index element={<RedirectToAIAgentSettings />} />
             <Route path="settings" element={<AIAgentSettingsPage />} />
+            <Route path="system-prompt" element={<AIAgentSystemPromptPage />} />
             <Route path="llm" element={<AIAgentLlmPage />} />
             <Route path="persona" element={<AIAgentPersonaPage />} />
             <Route path="mcp" element={<AIAgentMcpPage />} />

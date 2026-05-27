@@ -99,6 +99,18 @@ public final class ChatFlowImportTestUtil {
     public record Imported(TurChatFlow flow, TurPersona persona) {}
 
     /**
+     * Result of a {@link #importBundleIntoAgent} call. {@code flows} are the
+     * persisted flows in bundle order; {@code byTransientId} maps each
+     * bundle entry's transient {@code id} (the placeholder a
+     * {@code subFlowId} references) to the persisted flow, so a test can
+     * look up "which real flow did {@code chaos-sandwich} become".
+     */
+    public record ImportedBundle(
+            List<TurChatFlow> flows,
+            Map<String, TurChatFlow> byTransientId,
+            List<TurPersona> personas) {}
+
+    /**
      * Repositories the importer needs. Bundling them in a single record
      * keeps caller sites readable and lets {@link AbstractAgentExecutorIT}
      * publish a single {@code @Bean}-free factory method.
@@ -132,6 +144,19 @@ public final class ChatFlowImportTestUtil {
     /** Convenience: load the first entry (index 0). */
     public static ExportEntry loadFromClasspath(String resourcePath) throws IOException {
         return loadFromClasspath(resourcePath, 0);
+    }
+
+    /** Loads every entry of a multi-flow bundle from the classpath, in order. */
+    public static List<ExportEntry> loadBundleFromClasspath(String resourcePath) throws IOException {
+        try (InputStream in = ChatFlowImportTestUtil.class.getResourceAsStream(resourcePath)) {
+            Objects.requireNonNull(in, "Missing classpath resource: " + resourcePath);
+            List<Map<String, Object>> bundle = JSON.readValue(in,
+                    new TypeReference<List<Map<String, Object>>>() {});
+            if (bundle.isEmpty()) {
+                throw new IllegalStateException("Export bundle is empty: " + resourcePath);
+            }
+            return bundle.stream().map(ChatFlowImportTestUtil::toEntry).toList();
+        }
     }
 
     /**
@@ -178,8 +203,7 @@ public final class ChatFlowImportTestUtil {
                 TurAIAgentSlot slot = new TurAIAgentSlot();
                 slot.setName(name);
                 slot.setDescription((String) s.get("description"));
-                String type = (String) s.get("type");
-                slot.setType(type == null ? TurAIAgentSlotType.STRING : TurAIAgentSlotType.valueOf(type));
+                slot.setType(parseSlotType((String) s.get("type")));
                 slot.setTurAIAgent(agent);
                 repos.slots().save(slot);
             }
@@ -212,7 +236,170 @@ public final class ChatFlowImportTestUtil {
         return new Imported(flow, resolvedPersona);
     }
 
+    /**
+     * Imports a whole multi-flow bundle (a main flow plus the sub-flows it
+     * descends into) into {@code agent}, performing the two cross-flow
+     * rewrites the engine needs at runtime — the same ones the production
+     * {@code TurChatFlowAPI.turChatFlowImportBundle} endpoint performs, but
+     * via direct repository writes:
+     *
+     * <ol>
+     *   <li><b>Global persona remap.</b> Personas declared on ANY entry are
+     *       upserted once (dedup by name) and a single
+     *       {@code transientPersonaId → persistedUuid} map is applied to
+     *       every flow's {@code personaId} graph fields — so a {@code persona}
+     *       node in a sub-flow resolves even when only the main flow declares
+     *       the persona.</li>
+     *   <li><b>subFlowId remap.</b> Each entry's transient {@code id} is
+     *       mapped to its persisted flow UUID, then every {@code subFlow}
+     *       node's {@code subFlowId} and every {@code switchOptions[].subFlowId}
+     *       (on {@code subFlowSwitch}) is rewritten to the real UUID. Without
+     *       this the engine's {@code chatFlowRepository.findById(subFlowId)}
+     *       descent silently fails (logs "not found" and advances).</li>
+     * </ol>
+     *
+     * <p>Done in two passes: pass 1 persists every flow (graph carrying
+     * remapped personaIds but still-transient subFlowIds) to learn each
+     * flow's UUID; pass 2 rewrites the subFlowId references and re-saves.
+     */
+    public static ImportedBundle importBundleIntoAgent(TurAIAgent agent,
+            List<ExportEntry> bundle, Repos repos) {
+        // Pass 0 — upsert all personas across the bundle, build the global remap.
+        Map<String, String> personaIdRemap = new HashMap<>();
+        List<TurPersona> personas = new java.util.ArrayList<>();
+        for (ExportEntry entry : bundle) {
+            if (entry.personas() == null) {
+                continue;
+            }
+            for (Map<String, Object> p : entry.personas()) {
+                String name = (String) p.get("name");
+                TurPersona existing = repos.personas().findByNameIgnoreCase(name).orElse(null);
+                TurPersona persona = upsertPersonaFromExport(existing, p, repos.personas());
+                String originalId = (String) p.get("id");
+                if (originalId != null && !originalId.isBlank()) {
+                    personaIdRemap.put(originalId, persona.getId());
+                }
+                if (!agent.getPersonas().contains(persona)) {
+                    agent.getPersonas().add(persona);
+                }
+                personas.add(persona);
+            }
+        }
+        repos.agents().save(agent);
+
+        // Pass 1 — persist each flow (personaIds remapped, subFlowIds still transient).
+        Map<String, TurChatFlow> byTransientId = new LinkedHashMap<>();
+        List<TurChatFlow> flows = new java.util.ArrayList<>();
+        for (ExportEntry entry : bundle) {
+            upsertSlots(agent, entry, repos);
+            Map<String, Object> rewrittenGraph = rewritePersonaIds(entry.graph(), personaIdRemap);
+            TurChatFlow flow = new TurChatFlow();
+            flow.setName(entry.name());
+            flow.setDescription(entry.description());
+            flow.setDefinitionJson(JSON.writeValueAsString(rewrittenGraph));
+            flow.setEnabled(1);
+            flow.setGuardrailMethod(entry.guardrailMethod() == null
+                    ? TurChatFlowGuardrailMethod.LLM_JUDGE
+                    : TurChatFlowGuardrailMethod.valueOf(entry.guardrailMethod()));
+            flow.setTriggerDescription(entry.triggerDescription());
+            flow.setTriggerMode(entry.triggerMode() == null
+                    ? TurChatFlowTriggerMode.ONCE
+                    : TurChatFlowTriggerMode.valueOf(entry.triggerMode()));
+            flow.setTurAIAgent(agent);
+            flow = repos.flows().save(flow);
+            flows.add(flow);
+            if (entry.id() != null && !entry.id().isBlank()) {
+                byTransientId.put(entry.id(), flow);
+            }
+        }
+
+        // Pass 2 — rewrite transient subFlowId references to persisted UUIDs.
+        Map<String, String> subFlowIdRemap = new HashMap<>();
+        byTransientId.forEach((transientId, flow) -> subFlowIdRemap.put(transientId, flow.getId()));
+        for (TurChatFlow flow : flows) {
+            String rewritten = rewriteSubFlowIds(flow.getDefinitionJson(), subFlowIdRemap);
+            if (!rewritten.equals(flow.getDefinitionJson())) {
+                flow.setDefinitionJson(rewritten);
+                repos.flows().save(flow);
+            }
+        }
+
+        return new ImportedBundle(flows, byTransientId, personas);
+    }
+
     // ─────────────────────────── internals ───────────────────────────
+
+    private static void upsertSlots(TurAIAgent agent, ExportEntry entry, Repos repos) {
+        if (entry.slots() == null) {
+            return;
+        }
+        for (Map<String, Object> s : entry.slots()) {
+            String name = (String) s.get("name");
+            if (repos.slots().findByTurAIAgent_IdAndName(agent.getId(), name).isPresent()) {
+                continue;
+            }
+            TurAIAgentSlot slot = new TurAIAgentSlot();
+            slot.setName(name);
+            slot.setDescription((String) s.get("description"));
+            slot.setType(parseSlotType((String) s.get("type")));
+            slot.setTurAIAgent(agent);
+            repos.slots().save(slot);
+        }
+    }
+
+    /** Lenient slot-type parse — unknown/blank types fall back to STRING (matches the endpoint). */
+    private static TurAIAgentSlotType parseSlotType(String type) {
+        if (type == null || type.isBlank()) {
+            return TurAIAgentSlotType.STRING;
+        }
+        try {
+            return TurAIAgentSlotType.valueOf(type.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return TurAIAgentSlotType.STRING;
+        }
+    }
+
+    /**
+     * Rewrites transient {@code subFlowId} references (on {@code subFlow}
+     * nodes' {@code data.subFlowId} and on {@code switchOptions[].subFlowId})
+     * to persisted flow UUIDs. Returns the re-serialized graph JSON.
+     */
+    @SuppressWarnings("unchecked")
+    private static String rewriteSubFlowIds(String definitionJson, Map<String, String> remap) {
+        if (definitionJson == null || remap.isEmpty()) {
+            return definitionJson;
+        }
+        Map<String, Object> graph = JSON.readValue(definitionJson,
+                new TypeReference<Map<String, Object>>() {});
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) graph.get("nodes");
+        if (nodes == null) {
+            return definitionJson;
+        }
+        for (Map<String, Object> node : nodes) {
+            Object dataObj = node.get("data");
+            if (!(dataObj instanceof Map<?, ?>)) {
+                continue;
+            }
+            Map<String, Object> data = (Map<String, Object>) dataObj;
+            Object subFlowId = data.get("subFlowId");
+            if (subFlowId instanceof String s && remap.containsKey(s)) {
+                data.put("subFlowId", remap.get(s));
+            }
+            Object options = data.get("switchOptions");
+            if (options instanceof List<?> list) {
+                for (Object optObj : list) {
+                    if (optObj instanceof Map<?, ?> optMap) {
+                        Map<String, Object> opt = (Map<String, Object>) optMap;
+                        Object optSub = opt.get("subFlowId");
+                        if (optSub instanceof String s && remap.containsKey(s)) {
+                            opt.put("subFlowId", remap.get(s));
+                        }
+                    }
+                }
+            }
+        }
+        return JSON.writeValueAsString(graph);
+    }
 
     private static ExportEntry toEntry(Map<String, Object> raw) {
         @SuppressWarnings("unchecked")

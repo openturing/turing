@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test dist/test/transpile.test.js dist/test/deploy.test.js"
+    "test": "node --test dist/test/transpile.test.js dist/test/deploy.test.js dist/test/chaotic-chatflow.test.js"
   },
   "keywords": [
     "turing",

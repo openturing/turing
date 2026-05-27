@@ -8,6 +8,7 @@
     "notDeleted": "O Agente de IA {{name}} não foi excluído",
     "nav": {
       "settings": "Configurações",
+      "systemPrompt": "Prompt do Sistema",
       "languageModels": "Modelos de Linguagem",
       "personas": "Personas",
       "nativeTools": "Ferramentas Nativas",
@@ -83,7 +84,46 @@
     },
     "settings": {
       "title": "Configurações",
-      "description": "Informações gerais, prompt do sistema e status."
+      "description": "Informações gerais e status."
+    },
+    "systemPrompt": {
+      "title": "Prompt do Sistema",
+      "description": "O contrato de comportamento enviado ao modelo a cada turno — e uma prévia ao vivo de como ele é montado.",
+      "origin": {
+        "PERSONA": "Persona",
+        "AGENT": "Prompt do agente",
+        "MCP": "Servidor MCP",
+        "FLOW": "Chat flow",
+        "FEW_SHOT": "Few-shot",
+        "RAG": "Override de RAG"
+      },
+      "preview": {
+        "title": "Prévia ao Vivo",
+        "description": "Tudo abaixo é concatenado em uma única mensagem de sistema antes de chegar ao modelo. Cada bloco é marcado com sua origem.",
+        "runtimeOnly": "só em runtime",
+        "noFixedText": "Sem texto fixo — depende da conversa ao vivo.",
+        "flowLabel": "Pré-visualizar com chat flow",
+        "flowNone": "Sem flow (turno simples)",
+        "flowDisabled": "desabilitado"
+      },
+      "warnings": {
+        "title": "Checagem de conflitos",
+        "description": "Checagens heurísticas rodam automaticamente. Rode a checagem profunda para o LLM procurar contradições mais sutis que possam quebrar uma resposta.",
+        "count": "{{count}} problema(s) encontrado(s)",
+        "deepCheck": "Checagem profunda (LLM)",
+        "clean": "Nenhum conflito detectado. Rode a checagem profunda para uma revisão completa pelo LLM."
+      },
+      "finalPrompt": {
+        "title": "Prompt final",
+        "description": "A mensagem de sistema completa que o modelo recebe no turno pré-visualizado, incluindo as definições de ferramentas enviadas junto.",
+        "preview": "Prévia",
+        "raw": "Texto",
+        "copy": "Copiar",
+        "copied": "Copiado para a área de transferência",
+        "copyFailed": "Não foi possível copiar",
+        "toolsHeading": "Ferramentas disponíveis ao modelo",
+        "toolsNote": "_Fornecidas ao modelo como schemas de função/ferramenta (não como texto literal do prompt)._"
+      }
     },
     "llm": {
       "title": "Modelos de Linguagem",

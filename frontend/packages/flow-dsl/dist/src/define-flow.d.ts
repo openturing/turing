@@ -25,4 +25,21 @@ import type { FlowSpec } from "./types.js";
  * @since 2026.3.1
  */
 export declare function defineFlow<T extends FlowSpec>(spec: T): T;
+/**
+ * Identity helper for a multi-flow bundle (a main flow plus the sub-flows
+ * it descends into). Same inference trick as {@link defineFlow}, but for an
+ * array — preserves each element's literal-typed shape so node/enum typos
+ * across the whole bundle fail at {@code tsc} time. Feed the result to
+ * {@code transpileBundle} to emit the import-bundle JSON array.
+ *
+ * <pre>{@code
+ *   export const flows = defineBundle([
+ *     defineFlow({ id: "main", name: "Main", nodes: [...], edges: [...] }),
+ *     defineFlow({ id: "sub",  name: "Sub",  nodes: [...], edges: [...] }),
+ *   ]);
+ * }</pre>
+ *
+ * @since 2026.3.1
+ */
+export declare function defineBundle<T extends readonly FlowSpec[]>(specs: T): T;
 //# sourceMappingURL=define-flow.d.ts.map

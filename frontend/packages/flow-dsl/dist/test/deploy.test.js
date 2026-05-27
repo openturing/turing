@@ -77,7 +77,7 @@ describe("buildImportPayload", () => {
     it("stringifies graph into definitionJson and preserves slots/personas", () => {
         const payload = buildImportPayload({
             ...BASE_FLOW,
-            slots: [{ name: "email", type: "EMAIL" }],
+            slots: [{ name: "email", type: "STRING" }],
             personas: [{ name: "Mentor" }],
         });
         assert.equal(typeof payload.chatFlow.definitionJson, "string");
@@ -85,7 +85,7 @@ describe("buildImportPayload", () => {
         assert.equal(parsed.nodes.length, 2);
         assert.equal(parsed.edges.length, 1);
         assert.equal(payload.chatFlow.guardrailMethod, "LLM_JUDGE");
-        assert.deepEqual(payload.slots, [{ name: "email", type: "EMAIL" }]);
+        assert.deepEqual(payload.slots, [{ name: "email", type: "STRING" }]);
         assert.deepEqual(payload.personas, [{ name: "Mentor" }]);
     });
     it("omits slots/personas when empty", () => {

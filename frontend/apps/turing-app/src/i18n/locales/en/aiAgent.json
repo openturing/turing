@@ -8,6 +8,7 @@
     "notDeleted": "The {{name}} AI Agent was not deleted",
     "nav": {
       "settings": "Settings",
+      "systemPrompt": "System Prompt",
       "languageModels": "Language Models",
       "personas": "Personas",
       "nativeTools": "Native Tools",
@@ -83,7 +84,46 @@
     },
     "settings": {
       "title": "Settings",
-      "description": "General information, system prompt and status."
+      "description": "General information and status."
+    },
+    "systemPrompt": {
+      "title": "System Prompt",
+      "description": "The behavioral contract sent to the model on every turn — and a live preview of how it is assembled.",
+      "origin": {
+        "PERSONA": "Persona",
+        "AGENT": "Agent prompt",
+        "MCP": "MCP server",
+        "FLOW": "Chat flow",
+        "FEW_SHOT": "Few-shot",
+        "RAG": "RAG override"
+      },
+      "preview": {
+        "title": "Live Preview",
+        "description": "Everything below is concatenated into one system message before it reaches the model. Each block is tagged with where it comes from.",
+        "runtimeOnly": "runtime only",
+        "noFixedText": "No fixed text — depends on the live conversation.",
+        "flowLabel": "Preview with chat flow",
+        "flowNone": "No flow (plain turn)",
+        "flowDisabled": "disabled"
+      },
+      "warnings": {
+        "title": "Conflict check",
+        "description": "Heuristic checks run automatically. Run the deep check to have the LLM look for subtler contradictions that could break a reply.",
+        "count": "{{count}} issue(s) found",
+        "deepCheck": "Deep check (LLM)",
+        "clean": "No conflicts detected. Run the deep check for a thorough LLM review."
+      },
+      "finalPrompt": {
+        "title": "Final prompt",
+        "description": "The complete system message the model receives for the previewed turn, including the tool definitions sent alongside it.",
+        "preview": "Preview",
+        "raw": "Raw",
+        "copy": "Copy",
+        "copied": "Copied to clipboard",
+        "copyFailed": "Could not copy",
+        "toolsHeading": "Tools available to the model",
+        "toolsNote": "_Provided to the model as function/tool schemas (not literal prompt text)._"
+      }
     },
     "llm": {
       "title": "Language Models",

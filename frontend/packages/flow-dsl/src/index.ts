@@ -14,8 +14,8 @@
  * @since 2026.3.1
  */
 
-export { defineFlow } from "./define-flow.js";
-export { FlowSpecError, transpileFlow } from "./transpile.js";
+export { defineBundle, defineFlow } from "./define-flow.js";
+export { FlowSpecError, transpileBundle, transpileFlow } from "./transpile.js";
 export type {
   AiQuestionNode,
   ConditionNode,
@@ -29,7 +29,9 @@ export type {
   NodeType,
   OnJudgeReject,
   PersonaDeclaration,
+  PersonaLanguageStyle,
   PersonaNode,
+  PersonaTone,
   ScheduleAgentNode,
   SlotDeclaration,
   SlotNode,
@@ -38,6 +40,7 @@ export type {
   StartNode,
   SubFlowNode,
   SubFlowSwitchNode,
+  SuspendNode,
   SwitchNode,
   SwitchOption,
   ToolSource,

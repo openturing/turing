@@ -13,7 +13,7 @@
  *
  * @since 2026.3.1
  */
-export { defineFlow } from "./define-flow.js";
-export { FlowSpecError, transpileFlow } from "./transpile.js";
-export type { AiQuestionNode, ConditionNode, EndNode, FlowEdge, FlowNode, FlowSpec, FormCaptureNode, FunctionCallNode, GuardrailMethod, NodeType, OnJudgeReject, PersonaDeclaration, PersonaNode, ScheduleAgentNode, SlotDeclaration, SlotNode, SlotOperation, SlotType, StartNode, SubFlowNode, SubFlowSwitchNode, SwitchNode, SwitchOption, ToolSource, TranspiledEdge, TranspiledFlow, TranspiledNode, TranspiledNodeData, TriggerLanguage, TriggerMode, ValidationRule, WriteSlotNode, } from "./types.js";
+export { defineBundle, defineFlow } from "./define-flow.js";
+export { FlowSpecError, transpileBundle, transpileFlow } from "./transpile.js";
+export type { AiQuestionNode, ConditionNode, EndNode, FlowEdge, FlowNode, FlowSpec, FormCaptureNode, FunctionCallNode, GuardrailMethod, NodeType, OnJudgeReject, PersonaDeclaration, PersonaLanguageStyle, PersonaNode, PersonaTone, ScheduleAgentNode, SlotDeclaration, SlotNode, SlotOperation, SlotType, StartNode, SubFlowNode, SubFlowSwitchNode, SuspendNode, SwitchNode, SwitchOption, ToolSource, TranspiledEdge, TranspiledFlow, TranspiledNode, TranspiledNodeData, TriggerLanguage, TriggerMode, ValidationRule, WriteSlotNode, } from "./types.js";
 //# sourceMappingURL=index.d.ts.map

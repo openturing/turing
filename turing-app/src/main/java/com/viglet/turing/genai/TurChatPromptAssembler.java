@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
+import com.viglet.turing.genai.tool.TurMcpInstructionsProvider;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -61,17 +62,20 @@ public class TurChatPromptAssembler {
     private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
+    private final TurMcpInstructionsProvider mcpInstructionsProvider;
 
     public TurChatPromptAssembler(TurChatFlowEngineService chatFlowEngineService,
             TurPersonaPromptComposer personaPromptComposer,
             TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
             TurChatPipelineObservation chatPipelineObservation,
-            TurChatAttachmentService chatAttachmentService) {
+            TurChatAttachmentService chatAttachmentService,
+            TurMcpInstructionsProvider mcpInstructionsProvider) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
         this.chatPipelineObservation = chatPipelineObservation;
         this.chatAttachmentService = chatAttachmentService;
+        this.mcpInstructionsProvider = mcpInstructionsProvider;
     }
 
     /**
@@ -117,9 +121,15 @@ public class TurChatPromptAssembler {
             String baseSystemPrompt,
             List<MultipartFile> files) {
         long t0 = System.currentTimeMillis();
+        // Append the per-agent MCP server instructions (enabled servers with
+        // non-blank llmInstructions) so the model knows how/when to use the
+        // tools those servers expose. No-op when the agent has no MCP servers
+        // or none carry instructions.
+        String mcpAugmented = baseSystemPrompt
+                + mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
         String flowAugmented = flowContext == null
-                ? baseSystemPrompt
-                : baseSystemPrompt + chatFlowEngineService.buildSystemPromptAddendum(
+                ? mcpAugmented
+                : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(
                         flowContext.flow(), flowContext.state(), flowContext.graph());
         // Fuse the persona on top of everything: its instruction + style
         // guidelines + vocabulary constraints + brand-context hint +

@@ -34,6 +34,10 @@ export const queryKeys = {
     all: () => ['ai-agents'] as const,
     list: () => [...queryKeys.aiAgents.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.aiAgents.all(), 'detail', id] as const,
+    systemPromptPreview: (id: string, flowId?: string) =>
+      [...queryKeys.aiAgents.all(), 'system-prompt', 'preview', id, flowId ?? 'default'] as const,
+    systemPromptValidate: (id: string) =>
+      [...queryKeys.aiAgents.all(), 'system-prompt', 'validate', id] as const,
   },
   personas: {
     all: () => ['personas'] as const,

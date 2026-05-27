@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { PromptEditor } from "@/components/ui/prompt-editor"
 import { useCreateAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
@@ -29,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
+import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -56,43 +55,6 @@ const NONE_VALUE = "__none__";
 interface Props {
   value: TurAIAgent;
   isNew: boolean;
-}
-
-/**
- * System message used by the SystemPromptEditor "Help me write" sheet.
- * Tells the LLM that the field being edited is the agent's system prompt
- * (i.e. the persona / behavioral contract sent on every conversation),
- * so generated text is shaped accordingly. Uses live form state for the
- * agent name and admin-facing description.
- */
-function buildSystemPromptFieldInstruction(spec: {
-  title?: string;
-  agentDescription?: string;
-}): string {
-  return [
-    "You are helping a user write the SYSTEM PROMPT of an AI agent inside the Turing Enterprise Search platform.",
-    "",
-    "FIELD SEMANTICS:",
-    "- This text becomes the system message prepended to every conversation the agent has.",
-    "- It defines the agent's persona, scope, behavior boundaries, tone, and any operating instructions.",
-    "- It is NOT shown to the end user — it talks TO the LLM about how to behave.",
-    "",
-    "AGENT CONTEXT (current form state):",
-    `- Agent name: ${spec.title?.trim() || "(unset)"}`,
-    `- Agent description: ${spec.agentDescription?.trim() || "(unset)"}`,
-    "",
-    "WRITING RULES:",
-    "- Write in second person ('You are...', 'You should...').",
-    "- Be specific about scope (what the agent does AND what it refuses).",
-    "- Prefer imperative bullet lists or short paragraphs over flowery prose.",
-    "- Match the language the user wrote the brief in (Portuguese brief → Portuguese system prompt; English brief → English).",
-    "",
-    "OUTPUT RULES:",
-    "- Return ONLY the resulting system prompt text.",
-    "- Do NOT wrap in quotes, code fences, or markdown.",
-    "- Do NOT include a preamble, headers, commentary, or examples of conversations.",
-    "- If a current system prompt exists, prefer the smallest change that satisfies the user's instructions.",
-  ].join("\n");
 }
 
 export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
@@ -342,50 +304,6 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                       </IconPicker>
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-            </SectionCard.Content>
-          </SectionCard>
-
-          <SectionCard variant="violet">
-            <SectionCard.Header icon={IconFileText} title={t("forms.agentSettings.systemPrompt")} description={t("forms.agentSettings.systemPromptDesc")} />
-            <SectionCard.Content>
-              <FormField
-                control={form.control}
-                name="systemPrompt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
-                    <FormDescription>
-                      {t("forms.agentSettings.instructionDesc")}
-                    </FormDescription>
-                    <FormControl>
-                      <PromptEditor
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        fieldRef={field.ref}
-                        placeholder={t("forms.agentSettings.instructionPlaceholder")}
-                        hint={t("forms.agentSettings.instructionHint")}
-                        metaPrompt={{
-                          brief: form.watch("systemPromptMetaPrompt") ?? "",
-                          onBriefChange: (v) =>
-                            form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
-                          fieldInstruction: buildSystemPromptFieldInstruction({
-                            title: form.watch("title"),
-                            agentDescription: form.watch("description"),
-                          }),
-                          tone: "violet",
-                          triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
-                          title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
-                          description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
-                          placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
-                          hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
-                          generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

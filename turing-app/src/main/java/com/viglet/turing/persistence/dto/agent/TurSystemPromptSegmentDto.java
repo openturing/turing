@@ -1,0 +1,48 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ */
+package com.viglet.turing.persistence.dto.agent;
+
+/**
+ * One labeled fragment of the final system prompt, surfaced by the AI Agent
+ * "System Prompt" page Live Preview so an operator can see exactly which text
+ * comes from where. The runtime assembler concatenates several sources
+ * ({@code agent.systemPrompt}, MCP server instructions, the active chat-flow
+ * node addendum, the persona block) into a single system message — this DTO
+ * makes that opaque concatenation legible.
+ *
+ * @param origin     stable machine-readable source bucket the frontend themes
+ *                   on: {@code PERSONA}, {@code AGENT}, {@code MCP},
+ *                   {@code FLOW}, {@code FEW_SHOT}, {@code RAG}.
+ * @param title      human-readable heading for the segment (localized client-side
+ *                   only for the origin label; this carries the concrete name,
+ *                   e.g. the persona or MCP server title).
+ * @param content    the literal text this segment contributes to the prompt.
+ *                   Empty when {@code included} is false (informational segment).
+ * @param included   {@code true} when this segment is part of the prompt for a
+ *                   plain turn (no flow, default persona, no RAG override);
+ *                   {@code false} for informational/runtime-only segments.
+ * @param runtimeOnly {@code true} when the segment only materializes at runtime
+ *                   and depends on conversation state (active flow node,
+ *                   few-shot retrieval keyed by the user message, SN-site RAG
+ *                   override) — shown as an example, not as fixed text.
+ * @param note       optional one-line explanation of when/why this segment
+ *                   applies; {@code null} when self-explanatory.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.1
+ */
+public record TurSystemPromptSegmentDto(
+        String origin,
+        String title,
+        String content,
+        boolean included,
+        boolean runtimeOnly,
+        String note) {
+}

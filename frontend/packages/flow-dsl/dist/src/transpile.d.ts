@@ -52,4 +52,38 @@ export declare class FlowSpecError extends Error {
  * @since 2026.3.1
  */
 export declare function transpileFlow(spec: FlowSpec): TranspiledFlow;
+/**
+ * Transpile a multi-flow bundle (a main flow plus the sub-flows it
+ * descends into) into the array wire shape consumed by the editor's
+ * "Import Bundle" button and the backend
+ * {@code POST /api/ai-agent/{agentId}/chat-flow/import-bundle} endpoint.
+ *
+ * <p>Beyond running every flow through {@link transpileFlow} (which checks
+ * intra-flow structure), the bundle pass adds the cross-flow rules a
+ * single-flow transpile cannot see:
+ * <ul>
+ *   <li>Every {@link FlowSpec#id} is present and unique — the transient id
+ *       a {@code subFlow}/{@code subFlowSwitch} reference resolves against.</li>
+ *   <li>Every {@code subFlow} node's {@code subFlowId} and every
+ *       {@code subFlowSwitch}/{@code switch} option's {@code subFlowId}
+ *       points at a flow declared in the same bundle. A typo here would
+ *       otherwise only surface at runtime as a silently-skipped descent
+ *       (the engine logs "Sub Flow … not found" and advances).</li>
+ * </ul>
+ *
+ * <p>Side effect: populates each {@code subFlowName} (on {@code subFlow}
+ * nodes and on matched {@code switchOptions}) from the referenced flow's
+ * {@code name}, mirroring what the backend import endpoint writes so the
+ * emitted JSON renders with readable labels in the editor.
+ *
+ * <p>The returned array is the import-bundle payload: serialize it with
+ * {@code JSON.stringify(bundle, null, 2)} and drop it on the endpoint.
+ * The backend re-assigns fresh UUIDs and rewrites the transient
+ * {@code subFlowId}/{@code personaId} references on its side.
+ *
+ * @throws FlowSpecError on a missing/duplicate flow id or a dangling
+ *     cross-flow {@code subFlowId} reference.
+ * @since 2026.3.1
+ */
+export declare function transpileBundle(specs: readonly FlowSpec[]): TranspiledFlow[];
 //# sourceMappingURL=transpile.d.ts.map

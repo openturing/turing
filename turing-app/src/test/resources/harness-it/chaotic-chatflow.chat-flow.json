@@ -1,0 +1,1726 @@
+[
+  {
+    "name": "Chaotic Chatflow — Ministry Intake",
+    "description": "Nonsensical mega-flow exercising every node type, attribute, edge and sub-flow mechanic in one graph.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "Activate for absolutely anything mentioning chaos, ministries, sandwiches, abysses, stamps or absurd bureaucracy.",
+    "triggerMode": "ALWAYS",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-herald",
+          "type": "persona",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "VOICE: Herald",
+            "type": "persona",
+            "personaId": "P_HERALD"
+          }
+        },
+        {
+          "id": "slot-seed",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "SEED chaos_key",
+            "type": "slot",
+            "slotName": "chaos_key",
+            "slotOperation": "SET",
+            "slotValue": "alpha",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-greeting",
+          "type": "writeSlot",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "WRITE greeting",
+            "type": "writeSlot",
+            "slotName": "greeting",
+            "slotValue": "Hail {{chaos_key}} traveler"
+          }
+        },
+        {
+          "id": "cond-alpha",
+          "type": "condition",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "CONDITION",
+            "type": "condition",
+            "conditionExpression": "chaos_key == 'alpha'"
+          }
+        },
+        {
+          "id": "slot-marker",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 600
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "marker",
+            "slotOperation": "SET",
+            "slotValue": "hit"
+          }
+        },
+        {
+          "id": "cond-omega",
+          "type": "condition",
+          "position": {
+            "x": 0,
+            "y": 720
+          },
+          "data": {
+            "label": "CONDITION",
+            "type": "condition",
+            "conditionExpression": "chaos_key == 'omega'"
+          }
+        },
+        {
+          "id": "slot-omega-dead",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 840
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "omega",
+            "slotOperation": "SET",
+            "slotValue": "never"
+          }
+        },
+        {
+          "id": "slot-second",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 960
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "second",
+            "slotOperation": "SET",
+            "slotValue": "from-no"
+          }
+        },
+        {
+          "id": "switch-exact",
+          "type": "switch",
+          "position": {
+            "x": 0,
+            "y": 1080
+          },
+          "data": {
+            "label": "SWITCH",
+            "type": "switch",
+            "switchVariable": "chaos_key",
+            "switchOptions": [
+              {
+                "id": "opt-alpha",
+                "label": "alpha"
+              },
+              {
+                "id": "opt-beta",
+                "label": "beta"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slot-beta-dead",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 1200
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "beta",
+            "slotOperation": "SET",
+            "slotValue": "never"
+          }
+        },
+        {
+          "id": "slot-sw",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 1320
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "sw",
+            "slotOperation": "SET",
+            "slotValue": "exact"
+          }
+        },
+        {
+          "id": "switch-wild",
+          "type": "switch",
+          "position": {
+            "x": 0,
+            "y": 1440
+          },
+          "data": {
+            "label": "SWITCH",
+            "type": "switch",
+            "switchVariable": "ghost_var",
+            "switchOptions": [
+              {
+                "id": "opt-ghost",
+                "label": "boo"
+              }
+            ]
+          }
+        },
+        {
+          "id": "slot-ghost-dead",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 1560
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "ghost",
+            "slotOperation": "SET",
+            "slotValue": "never"
+          }
+        },
+        {
+          "id": "persona-goblin",
+          "type": "persona",
+          "position": {
+            "x": 0,
+            "y": 1680
+          },
+          "data": {
+            "label": "VOICE: Goblin",
+            "type": "persona",
+            "personaId": "P_GOBLIN"
+          }
+        },
+        {
+          "id": "subflow-paperwork",
+          "type": "subFlow",
+          "position": {
+            "x": 0,
+            "y": 1800
+          },
+          "data": {
+            "label": "DESCEND paperwork",
+            "type": "subFlow",
+            "subFlowId": "chaos-paperwork",
+            "subFlowName": "Stamp & Paperwork Office"
+          }
+        },
+        {
+          "id": "slot-cleanup",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 1920
+          },
+          "data": {
+            "label": "DELETE marker",
+            "type": "slot",
+            "slotName": "marker",
+            "slotOperation": "DELETE"
+          }
+        },
+        {
+          "id": "ask-prefilled",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 2040
+          },
+          "data": {
+            "label": "ASK (already filled → skipped)",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask for the chaos key again (should be skipped — already filled).",
+            "outputVariable": "chaos_key",
+            "inlineOptions": [
+              "alpha",
+              "beta",
+              "omega"
+            ]
+          }
+        },
+        {
+          "id": "ask-final",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 2160
+          },
+          "data": {
+            "label": "ASK quest name (deterministic landing)",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask the visitor for the name of their absurd quest. One sentence.",
+            "outputVariable": "quest_name",
+            "validationRule": "none"
+          }
+        },
+        {
+          "id": "subflowswitch-dept",
+          "type": "subFlowSwitch",
+          "position": {
+            "x": 0,
+            "y": 2280
+          },
+          "data": {
+            "label": "DEPARTMENT dispatch",
+            "type": "subFlowSwitch",
+            "switchVariable": "branch_dept",
+            "switchOptions": [
+              {
+                "id": "opt-sandwich",
+                "label": "sandwich",
+                "subFlowId": "chaos-sandwich",
+                "subFlowName": "Recursive Sandwich Department"
+              },
+              {
+                "id": "opt-paper",
+                "label": "paper",
+                "subFlowId": "chaos-paperwork",
+                "subFlowName": "Stamp & Paperwork Office"
+              },
+              {
+                "id": "opt-ouro",
+                "label": "ouroboros",
+                "subFlowId": "chaos-ouroboros",
+                "subFlowName": "Ouroboros Loop"
+              },
+              {
+                "id": "opt-sched",
+                "label": "scheduler",
+                "subFlowId": "chaos-scheduler",
+                "subFlowName": "Doomed Scheduler"
+              },
+              {
+                "id": "opt-suspend",
+                "label": "suspend",
+                "subFlowId": "chaos-suspend",
+                "subFlowName": "Indefinite Hold"
+              }
+            ]
+          }
+        },
+        {
+          "id": "form-doc",
+          "type": "formCapture",
+          "position": {
+            "x": 0,
+            "y": 2400
+          },
+          "data": {
+            "label": "FORM document (CPF)",
+            "type": "formCapture",
+            "aiInstruction": "Capture the visitor's absurd document number.",
+            "outputVariable": "doc",
+            "validationRule": "cpf"
+          }
+        },
+        {
+          "id": "ask-email",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 2520
+          },
+          "data": {
+            "label": "ASK email (block on reject)",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask for a contact email.",
+            "outputVariable": "email",
+            "validationRule": "email",
+            "onJudgeReject": "block"
+          }
+        },
+        {
+          "id": "ask-color",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 2640
+          },
+          "data": {
+            "label": "ASK colour (tool-free, chips)",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask which chaos colour the visitor prefers.",
+            "outputVariable": "color",
+            "inlineOptions": [
+              "red",
+              "blue",
+              "green"
+            ],
+            "onJudgeReject": "advance_with_literal",
+            "toolsEnabled": false,
+            "requiredTools": [
+              "search_site"
+            ]
+          }
+        },
+        {
+          "id": "switch-color",
+          "type": "switch",
+          "position": {
+            "x": 0,
+            "y": 2760
+          },
+          "data": {
+            "label": "SWITCH",
+            "type": "switch",
+            "switchVariable": "color",
+            "switchOptions": [
+              {
+                "id": "opt-red",
+                "label": "red"
+              },
+              {
+                "id": "opt-blue",
+                "label": "blue"
+              }
+            ]
+          }
+        },
+        {
+          "id": "suspend-approval",
+          "type": "suspend",
+          "position": {
+            "x": 0,
+            "y": 2880
+          },
+          "data": {
+            "label": "Awaiting absurd human approval",
+            "type": "suspend"
+          }
+        },
+        {
+          "id": "ask-blue",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 3000
+          },
+          "data": {
+            "label": "ASK blue shade",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask which shade of blue.",
+            "outputVariable": "blue_shade",
+            "onJudgeReject": "reprompt"
+          }
+        },
+        {
+          "id": "ask-other",
+          "type": "aiQuestion",
+          "position": {
+            "x": 0,
+            "y": 3120
+          },
+          "data": {
+            "label": "ASK other colour",
+            "type": "aiQuestion",
+            "aiInstruction": "Ask the visitor to describe their off-list colour.",
+            "outputVariable": "other_color"
+          }
+        },
+        {
+          "id": "fn-finalize",
+          "type": "functionCall",
+          "position": {
+            "x": 0,
+            "y": 3240
+          },
+          "data": {
+            "label": "FINALIZE (native, may fail)",
+            "type": "functionCall",
+            "toolSource": "NATIVE",
+            "functionName": "missing_finalize_tool",
+            "aiInstruction": "{\"quest\":\"{{quest_name}}\",\"color\":\"{{color}}\"}",
+            "outputVariable": "finalize_out",
+            "continueOnFailure": true
+          }
+        },
+        {
+          "id": "sched-finalize",
+          "type": "scheduleAgent",
+          "position": {
+            "x": 0,
+            "y": 3360
+          },
+          "data": {
+            "label": "SCHEDULE finalize routine",
+            "type": "scheduleAgent",
+            "routineId": "missing-finalize-routine",
+            "routineName": "absurd_finalizer",
+            "outputVariable": "sched_final",
+            "aiInstruction": "{\"quest\":\"{{quest_name}}\"}",
+            "routineTimeoutMs": 30000,
+            "continueOnFailure": true
+          }
+        },
+        {
+          "id": "end-main",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 3480
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "persona-herald",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "persona-herald",
+          "target": "slot-seed",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "slot-seed",
+          "target": "write-greeting",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "write-greeting",
+          "target": "cond-alpha",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e5",
+          "source": "cond-alpha",
+          "target": "slot-marker",
+          "sourceHandle": "yes",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e6",
+          "source": "cond-alpha",
+          "target": "slot-marker",
+          "sourceHandle": "no",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e7",
+          "source": "slot-marker",
+          "target": "cond-omega",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e8",
+          "source": "cond-omega",
+          "target": "slot-omega-dead",
+          "sourceHandle": "yes",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e9",
+          "source": "cond-omega",
+          "target": "slot-second",
+          "sourceHandle": "no",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e10",
+          "source": "slot-omega-dead",
+          "target": "end-main",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e11",
+          "source": "slot-second",
+          "target": "switch-exact",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e12",
+          "source": "switch-exact",
+          "target": "slot-sw",
+          "sourceHandle": "opt-alpha",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e13",
+          "source": "switch-exact",
+          "target": "slot-beta-dead",
+          "sourceHandle": "opt-beta",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e14",
+          "source": "slot-beta-dead",
+          "target": "end-main",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e15",
+          "source": "slot-sw",
+          "target": "switch-wild",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e16",
+          "source": "switch-wild",
+          "target": "slot-ghost-dead",
+          "sourceHandle": "opt-ghost",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e17",
+          "source": "switch-wild",
+          "target": "persona-goblin",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e18",
+          "source": "slot-ghost-dead",
+          "target": "end-main",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e19",
+          "source": "persona-goblin",
+          "target": "subflow-paperwork",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e20",
+          "source": "subflow-paperwork",
+          "target": "slot-cleanup",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e21",
+          "source": "slot-cleanup",
+          "target": "ask-prefilled",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e22",
+          "source": "ask-prefilled",
+          "target": "ask-final",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e23",
+          "source": "ask-final",
+          "target": "subflowswitch-dept",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e24",
+          "source": "subflowswitch-dept",
+          "target": "form-doc",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e25",
+          "source": "form-doc",
+          "target": "ask-email",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e26",
+          "source": "ask-email",
+          "target": "ask-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e27",
+          "source": "ask-color",
+          "target": "switch-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e28",
+          "source": "switch-color",
+          "target": "suspend-approval",
+          "sourceHandle": "opt-red",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e29",
+          "source": "switch-color",
+          "target": "ask-blue",
+          "sourceHandle": "opt-blue",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e30",
+          "source": "switch-color",
+          "target": "ask-other",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e31",
+          "source": "suspend-approval",
+          "target": "fn-finalize",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e32",
+          "source": "ask-blue",
+          "target": "fn-finalize",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e33",
+          "source": "ask-other",
+          "target": "fn-finalize",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e34",
+          "source": "fn-finalize",
+          "target": "sched-finalize",
+          "sourceHandle": "failure",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e35",
+          "source": "fn-finalize",
+          "target": "sched-finalize",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e36",
+          "source": "sched-finalize",
+          "target": "end-main",
+          "sourceHandle": "failure",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e37",
+          "source": "sched-finalize",
+          "target": "end-main",
+          "sourceHandle": "timeout",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e38",
+          "source": "sched-finalize",
+          "target": "end-main",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-main",
+    "slots": [
+      {
+        "name": "chaos_key",
+        "description": "Absurd routing key",
+        "type": "STRING"
+      },
+      {
+        "name": "greeting",
+        "description": "Interpolated greeting",
+        "type": "STRING"
+      },
+      {
+        "name": "marker",
+        "description": "Transient marker, later deleted",
+        "type": "STRING"
+      },
+      {
+        "name": "second",
+        "description": "Set on the condition NO branch",
+        "type": "STRING"
+      },
+      {
+        "name": "sw",
+        "description": "Set after the exact-match switch",
+        "type": "STRING"
+      },
+      {
+        "name": "quest_name",
+        "description": "First UNFILLED question slot",
+        "type": "STRING"
+      },
+      {
+        "name": "doc",
+        "description": "CPF-validated form field",
+        "type": "STRING"
+      },
+      {
+        "name": "email",
+        "description": "Email-validated question (STRING slot)",
+        "type": "STRING"
+      },
+      {
+        "name": "color",
+        "description": "Colour pick with chips",
+        "type": "STRING"
+      },
+      {
+        "name": "branch_dept",
+        "description": "Sub-flow-switch routing variable",
+        "type": "STRING"
+      },
+      {
+        "name": "finalize_out",
+        "description": "functionCall result slot",
+        "type": "TEXT"
+      },
+      {
+        "name": "sched_final",
+        "description": "scheduleAgent result slot",
+        "type": "TEXT"
+      },
+      {
+        "name": "omega"
+      },
+      {
+        "name": "beta"
+      },
+      {
+        "name": "ghost"
+      },
+      {
+        "name": "blue_shade"
+      },
+      {
+        "name": "other_color"
+      }
+    ],
+    "personas": [
+      {
+        "id": "P_HERALD",
+        "name": "Chaos Herald",
+        "description": "Pompous town-crier of the Ministry of Absurd Chaos.",
+        "systemInstruction": "You are the Chaos Herald. Announce everything as if proclaiming a royal decree about absolutely trivial matters. One sentence.",
+        "tone": "FORMAL",
+        "verbosity": 4,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "decree|hereby|chaos",
+        "forbiddenTerms": "boring|normal",
+        "enabled": 1
+      },
+      {
+        "id": "P_GOBLIN",
+        "name": "Filing Goblin",
+        "description": "Cranky goblin who files paperwork in the wrong drawers.",
+        "systemInstruction": "You are the Filing Goblin. Mutter, be blunt, complain about the filing. Short sentences.",
+        "tone": "CASUAL",
+        "verbosity": 1,
+        "languageStyle": "DIRECT",
+        "mandatoryTerms": "drawer|file",
+        "forbiddenTerms": "please|wonderful",
+        "enabled": 1
+      },
+      {
+        "id": "P_CHEF",
+        "name": "Sandwich Auditor",
+        "description": "Audits recursive sandwiches for structural compliance.",
+        "systemInstruction": "You are the Sandwich Auditor. Speak in precise, numbered, technical terms about sandwich layers.",
+        "tone": "TECHNICAL",
+        "verbosity": 3,
+        "languageStyle": "INSTRUCTIONAL",
+        "mandatoryTerms": "layer|compliance",
+        "forbiddenTerms": "yummy|delicious",
+        "enabled": 1
+      },
+      {
+        "id": "P_ORACLE",
+        "name": "Abyss Oracle",
+        "description": "Sells you prophecies from the bottom of the abyss.",
+        "systemInstruction": "You are the Abyss Oracle. Speak persuasively, always closing toward the next prophecy purchase.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "PERSUASIVE",
+        "mandatoryTerms": "prophecy|abyss",
+        "forbiddenTerms": "maybe|unsure",
+        "enabled": 1
+      },
+      {
+        "id": "P_NEUTRAL",
+        "name": "Stamp Clerk",
+        "description": "Neutral clerk who stamps anything placed before them.",
+        "systemInstruction": "You are the Stamp Clerk. Plain, neutral, factual. Stamp and move on.",
+        "tone": "CASUAL",
+        "verbosity": 3,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "",
+        "forbiddenTerms": "",
+        "enabled": 1
+      }
+    ]
+  },
+  {
+    "name": "Recursive Sandwich Department",
+    "description": "Descended into from the main flow; itself dispatches into the abyss via subFlowSwitch.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-chef",
+          "type": "persona",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "VOICE: Chef",
+            "type": "persona",
+            "personaId": "P_CHEF"
+          }
+        },
+        {
+          "id": "slot-sandwich",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "sandwich",
+            "slotOperation": "SET",
+            "slotValue": "club"
+          }
+        },
+        {
+          "id": "write-order",
+          "type": "writeSlot",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "WRITE SLOT",
+            "type": "writeSlot",
+            "slotName": "order",
+            "slotValue": "{{sandwich}} on rye"
+          }
+        },
+        {
+          "id": "subflowswitch-abyss",
+          "type": "subFlowSwitch",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "DISPATCH by filling",
+            "type": "subFlowSwitch",
+            "switchVariable": "sandwich",
+            "switchOptions": [
+              {
+                "id": "opt-club",
+                "label": "club",
+                "subFlowId": "chaos-abyss",
+                "subFlowName": "The Deep Abyss"
+              },
+              {
+                "id": "opt-veg",
+                "label": "veg",
+                "subFlowId": "chaos-paperwork",
+                "subFlowName": "Stamp & Paperwork Office"
+              }
+            ]
+          }
+        },
+        {
+          "id": "end-sandwich",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 600
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "persona-chef",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "persona-chef",
+          "target": "slot-sandwich",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "slot-sandwich",
+          "target": "write-order",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "write-order",
+          "target": "subflowswitch-abyss",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e5",
+          "source": "subflowswitch-abyss",
+          "target": "end-sandwich",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-sandwich"
+  },
+  {
+    "name": "The Deep Abyss",
+    "description": "Deepest sub-flow. Exercises functionCall failure-edge routing inside a nested descent.",
+    "guardrailMethod": "STRUCTURED_OUTPUT",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-abyss",
+          "type": "persona",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "VOICE: Oracle",
+            "type": "persona",
+            "personaId": "P_ORACLE"
+          }
+        },
+        {
+          "id": "slot-depth",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "abyss_depth",
+            "slotOperation": "SET",
+            "slotValue": "3"
+          }
+        },
+        {
+          "id": "fn-abyss",
+          "type": "functionCall",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "ABYSS tool (fails → recover)",
+            "type": "functionCall",
+            "toolSource": "NATIVE",
+            "functionName": "missing_abyss_tool",
+            "aiInstruction": "{\"depth\":\"{{abyss_depth}}\"}",
+            "outputVariable": "abyss_out",
+            "continueOnFailure": true
+          }
+        },
+        {
+          "id": "slot-abyss-rec",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "abyss_fn",
+            "slotOperation": "SET",
+            "slotValue": "recovered"
+          }
+        },
+        {
+          "id": "end-abyss",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 600
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "persona-abyss",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "persona-abyss",
+          "target": "slot-depth",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "slot-depth",
+          "target": "fn-abyss",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "fn-abyss",
+          "target": "slot-abyss-rec",
+          "sourceHandle": "failure",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e5",
+          "source": "fn-abyss",
+          "target": "slot-abyss-rec",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e6",
+          "source": "slot-abyss-rec",
+          "target": "end-abyss",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-abyss"
+  },
+  {
+    "name": "Stamp & Paperwork Office",
+    "description": "Exercises a condition with distinct yes/no targets and a writeSlot reading a parent-scope slot.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-neutral",
+          "type": "persona",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "VOICE: Clerk",
+            "type": "persona",
+            "personaId": "P_NEUTRAL"
+          }
+        },
+        {
+          "id": "slot-stamp",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "stamp",
+            "slotOperation": "SET",
+            "slotValue": "approved"
+          }
+        },
+        {
+          "id": "cond-stamp",
+          "type": "condition",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "CONDITION",
+            "type": "condition",
+            "conditionExpression": "stamp == 'approved'"
+          }
+        },
+        {
+          "id": "slot-paper-yes",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "paperwork",
+            "slotOperation": "SET",
+            "slotValue": "stamped"
+          }
+        },
+        {
+          "id": "slot-paper-no",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 600
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "paperwork",
+            "slotOperation": "SET",
+            "slotValue": "rejected"
+          }
+        },
+        {
+          "id": "write-summary",
+          "type": "writeSlot",
+          "position": {
+            "x": 0,
+            "y": 720
+          },
+          "data": {
+            "label": "WRITE SLOT",
+            "type": "writeSlot",
+            "slotName": "paper_summary",
+            "slotValue": "Form {{stamp}} for {{chaos_key}}"
+          }
+        },
+        {
+          "id": "end-paper",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 840
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "persona-neutral",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "persona-neutral",
+          "target": "slot-stamp",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "slot-stamp",
+          "target": "cond-stamp",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "cond-stamp",
+          "target": "slot-paper-yes",
+          "sourceHandle": "yes",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e5",
+          "source": "cond-stamp",
+          "target": "slot-paper-no",
+          "sourceHandle": "no",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e6",
+          "source": "slot-paper-yes",
+          "target": "write-summary",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e7",
+          "source": "slot-paper-no",
+          "target": "write-summary",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e8",
+          "source": "write-summary",
+          "target": "end-paper",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-paperwork"
+  },
+  {
+    "name": "Ouroboros Loop",
+    "description": "A sub-flow that descends into ITSELF — the engine's cycle detector must refuse and treat it as a no-op.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "subflow-self",
+          "type": "subFlow",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "DESCEND self (cycle!)",
+            "type": "subFlow",
+            "subFlowId": "chaos-ouroboros",
+            "subFlowName": "Ouroboros Loop"
+          }
+        },
+        {
+          "id": "end-ouro",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "subflow-self",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "subflow-self",
+          "target": "end-ouro",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-ouroboros"
+  },
+  {
+    "name": "Doomed Scheduler",
+    "description": "scheduleAgent with a missing routine — exercises failure-edge routing without JMS.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "sched-bogus",
+          "type": "scheduleAgent",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "SCHEDULE (missing routine → fail)",
+            "type": "scheduleAgent",
+            "routineId": "missing-sched-routine",
+            "outputVariable": "sched_out",
+            "routineTimeoutMs": 15000,
+            "continueOnFailure": true
+          }
+        },
+        {
+          "id": "slot-sched-rec",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "sched_status",
+            "slotOperation": "SET",
+            "slotValue": "recovered"
+          }
+        },
+        {
+          "id": "end-sched",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "sched-bogus",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "sched-bogus",
+          "target": "slot-sched-rec",
+          "sourceHandle": "failure",
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "sched-bogus",
+          "target": "slot-sched-rec",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "slot-sched-rec",
+          "target": "end-sched",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-scheduler"
+  },
+  {
+    "name": "Indefinite Hold",
+    "description": "Parks on a suspend node until an external resume call advances it.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "slot-pre",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "suspend_pre",
+            "slotOperation": "SET",
+            "slotValue": "before"
+          }
+        },
+        {
+          "id": "suspend-gate",
+          "type": "suspend",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "Held for absurd approval",
+            "type": "suspend"
+          }
+        },
+        {
+          "id": "slot-post",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "suspend_post",
+            "slotOperation": "SET",
+            "slotValue": "after"
+          }
+        },
+        {
+          "id": "end-suspend",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "slot-pre",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "slot-pre",
+          "target": "suspend-gate",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "suspend-gate",
+          "target": "slot-post",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "slot-post",
+          "target": "end-suspend",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-suspend"
+  }
+]

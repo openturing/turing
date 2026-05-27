@@ -26,9 +26,10 @@ export default defineFlow({
     "Ativar quando o visitante demonstrar interesse em conhecer cursos ou programas.",
   slots: [
     { name: "name", description: "Visitor first name", type: "STRING" },
-    { name: "email", description: "Visitor primary email", type: "EMAIL" },
+    // email is a STRING slot validated by the ask-email node's validationRule.
+    { name: "email", description: "Visitor primary email", type: "STRING" },
     { name: "area", description: "Area of interest", type: "STRING" },
-    { name: "objetivo", description: "Free-form career objective", type: "STRING" },
+    { name: "objetivo", description: "Free-form career objective", type: "TEXT" },
   ],
   nodes: [
     { id: "start", type: "start" },

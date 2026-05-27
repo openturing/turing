@@ -13,6 +13,6 @@
  *
  * @since 2026.3.1
  */
-export { defineFlow } from "./define-flow.js";
-export { FlowSpecError, transpileFlow } from "./transpile.js";
+export { defineBundle, defineFlow } from "./define-flow.js";
+export { FlowSpecError, transpileBundle, transpileFlow } from "./transpile.js";
 //# sourceMappingURL=index.js.map

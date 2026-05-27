@@ -1,0 +1,48 @@
+databaseChangeLog:
+  # LLM instructions for an MCP server. When the server is enabled and
+  # attached to the chatting agent, llmInstructions is injected into the
+  # agent system prompt so the model knows how/when to use the server's
+  # tools. llmInstructionsMetaPrompt is the companion "Help me write" brief
+  # (UI-only, never read at runtime).
+  #
+  # Both nullable — existing MCP servers stay instruction-less. Column names
+  # match the JPA field names literally (camelCase, no snake_case). Idempotent
+  # via columnExists.
+
+  - changeSet:
+      id: v2026.3.1.12-add-mcp-server-llm-instructions
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: mcp_server
+        - not:
+            - columnExists:
+                tableName: mcp_server
+                columnName: llmInstructions
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: llmInstructions
+                  type: longtext
+
+  - changeSet:
+      id: v2026.3.1.12-add-mcp-server-llm-instructions-meta-prompt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: mcp_server
+        - not:
+            - columnExists:
+                tableName: mcp_server
+                columnName: llmInstructionsMetaPrompt
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: llmInstructionsMetaPrompt
+                  type: longtext

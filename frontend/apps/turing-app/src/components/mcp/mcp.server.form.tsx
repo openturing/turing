@@ -26,7 +26,7 @@ import {
   useUpdateMcpServer,
 } from "@/api/queries/mcp-server.queries"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
-import { IconAlertTriangle, IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft, IconTrash } from "@tabler/icons-react"
+import { IconAlertTriangle, IconBraces, IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft, IconTrash } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -40,6 +40,7 @@ import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
+import { PromptEditor } from "../ui/prompt-editor"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
 
@@ -67,6 +68,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
     form.reset({
       ...value,
       description: value.description ?? "",
+      llmInstructions: value.llmInstructions ?? "",
       url: value.url ?? "",
       command: value.command ?? "",
       args: value.args ?? "",
@@ -217,6 +219,52 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                       )}
                     />
                   </div>
+                </SectionCard.Content>
+              </SectionCard>
+
+              {/* LLM Instructions Section */}
+              <SectionCard variant="violet">
+                <SectionCard.Header icon={IconBraces} title={t("forms.mcp.llmInstructionsTitle")} description={t("forms.mcp.llmInstructionsDesc")} />
+                <SectionCard.Content>
+                  <FormField
+                    control={form.control}
+                    name="llmInstructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.mcp.llmInstructionsLabel")}</FormLabel>
+                        <FormDescription>
+                          {t("forms.mcp.llmInstructionsHint")}
+                        </FormDescription>
+                        <FormControl>
+                          <PromptEditor
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            fieldRef={field.ref}
+                            placeholder={t("forms.mcp.llmInstructionsPlaceholder")}
+                            rows={4}
+                            metaPrompt={{
+                              brief: form.watch("llmInstructionsMetaPrompt") ?? "",
+                              onBriefChange: (v) =>
+                                form.setValue("llmInstructionsMetaPrompt", v, { shouldDirty: true }),
+                              fieldInstruction:
+                                "This text is injected into an AI agent's system prompt as guidance for an attached MCP (Model Context Protocol) server — it tells the model how and when to use the tools that server exposes. " +
+                                "MUST be written in English regardless of any other instruction. " +
+                                "MUST clearly state what the server is for, when the agent should reach for its tools, and any constraints or preferred order of use. " +
+                                "Be concise but specific; avoid filler. Do not include preamble, quotes, markdown headings, or commentary — return only the instruction text.",
+                              tone: "violet",
+                              triggerLabel: t("forms.mcp.helpWriteLlmInstructions"),
+                              title: t("forms.mcp.helpWriteLlmInstructionsTitle"),
+                              description: t("forms.mcp.helpWriteLlmInstructionsDescription"),
+                              placeholder: t("forms.mcp.helpWriteLlmInstructionsPlaceholder"),
+                              hint: t("forms.mcp.helpWriteLlmInstructionsHint"),
+                              generateLabel: t("forms.mcp.helpWriteLlmInstructionsGenerate"),
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </SectionCard.Content>
               </SectionCard>
 

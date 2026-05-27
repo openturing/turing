@@ -102,7 +102,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   metaPrompt,
 }) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
-  const [mode, setMode] = useState<"write" | "preview">("write");
+  const [mode, setMode] = useState<"write" | "preview">("preview");
 
   const setRef = useCallback((el: HTMLTextAreaElement | null) => {
     (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
@@ -182,17 +182,6 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
           <div className="flex items-center rounded-md border bg-muted/50 p-0.5 gap-0.5">
             <button
               type="button"
-              onClick={() => setMode("write")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "write"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              <IconPencil className="size-3.5" />
-              Write
-            </button>
-            <button
-              type="button"
               onClick={() => setMode("preview")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "preview"
                 ? "bg-background text-foreground shadow-sm"
@@ -201,6 +190,17 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
             >
               <IconEye className="size-3.5" />
               Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("write")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "write"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <IconPencil className="size-3.5" />
+              Write
             </button>
           </div>
         </div>

@@ -98,8 +98,61 @@ writeFileSync(
 - Every `condition` node has exactly one outgoing edge with
   `sourceHandle="yes"` and one with `sourceHandle="no"`.
 - Every outgoing edge of a `switch` node has a `sourceHandle` matching one
-  of the node's `switchOptions[].id`.
+  of the node's `switchOptions[].id` — plus an optional single
+  blank-`sourceHandle` **wildcard** edge for the no-match fallback (the
+  engine resolves it via `pickConditionEdge`).
 - Every non-`start` node has at least one incoming edge.
+
+## Bundles (sub-flows)
+
+A flow that descends into other flows via `subFlow` / `subFlowSwitch` ships
+as a **bundle** — a JSON array the backend's
+`POST /chat-flow/import-bundle` endpoint imports atomically, re-assigning
+UUIDs and rewriting the transient `subFlowId` / `personaId` references.
+
+Author the bundle with `defineBundle` (give every flow a stable `id`) and
+emit it with `transpileBundle`:
+
+```ts
+import { defineBundle, defineFlow, transpileBundle } from "@viglet/turing-flow-dsl";
+
+export const flows = defineBundle([
+  defineFlow({ id: "main", name: "Main", nodes: [
+    { id: "start", type: "start" },
+    { id: "go", type: "subFlow", subFlowId: "child" },   // cross-flow ref
+    { id: "end", type: "end" },
+  ], edges: [
+    { source: "start", target: "go" },
+    { source: "go", target: "end" },
+  ]}),
+  defineFlow({ id: "child", name: "Child", nodes: [
+    { id: "start", type: "start" }, { id: "end", type: "end" },
+  ], edges: [{ source: "start", target: "end" }]}),
+]);
+
+const bundle = transpileBundle(flows);   // → import-bundle JSON array
+```
+
+`transpileBundle` runs every flow through `transpileFlow` **and** validates
+that each `subFlowId` (on `subFlow` nodes and `subFlowSwitch`/`switch`
+options) resolves to a flow `id` present in the bundle — a dangling
+reference throws `FlowSpecError` at build time instead of silently failing
+the descent at runtime. It also fills each `subFlowName` from the referenced
+flow's `name`.
+
+## Node & type reference notes
+
+- **`suspend`** node parks the cursor until `POST /chat/resume` advances it;
+  it carries only a `label`.
+- **`functionCall`** / **`scheduleAgent`** accept `continueOnFailure: true`
+  to route a `sourceHandle: "failure"` edge on error; `functionCall` also
+  writes its result into `outputVariable`.
+- **`SlotType`** is `STRING | INTEGER | BOOLEAN | FLOAT | TEXT` (matching the
+  backend `TurAIAgentSlotType`). Email/phone/URL/number/date are
+  `ValidationRule`s on the capturing node, **not** slot types.
+- **Personas** declare the full backend voice shape (`id`, `systemInstruction`,
+  `tone`, `verbosity`, `languageStyle`, `mandatoryTerms`, `forbiddenTerms`,
+  `enabled`); a `persona` node's `personaId` points at a persona's `id`.
 
 Anything beyond that (unused `outputVariable`, too-long `aiInstruction`,
 trigger-description conflicts across flows) is the runtime linter's

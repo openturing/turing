@@ -33,6 +33,27 @@ public class TurMcpServer implements Serializable {
     @Column(nullable = true, length = 500)
     private String description;
 
+    /**
+     * LLM-facing guidance injected into the agent system prompt when this MCP
+     * server is attached to the chatting agent (and enabled). Tells the model
+     * how and when to use the tools this server exposes. Free text — stored as
+     * {@code longtext}, mapped literally to the {@code llmInstructions} column.
+     *
+     * @since 2026.3.1
+     */
+    @Column(columnDefinition = "longtext")
+    private String llmInstructions;
+
+    /**
+     * Companion brief for the "Help me write" authoring affordance on the
+     * {@link #llmInstructions} field. UI-only state — persisted so the brief
+     * survives reloads; never read at runtime.
+     *
+     * @since 2026.3.1
+     */
+    @Column(columnDefinition = "longtext")
+    private String llmInstructionsMetaPrompt;
+
     @Column(length = 150)
     private String icon;
 
