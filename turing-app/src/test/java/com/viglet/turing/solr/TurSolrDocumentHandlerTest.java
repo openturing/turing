@@ -678,6 +678,31 @@ class TurSolrDocumentHandlerTest {
                 assertThat(document.getFieldValue("price")).isNull();
         }
 
+        @Test
+        void testIndexingPropagatesIoFailureInsteadOfSwallowing() {
+                // Regression guard: a swallowed Solr/IO error used to falsely report the
+                // document as "Indexed" while it was actually lost. It must now surface so
+                // the resilience layer / circuit breaker can react.
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(new HashMap<>());
+                turSolrInstance.setSolrClient(new ThrowingSolrClient());
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("id", "doc-io-fail");
+
+                org.junit.jupiter.api.Assertions.assertThrows(
+                                TurSolrDocumentHandler.TurSolrIndexException.class,
+                                () -> turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes));
+        }
+
+        @Test
+        void testDeIndexingPropagatesIoFailureInsteadOfSwallowing() {
+                turSolrInstance.setSolrClient(new ThrowingSolrClient());
+
+                org.junit.jupiter.api.Assertions.assertThrows(
+                                TurSolrDocumentHandler.TurSolrIndexException.class,
+                                () -> turSolrDocumentHandler.deIndexing(turSolrInstance, "doc-io-fail"));
+        }
+
         private static final class CapturingSolrClient extends SolrClient {
                 private SolrRequest<?> lastRequest;
 
@@ -695,6 +720,20 @@ class TurSolrDocumentHandlerTest {
 
                 public SolrRequest<?> getLastRequest() {
                         return lastRequest;
+                }
+        }
+
+        /** Solr client stub that simulates an IO failure on every request. */
+        private static final class ThrowingSolrClient extends SolrClient {
+                @Override
+                public NamedList<Object> request(SolrRequest<?> request, String collection)
+                                throws SolrServerException, IOException {
+                        throw new IOException("disk full");
+                }
+
+                @Override
+                public void close() {
+                        // No resources to close for this test stub.
                 }
         }
 }

@@ -218,6 +218,7 @@ public class TurSNProcessQueue {
 
     private void createMissingFields(TurSNSite turSNSite,
             List<TurSNJobAttributeSpec> turSNAttributeSpecs) {
+        if (turSNAttributeSpecs == null) return;
         turSNAttributeSpecs.forEach(spec -> {
             if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
                 final TurSNSiteField turSNSiteField = saveSiteField(turSNSite, spec);

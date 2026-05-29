@@ -91,18 +91,18 @@ public class TurSolrDocumentHandler {
         } catch (SolrServerException | IOException e) {
             // Throw so the resilience layer (and the import service's per-doc
             // fallback) can react; the caller logs the final outcome.
-            throw new TurSolrBatchIndexException(
+            throw new TurSolrIndexException(
                     "Batch indexing of " + solrDocs.size() + " documents failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Marker exception for failed batch indexing. Carries the original Solr/IO
-     * failure as its cause; matched by the Resilience4j retry config and by the
-     * import service's per-doc fallback.
+     * Marker exception for failed Solr write operations (single-doc, batch, and
+     * delete). Carries the original Solr/IO failure as its cause; matched by the
+     * Resilience4j retry config and by the import service's per-doc fallback.
      */
-    public static class TurSolrBatchIndexException extends RuntimeException {
-        public TurSolrBatchIndexException(String message, Throwable cause) {
+    public static class TurSolrIndexException extends RuntimeException {
+        public TurSolrIndexException(String message, Throwable cause) {
             super(message, cause);
         }
     }
@@ -124,7 +124,9 @@ public class TurSolrDocumentHandler {
             updateRequest.setCommitWithin(commitWithin);
             updateRequest.process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
         } catch (SolrServerException | IOException e) {
-            log.error(e.getMessage(), e);
+            // Surface the failure instead of swallowing it — a logged-and-ignored error
+            // here silently reports a de-index as successful while the document remains.
+            throw new TurSolrIndexException("Error de-indexing Solr document id=" + id, e);
         }
     }
 
@@ -135,7 +137,7 @@ public class TurSolrDocumentHandler {
             updateRequest.setCommitWithin(commitWithin);
             updateRequest.process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
         } catch (SolrServerException | IOException e) {
-            log.error(e.getMessage(), e);
+            throw new TurSolrIndexException("Error de-indexing Solr documents type=" + type, e);
         }
     }
 
@@ -321,7 +323,11 @@ public class TurSolrDocumentHandler {
             updateRequest.setCommitWithin(commitWithin);
             updateRequest.process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
         } catch (SolrServerException | IOException e) {
-            log.error(e.getMessage(), e);
+            // Propagate instead of swallowing: a logged-and-ignored error here would
+            // falsely report the document as "Indexed" while it was actually lost. Letting
+            // it surface lets the resilience layer retry transient failures and the circuit
+            // breaker react to persistent ones.
+            throw new TurSolrIndexException("Error writing Solr document: " + e.getMessage(), e);
         }
     }
 }

@@ -97,6 +97,10 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public void deleteIndex(TurSEInstance seInstance, String indexName) {
+        // Close and drop any cached IndexWriter first — otherwise the directory is
+        // deleted underneath an open writer, leaving a stale instance whose write.lock
+        // is gone (NoSuchFileException -> AlreadyClosedException on the next index call).
+        turLuceneInstanceProcess.evict(seInstance.getEndpointUrl(), indexName);
         TurLuceneUtils.deleteCore(seInstance.getEndpointUrl(), indexName);
         if (storageSync != null && storageSync.isEnabled()) {
             storageSync.deleteFromStorage(indexName);
@@ -105,7 +109,10 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public void clearIndex(TurSEInstance seInstance, String indexName) {
-        // Lucene: clear by deleting and recreating the index
+        // Lucene: clear by deleting and recreating the index. Evict the cached writer
+        // first so the recreated core is reopened fresh instead of reusing the orphaned
+        // writer (see deleteIndex above).
+        turLuceneInstanceProcess.evict(seInstance.getEndpointUrl(), indexName);
         TurLuceneUtils.deleteCore(seInstance.getEndpointUrl(), indexName);
         TurLuceneUtils.createCore(seInstance.getEndpointUrl(), indexName);
         if (storageSync != null && storageSync.isEnabled()) {
@@ -165,6 +172,20 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         }
                         log.error("[Lucene] Indexing failed: {}", e.getMessage(), e);
                         return false;
+                    } catch (org.apache.lucene.store.AlreadyClosedException e) {
+                        // The cached IndexWriter was closed underneath us — typically the core
+                        // directory was deleted/recreated (clear/reindex) without evicting the
+                        // cache, so write.lock is missing and the writer tragically closed.
+                        // Rebuild the instance (preserving any existing index files) and retry
+                        // once, so a single stale writer can't keep tripping the circuit breaker.
+                        log.warn("[Lucene] IndexWriter closed (stale instance) for core '{}'. "
+                                + "Rebuilding and retrying. Cause: {}",
+                                luceneInstance.getIndexPath().getFileName(), e.getMessage());
+                        return turLuceneInstanceProcess.rebuildInstance(luceneInstance.getIndexPath())
+                                .map(fresh -> {
+                                    turLucene.indexing(fresh, turSNSite, attributes);
+                                    return true;
+                                }).orElse(false);
                     }
                 }).orElse(false);
     }

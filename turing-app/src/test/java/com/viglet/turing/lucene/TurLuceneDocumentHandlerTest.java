@@ -584,6 +584,41 @@ class TurLuceneDocumentHandlerTest {
     }
 
     @Test
+    void indexingShouldPropagateIoFailureInsteadOfSwallowing() throws IOException {
+        // Regression guard: a swallowed IOException used to falsely report the document
+        // as "Indexed" while it was actually lost. It must now surface to the caller so
+        // the resilience layer / circuit breaker can react.
+        Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+        fieldMap.put("title", TurSNSiteField.builder().name("title")
+                .type(TurSEFieldType.TEXT).multiValued(0).build());
+        when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+        IndexWriter failingWriter = mock(IndexWriter.class);
+        when(failingWriter.updateDocument(any(), any())).thenThrow(new IOException("disk full"));
+        TurLuceneInstance failingInstance = mock(TurLuceneInstance.class);
+        when(failingInstance.getWriter()).thenReturn(failingWriter);
+
+        Map<String, Object> attrs = new LinkedHashMap<>();
+        attrs.put("id", "doc-io-fail");
+        attrs.put("title", "Hello");
+
+        assertThrows(java.io.UncheckedIOException.class,
+                () -> handler.indexing(failingInstance, turSNSite, attrs));
+    }
+
+    @Test
+    void deIndexingShouldPropagateIoFailureInsteadOfSwallowing() throws IOException {
+        IndexWriter failingWriter = mock(IndexWriter.class);
+        when(failingWriter.deleteDocuments(any(org.apache.lucene.index.Term.class)))
+                .thenThrow(new IOException("disk full"));
+        TurLuceneInstance failingInstance = mock(TurLuceneInstance.class);
+        when(failingInstance.getWriter()).thenReturn(failingWriter);
+
+        assertThrows(java.io.UncheckedIOException.class,
+                () -> handler.deIndexing(failingInstance, "doc-io-fail"));
+    }
+
+    @Test
     void indexingShouldThrowNpeForNullAttributes() {
         // The cleaned map is a new LinkedHashMap(null) which throws NPE.
         // Use a separate handler/instance to avoid unnecessary stubbing from setUp.

@@ -29,6 +29,7 @@ import org.apache.lucene.util.BytesRef;
 import org.json.JSONArray;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -73,7 +74,9 @@ public class TurLuceneDocumentHandler {
             instance.getWriter().commit();
             syncAfterCommit(instance);
         } catch (IOException e) {
-            log.error("Error deIndexing id={}", id, e);
+            // Surface the failure: a swallowed IO error here silently reports a
+            // de-index as successful while the document is still in the index.
+            throw new UncheckedIOException("Error de-indexing Lucene document id=" + id, e);
         }
     }
 
@@ -84,7 +87,7 @@ public class TurLuceneDocumentHandler {
             instance.getWriter().commit();
             syncAfterCommit(instance);
         } catch (IOException e) {
-            log.error("Error deIndexing type={}", type, e);
+            throw new UncheckedIOException("Error de-indexing Lucene documents type=" + type, e);
         }
     }
 
@@ -114,7 +117,11 @@ public class TurLuceneDocumentHandler {
             instance.getWriter().commit();
             syncAfterCommit(instance);
         } catch (IOException e) {
-            log.error("Error writing Lucene document id={}", docId, e);
+            // Propagate instead of swallowing: a logged-and-ignored IO error here would
+            // falsely report the document as "Indexed" while it was actually lost. Letting
+            // it surface lets the resilience layer retry transient failures and the circuit
+            // breaker react to persistent ones.
+            throw new UncheckedIOException("Error writing Lucene document id=" + docId, e);
         }
     }
 

@@ -103,22 +103,46 @@ public class TurLuceneInstanceProcess {
 
     private Optional<TurLuceneInstance> getLuceneInstance(TurSEInstance turSEInstance, String coreName) {
         Path indexPath = resolveIndexPath(turSEInstance.getEndpointUrl(), coreName);
-        String cacheKey = indexPath.toString();
         try {
-            TurLuceneInstance instance = instanceCache.computeIfAbsent(cacheKey, key -> {
-                try {
-                    return createInstance(indexPath);
-                } catch (IOException e) {
-                    log.error("Failed to create Lucene instance for path: {}", indexPath, e);
-                    return null;
-                }
-            });
-            return Optional.ofNullable(instance);
+            return openInstance(indexPath);
         } catch (Exception e) {
             log.error("Error obtaining Lucene instance for core '{}' at '{}'", coreName,
                     turSEInstance.getEndpointUrl(), e);
             return Optional.empty();
         }
+    }
+
+    /** Returns the cached instance for {@code indexPath}, opening (and caching) one if absent. */
+    private Optional<TurLuceneInstance> openInstance(Path indexPath) {
+        TurLuceneInstance instance = instanceCache.computeIfAbsent(indexPath.toString(), key -> {
+            try {
+                return createInstance(indexPath);
+            } catch (IOException e) {
+                log.error("Failed to create Lucene instance for path: {}", indexPath, e);
+                return null;
+            }
+        });
+        return Optional.ofNullable(instance);
+    }
+
+    /**
+     * Recovers from an orphaned/closed {@link IndexWriter} — e.g. the core directory was
+     * deleted and recreated underneath a cached writer, leaving {@code write.lock} missing
+     * and the writer tragically closed. Closes and removes the stale cached instance
+     * <b>without deleting index files</b>, then reopens a fresh one. Unlike
+     * {@link #resetInstance(Path)} this preserves any existing index data.
+     */
+    public Optional<TurLuceneInstance> rebuildInstance(Path indexPath) {
+        TurLuceneInstance removed = instanceCache.remove(indexPath.toString());
+        if (removed != null) {
+            try {
+                removed.close();
+            } catch (IOException e) {
+                log.warn("Error closing stale Lucene instance during rebuild '{}': {}",
+                        indexPath, e.getMessage());
+            }
+        }
+        return openInstance(indexPath);
     }
 
     private TurLuceneInstance createInstance(Path indexPath) throws IOException {
