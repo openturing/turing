@@ -108,22 +108,28 @@ export default function IntegrationInstancePage() {
                     .catch(() => { /* dumont i18n unavailable */ });
 
                 const manifestPromise = loadRemote("dumont_react/manifest")
-                    .then((mod) => (mod as { default: { navItems: DumontNavItem[] } }).default)
+                    .then((mod) => mod as {
+                        default: { navItems: DumontNavItem[] };
+                        resolveIcon?: (name: string) => React.ElementType;
+                    })
                     .catch(() => null);
 
                 Promise.all([providerPromise, i18nPromise, manifestPromise])
-                    .then(([activeProvider, , manifest]) => {
-                        if (!manifest) {
+                    .then(([activeProvider, , manifestMod]) => {
+                        if (!manifestMod) {
                             console.warn("Dumont manifest unavailable; showing turing-only nav");
                             return;
                         }
-                        const items = manifest.navItems
+                        // Prefer Dumont's own icon resolver (it ships the icons), so new
+                        // connector icons need no change here. Fall back to the local map.
+                        const resolveDumontIcon = manifestMod.resolveIcon ?? resolveIcon;
+                        const items = manifestMod.default.navItems
                             .filter((item) => !activeProvider || !item.provider || item.provider === activeProvider)
                             .sort((a, b) => a.order - b.order)
                             .map((item) => ({
                                 title: t(item.titleKey),
                                 url: item.url,
-                                icon: resolveIcon(item.icon),
+                                icon: resolveDumontIcon(item.icon),
                             }));
                         setDumontNavItems(items);
                     });

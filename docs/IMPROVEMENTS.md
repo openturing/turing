@@ -4069,6 +4069,56 @@ cryptic `NoClassDefFoundError`. T216 enforces this at boot — Spring
 Boot launcher updated, Docker `ENTRYPOINT` updated, boot-time check
 runs before any cache is touched.
 
+> **JDK version decision (2026-05-27) — why Turing stays on Java 21,
+> and what the flags become on 22+/25.** The `--enable-preview` above
+> is required **only on JDK 21**. Jlama leans on two Panama APIs with
+> different maturity:
+>
+> | Panama API Jlama uses | JDK 21 | JDK 22+ / 25 |
+> |---|---|---|
+> | **Foreign Function & Memory** (off-heap, native SIMD) | preview → needs `--enable-preview` | **final since JDK 22 (JEP 454)** → flag drops |
+> | **Vector API** (SIMD kernels) | incubator → `--add-modules jdk.incubator.vector` | **still incubator even in JDK 25 (JEP 508)** → flag stays |
+> | Native downcalls | — | warning on JDK 24+ → add `--enable-native-access=ALL-UNNAMED` |
+>
+> **The real cost of `--enable-preview`**: preview-compiled `.class`
+> files are stamped with minor version `0xFFFF` and load **only** on a
+> JVM of the exact same major version running in preview mode. On JDK
+> 21 that pins the **entire `turing-app`** to Java 21 + preview — which
+> is precisely why embedded Jlama *server-wide* is awkward today, and
+> why moving to **JDK 25 (LTS)** is the real unlock: `--enable-preview`
+> disappears, leaving only the two innocuous launch flags (which do
+> *not* pin the bytecode to a JDK version).
+>
+> **Why we are NOT on JDK 25 yet — and the blocker is *not* Jlama.**
+> Spring Boot 4.0.6's managed BOM pins two deps that break on Java 25:
+>
+> - **Artemis `2.43.0`** → hard crash at broker init on Java 25:
+>   `UnsupportedOperationException: getSubject is not supported`
+>   (`Subject.getSubject` removed alongside the SecurityManager). Fixed
+>   in **Artemis 2.44.0** (multi-release SecurityManager/Subject shim).
+>   Spring Boot issue **#48344** was closed *"not planned /
+>   external-project"* — Boot will not bump it for us on the 4.0 line.
+> - **Hazelcast `5.5.0`** → Java 25 friction; **5.7.0** ships certified
+>   JDK 25 support (Docker tag `5.7.0-jdk25`).
+>
+> Both are fixable today by overriding the managed versions
+> (`<artemis.version>2.44.0</artemis.version>`,
+> `<hazelcast.version>5.7.0</hazelcast.version>`) plus the Hazelcast
+> `--add-opens` set. **Decision (2026-05-27): stay on JDK 21 and wait
+> for Spring Boot to bump the managed Hazelcast/Artemis versions**
+> rather than carry manual overrides ahead of the BOM. Re-evaluate
+> embedded-Jlama-on-the-server once the project is on JDK 25 — validate
+> with `mvn verify -pl turing-app` (the IT suite boots embedded Artemis
+> + Hazelcast via `AbstractTuringSpringIT`, so it is the real Java-25
+> smoke test).
+>
+> **Consequence for this block while on JDK 21**: keep embedded Jlama
+> strictly opt-in (`embedded-jlama` plugin type, off by default) and
+> run it with `--enable-preview`; the flag lines in XI.2 / XI.5 #1 are
+> correct for JDK 21. The **CLI** use case (single binary, no external
+> LLM) can carry its own launcher with these flags independently of the
+> server's JDK story.
+
 ### XI.3 Architecture — provider + model cache + storage resolver
 
 The three structural pieces this whole block hinges on.
