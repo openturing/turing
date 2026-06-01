@@ -86,8 +86,13 @@ public class TurLuceneResultProcessor {
 
         try {
             IndexSearcher searcher = instance.getSearcher();
-            int start = firstRow(params);
-            int rows = params.getRows() > 0 ? params.getRows() : 10;
+            // Resolve the effective page size first (mirrors TurSolrQueryBuilder#setRows):
+            // when the request omits "rows" it arrives negative/null, so fall back to the
+            // site's rowsPerPage. The offset MUST be computed from this same value —
+            // otherwise (page-1)*rawRows collapses to 0 and every page shows page 1.
+            int rows = effectiveRows(params, turSNSite);
+            int start = firstRow(params, rows);
+            results.setLimit(rows);
             // Collect enough hits to support pagination — must be >= 1
             int hitsNeeded = Math.max(1, start + rows);
 
@@ -399,13 +404,29 @@ public class TurLuceneResultProcessor {
     }
 
     private void populateResultsParameters(TurSEParameters params, TurSEResults results) {
-        results.setLimit(params.getRows());
+        // limit is set in getResults() from the effective rows (see effectiveRows)
         results.setCurrentPage(params.getCurrentPage());
         results.setSort(params.getSort());
         results.setQueryString(params.getQuery());
     }
 
-    private int firstRow(TurSEParameters params) {
-        return Math.max(0, (params.getCurrentPage() - 1) * params.getRows());
+    /**
+     * Resolves the effective page size. When the request omits {@code rows} it
+     * arrives null/negative, so fall back to the site's {@code rowsPerPage}
+     * (mirrors {@code TurSolrQueryBuilder#setRows}).
+     */
+    private int effectiveRows(TurSEParameters params, TurSNSite turSNSite) {
+        Integer rows = params.getRows();
+        if (rows != null && rows > 0) {
+            return rows;
+        }
+        Integer rowsPerPage = turSNSite.getRowsPerPage();
+        return (rowsPerPage != null && rowsPerPage > 0) ? rowsPerPage : 10;
+    }
+
+    private int firstRow(TurSEParameters params, int rows) {
+        Integer page = params.getCurrentPage();
+        int currentPage = (page != null && page > 0) ? page : 1;
+        return Math.max(0, (currentPage - 1) * rows);
     }
 }

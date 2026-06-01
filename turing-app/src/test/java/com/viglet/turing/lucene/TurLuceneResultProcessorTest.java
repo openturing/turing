@@ -296,7 +296,6 @@ class TurLuceneResultProcessorTest {
 
         com.viglet.turing.commons.se.TurSEParameters params =
                 org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
-        org.mockito.Mockito.when(params.getRows()).thenReturn(20);
         org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(3);
         org.mockito.Mockito.when(params.getSort()).thenReturn("relevance");
         org.mockito.Mockito.when(params.getQuery()).thenReturn("test query");
@@ -306,76 +305,157 @@ class TurLuceneResultProcessorTest {
 
         method.invoke(processor, params, results);
 
-        assertEquals(20, results.getLimit());
+        // limit is no longer set here — it comes from effectiveRows() in getResults()
         assertEquals(3, results.getCurrentPage());
         assertEquals("relevance", results.getSort());
         assertEquals("test query", results.getQueryString());
     }
 
-    // ---- firstRow tests ----
+    // ---- effectiveRows tests ----
 
-    @Test
-    void firstRowShouldReturnZeroForPageOne() throws Exception {
+    private int invokeEffectiveRows(Integer rows, Integer rowsPerPage) throws Exception {
         java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
-                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
+                "effectiveRows", com.viglet.turing.commons.se.TurSEParameters.class,
+                com.viglet.turing.persistence.model.sn.TurSNSite.class);
         method.setAccessible(true);
 
         com.viglet.turing.commons.se.TurSEParameters params =
                 org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
-        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(1);
-        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(rows);
 
-        int result = (int) method.invoke(processor, params);
+        com.viglet.turing.persistence.model.sn.TurSNSite site =
+                org.mockito.Mockito.mock(com.viglet.turing.persistence.model.sn.TurSNSite.class);
+        org.mockito.Mockito.when(site.getRowsPerPage()).thenReturn(rowsPerPage);
 
-        assertEquals(0, result);
+        return (int) method.invoke(processor, params, site);
+    }
+
+    @Test
+    void effectiveRowsShouldUseRequestedRowsWhenPositive() throws Exception {
+        assertEquals(25, invokeEffectiveRows(25, 10));
+    }
+
+    @Test
+    void effectiveRowsShouldFallBackToRowsPerPageWhenRowsNegative() throws Exception {
+        // The bug: omitting "rows" in the URL arrives as -1; must fall back to site rowsPerPage
+        assertEquals(10, invokeEffectiveRows(-1, 10));
+    }
+
+    @Test
+    void effectiveRowsShouldFallBackToRowsPerPageWhenRowsNull() throws Exception {
+        assertEquals(15, invokeEffectiveRows(null, 15));
+    }
+
+    @Test
+    void effectiveRowsShouldDefaultToTenWhenBothMissing() throws Exception {
+        assertEquals(10, invokeEffectiveRows(-1, 0));
+        assertEquals(10, invokeEffectiveRows(null, null));
+    }
+
+    // ---- firstRow tests ----
+
+    private int invokeFirstRow(Integer currentPage, int rows) throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class, int.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(currentPage);
+
+        return (int) method.invoke(processor, params, rows);
+    }
+
+    @Test
+    void firstRowShouldReturnZeroForPageOne() throws Exception {
+        assertEquals(0, invokeFirstRow(1, 10));
     }
 
     @Test
     void firstRowShouldCalculateOffsetCorrectly() throws Exception {
-        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
-                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
-        method.setAccessible(true);
-
-        com.viglet.turing.commons.se.TurSEParameters params =
-                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
-        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(3);
-        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
-
-        int result = (int) method.invoke(processor, params);
-
-        assertEquals(20, result);
+        assertEquals(20, invokeFirstRow(3, 10));
     }
 
     @Test
     void firstRowShouldReturnZeroForPageZero() throws Exception {
-        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
-                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
-        method.setAccessible(true);
-
-        com.viglet.turing.commons.se.TurSEParameters params =
-                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
-        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(0);
-        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
-
-        int result = (int) method.invoke(processor, params);
-
-        // (0-1)*10 = -10 -> Math.max(0, -10) = 0
-        assertEquals(0, result);
+        // page <= 0 is normalized to page 1 -> offset 0
+        assertEquals(0, invokeFirstRow(0, 10));
     }
 
     @Test
     void firstRowShouldReturnZeroForNegativePage() throws Exception {
-        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
-                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
-        method.setAccessible(true);
+        assertEquals(0, invokeFirstRow(-1, 10));
+    }
 
+    @Test
+    void firstRowShouldReturnZeroForNullPage() throws Exception {
+        assertEquals(0, invokeFirstRow(null, 10));
+    }
+
+    // ---- getResults: pagination regression (issue: every page showed page 1) ----
+
+    @Test
+    void getResultsShouldPaginateWhenRowsOmittedFromRequest() throws Exception {
+        // Build an in-memory index with 25 deterministically-ordered docs.
+        org.apache.lucene.store.Directory directory =
+                new org.apache.lucene.store.ByteBuffersDirectory();
+        org.apache.lucene.index.IndexWriterConfig config =
+                new org.apache.lucene.index.IndexWriterConfig(
+                        new org.apache.lucene.analysis.standard.StandardAnalyzer());
+        org.apache.lucene.index.IndexWriter writer =
+                new org.apache.lucene.index.IndexWriter(directory, config);
+        for (int i = 0; i < 25; i++) {
+            Document doc = new Document();
+            doc.add(new StringField("id", "doc" + i, Field.Store.YES));
+            writer.addDocument(doc);
+        }
+        writer.commit();
+
+        TurLuceneInstance instance = new TurLuceneInstance(writer, directory,
+                java.nio.file.Path.of("test-index"), new org.apache.lucene.facet.FacetsConfig());
+
+        // Site configured with 10 rows per page; request omits "rows" (arrives as -1).
+        com.viglet.turing.persistence.model.sn.TurSNSite site =
+                org.mockito.Mockito.mock(com.viglet.turing.persistence.model.sn.TurSNSite.class);
+        org.mockito.Mockito.when(site.getRowsPerPage()).thenReturn(10);
+
+        org.apache.lucene.search.Query query = new org.apache.lucene.search.MatchAllDocsQuery();
+
+        try {
+            com.viglet.turing.se.result.TurSEResults page1 = processor.getResults(instance, site,
+                    query, paramsForPage(1), List.of(), List.of(), null, 0L);
+            com.viglet.turing.se.result.TurSEResults page2 = processor.getResults(instance, site,
+                    query, paramsForPage(2), List.of(), List.of(), null, 0L);
+
+            assertEquals(25, page1.getNumFound());
+            assertEquals(10, page1.getResults().size());
+            assertEquals(10, page2.getResults().size());
+
+            assertEquals(0, page1.getStart());
+            assertEquals(10, page2.getStart());
+            assertEquals(10, page1.getLimit());
+            assertEquals(10, page2.getLimit());
+
+            List<String> page1Ids = page1.getResults().stream()
+                    .map(r -> (String) r.getFields().get("id")).toList();
+            List<String> page2Ids = page2.getResults().stream()
+                    .map(r -> (String) r.getFields().get("id")).toList();
+
+            // The regression: page 2 must NOT equal page 1.
+            assertNotEquals(page1Ids, page2Ids);
+            assertEquals("doc0", page1Ids.get(0));
+            assertEquals("doc10", page2Ids.get(0));
+        } finally {
+            instance.close();
+        }
+    }
+
+    private com.viglet.turing.commons.se.TurSEParameters paramsForPage(int page) {
         com.viglet.turing.commons.se.TurSEParameters params =
                 org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
-        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(-1);
-        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
-
-        int result = (int) method.invoke(processor, params);
-
-        assertEquals(0, result);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(page);
+        // "rows" omitted from the URL arrives negative
+        org.mockito.Mockito.when(params.getRows()).thenReturn(-1);
+        return params;
     }
 }
