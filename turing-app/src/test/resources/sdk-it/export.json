@@ -1,0 +1,503 @@
+{
+  "se": [
+    {
+      "id": "00000000-0000-0000-0000-lucene000001",
+      "title": "Lucene (Mythical Creatures)",
+      "description": "Local Lucene instance for Mythical Creatures sample",
+      "enabled": 1,
+      "endpointUrl": "./turing-sample",
+      "turSEVendor": {
+        "id": "LUCENE"
+      }
+    }
+  ],
+  "snSites": [
+    {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "name": "mythical-creatures",
+      "description": "An encyclopedia of mythical creatures from world folklore — dragons, krakens, phoenixes, and tricksters. Demonstrates multi-language (EN/PT), multi-valued facets, custom facets with mapped values, boolean filters, float danger ratings, and More Like This recommendations.",
+      "icon": "mdi:sword",
+      "rowsPerPage": 10,
+      "wildcardNoResults": 1,
+      "wildcardAlways": 0,
+      "exactMatch": 0,
+      "exactMatchField": "exact_match",
+      "facet": true,
+      "facetType": "AND",
+      "facetItemType": "OR",
+      "facetSort": "COUNT",
+      "hl": true,
+      "hlPre": "<mark>",
+      "hlPost": "</mark>",
+      "mlt": true,
+      "itemsPerFacet": 50,
+      "spellCheck": 1,
+      "spellCheckFixes": 3,
+      "spotlightWithResults": 1,
+      "searchTemplate": "mythical-creatures",
+      "thesaurus": false,
+      "defaultField": "_text_",
+      "defaultTitleField": "title",
+      "defaultTextField": "text",
+      "defaultDescriptionField": "description",
+      "defaultDateField": "first_recorded",
+      "defaultImageField": "image",
+      "defaultURLField": "url",
+      "turSEInstance": "00000000-0000-0000-0000-lucene000001",
+      "turSNRankingExpressions": [],
+      "turSNSiteMergeProviders": [],
+      "turSNSiteSpotlights": [
+        {
+          "id": "spot-myth-001",
+          "name": "Dragons",
+          "description": "Spotlight for dragon searches",
+          "language": "en_US",
+          "turSNSiteSpotlightTerms": [
+            {
+              "name": "dragon"
+            },
+            {
+              "name": "fire breathing"
+            },
+            {
+              "name": "wyvern"
+            }
+          ],
+          "turSNSiteSpotlightDocuments": [
+            {
+              "title": "European Dragon",
+              "type": "creature",
+              "position": 1,
+              "link": "/creatures/european-dragon",
+              "referenceId": "myth-001"
+            },
+            {
+              "title": "Shenlong — The Spirit Dragon",
+              "type": "creature",
+              "position": 2,
+              "link": "/creatures/shenlong",
+              "referenceId": "myth-003"
+            }
+          ]
+        }
+      ],
+      "turSNSiteCustomSorts": [
+        {
+          "id": "csort-myth-001",
+          "name": "danger",
+          "description": "Most Dangerous First",
+          "items": [
+            {
+              "id": "csi-m-001",
+              "fieldName": "danger_level",
+              "sortOrder": "DESC",
+              "position": 1
+            }
+          ]
+        }
+      ],
+      "turSNSiteLocales": [
+        {
+          "id": "loc-myth-en",
+          "language": "en_US",
+          "core": "mythical-creatures_en_US"
+        },
+        {
+          "id": "loc-myth-pt",
+          "language": "pt_BR",
+          "core": "mythical-creatures_pt_BR"
+        }
+      ],
+      "turSNSiteFields": [
+        {
+          "id": "mf-001",
+          "name": "title",
+          "type": "TEXT",
+          "multiValued": 0,
+          "description": "Creature name"
+        },
+        {
+          "id": "mf-002",
+          "name": "description",
+          "type": "TEXT",
+          "multiValued": 0,
+          "description": "Short description"
+        },
+        {
+          "id": "mf-003",
+          "name": "text",
+          "type": "TEXT",
+          "multiValued": 0,
+          "description": "Full lore"
+        },
+        {
+          "id": "mf-004",
+          "name": "url",
+          "type": "STRING",
+          "multiValued": 0,
+          "description": "URL"
+        },
+        {
+          "id": "mf-005",
+          "name": "image",
+          "type": "STRING",
+          "multiValued": 0,
+          "description": "Illustration URL"
+        },
+        {
+          "id": "mf-006",
+          "name": "first_recorded",
+          "type": "DATE",
+          "multiValued": 0,
+          "description": "First recorded mention"
+        },
+        {
+          "id": "mf-007",
+          "name": "origin",
+          "type": "STRING",
+          "multiValued": 1,
+          "description": "Cultural origin"
+        },
+        {
+          "id": "mf-008",
+          "name": "creature_type",
+          "type": "STRING",
+          "multiValued": 1,
+          "description": "Creature classification"
+        },
+        {
+          "id": "mf-009",
+          "name": "element",
+          "type": "STRING",
+          "multiValued": 1,
+          "description": "Associated elements"
+        },
+        {
+          "id": "mf-010",
+          "name": "habitat",
+          "type": "STRING",
+          "multiValued": 0,
+          "description": "Primary habitat"
+        },
+        {
+          "id": "mf-011",
+          "name": "danger_level",
+          "type": "FLOAT",
+          "multiValued": 0,
+          "description": "Danger rating 1-10"
+        },
+        {
+          "id": "mf-012",
+          "name": "is_shapeshifter",
+          "type": "BOOL",
+          "multiValued": 0,
+          "description": "Can change form"
+        },
+        {
+          "id": "mf-013",
+          "name": "is_immortal",
+          "type": "BOOL",
+          "multiValued": 0,
+          "description": "Cannot die"
+        },
+        {
+          "id": "mf-014",
+          "name": "abilities",
+          "type": "STRING",
+          "multiValued": 1,
+          "description": "Special abilities"
+        },
+        {
+          "id": "mf-015",
+          "name": "weakness",
+          "type": "STRING",
+          "multiValued": 1,
+          "description": "Known weaknesses"
+        },
+        {
+          "id": "mf-016",
+          "name": "era",
+          "type": "STRING",
+          "multiValued": 0,
+          "description": "Historical era"
+        },
+        {
+          "id": "mf-017",
+          "name": "type",
+          "type": "STRING",
+          "multiValued": 0,
+          "description": "Content type"
+        }
+      ],
+      "turSNSiteFieldExts": [
+        {
+          "id": "mfe-001",
+          "externalId": "mf-007",
+          "name": "origin",
+          "description": "Cultural Origin",
+          "facetName": "Origin",
+          "facetLocales": [
+            {
+              "id": "mfl-001",
+              "locale": "pt_BR",
+              "label": "Origem Cultural"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "STRING",
+          "multiValued": 1,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 1,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "OR",
+          "facetItemType": null,
+          "facetSort": "COUNT",
+          "facetPosition": 1,
+          "secondaryFacet": false,
+          "showAllFacetItems": true,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-002",
+          "externalId": "mf-008",
+          "name": "creature_type",
+          "description": "Creature Type",
+          "facetName": "Type",
+          "facetLocales": [
+            {
+              "id": "mfl-002",
+              "locale": "pt_BR",
+              "label": "Tipo de Criatura"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "STRING",
+          "multiValued": 1,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 1,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "OR",
+          "facetItemType": null,
+          "facetSort": "COUNT",
+          "facetPosition": 2,
+          "secondaryFacet": false,
+          "showAllFacetItems": false,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-003",
+          "externalId": "mf-009",
+          "name": "element",
+          "description": "Element",
+          "facetName": "Element",
+          "facetLocales": [
+            {
+              "id": "mfl-003",
+              "locale": "pt_BR",
+              "label": "Elemento"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "STRING",
+          "multiValued": 1,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 0,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "OR",
+          "facetItemType": null,
+          "facetSort": "ALPHABETICAL",
+          "facetPosition": 3,
+          "secondaryFacet": false,
+          "showAllFacetItems": false,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-004",
+          "externalId": "mf-010",
+          "name": "habitat",
+          "description": "Habitat",
+          "facetName": "Habitat",
+          "facetLocales": [
+            {
+              "id": "mfl-004",
+              "locale": "pt_BR",
+              "label": "Habitat"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "STRING",
+          "multiValued": 0,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 0,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "AND",
+          "facetItemType": null,
+          "facetSort": "COUNT",
+          "facetPosition": 4,
+          "secondaryFacet": false,
+          "showAllFacetItems": false,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-005",
+          "externalId": "mf-012",
+          "name": "is_shapeshifter",
+          "description": "Shapeshifter",
+          "facetName": "Shapeshifter",
+          "facetLocales": [
+            {
+              "id": "mfl-005",
+              "locale": "pt_BR",
+              "label": "Metamorfo"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "BOOL",
+          "multiValued": 0,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 0,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "AND",
+          "facetItemType": null,
+          "facetSort": "DEFAULT",
+          "facetPosition": 5,
+          "secondaryFacet": true,
+          "showAllFacetItems": false,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-006",
+          "externalId": "mf-013",
+          "name": "is_immortal",
+          "description": "Immortal",
+          "facetName": "Immortal",
+          "facetLocales": [
+            {
+              "id": "mfl-006",
+              "locale": "pt_BR",
+              "label": "Imortal"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "BOOL",
+          "multiValued": 0,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 0,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "AND",
+          "facetItemType": null,
+          "facetSort": "DEFAULT",
+          "facetPosition": 6,
+          "secondaryFacet": true,
+          "showAllFacetItems": false,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-007",
+          "externalId": "mf-016",
+          "name": "era",
+          "description": "Historical Era",
+          "facetName": "Era",
+          "facetLocales": [
+            {
+              "id": "mfl-007",
+              "locale": "pt_BR",
+              "label": "Era Histórica"
+            }
+          ],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "STRING",
+          "multiValued": 0,
+          "facet": 1,
+          "hl": 0,
+          "mlt": 0,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": "DISABLED",
+          "facetType": "AND",
+          "facetItemType": null,
+          "facetSort": "ALPHABETICAL",
+          "facetPosition": 7,
+          "secondaryFacet": false,
+          "showAllFacetItems": true,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-008",
+          "externalId": "mf-001",
+          "name": "title",
+          "description": "Title",
+          "facetName": "Title",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "TEXT",
+          "multiValued": 0,
+          "facet": 0,
+          "hl": 1,
+          "mlt": 1,
+          "enabled": 1,
+          "required": 1,
+          "facetRange": null,
+          "facetType": null,
+          "facetItemType": null,
+          "facetSort": null,
+          "facetPosition": null,
+          "secondaryFacet": null,
+          "showAllFacetItems": null,
+          "defaultValue": null
+        },
+        {
+          "id": "mfe-009",
+          "externalId": "mf-002",
+          "name": "description",
+          "description": "Description",
+          "facetName": "Description",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE",
+          "type": "TEXT",
+          "multiValued": 0,
+          "facet": 0,
+          "hl": 1,
+          "mlt": 1,
+          "enabled": 1,
+          "required": 0,
+          "facetRange": null,
+          "facetType": null,
+          "facetItemType": null,
+          "facetSort": null,
+          "facetPosition": null,
+          "secondaryFacet": null,
+          "showAllFacetItems": null,
+          "defaultValue": null
+        }
+      ]
+    }
+  ]
+}

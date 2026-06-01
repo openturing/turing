@@ -9,6 +9,7 @@
   - **frontend/apps/turing-app**: React 19 + TypeScript frontend (Vite, Tailwind v4, shadcn/ui)
   - **frontend/apps/marketplace**: marketplace example apps (mythical-creatures, space-missions, vinyl-records)
   - **frontend/packages/react-sdk**: `@viglet/turing-react-sdk` — hooks and UI components for the Turing API
+  - **frontend/packages/sdk**: `@viglet/turing-sdk` — **vanilla JS, zero-dependency** SDK (framework-agnostic client + observable controllers for search/chat/autocomplete/slots). Built for Adobe Edge Delivery Services (EDS) blocks, plain `<script>`, or any bundler. Ported from the React SDK's `core/` (axios → native `fetch` via an explicit `createTuringClient`). Ships a self-contained ESM vendor file (`dist/turing-sdk.js`) + UMD + types via Vite lib mode. EDS example blocks live in `frontend/packages/sdk/examples/eds/`. Build: `pnpm --filter @viglet/turing-sdk build` (root alias `build:sdk`). The React SDK keeps its own `core/` copy for now; a future change may have it depend on this package.
   - **frontend/packages/shared-types**: `@viglet/turing-shared-types`
 - **turing-commons**, **turing-spring**, **turing-java-sdk**: shared libraries
 - Root Maven POM is multi-module

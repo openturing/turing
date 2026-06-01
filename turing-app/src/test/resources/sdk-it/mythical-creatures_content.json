@@ -1,0 +1,445 @@
+{
+  "mythical-creatures": {
+    "en_US": [
+      {
+        "id": "myth-001",
+        "type": "creature",
+        "title": "European Dragon — The Fire-Breathing Terror",
+        "description": "The archetypal Western dragon: a massive, fire-breathing, winged reptile that hoards gold in mountain caves. From Beowulf's bane to Smaug, the European dragon represents greed, chaos, and the ultimate test of a hero's courage.",
+        "text": "European dragons appear in mythology from ancient Greece through medieval Christendom. Unlike their benevolent Eastern counterparts, Western dragons are almost universally malevolent — fire-breathing destroyers that must be slain by heroes or saints. The dragon in Beowulf (c. 700 AD) guards a treasure hoard and destroys the hero's kingdom. Saint George's dragon terrorized a city, demanding human sacrifices. In Norse mythology, Níðhöggr gnaws at the roots of Yggdrasil, the world tree. Medieval bestiaries described dragons as the largest of all serpents, with venomous breath and the ability to kill elephants by constriction. The dragon's hoard represents the sin of avarice, and its defeat symbolizes the triumph of virtue. Tolkien's Smaug and Game of Thrones' Drogon are direct descendants of this tradition.",
+        "url": "/creatures/european-dragon",
+        "image": "images/Friedrich-Johann-Justin-Bertuch_Mythical-Creature-Dragon_1806.jpg",
+        "first_recorded": "0700-01-01T00:00:00Z",
+        "origin": [
+          "Greek",
+          "Norse",
+          "Celtic",
+          "Germanic"
+        ],
+        "creature_type": [
+          "Dragon",
+          "Reptile",
+          "Winged Beast"
+        ],
+        "element": [
+          "Fire",
+          "Earth"
+        ],
+        "habitat": "Mountains",
+        "danger_level": 9.5,
+        "is_shapeshifter": false,
+        "is_immortal": false,
+        "abilities": [
+          "Fire Breath",
+          "Flight",
+          "Armored Scales",
+          "Treasure Sense"
+        ],
+        "weakness": [
+          "Underbelly",
+          "Dragon-slaying Swords",
+          "Saints"
+        ],
+        "era": "Medieval"
+      },
+      {
+        "id": "myth-002",
+        "type": "creature",
+        "title": "Kraken — The Abyssal Leviathan",
+        "description": "A colossal sea monster from Scandinavian folklore, said to dwell off the coasts of Norway and Greenland. Ships that vanished without trace were attributed to the Kraken's tentacles dragging them to the ocean floor.",
+        "text": "The Kraken first appeared in the Örvar-Odds saga (13th century) and was described by Erik Pontoppidan, Bishop of Bergen, in 1752 as 'the largest and most surprising of all animal creation.' Pontoppidan described an animal so vast that it could be mistaken for a chain of islands — one and a half miles in circumference. Sailors reported that the Kraken would surface to feed, creating whirlpools strong enough to swallow ships. When it descended, the suction alone could drag vessels down. Carl Linnaeus classified the Kraken as a real animal (Microcosmus marinus) in the first edition of Systema Naturae before removing it. Modern marine biologists believe the legend was inspired by sightings of giant squid (Architeuthis dux), which can grow to 43 feet. The Kraken appears in Tennyson's sonnet, Jules Verne's Twenty Thousand Leagues, and Pirates of the Caribbean.",
+        "url": "/creatures/kraken",
+        "image": "images/Le_Poulpe_Colossal.jpg",
+        "first_recorded": "1250-01-01T00:00:00Z",
+        "origin": [
+          "Norse",
+          "Scandinavian"
+        ],
+        "creature_type": [
+          "Sea Monster",
+          "Cephalopod",
+          "Leviathan"
+        ],
+        "element": [
+          "Water"
+        ],
+        "habitat": "Deep Ocean",
+        "danger_level": 10.0,
+        "is_shapeshifter": false,
+        "is_immortal": true,
+        "abilities": [
+          "Ship Destruction",
+          "Whirlpool Creation",
+          "Camouflage as Islands",
+          "Tentacle Grasp"
+        ],
+        "weakness": [
+          "Surface Exposure",
+          "Loud Noise"
+        ],
+        "era": "Medieval"
+      },
+      {
+        "id": "myth-003",
+        "type": "creature",
+        "title": "Shenlong — The Spirit Dragon",
+        "description": "The celestial Chinese dragon that controls wind, rain, and storms. Unlike destructive Western dragons, Shenlong is benevolent — a divine guardian whose appearance signals blessings, prosperity, and the Emperor's mandate from heaven.",
+        "text": "Shenlong (神龙, 'Spirit Dragon') is one of the four spiritual dragons in Chinese mythology, alongside Tianlong (celestial), Dilong (earth), and Fucanglong (treasure). As the controller of weather, Shenlong determines rainfall for agriculture — making it perhaps the most important dragon for a civilization built on rice cultivation. The dragon has the body of a serpent, the scales of a carp, the claws of an eagle, the horns of a deer, and whiskers like a catfish. It is said to be azure-scaled and five-clawed (five claws being reserved for the Imperial dragon). Offending Shenlong — through human arrogance or ecological destruction — brings drought, floods, and storms. The Dragon Dance performed during Chinese New Year honors Shenlong, asking for a prosperous harvest. The dragon also appears in Dragon Ball as 'Shenron,' the wish-granting dragon.",
+        "url": "/creatures/shenlong",
+        "image": "images/960px-Chinese_dragon_asset_heraldry.svg.png",
+        "first_recorded": "-2000-01-01T00:00:00Z",
+        "origin": [
+          "Chinese",
+          "East Asian"
+        ],
+        "creature_type": [
+          "Dragon",
+          "Spirit",
+          "Celestial Being"
+        ],
+        "element": [
+          "Water",
+          "Air",
+          "Lightning"
+        ],
+        "habitat": "Sky",
+        "danger_level": 7.0,
+        "is_shapeshifter": true,
+        "is_immortal": true,
+        "abilities": [
+          "Weather Control",
+          "Flight",
+          "Shape-shifting",
+          "Invisibility",
+          "Wish Granting"
+        ],
+        "weakness": [
+          "Disrespect",
+          "Iron"
+        ],
+        "era": "Ancient"
+      },
+      {
+        "id": "myth-004",
+        "type": "creature",
+        "title": "Phoenix — The Eternal Flame",
+        "description": "A radiant firebird that cyclically dies in a burst of flames and is reborn from its own ashes. Symbol of immortality, renewal, and resilience across Egyptian, Greek, Chinese, and early Christian traditions.",
+        "text": "The Phoenix myth appears independently across civilizations. The Egyptian Bennu bird was associated with the sun god Ra and the flooding of the Nile — a cycle of death and renewal. Herodotus described a bird that visited Heliopolis every 500 years, carrying its dead father in a ball of myrrh. In Greek mythology, the Phoenix lived in Arabia near a cool well, singing a song so beautiful that the sun god paused his chariot to listen. At the end of its life cycle (500 to 1,461 years depending on the source), it builds a nest of cinnamon twigs and ignites itself. From the ashes, a new Phoenix emerges. Early Christians adopted the Phoenix as a symbol of Christ's resurrection. In Chinese mythology, the Fenghuang is the 'Chinese Phoenix' — the feminine counterpart to the dragon, representing virtue and grace. The Phoenix features prominently in Harry Potter (Fawkes), X-Men, and countless cultural references to rebirth.",
+        "url": "/creatures/phoenix",
+        "image": "images/1280px-Phoenix__1583_.svg.png",
+        "first_recorded": "-1500-01-01T00:00:00Z",
+        "origin": [
+          "Egyptian",
+          "Greek",
+          "Chinese",
+          "Persian"
+        ],
+        "creature_type": [
+          "Bird",
+          "Elemental",
+          "Celestial Being"
+        ],
+        "element": [
+          "Fire",
+          "Light"
+        ],
+        "habitat": "Desert",
+        "danger_level": 4.0,
+        "is_shapeshifter": false,
+        "is_immortal": true,
+        "abilities": [
+          "Rebirth from Ashes",
+          "Healing Tears",
+          "Fire Immunity",
+          "Song of Enchantment",
+          "Extreme Longevity"
+        ],
+        "weakness": [
+          "Cannot be killed permanently — but can be trapped"
+        ],
+        "era": "Ancient"
+      },
+      {
+        "id": "myth-005",
+        "type": "creature",
+        "title": "Kitsune — The Nine-Tailed Fox",
+        "description": "A supernatural Japanese fox spirit that grows additional tails as it ages — up to nine for the oldest and most powerful. Kitsune can be benevolent guardians or malicious tricksters, and all are master shapeshifters.",
+        "text": "In Japanese folklore, foxes (kitsune) are intelligent beings with paranormal abilities that increase with age and wisdom. A fox that lives 100 years grows a second tail; the legendary nine-tailed fox (kyūbi no kitsune) is at least 1,000 years old. Kitsune are divided into two categories: zenko (善狐, benevolent foxes) who serve the deity Inari and protect rice harvests, and yako (野狐, field foxes) who are tricksters and sometimes malevolent. All kitsune can assume human form, typically appearing as beautiful women. The most famous kitsune legend is Tamamo-no-Mae, a nine-tailed fox who disguised herself as a courtesan in the court of Emperor Toba. When her true nature was discovered, she fled and was hunted by 80,000 warriors. After her death, her spirit became the Sessho-seki (Killing Stone), which killed anyone who touched it. Kitsune appear in Naruto, Pokémon (Ninetales), and countless anime.",
+        "url": "/creatures/kitsune",
+        "image": "images/Yoshitoshi_-_100_Aspects_of_the_Moon_-_91.jpg",
+        "first_recorded": "0712-01-01T00:00:00Z",
+        "origin": [
+          "Japanese",
+          "East Asian"
+        ],
+        "creature_type": [
+          "Spirit",
+          "Trickster",
+          "Shapeshifter"
+        ],
+        "element": [
+          "Fire",
+          "Illusion"
+        ],
+        "habitat": "Forests",
+        "danger_level": 6.5,
+        "is_shapeshifter": true,
+        "is_immortal": true,
+        "abilities": [
+          "Shape-shifting",
+          "Illusion Casting",
+          "Possession",
+          "Fox Fire (Kitsunebi)",
+          "Intelligence Beyond Mortals"
+        ],
+        "weakness": [
+          "Dogs",
+          "Faith",
+          "Revealing their tail in human form"
+        ],
+        "era": "Medieval"
+      },
+      {
+        "id": "myth-006",
+        "type": "creature",
+        "title": "Cuca — The Brazilian Alligator Witch",
+        "description": "A terrifying creature from Brazilian folklore: an old hag with the head of an alligator who kidnaps children who misbehave. Cuca never sleeps — she stays awake for seven years and naps for only seven seconds.",
+        "text": "Cuca (also Coca or Cucanha) is one of the most feared figures in Brazilian children's folklore. She is typically depicted as a hideous old woman with the head of an alligator, long claws, and a hunched body. According to the lullaby 'Nana Neném,' Cuca will come to get the child who doesn't sleep: 'Dorme, neném, que a Cuca vem pegar.' Cuca's origins may trace to the Portuguese 'Coca,' a dragon-like figure used in medieval processions. In Brazil, Monteiro Lobato reimagined Cuca as a villainess in Sítio do Picapau Amarelo, where she is a powerful sorceress who lives in a cave in the forest and schemes against Dona Benta's grandchildren. In this version, she is green-scaled, walks upright, and uses dark magic. The character has been adapted in multiple Brazilian TV series and remains a cultural touchstone — a uniquely Brazilian contribution to the world's gallery of fearsome mythical beings.",
+        "url": "/creatures/cuca",
+        "image": "images/Goya_Que_viene_el_coco_1799_NGA_7459.jpg",
+        "first_recorded": "1500-01-01T00:00:00Z",
+        "origin": [
+          "Brazilian",
+          "Portuguese"
+        ],
+        "creature_type": [
+          "Witch",
+          "Reptile",
+          "Trickster"
+        ],
+        "element": [
+          "Earth",
+          "Darkness"
+        ],
+        "habitat": "Forests",
+        "danger_level": 5.0,
+        "is_shapeshifter": false,
+        "is_immortal": false,
+        "abilities": [
+          "Dark Magic",
+          "Never Sleeps (7 years awake)",
+          "Child Abduction",
+          "Potion Brewing"
+        ],
+        "weakness": [
+          "Narizinho's cleverness",
+          "Sunlight",
+          "The seven-second nap"
+        ],
+        "era": "Colonial"
+      },
+      {
+        "id": "myth-007",
+        "type": "creature",
+        "title": "Wendigo — The Hunger That Walks",
+        "description": "A malevolent spirit from Algonquian folklore associated with insatiable greed, cannibalism, and the frozen wilderness. Those who consume human flesh in desperation may themselves transform into a Wendigo — forever starving.",
+        "text": "The Wendigo (also Windigo or Witiko) is a mythological creature from the folklore of the Algonquian peoples of the northern United States and Canada. It is associated with murder, greed, and the cultural taboo against cannibalism. During harsh winters when starvation threatened isolated communities, the Wendigo served as a cautionary tale: those who resorted to eating human flesh would be transformed into the creature — a gaunt, skeletal giant with ash-gray skin stretched over bones, lips chewed away from hunger, and eyes like burning embers pushed deep into their sockets. The Wendigo grows in proportion to what it eats, so it can never be satiated. Some Algonquian communities recognized 'Wendigo psychosis' — a condition where individuals in extreme isolation developed an overwhelming craving for human flesh. The Wendigo has become a staple of horror fiction, appearing in Stephen King's Pet Sematary, the Hannibal TV series, and the game Until Dawn.",
+        "url": "/creatures/wendigo",
+        "image": "images/Francisco_de_Goya__Saturno_devorando_a_su_hijo__1819-1823_.jpg",
+        "first_recorded": "1600-01-01T00:00:00Z",
+        "origin": [
+          "Algonquian",
+          "Native American",
+          "Canadian"
+        ],
+        "creature_type": [
+          "Spirit",
+          "Undead",
+          "Cursed Being"
+        ],
+        "element": [
+          "Ice",
+          "Darkness"
+        ],
+        "habitat": "Frozen Wilderness",
+        "danger_level": 9.0,
+        "is_shapeshifter": true,
+        "is_immortal": true,
+        "abilities": [
+          "Superhuman Speed",
+          "Mimicry of Human Voices",
+          "Insatiable Hunger",
+          "Fear Inducement",
+          "Winter Summoning"
+        ],
+        "weakness": [
+          "Fire",
+          "Silver",
+          "Destroying the frozen heart"
+        ],
+        "era": "Colonial"
+      },
+      {
+        "id": "myth-008",
+        "type": "creature",
+        "title": "Sphinx — The Riddle Guardian",
+        "description": "A creature with the body of a lion, the wings of an eagle, and the head of a human. The Greek Sphinx guarded the gates of Thebes, devouring anyone who failed her riddle — until Oedipus answered correctly and she destroyed herself.",
+        "text": "The Sphinx appears in both Egyptian and Greek mythology, though with very different roles. The Egyptian Sphinx (like the Great Sphinx of Giza) is a benevolent guardian — a protector of tombs and temples with the body of a lion and the head of a pharaoh. It represents divine wisdom and royal power. The Greek Sphinx, by contrast, is a terrifying female monster sent by the gods to punish Thebes. She perched on a rock outside the city and posed a riddle to every traveler: 'What walks on four legs in the morning, two at noon, and three in the evening?' Those who answered incorrectly were strangled and devoured. When Oedipus answered 'Man' (who crawls as a baby, walks upright as an adult, and uses a cane in old age), the Sphinx threw herself from the rock and died. The Sphinx represents the dangerous intersection of intelligence and power — knowledge as a weapon.",
+        "url": "/creatures/sphinx",
+        "image": "images/Sphinx_CdM_Paris_DeRidder865_n2.jpg",
+        "first_recorded": "-2500-01-01T00:00:00Z",
+        "origin": [
+          "Egyptian",
+          "Greek"
+        ],
+        "creature_type": [
+          "Guardian",
+          "Chimera",
+          "Winged Beast"
+        ],
+        "element": [
+          "Earth",
+          "Air"
+        ],
+        "habitat": "Desert",
+        "danger_level": 7.5,
+        "is_shapeshifter": false,
+        "is_immortal": false,
+        "abilities": [
+          "Riddle Mastery",
+          "Flight",
+          "Lion Strength",
+          "Divine Wisdom",
+          "Strangulation"
+        ],
+        "weakness": [
+          "Correct answer to her riddle",
+          "Her own pride"
+        ],
+        "era": "Ancient"
+      }
+    ],
+    "pt_BR": [
+      {
+        "id": "myth-001-pt",
+        "type": "creature",
+        "title": "Dragão Europeu — O Terror Cuspidor de Fogo",
+        "description": "O arquétipo do dragão ocidental: um réptil alado gigantesco que cospe fogo e acumula ouro em cavernas. De Beowulf a Smaug, o dragão europeu representa a ganância, o caos e a prova suprema da coragem de um herói.",
+        "text": "Os dragões europeus aparecem na mitologia desde a Grécia Antiga até a cristandade medieval. Diferentemente de seus equivalentes orientais benevolentes, os dragões ocidentais são quase universalmente malevolentes — destruidores cuspidores de fogo que devem ser mortos por heróis ou santos. O dragão de Beowulf (c. 700 d.C.) guarda um tesouro e destrói o reino do herói. O dragão de São Jorge aterrorizava uma cidade, exigindo sacrifícios humanos. Na mitologia nórdica, Níðhöggr rói as raízes de Yggdrasil, a árvore do mundo.",
+        "url": "/criaturas/dragao-europeu",
+        "image": "images/Friedrich-Johann-Justin-Bertuch_Mythical-Creature-Dragon_1806.jpg",
+        "first_recorded": "0700-01-01T00:00:00Z",
+        "origin": [
+          "Grego",
+          "Nórdico",
+          "Celta",
+          "Germânico"
+        ],
+        "creature_type": [
+          "Dragão",
+          "Réptil",
+          "Besta Alada"
+        ],
+        "element": [
+          "Fogo",
+          "Terra"
+        ],
+        "habitat": "Montanhas",
+        "danger_level": 9.5,
+        "is_shapeshifter": false,
+        "is_immortal": false,
+        "abilities": [
+          "Sopro de Fogo",
+          "Voo",
+          "Escamas Blindadas",
+          "Sentido do Tesouro"
+        ],
+        "weakness": [
+          "Ventre",
+          "Espadas Mata-Dragões",
+          "Santos"
+        ],
+        "era": "Medieval"
+      },
+      {
+        "id": "myth-006-pt",
+        "type": "creature",
+        "title": "Cuca — A Bruxa Jacaré do Brasil",
+        "description": "Uma criatura aterrorizante do folclore brasileiro: uma velha bruxa com cabeça de jacaré que sequestra crianças que se comportam mal. A Cuca nunca dorme — fica acordada por sete anos e cochila apenas sete segundos.",
+        "text": "A Cuca é uma das figuras mais temidas do folclore infantil brasileiro. Ela é geralmente representada como uma velha horrenda com cabeça de jacaré, garras longas e corpo curvado. Segundo a cantiga 'Nana Neném,' a Cuca vem pegar a criança que não dorme: 'Dorme, neném, que a Cuca vem pegar.' As origens da Cuca podem remontar à 'Coca' portuguesa, uma figura semelhante a um dragão usada em procissões medievais. No Brasil, Monteiro Lobato reimaginou a Cuca como vilã no Sítio do Picapau Amarelo, onde ela é uma poderosa feiticeira que vive em uma caverna na floresta.",
+        "url": "/criaturas/cuca",
+        "image": "images/Goya_Que_viene_el_coco_1799_NGA_7459.jpg",
+        "first_recorded": "1500-01-01T00:00:00Z",
+        "origin": [
+          "Brasileiro",
+          "Português"
+        ],
+        "creature_type": [
+          "Bruxa",
+          "Réptil",
+          "Trapaceira"
+        ],
+        "element": [
+          "Terra",
+          "Escuridão"
+        ],
+        "habitat": "Florestas",
+        "danger_level": 5.0,
+        "is_shapeshifter": false,
+        "is_immortal": false,
+        "abilities": [
+          "Magia Negra",
+          "Nunca Dorme (7 anos)",
+          "Sequestro de Crianças",
+          "Preparo de Poções"
+        ],
+        "weakness": [
+          "Esperteza da Narizinho",
+          "Luz do Sol",
+          "O cochilo de sete segundos"
+        ],
+        "era": "Colonial"
+      },
+      {
+        "id": "myth-004-pt",
+        "type": "creature",
+        "title": "Fênix — A Chama Eterna",
+        "description": "Uma ave flamejante e radiante que morre ciclicamente em uma explosão de chamas e renasce das próprias cinzas. Símbolo de imortalidade, renovação e resiliência nas tradições egípcia, grega, chinesa e cristã primitiva.",
+        "text": "O mito da Fênix aparece independentemente em diversas civilizações. O pássaro Bennu egípcio era associado ao deus sol Rá e às cheias do Nilo — um ciclo de morte e renovação. Heródoto descreveu um pássaro que visitava Heliópolis a cada 500 anos, carregando seu pai morto em uma bola de mirra. Na mitologia grega, a Fênix vivia na Arábia perto de uma fonte fresca, cantando uma canção tão bela que o deus sol parava sua carruagem para ouvir. No final de seu ciclo de vida, ela constrói um ninho de galhos de canela e se incendeia. Das cinzas, uma nova Fênix emerge.",
+        "url": "/criaturas/fenix",
+        "image": "images/1280px-Phoenix__1583_.svg.png",
+        "first_recorded": "-1500-01-01T00:00:00Z",
+        "origin": [
+          "Egípcio",
+          "Grego",
+          "Chinês",
+          "Persa"
+        ],
+        "creature_type": [
+          "Ave",
+          "Elemental",
+          "Ser Celestial"
+        ],
+        "element": [
+          "Fogo",
+          "Luz"
+        ],
+        "habitat": "Deserto",
+        "danger_level": 4.0,
+        "is_shapeshifter": false,
+        "is_immortal": true,
+        "abilities": [
+          "Renascimento das Cinzas",
+          "Lágrimas Curadoras",
+          "Imunidade ao Fogo",
+          "Canto Encantador",
+          "Extrema Longevidade"
+        ],
+        "weakness": [
+          "Não pode ser morta permanentemente — mas pode ser aprisionada"
+        ],
+        "era": "Antigo"
+      }
+    ]
+  }
+}

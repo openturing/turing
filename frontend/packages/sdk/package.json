@@ -1,0 +1,52 @@
+{
+  "name": "@viglet/turing-sdk",
+  "version": "2026.3.1",
+  "description": "Vanilla JS SDK for Viglet Turing ES - framework-agnostic, zero-dependency client + observable controllers for enterprise search. Works in Adobe Edge Delivery Services (EDS), plain <script>, or any bundler.",
+  "type": "module",
+  "main": "dist/turing-sdk.umd.cjs",
+  "module": "dist/turing-sdk.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/turing-sdk.js",
+      "require": "./dist/turing-sdk.umd.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "keywords": [
+    "turing",
+    "search",
+    "semantic-navigation",
+    "headless",
+    "vanilla-js",
+    "edge-delivery-services",
+    "eds",
+    "aem",
+    "enterprise-search",
+    "sdk"
+  ],
+  "author": "Viglet",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "^8.0.7",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openviglet/turing.git",
+    "directory": "frontend/packages/sdk"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
