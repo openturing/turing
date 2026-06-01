@@ -494,6 +494,10 @@ importers:
         version: 5.9.3
 
   packages/react-sdk:
+    dependencies:
+      '@viglet/turing-sdk':
+        specifier: workspace:*
+        version: link:../sdk
     devDependencies:
       '@storybook/addon-docs':
         specifier: ^10.4.1

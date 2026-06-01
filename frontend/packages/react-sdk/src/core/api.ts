@@ -12,26 +12,56 @@ import type {
 } from "./types";
 
 /**
- * Low-level Turing API client. All hooks delegate to this module.
- * Uses the globally configured axios instance from the host app,
- * inheriting baseURL, CSRF, auth headers, and interceptors.
+ * Low-level Turing API client for the React SDK.
  *
- * @since 2026.2.0
+ * <p>Uses the globally configured axios instance from the host app, inheriting
+ * baseURL, CSRF, auth headers, and interceptors (e.g. the console's 401→login
+ * redirect and backend-offline reporting). This is the one place the React SDK
+ * deliberately diverges from the framework-agnostic {@code @viglet/turing-sdk}:
+ * the vanilla SDK ships a `fetch`-based explicit client, while these functions
+ * stay bound to axios so the host's interceptors keep applying.
+ *
+ * <p>All transport-agnostic request/response <b>types</b>, plus the pure
+ * {@link parseHrefToParams} helper and the {@link CHAT_DISABLED_HINTS} table,
+ * are owned by {@code @viglet/turing-sdk} and re-exported here so existing
+ * `../core/api` imports keep working from a single source of truth.
+ *
+ * @since 2026.2.0 (types deduplicated into @viglet/turing-sdk in 2026.3.1)
  */
 
-export interface SearchParams {
-  q: string;
-  p?: string;
-  _setlocale?: string;
-  sort?: string;
-  fq?: string[];
-  tr?: string[];
-  nfpr?: string;
-  /** Group results by a field value (e.g. "templateName") */
-  group?: string;
-  /** Number of results per page */
-  rows?: string;
-}
+export { CHAT_DISABLED_HINTS, parseHrefToParams } from "@viglet/turing-sdk";
+export type {
+  SearchParams,
+  ClickTrackParams,
+  ChatEnabledResponse,
+  ChatDisabledReason,
+  PostChatConversationOptions,
+  PostAgentChatOptions,
+  PostLlmChatOptions,
+  TurChatSessionSlots,
+  TurChatSlotWriteResponse,
+  TurChatSlotExtractResponse,
+  TurChatConversationState,
+  TurChatHandoffChannel,
+  TurChatHandoffResponse,
+  TurChatFlowSelectResponse,
+} from "@viglet/turing-sdk";
+
+import type {
+  SearchParams,
+  ClickTrackParams,
+  ChatEnabledResponse,
+  PostChatConversationOptions,
+  PostAgentChatOptions,
+  PostLlmChatOptions,
+  TurChatSessionSlots,
+  TurChatSlotWriteResponse,
+  TurChatSlotExtractResponse,
+  TurChatConversationState,
+  TurChatHandoffChannel,
+  TurChatHandoffResponse,
+  TurChatFlowSelectResponse,
+} from "@viglet/turing-sdk";
 
 function buildQueryString(params: SearchParams): string {
   const qs = new URLSearchParams();
@@ -58,28 +88,6 @@ async function get<T>(url: string): Promise<T> {
 
 export function fetchSearch(site: string, params: SearchParams): Promise<TurSearchResponse> {
   return get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
-}
-
-/**
- * Payload for {@link postClick}. The minimum needed to reconstruct CTR is the
- * query that produced the result (`term`) and the document the user opened
- * (`documentId`). `position` is the 1-based rank within the page (used to
- * study scroll fatigue). `userId` and `locale` are optional but, when
- * provided, let dashboards split CTR by user cohort or locale.
- *
- * @since 2026.2.7
- */
-export interface ClickTrackParams {
-  /** Query that produced the result the user clicked. */
-  readonly term: string;
-  /** Identifier of the clicked document (URL/UUID/business id, free-form). */
-  readonly documentId: string;
-  /** 1-based rank of the clicked result within the page. */
-  readonly position: number;
-  /** Optional opaque user identifier. Defaults to anonymous on the server. */
-  readonly userId?: string;
-  /** BCP-47 or POSIX locale string ("en-US" / "en_US"). */
-  readonly locale?: string;
 }
 
 /**
@@ -111,65 +119,6 @@ export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlo
 }
 
 /**
- * Response of {@link fetchChatEnabled}. {@code sessionCookieName} and
- * {@code sessionTtlSeconds} drive the {@code TUR_SESSION} cookie minted by
- * the SDK — both come from {@code turing.chat.session.*} server config so
- * a deployment can override them without rebuilding the frontend.
- *
- * @since 2026.2.4 (extended in 2026.2.17 with session config)
- */
-export interface ChatEnabledResponse {
-  readonly enabled: boolean;
-  /**
-   * Diagnostic code explaining why chat is unavailable. `"NONE"` when
-   * `enabled` is true; otherwise one of: `"NO_GENAI"`, `"NO_AGENT"`,
-   * `"AGENT_DISABLED"`, `"RAG_DISABLED"`, `"MISSING_LLM"`,
-   * `"MISSING_EMBEDDING"`, `"MISSING_STORE"`. May be absent on older
-   * Turing backends — treat absence as opaque "disabled".
-   *
-   * @since 2026.2.17
-   */
-  readonly reason?: ChatDisabledReason;
-  readonly sessionCookieName?: string;
-  readonly sessionTtlSeconds?: number;
-}
-
-/**
- * Why the chat endpoint is disabled for a site. Mirror of the
- * server-side enum in {@code TurSNSiteGenAiAPI.ChatDisabledReason}.
- *
- * @since 2026.2.17
- */
-export type ChatDisabledReason =
-  | "NONE"
-  | "NO_GENAI"
-  | "NO_AGENT"
-  | "AGENT_DISABLED"
-  | "RAG_DISABLED"
-  | "MISSING_LLM"
-  | "MISSING_EMBEDDING"
-  | "MISSING_STORE";
-
-/**
- * Human-readable hint for each {@link ChatDisabledReason} value.
- * The frontend can use it directly as a tooltip on the AI Mode toggle
- * when the chat is unavailable. Localized to PT-BR by default since
- * the diagnostic is admin-facing in the only locale the SDK currently ships.
- *
- * @since 2026.2.17
- */
-export const CHAT_DISABLED_HINTS: Readonly<Record<ChatDisabledReason, string>> = {
-  NONE: "Chat com IA está disponível",
-  NO_GENAI: "Site não tem GenAI configurado no admin do Turing",
-  NO_AGENT: "Nenhum AI Agent vinculado a este site no admin do Turing",
-  AGENT_DISABLED: "O AI Agent vinculado está desabilitado",
-  RAG_DISABLED: "RAG está desabilitado no AI Agent (habilite no admin)",
-  MISSING_LLM: "O AI Agent não tem nenhuma instância de LLM configurada",
-  MISSING_EMBEDDING: "O AI Agent não tem um modelo de embedding selecionado",
-  MISSING_STORE: "O AI Agent não tem um vector store selecionado",
-};
-
-/**
  * Lightweight check whether the site has RAG (Generative AI) enabled.
  * Used by the search UI to conditionally expose the "AI Mode" toggle.
  *
@@ -195,14 +144,6 @@ function readXsrfCookie(): string | undefined {
  * built-in CSRF handling). Returns the {@code XSRF-TOKEN} cookie when present;
  * otherwise primes it with a `GET {baseURL}/csrf` and re-reads.
  *
- * <p>Spring Security 6 writes the CSRF cookie <em>lazily</em> — only once the
- * token is accessed — so an authenticated console that merely loaded the page
- * (all GETs) may not have the cookie yet. Without this prime, the first chat
- * POST goes out with no {@code X-XSRF-TOKEN} header and the server answers
- * 403. The {@code /csrf} fetch is best-effort: on a public/anonymous SPA where
- * the endpoint is absent or CSRF is disabled, it fails quietly and the request
- * proceeds tokenless (the CSRF-exempt endpoint still succeeds).
- *
  * @since 2026.3.1
  */
 async function ensureXsrfToken(): Promise<string | undefined> {
@@ -220,58 +161,10 @@ async function ensureXsrfToken(): Promise<string | undefined> {
   return readXsrfCookie();
 }
 
-export interface PostChatConversationOptions {
-  /**
-   * Called once per SSE chunk with the chunk's `content` field. Use it to
-   * render a typing/streaming effect. The same content is also accumulated
-   * and returned in the final {@link TurChatConversationResponse}.
-   */
-  readonly onToken?: (token: string) => void;
-  /**
-   * Called once if the chat-flow engine emits an `"options"` SSE event for
-   * the turn — with the parsed `string[]` of chip labels to render below the
-   * assistant message. Picking a chip is equivalent to sending that label as
-   * the next user message.
-   *
-   * @since 2026.2.17
-   */
-  readonly onOptions?: (options: string[]) => void;
-  /** Aborts the in-flight SSE request when triggered. */
-  readonly signal?: AbortSignal;
-  /**
-   * Stable id that groups all turns of the same conversation. Required for
-   * the chat-flow router to fire from turn 1 — without it, the backend
-   * skips flow selection entirely and the agent answers from its base
-   * system prompt only. Generate once per conversation on the client and
-   * reuse for every send until the user resets.
-   *
-   * @since 2026.2.16
-   */
-  readonly conversationId?: string;
-  /**
-   * Forces a specific chat flow to govern the turn instead of letting the
-   * router auto-pick. Used by admin/preview UIs that need to simulate a
-   * particular path. Most callers should leave this unset.
-   *
-   * @since 2026.2.16
-   */
-  readonly flowId?: string;
-}
-
 /**
  * Drains a Spring `Flux<ChatResponse>` SSE stream and returns both the
  * concatenated assistant text and any chip labels emitted by the chat-flow
- * engine via a `type === "options"` event. Each `data:` line is parsed as
- * {@link TurChatStreamEvent} and routed by {@code type}:
- *
- * - `"token"` (or omitted, for older servers): {@code content} is text — append
- *   to {@code aggregated} and forward through {@code onToken}.
- * - `"options"`: {@code content} is a JSON-encoded `string[]` — parsed once
- *   and surfaced via {@code onOptions} and on the returned value. Empty/
- *   malformed payloads are silently dropped.
- *
- * Shared between the site RAG chat and the agent chat — both endpoints emit
- * the same shape.
+ * engine via a `type === "options"` event.
  */
 async function consumeAssistantStream(
   response: Response,
@@ -299,9 +192,6 @@ async function consumeAssistantStream(
       return;
     }
     if (parsed.type === "options") {
-      // `content` is itself a JSON-encoded string[] — parse it once. Silently
-      // drop malformed/empty payloads rather than spamming the console; the
-      // UI just won't render chips for this turn.
       try {
         const parsedOptions = JSON.parse(parsed.content) as unknown;
         if (Array.isArray(parsedOptions)) {
@@ -316,8 +206,7 @@ async function consumeAssistantStream(
       }
       return;
     }
-    // Default to text. Treat any unknown `type` as a token event so old
-    // servers (no `type` field) and forward-compat servers both work.
+    // Default to text. Treat any unknown `type` as a token event.
     if (parsed.content) {
       aggregated += parsed.content;
       onToken?.(parsed.content);
@@ -343,12 +232,7 @@ async function consumeAssistantStream(
 /**
  * Conversational RAG: sends the full message history to the site's GenAI
  * chat (`POST /sn/{site}/chat/conversation`) and consumes the Server-Sent
- * Events stream returned by the backend. Each `data:` line is parsed as a
- * {@link TurChatStreamEvent}; the chunks are aggregated and returned as a
- * single {@link TurChatConversationResponse} after the stream closes.
- *
- * The server uses the latest user message for document retrieval and
- * preserves prior turns as conversation context.
+ * Events stream returned by the backend.
  *
  * @since 2026.2.4 (rewritten for SSE in 2026.2.15)
  */
@@ -394,42 +278,7 @@ export async function postChatConversation(
 }
 
 /**
- * Options for {@link postAgentChat}. Mirrors {@link PostChatConversationOptions}
- * — the agent endpoint speaks the same SSE shape as the SN site RAG endpoint.
- *
- * @since 2026.2.16
- */
-export interface PostAgentChatOptions {
-  readonly onToken?: (token: string) => void;
-  /**
-   * Called once if the chat-flow engine emits an `"options"` SSE event for
-   * the turn. See {@link PostChatConversationOptions.onOptions}.
-   *
-   * @since 2026.2.17
-   */
-  readonly onOptions?: (options: string[]) => void;
-  readonly signal?: AbortSignal;
-  readonly conversationId?: string;
-  readonly flowId?: string;
-  /**
-   * Optional file attachments. When non-empty, the request is sent as
-   * {@code multipart/form-data} with a {@code request} part (the existing
-   * JSON body as an {@code application/json} blob) plus one {@code files}
-   * part per file — mirrors the multipart variant exposed by
-   * {@code TurAIAgentChatAPI.chatMultipart}. When omitted or empty, the
-   * request is sent as plain {@code application/json}.
-   *
-   * @since 2026.3.1
-   */
-  readonly files?: ReadonlyArray<File>;
-}
-
-/**
  * Streams a turn through an explicit AI Agent (`POST /v2/ai-agent/{agentId}/chat`).
- * Use this when the consumer knows the exact agent + LLM to invoke (e.g. an
- * authenticated console UI). For anonymous site search, use
- * {@link postChatConversation} instead — it resolves the agent from the site
- * configuration server-side.
  *
  * @since 2026.2.16
  */
@@ -493,47 +342,8 @@ export async function postAgentChat(
 }
 
 /**
- * Options for {@link postLlmChat}. The plain-LLM endpoint has no chat-flow
- * runtime attached — there is no {@code conversationId}, no {@code flowId},
- * and no {@code options} (chip) events to forward. Only {@code onToken} and
- * {@code signal} carry over from the conversation/agent variants.
- *
- * @since 2026.3.1
- */
-export interface PostLlmChatOptions {
-  /**
-   * Called once per SSE chunk with the chunk's {@code content} field. The
-   * same content is also accumulated and returned in the resolved promise
-   * as a single {@link TurChatConversationResponse}.
-   */
-  readonly onToken?: (token: string) => void;
-  /** Aborts the in-flight SSE request when triggered. */
-  readonly signal?: AbortSignal;
-  /**
-   * Optional file attachments. When non-empty, the request is sent as
-   * {@code multipart/form-data} with a {@code request} part (JSON body) plus
-   * one {@code files} part per file — mirrors the multipart variant exposed
-   * by {@code TurLLMChatAPI.chat}. When omitted or empty, the request is
-   * sent as plain {@code application/json}.
-   */
-  readonly files?: ReadonlyArray<File>;
-}
-
-/**
  * Streams a turn against an explicit {@code TurLLMInstance} with no agent,
- * no site, and no chat-flow context — {@code POST /v2/llm/{id}/chat}. The
- * backend prepends its own base + tools + ops + render prompts; the caller
- * just supplies the message history.
- *
- * <p>When {@code options.files} is non-empty, the request is sent as
- * multipart so the LLM can attach the documents as {@code Media} parts on
- * the user message (PDF / image / etc.). Without files, the request is
- * plain JSON.
- *
- * <p>Returns the aggregated assistant text once the SSE stream closes; the
- * {@code options} field is always an empty array (no chat-flow → no chip
- * suggestions), preserved for shape parity with
- * {@link postChatConversation} / {@link postAgentChat}.
+ * no site, and no chat-flow context — {@code POST /v2/llm/{id}/chat}.
  *
  * @since 2026.3.1
  */
@@ -586,10 +396,7 @@ export async function postLlmChat(
 
 /**
  * Drops every chat-flow runtime state for {@code conversationId} on the
- * site's agent. Use to wire a "New chat" button on public search UIs —
- * client-side `reset()` only clears local state; this clears the server-side
- * mirror so a forced flow doesn't resume on the next conversation that
- * reuses an old id.
+ * site's agent.
  *
  * @returns number of state rows the server deleted (0 when nothing matched).
  * @since 2026.2.16
@@ -607,8 +414,7 @@ export async function deleteSiteConversationState(
 
 /**
  * Drops the runtime state of {@code (conversationId, flowId)} on the agent
- * endpoint. Mirror of {@link deleteSiteConversationState} for the explicit
- * agent path.
+ * endpoint.
  *
  * @since 2026.2.16
  */
@@ -626,8 +432,6 @@ export async function deleteAgentFlowState(
 
 /**
  * Fetches the curated list of enabled Intents for the site's AI agent.
- * Each Intent groups quick-prompt suggestions ("actions") that authors set
- * up in the Turing admin to surface as chips below the chat composer.
  * Returns an empty array when the site has no agent or no enabled intents.
  *
  * @since 2026.2.12
@@ -637,23 +441,8 @@ export function fetchIntents(site: string): Promise<TurIntent[]> {
 }
 
 /**
- * Slots captured during a chat session, returned as a single flat map keyed
- * by slot name. The backend merges values across every flow (active or
- * completed) of the AI agent that the conversation touched, so consumers
- * never need to walk a per-flow tree.
- *
- * @since 2026.2.7
- */
-export interface TurChatSessionSlots {
-  readonly conversationId: string;
-  readonly slots: Readonly<Record<string, string>>;
-}
-
-/**
  * Reads the slots captured during the conversation from the site's RAG
- * endpoint. Use when the SDK is in site mode (the same default as
- * {@link postChatConversation}). Pair with {@link useTuringSlots} to wire
- * a polled refresh.
+ * endpoint.
  *
  * Server endpoint: {@code GET /api/sn/{site}/chat/slots?conversationId=...}.
  *
@@ -669,7 +458,6 @@ export function fetchSiteChatSlots(
 
 /**
  * Reads the slots captured during the conversation from the agent endpoint.
- * Use when the SDK is in agent mode (mirrors {@link postAgentChat}).
  *
  * Server endpoint: {@code GET /api/v2/ai-agent/{agentId}/chat-slots?conversationId=...}.
  *
@@ -684,24 +472,8 @@ export function fetchAgentChatSlots(
 }
 
 /**
- * Server response for the slot-write endpoint. {@code updatedStates} is the
- * number of chat-flow state rows that absorbed the write — {@code 0} when
- * the conversation has no active flow yet (caller must send the first chat
- * message before writing slots).
- *
- * @since 2026.2.7
- */
-export interface TurChatSlotWriteResponse {
-  readonly updatedStates: number;
-}
-
-/**
  * Writes a single slot on the current conversation through the site's GenAI
- * endpoint. Companion to {@link fetchSiteChatSlots} — lets a React component
- * force a slot value (e.g. user picks an option via button) without sending
- * a chat message. The backend writes to every active flow state for
- * {@code conversationId}; if none exists yet, the call is a no-op and the
- * response reports {@code updatedStates: 0}.
+ * endpoint.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/slots}.
  *
@@ -721,34 +493,8 @@ export async function postSiteChatSlot(
 }
 
 /**
- * Server response for the slot-extract endpoint. {@code extracted} maps
- * each requested slot name to the value the LLM produced (or {@code null}
- * when the document didn't contain enough info to fill that slot).
- * {@code slotsWritten} counts how many were persisted by the engine —
- * may be less than {@code Object.keys(extracted).length} if some values
- * were null or the conversation had no live flow state yet.
- *
- * @since 2026.2.7
- */
-export interface TurChatSlotExtractResponse {
-  readonly extracted: Readonly<Record<string, string | null>>;
-  readonly slotsWritten: number;
-  readonly extractedTextChars: number;
-  /** Set when the server short-circuited (site/agent missing). */
-  readonly error?: string | null;
-}
-
-/**
- * Uploads a document (PDF / DOCX / TXT / RTF / HTML — anything Apache Tika
- * auto-detects) and asks the server to extract values for the requested
- * slots using the agent's configured LLM. Each extracted field is written
- * to the conversation's chat-flow state via the same path as the
- * {@code POST /chat/slots} writer — so {@link useTuringSlots} subscribers
- * receive the new values over SSE in &lt;100 ms.
- *
- * <p>Generic by design: caller supplies the {@code slotNames} array
- * (e.g. {@code ["name", "cargo_atual", "objetivo"]}) — if omitted, the
- * server targets the entire agent slot catalog.
+ * Uploads a document and asks the server to extract values for the requested
+ * slots using the agent's configured LLM.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract}.
  *
@@ -774,28 +520,7 @@ export async function postSiteSlotExtract(
 }
 
 /**
- * Snapshot of a conversation's active chat-flow state. Returned by the
- * lightweight {@code GET /chat/state} endpoint — useful for debug
- * panels and for app-level logic that needs to know which A/B variant
- * the visitor was routed to. All fields are nullable when the
- * conversation hasn't started yet.
- *
- * @since 2026.2.7
- */
-export interface TurChatConversationState {
-  readonly conversationId: string;
-  readonly flowId: string | null;
-  readonly flowName: string | null;
-  readonly currentNodeId: string | null;
-  readonly guardrailMethod: string | null;
-  readonly experimentKey: string | null;
-  readonly variantLabel: string | null;
-}
-
-/**
- * Lightweight read of the conversation's flow state. No LLM call, no
- * slot polling — just one row from the chat-flow state table. Used by
- * {@link useTuringFlowState} and {@link useTuringExperiment}.
+ * Lightweight read of the conversation's flow state.
  *
  * Server endpoint: {@code GET /api/sn/{site}/chat/state?conversationId=...}.
  *
@@ -810,57 +535,10 @@ export function fetchSiteChatState(
 }
 
 /**
- * Channels accepted by the handoff endpoint. {@code whatsapp} produces a
- * {@code wa.me} universal link; {@code email} a {@code mailto:};
- * {@code sms} an {@code sms:} link. New channels plug in on the server
- * side without touching this SDK.
- *
- * @since 2026.2.7
- */
-export type TurChatHandoffChannel =
-  | "whatsapp"
-  | "email"
-  | "sms"
-  | "telegram"
-  | "slack";
-
-/**
- * Server response for the handoff endpoint. {@code url} is the absolute
- * deep link the client should open (e.g. via {@code window.open(url, "_blank")});
- * {@code transcript} is the rendered slot context embedded inside the
- * URL's body, returned verbatim so the UI can preview to the visitor
- * what the consultant will see.
- *
- * @since 2026.2.7
- */
-export interface TurChatHandoffResponse {
-  readonly url: string | null;
-  readonly transcript: string | null;
-  readonly slotsIncluded: number;
-  readonly error?: string | null;
-}
-
-/**
  * Builds a channel-specific handoff deep link carrying the conversation
- * context. The visitor's captured slots (name, cargo, area, objetivo,
- * etc.) are embedded in the link's message body so the human consultant
- * picks up the conversation without re-asking. Side effect on the
- * server: writes {@code handoff_status = "{channel}_requested"} to the
- * chat-flow state for analytics tracking.
+ * context.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/handoff}.
- *
- * @example
- * ```ts
- * const result = await postSiteHandoff(site, {
- *   conversationId: "abc-123",
- *   channel: "whatsapp",
- *   destination: "5511999999999",
- *   intro: "Olá! Vim do site de Executive Education.",
- *   slotsToInclude: ["name", "cargo_atual", "area_label", "objetivo"],
- * });
- * if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
- * ```
  *
  * @since 2026.2.7
  */
@@ -888,31 +566,8 @@ export async function postSiteHandoff(
 }
 
 /**
- * Server response for the flow-chooser endpoint. {@code success} is false
- * when the site has no GenAI agent, the conversation could not be pinned,
- * or the requested {@code flow} did not resolve — {@code reason} carries the
- * human-readable explanation in that case. On success, {@code pinnedFlowId}
- * and {@code pinnedFlowName} echo the flow the engine locked onto.
- *
- * @since 2026.3.1
- */
-export interface TurChatFlowSelectResponse {
-  readonly success: boolean;
-  readonly pinnedFlowId: string | null;
-  readonly pinnedFlowName: string | null;
-  readonly reason: string | null;
-}
-
-/**
  * Pins a specific chat-flow for the conversation, overriding the LLM
- * trigger router. {@code flow} resolves by UUID first, then by
- * case-insensitive name — so a deep link can land the visitor on the
- * right persona (e.g. {@code ?flow=in-company}). The server snapshots
- * the conversation's existing slots, resets prior in-progress states on
- * the agent, pre-creates the chosen flow's state with that snapshot
- * seeded in, and walks transparent/satisfied nodes so the next chat turn
- * starts at the right cursor. Subsequent chat calls need no {@code flowId}
- * plumbing — the engine continuation rule keeps the pin sticky.
+ * trigger router.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/flow-select}.
  *
@@ -938,14 +593,9 @@ export async function postSiteFlowSelect(
 }
 
 /**
- * Lists the LLM instances visible to the current session. Mirror of the
- * admin's `GET /api/llm` listing — used by chat consumers that let the user
- * pick which model to talk to (admin chat, future SDK pickers).
+ * Lists the LLM instances visible to the current session.
  *
- * Server endpoint: {@code GET /api/llm}. The endpoint is secured behind
- * {@code ROLE_ADMIN} or the {@code LLM_VIEW} authority, so anonymous callers
- * will receive 401/403 — callers should gate the request on whether the host
- * session has the right grants.
+ * Server endpoint: {@code GET /api/llm}.
  *
  * @since 2026.3.1
  */
@@ -954,10 +604,7 @@ export function fetchLlmInstances(): Promise<TurLlmInstance[]> {
 }
 
 /**
- * Probes the configured context window for a given LLM instance. Calls into
- * the provider when possible (live probe → `source: "provider"`) and falls
- * back to the admin-configured value persisted on the instance
- * ({@code source: "config"}).
+ * Probes the configured context window for a given LLM instance.
  *
  * Server endpoint: {@code GET /api/v2/llm/{id}/chat/context-info}.
  *
@@ -970,9 +617,7 @@ export function fetchLlmContextInfo(
 }
 
 /**
- * Like {@link fetchLlmContextInfo} but scoped to an AI Agent — used when the
- * picker is mounted inside the explicit agent chat. The agent + LLM tuple is
- * required because the agent may pin its own context-window override.
+ * Like {@link fetchLlmContextInfo} but scoped to an AI Agent.
  *
  * Server endpoint:
  * {@code GET /api/v2/ai-agent/{agentId}/chat/context-info?llmInstanceId=...}.
@@ -996,33 +641,4 @@ export function fetchAutoComplete(site: string, params: SearchParams): Promise<s
 
 export function fetchSortOptions(site: string): Promise<TurSortOption[]> {
   return get<TurSortOption[]>(`/sn/${site}/search/sort-options`);
-}
-
-/**
- * Parses an href link from the Turing API (e.g. facet link, pagination link)
- * into a SearchParams object that can be used to re-execute a search.
- */
-export function parseHrefToParams(href: string): SearchParams {
-  const qs = href.includes("?") ? href.split("?")[1] : href;
-  const usp = new URLSearchParams(qs);
-
-  const fq: string[] = [];
-  const tr: string[] = [];
-
-  usp.getAll("fq").forEach((v) => fq.push(v));
-  usp.getAll("fq[]").forEach((v) => fq.push(v));
-  usp.getAll("tr").forEach((v) => tr.push(v));
-  usp.getAll("tr[]").forEach((v) => tr.push(v));
-
-  return {
-    q: usp.get("q") || "*",
-    p: usp.get("p") || "1",
-    _setlocale: usp.get("_setlocale") || undefined,
-    sort: usp.get("sort") || undefined,
-    fq: fq.length ? fq : undefined,
-    tr: tr.length ? tr : undefined,
-    nfpr: usp.get("nfpr") || undefined,
-    group: usp.get("group") || undefined,
-    rows: usp.get("rows") || undefined,
-  };
 }
