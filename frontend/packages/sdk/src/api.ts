@@ -434,6 +434,22 @@ export interface TurChatSessionSlots {
 }
 
 /**
+ * T63 — a slot-stream delta from {@code GET /chat/slots/stream/delta}. The
+ * first event is a {@code snapshot:true} carrying the whole map in
+ * {@code added}; subsequent events are incremental ({@code added}/{@code updated}
+ * upserts, {@code removed} deletes). The SSE multiplexer applies these to a
+ * running map so consumers still receive full {@link TurChatSessionSlots}
+ * snapshots.
+ */
+export interface TurChatSessionSlotsDelta {
+  readonly conversationId: string;
+  readonly snapshot: boolean;
+  readonly added: Readonly<Record<string, string>>;
+  readonly updated: Readonly<Record<string, string>>;
+  readonly removed: readonly string[];
+}
+
+/**
  * Reads the slots captured during the conversation from the site's RAG
  * endpoint.
  *

@@ -90,6 +90,11 @@ export const queryKeys = {
     list: () => [...queryKeys.routines.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.routines.all(), 'detail', id] as const,
   },
+  chatWebhooks: {
+    all: () => ['chat-webhooks'] as const,
+    list: () => [...queryKeys.chatWebhooks.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.chatWebhooks.all(), 'detail', id] as const,
+  },
   intents: {
     all: () => ['intents'] as const,
     listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,

@@ -1,0 +1,60 @@
+databaseChangeLog:
+  # T62 follow-up — payloadTemplate column on tur_chat_webhook.
+  #
+  # Optional JSON body template ({{slot}} placeholders, JSON-escaped) so the
+  # webhook can POST the CRM's own schema instead of the default envelope.
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.14-add-payloadTemplate
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: payloadTemplate
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: payloadTemplate
+                  type: longtext
+
+  - changeSet:
+      id: v2026.3.1.14-add-httpMethod
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: httpMethod
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: httpMethod
+                  type: varchar(8)
+                  defaultValue: POST
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.14-add-headersJson
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: headersJson
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: headersJson
+                  type: longtext

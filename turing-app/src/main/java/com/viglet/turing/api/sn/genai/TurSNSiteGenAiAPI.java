@@ -544,6 +544,41 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * T63 / §VII.6.d — delta variant of {@link #streamSlots}. Emits an initial
+	 * full snapshot ({@code snapshot:true}, whole map in {@code added}) then one
+	 * incremental {@code {added, updated, removed}} delta per slot write —
+	 * ~10× fewer bytes than re-sending the full map on conversations with many
+	 * slots. Clients reconstruct the running map by applying each delta (the
+	 * SDK's SSE multiplexer does this transparently and still surfaces full
+	 * snapshots to consumers).
+	 *
+	 * <p>Opt-in + non-breaking: the snapshot stream at {@code /slots/stream}
+	 * stays untouched for existing subscribers. Same 25s comment heartbeat and
+	 * single-node caveat.
+	 *
+	 * @since 2026.3.1
+	 */
+	@GetMapping(value = "/slots/stream/delta", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>> streamSlotDeltas(
+			@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		if (conversationId == null || conversationId.isBlank()) {
+			return Flux.empty();
+		}
+		java.util.Map<String, String> initial =
+				chatFlowEngineService.listSlotsForConversation(conversationId).slots();
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>> data =
+				slotEventBus.subscribeDelta(conversationId, initial)
+						.map(delta -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>builder(delta).build());
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>> heartbeats =
+				Flux.interval(java.time.Duration.ofSeconds(25))
+						.map(tick -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>builder().comment("heartbeat").build());
+		return Flux.merge(data, heartbeats);
+	}
+
+	/**
 	 * Document-to-slots extraction. The caller uploads any Tika-parseable
 	 * file (PDF / DOCX / TXT / RTF / HTML) plus the current conversation
 	 * id; the service extracts text via Apache Tika (same path the RAG

@@ -48,6 +48,10 @@
         "title": "Rotinas",
         "description": "Jobs assíncronos disparados pelos nós scheduleAgent — trabalho de longa duração sem bloquear o turno do chat."
       },
+      "chatWebhook": {
+        "title": "Webhooks",
+        "description": "Envie (POST) transcrições de chat e snapshots de slots para um CRM — no handoff explícito ou automaticamente quando um slot é gravado."
+      },
       "aiAgent": {
         "title": "Agente de IA",
         "description": "Crie agentes de IA que orquestram LLMs, ferramentas e servidores MCP para tarefas complexas."

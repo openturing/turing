@@ -27,6 +27,7 @@ import {
   PersonaRoutes,
   CustomToolRoutes,
   RoutineRoutes,
+  ChatWebhookRoutes,
   SERoutes,
   SNRoutes,
   StoreRoutes,
@@ -70,6 +71,7 @@ function App() {
                 {McpServerRoutes}
                 {CustomToolRoutes}
                 {RoutineRoutes}
+                {ChatWebhookRoutes}
                 {AIAgentRoutes}
                 {PersonaRoutes}
                 {IntegrationRoutes}

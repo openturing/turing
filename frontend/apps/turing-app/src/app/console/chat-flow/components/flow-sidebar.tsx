@@ -13,6 +13,7 @@ import {
   IconSparkles,
   IconSubtask,
   IconVariable,
+  IconWebhook,
   type Icon,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -42,6 +43,7 @@ const PALETTE: PaletteItem[] = [
   { type: "slot", labelKey: "chatFlow.palette.slot", icon: IconVariable, accent: "text-sky-600" },
   { type: "writeSlot", labelKey: "chatFlow.palette.writeSlot", icon: IconPencilPlus, accent: "text-teal-600" },
   { type: "functionCall", labelKey: "chatFlow.palette.functionCall", icon: IconBell, accent: "text-orange-600" },
+  { type: "webhook", labelKey: "chatFlow.palette.webhook", icon: IconWebhook, accent: "text-pink-600" },
   { type: "scheduleAgent", labelKey: "chatFlow.palette.scheduleAgent", icon: IconClock, accent: "text-lime-600" },
   { type: "suspend", labelKey: "chatFlow.palette.suspend", icon: IconHandStop, accent: "text-slate-600" },
   { type: "subFlow", labelKey: "chatFlow.palette.subFlow", icon: IconSubtask, accent: "text-violet-600" },

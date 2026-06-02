@@ -128,6 +128,7 @@
       "formCapture": "Form Capture",
       "condition": "Condition",
       "functionCall": "Function Call",
+      "webhook": "Webhook",
       "subFlow": "Sub Flow",
       "subFlowSwitch": "Sub-flow Switch",
       "persona": "Persona Switch",
@@ -185,6 +186,12 @@
         "outputVariable": "Output Slot",
         "timeoutMs": "Timeout (ms)",
         "timeoutMsHint": "Per-node override (milliseconds). Leave blank to use the routine's default. On expiry the engine takes the 'timeout' outgoing edge (or the first edge if none is wired)."
+      },
+      "webhook": {
+        "webhook": "Webhook",
+        "webhookPlaceholder": "Pick a webhook…",
+        "webhookEmpty": "No webhooks defined. Create one under Webhooks first.",
+        "webhookHint": "Fires the selected webhook (CRM push) when the flow reaches this node. The target URL, method, headers, payload template and credentials come from the webhook's own configuration."
       },
       "continueOnFailure": "Continue on failure (try/catch)",
       "continueOnFailureHint": "When checked, a tool/routine failure routes the flow along the outgoing edge whose handle is 'failure' — wire an alternative path for graceful recovery (apologize, ask user to re-input, escalate to handoff). When unchecked, the engine logs the error and advances to the first outgoing edge (legacy behavior).",

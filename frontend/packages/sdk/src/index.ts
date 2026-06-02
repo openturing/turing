@@ -55,6 +55,7 @@ export type {
   PostAgentChatOptions,
   PostLlmChatOptions,
   TurChatSessionSlots,
+  TurChatSessionSlotsDelta,
   TurChatSlotWriteResponse,
   TurChatSlotExtractResponse,
   TurChatConversationState,
@@ -82,6 +83,7 @@ export { subscribeSlotsSse } from "./slots-sse";
 export type {
   SlotsSseSubscriber,
   SlotsSseSubscription,
+  SlotsSseOptions,
 } from "./slots-sse";
 
 // ── Store ──

@@ -1,0 +1,73 @@
+databaseChangeLog:
+  # T62 / §VII.6.c — tur_chat_webhook: admin-declared outbound webhooks.
+  #
+  # A webhook POSTs the conversation transcript + slot snapshot as JSON to a
+  # configured CRM endpoint (Salesforce / HubSpot / Pipedrive) or any HTTP
+  # receiver. Fired either explicitly as a handoff channel (slotTrigger blank)
+  # or automatically when a subscribed slot is written (slotTrigger = a slot
+  # name or the wildcard '*'). The authHeader column holds the AES/GCM
+  # ciphertext of an Authorization header value (e.g. "Bearer xyz").
+  #
+  # Column names match the JPA field names exactly (camelCase) — Hibernate
+  # maps literally, no snake_case strategy is configured. Idempotent: gated
+  # by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.13-create-tur_chat_webhook
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_chat_webhook
+      changes:
+        - createTable:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: varchar(512)
+              - column:
+                  name: targetUrl
+                  type: varchar(1024)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slotTrigger
+                  type: varchar(128)
+              - column:
+                  name: includeSlots
+                  type: varchar(1024)
+              - column:
+                  name: authHeader
+                  type: varchar(2048)
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+              - column:
+                  name: updatedAt
+                  type: timestamp
+        - createIndex:
+            tableName: tur_chat_webhook
+            indexName: ix_tur_chat_webhook_slot_trigger
+            columns:
+              - column:
+                  name: slotTrigger

@@ -19,6 +19,7 @@ export type FlowNodeType =
   | "switch"
   | "slot"
   | "writeSlot"
+  | "webhook"
   | "suspend";
 
 export type FlowToolSource = "NATIVE" | "MCP";
@@ -268,6 +269,14 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-teal-50 dark:bg-teal-950/40",
     border: "border-teal-500",
     text: "text-teal-900 dark:text-teal-100",
+  },
+  webhook: {
+    // Rose-pink — an outbound side-effect node (CRM push) like functionCall
+    // (orange) but reaching an external HTTP endpoint, so a warmer/distinct
+    // hue signals "leaves the system".
+    bg: "bg-pink-50 dark:bg-pink-950/40",
+    border: "border-pink-500",
+    text: "text-pink-900 dark:text-pink-100",
   },
   formCapture: {
     // Indigo: visually adjacent to aiQuestion's blue (same family of

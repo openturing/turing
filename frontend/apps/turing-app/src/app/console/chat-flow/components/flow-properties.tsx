@@ -7,6 +7,7 @@ import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
 import { useAiAgent } from "@/api/queries/ai-agent.queries";
 import { useChatFlows } from "@/api/queries/chat-flow.queries";
 import { useRoutines } from "@/api/queries/routine.queries";
+import { useChatWebhooks } from "@/api/queries/webhook.queries";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,12 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
   const routineOptions = useMemo(
     () => (routines ?? []).filter((r) => r.enabled !== false),
     [routines],
+  );
+  // Webhook catalog — populates the webhook node's dropdown. Deployment-wide.
+  const { data: webhooks } = useChatWebhooks();
+  const webhookOptions = useMemo(
+    () => (webhooks ?? []).filter((w) => w.enabled !== false),
+    [webhooks],
   );
 
   useEffect(() => {
@@ -418,6 +425,39 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </span>
               </div>
             )}
+
+            <ContinueOnFailureField data={data} onChange={update} />
+          </>
+        )}
+
+        {type === "webhook" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.webhook.webhook")}</Label>
+              <Select
+                value={data.functionName ?? ""}
+                onValueChange={(value) => update({ functionName: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.webhook.webhookPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {webhookOptions.map((w) => (
+                    <SelectItem key={w.id} value={w.name}>
+                      <span className="font-mono text-[12px]">{w.name}</span>
+                      {w.slotTrigger && (
+                        <span className="ml-2 text-muted-foreground">— {w.slotTrigger}</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {webhookOptions.length === 0
+                  ? t("chatFlow.properties.webhook.webhookEmpty")
+                  : t("chatFlow.properties.webhook.webhookHint")}
+              </span>
+            </div>
 
             <ContinueOnFailureField data={data} onChange={update} />
           </>
@@ -932,6 +972,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.slot";
     case "writeSlot":
       return "chatFlow.palette.writeSlot";
+    case "webhook":
+      return "chatFlow.palette.webhook";
     case "scheduleAgent":
       return "chatFlow.palette.scheduleAgent";
     case "suspend":

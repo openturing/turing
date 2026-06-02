@@ -38,6 +38,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import com.viglet.turing.exchange.TurImportExchange;
 import com.viglet.turing.exchange.TurImportExchange.ImportResult;
@@ -92,6 +94,24 @@ class TurSdkContractIT extends AbstractTuringSpringIT {
 
     @Value("${local.server.port}")
     private int port;
+
+    /**
+     * This IT runs a {@code RANDOM_PORT} context that coexists in the same
+     * Maven fork as the cached {@code MOCK}-env contexts of the other ITs.
+     * With JMX enabled ({@code spring.jmx.enabled=true}, mandatory for
+     * {@code TurQueueBrowserService}), both contexts' {@code MBeanExporter}
+     * would register the {@code dataSource} HikariCP MBean under the same fixed
+     * ObjectName ({@code com.zaxxer.hikari:name=dataSource,type=HikariDataSource})
+     * — the second registration throws {@code InstanceAlreadyExistsException}
+     * and the context fails to load (only when run alongside the full suite,
+     * not in isolation). {@code spring.jmx.unique-names=true} appends an
+     * identity suffix to this context's runtime MBean names, so it never
+     * collides with the shared context's registration regardless of load order.
+     */
+    @DynamicPropertySource
+    static void uniqueJmxObjectNames(DynamicPropertyRegistry registry) {
+        registry.add("spring.jmx.unique-names", () -> "true");
+    }
 
     @Autowired
     private TurImportExchange importExchange;

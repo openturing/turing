@@ -128,6 +128,7 @@
       "formCapture": "Captura de Formulário",
       "condition": "Condição",
       "functionCall": "Chamada de Função",
+      "webhook": "Webhook",
       "subFlow": "Sub Fluxo",
       "subFlowSwitch": "Seletor de Sub-fluxo",
       "persona": "Trocar Persona",
@@ -185,6 +186,12 @@
         "outputVariable": "Slot de Saída",
         "timeoutMs": "Timeout (ms)",
         "timeoutMsHint": "Override por nó (em milissegundos). Em branco usa o timeout padrão da rotina. Ao expirar, o engine segue pela aresta 'timeout' (ou pela primeira aresta se não houver)."
+      },
+      "webhook": {
+        "webhook": "Webhook",
+        "webhookPlaceholder": "Escolha um webhook…",
+        "webhookEmpty": "Nenhum webhook definido. Crie um em Webhooks primeiro.",
+        "webhookHint": "Dispara o webhook selecionado (envio ao CRM) quando o fluxo chega neste nó. A URL de destino, método, cabeçalhos, template de payload e credenciais vêm da configuração do próprio webhook."
       },
       "continueOnFailure": "Continuar em caso de falha (try/catch)",
       "continueOnFailureHint": "Quando marcado, uma falha de tool/rotina roteia o fluxo pela aresta de saída cujo handle é 'failure' — desenhe um caminho alternativo para recuperação graciosa (pedir desculpa, repergunta ao usuário, escalar para handoff). Quando desmarcado, o engine registra o erro e avança pela primeira aresta de saída (comportamento legado).",

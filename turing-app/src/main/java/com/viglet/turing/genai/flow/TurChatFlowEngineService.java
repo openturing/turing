@@ -257,6 +257,7 @@ public class TurChatFlowEngineService {
     private final CacheManager cacheManager;
     private final TurFunctionCallNodeExecutor functionCallExecutor;
     private final TurScheduleAgentNodeExecutor scheduleAgentExecutor;
+    private final TurChatWebhookNodeExecutor webhookNodeExecutor;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
@@ -269,6 +270,7 @@ public class TurChatFlowEngineService {
             CacheManager cacheManager,
             TurFunctionCallNodeExecutor functionCallExecutor,
             TurScheduleAgentNodeExecutor scheduleAgentExecutor,
+            TurChatWebhookNodeExecutor webhookNodeExecutor,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
@@ -280,6 +282,7 @@ public class TurChatFlowEngineService {
         this.cacheManager = cacheManager;
         this.functionCallExecutor = functionCallExecutor;
         this.scheduleAgentExecutor = scheduleAgentExecutor;
+        this.webhookNodeExecutor = webhookNodeExecutor;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -2467,6 +2470,24 @@ public class TurChatFlowEngineService {
                 state = stateRepository.save(state);
                 slotEventBus.publish(state.getConversationId(),
                         listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
+            // webhook node (T62): deterministic outbound webhook POST from the
+            // flow — fires a named admin-declared webhook (CRM push) at a
+            // precise step, independent of slot-write triggers or handoff.
+            // Same failure-edge contract as functionCall: continueOnFailure
+            // routes a delivery failure along the 'failure' edge; otherwise
+            // the engine logs + advances to the first edge.
+            if ("webhook".equals(current.type())) {
+                TurChatWebhookNodeExecutor.ExecutionResult whResult =
+                        webhookNodeExecutor.execute(state, current);
+                if (!whResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
+                    ChatFlowOps.advanceOnFailure(state, graph, current);
+                } else {
+                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                }
+                state = stateRepository.save(state);
                 continue;
             }
 

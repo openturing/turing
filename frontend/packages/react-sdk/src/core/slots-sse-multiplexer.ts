@@ -9,4 +9,4 @@
  * @since 2026.3.1
  */
 export { subscribeSlotsSse } from "@viglet/turing-sdk";
-export type { SlotsSseSubscriber, SlotsSseSubscription } from "@viglet/turing-sdk";
+export type { SlotsSseSubscriber, SlotsSseSubscription, SlotsSseOptions } from "@viglet/turing-sdk";

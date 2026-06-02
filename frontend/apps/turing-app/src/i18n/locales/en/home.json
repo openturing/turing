@@ -48,6 +48,10 @@
         "title": "Routines",
         "description": "Async jobs fired by scheduleAgent chat-flow nodes — long-running work without blocking the chat turn."
       },
+      "chatWebhook": {
+        "title": "Webhooks",
+        "description": "POST chat transcripts and slot snapshots to a CRM — on explicit handoff or automatically when a slot is written."
+      },
       "aiAgent": {
         "title": "AI Agent",
         "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."

@@ -7,7 +7,7 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-import type { TurChatSessionSlots } from "./api";
+import type { TurChatSessionSlots, TurChatSessionSlotsDelta } from "./api";
 
 /**
  * Module-level SSE multiplexer for the {@code /chat/slots/stream} endpoint.
@@ -42,16 +42,31 @@ export interface SlotsSseSubscription {
   close(): void;
 }
 
+/** Optional behaviour for a slots subscription. @since 2026.3.1 */
+export interface SlotsSseOptions {
+  /**
+   * Consume the bandwidth-efficient delta stream
+   * ({@code /chat/slots/stream/delta}, T63) instead of the full-snapshot
+   * stream. The multiplexer reconstructs the running map from the deltas and
+   * still surfaces complete {@link TurChatSessionSlots} snapshots to
+   * subscribers, so the {@code onMessage} contract is unchanged. Defaults to
+   * {@code false} (full-snapshot stream) for backward compatibility.
+   */
+  readonly delta?: boolean;
+}
+
 interface Channel {
   readonly eventSource: EventSource;
   latestSnapshot: TurChatSessionSlots | null;
+  /** Running map maintained in delta mode (null in snapshot mode). */
+  runningSlots: Record<string, string> | null;
   readonly subscribers: Set<SlotsSseSubscriber>;
 }
 
 const channels = new Map<string, Channel>();
 
-function keyFor(baseURL: string, site: string, conversationId: string): string {
-  return `${baseURL}|${site}|${conversationId}`;
+function keyFor(baseURL: string, site: string, conversationId: string, delta: boolean): string {
+  return `${baseURL}|${site}|${conversationId}|${delta ? "delta" : "snapshot"}`;
 }
 
 function openChannel(
@@ -59,25 +74,20 @@ function openChannel(
   baseURL: string,
   site: string,
   conversationId: string,
+  delta: boolean,
 ): Channel {
-  const url = `${baseURL}/sn/${site}/chat/slots/stream?conversationId=${encodeURIComponent(
+  const path = delta ? "slots/stream/delta" : "slots/stream";
+  const url = `${baseURL}/sn/${site}/chat/${path}?conversationId=${encodeURIComponent(
     conversationId,
   )}`;
   const eventSource = new globalThis.EventSource(url, { withCredentials: true });
   const channel: Channel = {
     eventSource,
     latestSnapshot: null,
+    runningSlots: delta ? {} : null,
     subscribers: new Set<SlotsSseSubscriber>(),
   };
-  eventSource.onmessage = (ev) => {
-    let payload: TurChatSessionSlots;
-    try {
-      payload = JSON.parse(ev.data) as TurChatSessionSlots;
-    } catch {
-      // Drop genuinely corrupt JSON frames silently rather than breaking
-      // every subscriber on one bad payload.
-      return;
-    }
+  const notify = (payload: TurChatSessionSlots) => {
     channel.latestSnapshot = payload;
     const snapshotSubs = Array.from(channel.subscribers);
     for (const sub of snapshotSubs) {
@@ -86,6 +96,21 @@ function openChannel(
       } catch {
         // Per-subscriber error must not affect siblings.
       }
+    }
+  };
+  eventSource.onmessage = (ev) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(ev.data);
+    } catch {
+      // Drop genuinely corrupt JSON frames silently rather than breaking
+      // every subscriber on one bad payload.
+      return;
+    }
+    if (delta) {
+      notify(applyDelta(channel, parsed as TurChatSessionSlotsDelta, conversationId));
+    } else {
+      notify(parsed as TurChatSessionSlots);
     }
   };
   eventSource.onerror = () => {
@@ -108,21 +133,49 @@ function openChannel(
 }
 
 /**
+ * Applies one delta event to the channel's running map and returns the
+ * reconstructed full snapshot. A {@code snapshot:true} event resets the map
+ * (covers reconnects); incremental events upsert {@code added}/{@code updated}
+ * and delete {@code removed}.
+ */
+function applyDelta(
+  channel: Channel,
+  delta: TurChatSessionSlotsDelta,
+  conversationId: string,
+): TurChatSessionSlots {
+  let running = channel.runningSlots;
+  if (running === null || delta.snapshot) {
+    running = {};
+  }
+  for (const [k, v] of Object.entries(delta.added ?? {})) running[k] = v;
+  for (const [k, v] of Object.entries(delta.updated ?? {})) running[k] = v;
+  for (const k of delta.removed ?? []) delete running[k];
+  channel.runningSlots = running;
+  return { conversationId: delta.conversationId || conversationId, slots: { ...running } };
+}
+
+/**
  * Subscribes a callback pair to the SSE stream of slot snapshots for the
  * given {@code (baseURL, site, conversationId)} triple. Joins the existing
  * connection when one is open for that key, opens a new one otherwise.
  * Caller MUST invoke {@link SlotsSseSubscription#close} on cleanup.
+ *
+ * <p>Pass {@code options.delta = true} to consume the T63 delta stream — the
+ * multiplexer reconstructs snapshots internally so the {@code onMessage}
+ * contract is identical; only the wire bytes shrink.
  */
 export function subscribeSlotsSse(
   baseURL: string,
   site: string,
   conversationId: string,
   subscriber: SlotsSseSubscriber,
+  options?: SlotsSseOptions,
 ): SlotsSseSubscription {
-  const key = keyFor(baseURL, site, conversationId);
+  const delta = options?.delta === true;
+  const key = keyFor(baseURL, site, conversationId, delta);
   let channel = channels.get(key);
   if (channel === undefined) {
-    channel = openChannel(key, baseURL, site, conversationId);
+    channel = openChannel(key, baseURL, site, conversationId, delta);
   }
   channel.subscribers.add(subscriber);
 

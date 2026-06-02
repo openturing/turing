@@ -72,6 +72,16 @@ export interface UseTuringSlotsOptions {
    * @since 2026.2.7
    */
   readonly transport?: "polling" | "sse";
+  /**
+   * When {@code transport: "sse"}, consume the T63 delta stream
+   * ({@code /chat/slots/stream/delta}) instead of full snapshots. The hook's
+   * returned {@code slots} are identical — the multiplexer reconstructs the
+   * map from deltas — only the wire bytes shrink (~10× on slot-heavy
+   * conversations). Defaults to {@code false}.
+   *
+   * @since 2026.3.1
+   */
+  readonly sseDelta?: boolean;
 }
 
 export interface UseTuringSlotsReturn {
@@ -125,6 +135,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     pollInterval = 0,
     enabled = true,
     transport = "polling",
+    sseDelta = false,
   } = options;
   const agentId = agent?.id;
   if (!ctx && !agentId) {
@@ -229,11 +240,11 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
         setSseDisabled(true);
         setError("SSE channel closed; falling back to polling.");
       },
-    });
+    }, { delta: sseDelta });
     return () => {
       subscription.close();
     };
-  }, [enabled, sseActive, conversationId, siteName]);
+  }, [enabled, sseActive, conversationId, siteName, sseDelta]);
 
   // Drop cached slots when the conversation id flips to a different visitor
   // session — otherwise stale data leaks across logins / TUR_SESSION resets.

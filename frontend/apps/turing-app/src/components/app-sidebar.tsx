@@ -22,6 +22,7 @@ import {
   IconServer2,
   IconShieldCog,
   IconUserCircle,
+  IconWebhook,
   IconZoomCode
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
@@ -73,6 +74,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "mcpServer", titleKey: "home.features.mcpServer.title", url: "/admin/mcp/instance", icon: IconServer2 },
   { key: "customTool", titleKey: "home.features.customTool.title", url: ROUTES.CUSTOM_TOOL_INSTANCE, icon: IconBraces },
   { key: "routine", titleKey: "home.features.routine.title", url: ROUTES.ROUTINE_INSTANCE, icon: IconClock },
+  { key: "chatWebhook", titleKey: "home.features.chatWebhook.title", url: ROUTES.CHAT_WEBHOOK_INSTANCE, icon: IconWebhook },
   { key: "persona", titleKey: "home.features.persona.title", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle },
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },

@@ -54,6 +54,9 @@ public class TurChatHandoffService {
     /** WhatsApp's universal link domain — works on web + mobile, redirects to native app when installed. */
     private static final String WHATSAPP_LINK_BASE = "https://wa.me/";
 
+    /** Tracking slot written after a handoff so the UI/analytics can react. */
+    private static final String HANDOFF_STATUS_SLOT = "handoff_status";
+
     /** Default ordering of slots in the transcript when caller doesn't specify. Empty list = include all. */
     private static final List<String> DEFAULT_INCLUDED_SLOTS = List.of();
 
@@ -80,13 +83,26 @@ public class TurChatHandoffService {
          * Slack opaque ids, e.g. {@code "T01ABCDEF/U05XYZ123"}). Falls
          * back to the web client if Slack isn't installed.
          */
-        SLACK
+        SLACK,
+        /**
+         * Server-side webhook (T62). Unlike the deep-link channels above,
+         * this one does not produce a URL the browser opens — it POSTs the
+         * transcript + slot snapshot to a configured CRM endpoint
+         * (Salesforce / HubSpot / Pipedrive) right here on the server.
+         * {@code destination} is the admin-declared webhook name; the
+         * payload + credentials come from the {@code TurChatWebhook}
+         * configuration, not from the request.
+         */
+        WEBHOOK
     }
 
     private final TurChatFlowEngineService engineService;
+    private final TurChatWebhookService webhookService;
 
-    public TurChatHandoffService(TurChatFlowEngineService engineService) {
+    public TurChatHandoffService(TurChatFlowEngineService engineService,
+            TurChatWebhookService webhookService) {
         this.engineService = engineService;
+        this.webhookService = webhookService;
     }
 
     /**
@@ -131,19 +147,38 @@ public class TurChatHandoffService {
         Map<String, String> filtered = filterSlots(snapshot.slots(),
                 request.slotsToInclude() == null ? DEFAULT_INCLUDED_SLOTS : request.slotsToInclude());
         String transcript = renderTranscript(request.intro(), filtered);
+
+        // Webhook is server-side: POST the transcript to the configured CRM
+        // endpoint instead of handing the browser a deep link. A delivery
+        // failure is reported back to the visitor (they explicitly asked to
+        // be sent to a human), and the tracking slot is only written once the
+        // POST succeeds.
+        if (request.channel() == Channel.WEBHOOK) {
+            TurChatWebhookService.DispatchOutcome outcome = webhookService.dispatchHandoff(
+                    request.destination(), conversationId, transcript, filtered);
+            if (!outcome.ok()) {
+                return HandoffResult.failure(outcome.error());
+            }
+            engineService.writeSlot(conversationId, HANDOFF_STATUS_SLOT, "webhook_requested");
+            log.info("[Handoff] conv={} channel=WEBHOOK slots-included={} -> {}",
+                    conversationId, filtered.size(), outcome.url());
+            return new HandoffResult(outcome.url(), transcript, filtered.size(), null);
+        }
+
         String url = switch (request.channel()) {
             case WHATSAPP -> buildWhatsAppUrl(request.destination(), transcript);
             case EMAIL    -> buildMailtoUrl(request.destination(), transcript);
             case SMS      -> buildSmsUrl(request.destination(), transcript);
             case TELEGRAM -> buildTelegramUrl(request.destination(), transcript);
             case SLACK    -> buildSlackUrl(request.destination(), transcript);
+            case WEBHOOK  -> throw new IllegalStateException("WEBHOOK handled before switch");
         };
 
         // Tracking slot — lower-cased channel name + "_requested" suffix
         // so the React UI can show a "Handoff em andamento" state and the
         // analytics dashboard can group by this value.
         String statusValue = request.channel().name().toLowerCase(Locale.ROOT) + "_requested";
-        engineService.writeSlot(conversationId, "handoff_status", statusValue);
+        engineService.writeSlot(conversationId, HANDOFF_STATUS_SLOT, statusValue);
 
         log.info("[Handoff] conv={} channel={} slots-included={} url-length={}",
                 conversationId, request.channel(), filtered.size(), url.length());
@@ -191,7 +226,7 @@ public class TurChatHandoffService {
                 || "stat_pitch".equals(slotName)
                 || "final_pitch".equals(slotName)
                 || "lead_status".equals(slotName)
-                || "handoff_status".equals(slotName);
+                || HANDOFF_STATUS_SLOT.equals(slotName);
     }
 
     private static String renderTranscript(String intro, Map<String, String> slots) {

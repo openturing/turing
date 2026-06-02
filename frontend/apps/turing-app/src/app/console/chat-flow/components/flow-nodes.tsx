@@ -15,6 +15,7 @@ import {
   IconSparkles,
   IconSubtask,
   IconVariable,
+  IconWebhook,
 } from "@tabler/icons-react";
 
 import type { FlowNodeData } from "../types";
@@ -548,6 +549,42 @@ export function SuspendNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function WebhookNode({ data }: ChatFlowNodeProps) {
+  // The webhook node carries the chosen webhook name in `functionName`
+  // (no schema column added — same reuse trick as functionCall). T62.
+  const target = typeof data.functionName === "string" ? data.functionName.trim() : "";
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-pink-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-pink-500 px-3 py-2 text-white">
+        <IconWebhook className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Webhook"}</div>
+      </div>
+      <div className="bg-pink-50 p-3 text-xs leading-relaxed text-pink-900 dark:bg-pink-950/40 dark:text-pink-100">
+        <span className="font-semibold">Webhook: </span>
+        {target ? (
+          <code className="rounded bg-pink-200/60 px-1 py-0.5 text-[11px] dark:bg-pink-900/50">
+            {target}
+          </code>
+        ) : (
+          <span className="italic opacity-60">not selected</span>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-pink-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-pink-600!" />
+      {/* T49/T62: failure edge — only exposed when continueOnFailure is checked. */}
+      {data.continueOnFailure === true && (
+        <Handle
+          type="source"
+          id="failure"
+          position={Position.Bottom}
+          style={{ bottom: "-4px", left: "50%" }}
+          className="size-2.5! bg-rose-500!"
+        />
+      )}
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -562,5 +599,6 @@ export const nodeTypes = {
   switch: SwitchNode,
   slot: SlotNode,
   writeSlot: WriteSlotNode,
+  webhook: WebhookNode,
   suspend: SuspendNode,
 };

@@ -9,10 +9,13 @@
  */
 package com.viglet.turing.service.chatslots;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
 
 import lombok.extern.slf4j.Slf4j;
@@ -103,5 +106,43 @@ public class TurChatSlotEventBus {
      */
     public Flux<TurChatSessionSlotsDto> subscribeAll() {
         return sink.asFlux();
+    }
+
+    /**
+     * T63 — a delta view for one conversation. Emits an initial
+     * {@link TurChatSessionSlotsDeltaDto#snapshot snapshot} event carrying
+     * {@code initialSnapshot} verbatim, then one incremental delta per slot
+     * write (computed against the previous full snapshot). Empty deltas are
+     * filtered out so an idle write never reaches the wire.
+     *
+     * <p>The {@code prev} reference is per-subscription (each SSE client gets
+     * its own), so two clients connecting at different times each get a
+     * correct snapshot + deltas relative to their own connect point. Same
+     * single-node caveat as {@link #subscribe(String)}.
+     *
+     * @param conversationId conversation to scope the stream to
+     * @param initialSnapshot the current full slot map (read from persistence
+     *                        by the caller) — becomes the first event
+     * @since 2026.3.1
+     */
+    public Flux<TurChatSessionSlotsDeltaDto> subscribeDelta(String conversationId,
+            Map<String, String> initialSnapshot) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return Flux.empty();
+        }
+        Map<String, String> safeInitial = initialSnapshot == null
+                ? Map.of() : new LinkedHashMap<>(initialSnapshot);
+        AtomicReference<Map<String, String>> previous = new AtomicReference<>(safeInitial);
+        TurChatSessionSlotsDeltaDto initialEvent =
+                TurChatSessionSlotsDeltaDto.snapshot(conversationId, safeInitial);
+        Flux<TurChatSessionSlotsDeltaDto> deltas = subscribe(conversationId)
+                .map(event -> {
+                    Map<String, String> after = event.slots() == null
+                            ? Map.of() : event.slots();
+                    Map<String, String> before = previous.getAndSet(new LinkedHashMap<>(after));
+                    return TurChatSessionSlotsDeltaDto.diff(conversationId, before, after);
+                })
+                .filter(delta -> !delta.isEmpty());
+        return Flux.concat(Flux.just(initialEvent), deltas);
     }
 }

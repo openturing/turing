@@ -50,6 +50,14 @@ export interface SlotsControllerOptions {
   readonly enabled?: boolean;
   /** Transport for updates. {@code "sse"} is site-mode only. */
   readonly transport?: "polling" | "sse";
+  /**
+   * When {@code transport: "sse"}, consume the T63 delta stream
+   * ({@code /chat/slots/stream/delta}) instead of full snapshots. Reconstructed
+   * transparently — the controller's state is identical, only the wire shrinks
+   * (~10× fewer bytes on conversations with many slots). Defaults to
+   * {@code false}. @since 2026.3.1
+   */
+  readonly sseDelta?: boolean;
 }
 
 export interface SlotsControllerState {
@@ -79,6 +87,7 @@ export function createSlotsController(
     pollInterval = 0,
     enabled = true,
     transport = "polling",
+    sseDelta = false,
   } = options;
 
   const { site, agentId } = scope;
@@ -144,7 +153,7 @@ export function createSlotsController(
         store.setState({ error: "SSE channel closed; falling back to polling." });
         sync();
       },
-    });
+    }, { delta: sseDelta });
   }
 
   /**
