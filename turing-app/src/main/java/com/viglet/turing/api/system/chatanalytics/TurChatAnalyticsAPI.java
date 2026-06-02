@@ -64,17 +64,20 @@ public class TurChatAnalyticsAPI {
     private final TurAIAgentRepository agentRepository;
     private final TurPersonaRepository personaRepository;
     private final com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService;
+    private final com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
             TurChatMemoryStore chatMemoryStore,
             TurAIAgentRepository agentRepository,
             TurPersonaRepository personaRepository,
-            com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService) {
+            com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService,
+            com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
         this.agentRepository = agentRepository;
         this.personaRepository = personaRepository;
         this.significanceService = significanceService;
+        this.championChallengerService = championChallengerService;
     }
 
     /**
@@ -306,6 +309,48 @@ public class TurChatAnalyticsAPI {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
         return significanceService.evaluate(experimentKey, metric, fromInstant, toInstant, alpha);
+    }
+
+    /**
+     * T71 / §VII.8.b — champion-challenger promotion. Operator-triggered
+     * counterpart to {@link #experimentSignificance}: re-runs the same z-test
+     * and, when a winner is declared, pins the winner to {@code trafficWeight=100}
+     * and archives the losing arms ({@code trafficWeight=0} + closed assignment
+     * window). When the experiment is underpowered / not yet significant the
+     * call is a no-op and returns {@code applied=false} with the significance
+     * service's recommendation as the reason.
+     *
+     * <p>This explicit action ignores the per-flow {@code autoPromote} opt-in
+     * (an operator click is itself the opt-in); the flag only governs the daily
+     * {@code TurChampionChallengerPromotionJob}.
+     *
+     * <p>Endpoint params mirror {@link #experimentSignificance}, plus:
+     * <ul>
+     *   <li>{@code dryRun} — when {@code true}, computes and returns the
+     *       promotion plan (winner + archived labels) without persisting any
+     *       traffic-weight change. Lets the UI preview "what would happen".</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    @org.springframework.web.bind.annotation.PostMapping(
+            value = "/experiment/{experimentKey}/promote",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @org.springframework.security.access.annotation.Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public com.viglet.turing.service.chatanalytics.TurChampionChallengerService.PromotionResult
+            promoteExperimentWinner(
+            @PathVariable String experimentKey,
+            @RequestParam(defaultValue = "GOAL_ACHIEVED") String successMetric,
+            @RequestParam(required = false) Double alpha,
+            @RequestParam(defaultValue = "false") boolean dryRun) {
+        com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric metric;
+        try {
+            metric = com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric
+                    .valueOf(successMetric.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            metric = com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED;
+        }
+        return championChallengerService.promote(experimentKey, metric, alpha, dryRun);
     }
 
     /**

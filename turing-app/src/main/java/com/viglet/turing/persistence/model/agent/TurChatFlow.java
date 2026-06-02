@@ -234,6 +234,29 @@ public class TurChatFlow implements Serializable {
     private Boolean banditEnabled;
 
     /**
+     * T71 / §VII.8.b — champion-challenger auto-promotion opt-in. When any
+     * variant under the same {@code experimentKey} has this set to
+     * {@code TRUE}, the daily
+     * {@link com.viglet.turing.service.chatanalytics.TurChampionChallengerPromotionJob}
+     * evaluates the experiment's statistical significance and, once a winner
+     * is declared, auto-promotes the winner to {@code trafficWeight=100} and
+     * archives the losing arms ({@code trafficWeight=0} +
+     * {@code experimentEndsAt=now}, closing their assignment window). Bandit
+     * mode is also cleared on every arm once a champion is fixed.
+     *
+     * <p>Opt-in per the project convention that behaviour changes ship as a
+     * choosable per-entity flag (default = legacy): {@code null} / {@code FALSE}
+     * leaves the experiment under manual operator control — significance is
+     * still computable on demand, but no traffic is reassigned automatically.
+     * The manual {@code POST /experiment/{key}/promote} endpoint ignores this
+     * flag (an explicit operator click always promotes).
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "autoPromote")
+    private Boolean autoPromote;
+
+    /**
      * T93 / §VII.11.c — cross-flow slot inheritance. JSON object whose keys
      * are slot names this (receiving) flow expects to inherit from earlier
      * flows on the same conversation, and whose values are the source-slot

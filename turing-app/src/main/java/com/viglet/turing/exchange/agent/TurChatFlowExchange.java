@@ -50,6 +50,8 @@ public class TurChatFlowExchange {
     private Instant experimentStartsAt;
     private Instant experimentEndsAt;
     private Boolean banditEnabled;
+    /** T71 — champion-challenger auto-promotion opt-in; null on pre-T71 exports. */
+    private Boolean autoPromote;
 
     /** Relative path inside the ZIP to the chat-flow definition JSON. */
     private String definitionFile;
@@ -70,6 +72,7 @@ public class TurChatFlowExchange {
         e.experimentStartsAt = flow.getExperimentStartsAt();
         e.experimentEndsAt = flow.getExperimentEndsAt();
         e.banditEnabled = flow.getBanditEnabled();
+        e.autoPromote = flow.getAutoPromote();
         e.definitionFile = definitionFile;
         return e;
     }

@@ -136,6 +136,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [variantLabel, setVariantLabel] = useState(flow.variantLabel ?? "");
   const [trafficWeight, setTrafficWeight] = useState<number | null>(flow.trafficWeight ?? null);
   const [banditEnabled, setBanditEnabled] = useState<boolean>(flow.banditEnabled ?? false);
+  const [autoPromote, setAutoPromote] = useState<boolean>(flow.autoPromote ?? false);
   const [slotInheritanceJson, setSlotInheritanceJson] = useState(flow.slotInheritanceJson ?? "");
   const [open, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -234,6 +235,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       variantLabel: trimmedKey ? (variantLabel.trim() || null) : null,
       trafficWeight: trimmedKey ? trafficWeight : null,
       banditEnabled: trimmedKey ? banditEnabled : null,
+      autoPromote: trimmedKey ? autoPromote : null,
       slotInheritanceJson: slotInheritanceJson.trim() || null,
     };
     try {
@@ -252,7 +254,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       setSaving(false);
     }
   }, [name, description, guardrailMethod, captureMode, triggerDescription, triggerMode, triggerLanguage,
-      experimentKey, variantLabel, trafficWeight, banditEnabled, slotInheritanceJson,
+      experimentKey, variantLabel, trafficWeight, banditEnabled, autoPromote, slotInheritanceJson,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
   const onExport = useCallback(() => {
@@ -457,6 +459,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setTrafficWeight={setTrafficWeight}
           banditEnabled={banditEnabled}
           setBanditEnabled={setBanditEnabled}
+          autoPromote={autoPromote}
+          setAutoPromote={setAutoPromote}
           slotInheritanceJson={slotInheritanceJson}
           setSlotInheritanceJson={setSlotInheritanceJson}
         />

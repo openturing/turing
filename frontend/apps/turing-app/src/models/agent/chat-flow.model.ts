@@ -143,6 +143,18 @@ export interface TurChatFlow {
    */
   banditEnabled?: boolean | null;
   /**
+   * T71 / §VII.8.b — champion-challenger auto-promotion opt-in. When true
+   * on at least one variant under the same experimentKey, the daily
+   * promotion job auto-promotes the statistically-significant winner
+   * (trafficWeight=100) and archives the losers (trafficWeight=0 + closed
+   * window). Null/false leaves the experiment under manual control — the
+   * operator can still trigger promotion explicitly from the significance
+   * banner.
+   *
+   * @since 2026.3.1
+   */
+  autoPromote?: boolean | null;
+  /**
    * T93 / §VII.11.c — JSON mapping {@code {receivingSlot: sourceSlot}} of
    * slots this flow inherits from earlier flows on the same conversation.
    * {@code {"*":"*"}} = pass every captured slot through. Null/blank

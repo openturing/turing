@@ -541,6 +541,7 @@ public class TurChatFlowAPI {
                     existing.setExperimentStartsAt(incoming.getExperimentStartsAt());
                     existing.setExperimentEndsAt(incoming.getExperimentEndsAt());
                     existing.setBanditEnabled(incoming.getBanditEnabled());
+                    existing.setAutoPromote(incoming.getAutoPromote());
                     existing.setSlotInheritanceJson(incoming.getSlotInheritanceJson());
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);

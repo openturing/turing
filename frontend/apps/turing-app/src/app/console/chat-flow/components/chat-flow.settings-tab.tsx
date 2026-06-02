@@ -90,6 +90,8 @@ interface SettingsTabProps {
   setTrafficWeight: (value: number | null) => void;
   banditEnabled: boolean;
   setBanditEnabled: (value: boolean) => void;
+  autoPromote: boolean;
+  setAutoPromote: (value: boolean) => void;
   slotInheritanceJson: string;
   setSlotInheritanceJson: (value: string) => void;
 }
@@ -119,6 +121,8 @@ export function ChatFlowSettingsTab({
   setTrafficWeight,
   banditEnabled,
   setBanditEnabled,
+  autoPromote,
+  setAutoPromote,
   slotInheritanceJson,
   setSlotInheritanceJson,
 }: Readonly<SettingsTabProps>) {
@@ -415,6 +419,29 @@ export function ChatFlowSettingsTab({
                   id="chat-flow-bandit-enabled"
                   checked={banditEnabled}
                   onCheckedChange={setBanditEnabled}
+                  disabled={!experimentKey.trim()}
+                />
+              </FormRow>
+
+              {/* T71 / §VII.8.b — Champion-challenger auto-promotion. When ANY
+                  variant under the experimentKey opts in, the daily job
+                  promotes the significant winner to 100% traffic and archives
+                  the losers. Disabled until the flow is inside an
+                  experimentKey. */}
+              <FormRow
+                htmlFor="chat-flow-auto-promote"
+                label={t("chatFlow.fields.autoPromote", {
+                  defaultValue: "Auto-promote winner (champion-challenger)",
+                })}
+                description={t("chatFlow.fields.autoPromoteHint", {
+                  defaultValue:
+                    "When enabled, a daily job checks statistical significance and, once a winner is declared, pins it to 100% of traffic and archives the losing variants. Leave off to keep manual control — you can still promote on demand from the significance report.",
+                })}
+              >
+                <Switch
+                  id="chat-flow-auto-promote"
+                  checked={autoPromote}
+                  onCheckedChange={setAutoPromote}
                   disabled={!experimentKey.trim()}
                 />
               </FormRow>

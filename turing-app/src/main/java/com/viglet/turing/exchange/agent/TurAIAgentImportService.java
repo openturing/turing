@@ -474,6 +474,7 @@ public class TurAIAgentImportService {
             flow.setExperimentStartsAt(fe.getExperimentStartsAt());
             flow.setExperimentEndsAt(fe.getExperimentEndsAt());
             flow.setBanditEnabled(fe.getBanditEnabled());
+            flow.setAutoPromote(fe.getAutoPromote());
             flow.setTurAIAgent(agent);
             String rawDefinition = readSiblingFile(extractFolder, fe.getDefinitionFile());
             flow.setDefinitionJson(rewritePersonaIds(rawDefinition, refs.personaIdRemap));

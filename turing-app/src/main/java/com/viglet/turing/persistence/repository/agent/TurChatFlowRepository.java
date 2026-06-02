@@ -79,4 +79,15 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
      */
     @Cacheable(FIND_BY_AGENT_ID)
     List<TurChatFlow> findByTurAIAgent_IdOrderByNameAsc(String agentId);
+
+    /**
+     * T71 / §VII.8.b — enumerates every flow declared under one A/B
+     * {@code experimentKey} (the variants of a single experiment). Used by the
+     * champion-challenger promotion path (manual endpoint + daily job) to load
+     * the arms it promotes / archives. Deliberately <b>not</b> {@code @Cacheable}:
+     * it is invoked only on rare admin / scheduled promotion actions, and the
+     * promotion immediately mutates the same rows via {@code save(...)} — caching
+     * here would only add an eviction obligation for no read-throughput gain.
+     */
+    List<TurChatFlow> findByExperimentKey(String experimentKey);
 }

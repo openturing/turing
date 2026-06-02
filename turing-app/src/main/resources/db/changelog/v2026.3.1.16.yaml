@@ -1,0 +1,30 @@
+databaseChangeLog:
+  # T71 / §VII.8.b — champion-challenger auto-promotion opt-in on chat_flow.
+  #
+  # When any variant under the same experimentKey has autoPromote=true, the
+  # daily TurChampionChallengerPromotionJob evaluates statistical significance
+  # and, once a winner is declared, promotes the winner (trafficWeight=100) and
+  # archives the losers (trafficWeight=0 + experimentEndsAt=now). null/false
+  # preserves pre-T71 behaviour (manual operator control only).
+  #
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.16-add-autoPromote-to-chat_flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: autoPromote
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: autoPromote
+                  type: boolean
+                  remarks: "T71 — when TRUE, the daily champion-challenger job auto-promotes the significant winner."
