@@ -164,6 +164,18 @@
       "toolsEnabledHint": "When off, the agent's tool callbacks (MCP / native / custom) are stripped on this node. Use to gate the LLM from preemptively calling a tool before a slot is captured. Replaces the legacy \"NÃO CHAME NENHUMA TOOL\" sentinel in aiInstruction.",
       "requiredTools": "Required tools (one per line)",
       "requiredToolsHint": "Tool names that must reach the LLM on this node, even when the tool-prefilter would otherwise drop them due to low similarity with the user message. Use one name per line — must match the @Tool name, MCP tool name, or custom-tool name.",
+      "nodeAbTest": {
+        "experimentKey": "Per-node A/B experiment key",
+        "experimentKeyHint": "Set a key to A/B this single node's instruction. Each conversation is stickily assigned one arm below — no need to duplicate the whole flow. Independent from the flow-level A/B on the Settings tab.",
+        "variants": "Variants",
+        "addVariant": "Add variant",
+        "removeVariant": "Remove variant",
+        "empty": "No variants yet. Add at least two arms to run the test.",
+        "labelPlaceholder": "Arm name (e.g. control / punchy)",
+        "weight": "Weight",
+        "instructionPlaceholder": "Instruction / template override — leave blank for the control arm (keeps the base text).",
+        "variantsHint": "Weights are relative (50/50 ≡ 1/1). An arm with weight 0 is paused. A blank override keeps the node's authored text — use it for the control arm. On functionCall / scheduleAgent nodes the override swaps the tool input / routine payload template instead of a question."
+      },
       "functionName": "Function Call",
       "toolSource": "Tool Source",
       "toolSourceOptions": {

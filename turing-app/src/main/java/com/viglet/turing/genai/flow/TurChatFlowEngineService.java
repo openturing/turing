@@ -395,7 +395,10 @@ public class TurChatFlowEngineService {
         if (node.isEmpty()) {
             return "";
         }
-        return resolveStrategy(flow).buildSystemPromptAddendum(flow, node.get(), state, graph);
+        // T72 — apply any per-node A/B variant before the strategy reads the
+        // node's aiInstruction, so the LLM sees the assigned arm's wording.
+        ChatFlowNode effective = node.get().resolveVariant(state.getConversationId());
+        return resolveStrategy(flow).buildSystemPromptAddendum(flow, effective, state, graph);
     }
 
     /**
@@ -462,7 +465,11 @@ public class TurChatFlowEngineService {
                 flow.getId(), state.getConversationId(), previousNodeId,
                 flow.getGuardrailMethod(),
                 userMessage == null ? "" : truncate(userMessage, 80));
-        AdvanceContext ctx = new AdvanceContext(state, graph, nodeOpt.get(),
+        // T72 — swap in the per-node A/B variant assigned to this conversation
+        // (sticky, weighted) before the strategy guards the user's reply, so
+        // the same arm the LLM was prompted with is the one validated against.
+        ChatFlowNode activeNode = nodeOpt.get().resolveVariant(state.getConversationId());
+        AdvanceContext ctx = new AdvanceContext(state, graph, activeNode,
                 userMessage, assistantMessage, auxiliaryModel, flow);
         String override = resolveStrategy(flow).advance(ctx);
         // Condition nodes are transparent to the chat — the LLM never sees them
@@ -546,6 +553,11 @@ public class TurChatFlowEngineService {
         // aggregate metric surfaces a regression.
         formatVariantTrace(flow, leaf.getCurrentNodeId(), userMessage)
                 .ifPresent(trace -> log.info("[A/B Trace] {}", trace));
+        // T72 — sibling node-level trace. Fires only when the node the turn
+        // ran against carried a per-node experiment, so plain nodes incur a
+        // single null-check. Format: nodeExperimentKey:variantLabel:nodeId.
+        ChatFlowNode.formatNodeVariantTrace(activeNode, leaf.getConversationId())
+                .ifPresent(trace -> log.info("[A/B Node Trace] {}", trace));
         return new AdvanceResult(leaf, override);
     }
 
@@ -2417,7 +2429,24 @@ public class TurChatFlowEngineService {
             if (currentOpt.isEmpty()) {
                 return state;
             }
-            ChatFlowNode current = currentOpt.get();
+            // T72 — apply any per-node A/B variant before the transparent node
+            // is executed. resolveVariant only swaps aiInstruction and keeps
+            // id/type/edges, so routing (advanceToFirstEdge / advanceOnFailure)
+            // is identical; the swap matters for the two template-bearing
+            // transparent nodes — functionCall (tool input JSON template) and
+            // scheduleAgent (routine payload template) — letting authors A/B a
+            // single tool-call's input without duplicating the flow. Condition
+            // / switch / slot / persona / subFlow nodes don't read
+            // aiInstruction, so the swap is a no-op for them.
+            ChatFlowNode current = currentOpt.get().resolveVariant(state.getConversationId());
+            // Sibling node-level trace for the template-bearing nodes — fires
+            // once as the walk executes the node (mirrors the interactive-node
+            // trace emitted in advance()). Only when the node carries an
+            // experiment, so plain transparent nodes incur a single null-check.
+            if ("functionCall".equals(current.type()) || "scheduleAgent".equals(current.type())) {
+                ChatFlowNode.formatNodeVariantTrace(current, state.getConversationId())
+                        .ifPresent(tr -> log.info("[A/B Node Trace] {}", tr));
+            }
 
             if ("subFlow".equals(current.type())) {
                 Optional<TurChatFlowState> child = enterSubFlow(state, current);

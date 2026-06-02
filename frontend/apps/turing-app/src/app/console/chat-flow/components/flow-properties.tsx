@@ -20,7 +20,7 @@ import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
-import type { FlowNodeData, FlowNodeType, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
@@ -345,6 +345,8 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </span>
               </div>
             )}
+
+            <NodeAbTestSection data={data} onChange={update} />
           </>
         )}
 
@@ -427,6 +429,9 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             )}
 
             <ContinueOnFailureField data={data} onChange={update} />
+
+            {/* T72 — per-node A/B of the tool's input JSON template (aiInstruction). */}
+            <NodeAbTestSection data={data} onChange={update} />
           </>
         )}
 
@@ -565,6 +570,9 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             </div>
 
             <ContinueOnFailureField data={data} onChange={update} />
+
+            {/* T72 — per-node A/B of the routine payload template (aiInstruction). */}
+            <NodeAbTestSection data={data} onChange={update} />
           </>
         )}
 
@@ -942,6 +950,149 @@ function ContinueOnFailureField({
           </span>
         </div>
       </label>
+    </div>
+  );
+}
+
+/**
+ * Per-node A/B test editor (T72). Lets an author A/B a single node's wording
+ * without duplicating the whole flow: set a {@code nodeExperimentKey} and add
+ * variant arms, each optionally overriding the node's {@code aiInstruction}.
+ * The backend assigns one arm per conversation (sticky, weighted by
+ * {@code weight}) and swaps the instruction at prompt-build time. A blank
+ * override on an arm is the "control" arm (keeps the base instruction).
+ *
+ * <p>Lives inside {@code definitionJson} on the node — round-trips through the
+ * flow export/import for free (no entity column, unlike the flow-level T67
+ * fields).
+ */
+function NodeAbTestSection({
+  data,
+  onChange,
+}: {
+  readonly data: FlowNodeData;
+  readonly onChange: (patch: Partial<FlowNodeData>) => void;
+}) {
+  const { t } = useTranslation();
+  const experimentKey = data.nodeExperimentKey ?? "";
+  const variants = data.nodeVariants ?? [];
+  const enabled = experimentKey.trim().length > 0;
+
+  const updateVariant = (idx: number, patch: Partial<FlowNodeVariant>) => {
+    const next = variants.map((v, i) => (i === idx ? { ...v, ...patch } : v));
+    onChange({ nodeVariants: next });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-dashed border-purple-400/60 bg-purple-50/40 p-3 dark:bg-purple-950/20">
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="flow-node-experiment-key">
+          {t("chatFlow.properties.nodeAbTest.experimentKey", {
+            defaultValue: "Per-node A/B experiment key",
+          })}
+        </Label>
+        <Input
+          id="flow-node-experiment-key"
+          value={experimentKey}
+          onChange={(e) => {
+            const value = e.target.value;
+            onChange({
+              nodeExperimentKey: value.trim().length > 0 ? value : undefined,
+              // Clearing the key drops the arms too so the export JSON stays
+              // compact for nodes that opt back out of the experiment.
+              ...(value.trim().length === 0 ? { nodeVariants: undefined } : {}),
+            });
+          }}
+          placeholder="cargo-wording"
+        />
+        <span className="text-[11px] text-muted-foreground">
+          {t("chatFlow.properties.nodeAbTest.experimentKeyHint", {
+            defaultValue:
+              "Set a key to A/B this single node's instruction. Each conversation is stickily assigned one arm below — no need to duplicate the whole flow. Independent from the flow-level A/B on the Settings tab.",
+          })}
+        </span>
+      </div>
+
+      {enabled && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Label>
+              {t("chatFlow.properties.nodeAbTest.variants", { defaultValue: "Variants" })}
+            </Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                onChange({ nodeVariants: [...variants, { label: "", weight: 50, aiInstruction: "" }] })
+              }
+            >
+              <IconPlus className="size-4" />
+              {t("chatFlow.properties.nodeAbTest.addVariant", { defaultValue: "Add variant" })}
+            </Button>
+          </div>
+
+          {variants.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/30 p-3 text-center text-xs text-muted-foreground">
+              {t("chatFlow.properties.nodeAbTest.empty", {
+                defaultValue: "No variants yet. Add at least two arms to run the test.",
+              })}
+            </div>
+          ) : (
+            variants.map((variant, idx) => (
+              <div key={idx} className="flex flex-col gap-1 rounded-md border bg-background/60 p-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="h-8"
+                    value={variant.label ?? ""}
+                    placeholder={t("chatFlow.properties.nodeAbTest.labelPlaceholder", {
+                      defaultValue: "Arm name (e.g. control / punchy)",
+                    })}
+                    onChange={(e) => updateVariant(idx, { label: e.target.value })}
+                  />
+                  <Input
+                    className="h-8 w-20"
+                    type="number"
+                    min={0}
+                    value={variant.weight ?? ""}
+                    placeholder={t("chatFlow.properties.nodeAbTest.weight", { defaultValue: "Weight" })}
+                    onChange={(e) =>
+                      updateVariant(idx, {
+                        weight: e.target.value === "" ? undefined : Number(e.target.value),
+                      })
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("chatFlow.properties.nodeAbTest.removeVariant", {
+                      defaultValue: "Remove variant",
+                    })}
+                    onClick={() => onChange({ nodeVariants: variants.filter((_, i) => i !== idx) })}
+                  >
+                    <IconTrash className="size-4 text-destructive" />
+                  </Button>
+                </div>
+                <Textarea
+                  rows={3}
+                  value={variant.aiInstruction ?? ""}
+                  placeholder={t("chatFlow.properties.nodeAbTest.instructionPlaceholder", {
+                    defaultValue: "Instruction / template override — leave blank for the control arm (keeps the base text).",
+                  })}
+                  onChange={(e) => updateVariant(idx, { aiInstruction: e.target.value })}
+                />
+              </div>
+            ))
+          )}
+          <span className="text-[11px] text-muted-foreground">
+            {t("chatFlow.properties.nodeAbTest.variantsHint", {
+              defaultValue:
+                "Weights are relative (50/50 ≡ 1/1). An arm with weight 0 is paused. A blank instruction override keeps the node's authored wording — use it for the control arm.",
+            })}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -164,6 +164,18 @@
       "toolsEnabledHint": "Quando desligado, as tool callbacks do agente (MCP / native / custom) são removidas nesse nó. Use para impedir que o LLM chame uma tool preemptivamente antes do slot ser capturado. Substitui o sentinel legado \"NÃO CHAME NENHUMA TOOL\" no aiInstruction.",
       "requiredTools": "Tools obrigatórias (uma por linha)",
       "requiredToolsHint": "Nomes de tools que precisam chegar até o LLM nesse nó, mesmo quando o pré-filtro de tools as descartaria por baixa similaridade com a mensagem do usuário. Uma por linha — precisa bater com o nome do @Tool, da MCP tool ou da custom tool.",
+      "nodeAbTest": {
+        "experimentKey": "Chave de experimento A/B do nó",
+        "experimentKeyHint": "Defina uma chave para fazer A/B só da instrução deste nó. Cada conversa recebe de forma fixa um dos braços abaixo — sem precisar duplicar o fluxo inteiro. Independente do A/B em nível de fluxo na aba Configurações.",
+        "variants": "Variantes",
+        "addVariant": "Adicionar variante",
+        "removeVariant": "Remover variante",
+        "empty": "Nenhuma variante ainda. Adicione ao menos dois braços para rodar o teste.",
+        "labelPlaceholder": "Nome do braço (ex.: controle / direto)",
+        "weight": "Peso",
+        "instructionPlaceholder": "Sobrescrita da instrução / template — deixe em branco para o braço de controle (mantém o texto base).",
+        "variantsHint": "Os pesos são relativos (50/50 ≡ 1/1). Um braço com peso 0 fica pausado. Uma sobrescrita em branco mantém o texto original do nó — use no braço de controle. Em nós functionCall / scheduleAgent a sobrescrita troca o template de input da tool / payload da rotina em vez de uma pergunta."
+      },
       "functionName": "Função",
       "toolSource": "Origem da Ferramenta",
       "toolSourceOptions": {

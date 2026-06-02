@@ -76,6 +76,23 @@ export interface FlowSwitchOption {
   subFlowName?: string;
 }
 
+/**
+ * A single arm of a per-node A/B experiment (T72). When assigned to a
+ * conversation, the variant's non-blank {@link aiInstruction} replaces the
+ * node's base instruction at prompt-build time; a blank override marks the
+ * "control" arm (keep the authored instruction).
+ *
+ * @since 2026.3.1
+ */
+export interface FlowNodeVariant {
+  /** Human-readable arm name — surfaces in the `[A/B Node Trace]` log. */
+  label?: string;
+  /** Relative traffic weight. null/0 excludes the arm when others have weight; all-zero = uniform split. */
+  weight?: number;
+  /** Swapped instruction text. Blank/omitted = reuse the node's base instruction (control arm). */
+  aiInstruction?: string;
+}
+
 export interface FlowNodeData extends Record<string, unknown> {
   label: string;
   type: FlowNodeType;
@@ -207,6 +224,23 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   continueOnFailure?: boolean;
+  /**
+   * Per-node A/B experiment key (T72). When non-blank and at least one
+   * {@link nodeVariants} arm is declared, the engine swaps this single node's
+   * `aiInstruction` for the variant deterministically (and stickily) assigned
+   * to the conversation — granular optimization without duplicating the flow.
+   * Independent namespace from the flow-level `experimentKey` (T67). Blank/
+   * omitted (default) means the node behaves exactly as authored.
+   * @since 2026.3.1
+   */
+  nodeExperimentKey?: string;
+  /**
+   * Variant arms of this node's per-node A/B experiment (T72). Each arm may
+   * override {@link aiInstruction}; a blank override is the control arm.
+   * Empty/omitted means no per-node experiment.
+   * @since 2026.3.1
+   */
+  nodeVariants?: FlowNodeVariant[];
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
