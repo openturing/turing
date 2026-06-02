@@ -54,6 +54,9 @@ public class TurAIAgentExchange {
     private int chatMemoryRecentN;
     private String nativeTools;
     private String pythonRequirements;
+    // T66 / §VII.6.g — submission retention policy travels with the agent.
+    private com.viglet.turing.persistence.model.agent.TurSubmissionRetention submissionRetention;
+    private Integer submissionRetentionDays;
 
     // ─── reference IDs (entities live at envelope root) ───────────────
     private List<String> personaIds = new ArrayList<>();
@@ -93,6 +96,8 @@ public class TurAIAgentExchange {
         e.chatMemoryRecentN = agent.getChatMemoryRecentN();
         e.nativeTools = agent.getNativeTools();
         e.pythonRequirements = agent.getPythonRequirements();
+        e.submissionRetention = agent.getSubmissionRetention();
+        e.submissionRetentionDays = agent.getSubmissionRetentionDays();
 
         if (agent.getPersonas() != null) {
             agent.getPersonas().forEach(p -> e.personaIds.add(p.getId()));

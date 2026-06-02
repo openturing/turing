@@ -168,6 +168,32 @@ public class TurAIAgent implements Serializable {
     @Column(name = "over_budget_behavior", length = 16, nullable = false)
     private TurAgentOverBudgetBehavior overBudgetBehavior = TurAgentOverBudgetBehavior.WARN;
 
+    /**
+     * T66 / §VII.6.g — retention policy for this agent's completed
+     * {@code chat_flow_submission} rows (LGPD / GDPR compliance hook).
+     * {@code RETAIN_FOREVER} (default) keeps everything; {@code RETAIN_DAYS}
+     * lets the daily cleanup job delete submissions older than
+     * {@link #submissionRetentionDays}; {@code DELETE_AFTER_EXPORT} purges a
+     * conversation's submissions right after it is exported. Stored as a
+     * string column to avoid ordinal drift.
+     *
+     * @since 2026.3.1
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "submission_retention", length = 20, nullable = false)
+    private TurSubmissionRetention submissionRetention = TurSubmissionRetention.RETAIN_FOREVER;
+
+    /**
+     * T66 / §VII.6.g — age threshold in days used only when
+     * {@link #submissionRetention} is {@code RETAIN_DAYS}. Null or
+     * non-positive disables the time-based purge (effectively
+     * {@code RETAIN_FOREVER}).
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "submission_retention_days")
+    private Integer submissionRetentionDays;
+
     @Column(length = 2000)
     private String nativeTools;
 

@@ -235,6 +235,14 @@ public class TurAIAgentAPI {
             if (turAIAgent.getChatMode() != null) {
                 agentEdit.setChatMode(turAIAgent.getChatMode());
             }
+            // T66 / §VII.6.g — submission retention policy. Same field-by-field
+            // copy contract: null DTO value keeps the previously-persisted mode
+            // (older clients). The days threshold is copied verbatim (null is a
+            // valid "no threshold" state for RETAIN_DAYS).
+            if (turAIAgent.getSubmissionRetention() != null) {
+                agentEdit.setSubmissionRetention(turAIAgent.getSubmissionRetention());
+            }
+            agentEdit.setSubmissionRetentionDays(turAIAgent.getSubmissionRetentionDays());
             // T19/T24 reposition (2026.2.7) — ragBm25Fallback and
             // ragHybridSearch moved to TurSNSiteGenAi; no longer copied
             // here. See TurSNSiteGenAi field javadoc + TurSNSiteAPI for

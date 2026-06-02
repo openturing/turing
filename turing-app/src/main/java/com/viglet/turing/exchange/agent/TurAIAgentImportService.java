@@ -385,6 +385,12 @@ public class TurAIAgentImportService {
         agent.setChatMemoryRecentN(a.getChatMemoryRecentN());
         agent.setNativeTools(a.getNativeTools());
         agent.setPythonRequirements(a.getPythonRequirements());
+        // T66 / §VII.6.g — null-guarded so pre-T66 exports keep the entity
+        // default (RETAIN_FOREVER) instead of nulling a non-null column.
+        if (a.getSubmissionRetention() != null) {
+            agent.setSubmissionRetention(a.getSubmissionRetention());
+        }
+        agent.setSubmissionRetentionDays(a.getSubmissionRetentionDays());
     }
 
     private static void wireAgentReferences(TurAIAgent agent, TurAIAgentExchange a, ResolvedRefs refs) {

@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
+import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -127,6 +127,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // behaviour (no enforcement) until the operator opts in.
       maxPromptTokens: value.maxPromptTokens ?? 0,
       overBudgetBehavior: value.overBudgetBehavior ?? "WARN",
+      // T66 / §VII.6.g — RETAIN_FOREVER matches the backend enum default so
+      // existing agents keep every submission until the operator opts in.
+      submissionRetention: value.submissionRetention ?? "RETAIN_FOREVER",
+      submissionRetentionDays: value.submissionRetentionDays ?? 30,
       pythonRequirements: value.pythonRequirements ?? "",
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
@@ -748,6 +752,105 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
+            </SectionCard.Content>
+          </SectionCard>
+
+          {/* T66 / §VII.6.g — submission retention (LGPD/GDPR compliance hook). */}
+          <SectionCard variant="amber">
+            <SectionCard.Header
+              icon={IconShieldLock}
+              title={t("forms.agentSettings.submissionRetention", { defaultValue: "Submission retention" })}
+              description={t("forms.agentSettings.submissionRetentionSectionDesc", {
+                defaultValue:
+                  "Compliance policy (LGPD / GDPR) for how long this agent's completed chat-flow submissions are kept. Applies to the submission archive only — live PII slots expire via the global PII retention TTL.",
+              })}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="submissionRetention"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.submissionRetentionMode", { defaultValue: "Retention policy" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.submissionRetentionModeDesc", {
+                          defaultValue:
+                            "Retain forever: keep every submission. Retain N days: a daily job deletes submissions older than the threshold. Delete after export: purge a conversation's submissions as soon as it is exported.",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <select
+                          aria-label={t("forms.agentSettings.submissionRetentionMode", { defaultValue: "Retention policy" })}
+                          className="border rounded-md px-3 py-2 text-sm bg-background"
+                          value={field.value ?? "RETAIN_FOREVER"}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                        >
+                          <option value="RETAIN_FOREVER">
+                            {t("forms.agentSettings.submissionRetentionForever", { defaultValue: "Retain forever" })}
+                          </option>
+                          <option value="RETAIN_DAYS">
+                            {t("forms.agentSettings.submissionRetentionDaysOption", { defaultValue: "Retain for N days" })}
+                          </option>
+                          <option value="DELETE_AFTER_EXPORT">
+                            {t("forms.agentSettings.submissionRetentionAfterExport", { defaultValue: "Delete after export" })}
+                          </option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              {form.watch("submissionRetention") === "RETAIN_DAYS" && (
+                <FormField
+                  control={form.control}
+                  name="submissionRetentionDays"
+                  rules={{
+                    min: { value: 1, message: t("forms.agentSettings.submissionRetentionDaysMin", { defaultValue: "Must be ≥ 1." }) },
+                    max: { value: 3650, message: t("forms.agentSettings.submissionRetentionDaysMax", { defaultValue: "Must be ≤ 3650 (10 years)." }) },
+                  }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>
+                          {t("forms.agentSettings.submissionRetentionDaysLabel", { defaultValue: "Retention period (days)" })}
+                        </FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          {t("forms.agentSettings.submissionRetentionDaysDesc", {
+                            defaultValue:
+                              "Submissions completed more than this many days ago are deleted by the daily cleanup job. Leave at 0 to disable the time-based purge.",
+                          })}
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={3650}
+                            step={1}
+                            placeholder="30"
+                            value={field.value ?? 30}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            name={field.name}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItemTwoColumns.Right>
+                    </FormItemTwoColumns>
+                  )}
+                />
+              )}
             </SectionCard.Content>
           </SectionCard>
 

@@ -30,6 +30,7 @@ import com.viglet.turing.persistence.dto.agent.TurChatSlotAuditDto;
 import com.viglet.turing.persistence.model.agent.TurChatSlotAuditEntry;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.chatslots.TurChatSlotAuditService;
+import com.viglet.turing.service.chatslots.TurSubmissionRetentionService;
 import com.viglet.turing.system.TurLlmSummaryService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -77,15 +78,18 @@ public class TurChatSessionAPI {
     private final TurChatMemoryService chatMemoryService;
     private final TurLlmSummaryService llmSummaryService;
     private final TurChatSlotAuditService slotAuditService;
+    private final TurSubmissionRetentionService submissionRetentionService;
 
     public TurChatSessionAPI(TurChatFlowEngineService chatFlowEngineService,
             TurChatMemoryService chatMemoryService,
             TurLlmSummaryService llmSummaryService,
-            TurChatSlotAuditService slotAuditService) {
+            TurChatSlotAuditService slotAuditService,
+            TurSubmissionRetentionService submissionRetentionService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatMemoryService = chatMemoryService;
         this.llmSummaryService = llmSummaryService;
         this.slotAuditService = slotAuditService;
+        this.submissionRetentionService = submissionRetentionService;
     }
 
     @Operation(summary = "List slots captured during a chat session, merged into a "
@@ -166,10 +170,15 @@ public class TurChatSessionAPI {
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("conversation-" + sanitizeForFilename(conversationId) + ".json")
                 .build();
-        return ResponseEntity.ok()
+        ResponseEntity<TurChatSessionExportDto> response = ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(export);
+        // T66 / §VII.6.g — DELETE_AFTER_EXPORT agents treat this export as the
+        // system-of-record archive; purge their copy of the conversation's
+        // submissions now that the bundle is built. No-op for the other modes.
+        submissionRetentionService.applyPostExportRetention(conversationId);
+        return response;
     }
 
     private java.util.List<TurChatSlotAuditDto.Entry> slotAuditEntries(String conversationId) {

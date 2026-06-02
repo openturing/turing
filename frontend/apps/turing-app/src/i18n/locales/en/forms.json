@@ -978,7 +978,18 @@
       "chatModeCall": "Call (blocking)",
       "chatModeCallDesc": "Wait for the full reply and send it as a single SSE event.",
       "chatModeStream": "Stream (token-by-token)",
-      "chatModeStreamDesc": "Forward each token chunk to the SSE pipeline as it arrives. Per-turn tools (MCP / native / custom) are NOT honored on this path — agents that need tool calling should stay on Call."
+      "chatModeStreamDesc": "Forward each token chunk to the SSE pipeline as it arrives. Per-turn tools (MCP / native / custom) are NOT honored on this path — agents that need tool calling should stay on Call.",
+      "submissionRetention": "Submission retention",
+      "submissionRetentionSectionDesc": "Compliance policy (LGPD / GDPR) for how long this agent's completed chat-flow submissions are kept. Applies to the submission archive only — live PII slots expire via the global PII retention TTL.",
+      "submissionRetentionMode": "Retention policy",
+      "submissionRetentionModeDesc": "Retain forever: keep every submission. Retain N days: a daily job deletes submissions older than the threshold. Delete after export: purge a conversation's submissions as soon as it is exported.",
+      "submissionRetentionForever": "Retain forever",
+      "submissionRetentionDaysOption": "Retain for N days",
+      "submissionRetentionAfterExport": "Delete after export",
+      "submissionRetentionDaysLabel": "Retention period (days)",
+      "submissionRetentionDaysDesc": "Submissions completed more than this many days ago are deleted by the daily cleanup job.",
+      "submissionRetentionDaysMin": "Must be ≥ 1.",
+      "submissionRetentionDaysMax": "Must be ≤ 3650 (10 years)."
     },
     "agentTools": {
       "available": "Available Native Tools",

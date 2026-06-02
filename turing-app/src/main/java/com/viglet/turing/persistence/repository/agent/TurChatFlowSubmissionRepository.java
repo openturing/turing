@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.persistence.repository.agent;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -45,4 +46,15 @@ public interface TurChatFlowSubmissionRepository extends JpaRepository<TurChatFl
             "select s.endNodeId, count(s) from TurChatFlowSubmission s "
             + "where s.flow.id = :flowId group by s.endNodeId")
     List<Object[]> countByEndNodeForFlow(@org.springframework.data.repository.query.Param("flowId") String flowId);
+
+    /**
+     * T66 / §VII.6.g — submissions owned by a given agent (via
+     * {@code flow.turAIAgent}) whose {@code completedAt} predates the cutoff.
+     * Feeds the {@code RETAIN_DAYS} branch of the daily submission-retention
+     * cleanup job.
+     *
+     * @since 2026.3.1
+     */
+    List<TurChatFlowSubmission> findByFlow_TurAIAgent_IdAndCompletedAtBefore(
+            String agentId, LocalDateTime cutoff);
 }

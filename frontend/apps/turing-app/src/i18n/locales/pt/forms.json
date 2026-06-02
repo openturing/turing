@@ -978,7 +978,18 @@
       "chatModeCall": "Call (bloqueante)",
       "chatModeCallDesc": "Espera a resposta inteira e envia como um único evento SSE.",
       "chatModeStream": "Stream (token a token)",
-      "chatModeStreamDesc": "Encaminha cada chunk de token para o SSE conforme ele chega. As tools por turno (MCP / native / custom) NÃO são honradas nesse path — agentes que precisam de tool calling devem ficar em Call."
+      "chatModeStreamDesc": "Encaminha cada chunk de token para o SSE conforme ele chega. As tools por turno (MCP / native / custom) NÃO são honradas nesse path — agentes que precisam de tool calling devem ficar em Call.",
+      "submissionRetention": "Retenção de submissões",
+      "submissionRetentionSectionDesc": "Política de conformidade (LGPD / GDPR) sobre por quanto tempo as submissões concluídas de chat flow deste agente são mantidas. Vale apenas para o arquivo de submissões — slots de PII ativos expiram pelo TTL global de retenção de PII.",
+      "submissionRetentionMode": "Política de retenção",
+      "submissionRetentionModeDesc": "Reter para sempre: mantém todas as submissões. Reter N dias: um job diário apaga submissões mais antigas que o limite. Apagar após exportar: remove as submissões de uma conversa assim que ela é exportada.",
+      "submissionRetentionForever": "Reter para sempre",
+      "submissionRetentionDaysOption": "Reter por N dias",
+      "submissionRetentionAfterExport": "Apagar após exportar",
+      "submissionRetentionDaysLabel": "Período de retenção (dias)",
+      "submissionRetentionDaysDesc": "Submissões concluídas há mais dias que este valor são apagadas pelo job diário de limpeza.",
+      "submissionRetentionDaysMin": "Deve ser ≥ 1.",
+      "submissionRetentionDaysMax": "Deve ser ≤ 3650 (10 anos)."
     },
     "agentTools": {
       "available": "Ferramentas Nativas Disponíveis",

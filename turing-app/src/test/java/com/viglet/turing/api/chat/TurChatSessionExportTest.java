@@ -35,6 +35,7 @@ import com.viglet.turing.persistence.model.agent.TurChatSlotAuditEntry;
 import com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.chatslots.TurChatSlotAuditService;
+import com.viglet.turing.service.chatslots.TurSubmissionRetentionService;
 import com.viglet.turing.system.TurLlmSummaryService;
 
 /**
@@ -51,6 +52,7 @@ class TurChatSessionExportTest {
     private TurChatFlowEngineService engine;
     private TurChatMemoryService memory;
     private TurChatSlotAuditService audit;
+    private TurSubmissionRetentionService retention;
     private TurChatSessionAPI api;
 
     @BeforeEach
@@ -59,7 +61,8 @@ class TurChatSessionExportTest {
         memory = mock(TurChatMemoryService.class);
         TurLlmSummaryService summary = mock(TurLlmSummaryService.class);
         audit = mock(TurChatSlotAuditService.class);
-        api = new TurChatSessionAPI(engine, memory, summary, audit);
+        retention = mock(TurSubmissionRetentionService.class);
+        api = new TurChatSessionAPI(engine, memory, summary, audit, retention);
     }
 
     private TurChatSlotAuditEntry auditEntry(String slot, String oldV, String newV,
@@ -148,5 +151,21 @@ class TurChatSessionExportTest {
         api.exportConversation(conv, 25);
 
         org.mockito.Mockito.verify(memory).listMessages(conv, 25);
+    }
+
+    @Test
+    void exportTriggersPostExportRetentionHook() {
+        String conv = "conv-retention";
+        when(engine.exportFlowStates(conv)).thenReturn(List.of());
+        when(engine.listSubmissionsForConversation(conv)).thenReturn(List.of());
+        when(engine.listSlotsForConversation(conv)).thenReturn(new TurChatSessionSlotsDto(conv, Map.of()));
+        when(memory.listMessages(eq(conv), anyInt()))
+                .thenReturn(new TurChatSessionMessagesDto(conv, "NONE", false, List.of(), null));
+        when(audit.list(conv)).thenReturn(List.of());
+
+        api.exportConversation(conv, 1000);
+
+        // T66 — DELETE_AFTER_EXPORT enforcement runs after the bundle is built.
+        org.mockito.Mockito.verify(retention).applyPostExportRetention(conv);
     }
 }

@@ -1,0 +1,57 @@
+databaseChangeLog:
+  # T66 / §VII.6.g — per-agent submission retention policy.
+  #
+  # Two columns on ai_agent:
+  #   - submission_retention VARCHAR(20)
+  #       (RETAIN_FOREVER | RETAIN_DAYS | DELETE_AFTER_EXPORT, default RETAIN_FOREVER)
+  #   - submission_retention_days INT (nullable; only used when RETAIN_DAYS)
+  #
+  # RETAIN_FOREVER preserves pre-T66 behaviour. RETAIN_DAYS lets the daily
+  # TurSubmissionRetentionCleanupJob delete chat_flow_submission rows older
+  # than submission_retention_days. DELETE_AFTER_EXPORT purges a
+  # conversation's submissions right after the T65 export endpoint runs.
+  #
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.15-add-submission-retention
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: submission_retention
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: submission_retention
+                  type: varchar(20)
+                  defaultValue: RETAIN_FOREVER
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.15-add-submission-retention-days
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: submission_retention_days
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: submission_retention_days
+                  type: int
+                  constraints:
+                    nullable: true

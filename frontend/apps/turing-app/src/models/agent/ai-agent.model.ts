@@ -19,6 +19,21 @@ import type { TurStoreInstance } from "../store/store-instance.model.ts";
  */
 export type TurAgentChatMode = "CALL" | "STREAM";
 
+/**
+ * T66 / §VII.6.g — per-agent retention policy for the completed
+ * `chat_flow_submission` archive (LGPD / GDPR compliance hook).
+ * - "RETAIN_FOREVER"      — keep every submission (default).
+ * - "RETAIN_DAYS"         — daily job deletes submissions older than
+ *                           {@link TurAIAgent.submissionRetentionDays}.
+ * - "DELETE_AFTER_EXPORT" — purge a conversation's submissions right after
+ *                           it is exported via the session export endpoint.
+ * @since 2026.3.1
+ */
+export type TurSubmissionRetention =
+  | "RETAIN_FOREVER"
+  | "RETAIN_DAYS"
+  | "DELETE_AFTER_EXPORT";
+
 export interface TurAIAgent {
   id: string;
   title: string;
@@ -63,6 +78,17 @@ export interface TurAIAgent {
   nativeTools?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
+  /**
+   * T66 / §VII.6.g — retention policy for this agent's completed chat-flow
+   * submissions. Defaults to `RETAIN_FOREVER`. @since 2026.3.1
+   */
+  submissionRetention?: TurSubmissionRetention;
+  /**
+   * T66 / §VII.6.g — age threshold in days, used only when
+   * `submissionRetention === "RETAIN_DAYS"`. Null/0 disables the purge.
+   * @since 2026.3.1
+   */
+  submissionRetentionDays?: number | null;
   // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
   // moved from TurAIAgent to TurSNSiteGenAi — see sn-site-genai.model.ts.
   /**
