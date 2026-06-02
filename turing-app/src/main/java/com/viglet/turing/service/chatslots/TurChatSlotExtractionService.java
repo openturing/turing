@@ -224,7 +224,7 @@ public class TurChatSlotExtractionService {
      * agnostic — gpt-4o, claude-3.5, gemini-flash all follow the same
      * contract when the schema is small.
      */
-    private static String buildSystemPrompt(List<TurAIAgentSlot> slots) {
+    static String buildSystemPrompt(List<TurAIAgentSlot> slots) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are a precision extractor. The user message is the FULL TEXT of a document ");
         sb.append("(curriculum, invoice, form, etc.). Extract values for the following slots:\n\n");
@@ -254,7 +254,7 @@ public class TurChatSlotExtractionService {
      * fields the model invented are discarded so the writeSlot loop can't
      * accidentally persist garbage.
      */
-    private static Map<String, String> parseJsonReply(String reply, List<TurAIAgentSlot> slots) {
+    static Map<String, String> parseJsonReply(String reply, List<TurAIAgentSlot> slots) {
         if (reply == null || reply.isBlank()) return Map.of();
         String body = stripCodeFences(reply.trim());
         Map<String, String> result = new LinkedHashMap<>();

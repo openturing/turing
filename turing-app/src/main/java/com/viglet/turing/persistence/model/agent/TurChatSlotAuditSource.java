@@ -27,5 +27,11 @@ public enum TurChatSlotAuditSource {
     /** Slot set by {@code POST /api/sn/{site}/chat/slots} (React {@code useTuringSlotWriter}). */
     ENDPOINT,
     /** Slot set by {@code POST /api/sn/{site}/chat/slot-extract} (document → LLM → slot). */
-    EXTRACT
+    EXTRACT,
+    /**
+     * Multi-modal binary persisted to object storage and its URL written into
+     * an {@code IMAGE}/{@code AUDIO}/{@code FILE} slot via
+     * {@code POST /api/sn/{site}/chat/slot-upload} (T64).
+     */
+    UPLOAD
 }

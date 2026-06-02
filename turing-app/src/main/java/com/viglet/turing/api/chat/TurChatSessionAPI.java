@@ -16,7 +16,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.persistence.dto.agent.TurChatSessionExportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessagesDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
@@ -130,14 +136,63 @@ public class TurChatSessionAPI {
     @GetMapping("/{conversationId}/slot-audit")
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
     public TurChatSlotAuditDto slotAudit(@PathVariable String conversationId) {
+        return new TurChatSlotAuditDto(conversationId, slotAuditEntries(conversationId));
+    }
+
+    @Operation(summary = "T65 — full snapshot export of a conversation's runtime state "
+            + "for debugging / regression. Bundles the raw chat_flow_state rows (cursor "
+            + "node + parsed variable map per flow), finished submissions, the merged slot "
+            + "map, the chat-memory transcript, and the T60 slot-write audit trail into one "
+            + "JSON document. Served as an attachment so the admin 'Export conversation' "
+            + "button downloads it directly. pii_* values stay encrypted/redacted exactly "
+            + "as stored.")
+    @GetMapping("/{conversationId}/export")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public ResponseEntity<TurChatSessionExportDto> exportConversation(
+            @PathVariable String conversationId,
+            @RequestParam(defaultValue = "1000") int transcriptLimit) {
+        TurChatSessionMessagesDto transcript = chatMemoryService.listMessages(conversationId, transcriptLimit);
+        TurChatSessionExportDto export = new TurChatSessionExportDto(
+                conversationId,
+                java.time.LocalDateTime.now(),
+                chatFlowEngineService.exportFlowStates(conversationId),
+                chatFlowEngineService.listSubmissionsForConversation(conversationId),
+                chatFlowEngineService.listSlotsForConversation(conversationId).slots(),
+                transcript.engine(),
+                transcript.enabled(),
+                transcript.messages(),
+                slotAuditEntries(conversationId));
+
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("conversation-" + sanitizeForFilename(conversationId) + ".json")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(export);
+    }
+
+    private java.util.List<TurChatSlotAuditDto.Entry> slotAuditEntries(String conversationId) {
         java.util.List<TurChatSlotAuditEntry> rows = slotAuditService.list(conversationId);
-        java.util.List<TurChatSlotAuditDto.Entry> entries = rows.stream()
+        return rows.stream()
                 .map(r -> new TurChatSlotAuditDto.Entry(
                         r.getId(), r.getSlotName(), r.getOldValue(), r.getNewValue(),
                         r.getSource() == null ? null : r.getSource().name(),
                         r.getOriginDetail(), r.getTs()))
                 .toList();
-        return new TurChatSlotAuditDto(conversationId, entries);
+    }
+
+    /**
+     * Keep the downloaded filename safe — conversation ids are opaque client
+     * strings (cookie values) and could in theory carry path / header-injection
+     * characters. Replace anything outside {@code [A-Za-z0-9._-]} with '_'.
+     */
+    private static String sanitizeForFilename(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return "session";
+        }
+        String cleaned = conversationId.replaceAll("[^A-Za-z0-9._-]", "_");
+        return cleaned.length() > 80 ? cleaned.substring(0, 80) : cleaned;
     }
 
     private static String renderTranscript(java.util.List<TurChatSessionMessageDto> messages) {

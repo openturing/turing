@@ -57,7 +57,10 @@
         "INTEGER": "Integer",
         "BOOLEAN": "Boolean",
         "FLOAT": "Float",
-        "TEXT": "Text"
+        "TEXT": "Text",
+        "IMAGE": "Image",
+        "AUDIO": "Audio",
+        "FILE": "File"
       },
       "errors": {
         "nameRequired": "Name is required",

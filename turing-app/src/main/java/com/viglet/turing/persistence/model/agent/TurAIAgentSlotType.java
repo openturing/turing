@@ -18,6 +18,14 @@ package com.viglet.turing.persistence.model.agent;
  * long-form. Both are stored as {@code String} at runtime — the distinction
  * is purely UX-level (how the value is rendered/edited in tooling).
  *
+ * <p>{@code IMAGE}, {@code AUDIO} and {@code FILE} are <em>multi-modal</em>
+ * slots (T64): the runtime value is not the binary itself but a URL pointing
+ * at the binary kept in object storage ({@code TurStorageService} — MinIO /
+ * S3 / filesystem). A {@code POST .../chat/slot-upload} stores the upload and
+ * writes the resolved URL into the slot; Custom Tools and the Vision/Audio
+ * extraction path resolve that URL back to bytes when they need the content
+ * (e.g. photo-of-CV → Vision LLM → text slots).
+ *
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
@@ -26,5 +34,19 @@ public enum TurAIAgentSlotType {
     INTEGER,
     BOOLEAN,
     FLOAT,
-    TEXT
+    TEXT,
+    IMAGE,
+    AUDIO,
+    FILE;
+
+    /**
+     * Multi-modal slots hold a URL to a binary in object storage rather than
+     * an inline scalar value. Callers that upload / resolve binaries gate on
+     * this so a scalar slot can never be targeted by the binary upload path.
+     *
+     * @since 2026.3.1
+     */
+    public boolean isMultiModal() {
+        return this == IMAGE || this == AUDIO || this == FILE;
+    }
 }

@@ -60,6 +60,8 @@ import com.viglet.turing.service.chatslots.TurChatHandoffService;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.Channel;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffRequest;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffResult;
+import com.viglet.turing.service.chatslots.TurChatMultiModalSlotService;
+import com.viglet.turing.service.chatslots.TurChatMultiModalSlotService.MultiModalSlotResult;
 import com.viglet.turing.service.chatslots.TurChatShareOgService;
 import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 import com.viglet.turing.service.chatslots.TurChatSlotExtractionService;
@@ -90,6 +92,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
 	private final TurChatSlotExtractionService slotExtractionService;
+	private final TurChatMultiModalSlotService multiModalSlotService;
 	private final TurChatHandoffService handoffService;
 	private final TurChatShareOgService shareOgService;
 
@@ -105,6 +108,7 @@ public class TurSNSiteGenAiAPI {
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
 			TurChatSlotExtractionService slotExtractionService,
+			TurChatMultiModalSlotService multiModalSlotService,
 			TurChatHandoffService handoffService,
 			TurChatShareOgService shareOgService) {
 		this.turSNSearchProcess = turSNSearchProcess;
@@ -119,6 +123,7 @@ public class TurSNSiteGenAiAPI {
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
 		this.slotExtractionService = slotExtractionService;
+		this.multiModalSlotService = multiModalSlotService;
 		this.handoffService = handoffService;
 		this.shareOgService = shareOgService;
 	}
@@ -631,6 +636,74 @@ public class TurSNSiteGenAiAPI {
 			int slotsWritten,
 			int extractedTextChars,
 			String error) {
+	}
+
+	/**
+	 * Multi-modal slot upload (T64). Stores a binary (image / audio / any
+	 * file) in object storage and writes its URL into a multi-modal slot
+	 * ({@code IMAGE}/{@code AUDIO}/{@code FILE}) on the live conversation, so
+	 * a React component renders it straight from the slot value via the SSE
+	 * channel. For {@code IMAGE} slots, pass {@code vision=true} to also run
+	 * the agent's vision LLM over the image and fill scalar slots — the
+	 * "photo of a CV → name / cargo / objetivo slots" use case.
+	 *
+	 * <p>Requires object storage to be enabled ({@code turing.storage.type}
+	 * = {@code minio} or {@code filesystem}); returns an {@code error} when
+	 * disabled, the slot is unknown, or the slot is not multi-modal.
+	 *
+	 * <p>Unauthenticated, same posture as the rest of
+	 * {@code /api/sn/{site}/chat/*}.
+	 *
+	 * @since 2026.3.1
+	 */
+	@PostMapping(value = "/slot-upload", consumes = "multipart/form-data")
+	public ChatSlotUploadResponse uploadSlotBinary(@PathVariable String siteName,
+			@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+			@RequestParam("conversationId") String conversationId,
+			@RequestParam("slotName") String slotName,
+			@RequestParam(value = "vision", required = false, defaultValue = "false") boolean vision,
+			@RequestParam(value = "visionSlotNames", required = false) String visionSlotNames) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null || genAi.getTurAIAgent() == null) {
+						return ChatSlotUploadResponse.error(
+								"No AI agent configured for site '" + siteName + "'");
+					}
+					java.util.List<String> requested = (visionSlotNames == null || visionSlotNames.isBlank())
+							? java.util.List.of()
+							: java.util.Arrays.stream(visionSlotNames.split(","))
+									.map(String::trim).filter(s -> !s.isEmpty())
+									.toList();
+					MultiModalSlotResult result = multiModalSlotService.upload(
+							file, genAi.getTurAIAgent(), conversationId, slotName, vision, requested);
+					return ChatSlotUploadResponse.from(result);
+				})
+				.orElseGet(() -> ChatSlotUploadResponse.error("Site not found: " + siteName));
+	}
+
+	public record ChatSlotUploadResponse(
+			String slotName,
+			String slotType,
+			String objectName,
+			String url,
+			String contentType,
+			long size,
+			java.util.Map<String, String> visionExtracted,
+			int visionSlotsWritten,
+			String error) {
+
+		static ChatSlotUploadResponse error(String message) {
+			return new ChatSlotUploadResponse(null, null, null, null, null, 0,
+					java.util.Map.of(), 0, message);
+		}
+
+		static ChatSlotUploadResponse from(MultiModalSlotResult result) {
+			return new ChatSlotUploadResponse(result.slotName(),
+					result.slotType() == null ? null : result.slotType().name(),
+					result.objectName(), result.url(), result.contentType(), result.size(),
+					result.visionExtracted(), result.visionSlotsWritten(), result.error());
+		}
 	}
 
 	/**

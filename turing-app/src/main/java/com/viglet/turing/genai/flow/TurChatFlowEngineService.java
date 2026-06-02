@@ -836,6 +836,64 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * T65 / §VII.6.f — raw {@code chat_flow_state} rows for a conversation,
+     * flattened to export snapshots (parsed variable map + cursor node +
+     * sub-flow parent link). Newest first. Powers the "Export conversation"
+     * debug button alongside {@link #listSubmissionsForConversation} and
+     * {@link #listSlotsForConversation}.
+     *
+     * @since 2026.3.1
+     */
+    @Transactional(readOnly = true)
+    public List<com.viglet.turing.persistence.dto.agent.TurChatSessionExportDto.FlowState> exportFlowStates(
+            String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return List.of();
+        }
+        return stateRepository.findByConversationId(conversationId).stream()
+                .sorted(Comparator.comparing(TurChatFlowState::getUpdatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
+                .map(state -> {
+                    TurChatFlow flow = state.getFlow();
+                    return new com.viglet.turing.persistence.dto.agent.TurChatSessionExportDto.FlowState(
+                            state.getId(),
+                            flow == null ? null : flow.getId(),
+                            flow == null ? null : flow.getName(),
+                            state.getCurrentNodeId(),
+                            state.getParentStateId(),
+                            ChatFlowOps.readVariablesJson(state.getVariablesJson()),
+                            state.getUpdatedAt());
+                })
+                .toList();
+    }
+
+    /**
+     * T65 / §VII.6.f — finished flow runs for a single conversation read from
+     * the append-only {@code chat_flow_submission} table, newest first.
+     * Conversation-scoped sibling of {@link #listSubmissions(TurChatFlow)}.
+     *
+     * @since 2026.3.1
+     */
+    @Transactional(readOnly = true)
+    public List<TurChatFlowSubmissionDto> listSubmissionsForConversation(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return List.of();
+        }
+        return submissionRepository.findByConversationIdOrderByCompletedAtDesc(conversationId).stream()
+                .map(s -> {
+                    TurChatFlow flow = s.getFlow();
+                    return new TurChatFlowSubmissionDto(
+                            s.getConversationId(),
+                            flow == null ? null : flow.getId(),
+                            s.getCompletedAt(),
+                            ChatFlowOps.readVariablesJson(s.getVariablesJson()),
+                            s.getUserId(),
+                            s.getEndNodeId());
+                })
+                .toList();
+    }
+
+    /**
      * Aggregates every slot captured during a chat session into a single
      * flat map. Slots are conversation-scoped — sub-flows in one chain
      * already share their variable map through descent/ascent, and across

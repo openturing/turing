@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
-import { IconCopy, IconInfoCircle } from "@tabler/icons-react"
+import { IconCopy, IconDownload, IconInfoCircle } from "@tabler/icons-react"
 
 import { useChatSessionSlots, useChatSlotAudit } from "@/api/queries/chat-session.queries"
 import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service"
+import { TurChatSessionExportService } from "@/services/chat/chat-session-export.service"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -32,9 +33,12 @@ interface ChatSessionInfoSheetProps {
  *
  * @since 2026.2.7
  */
+const exportService = new TurChatSessionExportService()
+
 export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // Poll only while the sheet is visible AND a session exists; otherwise the
   // hook is disabled and no network traffic is generated.
@@ -54,6 +58,19 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
       toast.success(t("chat.sessionInfo.copied"))
     } catch {
       // Clipboard may be unavailable on insecure contexts; fail silently.
+    }
+  }
+
+  const exportConversation = async () => {
+    if (!conversationId || exporting) return
+    setExporting(true)
+    try {
+      await exportService.download(conversationId)
+      toast.success(t("chat.sessionInfo.exportSuccess"))
+    } catch {
+      toast.error(t("chat.sessionInfo.exportError"))
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -93,6 +110,16 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
                     title={t("chat.copyToClipboard")}
                   >
                     <IconCopy className="size-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportConversation}
+                    disabled={exporting}
+                    title={t("chat.sessionInfo.export")}
+                    aria-label={t("chat.sessionInfo.export")}
+                  >
+                    <IconDownload className="size-4" />
                   </Button>
                 </div>
               ) : (

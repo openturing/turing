@@ -57,7 +57,10 @@
         "INTEGER": "Inteiro",
         "BOOLEAN": "Booleano",
         "FLOAT": "Decimal",
-        "TEXT": "Texto longo"
+        "TEXT": "Texto longo",
+        "IMAGE": "Imagem",
+        "AUDIO": "Áudio",
+        "FILE": "Arquivo"
       },
       "errors": {
         "nameRequired": "Nome é obrigatório",
