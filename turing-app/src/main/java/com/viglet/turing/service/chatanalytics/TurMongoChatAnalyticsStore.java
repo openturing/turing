@@ -95,6 +95,9 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             putIfNotBlank(set, "storeInstanceId", event.storeInstanceId());
             putIfNotBlank(set, "userId", event.userId());
             putIfNotBlank(set, "locale", event.locale());
+            // T74 — visitor cohort (timezone / device class), set once on start.
+            putIfNotBlank(set, "timezone", event.timezone());
+            putIfNotBlank(set, "deviceType", event.deviceType());
 
             // outcome / aggregates — overwritten on every upsert
             if (event.outcome() != null) {
@@ -328,28 +331,34 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     @Override
-    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows) {
+    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension,
+            Map<String, String> filters, int maxRows) {
         try {
-            // Whitelist of dimensions — exposed as the {@code group} param
-            // on the /scorecard endpoint. Adding experimentKey + variantLabel
-            // lets the dashboard compare A/B arms head-to-head with the
-            // same metrics (sessions, avg duration, goal rate, sentiment).
-            // Anything outside the list falls back to agentId.
-            String field = switch (dimension == null ? "" : dimension) {
-                case "personaId"    -> "personaId";
-                case "experimentKey" -> "experimentKey";
-                case "variantLabel" -> "variantLabel";
-                // T110 — drill-down by orchestrator → child relationship.
-                case "parentConversationId" -> "parentConversationId";
-                default -> "agentId";
-            };
+            // Whitelisted group field (identity / experiment / T74 cohort);
+            // anything outside the list falls back to agentId. Shared with the
+            // Redis store via the interface so both pivot identically.
+            String field = TurChatAnalyticsStore.scorecardDimensionField(dimension);
             int cap = Math.max(1, Math.min(maxRows, 100));
 
-            List<Bson> pipeline = new ArrayList<>();
-            pipeline.add(new Document("$match", new Document()
+            // T74 — narrow the population BEFORE grouping. The match merges the
+            // time-range with each whitelisted cohort/identity filter so
+            // "variant X on mobile" is one server-side aggregation, not a
+            // client-side post-filter.
+            Document match = new Document()
                     .append("startedAt", new Document()
                             .append("$gte", Date.from(from))
-                            .append("$lte", Date.from(to)))));
+                            .append("$lte", Date.from(to)));
+            if (filters != null) {
+                for (Map.Entry<String, String> e : filters.entrySet()) {
+                    if (TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())
+                            && StringUtils.isNotBlank(e.getValue())) {
+                        match.append(e.getKey(), e.getValue());
+                    }
+                }
+            }
+
+            List<Bson> pipeline = new ArrayList<>();
+            pipeline.add(new Document("$match", match));
 
             // First pass: per (dimension, intentLabel) counts, plus session
             // aggregates. We pull intent counts in the same group so the
@@ -462,6 +471,12 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             c.createIndex(new Document().append("agentId", 1).append("startedAt", -1));
             c.createIndex(new Document().append("personaId", 1).append("startedAt", -1));
             c.createIndex(new Document("outcome", 1));
+            // T74 — cohort scorecard filters/group-bys. deviceType has very low
+            // cardinality (5 values) but pairs with startedAt for the windowed
+            // scan; timezone/locale similar.
+            c.createIndex(new Document().append("deviceType", 1).append("startedAt", -1));
+            c.createIndex(new Document().append("locale", 1).append("startedAt", -1));
+            c.createIndex(new Document().append("timezone", 1).append("startedAt", -1));
         } catch (Exception e) {
             log.warn("Chat analytics ensureIndexes failed: {}", e.getMessage());
         }
@@ -493,7 +508,9 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         return switch (trimmed) {
             case "agentId", "personaId", "llmInstanceId", "embeddingModelId",
                  "storeInstanceId", "outcome", "locale", "userId",
-                 "intentLabel", "goalAchieved", "sentiment" -> trimmed;
+                 "intentLabel", "goalAchieved", "sentiment",
+                 // T74 cohort + experiment dimensions.
+                 "timezone", "deviceType", "experimentKey", "variantLabel" -> trimmed;
             default -> "outcome";
         };
     }
@@ -558,6 +575,9 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("storeInstanceId",  doc.getString("storeInstanceId"));
         row.put("userId",           doc.getString("userId"));
         row.put("locale",           doc.getString("locale"));
+        // T74 — visitor cohort dimensions.
+        row.put("timezone",         doc.getString("timezone"));
+        row.put("deviceType",       doc.getString("deviceType"));
         row.put("outcome",          doc.getString("outcome"));
         row.put("startedAt",        toIsoString(doc.getDate("startedAt")));
         row.put("completedAt",      toIsoString(doc.getDate("completedAt")));

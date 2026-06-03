@@ -255,20 +255,45 @@ public class TurChatAnalyticsAPI {
      *   <li>{@code experimentKey} and {@code variantLabel} — A/B test
      *       breakdown. Group by the key to see traffic across experiments;
      *       group by label to compare variants of the active one.</li>
+     *   <li>{@code deviceType}, {@code locale}, {@code timezone} (T74) — the
+     *       visitor cohort dimensions.</li>
      * </ul>
+     *
+     * <p>T74 / §VII.8.e — the optional {@code deviceType} / {@code locale} /
+     * {@code timezone} / {@code experimentKey} / {@code variantLabel} params
+     * are <b>cohort filters</b>: they narrow the population before grouping so
+     * an operator can ask "does this variant win on <i>mobile</i>?" by setting
+     * {@code dimension=variantLabel} + {@code deviceType=mobile}. Blank params
+     * are ignored.
      */
     @GetMapping(value = "/scorecard", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Map<String, Object>> scorecard(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
             @RequestParam(defaultValue = "agentId") String dimension,
+            @RequestParam(required = false) String deviceType,
+            @RequestParam(required = false) String locale,
+            @RequestParam(required = false) String timezone,
+            @RequestParam(required = false) String experimentKey,
+            @RequestParam(required = false) String variantLabel,
             @RequestParam(defaultValue = "20") int limit) {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
+        Map<String, String> filters = new HashMap<>();
+        putFilter(filters, "deviceType", deviceType);
+        putFilter(filters, "locale", locale);
+        putFilter(filters, "timezone", timezone);
+        putFilter(filters, "experimentKey", experimentKey);
+        putFilter(filters, "variantLabel", variantLabel);
         List<Map<String, Object>> rows = analyticsService.getStore().scorecard(
-                fromInstant, toInstant, dimension, limit);
+                fromInstant, toInstant, dimension, filters, limit);
         enrichBucketLabels(rows, dimension);
         return rows;
+    }
+
+    /** Adds a scorecard cohort filter only when the value is non-blank. */
+    private static void putFilter(Map<String, String> filters, String key, String value) {
+        if (value != null && !value.isBlank()) filters.put(key, value.trim());
     }
 
     /**

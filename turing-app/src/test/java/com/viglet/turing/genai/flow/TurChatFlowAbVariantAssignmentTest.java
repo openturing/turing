@@ -228,6 +228,56 @@ class TurChatFlowAbVariantAssignmentTest {
         assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isTrue();
     }
 
+    // ──────────────────── T73: forced variant (QA / demo) ────────────────────
+
+    @Test
+    void forceVariant_matchesLabelCaseInsensitively() {
+        List<TurChatFlow> variants = List.of(
+                variant("A", "control", 50),
+                variant("B", "lucas-alumni", 50));
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "lucas-alumni"))
+                .as("exact label match").extracting(TurChatFlow::getId).isEqualTo("B");
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "LUCAS-Alumni"))
+                .as("case-insensitive match").extracting(TurChatFlow::getId).isEqualTo("B");
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "  control  "))
+                .as("surrounding whitespace trimmed").extracting(TurChatFlow::getId).isEqualTo("A");
+    }
+
+    @Test
+    void forceVariant_unknownLabelReturnsNull() {
+        List<TurChatFlow> variants = List.of(
+                variant("A", "control", 50),
+                variant("B", "treatment", 50));
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "does-not-exist")).isNull();
+    }
+
+    @Test
+    void forceVariant_blankOrNullInputsReturnNull() {
+        List<TurChatFlow> variants = List.of(variant("A", "control", 50));
+        assertThat(TurChatFlowEngineService.forceVariant(variants, null)).isNull();
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "   ")).isNull();
+        assertThat(TurChatFlowEngineService.forceVariant(null, "control")).isNull();
+        assertThat(TurChatFlowEngineService.forceVariant(List.of(), "control")).isNull();
+    }
+
+    @Test
+    void forceVariant_toleratesNullVariantLabel() {
+        TurChatFlow noLabel = variant("A", null, 50);
+        TurChatFlow labelled = variant("B", "treatment", 50);
+        assertThat(TurChatFlowEngineService.forceVariant(List.of(noLabel, labelled), "treatment"))
+                .extracting(TurChatFlow::getId).isEqualTo("B");
+        assertThat(TurChatFlowEngineService.forceVariant(List.of(noLabel), "treatment")).isNull();
+    }
+
+    @Test
+    void forceVariant_returnsFirstMatchOnDuplicateLabels() {
+        List<TurChatFlow> variants = List.of(
+                variant("A", "treatment", 50),
+                variant("B", "treatment", 50));
+        assertThat(TurChatFlowEngineService.forceVariant(variants, "treatment"))
+                .extracting(TurChatFlow::getId).isEqualTo("A");
+    }
+
     // ─────────────────────────── helpers ───────────────────────────
 
     private static TurChatFlow variant(String id, String label, Integer weight) {

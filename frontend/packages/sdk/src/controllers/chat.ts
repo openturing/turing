@@ -71,6 +71,21 @@ export interface ChatControllerOptions {
   readonly maxMessages?: number;
   /** Force a specific chat flow for every turn. */
   readonly flowId?: string;
+  /**
+   * Force a specific A/B experiment arm by `variantLabel` for every turn
+   * (T73) — bypasses the engine's deterministic hash / bandit / schedule
+   * window. Useful for QA + sales demos. When omitted, the controller falls
+   * back to the `?_ab_variant=<label>` URL query param (set
+   * {@link ChatControllerOptions.readAbVariantFromUrl} to `false` to disable
+   * that auto-detection).
+   */
+  readonly forcedVariant?: string;
+  /**
+   * Whether to auto-read the forced A/B variant from the `?_ab_variant`
+   * URL query param when {@link ChatControllerOptions.forcedVariant} is not
+   * set explicitly. Defaults to `true`.
+   */
+  readonly readAbVariantFromUrl?: boolean;
   /** Opt into agent mode. */
   readonly agent?: ChatControllerAgent;
   /** Controlled conversation id (host owns the session lifecycle). */
@@ -108,6 +123,25 @@ const DEFAULT_MAX_MESSAGES = 50;
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Query-param name carrying the forced A/B variant (T73). */
+const AB_VARIANT_PARAM = "_ab_variant";
+
+/**
+ * Reads the forced A/B variant label from the current page URL
+ * (`?_ab_variant=<label>`). Returns `undefined` when there is no
+ * `window.location` (SSR / non-browser) or the param is absent/blank.
+ */
+function readAbVariantFromLocation(): string | undefined {
+  try {
+    const search = globalThis.location?.search;
+    if (!search) return undefined;
+    const value = new URLSearchParams(search).get(AB_VARIANT_PARAM)?.trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function isAbortError(err: unknown): boolean {
@@ -194,6 +228,13 @@ export function createChatController(
     conversationId: controlledConversationId,
     initialMessages,
   } = options;
+
+  // T73: forced A/B variant. Explicit option wins; otherwise auto-detect the
+  // `?_ab_variant=<label>` URL param unless the host opted out. Resolved once
+  // at construction so the demo link drives every turn of the session.
+  const forcedVariant =
+    options.forcedVariant ??
+    (options.readAbVariantFromUrl === false ? undefined : readAbVariantFromLocation());
 
   const agentId = agent?.id;
   const agentLlmInstanceId = agent?.llmInstanceId;
@@ -352,12 +393,14 @@ export function createChatController(
           ? await postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
               conversationId: activeConversationId,
               flowId,
+              forcedVariant,
               onToken,
               signal: controller.signal,
             })
           : await postChatConversation(client, site, wire, locale, {
               conversationId: activeConversationId,
               flowId,
+              forcedVariant,
               onToken,
               signal: controller.signal,
             });

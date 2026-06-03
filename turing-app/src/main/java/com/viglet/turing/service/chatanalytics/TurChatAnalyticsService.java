@@ -107,6 +107,24 @@ public class TurChatAnalyticsService {
     public void recordSessionStart(String conversationId, String agentId, String personaId,
             String llmInstanceId, String embeddingModelId, String storeInstanceId,
             String userId, String locale, String firstUserMessage) {
+        recordSessionStart(conversationId, agentId, personaId, llmInstanceId, embeddingModelId,
+                storeInstanceId, userId, locale, firstUserMessage, null, null);
+    }
+
+    /**
+     * T74 overload — also seeds the visitor cohort fields ({@code timezone}
+     * from the {@code X-Timezone} header, {@code deviceType} classified from
+     * the {@code User-Agent}). The chat executor resolves these via
+     * {@link TurChatCohortResolver} on the HTTP thread and passes them in so
+     * the scorecard can slice variants by sub-population. The legacy overload
+     * delegates here with {@code null} cohort fields.
+     *
+     * @since 2026.3.1
+     */
+    public void recordSessionStart(String conversationId, String agentId, String personaId,
+            String llmInstanceId, String embeddingModelId, String storeInstanceId,
+            String userId, String locale, String firstUserMessage,
+            String timezone, String deviceType) {
         if (!store.isEnabled()) return;
         Instant now = Instant.now();
         // T110 — when a Custom Tool's agent.invoke(...) spawns this session,
@@ -119,11 +137,11 @@ public class TurChatAnalyticsService {
         inFlight.computeIfAbsent(conversationId,
                 id -> new InFlight(now, agentId, personaId, llmInstanceId,
                         embeddingModelId, storeInstanceId, userId, locale,
-                        parentConversationId));
+                        parentConversationId, timezone, deviceType));
         try {
             store.upsertSession(TurChatSessionEvent.start(conversationId, agentId, personaId,
                     llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
-                    visibleFirstUserMessage, now, parentConversationId));
+                    visibleFirstUserMessage, now, parentConversationId, timezone, deviceType));
         } catch (RuntimeException e) {
             log.warn("Chat analytics recordSessionStart failed for {}: {}",
                     conversationId, e.getMessage());
@@ -330,7 +348,9 @@ public class TurChatAnalyticsService {
                     inflight == null ? 0L : inflight.totalToolLatencyMs,
                     inflight == null ? null : inflight.experimentKey,
                     inflight == null ? null : inflight.variantLabel,
-                    inflight == null ? null : inflight.parentConversationId));
+                    inflight == null ? null : inflight.parentConversationId,
+                    inflight == null ? null : inflight.timezone,
+                    inflight == null ? null : inflight.deviceType));
             if (inflight != null && inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
@@ -369,6 +389,10 @@ public class TurChatAnalyticsService {
         final String locale;
         /** T110 — parent conversation id when spawned by {@code agent.invoke(...)}. */
         final String parentConversationId;
+        /** T74 — visitor cohort: IANA timezone (X-Timezone header), or null. */
+        final String timezone;
+        /** T74 — visitor cohort: device class from User-Agent, or null. */
+        final String deviceType;
         int turns;
         long tokensIn;
         long tokensOut;
@@ -383,7 +407,7 @@ public class TurChatAnalyticsService {
 
         InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
                 String embeddingModelId, String storeInstanceId, String userId, String locale,
-                String parentConversationId) {
+                String parentConversationId, String timezone, String deviceType) {
             this.startedAt = startedAt;
             this.lastTouchedAt = startedAt;
             this.agentId = agentId;
@@ -394,6 +418,8 @@ public class TurChatAnalyticsService {
             this.userId = userId;
             this.locale = locale;
             this.parentConversationId = parentConversationId;
+            this.timezone = timezone;
+            this.deviceType = deviceType;
         }
 
         synchronized void recordTurn(long in, long out) {

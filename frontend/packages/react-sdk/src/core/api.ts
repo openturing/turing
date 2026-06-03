@@ -230,6 +230,24 @@ async function consumeAssistantStream(
 }
 
 /**
+ * T74 — best-effort browser timezone for the {@code X-Timezone} header. The
+ * chat endpoints fold it into the analytics cohort (with locale from
+ * {@code Accept-Language} and device class from {@code User-Agent}) so the
+ * scorecard can slice variants by sub-population. Returns {@code null} outside
+ * a browser / when {@code Intl} can't resolve a zone — the server then records
+ * a {@code null} timezone, no behaviour change.
+ *
+ * @since 2026.3.1
+ */
+function browserTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Conversational RAG: sends the full message history to the site's GenAI
  * chat (`POST /sn/{site}/chat/conversation`) and consumes the Server-Sent
  * Events stream returned by the backend.
@@ -251,6 +269,8 @@ export async function postChatConversation(
   };
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const tz = browserTimezone();
+  if (tz) headers["X-Timezone"] = tz;
 
   const response = await fetch(url, {
     method: "POST",
@@ -261,6 +281,7 @@ export async function postChatConversation(
       locale,
       conversationId: options?.conversationId,
       flowId: options?.flowId,
+      forcedVariant: options?.forcedVariant,
     }),
     signal: options?.signal,
   });
@@ -296,12 +317,15 @@ export async function postAgentChat(
   };
   const xsrf = await ensureXsrfToken();
   if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const tz = browserTimezone();
+  if (tz) headers["X-Timezone"] = tz;
 
   const requestPayload = {
     llmInstanceId,
     messages,
     conversationId: options?.conversationId,
     flowId: options?.flowId,
+    forcedVariant: options?.forcedVariant,
   };
 
   let body: BodyInit;

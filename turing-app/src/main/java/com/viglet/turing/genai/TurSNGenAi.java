@@ -196,6 +196,27 @@ public class TurSNGenAi {
             java.util.Map<String, List<String>> filters,
             String conversationId,
             String flowId) {
+        return assistantConversationStreaming(context, agent, llmInstance, history, filters,
+                conversationId, flowId, null);
+    }
+
+    /**
+     * Overload carrying a forced A/B variant label (T73 / §VII.8.d) down to
+     * the executor so an embedded widget can preview a specific experiment arm
+     * via {@code ?_ab_variant=<label>}. A blank value is the production
+     * default and behaves identically to the no-variant overload.
+     *
+     * @since 2026.3.1
+     */
+    public reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> assistantConversationStreaming(
+            TurGenAiContext context,
+            com.viglet.turing.persistence.model.agent.TurAIAgent agent,
+            com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,
+            List<ConversationMessage> history,
+            java.util.Map<String, List<String>> filters,
+            String conversationId,
+            String flowId,
+            String forcedVariant) {
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(
@@ -221,7 +242,7 @@ public class TurSNGenAi {
                         m.role(), m.content() == null ? "" : m.content()))
                 .toList();
         return agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
-                conversationId, flowId);
+                conversationId, flowId, null, forcedVariant);
     }
 
     /**

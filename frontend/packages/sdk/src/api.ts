@@ -26,6 +26,23 @@ import type {
  * @since 2026.3.1
  */
 
+/**
+ * T74 — best-effort browser timezone header. The chat endpoints read
+ * {@code X-Timezone} into the analytics cohort (alongside locale from
+ * {@code Accept-Language} and device class from {@code User-Agent}) so the
+ * scorecard can slice variants by sub-population. Returns an empty object
+ * outside a browser / when {@code Intl} can't resolve a zone, so the request
+ * is unchanged and the server simply records a {@code null} timezone.
+ */
+function browserTimezoneHeaders(): Record<string, string> {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tz ? { "X-Timezone": tz } : {};
+  } catch {
+    return {};
+  }
+}
+
 export interface SearchParams {
   q: string;
   p?: string;
@@ -164,6 +181,13 @@ export interface PostChatConversationOptions {
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
+  /**
+   * Forced A/B variant label (T73) — when set, the engine hard-pins this
+   * experiment arm regardless of the deterministic hash / bandit / schedule
+   * window. Typically sourced from the `?_ab_variant=<label>` URL param for
+   * QA + sales demos. Blank/undefined → normal sticky assignment.
+   */
+  readonly forcedVariant?: string;
 }
 
 /**
@@ -250,12 +274,14 @@ export async function postChatConversation(
     headers: {
       Accept: "text/event-stream",
       "Content-Type": "application/json",
+      ...browserTimezoneHeaders(),
     },
     body: JSON.stringify({
       messages,
       locale,
       conversationId: options?.conversationId,
       flowId: options?.flowId,
+      forcedVariant: options?.forcedVariant,
     }),
     signal: options?.signal,
   });
@@ -278,6 +304,12 @@ export interface PostAgentChatOptions {
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
+  /**
+   * Forced A/B variant label (T73) — hard-pins this experiment arm for QA +
+   * sales demos, bypassing the deterministic hash / bandit / schedule window.
+   * Typically sourced from the `?_ab_variant=<label>` URL param.
+   */
+  readonly forcedVariant?: string;
   /** Optional file attachments — switches the request to multipart/form-data. */
   readonly files?: ReadonlyArray<File>;
 }
@@ -298,9 +330,13 @@ export async function postAgentChat(
     messages,
     conversationId: options?.conversationId,
     flowId: options?.flowId,
+    forcedVariant: options?.forcedVariant,
   };
 
-  const headers: Record<string, string> = { Accept: "text/event-stream" };
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    ...browserTimezoneHeaders(),
+  };
   let body: BodyInit;
   if (options?.files && options.files.length > 0) {
     const form = new FormData();

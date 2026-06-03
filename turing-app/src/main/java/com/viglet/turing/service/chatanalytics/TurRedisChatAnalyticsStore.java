@@ -84,6 +84,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             putIfNotBlank(fields, "storeInstanceId",  event.storeInstanceId());
             putIfNotBlank(fields, "userId",           event.userId());
             putIfNotBlank(fields, "locale",           event.locale());
+            // T74 — visitor cohort (timezone / device class).
+            putIfNotBlank(fields, "timezone",         event.timezone());
+            putIfNotBlank(fields, "deviceType",       event.deviceType());
             if (event.outcome() != null) fields.put("outcome", event.outcome().name());
             fields.put("totalTurns",         String.valueOf(event.totalTurns()));
             fields.put("totalTokensIn",      String.valueOf(event.totalTokensIn()));
@@ -277,17 +280,12 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     @Override
-    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows) {
-        // Whitelist matches the Mongo store's; "experimentKey" and
-        // "variantLabel" surface A/B test arm comparison on the dashboard.
-        String field = switch (dimension == null ? "" : dimension) {
-            case "personaId"     -> "personaId";
-            case "experimentKey" -> "experimentKey";
-            case "variantLabel"  -> "variantLabel";
-            // T110 — drill-down by orchestrator → child relationship.
-            case "parentConversationId" -> "parentConversationId";
-            default -> "agentId";
-        };
+    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension,
+            Map<String, String> filters, int maxRows) {
+        // Whitelisted group field — shared with the Mongo store via the
+        // interface so both pivot identically (identity / experiment / T74
+        // cohort dimensions).
+        String field = TurChatAnalyticsStore.scorecardDimensionField(dimension);
         int cap = Math.max(1, Math.min(maxRows, 100));
 
         // dim → aggregates: [sessions, durationSum, processedCount, achievedScore, negativeCount]
@@ -302,6 +300,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
+                // T74 — narrow the population before grouping. Mongo pushes
+                // this into a $match; the Redis store filters in-process.
+                if (!matchesScorecardFilters(hash, filters)) continue;
                 String dim = hash.get(field);
                 if (StringUtils.isBlank(dim)) dim = "unknown";
                 double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
@@ -403,6 +404,22 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         if (StringUtils.isNotBlank(value)) map.put(key, value);
     }
 
+    /**
+     * T74 — true when the session hash satisfies every whitelisted scorecard
+     * filter (cohort + identity). Blank filter values and non-whitelisted keys
+     * are ignored; a null/empty map matches everything.
+     */
+    private static boolean matchesScorecardFilters(Map<String, String> hash,
+            Map<String, String> filters) {
+        if (filters == null || filters.isEmpty()) return true;
+        for (Map.Entry<String, String> e : filters.entrySet()) {
+            if (!TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())) continue;
+            if (StringUtils.isBlank(e.getValue())) continue;
+            if (!e.getValue().equals(hash.get(e.getKey()))) return false;
+        }
+        return true;
+    }
+
     private static boolean matches(Map<String, String> hash, String agentId, String personaId, String outcome,
             String intentLabel, String goalAchieved, String sentiment) {
         if (StringUtils.isNotBlank(agentId)      && !agentId.equals(hash.get("agentId")))           return false;
@@ -420,7 +437,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         return switch (trimmed) {
             case "agentId", "personaId", "llmInstanceId", "embeddingModelId",
                  "storeInstanceId", "outcome", "locale", "userId",
-                 "intentLabel", "goalAchieved", "sentiment" -> trimmed;
+                 "intentLabel", "goalAchieved", "sentiment",
+                 // T74 cohort + experiment dimensions.
+                 "timezone", "deviceType", "experimentKey", "variantLabel" -> trimmed;
             default -> "outcome";
         };
     }
@@ -510,6 +529,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("storeInstanceId",  hash.get("storeInstanceId"));
         row.put("userId",           hash.get("userId"));
         row.put("locale",           hash.get("locale"));
+        // T74 — visitor cohort dimensions.
+        row.put("timezone",         hash.get("timezone"));
+        row.put("deviceType",       hash.get("deviceType"));
         row.put("outcome",          hash.get("outcome"));
         row.put("startedAt",        hash.get("startedAt"));
         row.put("completedAt",      hash.get("completedAt"));

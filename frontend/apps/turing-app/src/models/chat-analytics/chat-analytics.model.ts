@@ -21,6 +21,10 @@ export interface TurChatAnalyticsSession {
   storeInstanceId?: string | null;
   userId?: string | null;
   locale?: string | null;
+  /** IANA timezone the visitor's browser reported via X-Timezone (T74). */
+  timezone?: string | null;
+  /** Device class derived from the User-Agent (T74). */
+  deviceType?: string | null;
   outcome?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
@@ -142,7 +146,19 @@ export type TurChatAnalyticsScorecardDimension =
   | "personaId"
   | "experimentKey"
   | "variantLabel"
-  | "parentConversationId";
+  | "parentConversationId"
+  // T74 — visitor cohort dimensions (device class / locale / timezone).
+  | "deviceType"
+  | "locale"
+  | "timezone";
+
+/**
+ * Device-class cohort values (T74). Classified server-side from the
+ * {@code User-Agent} by {@code TurChatCohortResolver}; mirrors its
+ * {@code DEVICE_*} constants. Used as the headline "mobile vs desktop"
+ * scorecard filter.
+ */
+export type TurChatDeviceType = "mobile" | "tablet" | "desktop" | "bot" | "unknown";
 
 /**
  * One row of the {@code /scorecard} response. {@code bucket} is the raw
@@ -168,4 +184,20 @@ export interface TurChatAnalyticsScorecardParams {
   dimension?: TurChatAnalyticsScorecardDimension;
   /** Defaults to 20 on the server, capped at 100. */
   limit?: number;
+  /**
+   * T74 cohort filters — narrow the population BEFORE grouping so a variant
+   * can be evaluated within a sub-population ("does variant X win on mobile?").
+   * Blank/undefined values are ignored by the server.
+   */
+  deviceType?: TurChatDeviceType | "";
+  locale?: string;
+  timezone?: string;
+  experimentKey?: string;
+  variantLabel?: string;
+}
+
+/** Also surfaced on each session row (T74). */
+export interface TurChatAnalyticsCohortColumns {
+  timezone?: string | null;
+  deviceType?: TurChatDeviceType | string | null;
 }

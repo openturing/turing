@@ -1355,6 +1355,31 @@ public class TurChatFlowEngineService {
             String conversationId,
             String lastUserMessage,
             ChatModel routerModel) {
+        return selectActiveFlow(agent, conversationId, lastUserMessage, routerModel, null);
+    }
+
+    /**
+     * Overload accepting a forced A/B variant label (T73 / §VII.8.d).
+     *
+     * <p>When {@code forcedVariant} is non-blank and the router lands on a
+     * flow that belongs to an experiment, the matching arm (by
+     * {@code variantLabel}, case-insensitive) is hard-pinned — bypassing the
+     * deterministic hash, Thompson sampling, and the scheduled experiment
+     * window — so a QA reviewer or a sales engineer can preview a specific
+     * (even not-yet-live or already-retired) variant via
+     * {@code ?_ab_variant=<label>}. A blank value, a non-matching label, or a
+     * router pick outside any experiment all degrade gracefully to the normal
+     * sticky assignment. Forcing does <em>not</em> override an already
+     * in-progress flow (the continuation path wins) — preview a variant from a
+     * fresh {@code conversationId}.
+     *
+     * @since 2026.3.1
+     */
+    public Optional<FlowSelection> selectActiveFlow(TurAIAgent agent,
+            String conversationId,
+            String lastUserMessage,
+            ChatModel routerModel,
+            String forcedVariant) {
         if (agent == null || conversationId == null || conversationId.isBlank()) {
             return Optional.empty();
         }
@@ -1472,7 +1497,7 @@ public class TurChatFlowEngineService {
         //    conversation (same hash bucket regardless of which variant
         //    the router happened to land on first) so a user never flips
         //    variants mid-experiment.
-        AbResolved ab = resolveAbVariant(picked.get(), candidates, conversationId);
+        AbResolved ab = resolveAbVariant(picked.get(), candidates, conversationId, forcedVariant);
         final TurChatFlow flow = ab.flow();
         final ChatFlowGraph pickedGraph = ab.graph();
 
@@ -1539,13 +1564,50 @@ public class TurChatFlowEngineService {
      * to compile.
      */
     private AbResolved resolveAbVariant(RouterCandidate picked,
-            List<RouterCandidate> candidates, String conversationId) {
+            List<RouterCandidate> candidates, String conversationId, String forcedVariant) {
         TurChatFlow routerFlow = picked.flow();
         ChatFlowGraph routerGraph = picked.graph();
         String experimentKey = routerFlow.getExperimentKey();
         if (experimentKey == null || experimentKey.isBlank()) {
             return new AbResolved(routerFlow, routerGraph);
         }
+
+        // T73 / §VII.8.d — forced variant for QA + sales demo. When the caller
+        // supplied `?_ab_variant=<label>` and the router landed inside this
+        // experiment, hard-pin the arm whose variantLabel matches
+        // (case-insensitive), bypassing the deterministic hash, Thompson
+        // sampling, AND the scheduled experiment window (so a reviewer can
+        // preview a not-yet-live or already-retired variant). The group is
+        // collected WITHOUT the window filter for exactly that reason. A
+        // non-matching label or an unparseable variant graph degrades to the
+        // normal assignment below so a stale demo link never blanks the chat.
+        if (forcedVariant != null && !forcedVariant.isBlank()) {
+            List<TurChatFlow> group = candidates.stream()
+                    .map(RouterCandidate::flow)
+                    .filter(f -> experimentKey.equals(f.getExperimentKey()))
+                    .toList();
+            TurChatFlow forced = forceVariant(group, forcedVariant);
+            if (forced != null) {
+                Optional<ChatFlowGraph> forcedGraph = forced.getId().equals(routerFlow.getId())
+                        ? Optional.of(routerGraph)
+                        : parseGraph(forced);
+                if (forcedGraph.isPresent()) {
+                    log.info("[A/B] Experiment '{}': FORCED variant '{}' (flow {}) via _ab_variant "
+                            + "— bypassing hash/bandit + schedule window",
+                            experimentKey, forced.getVariantLabel(), forced.getId());
+                    chatAnalyticsService.recordExperimentAssignment(conversationId,
+                            experimentKey, forced.getVariantLabel());
+                    return new AbResolved(forced, forcedGraph.get());
+                }
+                log.warn("[A/B] Experiment '{}': forced variant '{}' has an unparseable graph "
+                        + "— falling back to normal assignment", experimentKey, forcedVariant);
+            } else {
+                log.warn("[A/B] Experiment '{}': forced variant label '{}' not found among {} "
+                        + "arm(s) — falling back to normal assignment",
+                        experimentKey, forcedVariant, group.size());
+            }
+        }
+
         java.time.Instant now = java.time.Instant.now();
         List<TurChatFlow> variants = candidates.stream()
                 .map(RouterCandidate::flow)
@@ -1635,6 +1697,33 @@ public class TurChatFlowEngineService {
      *
      * @since 2026.2.7
      */
+    /**
+     * Resolves a <em>forced</em> A/B variant by label (T73 / §VII.8.d).
+     * Returns the variant in {@code variants} whose {@code variantLabel}
+     * equals {@code forcedLabel} ignoring case and surrounding whitespace, or
+     * {@code null} when no arm matches (or either input is blank/empty). Used
+     * by the {@code ?_ab_variant=<label>} QA / sales-demo override to hard-pin
+     * a specific arm regardless of the deterministic hash, Thompson sampling,
+     * or the scheduled experiment window.
+     *
+     * <p>Package-private + pure (no Spring, no DB) for unit testing.
+     *
+     * @since 2026.3.1
+     */
+    static TurChatFlow forceVariant(List<TurChatFlow> variants, String forcedLabel) {
+        if (variants == null || variants.isEmpty() || forcedLabel == null || forcedLabel.isBlank()) {
+            return null;
+        }
+        String target = forcedLabel.trim();
+        for (TurChatFlow v : variants) {
+            String label = v.getVariantLabel();
+            if (label != null && label.trim().equalsIgnoreCase(target)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
     static TurChatFlow assignVariant(List<TurChatFlow> variants, String conversationId,
             String experimentKey) {
         int totalWeight = 0;

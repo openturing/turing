@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteAgentFlowState,
   deleteSiteConversationState,
@@ -16,6 +16,27 @@ import {
 import type { TurChatConversationMessage } from "../core/types";
 
 export type ChatStatus = "idle" | "loading" | "success" | "error";
+
+/** Query-param name carrying the forced A/B variant (T73). */
+const AB_VARIANT_PARAM = "_ab_variant";
+
+/**
+ * Reads the forced A/B variant label from the current page URL
+ * (`?_ab_variant=<label>`). Returns `undefined` when there is no
+ * `window.location` (SSR / non-browser) or the param is absent/blank.
+ *
+ * @since 2026.3.1
+ */
+function readAbVariantFromLocation(): string | undefined {
+  try {
+    const search = globalThis.location?.search;
+    if (!search) return undefined;
+    const value = new URLSearchParams(search).get(AB_VARIANT_PARAM)?.trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export interface ChatMessage extends TurChatConversationMessage {
   /** Stable id for React keys (auto-generated) */
@@ -93,6 +114,24 @@ export interface UseTuringChatOptions {
    * @since 2026.2.16
    */
   readonly flowId?: string;
+  /**
+   * Forces a specific A/B experiment arm by `variantLabel` for every turn
+   * (T73) — bypasses the engine's deterministic hash / bandit / schedule
+   * window. Typically used for QA + sales demos. When omitted, the hook falls
+   * back to the `?_ab_variant=<label>` URL query param unless
+   * {@link UseTuringChatOptions.readAbVariantFromUrl} is `false`.
+   *
+   * @since 2026.3.1
+   */
+  readonly forcedVariant?: string;
+  /**
+   * Whether to auto-read the forced A/B variant from the `?_ab_variant` URL
+   * query param when {@link UseTuringChatOptions.forcedVariant} is not set
+   * explicitly. Defaults to `true`.
+   *
+   * @since 2026.3.1
+   */
+  readonly readAbVariantFromUrl?: boolean;
   /**
    * Opt into agent mode: the hook hits `POST /v2/ai-agent/{id}/chat` with
    * the explicit `llmInstanceId` instead of the site's RAG endpoint. When
@@ -325,6 +364,16 @@ export function useTuringChat(
     conversationId: controlledConversationId,
     initialMessages,
   } = options;
+  // T73: forced A/B variant. Explicit option wins; otherwise auto-detect the
+  // `?_ab_variant=<label>` URL param unless the caller opted out.
+  const optForcedVariant = options.forcedVariant;
+  const optReadAbVariantFromUrl = options.readAbVariantFromUrl;
+  const forcedVariant = useMemo(
+    () =>
+      optForcedVariant ??
+      (optReadAbVariantFromUrl === false ? undefined : readAbVariantFromLocation()),
+    [optForcedVariant, optReadAbVariantFromUrl],
+  );
   const agentId = agent?.id;
   const agentLlmInstanceId = agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
@@ -542,12 +591,14 @@ export function useTuringChat(
           ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
               conversationId: activeConversationId,
               flowId,
+              forcedVariant,
               onToken,
               signal: controller.signal,
             })
           : await postChatConversation(siteName, wire, effectiveLocale, {
               conversationId: activeConversationId,
               flowId,
+              forcedVariant,
               onToken,
               signal: controller.signal,
             });
@@ -571,7 +622,7 @@ export function useTuringChat(
         handleSendError(err, requestId);
       }
     },
-    [siteName, effectiveLocale, maxMessages, flowId, agentId, agentLlmInstanceId, controlledConversationId, handleSendError],
+    [siteName, effectiveLocale, maxMessages, flowId, forcedVariant, agentId, agentLlmInstanceId, controlledConversationId, handleSendError],
   );
 
   const stop = useCallback(() => {

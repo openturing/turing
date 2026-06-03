@@ -120,5 +120,23 @@ class TurChatAnalyticsServiceTest {
                 "user-1", "pt-BR", "Hello", now);
 
         assertThat(event.parentConversationId()).isNull();
+        // T74 — legacy overloads leave the cohort fields null.
+        assertThat(event.timezone()).isNull();
+        assertThat(event.deviceType()).isNull();
+    }
+
+    @Test
+    void startFactory_cohortOverload_threadsTimezoneAndDeviceThrough() {
+        Instant now = Instant.now();
+        TurChatSessionEvent event = TurChatSessionEvent.start(
+                "conv-1", "agent-1", null, "llm-1", null, null,
+                "user-1", "pt-BR", "Hello", now, null,
+                "America/Sao_Paulo", "mobile");
+
+        assertThat(event.locale()).isEqualTo("pt-BR");
+        assertThat(event.timezone()).isEqualTo("America/Sao_Paulo");
+        assertThat(event.deviceType()).isEqualTo("mobile");
+        assertThat(event.parentConversationId()).isNull();
+        assertThat(event.outcome()).isEqualTo(TurChatSessionOutcome.IN_PROGRESS);
     }
 }

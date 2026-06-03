@@ -40,6 +40,7 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
+import com.viglet.turing.service.chatanalytics.TurChatCohortResolver;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -104,6 +105,7 @@ public class TurAgentChatExecutor {
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurAgentPersonaResolver personaResolver;
     private final TurChatAnalyticsService chatAnalyticsService;
+    private final TurChatCohortResolver chatCohortResolver;
     private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
@@ -116,6 +118,7 @@ public class TurAgentChatExecutor {
             TurChatFlowEngineService chatFlowEngineService,
             TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
+            TurChatCohortResolver chatCohortResolver,
             TurChatPipelineObservation chatPipelineObservation) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -127,6 +130,7 @@ public class TurAgentChatExecutor {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaResolver = personaResolver;
         this.chatAnalyticsService = chatAnalyticsService;
+        this.chatCohortResolver = chatCohortResolver;
         this.chatPipelineObservation = chatPipelineObservation;
     }
 
@@ -253,6 +257,27 @@ public class TurAgentChatExecutor {
     }
 
     /**
+     * Overload accepting visitor attachments + a forced A/B variant label
+     * (T73 / §VII.8.d) — the entry point the chat REST controller uses when a
+     * {@code ?_ab_variant=<label>} hint rode in on the request. Runs at
+     * {@code agentInvokeDepth = 0} (a top-level visitor turn). All other
+     * behaviour matches the files overload.
+     *
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files,
+            String forcedVariant) {
+        return execute(agent, llmInstance, history, systemPromptOverride,
+                conversationId, flowId, files, 0, forcedVariant);
+    }
+
+    /**
      * Overload accepting the current {@code agent.invoke(...)} recursion
      * depth. Published into the Spring AI {@code ToolContext} via
      * {@link com.viglet.turing.genai.tool.TurCustomToolCallbackService#TOOL_CONTEXT_AGENT_INVOKE_DEPTH}
@@ -272,6 +297,31 @@ public class TurAgentChatExecutor {
             String flowId,
             List<MultipartFile> files,
             int agentInvokeDepth) {
+        return execute(agent, llmInstance, history, systemPromptOverride,
+                conversationId, flowId, files, agentInvokeDepth, null);
+    }
+
+    /**
+     * Overload accepting a forced A/B variant label (T73 / §VII.8.d).
+     * Carries the visitor-supplied {@code ?_ab_variant=<label>} hint down to
+     * {@link TurChatFlowEngineService#selectActiveFlow} so QA / sales-demo
+     * sessions can preview a specific experiment arm. A blank value is the
+     * production default and behaves exactly like the legacy overloads.
+     *
+     * @param forcedVariant variant label to hard-pin within whatever
+     *                      experiment the router selects; null/blank → normal
+     *                      sticky assignment.
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files,
+            int agentInvokeDepth,
+            String forcedVariant) {
 
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown
@@ -297,7 +347,7 @@ public class TurAgentChatExecutor {
         String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
         String lastUserMessageEarly = lastMessageOfRole(history, "user");
         TurAgentChatFlowContext initialFlowContext = resolveFlowContext(agent, conversationId,
-                flowId, lastUserMessageEarly, chatModel);
+                flowId, lastUserMessageEarly, chatModel, forcedVariant);
         // §I.5 step 1 inversion: when a flow is governing this turn (and the
         // turn is NOT the freshly-triggered activation turn — that one needs
         // the legacy skip path because the user msg is the trigger, not data
@@ -499,6 +549,16 @@ public class TurAgentChatExecutor {
         if (conversationId == null || conversationId.isBlank()) return;
         if (chatAnalyticsService == null || !chatAnalyticsService.isEnabled()) return;
         try {
+            // T74 — resolve the visitor cohort (locale / timezone / device)
+            // from the HTTP request bound to THIS thread. Runs in the
+            // synchronous prologue of execute(...) — same place resolveUsername
+            // reads SecurityContextHolder — before the reactive Flux starts on
+            // a worker thread, so the request headers are still reachable.
+            // Off-request callers (agent.invoke child sessions) get an empty
+            // cohort, which is correct: a child has no visitor cohort.
+            TurChatCohortResolver.Cohort cohort = chatCohortResolver == null
+                    ? TurChatCohortResolver.Cohort.empty()
+                    : chatCohortResolver.resolveFromCurrentRequest();
             chatAnalyticsService.recordSessionStart(
                     conversationId,
                     agent.getId(),
@@ -509,8 +569,10 @@ public class TurAgentChatExecutor {
                     agent.getTurStoreInstance() == null
                             ? null : agent.getTurStoreInstance().getId(),
                     username,
-                    null,
-                    firstUserMessage);
+                    cohort.locale(),
+                    firstUserMessage,
+                    cohort.timezone(),
+                    cohort.deviceType());
         } catch (RuntimeException e) {
             log.debug("[AgentExec] analytics start failed: {}", e.getMessage());
         }
@@ -546,7 +608,8 @@ public class TurAgentChatExecutor {
             String conversationId,
             String flowId,
             String lastUserMessage,
-            ChatModel routerModel) {
+            ChatModel routerModel,
+            String forcedVariant) {
         if (conversationId == null || conversationId.isBlank()) {
             return null;
         }
@@ -556,9 +619,11 @@ public class TurAgentChatExecutor {
         if (flowId != null && !flowId.isBlank()) {
             return resolveForcedFlow(agent, conversationId, flowId);
         }
-        // Auto mode: ask the engine's router which flow (if any) fits.
+        // Auto mode: ask the engine's router which flow (if any) fits. The
+        // forced-variant hint (T73) only bites here — an explicit flowId pin
+        // above already bypasses A/B routing entirely.
         return chatFlowEngineService
-                .selectActiveFlow(agent, conversationId, lastUserMessage, routerModel)
+                .selectActiveFlow(agent, conversationId, lastUserMessage, routerModel, forcedVariant)
                 .map(s -> new TurAgentChatFlowContext(s.flow(), s.graph(), s.state(), s.freshlyTriggered()))
                 .orElse(null);
     }

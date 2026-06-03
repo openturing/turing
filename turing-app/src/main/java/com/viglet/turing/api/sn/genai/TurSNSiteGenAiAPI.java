@@ -289,7 +289,7 @@ public class TurSNSiteGenAiAPI {
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(
 					context, agent, llmInstance, request.messages(), request.filters(),
-					request.conversationId(), request.flowId());
+					request.conversationId(), request.flowId(), request.forcedVariant());
 			// Capture the turn for chat memory: accumulate the streamed assistant
 			// chunks and enqueue once the stream finishes. The service is a no-op
 			// when the agent has chatMemoryEnabled=false or the logging engine is
@@ -823,6 +823,6 @@ public class TurSNSiteGenAiAPI {
 
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,
 			java.util.Map<String, List<String>> filters,
-			String conversationId, String flowId) {
+			String conversationId, String flowId, String forcedVariant) {
 	}
 }

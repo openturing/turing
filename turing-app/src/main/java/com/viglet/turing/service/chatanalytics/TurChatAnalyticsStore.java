@@ -19,6 +19,7 @@ package com.viglet.turing.service.chatanalytics;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Pluggable persistence for chat usage analytics — companion to
@@ -137,8 +138,18 @@ public interface TurChatAnalyticsStore {
      * <p>{@code dimension} accepts {@code agentId} or {@code personaId};
      * unknown values default to {@code agentId}. {@code maxRows} is capped to
      * 100 by the implementation.
+     *
+     * <p>T74 / §VII.8.e — {@code filters} narrows the population BEFORE
+     * grouping, so an operator can ask "does this variant win on
+     * <i>mobile</i>?" by grouping on {@code variantLabel} while filtering
+     * {@code deviceType=mobile}. Keys are whitelisted by the implementation
+     * (cohort: {@code deviceType}/{@code locale}/{@code timezone}; identity:
+     * {@code agentId}/{@code personaId}/{@code experimentKey}/
+     * {@code variantLabel}/{@code outcome}); unknown keys and blank values are
+     * ignored. A {@code null}/empty map applies no filter (deployment-wide).
      */
-    List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows);
+    List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension,
+            Map<String, String> filters, int maxRows);
 
     /**
      * Returns a single session document keyed by {@code conversationId}, or
@@ -163,5 +174,38 @@ public interface TurChatAnalyticsStore {
      */
     default void ensureIndexes() {
         // no-op by default
+    }
+
+    /**
+     * T74 — fields a scorecard {@code filters} map may legitimately target.
+     * Shared by every store so the Mongo {@code $match} and the Redis
+     * in-process filter agree on exactly which columns are filterable, closing
+     * the same field-injection vector {@code sanitizeFieldName} guards for
+     * {@code groupBy}. Cohort fields ({@code deviceType}/{@code locale}/
+     * {@code timezone}) plus the identity/experiment dimensions already used
+     * for grouping.
+     */
+    Set<String> SCORECARD_FILTERABLE_FIELDS = Set.of(
+            "agentId", "personaId", "experimentKey", "variantLabel",
+            "locale", "timezone", "deviceType", "outcome");
+
+    /**
+     * Maps a scorecard {@code dimension} request to the stored document field
+     * to group on, whitelisting the accepted values (unknown → {@code agentId}).
+     * Shared so Mongo and Redis pivot on identical fields. T74 adds the three
+     * cohort dimensions.
+     */
+    static String scorecardDimensionField(String dimension) {
+        return switch (dimension == null ? "" : dimension.trim()) {
+            case "personaId"           -> "personaId";
+            case "experimentKey"       -> "experimentKey";
+            case "variantLabel"        -> "variantLabel";
+            case "parentConversationId" -> "parentConversationId";
+            // T74 cohort dimensions.
+            case "locale"     -> "locale";
+            case "timezone"   -> "timezone";
+            case "deviceType" -> "deviceType";
+            default -> "agentId";
+        };
     }
 }

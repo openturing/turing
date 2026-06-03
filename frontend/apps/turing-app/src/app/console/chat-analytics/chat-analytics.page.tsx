@@ -9,6 +9,7 @@ import { useChatSlotAudit } from "@/api/queries/chat-session.queries";
 import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ import type {
   TurChatAnalyticsMetric,
   TurChatAnalyticsScorecardDimension,
   TurChatAnalyticsSession,
+  TurChatDeviceType,
 } from "@/models/chat-analytics/chat-analytics.model";
 import { IconChartLine, IconFlask, IconMessageOff } from "@tabler/icons-react";
 import { useState } from "react";
@@ -177,6 +179,8 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 <MetaRow label="Persona"   value={data.session.personaName ?? data.session.personaId} />
                 <MetaRow label="LLM"       value={data.session.llmInstanceId} />
                 <MetaRow label="Locale"    value={data.session.locale} />
+                <MetaRow label="Device"    value={data.session.deviceType} />
+                <MetaRow label="Timezone"  value={data.session.timezone} />
                 <MetaRow label="User"      value={data.session.userId} />
                 <MetaRow label="Turns"     value={data.session.totalTurns ?? 0} />
                 <MetaRow label="Tokens in"  value={data.session.totalTokensIn ?? 0} />
@@ -518,19 +522,44 @@ const DIMENSION_OPTIONS: readonly DimensionOption[] = [
   { value: "experimentKey",        label: "Experiment key" },
   { value: "variantLabel",         label: "A/B variant" },
   { value: "parentConversationId", label: "Parent conversation" },
+  // T74 — visitor cohort dimensions.
+  { value: "deviceType",           label: "Device (mobile/desktop)" },
+  { value: "locale",               label: "Locale" },
+  { value: "timezone",             label: "Timezone" },
+];
+
+// T74 — device cohort filter values. "" = no filter (all devices).
+const DEVICE_FILTER_OPTIONS: readonly { value: TurChatDeviceType | "all"; label: string }[] = [
+  { value: "all",     label: "All devices" },
+  { value: "mobile",  label: "Mobile" },
+  { value: "desktop", label: "Desktop" },
+  { value: "tablet",  label: "Tablet" },
+  { value: "bot",     label: "Bot" },
+  { value: "unknown", label: "Unknown" },
 ];
 
 function ScorecardPanel() {
-  const [dimension, setDimension] = useState<TurChatAnalyticsScorecardDimension>("agentId");
+  const [dimension, setDimension] = useState<TurChatAnalyticsScorecardDimension>("variantLabel");
+  // T74 cohort filters — narrow the population so a variant can be judged
+  // within a sub-population ("does variant X win on mobile / in pt-BR?").
+  const [deviceFilter, setDeviceFilter] = useState<TurChatDeviceType | "all">("all");
+  const [localeFilter, setLocaleFilter] = useState("");
+  const [timezoneFilter, setTimezoneFilter] = useState("");
   const { data: rows = [], isLoading, isError } = useChatAnalyticsScorecard({
     dimension,
     limit: 20,
+    deviceType: deviceFilter === "all" ? "" : deviceFilter,
+    locale: localeFilter.trim() || undefined,
+    timezone: timezoneFilter.trim() || undefined,
   });
   const isExperimentDim = dimension === "experimentKey" || dimension === "variantLabel";
   const isParentConvDim = dimension === "parentConversationId";
+  const hasCohortFilter =
+    deviceFilter !== "all" || localeFilter.trim() !== "" || timezoneFilter.trim() !== "";
   let description: string;
   if (isExperimentDim) {
-    description = "A/B variants compared head-to-head — pick a row to see which arm lifts conversion.";
+    description =
+      "A/B variants compared head-to-head — add a cohort filter to ask whether a variant wins in a sub-population.";
   } else if (isParentConvDim) {
     description = "Orchestrator agents grouped by parent conversation — each row is one orchestrator + its sub-task sessions (T109/T110).";
   } else {
@@ -538,7 +567,7 @@ function ScorecardPanel() {
   }
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -563,6 +592,51 @@ function ScorecardPanel() {
             </SelectContent>
           </Select>
         </div>
+        {/* T74 — cohort filter row. Device is a fixed enum; locale + timezone
+            are free-text (exact match, e.g. "pt-BR", "America/Sao_Paulo"). */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-xs">Cohort:</span>
+          <Select
+            value={deviceFilter}
+            onValueChange={(v) => setDeviceFilter(v as TurChatDeviceType | "all")}
+          >
+            <SelectTrigger className="h-8 w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DEVICE_FILTER_OPTIONS.map((d) => (
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={localeFilter}
+            onChange={(e) => setLocaleFilter(e.target.value)}
+            placeholder="Locale (e.g. pt-BR)"
+            className="h-8 w-[160px]"
+          />
+          <Input
+            value={timezoneFilter}
+            onChange={(e) => setTimezoneFilter(e.target.value)}
+            placeholder="Timezone (e.g. America/Sao_Paulo)"
+            className="h-8 w-[220px]"
+          />
+          {hasCohortFilter && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground text-xs underline"
+              onClick={() => {
+                setDeviceFilter("all");
+                setLocaleFilter("");
+                setTimezoneFilter("");
+              }}
+            >
+              Clear cohort
+            </button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading && (
@@ -573,7 +647,7 @@ function ScorecardPanel() {
         )}
         {!isLoading && !isError && rows.length === 0 && (
           <p className="text-muted-foreground py-8 text-center text-sm">
-            {emptyStateMessage(isExperimentDim, isParentConvDim)}
+            {emptyStateMessage(isExperimentDim, isParentConvDim, hasCohortFilter)}
           </p>
         )}
         {rows.length > 0 && (
@@ -624,7 +698,14 @@ function formatRate(value: number | null | undefined): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function emptyStateMessage(isExperimentDim: boolean, isParentConvDim: boolean): string {
+function emptyStateMessage(
+  isExperimentDim: boolean,
+  isParentConvDim: boolean,
+  hasCohortFilter: boolean,
+): string {
+  if (hasCohortFilter) {
+    return "No sessions match this cohort in the selected window — try a broader device/locale/timezone filter.";
+  }
   if (isExperimentDim) {
     return "No experiments declared yet — set an experimentKey on at least two chat flows to enable A/B routing.";
   }

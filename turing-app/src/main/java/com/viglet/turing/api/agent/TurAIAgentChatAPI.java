@@ -88,7 +88,13 @@ public class TurAIAgentChatAPI {
             String llmInstanceId,
             List<ChatMessageItem> messages,
             String conversationId,
-            String flowId) {
+            String flowId,
+            String forcedVariant) {
+        /** Back-compat constructor (pre-T73): defaults {@code forcedVariant} to null. */
+        public AgentChatRequest(String llmInstanceId, List<ChatMessageItem> messages,
+                String conversationId, String flowId) {
+            this(llmInstanceId, messages, conversationId, flowId, null);
+        }
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -169,7 +175,7 @@ public class TurAIAgentChatAPI {
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
                 .toList();
         return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
-                        request.conversationId(), request.flowId(), files)
+                        request.conversationId(), request.flowId(), files, request.forcedVariant())
                 .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
     }
 

@@ -85,7 +85,29 @@ public record TurChatSessionEvent(
          *
          * @since 2026.3.1 (T110)
          */
-        String parentConversationId) {
+        String parentConversationId,
+        /**
+         * IANA timezone id the visitor's browser reported (e.g.
+         * {@code "America/Sao_Paulo"}), captured from the {@code X-Timezone}
+         * request header the SDK populates via
+         * {@code Intl.DateTimeFormat().resolvedOptions().timeZone}. {@code null}
+         * when the client didn't send it. One of the three T74 cohort
+         * dimensions used to slice the scorecard into sub-populations.
+         *
+         * @since 2026.3.1 (T74)
+         */
+        String timezone,
+        /**
+         * Device class derived from the {@code User-Agent} header —
+         * {@code "mobile"} / {@code "tablet"} / {@code "desktop"} /
+         * {@code "bot"} / {@code "unknown"}. The headline T74 cohort
+         * ("does this variant win on mobile vs desktop?"). Server-side
+         * classification via {@link TurChatCohortResolver}, so it's populated
+         * for every visitor without client cooperation.
+         *
+         * @since 2026.3.1 (T74)
+         */
+        String deviceType) {
 
     /** Builder of the start record (most aggregate fields zeroed/null). */
     public static TurChatSessionEvent start(String conversationId, String agentId,
@@ -107,9 +129,28 @@ public record TurChatSessionEvent(
             String personaId, String llmInstanceId, String embeddingModelId,
             String storeInstanceId, String userId, String locale, String firstUserMessage,
             Instant startedAt, String parentConversationId) {
+        return start(conversationId, agentId, personaId, llmInstanceId,
+                embeddingModelId, storeInstanceId, userId, locale, firstUserMessage,
+                startedAt, parentConversationId, null, null);
+    }
+
+    /**
+     * Richest start overload — also carries the T74 visitor cohort fields
+     * ({@code timezone} from the {@code X-Timezone} header, {@code deviceType}
+     * classified from the {@code User-Agent}). The two legacy overloads above
+     * delegate here with {@code null} cohort fields so existing call sites
+     * stay source-compatible.
+     *
+     * @since 2026.3.1 (T74)
+     */
+    public static TurChatSessionEvent start(String conversationId, String agentId,
+            String personaId, String llmInstanceId, String embeddingModelId,
+            String storeInstanceId, String userId, String locale, String firstUserMessage,
+            Instant startedAt, String parentConversationId, String timezone, String deviceType) {
         return new TurChatSessionEvent(conversationId, agentId, personaId,
                 llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
                 firstUserMessage, startedAt, null, TurChatSessionOutcome.IN_PROGRESS,
-                0, 0L, 0L, 0L, 0, 0, 0L, null, null, parentConversationId);
+                0, 0L, 0L, 0L, 0, 0, 0L, null, null, parentConversationId,
+                timezone, deviceType);
     }
 }

@@ -74,7 +74,8 @@ public class TurNoOpChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     @Override
-    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows) {
+    public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension,
+            Map<String, String> filters, int maxRows) {
         return Collections.emptyList();
     }
 
