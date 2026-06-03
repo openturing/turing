@@ -431,7 +431,7 @@ acting.
 | T80 | ✅ | T78 | ⭐ **Container sandbox (Docker)** — opt-in per-deployment execution mode (`NATIVE` default \| `DOCKER`) in Global Settings. DOCKER runs each execution in a throwaway container (`--rm --network none --cap-drop ALL --security-opt no-new-privileges --read-only`, tmpfs `/tmp`, only the session dir bind-mounted rw, deps dir mounted ro at `/deps`), with `--memory`/`--cpus`/`--pids-limit` caps. Configurable image (default `python:3.12-slim`); "Check Docker" admin probe (`TurCodeInterpreterToolService.checkDocker`). NATIVE path unchanged. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
 | T81 | ✅ | T80 | Resource limits per execution (cgroups) for the **NATIVE** path — opt-in CPU/RAM cap (`turing.code-interpreter.native.limits.*`). Wraps the host Python in `prlimit` (RLIMIT_AS + RLIMIT_CPU) or `systemd-run --scope` (cgroup MemoryMax/CPUQuota); `auto` prefers prlimit. Disabled by default (NATIVE path unchanged); Windows / missing-binary degrade to a warning, never break. Closes the runaway-memory gap the 30s timeout couldn't (`[x*x for x in range(10**9)]`). | §VII.9.f |
 | T82 | ✅ | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. NATIVE-only, opt-in (`turing.code-interpreter.warm-pool.enabled`); single-use workers (one execution then exit — no state leak), refilled async. Auto-bypassed in DOCKER mode and when T81 native limits are on (a running worker can't be wrapped by prlimit). `TurCodeInterpreterWarmPool`. | §VII.9.g |
-| T83 | 💭 | T36 | Structured output capture — return `{stdout, files: [...], duration_ms, exit_code}` JSON instead of markdown-with-links so callers don't regex-parse. | §VII.9.h |
+| T83 | ✅ | T36 | Structured output capture — `executePythonStructured(...)` returns a `TurCodeInterpreterResult` record (`stdout`, `stderr`, `files:[{name,url,image,sizeBytes}]`, `exitCode`, `timedOut`, `durationMs`, plus `markdown`); Groovy `code.executePythonStructured(...)` / `code.executePythonJson(...)` let Custom Tools read fields / parse JSON instead of regex-ing the markdown. Markdown path unchanged (String overloads return `.markdown()`). | §VII.9.h |
 
 #### D.6 — Analytics & observability gaps
 
@@ -2435,6 +2435,30 @@ challenger persona (peer voice) with 50/50 split.
 | HMAC-signed URLs + cookie-binding | URL guessing / cross-browser leakage | ✅ T79 |
 | Container sandbox (Docker / gVisor / Firecracker) | Runtime escape — malicious Python reading `/etc/passwd` or cross-tenant files | ✅ T80 (opt-in DOCKER mode) — see VII.2.h |
 | Per-execution CPU/RAM cap (NATIVE) | Runaway memory/CPU trashing the JVM (`[x*x for x in range(10**9)]`) | ✅ T81 (opt-in `prlimit`/`systemd-run`) — see VII.2.k |
+| Pre-warmed interpreter pool (NATIVE) | ~200ms cold-boot tax per frequently-invoked tool | ✅ T82 (opt-in, single-use workers) |
+| Structured output capture | Callers regex-parsing markdown for file URLs / exit code | ✅ T83 — see VII.9.h |
+
+#### VII.9.h Structured output capture (T83)
+`TurCodeInterpreterToolService.executePythonStructured(...)` (and the
+tenant-aware `executePythonStructuredForTenant`) return a
+`TurCodeInterpreterResult` record — `sessionId`, `success`, `exitCode`,
+`timedOut`, `durationMs`, `stdout`, `stderr`, `files:[{name, url, image,
+sizeBytes}]`, and the legacy `markdown`. The Groovy `code` binding gains
+`code.executePythonStructured(script | [script:, inputs:])` (fields read
+directly) and `code.executePythonJson(...)` (compact snake-case JSON
+`{session_id, success, exit_code, timed_out, duration_ms, stdout, stderr,
+files}` — `markdown` excluded). This retires the brittle Custom-Tool idiom
+`def m = (result =~ /\[Download[^\]]+]\(([^)]+)\)/)` documented in §VII.1.b
+in favour of `slots.set("pdf_url", r.files()[0].url())`.
+
+Per the opt-in doctrine the markdown path is untouched: the `@Tool
+execute_python` method and every String overload simply return
+`result.markdown()`, so the LLM-facing rendering (image embeds, download
+links, the verbatim-copy banner) is byte-for-byte identical and no existing
+flow needs revalidation. `signedFileUrl(...)` is shared between the markdown
+bullet list and the structured descriptors so signed URLs never drift, and
+`durationMs` is measured from just before process spawn (excludes dep
+install).
 
 #### VII.10.a Chat analytics (T84)
 9 timeseries metrics + 4 scorecard dimensions exposed at

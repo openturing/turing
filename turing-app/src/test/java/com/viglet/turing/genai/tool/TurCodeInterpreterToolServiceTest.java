@@ -820,6 +820,110 @@ class TurCodeInterpreterToolServiceTest {
         assertThat(result).isNull();
     }
 
+    // --- T83 structured output capture ---
+
+    @Test
+    void buildFileDescriptorsShouldReturnEmptyForNullOrEmpty() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildFileDescriptors", String.class, File[].class, String.class);
+        method.setAccessible(true);
+
+        java.util.List<?> nullFiles = (java.util.List<?>) method.invoke(service, "s1", null, null);
+        java.util.List<?> emptyFiles = (java.util.List<?>) method.invoke(service, "s1", new File[0], null);
+
+        assertThat(nullFiles).isEmpty();
+        assertThat(emptyFiles).isEmpty();
+    }
+
+    @Test
+    void buildFileDescriptorsShouldExposeNameUrlImageFlagAndSize() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildFileDescriptors", String.class, File[].class, String.class);
+        method.setAccessible(true);
+
+        File png = File.createTempFile("chart", ".png");
+        png.deleteOnExit();
+        java.nio.file.Files.writeString(png.toPath(), "fake-image-bytes");
+        File csv = File.createTempFile("data", ".csv");
+        csv.deleteOnExit();
+
+        @SuppressWarnings("unchecked")
+        java.util.List<TurCodeInterpreterToolService.TurCodeInterpreterFile> files =
+                (java.util.List<TurCodeInterpreterToolService.TurCodeInterpreterFile>) method.invoke(
+                        service, "sess1", new File[]{png, csv}, null);
+
+        assertThat(files).hasSize(2);
+        TurCodeInterpreterToolService.TurCodeInterpreterFile imageFile = files.get(0);
+        assertThat(imageFile.name()).isEqualTo(png.getName());
+        assertThat(imageFile.image()).isTrue();
+        assertThat(imageFile.sizeBytes()).isEqualTo(png.length());
+        // urlSigner is null in the 1-arg ctor → unsigned relative URL.
+        assertThat(imageFile.url())
+                .isEqualTo("/api/v2/code-interpreter/sess1/" + png.getName());
+
+        TurCodeInterpreterToolService.TurCodeInterpreterFile dataFile = files.get(1);
+        assertThat(dataFile.image()).isFalse();
+        assertThat(dataFile.url()).isEqualTo("/api/v2/code-interpreter/sess1/" + csv.getName());
+    }
+
+    @Test
+    void errorResultShouldBuildFailedRecordWithMessageAsMarkdown() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "errorResult", String.class, String.class);
+        method.setAccessible(true);
+
+        TurCodeInterpreterToolService.TurCodeInterpreterResult result =
+                (TurCodeInterpreterToolService.TurCodeInterpreterResult) method.invoke(
+                        null, "s1", "Error: boom");
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.exitCode()).isEqualTo(-1);
+        assertThat(result.timedOut()).isFalse();
+        assertThat(result.durationMs()).isZero();
+        // markdown must equal the legacy returned string byte-for-byte so the
+        // String overloads stay unchanged; stderr mirrors it for structured callers.
+        assertThat(result.markdown()).isEqualTo("Error: boom");
+        assertThat(result.stderr()).isEqualTo("Error: boom");
+        assertThat(result.files()).isEmpty();
+    }
+
+    @Test
+    void executePythonStructuredShouldReturnNonNullResultAndConsistentSuccessFlag() {
+        // No Python configured → resolvePythonExecutable may throw (caught) or a
+        // host Python may exist. Either way the structured result is non-null and
+        // its success flag is consistent with the exit code (success ⇒ exit 0).
+        TurGlobalSettingsService settings = mock(TurGlobalSettingsService.class);
+        when(settings.getPythonExecutable()).thenReturn("");
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(settings);
+
+        TurCodeInterpreterToolService.TurCodeInterpreterResult result =
+                svc.executePythonStructured("print('hello')", null);
+
+        assertThat(result).isNotNull();
+        assertThat(result.markdown()).isNotBlank();
+        if (result.success()) {
+            assertThat(result.exitCode()).isZero();
+            assertThat(result.timedOut()).isFalse();
+        }
+    }
+
+    @Test
+    void executePythonMarkdownOverloadShouldEqualStructuredMarkdown() {
+        // The legacy String overload must return exactly the structured result's
+        // markdown — the contract that keeps every existing LLM/Custom-Tool caller
+        // working after T83. Both overloads run the same code through the same
+        // branch, so their markdown must match (whether Python runs or not).
+        TurGlobalSettingsService settings = mock(TurGlobalSettingsService.class);
+        when(settings.getPythonExecutable()).thenReturn("");
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(settings);
+
+        String markdown = svc.executePythonWithExtraRequirements("", null);
+        TurCodeInterpreterToolService.TurCodeInterpreterResult structured =
+                svc.executePythonStructured("", null);
+
+        assertThat(markdown).isEqualTo(structured.markdown());
+    }
+
     @Test
     void readStreamShouldReadNormalContent() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(

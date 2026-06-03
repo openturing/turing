@@ -43,16 +43,34 @@ import tools.jackson.databind.json.JsonMapper;
  * runs as the JVM user. Proper runtime isolation needs containerization
  * (Docker / gVisor / Firecracker) — separate roadmap.
  *
- * <p>Usage in Groovy:
+ * <p>Usage in Groovy — the markdown form (LLM echoes the result verbatim):
  * <pre>{@code
  *   def result = code.executePython('''
  *       from reportlab.platypus import SimpleDocTemplate
  *       # ... build a PDF
  *       print('done')
  *   ''')
- *   def m = (result =~ /\[Download[^\]]+]\(([^)]+)\)/)
- *   if (m) slots.set("proposta_pdf_url", m[0][1])
  * }</pre>
+ *
+ * <p>Or the <b>structured</b> form (T83) — no regex parsing of the markdown.
+ * {@code executePythonStructured} returns a
+ * {@link TurCodeInterpreterToolService.TurCodeInterpreterResult} whose fields
+ * ({@code stdout}, {@code files}, {@code exitCode}, {@code timedOut},
+ * {@code durationMs}) are read directly:
+ * <pre>{@code
+ *   def r = code.executePythonStructured('''
+ *       # ... build a PDF named proposta.pdf
+ *   ''')
+ *   if (r.success() && r.files()) {
+ *       slots.set("proposta_pdf_url", r.files()[0].url())
+ *   }
+ * }</pre>
+ *
+ * <p>{@code code.executePythonJson(...)} returns the same data as a compact
+ * JSON string ({@code {session_id, success, exit_code, timed_out, duration_ms,
+ * stdout, stderr, files:[{name,url,image,size_bytes}]}}) for callers that
+ * prefer {@code new groovy.json.JsonSlurper().parseText(...)} or want to feed
+ * a webhook payload directly.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.7
@@ -168,22 +186,91 @@ public class TurCustomToolCodeHelper {
      * @return same markdown payload as {@link #executePython(String)}
      */
     public String executePython(Map<String, Object> namedArgs) {
+        String script;
+        try {
+            script = assembleScript(namedArgs);
+        } catch (IllegalArgumentException e) {
+            return "Error: " + e.getMessage();
+        }
+        return executePython(script);
+    }
+
+    /**
+     * Structured sibling of {@link #executePython(String)} (T83) — returns the
+     * typed {@link TurCodeInterpreterToolService.TurCodeInterpreterResult}
+     * (stdout / stderr / files / exitCode / timedOut / durationMs) so the
+     * Groovy author reads fields directly instead of regex-parsing the
+     * markdown. Empty code yields a failed result (no subprocess run).
+     */
+    public TurCodeInterpreterToolService.TurCodeInterpreterResult executePythonStructured(String pythonCode) {
+        if (pythonCode == null || pythonCode.isBlank()) {
+            return failed("Error: empty Python code");
+        }
+        return codeInterpreter.executePythonStructuredForTenant(
+                pythonCode, agentRequirements, agentId, conversationId);
+    }
+
+    /**
+     * Named-argument structured overload (T83) — same {@code script:} /
+     * {@code inputs:} contract as {@link #executePython(Map)} but returns the
+     * structured result. Bad input yields a failed result whose {@code stderr}
+     * carries the diagnostic.
+     */
+    public TurCodeInterpreterToolService.TurCodeInterpreterResult executePythonStructured(
+            Map<String, Object> namedArgs) {
+        String script;
+        try {
+            script = assembleScript(namedArgs);
+        } catch (IllegalArgumentException e) {
+            return failed("Error: " + e.getMessage());
+        }
+        return executePythonStructured(script);
+    }
+
+    /**
+     * JSON form of {@link #executePythonStructured(String)} (T83). Returns a
+     * compact object {@code {session_id, success, exit_code, timed_out,
+     * duration_ms, stdout, stderr, files:[{name,url,image,size_bytes}]}} —
+     * snake_case keys, the {@code markdown} field deliberately omitted — ready
+     * for {@code JsonSlurper} or a webhook payload.
+     */
+    public String executePythonJson(String pythonCode) {
+        return toJson(executePythonStructured(pythonCode));
+    }
+
+    /** Named-argument JSON overload (T83). See {@link #executePythonJson(String)}. */
+    public String executePythonJson(Map<String, Object> namedArgs) {
+        return toJson(executePythonStructured(namedArgs));
+    }
+
+    /**
+     * Builds the final Python source from the named-arg map shared by the
+     * markdown and structured/JSON paths. Returns {@code script} unchanged when
+     * no {@code inputs} are supplied, otherwise prepends the base64-JSON
+     * decode prelude that exposes the {@code INPUTS} dict.
+     *
+     * @throws IllegalArgumentException with a caller-facing message (no
+     *         {@code "Error: "} prefix — callers add their own) when the map is
+     *         null, {@code script} is missing/blank, or {@code inputs} can't be
+     *         JSON-encoded.
+     */
+    private String assembleScript(Map<String, Object> namedArgs) {
         if (namedArgs == null) {
-            return "Error: missing named args (script:, inputs:)";
+            throw new IllegalArgumentException("missing named args (script:, inputs:)");
         }
         Object scriptObj = namedArgs.get("script");
         if (!(scriptObj instanceof String script) || script.isBlank()) {
-            return "Error: missing or empty 'script' argument";
+            throw new IllegalArgumentException("missing or empty 'script' argument");
         }
         Object inputs = namedArgs.get("inputs");
         if (inputs == null) {
-            return executePython(script);
+            return script;
         }
         String json;
         try {
             json = INPUTS_JSON.writeValueAsString(inputs);
         } catch (Exception e) {
-            return "Error: failed to JSON-encode 'inputs': " + e.getMessage();
+            throw new IllegalArgumentException("failed to JSON-encode 'inputs': " + e.getMessage());
         }
         String b64 = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
         // The prelude exposes json/base64 under both names — the
@@ -203,6 +290,51 @@ public class TurCustomToolCodeHelper {
                 + "import base64 as _base64\n"
                 + "import base64\n"
                 + "INPUTS = _json.loads(_base64.b64decode(\"" + b64 + "\").decode(\"utf-8\"))\n\n";
-        return executePython(prelude + script);
+        return prelude + script;
+    }
+
+    /**
+     * Failed structured result for input-validation errors that happen before
+     * any subprocess runs — mirrors the service's own error result shape so a
+     * Groovy author sees {@code success() == false} and the diagnostic in both
+     * {@code stderr()} and {@code markdown()}.
+     */
+    private static TurCodeInterpreterToolService.TurCodeInterpreterResult failed(String message) {
+        return new TurCodeInterpreterToolService.TurCodeInterpreterResult(
+                null, false, -1, false, 0L, "", message, java.util.List.of(), message);
+    }
+
+    /**
+     * Serializes a structured result to the T83 JSON contract. The
+     * {@code markdown} field is intentionally excluded (it's the legacy
+     * rendering, redundant for JSON consumers) and keys are snake_case so the
+     * shape matches {@code {stdout, files, duration_ms, exit_code}} as
+     * documented. Never throws — a serialization failure degrades to a small
+     * error object so a Groovy caller always gets parseable JSON.
+     */
+    private static String toJson(TurCodeInterpreterToolService.TurCodeInterpreterResult r) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("session_id", r.sessionId());
+        m.put("success", r.success());
+        m.put("exit_code", r.exitCode());
+        m.put("timed_out", r.timedOut());
+        m.put("duration_ms", r.durationMs());
+        m.put("stdout", r.stdout());
+        m.put("stderr", r.stderr());
+        java.util.List<java.util.Map<String, Object>> files = new java.util.ArrayList<>();
+        for (TurCodeInterpreterToolService.TurCodeInterpreterFile f : r.files()) {
+            java.util.Map<String, Object> fm = new java.util.LinkedHashMap<>();
+            fm.put("name", f.name());
+            fm.put("url", f.url());
+            fm.put("image", f.image());
+            fm.put("size_bytes", f.sizeBytes());
+            files.add(fm);
+        }
+        m.put("files", files);
+        try {
+            return INPUTS_JSON.writeValueAsString(m);
+        } catch (Exception e) {
+            return "{\"success\":false,\"error\":\"failed to serialize result\"}";
+        }
     }
 }

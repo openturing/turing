@@ -325,6 +325,25 @@ public class TurCodeInterpreterToolService {
      *                  or null/blank when only the global env is needed.
      */
     public String executePythonWithExtraRequirements(String code, String extraReqs) {
+        return executePythonStructured(code, extraReqs).markdown();
+    }
+
+    /**
+     * Structured sibling of {@link #executePythonWithExtraRequirements} (T83).
+     * Runs the same gated execution but returns a {@link TurCodeInterpreterResult}
+     * — {@code stdout}, {@code stderr}, the generated {@code files} (name +
+     * signed URL + image flag + size), {@code exitCode}, {@code timedOut}, and
+     * {@code durationMs} — so programmatic callers (Groovy Custom Tools,
+     * webhooks, slot writers) read fields directly instead of regex-parsing the
+     * markdown bullet list. The {@link TurCodeInterpreterResult#markdown()}
+     * field still carries the exact LLM-facing rendering for callers that want
+     * it (e.g. echoing into chat).
+     *
+     * <p>Behavior of the legacy markdown path is unchanged — the String
+     * overloads simply return {@code .markdown()} of this result, so existing
+     * LLM tool calls and Custom Tools that parse the markdown keep working.
+     */
+    public TurCodeInterpreterResult executePythonStructured(String code, String extraReqs) {
         // Concurrency gate: cap simultaneous Python subprocesses so a
         // 100-visitor burst doesn't fork 100 procs and OOM the host.
         // tryAcquire with a short timeout — if capacity is exhausted
@@ -336,17 +355,37 @@ public class TurCodeInterpreterToolService {
             acquired = limiter.tryAcquire(acquireTimeoutMs, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "Error: code interpreter wait interrupted";
+            return errorResult(null, "Error: code interpreter wait interrupted");
         }
         if (!acquired) {
             log.warn("[CodeInterpreter] concurrency exhausted (cap={} available=0); rejecting call",
                     maxConcurrent);
-            return "Error: code interpreter is at capacity right now — please try again in a moment.";
+            return errorResult(null,
+                    "Error: code interpreter is at capacity right now — please try again in a moment.");
         }
         try {
             return executePythonInternal(code, extraReqs);
         } finally {
             limiter.release();
+        }
+    }
+
+    /**
+     * Tenant-aware structured overload (T83) — mirror of
+     * {@link #executePythonForTenant} that returns the structured
+     * {@link TurCodeInterpreterResult} instead of markdown. Routes the session
+     * dir under {@code tenants/{agentId}/{conversationId}/...} exactly as the
+     * markdown path does.
+     */
+    public TurCodeInterpreterResult executePythonStructuredForTenant(String code, String extraReqs,
+            String agentId, String conversationId) {
+        tenantAgentId.set(sanitizePathSegment(agentId));
+        tenantConversationId.set(sanitizePathSegment(conversationId));
+        try {
+            return executePythonStructured(code, extraReqs);
+        } finally {
+            tenantAgentId.remove();
+            tenantConversationId.remove();
         }
     }
 
@@ -359,7 +398,7 @@ public class TurCodeInterpreterToolService {
         return concurrencyLimiter.get();
     }
 
-    private String executePythonInternal(String code, String extraReqs) {
+    private TurCodeInterpreterResult executePythonInternal(String code, String extraReqs) {
         String sessionId = UUID.randomUUID().toString().substring(0, 8);
         log.info("[CodeInterpreter] session={} | Executing {} chars of Python code (agentExtras={})",
                 sessionId, code.length(), (extraReqs == null || extraReqs.isBlank()) ? "no" : "yes");
@@ -399,10 +438,10 @@ public class TurCodeInterpreterToolService {
         } catch (InterruptedException e) {
             log.error("[CodeInterpreter] session={} | INTERRUPTED: {}", sessionId, e.getMessage(), e);
             Thread.currentThread().interrupt();
-            return "Error executing Python code: " + e.getMessage();
+            return errorResult(sessionId, "Error executing Python code: " + e.getMessage());
         } catch (Exception e) {
             log.error("[CodeInterpreter] session={} | EXCEPTION: {}", sessionId, e.getMessage(), e);
-            return "Error executing Python code: " + e.getMessage();
+            return errorResult(sessionId, "Error executing Python code: " + e.getMessage());
         } finally {
             // Mandatory: clear the ThreadLocal so virtual-thread pools don't
             // leak the value into unrelated tool invocations.
@@ -869,7 +908,45 @@ public class TurCodeInterpreterToolService {
     public record TurDockerStatus(boolean available, String serverVersion, String error) {
     }
 
-    private String executeAndCollectOutput(String sessionId, File sessionDir,
+    /**
+     * One file produced by an execution (T83). {@code url} is the (optionally
+     * signed) relative serve path under {@code /api/v2/code-interpreter/...};
+     * {@code image} mirrors {@link #isImageFile} so a caller can choose between
+     * inline render and download link without re-deriving it from the
+     * extension; {@code sizeBytes} is the on-disk size at capture time.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.1
+     */
+    public record TurCodeInterpreterFile(String name, String url, boolean image, long sizeBytes) {
+    }
+
+    /**
+     * Structured result of a Python execution (T83). Gives programmatic callers
+     * (Groovy Custom Tools, webhooks, slot writers) the {@code stdout},
+     * {@code stderr}, generated {@code files}, {@code exitCode}, {@code timedOut}
+     * flag and {@code durationMs} as typed fields instead of forcing them to
+     * regex-parse the markdown. {@code success} is {@code exitCode == 0 &&
+     * !timedOut}. {@code markdown} retains the exact LLM-facing rendering for
+     * callers that still want it (e.g. echoing the download link into chat);
+     * the legacy String overloads return precisely this field.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.1
+     */
+    public record TurCodeInterpreterResult(
+            String sessionId,
+            boolean success,
+            int exitCode,
+            boolean timedOut,
+            long durationMs,
+            String stdout,
+            String stderr,
+            List<TurCodeInterpreterFile> files,
+            String markdown) {
+    }
+
+    private TurCodeInterpreterResult executeAndCollectOutput(String sessionId, File sessionDir,
             Path scriptPath) throws IOException, InterruptedException {
         // Resolve auto-installed deps BEFORE building the env / runner. The
         // dep service unions the global `GLOBAL_PYTHON_REQUIREMENTS` setting
@@ -896,6 +973,9 @@ public class TurCodeInterpreterToolService {
         // dir into a throwaway hardened container. The post-start stream /
         // timeout / generated-file handling below is identical for both.
         TurCodeInterpreterExecutionMode mode = resolveExecutionMode();
+        // T83 — wall-clock timing for the structured result's durationMs. Starts
+        // just before process spawn so it measures execution, not dep install.
+        long startNanos = System.nanoTime();
         Process process;
         String containerName = null;
         if (mode == TurCodeInterpreterExecutionMode.DOCKER) {
@@ -958,14 +1038,18 @@ public class TurCodeInterpreterToolService {
             }
             outThread.join(2000);
             errThread.join(2000);
+            long durationMs = elapsedMs(startNanos);
             log.warn("[CodeInterpreter] session={} | TIMEOUT after {}s | script={} | Partial stdout:\n{}",
                     sessionId, TIMEOUT_SECONDS, scriptPath.toAbsolutePath(), stdout);
-            return "Error: Code execution timed out after " + TIMEOUT_SECONDS + " seconds.\n"
+            String markdown = "Error: Code execution timed out after " + TIMEOUT_SECONDS + " seconds.\n"
                     + "Partial output:\n" + stdout;
+            return new TurCodeInterpreterResult(sessionId, false, -1, true, durationMs,
+                    stdout.toString(), stderr.toString(), List.of(), markdown);
         }
 
         outThread.join(5000);
         errThread.join(5000);
+        long durationMs = elapsedMs(startNanos);
 
         int exitCode = process.exitValue();
         File[] generatedFiles = sessionDir
@@ -976,9 +1060,31 @@ public class TurCodeInterpreterToolService {
         // otherwise. The convId carries into the HMAC payload so the
         // server can later verify cookie-binding.
         String convForUrl = tenantConversationId.get();
-        String result = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles, convForUrl);
+        String markdown = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles, convForUrl);
+        List<TurCodeInterpreterFile> files = buildFileDescriptors(sessionId, generatedFiles, convForUrl);
         logResult(sessionId, scriptPath, exitCode, stdout, stderr, generatedFiles);
-        return result;
+        return new TurCodeInterpreterResult(sessionId, exitCode == 0, exitCode, false, durationMs,
+                stdout.toString(), stderr.toString(), files, markdown);
+    }
+
+    /** Elapsed wall-clock ms since {@code startNanos} (from {@link System#nanoTime()}). */
+    private static long elapsedMs(long startNanos) {
+        return (System.nanoTime() - startNanos) / 1_000_000L;
+    }
+
+    /**
+     * Builds a failed {@link TurCodeInterpreterResult} whose {@code markdown}
+     * is the supplied diagnostic — used for infra failures that occur before
+     * (or instead of) a subprocess run: capacity rejection, interrupt, Python
+     * not found, or an unexpected exception. {@code exitCode} is {@code -1},
+     * {@code success} false, {@code timedOut} false, no files; the message is
+     * mirrored into {@code stderr} for structured consumers. Returning the same
+     * string as {@code markdown} keeps the legacy String overloads byte-for-byte
+     * identical to their pre-T83 behavior.
+     */
+    private static TurCodeInterpreterResult errorResult(String sessionId, String message) {
+        return new TurCodeInterpreterResult(sessionId, false, -1, false, 0L,
+                "", message, List.of(), message);
     }
 
     private void readStream(java.io.Reader reader, StringBuilder buffer) {
@@ -1037,10 +1143,7 @@ public class TurCodeInterpreterToolService {
         result.append(
                 "IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
         for (File f : generatedFiles) {
-            String signedSuffix = (urlSigner == null)
-                    ? ""
-                    : urlSigner.signQueryString(sessionId, f.getName(), convId);
-            String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName() + signedSuffix;
+            String fileUrl = signedFileUrl(sessionId, f.getName(), convId);
             String prefix = isImageFile(f.getName()) ? "!" : "Download ";
             // Image markdown: ![alt](url). Plain link: [Download name](url).
             // The "Download " prefix label lives inside the [] for non-image
@@ -1051,6 +1154,41 @@ public class TurCodeInterpreterToolService {
                 result.append("[").append(prefix).append(f.getName()).append("](").append(fileUrl).append(")\n");
             }
         }
+    }
+
+    /**
+     * Structured-output mirror of {@link #appendGeneratedFiles} (T83): the same
+     * files with the same signed URLs, exposed as {@link TurCodeInterpreterFile}
+     * records so programmatic callers read {@code name} / {@code url} /
+     * {@code image} / {@code sizeBytes} directly instead of regex-parsing the
+     * markdown bullet list.
+     */
+    private List<TurCodeInterpreterFile> buildFileDescriptors(String sessionId,
+            File[] generatedFiles, String convId) {
+        if (generatedFiles == null || generatedFiles.length == 0) return List.of();
+        List<TurCodeInterpreterFile> files = new ArrayList<>(generatedFiles.length);
+        for (File f : generatedFiles) {
+            files.add(new TurCodeInterpreterFile(
+                    f.getName(),
+                    signedFileUrl(sessionId, f.getName(), convId),
+                    isImageFile(f.getName()),
+                    f.length()));
+        }
+        return files;
+    }
+
+    /**
+     * Builds the (optionally HMAC-signed) relative serve URL for a generated
+     * file. Shared by the markdown rendering ({@link #appendGeneratedFiles})
+     * and the structured descriptors ({@link #buildFileDescriptors}) so the
+     * two never drift. Unsigned when the signer is absent (legacy 1-arg test
+     * ctor leaves {@code urlSigner == null}).
+     */
+    private String signedFileUrl(String sessionId, String fileName, String convId) {
+        String signedSuffix = (urlSigner == null)
+                ? ""
+                : urlSigner.signQueryString(sessionId, fileName, convId);
+        return "/api/v2/code-interpreter/" + sessionId + "/" + fileName + signedSuffix;
     }
 
     /**
