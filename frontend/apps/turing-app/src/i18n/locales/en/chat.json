@@ -68,7 +68,10 @@
       },
       "auditFromTo": "{{from}} → {{to}}",
       "auditEmptyValue": "(empty)",
-      "auditCleared": "(cleared)"
+      "auditCleared": "(cleared)",
+      "workspace": "Workspace files",
+      "workspaceEmpty": "No files have been built for this conversation yet.",
+      "workspaceError": "Workspace stream unavailable for this conversation."
     }
   }
 }

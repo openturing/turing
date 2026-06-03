@@ -53,7 +53,9 @@ public class TurChatSlotSseRegistry {
 
     /** Stream variant a channel serves — mirrors the SDK's key suffix. */
     public enum Mode {
-        SNAPSHOT, DELTA;
+        SNAPSHOT, DELTA,
+        /** T113 — the per-conversation workspace artifact stream. */
+        WORKSPACE;
 
         /** Lowercase wire token used in the DTO and the SDK key. */
         public String wire() {

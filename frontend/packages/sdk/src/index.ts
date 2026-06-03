@@ -57,6 +57,9 @@ export type {
   PostLlmChatOptions,
   TurChatSessionSlots,
   TurChatSessionSlotsDelta,
+  TurWorkspaceArtifact,
+  TurWorkspaceEvent,
+  TurWorkspaceArtifacts,
   TurChatSlotWriteResponse,
   TurChatSlotExtractResponse,
   TurChatConversationState,
@@ -86,6 +89,14 @@ export type {
   SlotsSseSubscription,
   SlotsSseOptions,
 } from "./slots-sse";
+
+// ── Workspace SSE multiplexer (T113) ──
+export { subscribeWorkspaceSse, _workspaceSseOpenChannelCount } from "./workspace-sse";
+export type {
+  WorkspaceSseSubscriber,
+  WorkspaceSseSubscription,
+  WorkspaceSseScope,
+} from "./workspace-sse";
 
 // ── Store ──
 export { createStore } from "./store";

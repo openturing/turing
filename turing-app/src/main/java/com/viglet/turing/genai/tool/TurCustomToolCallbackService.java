@@ -149,6 +149,7 @@ public class TurCustomToolCallbackService {
     private final TurAgentChatExecutor agentChatExecutor;
     private final TurAIAgentRepository agentRepository;
     private final TurLLMInstanceRepository llmRepository;
+    private final com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
@@ -165,7 +166,8 @@ public class TurCustomToolCallbackService {
             // exist.
             @Lazy TurAgentChatExecutor agentChatExecutor,
             TurAIAgentRepository agentRepository,
-            TurLLMInstanceRepository llmRepository) {
+            TurLLMInstanceRepository llmRepository,
+            com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
@@ -176,6 +178,7 @@ public class TurCustomToolCallbackService {
         this.agentChatExecutor = agentChatExecutor;
         this.agentRepository = agentRepository;
         this.llmRepository = llmRepository;
+        this.agentWorkspace = agentWorkspace;
     }
 
     /**
@@ -390,6 +393,10 @@ public class TurCustomToolCallbackService {
         //                  React portal on its next polling tick — that's
         //                  how a tool feeds dynamic data into UI components
         //                  like the "Programas recomendados" card grid.
+        //   workspace    — per-conversation blob store (T112). put/get/list/
+        //                  delete/url for drafts, partial results, and
+        //                  intermediate artifacts; url(key) yields a signed
+        //                  download URL the LLM can hand the user.
         binding.setVariable("args", args);
         // Slot helper is constructed first so the http helper can take it as
         // a credential source (T39 reserved __ prefix → auto Authorization
@@ -429,6 +436,14 @@ public class TurCustomToolCallbackService {
         binding.setVariable("agent",
                 new TurCustomToolAgentHelper(agentChatExecutor, agentRepository,
                         llmRepository, tenantConversationId, parentDepth + 1));
+        // T112 — `workspace`: per-conversation blob store (T111) for drafts,
+        // partial results, and intermediate artifacts. Pre-bound to the active
+        // tenant (agentId + conversationId); writes land under
+        // tenants/{agentId}/{conversationId}/workspace/<key>. workspace.url(key)
+        // returns an HMAC-signed download URL the LLM can hand the user without
+        // the bytes touching the prompt. No-op mode when tenant context absent.
+        binding.setVariable("workspace",
+                new TurCustomToolWorkspaceHelper(agentWorkspace, tenantAgentId, tenantConversationId));
         Script script = scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();

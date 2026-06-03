@@ -28,6 +28,9 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId, onModelChange, onToggleSidebar, hasMessages, onNewChat, agents, activeSessionId }: ChatHeaderProps) {
   const { t } = useTranslation()
+  // Agent tabs are keyed `agent:<id>`; extract the id so the session-info
+  // sheet can stream that agent's per-conversation workspace artifacts (T113).
+  const activeAgentId = activeTab.startsWith("agent:") ? activeTab.slice(6) : null
 
   return (
     <div className="border-b shrink-0">
@@ -36,7 +39,7 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
         <button type="button" onClick={onToggleSidebar} title={t("chat.sessions")} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted shrink-0">
           <IconHistory className="size-5" />
         </button>
-        <ChatSessionInfoSheet conversationId={activeSessionId} />
+        <ChatSessionInfoSheet conversationId={activeSessionId} agentId={activeAgentId} />
         <Select value={selectedLlmId} onValueChange={onModelChange}>
           <SelectTrigger className="flex-1 min-w-0">
             <SelectValue placeholder={t("chat.selectModel")} />

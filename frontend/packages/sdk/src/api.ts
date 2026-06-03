@@ -528,6 +528,45 @@ export interface TurChatSessionSlotsDelta {
 }
 
 /**
+ * T113 — a single artifact in an agent's per-conversation workspace, as
+ * advertised on the workspace SSE bus. Carries <b>metadata only</b>: follow
+ * {@link signedUrl} to download the bytes (a time-limited, HMAC-signed
+ * {@code /api/v2/workspace/file} link). {@code contentType} / {@code signedUrl}
+ * are {@code null} only transiently, never for a {@code put}.
+ */
+export interface TurWorkspaceArtifact {
+  readonly key: string;
+  readonly contentType: string | null;
+  readonly size: number;
+  readonly signedUrl: string | null;
+}
+
+/**
+ * T113 — one workspace mutation from {@code GET /chat/workspace/stream}. The
+ * server emits one per blob write/delete; the SSE multiplexer folds these into
+ * a running artifact map and surfaces full {@link TurWorkspaceArtifacts}
+ * snapshots to consumers (so a sidebar just renders {@code artifacts}).
+ */
+export interface TurWorkspaceEvent {
+  readonly conversationId: string;
+  readonly event: "put" | "delete";
+  readonly key: string;
+  readonly contentType: string | null;
+  readonly size: number;
+  readonly signedUrl: string | null;
+}
+
+/**
+ * T113 — the reconstructed full list of artifacts in a conversation's
+ * workspace, surfaced by the workspace SSE multiplexer after applying each
+ * {@link TurWorkspaceEvent}. Sorted by key for stable rendering.
+ */
+export interface TurWorkspaceArtifacts {
+  readonly conversationId: string;
+  readonly artifacts: readonly TurWorkspaceArtifact[];
+}
+
+/**
  * Reads the slots captured during the conversation from the site's RAG
  * endpoint.
  *

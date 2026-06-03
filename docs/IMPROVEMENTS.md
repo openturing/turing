@@ -43,6 +43,8 @@ acting.
 - [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
 - [XI. Embedded LLM via Jlama — pure-Java in-process inference](#xi-embedded-llm-via-jlama--pure-java-in-process-inference)
 - [XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence](#xii-admin-chat--vigletturing-react-sdk-convergence)
+- [XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform](#xiii-turing-as-an-mcp-server--let-claude-and-any-agent-drive-the-platform)
+- [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
 
 ---
 
@@ -541,8 +543,8 @@ Remaining platform-relevant promotions:
 | #    | Status | Depends on | Task | Detail in |
 |------|--------|------------|------|-----------|
 | T111 | ✅ | — | **`TurAgentWorkspace` service ✅ shipped** — per-conversation key-value-blob store backed by `TurStorageService` (already pluggable: NoOp / filesystem / MinIO). New package `com.viglet.turing.genai.workspace`: [`TurAgentWorkspace`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurAgentWorkspace.java) interface — `put(agentId,conversationId,key,bytes,contentType)`, `get(...)→Optional<byte[]>`, `list(...,prefix)→List<WorkspaceEntry>`, `delete(...)`, `signedUrl(...)`; [`WorkspaceEntry`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/WorkspaceEntry.java) record `(key, sizeBytes, contentType, lastModified, signedUrl)` with workspace-relative key (scope prefix stripped, never leaks tenant path). Impl [`TurAgentWorkspaceService`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurAgentWorkspaceService.java) maps every op onto the T78 multi-tenant path `tenants/{agentId}/{conversationId}/workspace/<key>` (reuses the pattern verbatim) — two conversations / two agents never see each other's blobs. **Distinct from slots**: slots are flat scalars/JSON on the slot bus; workspace is byte-blobs with content type + signed URLs. `put` streams via `uploadStream` (content type guessed from key when null); `get` swallows missing-key/disabled-storage/backend errors → `Optional.empty()`; `list` walks `listObjects` **recursively** (single-level on FS/MinIO) scoped to the conversation subtree — cheaper + safer than `listAllObjects` (which would scan every tenant) — strips the scope to return relative keys; `delete` is a no-op when absent; disabled storage → `get`/`list` empty, `put` throws. **Path safety**: `sanitizeSegment` coerces agent/conv ids to `[a-zA-Z0-9._-]` and rejects `.`/`..` (mirrors `TurCodeInterpreterToolService.sanitizePathSegment`); `sanitizeKey` normalizes `\`→`/`, strips leading `/`, and rejects `..` segments + the signer delimiter `\|` (FS backend re-checks via `resolveSafe()`). **Signed URLs** ([`TurAgentWorkspaceUrlSigner`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurAgentWorkspaceUrlSigner.java)) mirror the T79 code-interpreter pattern — HMAC-SHA256 over `v1\|{agentId}\|{conversationId}\|{key}\|{exp}`, **reusing the same Global Settings secret** (`getCodeInterpreterUrlSigningSecret()`) so no new config row / Liquibase migration; agent+conversation are baked into the signature so a URL can't be replayed cross-conversation (no separate cookie needed — the conv id rides in the URL and is signed) and stops working past `turing.workspace.url-signing.ttl-seconds` (default 1h). Fail-open when signing disabled or secret blank, exactly like T79. Serve endpoint [`TurAgentWorkspaceFileAPI`](../turing-app/src/main/java/com/viglet/turing/api/workspace/TurAgentWorkspaceFileAPI.java) `GET /api/v2/workspace/file?agentId=&conversationId=&key=&exp=&sig=` verifies **before** any storage lookup (403 never leaks existence; every non-OK `VerifyResult`→single 403, granular case logged only) then streams the blob inline; authenticated like the existing `/api/v2/code-interpreter/**` file API (not added to `permitAll`). **Tests** — 20 unit tests: [`TurAgentWorkspaceServiceTest`](../turing-app/src/test/java/com/viglet/turing/genai/workspace/TurAgentWorkspaceServiceTest.java) (12, in-memory storage double reproducing single-level `listObjects` semantics — put/get round-trip + tenant-scoped path, content-type guess, recursive list with cross-conversation isolation, prefix scoping, delete, signed-URL param shape, `..`/`\|`/blank/leading-slash key handling, disabled-storage behavior) + [`TurAgentWorkspaceUrlSignerTest`](../turing-app/src/test/java/com/viglet/turing/genai/workspace/TurAgentWorkspaceUrlSignerTest.java) (8 — sign/verify round-trip, tampered key/conversation, expired, missing/malformed, disabled fail-open, blank-secret fail-open, distinct-key distinct-sig). Verified: backend compile clean; 22/22 across the new tests + `TurCacheAnnotationConventionsTest` + `TurLiquibaseChangelogAgnosticTest` lints green. **Unblocks T112–T115.** | §IX.3.a |
-| T112 | 📋 | T111 | **`workspace` helper for Custom Tool Groovy** — `workspace.put(key, value)`, `workspace.get(key)`, `workspace.list("drafts/")`, `workspace.url(key)` (returns HMAC-signed URL using the T79 signer). Tools write drafts, partial results, intermediate artifacts; downstream tools read them; LLM references them by URL in chat. | §IX.3.b |
-| T113 | 📋 | T111 | **Workspace SSE bus** — `GET /chat/workspace/stream?conversationId=X` emits `{event: put/delete, key, contentType, size, signedUrl}` events. Mirrors `TurChatSlotEventBus`. SDK hook `useTuringWorkspace<T>` consumes; UI renders the active artifact list as a sidebar. | §IX.3.c |
+| T112 | ✅ | T111 | **`workspace` helper for Custom Tool Groovy ✅ shipped** — new Groovy binding [`TurCustomToolWorkspaceHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolWorkspaceHelper.java) bound as `workspace` by [`TurCustomToolCallbackService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolCallbackService.java), pre-scoped to the active `agentId` + `conversationId` (pulled from `ToolContext` keys `TOOL_CONTEXT_AGENT_ID` / `TOOL_CONTEXT_CONVERSATION_ID`, same as the `code` helper). API: `put(key, value)` (UTF-8 `text/plain`), `put(key, bytes, contentType)`, `get(key)→byte[]`, `getText(key)→String`, `list(prefix)` / `list()` →`List<WorkspaceEntry>`, `delete(key)`, `url(key)` (HMAC-signed download URL via T111's `TurAgentWorkspaceUrlSigner`, which reuses the T79 secret). Thin façade over [`TurAgentWorkspace`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurAgentWorkspace.java) (T111) — blobs land under `tenants/{agentId}/{conversationId}/workspace/<key>`. **No-op mode** (mirrors `slots` helper): null tenant context → `put`/`delete` log+return, `get`/`url`/`getText` return null, `list` returns empty; null/blank key is also a no-op. Composes with the existing `code`/`http`/`slots`/`turingSearch`/`agent` bindings. **Tests** — 9 unit tests ([`TurCustomToolWorkspaceHelperTest`](../turing-app/src/test/java/com/viglet/turing/genai/tool/TurCustomToolWorkspaceHelperTest.java)): UTF-8 put, byte+contentType passthrough, get present/absent, getText decode, list + no-arg variant, signed url, delete, no-op-mode `verifyNoInteractions`, null/blank-key no-op. Verified: backend module compiles, 9/9 green. | §IX.3.b |
+| T113 | ✅ | T111 | **Workspace SSE bus ✅ shipped** — live "files this agent built for you" stream. Backend: [`TurWorkspaceEvent`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurWorkspaceEvent.java) record `(conversationId, event:"put"\|"delete", key, contentType, size, signedUrl)` + [`TurWorkspaceEventBus`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurWorkspaceEventBus.java) — the exact analogue of `TurChatSlotEventBus` (multicast `Sinks.Many` directBestEffort, `tryEmitNext` FAIL_FAST, per-conversation downstream filter, single-node). **Metadata only** (the deliberate contrast with the slot bus, which re-pushes the whole value map): a 50 MB blob costs a few hundred bytes/change, not 50 MB to every client — consumers follow `signedUrl`. [`TurAgentWorkspaceService`](../turing-app/src/main/java/com/viglet/turing/genai/workspace/TurAgentWorkspaceService.java) `put`/`delete` publish after a successful storage op (the single seam every path funnels through: T112 Groovy helper, T114 auto-offload, future server-side writers). Endpoint [`streamWorkspace`](../turing-app/src/main/java/com/viglet/turing/api/sn/genai/TurSNSiteGenAiAPI.java) `GET /api/sn/{site}/chat/workspace/stream?conversationId=X&agentId=Y` (mirrors `/slots/stream`): optional `agentId` back-fills an initial snapshot (one synthetic `put` per existing artifact via `workspace.list`), then relays the bus; 25s comment heartbeat; T90 refcounting on a new `TurChatSlotSseRegistry.Mode.WORKSPACE` channel. **Agent-scoped variant**: the admin chat console is agent-scoped (no "site"), so a second endpoint [`TurAIAgentChatAPI.streamWorkspace`](../turing-app/src/main/java/com/viglet/turing/api/agent/TurAIAgentChatAPI.java) `GET /api/v2/ai-agent/{agentId}/workspace/stream?conversationId=X` carries agentId in the path (always back-fills the snapshot); authenticated like the rest of `/api/v2/ai-agent/**` (correct for the console, not `permitAll`). Wired into the chat [`ChatSessionInfoSheet`](../frontend/apps/turing-app/src/app/console/chat/components/chat-session-info-sheet.tsx) as a live "Workspace files" section (agent id derived from the `agent:<id>` tab in `chat-header`). SDK: vanilla [`subscribeWorkspaceSse`](../frontend/packages/sdk/src/workspace-sse.ts) multiplexer takes a `WorkspaceSseScope` (`{site?}` → site endpoint w/ optional agentId back-fill, or `{agentId}` → agent endpoint); folds single-artifact events into a running map → surfaces full `TurWorkspaceArtifacts` snapshots; one EventSource per `(baseURL,site,agentId,conversationId)`; late-subscriber microtask replay; + `TurWorkspaceArtifact`/`TurWorkspaceEvent`/`TurWorkspaceArtifacts` types. react-sdk [`useTuringWorkspace`](../frontend/packages/react-sdk/src/hooks/use-turing-workspace.ts) hook (SSE-only; site mode via `<TuringProvider>` or **agent mode** via `agent:{id}` — no provider needed; TUR_SESSION cookie sync, stale-conversation clear) + drop-in [`TuringWorkspacePanel`](../frontend/packages/react-sdk/src/ui/TuringWorkspacePanel.tsx) sidebar (render-prop rows, signed-URL download links, byte formatter). **Tests** — backend `TurWorkspaceEventBusTest` (3) + 3 new `TurAgentWorkspaceServiceTest` cases (put/delete publish, cross-conversation isolation) + 2 `TurAIAgentChatAPITest` cases (agent-scoped stream snapshot+bus relay, blank-conv empty). Verified: backend 9/9 + 18/18 agent-API green, test-compile clean; `@viglet/turing-sdk` + `@viglet/turing-react-sdk` build clean; `turing-app` `tsc -b` clean. | §IX.3.c |
 | T114 | 📋 | T111 | **Auto-offload large tool results** — when a tool returns >`TOOL_RESULT_INLINE_MAX` chars (default 4096), `TurToolCallbackPipeline` stores the full payload in workspace at `tool-results/{toolName}-{ts}.json`, replaces inline text with `Stored at workspace://tool-results/foo-1234.json (15KB) — call workspace.read(key) for full content.` Marker tells the LLM it can re-fetch. Cuts prompt-token bloat dramatically on tools that return JSON catalogs. | §IX.3.d |
 | T115 | 📋 | T111 | **Memory compression to workspace** — when persisted history exceeds `chatMemoryCompressionThresholdTokens` (default 8k), the oldest turns past the T30 recent-N window get summarized via a single dedicated LLM call → stored as `memory/summary-{from}-{to}.md` in workspace → the summary URL replaces those turns in the prompt context. Pairs with T30 BM25 relevance (relevance still surfaces the original turns when needed; summary is the default cheap path). | §IX.3.e |
 
@@ -976,6 +978,107 @@ Remaining platform-relevant promotions:
 | T230 | ✅ | T219 | **Deleted `TurChatService` and `chat.service.ts`** — after T227 retired the last call sites, a frontend-wide sweep confirmed nothing imported the `TurChatService` class anymore and `sendSemanticStream` was dead code (defined, never called — no residual service needed). The only surviving export was the `ChatMessageItem` type (`{ role: "user"|"assistant"|"system"; content }`), consumed by [chat.types.ts](../frontend/apps/turing-app/src/app/console/chat/chat.types.ts) (`ChatMessage extends …`) and [chat-session.service.ts](../frontend/apps/turing-app/src/services/chat/chat-session.service.ts) (`ChatSession.messages`); both now extend the SDK's byte-identical [`TurChatConversationMessage`](../frontend/packages/react-sdk/src/core/types.ts) instead, so the IndexedDB session shape is unchanged. File deleted (-368 lines); stale `TurChatService.sendAgentStream` JSDoc reference in `AgentChatTab` cleaned up. Method→SDK equivalence for the record: `sendStream`→`postLlmChat` (T224), `sendAgentStream`→`postAgentChat` (T221+T222), `queryLLMInstances`→`fetchLlmInstances` (T219), `fetchContextInfo`→`fetchLlmContextInfo` (T219), `fetchAgentContextInfo`→`fetchAgentContextInfo` (T219), `resetAgentFlowState`→`deleteAgentFlowState` (via `useTuringChat.resetFlow()`). Verified: admin app `tsc --noEmit -p tsconfig.app.json` exit 0; frontend-wide grep for `chat.service` / `TurChatService` / `ChatMessageItem` / `sendSemanticStream` returns zero matches. | §XII.2 |
 | T231 | ✅ | T226–T230 | **`chat.page.tsx` extraction** — T227 already extracted the per-agent tab content; T231 completed the structural goals. The child was renamed [AgentChatTab](../frontend/apps/turing-app/src/app/console/chat/components/agent-chat-tab.tsx) (matching this spec) and now owns its **full SDK hook trio**: `useTuringChat` (conversation) + `useTuringScheduleAgentWaiting` (the "Aguardando rotina…" banner, which transitively wraps `useTuringSlots`) — `useTuringScheduleAgentWaiting` moved out of the page into the tab, so the parent no longer threads a `routineWaiting` prop and each tab polls its own conversation's slots. The duplicated `toTuringMessages`/`toAdminMessages` admin↔SDK mappers were centralized into [chat.types.ts](../frontend/apps/turing-app/src/app/console/chat/chat.types.ts) (one definition, imported by both page and tab). The no-LLM disabled placeholder was extracted to a co-located `AgentNoLlmFallback` (the chat hook can't mount in agent mode without a valid LLM id, so it stays a sibling, not a branch inside the tab). **Top-level `chat.page.tsx` keeps** exactly what the spec lists: agent loading + default-agent resolution, multi-tab header + LLM/flow selectors (driving the per-tab `agent`/`flowId` props), session sidebar + restore (IndexedDB service unchanged), and compaction orchestration (admin-only, thin direct `postAgentChat`). Net delta: `chat.page.tsx` 571 → 400 lines; `agent-chat-tab.tsx` ~322 lines (incl. the fallback); `chat.service.ts` gone (-368, T230). Verified: admin `tsc --noEmit -p tsconfig.app.json` exit 0; frontend grep for `AgentTabContent`/`agent-tab-content` returns zero matches. Runtime still unproven — T232 smoke ITs remain the regression gate. | §XII.2 |
 | T232 | ✅ | T231 | **Admin smoke ITs (RTL)** — bootstrapped the **frontend's first test runner** (none existed in the monorepo): vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb, a standalone [vitest.config.ts](../frontend/apps/turing-app/vitest.config.ts) (deliberately NOT extending vite.config — drops Module Federation / Tailwind / boot-loader for jsdom), and [src/test/setup.ts](../frontend/apps/turing-app/src/test/setup.ts) with global module mocks (react-i18next passthrough, react-markdown→raw text, `useCurrentUser` stub, the shared `axios` singleton) + jsdom polyfills (`scrollIntoView`/`ResizeObserver`/`matchMedia`). Three tests in [chat/__tests__/](../frontend/apps/turing-app/src/app/console/chat/__tests__/): (1) **send+stream+chips** mounts `AgentChatTab`, stubs `fetch` with an SSE stream (`data: {type:token…}` / `{type:options…}`), asserts the streamed bubble + chip buttons, then clicks a chip and asserts the 2nd `fetch` body carries the chip label; (2) **session restore** seeds IndexedDB via the real `saveSession`, mounts the full `ChatPage` (services + `/llm` + context-info mocked, wrapped in a fresh `QueryClientProvider` for the header's session-info `useQuery`), asserts the session lists in the sidebar, clicks it, asserts the restored transcript renders (validates the controlled `conversationId` + `initialMessages` re-seed path from T227); (3) **scheduleAgent banner** stubs the `chat-slots` poll to inject a `__scheduleAgent_pending_*` marker, asserts "Aguardando rotina…" shows, clears the marker, asserts the next 2s poll removes it. They double as the regression suite for SDK↔admin protocol drift. Verified: `pnpm install` clean (no Windows EBUSY), **4/4 tests pass** (`pnpm --filter turing-app test`), `tsc -b` (build gate) exit 0 with test files included. Note: vitest 3.2.4 runs fine against Vite 8 here; bump to vitest 4 if a future Vite upgrade needs it. | §XII.2 |
+
+### Block I — Turing as an MCP Server (T245–T256)
+
+> Invert the integration: today Turing **consumes** external MCP
+> servers (`TurMcpServer` + `TurMcpToolCallbackService`). Block I makes
+> Turing **be** an MCP server so Claude Desktop, Claude Code, Cursor,
+> ChatGPT, and any agent runtime connect at `https://<host>/mcp` and
+> drive search / RAG / agents / ingestion as tools. The full design,
+> the per-persona productivity scenarios, and the sales narrative live
+> in **§XIII**. Tasks are ordered: stand up transport → lock the
+> security gate → expose read tools → richer surfaces → write/SaaS →
+> DX. **The cheap part is real**: the tool catalog (`search_site`,
+> `get_site_fields`, `list_sites`, `search_knowledge_base`,
+> `knowledge_base_stats`, integration/logging/system-info tools) is
+> already implemented as `@Tool` callbacks decorated through
+> `TurToolCallbackPipeline` — Block I is transport + auth + scoping,
+> not a re-implementation.
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T245 | 📋 | — | **MCP server transport (loopback first)** — add `spring-ai-starter-mcp-server-webmvc`, expose `/mcp` over Streamable HTTP, and register the existing decorated tool catalog via a `ToolCallbackProvider` built from `TurToolCallbackPipeline.decorate(...)` (real descriptions from `prompts/tools/**/*.md`, never the `"."` placeholders). Bound to loopback / disabled by default until T246. | §XIII.5 |
+| T246 | 📋 | T245 | **OAuth 2.1 resource-server auth + scoping** — Turing validates Keycloak-issued bearer tokens on `/mcp` (MCP authorization spec), maps token → tenant + role → allowed sites + allowed tool set. **Security gate: nothing leaves loopback before this lands.** | §XIII.6 |
+| T247 | 📋 | T246 | **Read search surface as MCP tools** — `list_sites`, `get_site_fields`, `search_site`, `get_document`, `similar_documents`, `facet_search`, `autocomplete`. Reuse the semantic-chat tool services; no new search logic. | §XIII.3 |
+| T248 | 📋 | T247 | **`rag_answer` — one-call cited RAG** — hybrid search + grounded answer + citations in a single MCP tool call, so a client gets enterprise-truth-grounded prose without orchestrating 3 calls. Reuses the §III RAG pipeline. | §XIII.3 |
+| T249 | 📋 | T246 | **`invoke_agent` + `list_agents`** — run a configured AI Agent / chat-flow headlessly over MCP (returns final answer + captured slots), reusing `TurAgentChatExecutor`. Lets an external orchestrator delegate a whole guided flow to Turing. | §XIII.3 |
+| T250 | 📋 | T247 | **MCP Resources** — expose indexed documents + site schemas as browsable MCP resources (`turing://site/{id}/doc/{docId}`), so clients can read/attach content directly, not only search it. | §XIII.3 |
+| T251 | 📋 | T245 | **MCP Prompts** — publish personas + system-prompt fragments as reusable MCP prompts, so a client can adopt the customer's brand voice with one prompt pick. | §XIII.3 |
+| T252 | 📋 | T247 | **Analytics tools** — `top_failed_searches`, `search_metrics`, `content_gaps`. Turns "what are users asking that we can't answer?" into a one-tool question for product/content teams. | §XIII.4 |
+| T253 | 💭 | T246 | **Gated write / ingestion tools** — `index_document`, `deindex_document`, `reindex_site`. Off by default, behind an explicit write scope + the storage/sandbox guardrails. Lets an agent push a folder of PDFs into a site. | §XIII.3 |
+| T254 | 💭 | T246 | **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). Builds on §X.5 T146. | §XIII.6 |
+| T255 | 💭 | T245 | **One-click client config (DX)** — admin generates ready-to-paste `mcp.json` snippets for Claude Desktop / Claude Code / Cursor (endpoint + auth). Removes the only friction between "we have Turing" and "my Claude can search it". | §XIII.7 |
+| T256 | 💭 | T254 | **Federation directory + bold bets** — cross-ref §X.5 T192: opt-in publish a redacted public MCP server to `directory.turing.io`; every publisher makes every subscriber's agents more useful. Network-effect moat. | §XIII.7 |
+
+### Block J — Multi-tenancy (T257–T284)
+
+> Turn the single-tenant install into a SaaS where each user/organization
+> self-registers and gets an isolated environment, **all on one shared
+> JVM**. Decided architecture (Q&A 2026-06-03, see §XIV.1): **(1)
+> discriminator-column isolation** — one DB/schema, Hibernate 6 `@TenantId`
+> auto-filters reads and stamps writes from a `TenantContext`; **(2) single
+> Keycloak realm + a tenant claim** — new `TurTenant` + `TurTenantMembership`
+> (a user may belong to many tenants), self-signup creates a tenant + owner
+> membership; **(3) tenant-owned infrastructure with an optional shared
+> pool** — `tenantId` on `llm_instance`/`se_instance`/`store_instance`/etc.,
+> `null` meaning a platform-global instance every tenant may use.
+>
+> **Hard rule — zero behavior change when tenancy is off.** Everything is
+> gated behind `turing.tenancy.enabled` (default **false**). When off, a
+> single immutable `DEFAULT` tenant is resolved for every request and the
+> Hibernate filter is a no-op equality against that constant — existing
+> single-tenant installs behave bit-for-bit as today. This follows the
+> project's "ship behavior changes as an opt-in flag, default = legacy"
+> convention. The legacy `turing.multi-tenant` flag + `createdBy`
+> pseudo-tenant filter on `TurSNSite` (`findAllForListingByCreatedBy`) is
+> **superseded** by this block and retired in T262.
+>
+> **The leak surface is the whole point.** Discriminator isolation is only
+> as safe as its weakest unscoped path. The dangerous tasks are not the
+> entity columns (Hibernate handles those) but the **out-of-band caches and
+> resources** that bypass the ORM: Hazelcast cache keys (id-only today →
+> cross-tenant serve), Solr/ES core names, storage paths, the Lucene vector
+> store, the global AES secret key, JMS messages, `@Scheduled findAll()`
+> sweeps, and **reactive/async thread hops** that drop the `ThreadLocal`
+> (chat SSE is a `Flux` — T274 is non-optional). T280 is the adversarial
+> cross-tenant isolation IT that gates "this is safe to expose."
+>
+> **Sequencing**: §XIV.2 (foundation) → §XIV.3 (identity/self-service) →
+> §XIV.4 (out-of-band resource scoping — the risky middle) → §XIV.5
+> (BYO/pool infra + quotas) → §XIV.6 (frontend) → §XIV.7 (hardening). Pick
+> the lowest-numbered task whose deps are ✅.
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T257 | 📋 | — | **`TurTenant` + `TurTenantMembership` model** — new aggregate `TurTenant` (UUID PK, unique `slug`/subdomain, `name`, `status` ACTIVE/SUSPENDED, `plan`, `createdAt`) and `TurTenantMembership` (tenant_id, username, `role` OWNER/ADMIN/MEMBER, status) so a user can belong to many tenants. Liquibase `v2026.3.x.yaml` (two tables + unique `(tenant_id, username)` + unique `slug`). Repositories + `@Cacheable`/`@CacheEvict` per the cache convention. **No behavior wired yet** — model only. Also seed the immutable `DEFAULT` tenant row used when tenancy is off. | §XIV.2.1 |
+| T258 | 📋 | T257 | **`TurTenantContext` (ThreadLocal holder)** — `set/get/clear(currentTenantId)` + a `SYSTEM`/privileged mode that bypasses the filter (for platform-admin + scheduled jobs). `resolveCurrentTenant()` returns `DEFAULT` when `turing.tenancy.enabled=false`. Unit-tested holder; nothing reads it yet. | §XIV.2.2 |
+| T259 | 📋 | T258 | **Tenant resolution filter** — a `OncePerRequestFilter` (ordered after auth) that resolves the tenant from, in priority: JWT `tenant` claim → session attribute → subdomain → `X-Turing-Tenant` header, validates the authenticated principal has an active `TurTenantMembership`, sets `TurTenantContext`, and **clears it in `finally`**. 403 on member-mismatch. No-op (`DEFAULT`) when tenancy off. | §XIV.2.3 |
+| T260 | 📋 | T259 | **Hibernate `@TenantId` wiring — pilot on `TurSNSite`** — register a `CurrentTenantIdentifierResolver` reading `TurTenantContext`, add a `@TenantId String tenantId` field + Liquibase column to `TurSNSite` only, and prove end-to-end with an IT: writes auto-stamp `tenantId`, reads auto-filter, a second tenant can't see the first's site. Validates the whole mechanism before the fan-out. | §XIV.2.4 |
+| T261 | 📋 | T260 | **Roll `@TenantId` across all tenant-owned entities** — add the field + Liquibase column (nullable first) to every aggregate root and any child with a non-parent-scoped finder: `ai_agent`, `chat_flow`, `chat_flow_state`, `chat_flow_submission`, `analytics_intent`, `custom_tool`, `ai_persona`, `tur_routine`, `tur_chat_webhook`, `dev_token`, `rag_bm25_core`, the `sn_site_*` children queried directly, `integration_instance`. Shared-infra tables deferred to T275. | §XIV.2.5 |
+| T262 | 📋 | T261 | **Backfill + retire legacy pseudo-tenant** — migration assigns all existing rows to `DEFAULT` (or maps `createdBy`→tenant where a 1:1 owner is known), flips columns to NOT NULL, and deletes the `turing.multi-tenant` branch + `findAllForListingByCreatedBy`/`findByCreatedBy` now that `@TenantId` does the filtering. | §XIV.2.6 |
+| T263 | 📋 | T257 | **Keycloak tenant claim + membership authorities** — extend `TurOidcUserService`/`TurOAuth2UserService` to read the `tenant`(s) claim/group, load `TurTenantMembership`, and expose membership + per-tenant role as authorities; map the session-auth (`/api/login`) path the same way. Single realm, no realm provisioning. | §XIV.3.1 |
+| T264 | 📋 | T263 | **Self-service signup** — `POST /api/signup` creates a `TurTenant` + OWNER `TurTenantMembership`, optionally provisions the Keycloak user via Admin API + sets the tenant attribute, idempotent, slug-uniqueness + reserved-word guard. Gated by the existing `turing.authentication.new-user`. | §XIV.3.2 |
+| T265 | 📋 | T263 | **Current-tenant switch API + "my tenants"** — `GET /api/tenants/mine`, `POST /api/tenants/{slug}/switch` (sets the session attribute T259 reads) for users in multiple tenants. | §XIV.3.3 |
+| T266 | 📋 | T260 | **Platform-admin cross-tenant context** — a privileged `SYSTEM`-mode entry (new `ROLE_PLATFORM_ADMIN`) that runs without the tenant filter for support/ops, **audited** on every cross-tenant read; the only sanctioned filter bypass. | §XIV.3.4 |
+| T267 | 📋 | T260 | **Cache tenant-awareness (HIGH leak risk)** — make every chat/repo `@Cacheable` key tenant-scoped via a `TurTenantCacheKeyGenerator` (or a tenant prefix on the resolved key) reading `TurTenantContext`; audit all cache names (§XIV.4.1 inventory). Extend `TurCacheAnnotationConventionsTest` to fail a `@Cacheable` whose key can't include a tenant when tenancy is on. | §XIV.4.1 |
+| T268 | 📋 | T261 | **Search-engine core/index tenant prefixing** — prefix `TurSNSiteLocale.core`, `rag_<storeId>_<locale>`, and `intent_<agentId>` with the tenant (`t<shortId>_…`); provisioner creates/drops per-tenant; SN search/listing APIs keep filtering internal cores by prefix. | §XIV.4.2 |
+| T269 | 📋 | T261 | **Storage path tenant scoping** — `TurStorageService` prepends `tenants/<tenantId>/` to every object key (MinIO + filesystem), `resolveSafe()` rejects traversal out of the tenant root; optional bucket-per-tenant behind a flag. | §XIV.4.3 |
+| T270 | 📋 | T261 | **Lucene vector store per-tenant base path** — `TurLuceneStoreProvider` resolves under `./store/lucene-vector/<tenantId>/`; the in-memory index cache key gains the tenant prefix so two tenants' same-named collections never share a handle. | §XIV.4.4 |
+| T271 | 📋 | T261 | **Per-tenant secret key derivation** — `TurSecretCryptoService` derives the AES key as `PBKDF2(masterKey, tenantId, salt)` so a leaked ciphertext from one tenant isn't decryptable under another; `encrypt/decrypt` gain a tenant arg (default `DEFAULT`). One-shot re-encryption migration for existing `apiKeyEncrypted`/`credentialEncrypted`. | §XIV.4.5 |
+| T272 | 📋 | T258 | **JMS tenant propagation** — stamp `tenantId` as a message property on `indexing.queue` / `routine.queue` sends; `TurSNProcessQueue` + routine listener restore `TurTenantContext` from the header before processing and clear after. | §XIV.4.6 |
+| T273 | 📋 | T272 | **Scheduled-job tenant fan-out** — wrap each `@Scheduled` sweep (`TurWeeklySearchReportService`, `TurChatAnalyticsRetentionWorker`, `TurChampionChallengerPromotionJob`, `TurCodeInterpreterCleanupTask`) to iterate active tenants, running each body inside that tenant's `TurTenantContext`; ShedLock names stay single (dispatcher) or go `<tenant>:<lock>` if parallelized. | §XIV.4.7 |
+| T274 | 📋 | T258 | **Reactive + async context propagation (non-optional)** — chat SSE is a `Flux` and `TurTenantContext` is a `ThreadLocal`; wire Micrometer `context-propagation` `ThreadLocalAccessor` + `Hooks.enableAutomaticContextPropagation()` and a `TaskDecorator` on the `@Async`/SSE executors so the tenant survives every thread hop. Regression: a chat turn must resolve the same tenant on the worker thread as on the request thread. | §XIV.4.8 |
+| T275 | 📋 | T261 | **Tenant-owned infra + shared pool** — add nullable `tenantId` to `llm_instance`, `embedding_model`, `store_instance`, `se_instance`, `mcp_server`, `integration_instance`; repositories return `tenantId = current ∪ tenantId IS NULL` (the platform pool); only `ROLE_PLATFORM_ADMIN` may create/edit global (`null`) instances. **Not** under `@TenantId` (it filters out NULLs) — explicit `(current OR null)` finders instead. | §XIV.5.1 |
+| T276 | 📋 | T275 | **Per-tenant cost attribution** — tag `llm_token_usage` rows with `tenantId`; analytics + billing roll-ups group by tenant. | §XIV.5.2 |
+| T277 | 💭 | T276 | **Plan-based quotas** — `TurTenant.plan` → limits (max agents/sites/storage bytes/monthly tokens); enforced at create + at LLM-call admission; 429/402 with a clear message. | §XIV.5.3 |
+| T278 | 📋 | T265 | **Frontend tenant context** — org switcher in the console header, signup/onboarding page, tenant-settings page; scope React Query keys by current tenant so a switch invalidates cleanly; send the tenant on every request (header/subdomain). | §XIV.6.1 |
+| T279 | 📋 | T266 | **Platform-admin tenant console** — list/suspend/delete tenants, view usage, impersonate (uses T266's audited cross-tenant context). | §XIV.6.2 |
+| T280 | 📋 | T267,T268,T269,T270,T271,T272,T274 | **Cross-tenant isolation IT suite (the safety gate)** — seed two tenants with colliding names/ids; assert every surface is isolated: REST reads, cache (no cross-serve), Solr/ES cores, storage, Lucene, secrets (B's ciphertext undecryptable as A), JMS, chat SSE. Negative tests: tenant-A user → 403/empty on tenant-B resources. Nothing ships to a real SaaS endpoint before this is green. | §XIV.7.1 |
+| T281 | 📋 | T280 | **Tenant lifecycle teardown** — suspend (block auth) + delete (cascade JPA rows + drop cores + purge storage prefix + delete Lucene dir + evict caches + delete Keycloak attribute); idempotent, audited, dry-run mode. | §XIV.7.2 |
+| T282 | 💭 | T280 | **MCP server multi-tenant scoping** — fold tenancy into Block I: `/mcp` OAuth token → tenant → `TurTenantContext`, reusing T246's scoping. Cross-references T254 (per-tenant SaaS endpoints). | §XIV.7.3 |
+| T283 | 📋 | T280 | **`docs/MULTI_TENANCY.md`** — the operator + developer guide: isolation model, the leak-surface checklist, "how to make a new entity tenant-safe", default-tenant/off behavior, teardown runbook. | §XIV.7.4 |
+| T284 | 💭 | T257 | **Hybrid escalation hook (future)** — keep the door open for migrating a heavy enterprise tenant to a dedicated schema/DB later (`TurTenant.isolationMode = SHARED \| SCHEMA \| DB`); pluggable `CurrentTenantIdentifierResolver` + `MultiTenantConnectionProvider` seam, no implementation now. Records the chosen-strategy reversal cost. | §XIV.7.5 |
 
 ### Non-goals (do NOT add as tasks)
 
@@ -5004,5 +5107,466 @@ future protocol fix lands in exactly one place.
 > lines from the admin chat module, one canonical place to fix the
 > next protocol bug, and three smoke ITs that catch the drift before
 > it ships."
+
+---
+
+## XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform
+
+> **The pitch in one line**: stop asking customers to integrate Turing
+> into their apps — let the AI client they *already pay for* (Claude
+> Desktop, Claude Code, Cursor, ChatGPT, internal agents) connect to
+> Turing in 30 seconds and search, answer, and act on their enterprise
+> content. Turing stops being "a chat UI you have to adopt" and becomes
+> **the grounding layer that lives inside whatever agent the customer
+> already uses.**
+
+### XIII.1 The thesis — two markets, one endpoint
+
+Turing today is consumed two ways: the public SN search/chat widget,
+and the admin console. Both require the customer to **come to Turing**.
+MCP inverts that: a `https://<host>/mcp` endpoint means **Turing goes
+to wherever the customer's intelligence already lives**.
+
+This is the §X.5 / T146 idea ("Turing's MCP server as a public
+consumption surface") promoted from a paragraph to a real plan, because
+the build cost just collapsed — see §XIII.2.
+
+- **Ganho 1 (sell to the buyer)**: "Your team already has Claude. Point
+  it at Turing and every employee can ask your intranet, your policies,
+  your product catalog — *with citations* — without you building a
+  single screen."
+- **Ganho 2 (sell to the architect)**: one MCP integration replaces N
+  bespoke REST integrations. Turing becomes one well-behaved node in a
+  multi-tool agent graph (Turing search + Jira + GitHub + Google Drive),
+  not a walled garden.
+- **Ganho 3 (sell to the CFO)**: zero net-new seats, zero net-new UI to
+  maintain. The interface is the LLM client the company already
+  standardized on. Turing monetizes the **grounding**, not the chrome.
+- **Strategic shift**: Turing competes to be the *search infrastructure
+  inside other AI products*, not only the customer-facing chat. Both
+  markets coexist; MCP adds the second one for almost free.
+
+### XIII.2 What exists today — why this is mostly transport, not a rewrite
+
+The senior-architect read: **the expensive 80% is already built.**
+
+- **The tool catalog already exists** as Spring AI `@Tool` callbacks:
+  `search_site` / `get_site_fields` / `list_sites`
+  ([`TurLLMSemanticChatAPI`](../turing-app/src/main/java/com/viglet/turing/api/llm/chat/TurLLMSemanticChatAPI.java)),
+  `search_knowledge_base` / `knowledge_base_stats` /
+  `list_knowledge_base_files` / `get_file_from_knowledge_base`
+  ([`TurRagSearchToolService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurRagSearchToolService.java)),
+  plus integration-monitoring, logging, and system-info tool services.
+  These are the *same* tools the internal Semantic-Navigation agent uses
+  — they're production-tested.
+- **Descriptions are already curated** — real tool docs live in
+  `prompts/tools/**/*.md` and are attached at runtime via
+  `TurToolDescriptionService` + `TurToolCallbackPipeline.decorate(...)`
+  (the `@Tool(description=".")` placeholders are intentional). MCP needs
+  exactly these descriptions, so we get them for free.
+- **The Spring AI MCP dependency is already on the classpath**
+  (`spring-ai-mcp` in [`turing-app/pom.xml`](../turing-app/pom.xml)) —
+  today wired only for the **consumer** path (`TurMcpServer` +
+  [`TurMcpToolCallbackService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurMcpToolCallbackService.java),
+  where Turing calls *out* to external MCP servers). The server starter
+  is the missing half.
+
+**Therefore**: Block I is (1) add the server transport, (2) bolt on
+auth + tenant/site scoping, (3) register the already-decorated callbacks
+as the MCP tool surface, (4) add resources/prompts. We are **not**
+re-implementing search, RAG, or the agent runtime. That's the whole
+reason this is worth doing now rather than "someday".
+
+> ⚠️ **The one hard part is not the tools — it's the trust boundary.**
+> The internal agent runs the tool catalog *server-side, on behalf of a
+> known agent*. An MCP server hands that catalog to an *external,
+> partially-trusted client*. T246 (auth + scoping) is therefore the
+> real engineering, and it must land before anything leaves loopback.
+> Everything else is plumbing.
+
+### XIII.3 The surface — tools, resources, prompts
+
+MCP has three primitives; Turing should expose all three (most products
+ship only tools and leave value on the table).
+
+**Tools** (verbs the client can call):
+
+| Tool | What it does | Backed by | Scope |
+|---|---|---|---|
+| `list_sites` | Discover SN sites + locales | `TurLLMSemanticChatAPI` | read |
+| `get_site_fields` | Field map + which are facets | existing | read |
+| `search_site` | Semantic / hybrid search, faceted | existing | read |
+| `autocomplete` | Type-ahead suggestions | SN autocomplete | read |
+| `get_document` | Fetch one indexed doc by id | SN store | read |
+| `similar_documents` | KNN vector neighbors | §III vector store | read |
+| `facet_search` | Faceted drill-down | existing | read |
+| `rag_answer` (T248) | Hybrid search → grounded, **cited** answer in one call | §III RAG pipeline | read |
+| `invoke_agent` / `list_agents` (T249) | Run a whole chat-flow headlessly, return answer + slots | `TurAgentChatExecutor` | read |
+| `top_failed_searches` / `content_gaps` (T252) | "What are users asking that we can't answer?" | chat/search analytics | read |
+| `index_document` / `reindex_site` (T253) | Push/refresh content | SN indexing | **write (gated)** |
+
+**Resources** (nouns the client can read/attach — T250): expose indexed
+documents and site schemas as `turing://site/{id}/doc/{docId}` and
+`turing://site/{id}/schema`. This lets a client *attach* the source
+document to its context window, not just receive a search snippet — the
+difference between "here's a summary" and "here's the actual policy PDF,
+reason over it."
+
+**Prompts** (reusable templates — T251): publish each Persona and the
+composed system-prompt fragments as MCP prompts. One pick in Claude's
+prompt menu and the customer's brand voice + guardrails come along.
+
+### XIII.4 The scenarios — productivity gains by persona (the sales engine)
+
+Each row is a demo you can run on a customer call. The common shape:
+*the customer keeps their tool, Turing supplies the truth.*
+
+1. **Developer in Claude Code / Cursor** — "how does our auth refresh
+   flow work?" Claude calls `search_site` over the company's
+   Turing-indexed wiki + ADRs + code docs, answers *with links*, never
+   leaving the editor. **Gain**: kills the context-switch to Confluence;
+   answers are grounded in *current* internal docs, not the model's
+   stale training data.
+2. **Every employee via Claude Desktop** — the customer buys Claude for
+   the org, points it at Turing, and the whole intranet/policies/HR-FAQ
+   becomes ask-able with citations. **Gain**: enterprise search adoption
+   with *zero* UI build and zero new login — the chat the company
+   already uses *is* the search front-end.
+3. **Content / editorial ops** — "list every page that still mentions
+   the old product name, with URLs." `facet_search` + `search_site` →
+   instant content audit. **Gain**: a half-day manual crawl becomes a
+   sentence.
+4. **Bulk ingestion by agent (T253)** — "index this folder of policy
+   PDFs into the `compliance` site." Claude reads the files and calls
+   `index_document`. **Gain**: content onboarding without the admin
+   console or a connector project.
+5. **Multi-tool orchestration** — "find the incident runbook in our KB,
+   open a Jira ticket, and link the doc." Turing MCP (search) + Atlassian
+   MCP (Jira) in one Claude flow. **Gain**: Turing becomes a *composable*
+   node, not an integration dead-end.
+6. **Answer grounding / anti-hallucination** — any agent calls
+   `rag_answer` (T248) to ground a draft in enterprise truth before
+   replying. **Gain**: the citation trail is the auditable defense for
+   regulated answers.
+7. **Self-service content-gap analytics (T252)** — "what did users
+   search last week that returned nothing?" `content_gaps` → the product
+   team sees exactly what content to write next. **Gain**: turns search
+   logs into a backlog without a BI project.
+8. **Admin introspection** — "which fields on the Products site are
+   faceted?" `get_site_fields`. **Gain**: configure/debug from the same
+   chat, no console hunting.
+9. **Delegated guided flows (T249)** — an external orchestrator hands a
+   whole lead-capture / triage chat-flow to Turing via `invoke_agent`
+   and gets back the captured slots. **Gain**: reuse the customer's
+   carefully-authored flows from *outside* the Turing chat widget.
+10. **Turing-inside-an-ISV-product (B2B2C)** — a software vendor builds
+    their own AI product and uses Turing MCP as the enterprise-search
+    backend. **Gain**: Turing earns infrastructure revenue inside
+    products it doesn't have to build (the §XIII.1 strategic shift).
+
+### XIII.5 Architecture — how to build it (senior architect)
+
+- **Transport (T245)**: add `spring-ai-starter-mcp-server-webmvc`,
+  serve **Streamable HTTP** at `/mcp`. Prefer Streamable HTTP over the
+  deprecated HTTP+SSE transport from the MCP spec; keep an SSE fallback
+  only if a target client still needs it.
+- **Tool registration (T245)**: build the server's `ToolCallbackProvider`
+  from `TurToolCallbackPipeline.decorate(callbacks)` — the *same*
+  decoration path the internal agent uses, so descriptions
+  (`prompts/tools/**/*.md`), naming, and the placeholder-stripping all
+  come along. **Never** register raw `@Tool` callbacks with the `"."`
+  descriptions. This is a project invariant (see `agents.md`).
+- **One catalog, two consumers**: the internal Semantic-Nav agent and
+  the external MCP server should resolve tools through the *same*
+  factory so a new tool shows up in both surfaces. Avoid a parallel
+  hand-maintained MCP tool list — that's how the surfaces drift.
+- **Large catalogs (T254)**: reuse **tool pre-filtering (T29)** so a
+  client connecting to a tenant with dozens of tools gets a relevant
+  subset, not a 60-tool wall that blows the client's tool budget.
+- **Observability (T254)**: emit per-tool MCP call metrics by reusing
+  the **T88 tool-latency** accumulator and **T32 meters** — the MCP
+  surface must be as observable as the internal agent (p95 per tool,
+  error rate, calls per tenant).
+- **Resources/prompts (T250/T251)**: back resources with the SN store +
+  schema introspection already used by `get_site_fields`; back prompts
+  with the persona/system-prompt composition from §IV.5 + the persona
+  domain.
+- **Reuse, don't fork**: `invoke_agent` (T249) routes through
+  `TurAgentChatExecutor` (do not duplicate the flow runtime); `rag_answer`
+  (T248) routes through the §III RAG pipeline.
+
+### XIII.6 Security, multi-tenancy & governance (the part that earns the enterprise check)
+
+This is where the deal is won or lost in an enterprise review.
+
+- **Auth (T246)**: implement the **MCP authorization spec** — Turing is
+  an OAuth 2.1 **resource server** validating Keycloak-issued bearer
+  tokens on `/mcp`. No anonymous access to a non-loopback endpoint, ever.
+- **Scoping**: token → tenant → role → **allowed sites** + **allowed
+  tools**. A marketing token sees the public catalog + read tools; an
+  ops token additionally sees ingestion tools. Scoping is enforced
+  server-side *inside* each tool callback, not just at the endpoint —
+  defense in depth.
+- **Read-only by default**: write/ingestion tools (T253) require an
+  explicit write scope and stay off until a customer opts in. Same
+  posture as the storage + Code-Interpreter sandbox lessons (§VII).
+- **Per-tenant endpoints (T254)**: SaaS gets
+  `https://<tenant>.turing.cloud/mcp`; the token decides which sites are
+  even *visible*, so a misconfigured client can't enumerate another
+  tenant's content.
+- **Rate limiting & cost**: a public MCP surface is a new attack/cost
+  surface. Per-token rate limits + the existing multi-tenant cost
+  controls (§X.14) apply here too.
+- **Auditability**: every MCP tool call is attributable to a token →
+  user → tenant, and lands in the same audit trail as internal tool
+  calls. This is the line that closes regulated verticals.
+
+### XIII.7 DX & distribution — remove the last 30 seconds of friction
+
+- **One-click client config (T255)**: the admin generates ready-to-paste
+  `mcp.json` for Claude Desktop / Claude Code / Cursor — endpoint, auth
+  hint, recommended tool subset. The gap between "we bought Turing" and
+  "my Claude can search it" should be a copy-paste, not a docs safari.
+- **Federation directory (T256, xref §X.5 T192)**: tenants opt-in to
+  publish a *redacted* public MCP server (public docs, public catalog)
+  to `directory.turing.io`; subscribers add it to their agent's
+  allow-list. Every publisher makes every subscriber's agents more
+  useful — a long-tail network-effect moat that pure-API competitors
+  can't replicate.
+
+### XIII.8 Sequencing — what to ship first
+
+1. **T245** — transport + register the decorated catalog, **bound to
+   loopback**. Demo-able same week against a local Claude Desktop /
+   Claude Code. Proves the catalog reuse with near-zero new code.
+2. **T246** — auth + scoping. The gate. Nothing reaches a non-loopback
+   address before this is green.
+3. **T247 + T248** — the read search surface + `rag_answer`. This is the
+   "point Claude at your intranet, get cited answers" demo — the core
+   sales moment.
+4. **T249 + T250 + T251** — agents, resources, prompts. Depth that
+   separates Turing from a thin search API.
+5. **T252** — analytics tools. Easy, high-perceived-value, content-team
+   love.
+6. **T253 + T254** — gated writes + per-tenant SaaS. The monetizable,
+   enterprise-grade surface.
+7. **T255 + T256** — DX polish + the federation long-shot.
+
+**Convicted first move**: ship **T245 against loopback** to prove the
+"the tools we already have just *become* an MCP server" thesis in a
+single demo, then immediately fund **T246** because every dollar of
+this only unlocks once the trust boundary is real.
+
+### XIII.9 The narrative — one paragraph
+
+> "Turing already speaks MCP — as a client. It calls out to external
+> tool servers today through `TurMcpToolCallbackService`. Block I flips
+> the arrow: the same production-tested tool catalog the internal agent
+> uses — `search_site`, `get_site_fields`, `search_knowledge_base`, the
+> integration/logging/system-info tools, all already decorated with
+> curated descriptions through `TurToolCallbackPipeline` — gets
+> re-exposed at `https://<host>/mcp` so the AI client the customer
+> already pays for can drive Turing directly. No new chat UI to build,
+> no new seats to buy, one MCP integration instead of N REST ones. The
+> hard 80% (the tools, the descriptions, the RAG pipeline, the agent
+> runtime) is done; the work is transport, an OAuth-2.1 trust boundary
+> with per-tenant/per-site scoping, and the resources/prompts that turn
+> a search API into a first-class agent surface. The strategic payoff:
+> Turing stops competing only to be the customer's chat window and
+> starts competing to be the **grounding layer inside every other AI
+> product** — a second market, opened for the cost of plumbing we mostly
+> already own."
+
+---
+
+## XIV. Multi-tenancy — one shared JVM, many isolated tenants
+
+> Goal: let a user or organization self-register and get an environment
+> that is *theirs* — their sites, agents, chat flows, personas, indexes,
+> uploads, analytics — while **one JVM process serves all of them**. This
+> is the SaaS pivot for Turing. The detail below is the source of truth
+> for the Block J tasks (T257–T284); the table in §0 is the executable
+> view.
+
+### XIV.1 The decision (Q&A 2026-06-03) and why
+
+Three forks decided up front because they shape every downstream task:
+
+1. **Data isolation → discriminator column (one DB, one schema).**
+   Hibernate 6's native `@TenantId` adds the partition column to inserts
+   and a `WHERE tenant_id = ?` to every read automatically, driven by a
+   `CurrentTenantIdentifierResolver` that reads a request-scoped
+   `TurTenantContext`. Chosen over schema-per-tenant / DB-per-tenant
+   because: (a) it fits the **shared-JVM** constraint with a single
+   connection pool — no per-tenant `DataSource` juggling; (b) it slots
+   onto the existing **all-UUID-string PKs** (no sequence/collision
+   concerns); (c) it generalizes the seed already in the codebase
+   (`turing.multi-tenant` + `TurSNSite.findAllForListingByCreatedBy`);
+   (d) self-service signup is a row insert, not a schema provision. The
+   trade-off — logical, not physical, isolation — is mitigated by T280's
+   adversarial isolation suite and the per-tenant secret key (T271), and
+   the door to schema/DB escalation for a heavy tenant is kept open by
+   T284.
+
+2. **Identity → single Keycloak realm + a tenant claim.** A new
+   `TurTenant` aggregate and a `TurTenantMembership` join (user ↔ tenant ↔
+   role) let one user belong to many tenants. Keycloak stays one realm; a
+   `tenant` claim/group on the token selects the active tenant; the
+   session-auth path mirrors it. Chosen over realm-per-tenant because
+   self-service signup must not require Keycloak Admin realm provisioning
+   on the hot path, and most users will live in exactly one tenant. The
+   existing JPA RBAC (`TurUser`/`TurGroup`/`TurRole`/`TurPrivilege`) is
+   reused, scoped per membership.
+
+3. **Shared infrastructure → tenant-owned (BYO keys) with an optional
+   shared pool.** `tenantId` becomes a *nullable* column on
+   `llm_instance`/`embedding_model`/`store_instance`/`se_instance`/
+   `mcp_server`/`integration_instance`: a non-null value is a tenant's own
+   instance (their API key, their endpoint); `null` is a
+   platform-provided global instance every tenant may use, editable only
+   by `ROLE_PLATFORM_ADMIN`. These tables are deliberately **not** under
+   `@TenantId` (which would filter the shared NULLs out) — they use
+   explicit `tenantId = :current OR tenantId IS NULL` finders.
+
+**The non-negotiable invariant — off means legacy.** All of this hides
+behind `turing.tenancy.enabled` (default **false**). When off, every
+request resolves the immutable `DEFAULT` tenant and the discriminator is a
+constant equality, so single-tenant installs are byte-for-byte unchanged.
+This is the project's standing "opt-in flag, default = legacy" rule and it
+keeps the entire existing IT suite valid without revalidation.
+
+**Where the risk actually lives.** The `@TenantId` columns are the *easy*
+80% — Hibernate enforces them once wired. The breach surface is every path
+that bypasses the ORM and is keyed by id-only today:
+
+| Resource | Today | Tenant-safe form | Task |
+|---|---|---|---|
+| Hazelcast `@Cacheable` | key = entity id | key prefixed with tenant | T267 |
+| Solr/ES cores | `site_en`, `rag_<id>_<loc>`, `intent_<id>` | `t<short>_…` prefix | T268 |
+| Object storage | flat under `assets/` | `tenants/<id>/…` prefix + guard | T269 |
+| Lucene vector store | `./store/lucene-vector/<coll>` | `…/<tenantId>/<coll>` | T270 |
+| Secret crypto | one global AES key | `PBKDF2(master, tenantId)` | T271 |
+| Artemis JMS | no tenant header | `tenantId` message property | T272 |
+| `@Scheduled findAll()` | sweeps all rows = all tenants | per-tenant fan-out in context | T273 |
+| Reactive/async hops | `ThreadLocal` dropped on Flux/`@Async` | context propagation | T274 |
+
+T274 deserves a flag: the chat pipeline returns a `Flux<ChatResponse>` and
+Reactor freely switches threads, so the request-thread `ThreadLocal` is
+gone by the time the LLM call runs. Without Micrometer context propagation
++ `Hooks.enableAutomaticContextPropagation()` the worker thread resolves
+`DEFAULT` (or worse, the *previous* request's tenant on a pooled thread).
+This is the single most likely silent cross-tenant bug.
+
+### XIV.2 Foundation — tenant model, context, filter, discriminator
+
+- **XIV.2.1 (T257)** — `TurTenant` (`id` UUID, unique `slug`, `name`,
+  `status`, `plan`, `createdAt`) + `TurTenantMembership` (`tenant_id`,
+  `username`, `role` OWNER/ADMIN/MEMBER, `status`; unique
+  `(tenant_id, username)`). Liquibase per convention (camelCase columns,
+  `longtext` where needed, idempotent preconditions). Seed the `DEFAULT`
+  tenant. Repositories follow the `@Cacheable`/`@CacheEvict` pairing rule.
+- **XIV.2.2 (T258)** — `TurTenantContext`: a `ThreadLocal<String>` holder
+  with `set/get/clear` and a `runAs(tenantId, Runnable)` + `runAsSystem`
+  helper. `resolveCurrentTenant()` short-circuits to `DEFAULT` when the
+  feature flag is off so nothing downstream needs flag-awareness.
+- **XIV.2.3 (T259)** — `TurTenantResolutionFilter` (`OncePerRequestFilter`,
+  ordered after the security filter so the principal is known). Resolution
+  priority JWT claim → session attr → subdomain → header. Validates active
+  `TurTenantMembership` for the principal (403 on mismatch); anonymous
+  public-search paths resolve the site's tenant from the site itself.
+  `clear()` in `finally` — pooled threads must never leak a tenant.
+- **XIV.2.4 (T260)** — Register `CurrentTenantIdentifierResolver` →
+  `TurTenantContext`; enable Hibernate discriminator multi-tenancy; add
+  `@TenantId String tenantId` to `TurSNSite` + Liquibase column **as the
+  pilot**. Prove with an IT (auto-stamp on write, auto-filter on read,
+  tenant-B blind to tenant-A) before fan-out.
+- **XIV.2.5 (T261)** — fan the field + column (nullable first) across all
+  aggregate roots and directly-queried children listed in the T261 row.
+  Each new entity file carries the `@since` tag at the current version.
+- **XIV.2.6 (T262)** — backfill to `DEFAULT` (or `createdBy`→tenant where a
+  1:1 mapping exists), flip NOT NULL in a *follow-up* changelog (never edit
+  a shipped one), delete the `turing.multi-tenant`/`createdBy` filter path.
+
+### XIV.3 Identity & self-service
+
+- **XIV.3.1 (T263)** — membership-aware authorities in both OIDC and
+  session paths; the `tenant` claim picks the active membership.
+- **XIV.3.2 (T264)** — `POST /api/signup`: create tenant + OWNER
+  membership, optional Keycloak user provision via Admin API (preserving
+  the issuer-uri base path — see the Keycloak context-path memory),
+  slug uniqueness + reserved-word guard, idempotent.
+- **XIV.3.3 (T265)** — `GET /api/tenants/mine` + `POST /…/switch` for
+  multi-tenant users.
+- **XIV.3.4 (T266)** — `ROLE_PLATFORM_ADMIN` + an audited `runAsSystem`
+  bypass; the *only* sanctioned way to read across tenants.
+
+### XIV.4 Out-of-band resource scoping (the risky middle)
+
+One task per resource in the XIV.1 table:
+
+- **XIV.4.1 (T267)** — `TurTenantCacheKeyGenerator` or a tenant prefix on
+  resolved keys for every chat/repo `@Cacheable`. Inventory the cache
+  names (the project already tracks ~9 chat IMaps + the repository
+  `turXxxfindAll/findById` families). Extend `TurCacheAnnotationConventionsTest`
+  to assert tenant-safety when the flag is on.
+- **XIV.4.2 (T268)** — core/index prefixing + per-tenant provisioning;
+  keep internal cores filtered from `TurSNSiteSearchAPI` by prefix (same
+  technique T24b uses for `rag_`/`intent_`).
+- **XIV.4.3 (T269)** — `tenants/<tenantId>/` storage prefix in
+  `TurStorageService` (both impls), `resolveSafe()` tenant-root guard,
+  optional bucket-per-tenant flag.
+- **XIV.4.4 (T270)** — per-tenant Lucene base path + cache-key prefix.
+- **XIV.4.5 (T271)** — per-tenant AES key derivation + one-shot
+  re-encryption migration.
+- **XIV.4.6 (T272)** — `tenantId` JMS property on send; listeners restore
+  + clear context.
+- **XIV.4.7 (T273)** — per-tenant fan-out of every `@Scheduled` sweep.
+- **XIV.4.8 (T274)** — reactive/async context propagation; regression IT
+  asserting worker-thread tenant == request-thread tenant.
+
+### XIV.5 BYO infra + shared pool + quotas
+
+- **XIV.5.1 (T275)** — nullable `tenantId` on the infra tables; `current ∪
+  null` finders; platform-admin gate on global instances.
+- **XIV.5.2 (T276)** — `tenantId` on `llm_token_usage` for cost roll-up.
+- **XIV.5.3 (T277, 💭)** — plan-based quota enforcement at create + LLM
+  admission.
+
+### XIV.6 Frontend
+
+- **XIV.6.1 (T278)** — org switcher, signup/onboarding, tenant settings,
+  tenant-scoped React Query keys, tenant sent on every request.
+- **XIV.6.2 (T279)** — platform-admin tenant console (list/suspend/delete/
+  impersonate).
+
+### XIV.7 Hardening
+
+- **XIV.7.1 (T280)** — the adversarial cross-tenant isolation IT suite.
+  **This is the ship gate**: no SaaS endpoint goes live until every
+  surface in the XIV.1 table has a passing negative test (tenant-A cannot
+  observe tenant-B via REST, cache, core, storage, Lucene, secret, JMS, or
+  SSE). Builds on `AbstractTuringSpringIT` (do not redeclare
+  `@SpringBootTest`; per-JVM Artemis dir; JMX via `properties`).
+- **XIV.7.2 (T281)** — tenant teardown across JPA + cores + storage +
+  Lucene + caches + Keycloak; idempotent, audited, dry-run.
+- **XIV.7.3 (T282, 💭)** — fold tenancy into the Block I MCP server
+  (`/mcp` token → tenant), cross-ref T246/T254.
+- **XIV.7.4 (T283)** — `docs/MULTI_TENANCY.md`: model, leak-surface
+  checklist, "how to make a new entity tenant-safe", off-behavior,
+  teardown runbook.
+- **XIV.7.5 (T284, 💭)** — keep the escalation seam to schema/DB isolation
+  for a heavy enterprise tenant (`TurTenant.isolationMode`), no
+  implementation now.
+
+### XIV.8 Non-goals for this block
+
+- No schema-per-tenant or DB-per-tenant implementation now (only the T284
+  seam).
+- No realm-per-tenant Keycloak provisioning.
+- No rewrite of the existing RBAC model — it is reused, scoped per
+  membership.
+- No change to single-tenant behavior when `turing.tenancy.enabled=false`.
+- Shared-infra instances stay shared by design (the `null`-tenant pool);
+  this block does not force every instance to be tenant-owned.
 
 ---

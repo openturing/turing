@@ -21,7 +21,11 @@ import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
+import com.viglet.turing.genai.workspace.TurAgentWorkspace;
+import com.viglet.turing.genai.workspace.TurWorkspaceEvent;
+import com.viglet.turing.genai.workspace.TurWorkspaceEventBus;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
+import com.viglet.turing.service.chatslots.TurChatSlotSseRegistry;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -61,6 +65,9 @@ public class TurAIAgentChatAPI {
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurCodeInterpreterUrlSigner urlSigner;
+    private final TurAgentWorkspace agentWorkspace;
+    private final TurWorkspaceEventBus workspaceEventBus;
+    private final TurChatSlotSseRegistry slotSseRegistry;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentRepositoryPort turAIAgentRepositoryPort,
@@ -71,7 +78,10 @@ public class TurAIAgentChatAPI {
             TurAgentChatExecutor agentChatExecutor,
             TurChatFlowRepository turChatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
-            TurCodeInterpreterUrlSigner urlSigner) {
+            TurCodeInterpreterUrlSigner urlSigner,
+            TurAgentWorkspace agentWorkspace,
+            TurWorkspaceEventBus workspaceEventBus,
+            TurChatSlotSseRegistry slotSseRegistry) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -82,6 +92,9 @@ public class TurAIAgentChatAPI {
         this.turChatFlowRepository = turChatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
         this.urlSigner = urlSigner;
+        this.agentWorkspace = agentWorkspace;
+        this.workspaceEventBus = workspaceEventBus;
+        this.slotSseRegistry = slotSseRegistry;
     }
 
     public record AgentChatRequest(
@@ -217,6 +230,47 @@ public class TurAIAgentChatAPI {
     public TurChatSessionSlotsDto chatSlots(@PathVariable String agentId,
             @RequestParam String conversationId) {
         return chatFlowEngineService.listSlotsForConversation(conversationId);
+    }
+
+    /**
+     * T113 — agent-scoped variant of the workspace artifact stream. Same
+     * contract as the site-scoped {@code /api/sn/{site}/chat/workspace/stream}
+     * (one server-sent event per blob {@code put}/{@code delete}, metadata
+     * only), but the {@code agentId} rides in the path instead of a query
+     * param — so the admin chat console (which is agent-scoped and has no
+     * "site") can render the live "files this agent built for you" sidebar.
+     *
+     * <p>The initial snapshot back-fill always runs here (the path always
+     * carries the agent), then the bus relays live mutations. Same 25s comment
+     * heartbeat, T90 refcounting on the {@code WORKSPACE} channel, and
+     * single-node caveat as the slot streams.
+     *
+     * @since 2026.3.1
+     */
+    @GetMapping(value = "/workspace/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> streamWorkspace(
+            @PathVariable String agentId,
+            @RequestParam String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return Flux.empty();
+        }
+        Flux<TurWorkspaceEvent> initial =
+                Flux.fromIterable(agentWorkspace.list(agentId, conversationId, null))
+                        .map(entry -> TurWorkspaceEvent.put(conversationId, entry.key(),
+                                entry.contentType(), entry.sizeBytes(), entry.signedUrl()));
+        Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> data =
+                Flux.concat(initial, workspaceEventBus.subscribe(conversationId))
+                        .map(event -> org.springframework.http.codec.ServerSentEvent
+                                .<TurWorkspaceEvent>builder(event).build());
+        Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> heartbeats =
+                Flux.interval(java.time.Duration.ofSeconds(25))
+                        .map(tick -> org.springframework.http.codec.ServerSentEvent
+                                .<TurWorkspaceEvent>builder().comment("heartbeat").build());
+        return Flux.merge(data, heartbeats)
+                .doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+                        TurChatSlotSseRegistry.Mode.WORKSPACE))
+                .doFinally(sig -> slotSseRegistry.release(conversationId,
+                        TurChatSlotSseRegistry.Mode.WORKSPACE));
     }
 
     @GetMapping("/chat/context-info")

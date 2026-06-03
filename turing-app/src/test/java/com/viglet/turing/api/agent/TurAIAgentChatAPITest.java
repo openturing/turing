@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -71,6 +73,12 @@ class TurAIAgentChatAPITest {
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
     @Mock
     private com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner urlSigner;
+    @Mock
+    private com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace;
+    @Mock
+    private com.viglet.turing.genai.workspace.TurWorkspaceEventBus workspaceEventBus;
+    @Mock
+    private com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
 
     private TurAIAgentChatAPI api;
 
@@ -80,7 +88,8 @@ class TurAIAgentChatAPITest {
                 turAIAgentRepository, turAIAgentRepositoryPort,
                 turLLMInstanceRepository, turLLMInstanceRepositoryPort,
                 llmProviderFactory, turSecretCryptoService, agentChatExecutor,
-                turChatFlowRepository, chatFlowEngineService, urlSigner);
+                turChatFlowRepository, chatFlowEngineService, urlSigner,
+                agentWorkspace, workspaceEventBus, slotSseRegistry);
     }
 
     private static TurAIAgentDomain agentDomain(String id) {
@@ -335,5 +344,49 @@ class TurAIAgentChatAPITest {
         var r2 = new TurAIAgentChatAPI.ChatResponse("user", "Hi");
 
         assertThat(r1).isNotEqualTo(r2);
+    }
+
+    // --- streamWorkspace() tests (T113, agent-scoped) ---
+
+    @Test
+    void streamWorkspaceEmitsInitialSnapshotThenRelaysBus() {
+        // Snapshot back-fill from the workspace, plus a live put from the bus.
+        when(agentWorkspace.list("agent-1", "conv-1", null)).thenReturn(List.of(
+                new com.viglet.turing.genai.workspace.WorkspaceEntry(
+                        "reports/a.csv", 12L, "text/csv", "2026-06-03T00:00:00Z",
+                        "/api/v2/workspace/file?agentId=agent-1&conversationId=conv-1&key=reports%2Fa.csv")));
+        when(workspaceEventBus.subscribe("conv-1")).thenReturn(reactor.core.publisher.Flux.just(
+                com.viglet.turing.genai.workspace.TurWorkspaceEvent.delete("conv-1", "old.txt")));
+
+        List<com.viglet.turing.genai.workspace.TurWorkspaceEvent> received = new ArrayList<>();
+        var sub = api.streamWorkspace("agent-1", "conv-1")
+                .map(sse -> sse.data())
+                .filter(Objects::nonNull)
+                .subscribe(received::add);
+
+        // Both the initial snapshot put and the bus delete arrive synchronously
+        // (fromIterable + Flux.just); the 25s heartbeat hasn't fired.
+        assertThat(received).hasSize(2);
+        assertThat(received.get(0).event())
+                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.PUT);
+        assertThat(received.get(0).key()).isEqualTo("reports/a.csv");
+        assertThat(received.get(0).contentType()).isEqualTo("text/csv");
+        assertThat(received.get(0).size()).isEqualTo(12L);
+        assertThat(received.get(1).event())
+                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.DELETE);
+        assertThat(received.get(1).key()).isEqualTo("old.txt");
+        sub.dispose();
+    }
+
+    @Test
+    void streamWorkspaceBlankConversationIsEmpty() {
+        List<com.viglet.turing.genai.workspace.TurWorkspaceEvent> received = new ArrayList<>();
+        var sub = api.streamWorkspace("agent-1", "  ")
+                .map(sse -> sse.data())
+                .filter(Objects::nonNull)
+                .subscribe(received::add);
+
+        assertThat(received).isEmpty();
+        sub.dispose();
     }
 }

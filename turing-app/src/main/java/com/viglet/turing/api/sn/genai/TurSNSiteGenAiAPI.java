@@ -46,6 +46,9 @@ import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.workspace.TurAgentWorkspace;
+import com.viglet.turing.genai.workspace.TurWorkspaceEvent;
+import com.viglet.turing.genai.workspace.TurWorkspaceEventBus;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
 import com.viglet.turing.persistence.dto.intent.TurIntentDto;
 import com.viglet.turing.persistence.mapper.intent.TurIntentMapper;
@@ -96,6 +99,8 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatMultiModalSlotService multiModalSlotService;
 	private final TurChatHandoffService handoffService;
 	private final TurChatShareOgService shareOgService;
+	private final TurAgentWorkspace agentWorkspace;
+	private final TurWorkspaceEventBus workspaceEventBus;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -112,7 +117,9 @@ public class TurSNSiteGenAiAPI {
 			TurChatSlotExtractionService slotExtractionService,
 			TurChatMultiModalSlotService multiModalSlotService,
 			TurChatHandoffService handoffService,
-			TurChatShareOgService shareOgService) {
+			TurChatShareOgService shareOgService,
+			TurAgentWorkspace agentWorkspace,
+			TurWorkspaceEventBus workspaceEventBus) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -129,6 +136,8 @@ public class TurSNSiteGenAiAPI {
 		this.multiModalSlotService = multiModalSlotService;
 		this.handoffService = handoffService;
 		this.shareOgService = shareOgService;
+		this.agentWorkspace = agentWorkspace;
+		this.workspaceEventBus = workspaceEventBus;
 	}
 
 	/**
@@ -631,6 +640,61 @@ public class TurSNSiteGenAiAPI {
 						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA))
 				.doFinally(sig -> slotSseRegistry.release(conversationId,
 						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA));
+	}
+
+	/**
+	 * T113 / §IX.3.c — workspace artifact stream. The exact analogue of
+	 * {@link #streamSlots} for the per-conversation blob store (T111): emits one
+	 * server-sent event per workspace mutation so a portal can render the live
+	 * "files this agent built for you" sidebar.
+	 *
+	 * <p>The first events are an initial <b>snapshot</b> — one {@code put} per
+	 * artifact already present — so a client that connects mid-conversation sees
+	 * the existing files immediately. The snapshot requires {@code agentId} (the
+	 * blob store is scoped by agent + conversation); omit it and the stream still
+	 * delivers live mutations, just without the back-fill. After the snapshot the
+	 * stream relays every {@code put}/{@code delete} from
+	 * {@link com.viglet.turing.genai.workspace.TurWorkspaceEventBus}.
+	 *
+	 * <p>Each event carries <b>metadata only</b>
+	 * ({@code {event, key, contentType, size, signedUrl}}) — never the bytes, so
+	 * a large blob never floods every connected client (the deliberate contrast
+	 * with the slot bus, which re-pushes the whole value map). A consumer follows
+	 * {@code signedUrl} to download the artifact.
+	 *
+	 * <p>Same 25s comment heartbeat, T90 refcounting (on the {@code WORKSPACE}
+	 * channel), and single-node caveat as the slot streams.
+	 *
+	 * @since 2026.3.1
+	 */
+	@GetMapping(value = "/workspace/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> streamWorkspace(
+			@PathVariable String siteName,
+			@RequestParam String conversationId,
+			@RequestParam(required = false) String agentId) {
+		if (conversationId == null || conversationId.isBlank()) {
+			return Flux.empty();
+		}
+		Flux<TurWorkspaceEvent> initial = (agentId == null || agentId.isBlank())
+				? Flux.empty()
+				: Flux.fromIterable(agentWorkspace.list(agentId, conversationId, null))
+						.map(entry -> TurWorkspaceEvent.put(conversationId, entry.key(),
+								entry.contentType(), entry.sizeBytes(), entry.signedUrl()));
+		Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> data =
+				Flux.concat(initial, workspaceEventBus.subscribe(conversationId))
+						.map(event -> org.springframework.http.codec.ServerSentEvent
+								.<TurWorkspaceEvent>builder(event).build());
+		Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> heartbeats =
+				Flux.interval(java.time.Duration.ofSeconds(25))
+						.map(tick -> org.springframework.http.codec.ServerSentEvent
+								.<TurWorkspaceEvent>builder().comment("heartbeat").build());
+		// T90 — refcount this connection on the WORKSPACE channel so the admin
+		// debug surface reports it alongside the slot channels.
+		return Flux.merge(data, heartbeats)
+				.doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.WORKSPACE))
+				.doFinally(sig -> slotSseRegistry.release(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.WORKSPACE));
 	}
 
 	/**

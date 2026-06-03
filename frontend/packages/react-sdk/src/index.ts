@@ -41,6 +41,9 @@ export type {
   ChatDisabledReason,
   ClickTrackParams,
   TurChatSessionSlots,
+  TurWorkspaceArtifact,
+  TurWorkspaceArtifacts,
+  TurWorkspaceEvent,
   TurChatSlotWriteResponse,
   TurChatSlotExtractResponse,
   TurChatHandoffChannel,
@@ -106,6 +109,13 @@ export type {
   UseTuringSlotOptions,
   UseTuringSlotParseMode,
 } from "./hooks/use-turing-slot";
+export { useTuringWorkspace } from "./hooks/use-turing-workspace";
+export type {
+  UseTuringWorkspaceReturn,
+  UseTuringWorkspaceOptions,
+  UseTuringWorkspaceAgent,
+  WorkspaceStatus,
+} from "./hooks/use-turing-workspace";
 export { useTuringRoutineWaiting } from "./hooks/use-turing-routine-waiting";
 export type {
   UseTuringRoutineWaitingReturn,
@@ -165,6 +175,8 @@ export { TuringSearchBar } from "./ui/TuringSearchBar";
 export { TuringSearchField } from "./ui/TuringSearchField";
 export { TuringResultList } from "./ui/TuringResultList";
 export { TuringPagination } from "./ui/TuringPagination";
+export { TuringWorkspacePanel } from "./ui/TuringWorkspacePanel";
+export type { TuringWorkspacePanelProps } from "./ui/TuringWorkspacePanel";
 
 // ── Types ──
 export type {

@@ -51,11 +51,14 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
 
     private final TurStorageService storageService;
     private final TurAgentWorkspaceUrlSigner urlSigner;
+    private final TurWorkspaceEventBus eventBus;
 
     public TurAgentWorkspaceService(TurStorageService storageService,
-            TurAgentWorkspaceUrlSigner urlSigner) {
+            TurAgentWorkspaceUrlSigner urlSigner,
+            TurWorkspaceEventBus eventBus) {
         this.storageService = storageService;
         this.urlSigner = urlSigner;
+        this.eventBus = eventBus;
     }
 
     @Override
@@ -65,7 +68,10 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
                     "Agent workspace requires storage to be enabled (turing.storage.type != none).");
         }
         byte[] body = content == null ? new byte[0] : content;
-        String objectName = scopedKey(agentId, conversationId, key);
+        String safeAgent = sanitizeSegment(agentId);
+        String safeConv = sanitizeSegment(conversationId);
+        String safeKey = sanitizeKey(key);
+        String objectName = scopeRoot(safeAgent, safeConv) + safeKey;
         String type = (contentType == null || contentType.isBlank())
                 ? TurStorageContentTypes.guessContentType(key)
                 : contentType;
@@ -74,6 +80,11 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to write workspace key: " + key, e);
         }
+        // T113 — advertise the artifact's new metadata on the workspace SSE bus.
+        // Routed by the raw conversationId so it matches the SSE subscriber's
+        // query param; only metadata + a signed URL travel, never the bytes.
+        eventBus.publish(TurWorkspaceEvent.put(conversationId, safeKey, type, body.length,
+                buildSignedUrl(safeAgent, safeConv, safeKey)));
     }
 
     @Override
@@ -127,9 +138,13 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
         if (!storageService.isEnabled()) {
             return;
         }
-        String objectName = scopedKey(agentId, conversationId, key);
+        String safeKey = sanitizeKey(key);
+        String objectName = scopeRoot(sanitizeSegment(agentId), sanitizeSegment(conversationId)) + safeKey;
         try {
             storageService.deleteObject(objectName);
+            // T113 — broadcast the removal so connected portals drop the
+            // artifact from their list. Published only on a successful delete.
+            eventBus.publish(TurWorkspaceEvent.delete(conversationId, safeKey));
         } catch (Exception e) {
             log.debug("Workspace delete no-op for key '{}': {}", key, e.getMessage());
         }
@@ -238,7 +253,7 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
                 + "?agentId=" + enc(safeAgent)
                 + "&conversationId=" + enc(safeConv)
                 + "&key=" + enc(safeKey);
-        if (suffix.isEmpty()) {
+        if (suffix == null || suffix.isEmpty()) {
             return base;
         }
         // signQueryString returns "?exp=...&sig=..." — splice as extra params.

@@ -63,12 +63,14 @@ class TurAgentWorkspaceServiceTest {
     private TurAgentWorkspaceUrlSigner urlSigner;
 
     private InMemoryStorage storage;
+    private TurWorkspaceEventBus eventBus;
     private TurAgentWorkspaceService workspace;
 
     @BeforeEach
     void setUp() {
         storage = new InMemoryStorage();
-        workspace = new TurAgentWorkspaceService(storage, urlSigner);
+        eventBus = new TurWorkspaceEventBus();
+        workspace = new TurAgentWorkspaceService(storage, urlSigner, eventBus);
     }
 
     @Test
@@ -172,9 +174,54 @@ class TurAgentWorkspaceServiceTest {
     }
 
     @Test
+    void putPublishesPutEventWithMetadata() {
+        when(urlSigner.signQueryString(anyString(), anyString(), anyString())).thenReturn("?exp=1&sig=z");
+        List<TurWorkspaceEvent> events = new ArrayList<>();
+        var sub = eventBus.subscribe(CONV).subscribe(events::add);
+
+        workspace.put(AGENT, CONV, "reports/b.csv", "a,b".getBytes(StandardCharsets.UTF_8), "text/csv");
+
+        assertEquals(1, events.size());
+        TurWorkspaceEvent ev = events.get(0);
+        assertEquals(TurWorkspaceEvent.PUT, ev.event());
+        assertEquals(CONV, ev.conversationId());
+        assertEquals("reports/b.csv", ev.key());
+        assertEquals("text/csv", ev.contentType());
+        assertEquals(3L, ev.size());
+        assertTrue(ev.signedUrl().startsWith("/api/v2/workspace/file?"));
+        sub.dispose();
+    }
+
+    @Test
+    void deletePublishesDeleteEvent() {
+        when(urlSigner.signQueryString(anyString(), anyString(), anyString())).thenReturn("");
+        workspace.put(AGENT, CONV, "tmp.txt", "x".getBytes(), "text/plain");
+
+        List<TurWorkspaceEvent> events = new ArrayList<>();
+        var sub = eventBus.subscribe(CONV).subscribe(events::add);
+        workspace.delete(AGENT, CONV, "tmp.txt");
+
+        assertEquals(1, events.size());
+        assertEquals(TurWorkspaceEvent.DELETE, events.get(0).event());
+        assertEquals("tmp.txt", events.get(0).key());
+        sub.dispose();
+    }
+
+    @Test
+    void otherConversationsNotMixedInOnBus() {
+        when(urlSigner.signQueryString(anyString(), anyString(), anyString())).thenReturn("");
+        List<TurWorkspaceEvent> events = new ArrayList<>();
+        var sub = eventBus.subscribe(CONV).subscribe(events::add);
+
+        workspace.put(AGENT, "conv-OTHER", "x.txt", "1".getBytes(), "text/plain");
+        assertTrue(events.isEmpty());
+        sub.dispose();
+    }
+
+    @Test
     void disabledStorageGetAndListAreEmptyPutThrows() {
         TurAgentWorkspaceService disabled =
-                new TurAgentWorkspaceService(new TurNoOpStorageService(), urlSigner);
+                new TurAgentWorkspaceService(new TurNoOpStorageService(), urlSigner, eventBus);
         assertTrue(disabled.get(AGENT, CONV, "a.txt").isEmpty());
         assertTrue(disabled.list(AGENT, CONV, null).isEmpty());
         assertThrows(IllegalStateException.class,

@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
-import { IconCopy, IconDownload, IconInfoCircle } from "@tabler/icons-react"
+import { IconCopy, IconDownload, IconFile, IconInfoCircle } from "@tabler/icons-react"
+import { useTuringWorkspace } from "@viglet/turing-react-sdk"
 
 import { useChatSessionSlots, useChatSlotAudit } from "@/api/queries/chat-session.queries"
 import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service"
@@ -17,6 +18,12 @@ import {
 
 interface ChatSessionInfoSheetProps {
   conversationId: string | null
+  /**
+   * Active agent id, used to stream the per-conversation workspace artifacts
+   * (T113) via the agent-scoped `/v2/ai-agent/{id}/workspace/stream` endpoint.
+   * When null (no agent tab active) the workspace section is hidden.
+   */
+  agentId?: string | null
 }
 
 /**
@@ -35,7 +42,7 @@ interface ChatSessionInfoSheetProps {
  */
 const exportService = new TurChatSessionExportService()
 
-export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetProps) {
+export function ChatSessionInfoSheet({ conversationId, agentId }: ChatSessionInfoSheetProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -159,6 +166,14 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
               </section>
             )}
 
+            {conversationId && agentId && (
+              <WorkspaceArtifactsSection
+                conversationId={conversationId}
+                agentId={agentId}
+                enabled={open}
+              />
+            )}
+
             {conversationId && (
               <section className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -186,6 +201,77 @@ export function ChatSessionInfoSheet({ conversationId }: ChatSessionInfoSheetPro
       </Sheet>
     </>
   )
+}
+
+/**
+ * Live "files this agent built for you" list (T113). Subscribes to the
+ * agent-scoped workspace SSE stream via {@link useTuringWorkspace} in agent
+ * mode — no `<TuringProvider>` / site needed (the admin console is
+ * agent-scoped). Each `put`/`delete` the agent performs updates the list in
+ * &lt;100&nbsp;ms; rows link to the HMAC-signed download URL.
+ */
+function WorkspaceArtifactsSection({
+  conversationId,
+  agentId,
+  enabled,
+}: {
+  readonly conversationId: string
+  readonly agentId: string
+  readonly enabled: boolean
+}) {
+  const { t } = useTranslation()
+  const { artifacts, status } = useTuringWorkspace({
+    conversationId,
+    agent: { id: agentId },
+    enabled,
+  })
+
+  let body: React.ReactNode
+  if (status === "error") {
+    body = <p className="text-sm text-destructive">{t("chat.sessionInfo.workspaceError")}</p>
+  } else if (artifacts.length === 0) {
+    body = <p className="text-sm text-muted-foreground">{t("chat.sessionInfo.workspaceEmpty")}</p>
+  } else {
+    body = (
+      <ul className="space-y-1.5">
+        {artifacts.map((artifact) => (
+          <li key={artifact.key}>
+            <a
+              href={artifact.signedUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              title={artifact.contentType ?? undefined}
+              className="flex items-center gap-2 rounded-md border bg-muted/10 px-3 py-2 text-xs hover:bg-muted/30 transition-colors"
+            >
+              <IconFile className="size-4 shrink-0 text-muted-foreground" />
+              <span className="font-mono truncate flex-1 min-w-0">{artifact.key}</span>
+              <span className="text-muted-foreground/70 shrink-0">{formatBytes(artifact.size)}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  return (
+    <section className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        {t("chat.sessionInfo.workspace")}
+      </div>
+      {body}
+    </section>
+  )
+}
+
+/** Compact byte formatter (B / KB / MB / GB) for the workspace artifact list. */
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes < 0) return "0 B"
+  const units = ["B", "KB", "MB", "GB", "TB"]
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / Math.pow(1024, exponent)
+  const rounded = exponent === 0 ? value : Math.round(value * 10) / 10
+  return `${rounded} ${units[exponent]}`
 }
 
 /**
