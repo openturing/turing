@@ -70,6 +70,16 @@ turing:
         memory-max: 1g          # hard RAM cap (prlimit --as / cgroup MemoryMax)
         cpu-seconds: 35         # CPU-time cap (prlimit --cpu); <=0 disables
         limiter: auto           # auto | prlimit | systemd-run | none
+    warm-pool:
+      # Pre-warmed interpreter pool for the NATIVE path (T82). Keeps a few host
+      # Python interpreters booted-and-blocked so a frequently-invoked tool
+      # skips the ~200ms cold boot each call. Workers are single-use (one
+      # execution then exit — no cross-tenant state leak), refilled async.
+      # NATIVE only; automatically bypassed in DOCKER mode and whenever the
+      # native limits above are enabled (a running worker can't be wrapped by
+      # prlimit/systemd-run). Opt-in; false = legacy cold-spawn-per-call.
+      enabled: false
+      size: 2                   # interpreters kept booted and ready
   git:
     server: false
   marketplace:

@@ -430,7 +430,7 @@ acting.
 | T79 | ✅ | — | HMAC-signed URLs + cookie-binding for `/api/v2/code-interpreter/{session}/{file}` — prevents URL replay / cross-browser leakage (`TurCodeInterpreterUrlSigner`). | §VII.9.d |
 | T80 | ✅ | T78 | ⭐ **Container sandbox (Docker)** — opt-in per-deployment execution mode (`NATIVE` default \| `DOCKER`) in Global Settings. DOCKER runs each execution in a throwaway container (`--rm --network none --cap-drop ALL --security-opt no-new-privileges --read-only`, tmpfs `/tmp`, only the session dir bind-mounted rw, deps dir mounted ro at `/deps`), with `--memory`/`--cpus`/`--pids-limit` caps. Configurable image (default `python:3.12-slim`); "Check Docker" admin probe (`TurCodeInterpreterToolService.checkDocker`). NATIVE path unchanged. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
 | T81 | ✅ | T80 | Resource limits per execution (cgroups) for the **NATIVE** path — opt-in CPU/RAM cap (`turing.code-interpreter.native.limits.*`). Wraps the host Python in `prlimit` (RLIMIT_AS + RLIMIT_CPU) or `systemd-run --scope` (cgroup MemoryMax/CPUQuota); `auto` prefers prlimit. Disabled by default (NATIVE path unchanged); Windows / missing-binary degrade to a warning, never break. Closes the runaway-memory gap the 30s timeout couldn't (`[x*x for x in range(10**9)]`). | §VII.9.f |
-| T82 | 💭 | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. | §VII.9.g |
+| T82 | ✅ | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. NATIVE-only, opt-in (`turing.code-interpreter.warm-pool.enabled`); single-use workers (one execution then exit — no state leak), refilled async. Auto-bypassed in DOCKER mode and when T81 native limits are on (a running worker can't be wrapped by prlimit). `TurCodeInterpreterWarmPool`. | §VII.9.g |
 | T83 | 💭 | T36 | Structured output capture — return `{stdout, files: [...], duration_ms, exit_code}` JSON instead of markdown-with-links so callers don't regex-parse. | §VII.9.h |
 
 #### D.6 — Analytics & observability gaps
@@ -2883,8 +2883,8 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 5. **T46 OR TK4 — `functionCall` decision** (~1-3 days for decision +
    1-2 weeks if implemented). Vapor cleanup. Either ship it or kill it.
 
-**Defer**: T80 + T81 (resource limits) shipped; T82 (pre-warmed pool)
-remains. Most Block D items wait on a customer to ask for them
+**Defer**: T80 + T81 (resource limits) + T82 (pre-warmed pool) shipped.
+Most remaining Block D items wait on a customer to ask for them
 twice before scheduling.
 
 ### VIII.8 The pergunta hard

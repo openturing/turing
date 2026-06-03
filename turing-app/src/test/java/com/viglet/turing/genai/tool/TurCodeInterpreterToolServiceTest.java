@@ -766,6 +766,60 @@ class TurCodeInterpreterToolServiceTest {
                 .contains("CPUQuota=100%");
     }
 
+    // --- T82 pre-warmed interpreter pool ---
+
+    @Test
+    void buildWarmBootstrapScriptShouldReadStdinChdirAndExec() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildWarmBootstrapScript");
+        method.setAccessible(true);
+
+        String script = (String) method.invoke(service);
+        assertThat(script)
+                .contains("sys.stdin.readline()")
+                .contains("os.chdir(_parts[0])")
+                .contains("split('\\t')")
+                .contains("exec(compile(_code, _runner, 'exec')")
+                .contains("'__name__': '__main__'");
+    }
+
+    @Test
+    void feedWarmWorkerShouldWriteTabSeparatedInstructionLine() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "feedWarmWorker", Process.class, File.class, java.nio.file.Path.class);
+        method.setAccessible(true);
+
+        java.io.ByteArrayOutputStream stdin = new java.io.ByteArrayOutputStream();
+        Process worker = mock(Process.class);
+        when(worker.getOutputStream()).thenReturn(stdin);
+
+        File sessionDir = new File(System.getProperty("java.io.tmpdir"), "warm-sess");
+        java.nio.file.Path runner = sessionDir.toPath().resolve("_runner.py");
+
+        method.invoke(service, worker, sessionDir, runner);
+
+        String written = stdin.toString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(written)
+                .isEqualTo(sessionDir.getAbsolutePath() + "\t_runner.py\n");
+    }
+
+    @Test
+    void tryWarmStartShouldReturnNullWhenPoolAbsent() throws Exception {
+        // The default `service` is built with the 1-arg ctor → warmPool == null,
+        // so tryWarmStart must always cold-fall-back (return null), even with an
+        // empty limiter prefix.
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "tryWarmStart", String.class, File.class, java.nio.file.Path.class,
+                java.util.List.class);
+        method.setAccessible(true);
+
+        File sessionDir = new File(System.getProperty("java.io.tmpdir"), "warm-sess2");
+        java.nio.file.Path runner = sessionDir.toPath().resolve("_runner.py");
+
+        Object result = method.invoke(service, "s1", sessionDir, runner, java.util.List.of());
+        assertThat(result).isNull();
+    }
+
     @Test
     void readStreamShouldReadNormalContent() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(

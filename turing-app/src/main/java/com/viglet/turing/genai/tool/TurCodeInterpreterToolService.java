@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -90,6 +91,12 @@ public class TurCodeInterpreterToolService {
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurCustomToolDependencyService dependencyService;
     private final TurCodeInterpreterUrlSigner urlSigner;
+    /**
+     * Pre-warmed interpreter pool (T82). Null in the test constructors and
+     * whenever the bean is absent — every consumer treats null as "warm pool
+     * unavailable" and cold-spawns, so the field is always optional.
+     */
+    private final TurCodeInterpreterWarmPool warmPool;
 
     /**
      * Test-friendly constructor — wires the sandbox without auto-install
@@ -98,25 +105,27 @@ public class TurCodeInterpreterToolService {
      * are emitted unsigned (legacy behavior) and PYTHONPATH stays unset.
      */
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService) {
-        this(turGlobalSettingsService, null, null);
+        this(turGlobalSettingsService, null, null, null);
     }
 
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
             TurCustomToolDependencyService dependencyService) {
-        this(turGlobalSettingsService, dependencyService, null);
+        this(turGlobalSettingsService, dependencyService, null, null);
     }
 
     // Mark the full-args ctor as the one Spring should use for autowiring.
-    // With 3 public constructors none of them is the obvious "longest
+    // With several public constructors none of them is the obvious "longest
     // satisfiable" — Spring falls back to the no-arg ctor (which doesn't
     // exist) and the whole context fails to load. Annotation pins the choice.
     @Autowired
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
             TurCustomToolDependencyService dependencyService,
-            TurCodeInterpreterUrlSigner urlSigner) {
+            TurCodeInterpreterUrlSigner urlSigner,
+            TurCodeInterpreterWarmPool warmPool) {
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.dependencyService = dependencyService;
         this.urlSigner = urlSigner;
+        this.warmPool = warmPool;
     }
 
     @Value("${turing.code-interpreter.python-executable:}")
@@ -202,6 +211,19 @@ public class TurCodeInterpreterToolService {
      */
     @Value("${turing.code-interpreter.native.limits.limiter:auto}")
     private String nativeLimiter;
+
+    // ─────────────────── T82 NATIVE pre-warmed interpreter pool ──────────────
+    // Keeps a few host interpreters booted-and-blocked so a frequently-invoked
+    // tool doesn't pay the ~200ms cold-boot every call. NATIVE only, bypassed
+    // when T81 limits are on (a running worker can't be retro-wrapped by
+    // prlimit). Opt-in; the bean is primed in @PostConstruct.
+
+    @PostConstruct
+    void primeWarmPool() {
+        if (warmPool != null && warmPool.isEnabled()) {
+            warmPool.initialize(this::spawnWarmWorker);
+        }
+    }
 
     /** Mount point inside the container for the per-call session dir. */
     private static final String DOCKER_SANDBOX_MOUNT = "/sandbox";
@@ -468,6 +490,94 @@ public class TurCodeInterpreterToolService {
         env.remove("PYTHONSTARTUP");
         env.remove("PYTHONHOME");
         env.remove("PYTHONUSERSITE");
+    }
+
+    // ──────────────── T82 pre-warmed interpreter pool plumbing ───────────────
+
+    /**
+     * Spawns one warm worker: a host Python booted with the same locked-down
+     * NATIVE env as a cold call but parked on {@code stdin.readline()} via
+     * {@link #buildWarmBootstrapScript()}. The factory handed to
+     * {@link TurCodeInterpreterWarmPool}. PYTHONPATH is deliberately left unset
+     * here — the per-call {@code _runner.py} injects the deps dir itself, so a
+     * worker is deps-agnostic and reusable for any agent.
+     *
+     * @throws IllegalStateException when no Python executable is configured
+     *         (propagated to the pool, which logs and stays under target).
+     */
+    Process spawnWarmWorker() throws java.io.IOException {
+        String python = resolvePythonExecutable();
+        ProcessBuilder pb = new ProcessBuilder(python, "-c", buildWarmBootstrapScript());
+        pb.redirectErrorStream(false);
+        configureNativeEnv(pb, null);
+        return pb.start();
+    }
+
+    /**
+     * The {@code python -c} bootstrap a warm worker runs. It blocks on a single
+     * stdin line {@code "<sessionDir>\t<runnerFile>"}, {@code chdir}s into the
+     * session dir, then {@code exec}s that per-call runner under a fresh
+     * {@code __main__} namespace and exits — single-use, identical to a cold
+     * spawn except the interpreter was already booted. Prints nothing of its
+     * own before exec, so the caller's stdout/stderr capture is unchanged.
+     */
+    String buildWarmBootstrapScript() {
+        return """
+                import sys, os
+                _line = sys.stdin.readline()
+                if _line:
+                    _parts = _line.rstrip('\\r\\n').split('\\t')
+                    os.chdir(_parts[0])
+                    _runner = _parts[1]
+                    with open(_runner, encoding='utf-8') as _f:
+                        _code = _f.read()
+                    exec(compile(_code, _runner, 'exec'),
+                         {'__name__': '__main__', '__file__': _runner})
+                """;
+    }
+
+    /**
+     * Tries to run this call on a pre-warmed worker instead of cold-spawning.
+     * Returns the live worker {@link Process} (already fed its instructions),
+     * or {@code null} to signal the caller to cold-spawn. Null whenever: the
+     * T81 limiter prefix is non-empty (a running worker can't be wrapped), the
+     * pool is absent/disabled, no worker is ready, the worker died, or feeding
+     * it failed. Never throws.
+     */
+    private Process tryWarmStart(String sessionId, File sessionDir, Path runnerPath,
+            List<String> limitPrefix) {
+        if (!limitPrefix.isEmpty() || warmPool == null || !warmPool.isEnabled()) {
+            return null;
+        }
+        Process worker = warmPool.acquire();
+        if (worker == null || !worker.isAlive()) {
+            return null;
+        }
+        try {
+            feedWarmWorker(worker, sessionDir, runnerPath);
+            log.info("[CodeInterpreter] session={} | NATIVE mode (warm pool worker)", sessionId);
+            return worker;
+        } catch (java.io.IOException e) {
+            log.debug("[CodeInterpreter] session={} | warm worker feed failed ({}); cold fallback",
+                    sessionId, e.getMessage());
+            worker.destroyForcibly();
+            return null;
+        }
+    }
+
+    /**
+     * Writes the single {@code "<sessionDir>\t<runnerFile>\n"} instruction line
+     * to the warm worker's stdin and closes it (EOF). The booted interpreter,
+     * blocked on {@code readline()}, picks it up and runs the runner.
+     */
+    private void feedWarmWorker(Process worker, File sessionDir, Path runnerPath)
+            throws java.io.IOException {
+        String instruction = sessionDir.getAbsolutePath() + "\t"
+                + runnerPath.getFileName().toString() + "\n";
+        try (var stdin = worker.getOutputStream()) {
+            stdin.write(instruction.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            stdin.flush();
+        }
     }
 
     // ──────────────── T81 NATIVE resource-limit command prefix ───────────────
@@ -786,7 +896,7 @@ public class TurCodeInterpreterToolService {
         // dir into a throwaway hardened container. The post-start stream /
         // timeout / generated-file handling below is identical for both.
         TurCodeInterpreterExecutionMode mode = resolveExecutionMode();
-        ProcessBuilder pb;
+        Process process;
         String containerName = null;
         if (mode == TurCodeInterpreterExecutionMode.DOCKER) {
             // Inside the container the deps dir (when present) is bind-mounted
@@ -796,25 +906,34 @@ public class TurCodeInterpreterToolService {
             Files.writeString(runnerPath,
                     buildRunnerScript(scriptPath.getFileName().toString(), depsLiteral));
             containerName = "turing-ci-" + sessionId;
-            pb = buildDockerProcess(containerName, sessionDir, depsDir);
+            ProcessBuilder pb = buildDockerProcess(containerName, sessionDir, depsDir);
             log.info("[CodeInterpreter] session={} | DOCKER mode | image={} container={} network={}",
                     sessionId, resolveDockerImage(), containerName, dockerNetwork);
+            process = pb.start();
         } else {
             Files.writeString(runnerPath,
                     buildRunnerScript(scriptPath.getFileName().toString(), depsDir));
             // T81 — optionally wrap the host Python in a resource limiter
             // (prlimit / systemd-run) so a memory-bomb script is capped
             // before it can exhaust host RAM. Empty prefix = legacy behavior.
-            List<String> nativeCmd = new ArrayList<>(nativeLimitPrefix());
-            nativeCmd.add(resolvePythonExecutable());
-            nativeCmd.add(runnerPath.toString());
-            pb = new ProcessBuilder(nativeCmd);
-            pb.directory(sessionDir);
-            pb.redirectErrorStream(false);
-            configureNativeEnv(pb, depsDir);
+            List<String> limitPrefix = nativeLimitPrefix();
+            // T82 — when no limiter wrapper is needed, try a pre-warmed
+            // interpreter to skip the ~200ms cold boot. Returns null whenever
+            // the pool is off/empty/unavailable → transparent cold fallback.
+            Process warm = tryWarmStart(sessionId, sessionDir, runnerPath, limitPrefix);
+            if (warm != null) {
+                process = warm;
+            } else {
+                List<String> nativeCmd = new ArrayList<>(limitPrefix);
+                nativeCmd.add(resolvePythonExecutable());
+                nativeCmd.add(runnerPath.toString());
+                ProcessBuilder pb = new ProcessBuilder(nativeCmd);
+                pb.directory(sessionDir);
+                pb.redirectErrorStream(false);
+                configureNativeEnv(pb, depsDir);
+                process = pb.start();
+            }
         }
-
-        Process process = pb.start();
 
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
