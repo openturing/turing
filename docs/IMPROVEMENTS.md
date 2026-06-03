@@ -494,6 +494,24 @@ Remaining platform-relevant promotions:
 | TK5 | 💭 | Replace Brevo email integration with Resend or Postmark | Modern provider, smaller footprint, better deliverability. Email-out is the feature; the provider is a swappable detail. |
 | TK6 | 💭 | Audit Custom Solr admin UI usage; if zero customers depend on it, fold into Solr native admin URL | TurSN legacy. Maintaining two admin surfaces dilutes. |
 
+#### D.11 — Tracked follow-ups (promoted from inline notes, 2026-06-03)
+
+> These were described inline inside shipped tasks (as "follow-up" /
+> "deferred" / "what remains") but had no task row of their own. Promoted
+> here so they're trackable. The **Detail in** column points back to the
+> originating section.
+
+| #    | Status | Depends on | Task | Detail in |
+|------|--------|------------|------|-----------|
+| T237 | 💭 | T85 | **Full path-aware funnel** — T85 shipped the funnel V1 over the existing session events (the API already exposes `abandonedCount`), but a true per-node drop-off funnel needs a per-turn node-visit log. Add a `chat_node_visit` record (conversationId, flowId, nodeId, ts) written as the engine advances the cursor, then aggregate it into a node-by-node funnel ("80% reached `ask_email`, 45% reached `confirm`"). Wire into the existing chat-analytics funnel surface. | §VII.10.b |
+| T238 | 💭 | T86 | **Conversation replay scrubber** — T86 shipped a chronological replay (render + scroll). Add a time-window scrubber that filters events around a target timestamp, once V1 reveals which semantics operators want (sliding time-window vs current-turn-focused). UI-only on top of the existing event stream. | §VII.10.c |
+| T239 | 💭 | T80 | **Code Interpreter sandbox hardening (seccomp + gVisor)** — T80 ships Docker mode with `--cap-drop ALL --security-opt no-new-privileges` + read-only FS. Add a seccomp profile (syscall allow-list) and an optional gVisor/Firecracker runtime for defense-in-depth. **Gate item — required posture before the multi-tenant Turing Cloud (§VIII) can run untrusted code.** | §VII.2.h / §VIII |
+| T240 | 💭 | T110 | **Sub-agent session-detail surfaces** — T110 captures `parentConversationId` + the scorecard dimension; the presentation glue is deferred. Add: (a) a "Spawned by orchestrator: `<parentId>`" chip on a child session detail linking back to the parent; (b) on an orchestrator session, a child-list panel with each child's per-task summary. Backend data is fully projected — pure frontend. | §IX.2.c |
+| T241 | 💭 | T70 | **Per-experiment success-metric override** — T70's Thompson-sampling bandit defines "success" via `TurExperimentSignificanceService.collectVariantStats` (conversion). Let an experiment declare its own success signal (e.g. `handoff`, `lead-capture`, slot-filled) and thread that metric enum through `pickVariant` so different experiments optimize different outcomes. | §VII.8.a |
+| T242 | 📋 | — | **CI nightly pipeline for `-Pllm-it`** — the `llm-it` Maven profile (real-LLM integration tests, gpt-4o-mini) runs locally; wire a nightly CI job that injects the `OPENAI_API_KEY` secret and runs it, so LLM-path regressions surface without a local run. Explicitly out-of-scope at the time the test plan shipped. | §VI.6 |
+| T243 | 📋 | T224 | **Extract a shared `useStreamingChatCore` hook** — `useTuringChat` and `useTuringLlmChat` duplicate the streaming/bubble/abort state machine. The extraction was deferred because `useTuringChat`'s site-vs-agent bifurcation (enabled probe, conversationId minting, options chips, resetFlow) makes a clean shared core costly at one consumer. Revisit when `useTuringChat` is next refactored. Refactor-only — no behavior change. | §XII.1 |
+| T244 | 📋 | — | **Block A "cascade ascent" IT body** — the last deferred structural test body from the Block A harness audit: a multi-level sub-flow ascent case. Needs a new `nested-sub-flow` fixture + `subFlowId` remap in `ChatFlowImportTestUtil`. Test debt, non-blocking. | §0 Block A |
+
 ### Block E — Deep Agents competitive parity (and beyond)
 
 > Triggered by analysis of LangChain Deep Agents (`langchain.com/deep-agents`).
