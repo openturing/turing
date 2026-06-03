@@ -50,4 +50,23 @@ export class TurGlobalSettingsService {
     );
     return response.data;
   }
+
+  /**
+   * T80 — probes whether Docker is reachable from the running server, so
+   * the admin can validate the host before switching the Code Interpreter
+   * execution mode to DOCKER. Returns availability + the daemon's server
+   * version (or an error string when unavailable).
+   */
+  async getDockerStatus(): Promise<{
+    available: boolean;
+    serverVersion: string | null;
+    error: string | null;
+  }> {
+    const response = await axios.get<{
+      available: boolean;
+      serverVersion: string | null;
+      error: string | null;
+    }>("/system/global-settings/code-interpreter/docker/status");
+    return response.data;
+  }
 }

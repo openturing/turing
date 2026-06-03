@@ -30,6 +30,93 @@ class TurGlobalSettingsServiceTest {
     @InjectMocks
     private TurGlobalSettingsService service;
 
+    // --- T80 Code Interpreter execution mode / docker image ---
+
+    @Test
+    void getCodeInterpreterExecutionModeShouldDefaultToNative() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE))
+                .thenReturn(Optional.empty());
+        assertEquals(com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.NATIVE,
+                service.getCodeInterpreterExecutionMode());
+    }
+
+    @Test
+    void getCodeInterpreterExecutionModeShouldReturnDockerWhenConfigured() {
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("DOCKER");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE))
+                .thenReturn(Optional.of(configVar));
+        assertEquals(com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.DOCKER,
+                service.getCodeInterpreterExecutionMode());
+    }
+
+    @Test
+    void getCodeInterpreterExecutionModeShouldFallBackToNativeForGarbage() {
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("NONSENSE");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE))
+                .thenReturn(Optional.of(configVar));
+        assertEquals(com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.NATIVE,
+                service.getCodeInterpreterExecutionMode());
+    }
+
+    @Test
+    void updateCodeInterpreterExecutionModeShouldPersistName() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE))
+                .thenReturn(Optional.empty());
+        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
+        service.updateCodeInterpreterExecutionMode(
+                com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.DOCKER);
+        verify(turConfigVarRepository).save(captor.capture());
+        assertEquals("DOCKER", captor.getValue().getValue());
+        assertEquals(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE, captor.getValue().getId());
+    }
+
+    @Test
+    void updateCodeInterpreterExecutionModeShouldCoerceNullToNative() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE))
+                .thenReturn(Optional.empty());
+        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
+        service.updateCodeInterpreterExecutionMode(null);
+        verify(turConfigVarRepository).save(captor.capture());
+        assertEquals("NATIVE", captor.getValue().getValue());
+    }
+
+    @Test
+    void getCodeInterpreterDockerImageShouldDefaultWhenMissing() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE))
+                .thenReturn(Optional.empty());
+        assertEquals("python:3.12-slim", service.getCodeInterpreterDockerImage());
+    }
+
+    @Test
+    void getCodeInterpreterDockerImageShouldDefaultWhenBlank() {
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("   ");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE))
+                .thenReturn(Optional.of(configVar));
+        assertEquals("python:3.12-slim", service.getCodeInterpreterDockerImage());
+    }
+
+    @Test
+    void updateCodeInterpreterDockerImageShouldTrimAndPersist() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE))
+                .thenReturn(Optional.empty());
+        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
+        String result = service.updateCodeInterpreterDockerImage("  my/image:1  ");
+        verify(turConfigVarRepository).save(captor.capture());
+        assertEquals("my/image:1", captor.getValue().getValue());
+        assertEquals("my/image:1", result);
+    }
+
+    @Test
+    void updateCodeInterpreterDockerImageShouldFallBackToDefaultForBlank() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE))
+                .thenReturn(Optional.empty());
+        String result = service.updateCodeInterpreterDockerImage("");
+        assertEquals("python:3.12-slim", result);
+    }
+
     // --- getDecimalSeparator ---
 
     @Test

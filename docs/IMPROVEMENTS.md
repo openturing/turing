@@ -428,7 +428,7 @@ acting.
 | T77 | ✅ | — | Per-agent Python deps auto-install (global + per-agent UNION) — admin declares `pip install reportlab matplotlib qrcode` in a Custom Tool textarea; engine ensures deps before `executePython`. | §VII.9.b |
 | T78 | ✅ | — | Multi-tenant path isolation — session dirs scoped as `tenants/{agentId}/{convId}/...`. Eliminates cross-tenant filesystem accidents (`TurCodeInterpreterToolService.executePythonForTenant`). | §VII.9.c |
 | T79 | ✅ | — | HMAC-signed URLs + cookie-binding for `/api/v2/code-interpreter/{session}/{file}` — prevents URL replay / cross-browser leakage (`TurCodeInterpreterUrlSigner`). | §VII.9.d |
-| T80 | 📋 | T78 | ⭐ **Container sandbox (Docker / gVisor / Firecracker)** — the ONLY remaining gap in the Code Interpreter threat model. Today a malicious Python script can `open("../../../etc/passwd")` and read any host file the JVM user can; path isolation + URL hardening close HTTP / operational vectors but not the runtime escape. Containerization isolates syscalls, filesystem, network. Estimated ~2 weeks: base image with `python+reportlab+matplotlib` pre-installed + bind-mount only on session dir + drop capabilities + seccomp filter; gVisor for defense-in-depth. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
+| T80 | ✅ | T78 | ⭐ **Container sandbox (Docker)** — opt-in per-deployment execution mode (`NATIVE` default \| `DOCKER`) in Global Settings. DOCKER runs each execution in a throwaway container (`--rm --network none --cap-drop ALL --security-opt no-new-privileges --read-only`, tmpfs `/tmp`, only the session dir bind-mounted rw, deps dir mounted ro at `/deps`), with `--memory`/`--cpus`/`--pids-limit` caps. Configurable image (default `python:3.12-slim`); "Check Docker" admin probe (`TurCodeInterpreterToolService.checkDocker`). NATIVE path unchanged. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
 | T81 | 💭 | T80 | Resource limits per execution (cgroups) — CPU/RAM cap. Today only the 30s timeout controls runaway scripts (`[x*x for x in range(10**9)]` still trashes the JVM). | §VII.9.f |
 | T82 | 💭 | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. | §VII.9.g |
 | T83 | 💭 | T36 | Structured output capture — return `{stdout, files: [...], duration_ms, exit_code}` JSON instead of markdown-with-links so callers don't regex-parse. | §VII.9.h |
@@ -2433,7 +2433,7 @@ challenger persona (peer voice) with 50/50 split.
 | Python deps auto-install (global ∪ per-agent) | Operator handoff of `pip install` between envs | ✅ T77 |
 | Multi-tenant path isolation (`tenants/{agentId}/{convId}/...`) | Cross-tenant accidental cleanup; per-agent search scoping | ✅ T78 |
 | HMAC-signed URLs + cookie-binding | URL guessing / cross-browser leakage | ✅ T79 |
-| Container sandbox (Docker / gVisor / Firecracker) | Runtime escape — malicious Python reading `/etc/passwd` or cross-tenant files | ❌ T80 — see VII.2.h |
+| Container sandbox (Docker / gVisor / Firecracker) | Runtime escape — malicious Python reading `/etc/passwd` or cross-tenant files | ✅ T80 (opt-in DOCKER mode) — see VII.2.h |
 
 #### VII.10.a Chat analytics (T84)
 9 timeseries metrics + 4 scorecard dimensions exposed at
@@ -2536,17 +2536,44 @@ re-discovering. `gpt-4o-mini` improves dramatically with few-shot.
   rest, TTL configurable (default 24h). Compliance pitch for regulated
   customers (banking, healthcare, B2C with strong privacy reqs).
 
-#### VII.2.h Code Interpreter container sandbox (T80) ⭐
-The single largest remaining gap in the Code Interpreter threat model.
-Today a malicious Python script runs as the JVM's OS user and can
+#### VII.2.h Code Interpreter container sandbox (T80) ⭐ ✅
+Closes the single largest gap in the Code Interpreter threat model.
+Previously a malicious Python script ran as the JVM's OS user and could
 `open("../../../etc/passwd")` or read any file the JVM can. Path
 isolation (T78) + URL hardening (T79) closed the HTTP / operational
-vectors but **not** the runtime escape. Without containerization, any
-SaaS pitch with customer-authored Custom Tools is at risk of
-cross-tenant exfiltration. Estimated ~2 weeks: base Docker image with
-`python+reportlab+matplotlib+qrcode` pre-installed, bind-mount only the
-session dir, drop capabilities, seccomp filter. gVisor optional for
-defense in depth. **Gate item — this opens Turing Cloud (see §VIII).**
+vectors but **not** the runtime escape.
+
+**Shipped as an opt-in execution mode** (not a forced rewrite — see the
+"opt-in per-entity" doctrine). Console → Global Settings → Code
+Interpreter exposes an *Execution Mode* selector:
+
+- **`NATIVE`** (default) — the legacy host-subprocess path, unchanged.
+  Zero new dependency; existing single-tenant / on-prem deployments and
+  local dev keep working exactly as before.
+- **`DOCKER`** — each execution runs in a throwaway container via the
+  `docker` CLI:
+  `docker run --rm --network none --memory 512m --cpus 1.0
+  --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges
+  --read-only --tmpfs /tmp -v <sessionDir>:/sandbox:rw
+  [-v <depsDir>:/deps:ro] <image> python /sandbox/_runner.py`.
+  Only the per-call session dir is writable; generated files land there
+  and the existing "Generated Files" / signed-URL flow is unchanged. On
+  timeout the container is `docker kill`-ed (best effort) on top of
+  destroying the client. The deps dir from T77 is mounted read-only at
+  `/deps` and put on `PYTHONPATH` (pure-python packages work; native
+  ones should be baked into the image).
+
+The image is configurable (default `python:3.12-slim`; operators
+typically publish their own with `reportlab+matplotlib+qrcode`
+pre-installed), and the resource caps / network are tunable via
+`turing.code-interpreter.docker.*`. A **"Check Docker"** button in the
+UI probes daemon availability (`TurCodeInterpreterToolService.checkDocker`
+→ `GET /api/system/global-settings/code-interpreter/docker/status`)
+before an operator commits to DOCKER mode.
+
+Follow-ups still open: seccomp profile + gVisor for defense-in-depth,
+and finer per-execution cgroup tuning (T81). **Gate item — this opens
+Turing Cloud (see §VIII).**
 
 #### VII.2.i A/B multi-armed bandit (T70) + champion-challenger (T71)
 Current A/B is fixed split + scheduling window. Bandit math (Thompson

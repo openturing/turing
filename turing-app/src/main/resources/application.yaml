@@ -46,6 +46,18 @@ turing:
       access-key: admin
       secret-key: minha_senha_forte
       bucket: turing-assets
+  code-interpreter:
+    # Execution mode is chosen at runtime in Console -> Global Settings ->
+    # Code Interpreter (NATIVE host subprocess, the default, or DOCKER). The
+    # properties below only apply when the mode is DOCKER and are safe to
+    # leave untouched on NATIVE deployments.
+    docker:
+      executable: docker        # Docker CLI binary (must be on PATH)
+      network: none             # none = no egress; or a named docker network
+      memory: 512m              # hard RAM cap per execution
+      cpus: "1.0"               # CPU quota per execution
+      pids-limit: 128           # max PIDs (fork-bomb containment)
+      probe-timeout-seconds: 8  # timeout for the "Check Docker" availability probe
   git:
     server: false
   marketplace:

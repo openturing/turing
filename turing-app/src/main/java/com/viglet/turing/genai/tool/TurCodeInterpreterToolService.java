@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -136,6 +137,37 @@ public class TurCodeInterpreterToolService {
 
     @Value("${turing.code-interpreter.acquire-timeout-ms:2000}")
     private long acquireTimeoutMs;
+
+    // ───────────────────── T80 Docker sandbox config ─────────────────────
+    // Used only when the Global Settings execution mode is DOCKER. Defaults
+    // are conservative: no network, 512 MB RAM, 1 CPU, 128 PIDs. Operators
+    // override per environment. The native path ignores every one of these.
+
+    /** Docker CLI binary (on PATH by default). */
+    @Value("${turing.code-interpreter.docker.executable:docker}")
+    private String dockerExecutable;
+    /** Container network: {@code none} (default, no egress) or a named network. */
+    @Value("${turing.code-interpreter.docker.network:none}")
+    private String dockerNetwork;
+    /** Hard memory cap (docker {@code --memory} syntax, e.g. {@code 512m}). */
+    @Value("${turing.code-interpreter.docker.memory:512m}")
+    private String dockerMemory;
+    /** CPU quota (docker {@code --cpus} syntax, e.g. {@code 1.0}). */
+    @Value("${turing.code-interpreter.docker.cpus:1.0}")
+    private String dockerCpus;
+    /** Max PIDs to thwart fork bombs. */
+    @Value("${turing.code-interpreter.docker.pids-limit:128}")
+    private int dockerPidsLimit;
+    /** How long to wait for the `docker version` probe before giving up. */
+    @Value("${turing.code-interpreter.docker.probe-timeout-seconds:8}")
+    private int dockerProbeTimeoutSeconds;
+
+    /** Mount point inside the container for the per-call session dir. */
+    private static final String DOCKER_SANDBOX_MOUNT = "/sandbox";
+    /** Read-only mount point inside the container for the platform deps dir. */
+    private static final String DOCKER_DEPS_MOUNT = "/deps";
+    /** Fallback image when the setting is somehow blank (defense in depth). */
+    private static final String DOCKER_IMAGE_FALLBACK = "python:3.12-slim";
 
     /**
      * Lazy-initialized semaphore — the @Value field {@link #maxConcurrent}
@@ -345,6 +377,194 @@ public class TurCodeInterpreterToolService {
         return path;
     }
 
+    // ───────────────────────── T80 Docker sandbox ─────────────────────────
+
+    /**
+     * Reads the configured execution mode from Global Settings, defaulting
+     * to {@link TurCodeInterpreterExecutionMode#DEFAULT} (NATIVE) whenever
+     * settings are unavailable (e.g. unit-test mock that returns null) so a
+     * misconfiguration never bricks the sandbox — it just runs natively.
+     */
+    private TurCodeInterpreterExecutionMode resolveExecutionMode() {
+        try {
+            TurCodeInterpreterExecutionMode mode = turGlobalSettingsService.getCodeInterpreterExecutionMode();
+            return mode == null ? TurCodeInterpreterExecutionMode.DEFAULT : mode;
+        } catch (Exception e) {
+            log.debug("[CodeInterpreter] could not resolve execution mode, defaulting to NATIVE: {}",
+                    e.getMessage());
+            return TurCodeInterpreterExecutionMode.DEFAULT;
+        }
+    }
+
+    private String resolveDockerImage() {
+        try {
+            String image = turGlobalSettingsService.getCodeInterpreterDockerImage();
+            return (image == null || image.isBlank()) ? DOCKER_IMAGE_FALLBACK : image.trim();
+        } catch (Exception e) {
+            return DOCKER_IMAGE_FALLBACK;
+        }
+    }
+
+    /**
+     * Sets the locked-down environment for the NATIVE subprocess path.
+     * Extracted so the docker branch can opt out entirely (it sets env via
+     * {@code -e} flags on the {@code docker run} command instead).
+     */
+    private void configureNativeEnv(ProcessBuilder pb, Path depsDir) {
+        var env = pb.environment();
+        env.put("MPLBACKEND", "Agg");
+        env.put("PATH", SAFE_PATH);
+        env.put("PYTHONUTF8", "1");
+        env.put("PYTHONIOENCODING", "utf-8");
+        if (depsDir != null) {
+            // Replace any inherited PYTHONPATH — keeping it isolated to
+            // ONLY the platform-managed deps dir is the whole point of
+            // this feature (otherwise operator system-packages leak in).
+            env.put("PYTHONPATH", depsDir.toAbsolutePath().toString());
+        } else {
+            env.remove("PYTHONPATH");
+        }
+        env.remove("PYTHONSTARTUP");
+        env.remove("PYTHONHOME");
+        env.remove("PYTHONUSERSITE");
+    }
+
+    /**
+     * Builds the {@code docker run} command for one execution. Hardening:
+     * <ul>
+     *   <li>{@code --rm} — container removed on exit (incl. after kill);</li>
+     *   <li>{@code --network} — {@code none} by default (no egress);</li>
+     *   <li>{@code --memory} / {@code --cpus} / {@code --pids-limit} —
+     *       resource caps (fork-bomb / OOM containment);</li>
+     *   <li>{@code --cap-drop ALL} + {@code --security-opt no-new-privileges}
+     *       — strips Linux capabilities and privilege escalation;</li>
+     *   <li>{@code --read-only} root fs with a small {@code /tmp} tmpfs and
+     *       the session dir as the ONLY writable bind mount — a malicious
+     *       script can't reach other tenants' files or the host;</li>
+     *   <li>deps dir (when present) bind-mounted <b>read-only</b> at
+     *       {@code /deps} and put on {@code PYTHONPATH}.</li>
+     * </ul>
+     *
+     * <p>Generated files land in the bind-mounted session dir, so the host
+     * sees them and the existing "Generated Files" logic is unchanged.
+     */
+    private ProcessBuilder buildDockerProcess(String containerName, File sessionDir, Path depsDir) {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(dockerExecutable);
+        cmd.add("run");
+        cmd.add("--rm");
+        cmd.add("--name");
+        cmd.add(containerName);
+        cmd.add("--network");
+        cmd.add(dockerNetwork);
+        cmd.add("--memory");
+        cmd.add(dockerMemory);
+        cmd.add("--cpus");
+        cmd.add(dockerCpus);
+        cmd.add("--pids-limit");
+        cmd.add(String.valueOf(dockerPidsLimit));
+        cmd.add("--cap-drop");
+        cmd.add("ALL");
+        cmd.add("--security-opt");
+        cmd.add("no-new-privileges");
+        cmd.add("--read-only");
+        cmd.add("--tmpfs");
+        cmd.add("/tmp:rw,size=64m");
+        // The session dir is the ONLY writable mount — script.py / _runner.py
+        // live here and generated files are written here.
+        cmd.add("-v");
+        cmd.add(sessionDir.getAbsolutePath() + ":" + DOCKER_SANDBOX_MOUNT + ":rw");
+        if (depsDir != null) {
+            cmd.add("-v");
+            cmd.add(depsDir.toAbsolutePath() + ":" + DOCKER_DEPS_MOUNT + ":ro");
+        }
+        cmd.add("-w");
+        cmd.add(DOCKER_SANDBOX_MOUNT);
+        cmd.add("-e");
+        cmd.add("MPLBACKEND=Agg");
+        cmd.add("-e");
+        cmd.add("PYTHONUTF8=1");
+        cmd.add("-e");
+        cmd.add("PYTHONIOENCODING=utf-8");
+        // matplotlib/fontconfig need a writable HOME; /tmp is the tmpfs.
+        cmd.add("-e");
+        cmd.add("HOME=/tmp");
+        cmd.add("-e");
+        cmd.add("MPLCONFIGDIR=/tmp");
+        if (depsDir != null) {
+            cmd.add("-e");
+            cmd.add("PYTHONPATH=" + DOCKER_DEPS_MOUNT);
+        }
+        cmd.add(resolveDockerImage());
+        cmd.add("python");
+        cmd.add(DOCKER_SANDBOX_MOUNT + "/_runner.py");
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(false);
+        return pb;
+    }
+
+    private void killDockerContainer(String containerName) {
+        try {
+            Process kill = new ProcessBuilder(dockerExecutable, "kill", containerName)
+                    .redirectErrorStream(true)
+                    .start();
+            kill.waitFor(5, TimeUnit.SECONDS);
+        } catch (IOException e) {
+            log.debug("[CodeInterpreter] docker kill {} failed: {}", containerName, e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Probes Docker availability for the admin UI ("Check Docker" button)
+     * by running {@code docker version --format {{.Server.Version}}}. Never
+     * throws — failures (binary missing, daemon down, timeout) come back as
+     * {@code available=false} with an {@code error} message.
+     */
+    public TurDockerStatus checkDocker() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    dockerExecutable, "version", "--format", "{{.Server.Version}}");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            StringBuilder out = new StringBuilder();
+            Thread reader = Thread.ofVirtual().start(() -> readStream(
+                    new java.io.InputStreamReader(p.getInputStream(),
+                            java.nio.charset.StandardCharsets.UTF_8),
+                    out));
+            int timeout = dockerProbeTimeoutSeconds > 0 ? dockerProbeTimeoutSeconds : 8;
+            boolean finished = p.waitFor(timeout, TimeUnit.SECONDS);
+            if (!finished) {
+                p.destroyForcibly();
+                reader.join(2000);
+                return new TurDockerStatus(false, null, "docker version probe timed out");
+            }
+            reader.join(2000);
+            String output = out.toString().trim();
+            if (p.exitValue() == 0 && !output.isBlank()) {
+                return new TurDockerStatus(true, output, null);
+            }
+            return new TurDockerStatus(false, null,
+                    output.isBlank() ? "docker daemon not reachable" : output);
+        } catch (IOException e) {
+            return new TurDockerStatus(false, null,
+                    "docker executable not found or not runnable: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new TurDockerStatus(false, null, "docker probe interrupted");
+        }
+    }
+
+    /**
+     * Result of {@link #checkDocker()}. {@code available} true means the
+     * daemon answered and {@code serverVersion} is populated; otherwise
+     * {@code error} explains why.
+     */
+    public record TurDockerStatus(boolean available, String serverVersion, String error) {
+    }
+
     private String executeAndCollectOutput(String sessionId, File sessionDir,
             Path scriptPath) throws IOException, InterruptedException {
         // Resolve auto-installed deps BEFORE building the env / runner. The
@@ -366,26 +586,33 @@ public class TurCodeInterpreterToolService {
         // that reads it directly.
         Path depsDir = dependencyService.ensureInstalled(extraRequirements.get());
         Path runnerPath = sessionDir.toPath().resolve("_runner.py");
-        Files.writeString(runnerPath, buildRunnerScript(scriptPath.getFileName().toString(), depsDir));
-        ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
-        pb.directory(sessionDir);
-        pb.redirectErrorStream(false);
-        var env = pb.environment();
-        env.put("MPLBACKEND", "Agg");
-        env.put("PATH", SAFE_PATH);
-        env.put("PYTHONUTF8", "1");
-        env.put("PYTHONIOENCODING", "utf-8");
-        if (depsDir != null) {
-            // Replace any inherited PYTHONPATH — keeping it isolated to
-            // ONLY the platform-managed deps dir is the whole point of
-            // this feature (otherwise operator system-packages leak in).
-            env.put("PYTHONPATH", depsDir.toAbsolutePath().toString());
+
+        // T80 — branch on execution mode. NATIVE forks the host Python
+        // subprocess (legacy default); DOCKER bind-mounts only the session
+        // dir into a throwaway hardened container. The post-start stream /
+        // timeout / generated-file handling below is identical for both.
+        TurCodeInterpreterExecutionMode mode = resolveExecutionMode();
+        ProcessBuilder pb;
+        String containerName = null;
+        if (mode == TurCodeInterpreterExecutionMode.DOCKER) {
+            // Inside the container the deps dir (when present) is bind-mounted
+            // read-only at /deps; the runner must reference THAT path, not the
+            // host absolute path.
+            String depsLiteral = depsDir != null ? DOCKER_DEPS_MOUNT : null;
+            Files.writeString(runnerPath,
+                    buildRunnerScript(scriptPath.getFileName().toString(), depsLiteral));
+            containerName = "turing-ci-" + sessionId;
+            pb = buildDockerProcess(containerName, sessionDir, depsDir);
+            log.info("[CodeInterpreter] session={} | DOCKER mode | image={} container={} network={}",
+                    sessionId, resolveDockerImage(), containerName, dockerNetwork);
         } else {
-            env.remove("PYTHONPATH");
+            Files.writeString(runnerPath,
+                    buildRunnerScript(scriptPath.getFileName().toString(), depsDir));
+            pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
+            pb.directory(sessionDir);
+            pb.redirectErrorStream(false);
+            configureNativeEnv(pb, depsDir);
         }
-        env.remove("PYTHONSTARTUP");
-        env.remove("PYTHONHOME");
-        env.remove("PYTHONUSERSITE");
 
         Process process = pb.start();
 
@@ -403,6 +630,13 @@ public class TurCodeInterpreterToolService {
 
         if (!finished) {
             process.destroyForcibly();
+            // Killing the `docker run` client doesn't stop the container —
+            // it keeps running detached. Fire a best-effort `docker kill` so
+            // a runaway script doesn't outlive its timeout. With `--rm` the
+            // container is auto-removed once killed.
+            if (containerName != null) {
+                killDockerContainer(containerName);
+            }
             outThread.join(2000);
             errThread.join(2000);
             log.warn("[CodeInterpreter] session={} | TIMEOUT after {}s | script={} | Partial stdout:\n{}",
@@ -559,8 +793,18 @@ public class TurCodeInterpreterToolService {
      * var inheritance and works regardless of the OS quirk.
      */
     private String buildRunnerScript(String scriptFilename, Path depsDir) {
-        String depsPathLiteral = depsDir != null
-                ? repr(depsDir.toAbsolutePath().toString())
+        return buildRunnerScript(scriptFilename,
+                depsDir != null ? depsDir.toAbsolutePath().toString() : null);
+    }
+
+    /**
+     * Overload that takes the deps path as a raw string so the Docker path
+     * can pass the in-container mount point ({@code /deps}) rather than the
+     * host absolute path. {@code null} → no {@code sys.path} injection.
+     */
+    private String buildRunnerScript(String scriptFilename, String depsPath) {
+        String depsPathLiteral = depsPath != null
+                ? repr(depsPath)
                 : "None";
         return """
                 import sys

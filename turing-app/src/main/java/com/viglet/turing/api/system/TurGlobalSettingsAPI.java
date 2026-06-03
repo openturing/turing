@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.email.TurEmailService;
+import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
+import com.viglet.turing.genai.tool.TurCodeInterpreterToolService.TurDockerStatus;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,11 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 public class TurGlobalSettingsAPI {
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurEmailService turEmailService;
+    private final TurCodeInterpreterToolService turCodeInterpreterToolService;
 
     public TurGlobalSettingsAPI(TurGlobalSettingsService turGlobalSettingsService,
-            TurEmailService turEmailService) {
+            TurEmailService turEmailService,
+            TurCodeInterpreterToolService turCodeInterpreterToolService) {
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.turEmailService = turEmailService;
+        this.turCodeInterpreterToolService = turCodeInterpreterToolService;
     }
 
     @Operation(summary = "Get global settings")
@@ -36,6 +41,8 @@ public class TurGlobalSettingsAPI {
                 .decimalSeparator(turGlobalSettingsService.getDecimalSeparator())
                 .pythonExecutable(turGlobalSettingsService.getPythonExecutable())
                 .pythonRequirements(turGlobalSettingsService.getPythonRequirements())
+                .codeInterpreterExecutionMode(turGlobalSettingsService.getCodeInterpreterExecutionMode())
+                .codeInterpreterDockerImage(turGlobalSettingsService.getCodeInterpreterDockerImage())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
@@ -63,6 +70,10 @@ public class TurGlobalSettingsAPI {
                         .updatePythonExecutable(globalSettings.getPythonExecutable()))
                 .pythonRequirements(turGlobalSettingsService
                         .updatePythonRequirements(globalSettings.getPythonRequirements()))
+                .codeInterpreterExecutionMode(turGlobalSettingsService
+                        .updateCodeInterpreterExecutionMode(globalSettings.getCodeInterpreterExecutionMode()))
+                .codeInterpreterDockerImage(turGlobalSettingsService
+                        .updateCodeInterpreterDockerImage(globalSettings.getCodeInterpreterDockerImage()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
                 .llmCacheEnabled(turGlobalSettingsService
@@ -122,6 +133,19 @@ public class TurGlobalSettingsAPI {
 
     /** Rotation result — preview is the first 8 chars only, for confirmation in the UI. */
     public record TurUrlSigningSecretRotation(boolean rotated, String preview) {
+    }
+
+    /**
+     * T80 — probes whether Docker is reachable from the running server.
+     * Lets the admin validate the host before switching the Code
+     * Interpreter execution mode to {@code DOCKER}. Never sends anything
+     * sensitive — only an availability flag, the daemon's server version,
+     * and an error string when unavailable.
+     */
+    @Operation(summary = "Check whether Docker is available for the Code Interpreter sandbox")
+    @GetMapping("/code-interpreter/docker/status")
+    public TurDockerStatus getDockerStatus() {
+        return turCodeInterpreterToolService.checkDocker();
     }
 
     @Operation(summary = "Send a test email to validate email configuration")

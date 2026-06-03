@@ -51,6 +51,24 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String CODE_INTERPRETER_URL_SIGNING_SECRET =
 			"GLOBAL_CODE_INTERPRETER_URL_SIGNING_SECRET";
+	/**
+	 * T80 — Code Interpreter execution mode: {@code NATIVE} (default;
+	 * host subprocess, legacy behavior) or {@code DOCKER} (each execution
+	 * runs in a throwaway hardened container). Operator choice, so a
+	 * deployment can opt into containerization without a code change.
+	 */
+	public static final String CODE_INTERPRETER_EXECUTION_MODE =
+			"GLOBAL_CODE_INTERPRETER_EXECUTION_MODE";
+	public static final String CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE = "NATIVE";
+	/**
+	 * T80 — Docker image used when {@link #CODE_INTERPRETER_EXECUTION_MODE}
+	 * is {@code DOCKER}. Should bundle Python plus the packages the agents
+	 * rely on (reportlab, matplotlib, qrcode, …). Defaults to the upstream
+	 * slim Python image; operators typically publish their own.
+	 */
+	public static final String CODE_INTERPRETER_DOCKER_IMAGE =
+			"GLOBAL_CODE_INTERPRETER_DOCKER_IMAGE";
+	public static final String CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
@@ -92,6 +110,10 @@ public class TurConfigVarOnStartup {
 		// (existing + non-blank), this is a no-op — fleet-wide signed URLs
 		// stay valid across restarts.
 		ensureSecretConfigVar(CODE_INTERPRETER_URL_SIGNING_SECRET, GLOBAL_PATH);
+		ensureConfigVar(CODE_INTERPRETER_EXECUTION_MODE, GLOBAL_PATH,
+				CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE);
+		ensureConfigVar(CODE_INTERPRETER_DOCKER_IMAGE, GLOBAL_PATH,
+				CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");

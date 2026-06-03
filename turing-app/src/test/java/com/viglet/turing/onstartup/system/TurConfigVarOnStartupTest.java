@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(19)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(21)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -50,6 +50,14 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PYTHON_REQUIREMENTS".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_CODE_INTERPRETER_EXECUTION_MODE".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "NATIVE".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_CODE_INTERPRETER_DOCKER_IMAGE".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "python:3.12-slim".equals(configVar.getValue())));
         assertTrue(savedVars.stream().anyMatch(configVar ->
                 "GLOBAL_CODE_INTERPRETER_URL_SIGNING_SECRET".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())

@@ -551,6 +551,119 @@ class TurCodeInterpreterToolServiceTest {
         assertThat(path).isNotNull();
     }
 
+    // --- T80 Docker sandbox ---
+
+    @Test
+    void buildRunnerScriptWithStringDepsShouldUseContainerMount() throws Exception {
+        // The (String, String) overload is what the Docker branch calls with
+        // the in-container mount point "/deps" rather than the host path.
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildRunnerScript", String.class, String.class);
+        method.setAccessible(true);
+
+        String script = (String) method.invoke(service, "script.py", "/deps");
+        assertThat(script)
+                .contains("_DEPS_DIR = '/deps'")
+                .contains("sys.path.insert(0, _DEPS_DIR)");
+    }
+
+    @Test
+    void resolveExecutionModeShouldDefaultToNativeWhenSettingsReturnNull() throws Exception {
+        // Mock settings returns null for getCodeInterpreterExecutionMode() —
+        // resolveExecutionMode must coerce that to NATIVE, never NPE.
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod("resolveExecutionMode");
+        method.setAccessible(true);
+        Object mode = method.invoke(service);
+        assertThat(mode).isEqualTo(TurCodeInterpreterExecutionMode.NATIVE);
+    }
+
+    @Test
+    void buildDockerProcessShouldEmitHardenedCommand() throws Exception {
+        TurGlobalSettingsService settings = mock(TurGlobalSettingsService.class);
+        when(settings.getCodeInterpreterDockerImage()).thenReturn("myorg/ci:1");
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(settings);
+
+        // Populate the @Value-backed docker fields (no Spring context here).
+        setField(svc, "dockerExecutable", "docker");
+        setField(svc, "dockerNetwork", "none");
+        setField(svc, "dockerMemory", "512m");
+        setField(svc, "dockerCpus", "1.0");
+        setField(svc, "dockerPidsLimit", 128);
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildDockerProcess", String.class, File.class, java.nio.file.Path.class);
+        method.setAccessible(true);
+
+        File sessionDir = new File(System.getProperty("java.io.tmpdir"), "turing-ci-test");
+        java.nio.file.Path depsDir = java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "deps");
+
+        ProcessBuilder pb = (ProcessBuilder) method.invoke(
+                svc, "turing-ci-abc", sessionDir, depsDir);
+        java.util.List<String> cmd = pb.command();
+        String joined = String.join(" ", cmd);
+
+        assertThat(cmd).startsWith("docker", "run", "--rm");
+        assertThat(joined)
+                .contains("--name turing-ci-abc")
+                .contains("--network none")
+                .contains("--memory 512m")
+                .contains("--cpus 1.0")
+                .contains("--pids-limit 128")
+                .contains("--cap-drop ALL")
+                .contains("no-new-privileges")
+                .contains("--read-only")
+                .contains(":/sandbox:rw")
+                .contains(":/deps:ro")
+                .contains("PYTHONPATH=/deps")
+                .contains("myorg/ci:1")
+                .contains("python /sandbox/_runner.py");
+    }
+
+    @Test
+    void buildDockerProcessShouldOmitDepsMountWhenNull() throws Exception {
+        TurGlobalSettingsService settings = mock(TurGlobalSettingsService.class);
+        when(settings.getCodeInterpreterDockerImage()).thenReturn("python:3.12-slim");
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(settings);
+        setField(svc, "dockerExecutable", "docker");
+        setField(svc, "dockerNetwork", "none");
+        setField(svc, "dockerMemory", "512m");
+        setField(svc, "dockerCpus", "1.0");
+        setField(svc, "dockerPidsLimit", 128);
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildDockerProcess", String.class, File.class, java.nio.file.Path.class);
+        method.setAccessible(true);
+
+        File sessionDir = new File(System.getProperty("java.io.tmpdir"), "turing-ci-test2");
+        ProcessBuilder pb = (ProcessBuilder) method.invoke(svc, "turing-ci-x", sessionDir, null);
+        String joined = String.join(" ", pb.command());
+
+        assertThat(joined)
+                .doesNotContain(":/deps:ro")
+                .doesNotContain("PYTHONPATH=/deps");
+    }
+
+    @Test
+    void checkDockerShouldReturnUnavailableForBogusExecutable() throws Exception {
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(
+                mock(TurGlobalSettingsService.class));
+        // Point at a binary that cannot exist so the probe fails fast and the
+        // method returns a status instead of throwing.
+        setField(svc, "dockerExecutable",
+                System.getProperty("java.io.tmpdir") + "/definitely-not-docker-xyz");
+        setField(svc, "dockerProbeTimeoutSeconds", 5);
+
+        TurCodeInterpreterToolService.TurDockerStatus status = svc.checkDocker();
+        assertThat(status.available()).isFalse();
+        assertThat(status.error()).isNotBlank();
+    }
+
+    private static void setField(Object target, String name, Object value) throws Exception {
+        java.lang.reflect.Field f = TurCodeInterpreterToolService.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(target, value);
+    }
+
     @Test
     void readStreamShouldReadNormalContent() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(

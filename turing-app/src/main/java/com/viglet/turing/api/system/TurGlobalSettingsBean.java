@@ -1,5 +1,6 @@
 package com.viglet.turing.api.system;
 
+import com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode;
 import com.viglet.turing.system.TurEmailProviderType;
 import com.viglet.turing.system.TurGlobalDecimalSeparator;
 
@@ -25,6 +26,22 @@ public class TurGlobalSettingsBean {
      * auto-install (operator manages the env manually).
      */
     private String pythonRequirements;
+    /**
+     * T80 — Code Interpreter execution mode: {@code NATIVE} (host
+     * subprocess, legacy default) or {@code DOCKER} (each execution runs
+     * in a throwaway hardened container). Operator choice exposed in the
+     * Global Settings UI.
+     *
+     * @since 2026.3.1
+     */
+    private TurCodeInterpreterExecutionMode codeInterpreterExecutionMode;
+    /**
+     * T80 — Docker image used when {@link #codeInterpreterExecutionMode}
+     * is {@code DOCKER}. Blank → server default ({@code python:3.12-slim}).
+     *
+     * @since 2026.3.1
+     */
+    private String codeInterpreterDockerImage;
     private String defaultLlmId;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;

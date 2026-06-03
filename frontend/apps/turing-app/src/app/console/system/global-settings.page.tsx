@@ -21,7 +21,7 @@ import { StickyPageHeader } from "@/components/sticky-page-header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconAlertTriangle, IconBrain, IconCheck, IconDatabase, IconDeviceFloppy, IconKey, IconLoader2, IconMail, IconMailForward, IconRefresh, IconSettings } from "@tabler/icons-react";
+import { IconAlertTriangle, IconBrain, IconBrandDocker, IconCheck, IconDatabase, IconDeviceFloppy, IconKey, IconLoader2, IconMail, IconMailForward, IconRefresh, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
 import type { TurStoreInstance } from "@/models/store/store-instance.model";
@@ -50,6 +50,8 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     defaultLlmId: "",
     pythonExecutable: "",
     pythonRequirements: "",
+    codeInterpreterExecutionMode: "NATIVE",
+    codeInterpreterDockerImage: "python:3.12-slim",
     llmCacheEnabled: false,
     llmCacheTtlMs: 3600000,
     llmCacheRegenerate: false,
@@ -83,6 +85,15 @@ export default function GlobalSettingsPage() {
     const [secretConfigured, setSecretConfigured] = useState<boolean | null>(null);
     const [secretPreview, setSecretPreview] = useState<string | null>(null);
     const [isRotatingSecret, setIsRotatingSecret] = useState(false);
+    // T80 — Docker availability probe for the Code Interpreter sandbox.
+    // Only meaningful when the execution mode is DOCKER; lets the admin
+    // confirm the host can run containers before saving.
+    const [dockerStatus, setDockerStatus] = useState<{
+        available: boolean;
+        serverVersion: string | null;
+        error: string | null;
+    } | null>(null);
+    const [isCheckingDocker, setIsCheckingDocker] = useState(false);
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
@@ -134,6 +145,25 @@ export default function GlobalSettingsPage() {
         }
     };
 
+    const onCheckDocker = async () => {
+        try {
+            setIsCheckingDocker(true);
+            const status = await turGlobalSettingsService.getDockerStatus();
+            setDockerStatus(status);
+            if (status.available) {
+                toast.success(t("globalSettings.dockerCheckSuccess", { version: status.serverVersion }));
+            } else {
+                toast.error(t("globalSettings.dockerCheckFailed", { error: status.error ?? "" }));
+            }
+        } catch (error) {
+            console.error("docker status check failed", error);
+            setDockerStatus({ available: false, serverVersion: null, error: "request failed" });
+            toast.error(t("globalSettings.dockerCheckFailed", { error: "" }));
+        } finally {
+            setIsCheckingDocker(false);
+        }
+    };
+
     const onSubmit = async (data: TurGlobalSettings) => {
         try {
             setIsSaving(true);
@@ -171,6 +201,7 @@ export default function GlobalSettingsPage() {
 
     const llmCacheEnabled = form.watch("llmCacheEnabled") ?? false;
     const ragEnabled = form.watch("ragEnabled") ?? false;
+    const codeInterpreterMode = form.watch("codeInterpreterExecutionMode") ?? "NATIVE";
 
     return (
         <Form {...form}>
@@ -276,6 +307,103 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
+
+                            {/* T80 — execution mode. NATIVE keeps the legacy
+                                host-subprocess behavior; DOCKER runs each
+                                execution in a throwaway hardened container.
+                                Operator choice — switching needs no redeploy. */}
+                            <FormField
+                                control={form.control}
+                                name="codeInterpreterExecutionMode"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("globalSettings.codeInterpreterMode")}</FormLabel>
+                                        <FormDescription>
+                                            {t("globalSettings.codeInterpreterModeDesc")}
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value ?? "NATIVE"}
+                                                disabled={isLoading}
+                                            >
+                                                <SelectTrigger className="w-full max-w-xs">
+                                                    <SelectValue placeholder={t("globalSettings.choose")} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="NATIVE">{t("globalSettings.codeInterpreterModeNative")}</SelectItem>
+                                                    <SelectItem value="DOCKER">{t("globalSettings.codeInterpreterModeDocker")}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Docker-only options — image + availability probe.
+                                Shown only when the mode is DOCKER to keep the
+                                NATIVE form uncluttered. */}
+                            {codeInterpreterMode === "DOCKER" && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="codeInterpreterDockerImage"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t("globalSettings.codeInterpreterImage")}</FormLabel>
+                                                <FormDescription>
+                                                    {t("globalSettings.codeInterpreterImageDesc")}
+                                                </FormDescription>
+                                                <FormControl>
+                                                    <Input
+                                                        className="max-w-md font-mono text-sm"
+                                                        placeholder="python:3.12-slim"
+                                                        autoComplete="off"
+                                                        spellCheck={false}
+                                                        disabled={isLoading}
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <GradientButton
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={onCheckDocker}
+                                                loading={isCheckingDocker}
+                                                disabled={isLoading || isCheckingDocker}
+                                            >
+                                                <IconBrandDocker className="size-4" />
+                                                {t("globalSettings.dockerCheckAction")}
+                                            </GradientButton>
+                                            {dockerStatus?.available && (
+                                                <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                                    <IconCheck className="size-4" />
+                                                    {t("globalSettings.dockerStatusAvailable", { version: dockerStatus.serverVersion })}
+                                                </span>
+                                            )}
+                                            {dockerStatus && !dockerStatus.available && (
+                                                <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                                    <IconAlertTriangle className="size-4" />
+                                                    {t("globalSettings.dockerStatusUnavailable")}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {dockerStatus && !dockerStatus.available && dockerStatus.error && (
+                                            <p className="font-mono text-xs text-muted-foreground break-all max-w-md">
+                                                {dockerStatus.error}
+                                            </p>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </SectionCard.Content>
                     </SectionCard>
 

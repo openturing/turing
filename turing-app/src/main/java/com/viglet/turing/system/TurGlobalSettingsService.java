@@ -195,6 +195,65 @@ public class TurGlobalSettingsService {
         return clamped;
     }
 
+    /**
+     * T80 — current Code Interpreter execution mode. {@code NATIVE}
+     * (default) runs Python as a host subprocess; {@code DOCKER} runs each
+     * execution inside a throwaway hardened container. Falls back to
+     * {@link com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode#DEFAULT}
+     * when the row is missing or holds an unparseable value.
+     *
+     * @since 2026.3.1
+     */
+    public com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode getCodeInterpreterExecutionMode() {
+        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE)
+                .map(TurConfigVar::getValue)
+                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE);
+        return com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.fromString(value);
+    }
+
+    public com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode updateCodeInterpreterExecutionMode(
+            com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode mode) {
+        com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode safe =
+                mode == null ? com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.DEFAULT : mode;
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(safe.name());
+        turConfigVarRepository.save(configVar);
+        return safe;
+    }
+
+    /**
+     * T80 — Docker image used when the execution mode is {@code DOCKER}.
+     * Blank falls back to the documented default
+     * ({@code python:3.12-slim}); operators usually publish an image with
+     * the agents' Python packages baked in.
+     *
+     * @since 2026.3.1
+     */
+    public String getCodeInterpreterDockerImage() {
+        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE)
+                .map(TurConfigVar::getValue)
+                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE);
+        return (value == null || value.isBlank())
+                ? TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE
+                : value.trim();
+    }
+
+    public String updateCodeInterpreterDockerImage(String image) {
+        String value = (image == null || image.isBlank())
+                ? TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE
+                : image.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)
