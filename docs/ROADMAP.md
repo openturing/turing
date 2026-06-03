@@ -189,46 +189,16 @@
 - 💭 **T191** (deps: T169, T126) **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if… → §X.15.e
 - 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
 
-## G.1 — Foundation (dependency + provider + cache + storage path)
+## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 
-- 📋 **T193** (deps: —) **`com.github.tjake:jlama-core:0.8.4+` dependency + `TurEmbeddedLlmProvider`** — new `@Component` implementing `TurGenAiLlmProvider` with `getPluginType()=="embedded-jlama"`. → §XI.2, §XI.3
-- 📋 **T194** (deps: T193) **`TurEmbeddedModelCache`** — per-`TurLLMInstance.id` cache of loaded `AbstractModel`s. → §XI.3
-- 📋 **T195** (deps: —) **`TurStorageService.resolveLocalPath(String key): Path`** — new method on the storage interface. → §XI.3
-- 📋 **T196** (deps: T193) **`EMBEDDED_JLAMA` vendor row** — extend [TurLLMVendorOnStartup.java](../turing-app/src/main/java/com/viglet/turing/onstartup/llm/TurLLMVendorOnStartup.java) with `vendor(id="EMBEDDED_JLAMA", plugin="embedded-jlama", title="Embedded (Jlama)… → §XI.3
-- 📋 **T197** (deps: T193, T194, T195) **`TurEmbeddedChatModel` + `TurEmbeddedStreamingChatModel`** — Spring AI `ChatModel` / `StreamingChatModel` adapters. → §XI.3
-- 📋 **T198** (deps: T193, T194, T195) **`TurEmbeddedEmbeddingModel`** — separate Spring AI `EmbeddingModel` adapter via `JlamaEmbeddingModel`. → §XI.7
+> **Decision:** the 26-task committed Jlama program (was T193–T218) is cut to a
+> single time-boxed spike. Rationale: Jlama upstream is stagnant (last release
+> 2025-01-01, single maintainer), and **Ollama-as-sidecar already delivers the
+> air-gapped + tool-calling story** in the same docker-compose with far less risk.
+> The committed 8-week build was the roadmap violating its own "courage to
+> deprecate" principle. Detailed Jlama design is in `git log` (former §XI).
 
-## G.2 — Frontend UX (model picker + import)
-
-- 📋 **T199** (deps: T193, T195) **`JlamaModelPicker` React component** — modal/dropdown that lists candidate model directories under `models/` in `TurStorageService`. → §XI.4
-- 📋 **T200** (deps: T199) **`applyVendorDefaults("EMBEDDED_JLAMA")`** in [llm.instance.form.tsx:139-195](../frontend/apps/turing-app/src/components/llm/llm.instance.form.tsx) — sets `apiKey=""` (hidden), `url=""` (hidden), conditional fields revealed: `modelAssetKey… → §XI.4
-- 📋 **T201** (deps: T199) **Model metadata pre-flight on selection** — when the picker selects a model dir, frontend calls `GET /api/llm/embedded/model-info?key=...` → reads `config.json` and returns `{architecture, paramCount, hiddenSize, contextLength, vocabSize,… → §XI.4, §XI.7
-- 📋 **T202** (deps: T193) **Pre-flight RAM check on save** — `TurLLMInstanceAPI` PUT/POST validates that `estimatedModelRam + currentLoadedTotal < 0.7 * Runtime.maxMemory()`; rejects with 422 + actionable message ("Loading this model would push memory beyond 70% — e… → §XI.5
-
-## G.3 — Operational realities (Panama, lifecycle, observability)
-
-- 📋 **T203** (deps: T194) **Per-conversation session UUID lifecycle** — Jlama's KV-cache is keyed by `UUID` per `AbstractModel.generate(...)` call. → §XI.5
-- 📋 **T204** (deps: T194) **Eager-load on startup** — when `eagerLoad=true` on a `TurLLMInstance`, a Spring `ApplicationReadyEvent` listener walks the embedded instances and pre-loads each into the cache. → §XI.5
-- 📋 **T205** (deps: T193) **Memory + load observability** — extend `TurChatPipelineObservation` (post-T32) with `turing.embedded.{modelLoadMs, modelEvictions, loadedModelCount, residentBytes, sessionsActive, tokensPerSecond}` Micrometer gauges + timers, tagged by `i… → §XI.5
-- 📋 **T206** (deps: T193) **Status panel in LLM Instance details page** — per-embedded-instance card showing: load state (`unloaded` / `loading` / `ready` / `evicted`), resident RAM, active session count, last-used timestamp, total inferences served, recent average… → §XI.5
-
-## G.4 — Capability completion (tool calling, judge, rerank, embedding)
-
-- 📋 **T207** (deps: T193) **Tool calling via LangChain4j-Jlama** — wire `JlamaChatModel`'s native tool-calling support (works with **Llama 3.1**, **Mistral**, **Mixtral** today; **JSON-mode not yet supported** — that's the LangChain4j gap, T173 strict JSON schemas d… → §XI.6
-- 📋 **T208** (deps: T193) **Local LlmJudge** — route the guardrail's bilingual judge (today defaults to gpt-4o-mini, $0.15/1M in) to a local 3B I8 Jlama model (~2–3 GB RAM, 5–15 tok/s pure-Java, ~15–30 tok/s with `jlama-native`). → §XI.6
-- 📋 **T209** (deps: T198) **Local embedding for `TurLuceneVectorStore` + RAG indexer** — when an agent's embedding provider is an embedded instance with `role=embedding`, the indexer pipes through the local Jlama BGE / MiniLM model instead of OpenAI / Anthropic / Ge… → §XI.6
-- 💭 **T210** (deps: T193, T209) **Local rerank stage in T24 hybrid RAG** — Jlama has **no native rerank API** (unlike kherud 4.1). → §XI.7
-
-## G.5 — Bold creative bets
-
-- 💭 **T211** (deps: T193, T207) **Zero-egress certification mode** — global flag `turing.network.outbound-llm=forbidden`. → §XI.7
-- 💭 **T212** (deps: T193, T208) **Hybrid orchestration — cheap-by-default, escalate when needed** — chat-flow node-level setting `llmTier`: `embedded` (default for `aiQuestion` / `formCapture` / `writeSlot`), `cloud` (for the final answer composition or complex RAG synthe… → §XI.7
-- 💭 **T213** (deps: T193) **Recommended Jlama model gallery** — curated list of `huggingface.co/tjake/*` pre-quantized models (and known-compatible community releases) at `/console/llm-models/recommended`. → §XI.4
-- 💭 **T214** (deps: T193) **`.gguf` → Jlama converter UI** — addresses the user's original "drop a GGUF" intent. → §XI.4
-- 💭 **T215** (deps: T193) **Custom-Tool `embedded` helper** — Custom Tool Groovy scripts get a new helper `embedded.complete(instanceId, prompt, opts?)` / `embedded.embed(instanceId, text)`. → §XI.7
-- 📋 **T216** (deps: T193) **JVM Panama Vector flag enforcement** — boot-time check that JVM was launched with `--add-modules jdk.incubator.vector --enable-preview`. → §XI.5
-- 💭 **T217** (deps: T216) **`jlama-native` SIMD opt-in** — per-deployment property `turing.embedded.jlama.native-simd=true` (default false). → §XI.5
-- 💭 **T218** (deps: T193, T208) **"This conversation cost $0.00" badge** — when every LLM call in a conversation went through embedded instances, the chat UI surfaces a green "$0 — fully local" badge. → §XI.7
+- 💭 **T193 (spike)** (deps: —) **Embedded inference engine evaluation** — 2–3 day spike: benchmark Jlama (pure-Java, Panama) vs Ollama-sidecar vs `de.kherud:llama` for the zero-egress deployment story (tool calling, RAM, tok/s, Windows, ops). Decide ONE engine before committing any build. Default assumption: **Ollama-sidecar**. Promote to a real block only if the spike beats that default for a named customer requirement. → STRATEGY §VIII (deprecations)
 
 ## Block I — Turing as an MCP Server (T245–T256)
 
@@ -275,6 +245,39 @@
 - 💭 **T282** (deps: T280) **MCP server multi-tenant scoping** — fold tenancy into Block I: `/mcp` OAuth token → tenant → `TurTenantContext`, reusing T246's scoping. → §XIV.7.3
 - 📋 **T283** (deps: T280) **`docs/MULTI_TENANCY.md`** — the operator + developer guide: isolation model, the leak-surface checklist, "how to make a new entity tenant-safe", default-tenant/off behavior, teardown runbook. → §XIV.7.4
 - 💭 **T284** (deps: T257) **Hybrid escalation hook (future)** — keep the door open for migrating a heavy enterprise tenant to a dedicated schema/DB later (`TurTenant.isolationMode = SHARED \| SCHEMA \| DB`); pluggable `CurrentTenantIdentifierResolver` + `MultiTenant… → §XIV.7.5
+
+## Block K — Agent CI (flow/prompt eval gate) ⭐ next anchor (2026-06-03)
+
+> Turns capabilities you already shipped (bilingual LLM-judge, analytics,
+> transcripts, T94 lint) into a sales differentiator for the regulated verticals:
+> a non-engineer can change a prompt/flow and a **golden-set eval gate** proves it
+> didn't regress *before* publish. Deepens the audit-grade moat.
+
+- 📋 **T285** (deps: T94) **`TurAgentEvalSet` entity + CRUD** — per-agent golden set of cases `(seed user turns, expected captured slots / outcome, optional rubric)`; seedable from anonymized real sessions (pairs with T61 PII redaction). → §XV.1
+- 📋 **T286** (deps: T285) **Eval runner + judge scoring** — replays each case through `TurChatFlowEngineService` + executor, scores via the existing bilingual LLM-judge, emits pass/fail + per-case score + slot-capture diff vs expected. → §XV.2
+- 📋 **T287** (deps: T286) **Pre-publish gate in the flow editor** — on save/publish, run the agent's eval set; block (or warn) on regression vs the last green baseline; surfaced in the existing chat-flow Lint UI panel. → §XV.3
+- 📋 **T288** (deps: T286) **Agent-eval CI** — `-Pagent-eval` Maven profile + `POST /api/ai-agent/{id}/eval/run` for nightly + PR gating (mirrors the T242 `-Pllm-it` nightly pattern). → §XV.4
+
+## Block L — Cost & token governance (provider-agnostic)
+
+> Productizes the X.17 promise ("the bill drops 50%") with a screen that proves it.
+> Provider-agnostic + real-time, so it works on the Spring AI path, Ollama, and
+> embedded ($0) — **not** coupled to the native-SDK seam. The vendor Usage-API
+> import (F.13 T183–T185) becomes the *enrichment* layer, not the foundation.
+
+- 📋 **T289** (deps: —) **`TurChatCostSample` per-turn capture** — read prompt/completion tokens from Spring AI `ChatResponse` usage metadata × a per-model price table; one sample per turn tagged `(tenant, agent, llm, stage)`. Rides the T32 observability plumbing; works for every provider incl. local ($0). → §XVI.1
+- 📋 **T290** (deps: T289) **Live AI-spend dashboard** — per agent / tenant / LLM / stage time-series + budget thresholds. Complements (does not duplicate) F.13 T184's 30-day vendor-Usage import. → §XVI.2
+- 📋 **T291** (deps: T289) **Turn-time soft budget gate** — per-agent `monthlyBudgetUsd` / `perTurnSoftCapUsd`; on projected breach, downgrade to a cheaper model or warn. Generalizes F.13 T185 beyond the native path. → §XVI.3
+
+## Block M — Verifiable answers (provider-agnostic provenance)
+
+> Makes the RAG provenance you already retrieve *visible* to the end user — the
+> trust unlock for Education/Finance vs a source-less ChatGPT. Works for any LLM
+> over existing T24 hybrid-RAG hits; Anthropic per-span Citations (F.6 T152–T154)
+> enrich it when the agent runs on Claude.
+
+- 📋 **T292** (deps: T24) **RAG attribution metadata end-to-end** — every `search_knowledge_base` hit carries `(sourceId, title, url, chunkIndex, score)` through the SSE stream as a structured `sources[]` block — no vendor citation API required. → §XVII.1
+- 📋 **T293** (deps: T292) **Source-chip UI + "why did you say this?" trace** — chat renderer (react-sdk + admin) shows inline source chips with confidence and a one-click expansion to the retrieved chunks. Cross-refs F.6 T154 for Claude per-span underlining. → §XVII.2
 
 ## Non-goals (do NOT add as tasks)
 

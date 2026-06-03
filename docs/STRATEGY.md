@@ -83,22 +83,35 @@ where the engagement opened doors:
 Vertical is where 2026 venture dollars sit. Horizontal is where they
 left.
 
-### VIII.4 The MCP-first transition
+### VIII.4 The MCP pillar — Turing speaks MCP both ways
 
-**Tese**: Model Context Protocol is becoming the de facto standard for
-agent tools (Anthropic, Cursor, Claude Desktop, Glama, OpenTools).
-**Custom Tools Groovy is Turing-only lock-in**. Move Custom Tools to be
-**MCP servers by default**, with Groovy demoted to legacy mode.
+**Tese**: Model Context Protocol is the de facto standard for agent
+tools (Anthropic, Cursor, Claude Desktop, Glama, OpenTools). Turing's
+MCP story is **one pillar with two directions** — previously split
+across two sections, now unified because the strategic move is the same
+bet on the same protocol:
 
-- **Ganho 1**: Custom Tools written for Turing become portable to any
-  MCP client.
-- **Ganho 2**: the MCP marketplace ecosystem becomes available *to*
-  Turing customers without writing new code (third-party tools listed
-  in the admin gallery).
-- **Trade-off**: existing Groovy customers need a migration path.
-- **Sequencing**: ship a one-shot Groovy → MCP exporter, then make MCP
-  the default for new tools while keeping Groovy on the docs as
-  "advanced" for power users.
+1. **Turing as MCP _client_** (tool portability) — **Custom Tools Groovy
+   is Turing-only lock-in.** Make Custom Tools **MCP servers by default**,
+   Groovy demoted to legacy/"advanced" mode. Ganho: tools written for
+   Turing become portable to any MCP client, AND the third-party MCP
+   marketplace becomes available *inside* Turing's admin gallery with no
+   new code. Sequencing: ship a one-shot **Groovy → MCP exporter**, then
+   default new tools to MCP.
+2. **Turing as MCP _server_** (distribution inversion) — expose
+   `https://<host>/mcp` so the AI client the customer *already pays for*
+   (Claude Desktop, Cursor, ChatGPT, internal agents) connects to Turing
+   in 30 seconds and searches/answers/acts on enterprise content with
+   citations. Turing stops being "a chat UI you must adopt" and becomes
+   the grounding layer inside whatever agent the customer already runs.
+   Full plan in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIII; tasks in
+   [ROADMAP.md](ROADMAP.md) Block I.
+
+**Why one pillar, not two**: the same protocol investment (transport,
+auth, tool/resource/prompt schema) serves both. Sell it as one line —
+"Turing speaks MCP in both directions: your tools go out, the world's
+agents come in" — instead of two half-stories. **Trade-off**: existing
+Groovy customers need a migration path (the exporter covers it).
 
 ### VIII.5 The Spring AI question — fork or live with the lag
 
@@ -134,24 +147,37 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 
 ### VIII.7 Sequencing — what to start this quarter
 
-**Convicted choices, not exhaustive list**:
+**Convicted choices, not exhaustive list** (revised 2026-06-03):
 
-1. ⭐ **T80 — Container sandbox for Code Interpreter** (~2 weeks). The
-   one feature that gates multi-tenant SaaS and the Turing Sandbox SKU.
-   No clean shortcut exists.
-2. **T60 + T61 — Slot audit log + PII prefix** (~2 weeks). Unlocks the
-   compliance pitch for regulated verticals. Required before any bank /
-   hospital conversation.
-3. **T94 — Chat-flow lint** (~1 week). Drives perceived editor
-   maturity; first thing CTOs see in a demo.
-4. **T70 — Multi-armed bandit for A/B** (~1 week). Replaces fixed-split
-   pain we already feel internally.
-5. **T46 OR TK4 — `functionCall` decision** (~1-3 days for decision +
-   1-2 weeks if implemented). Vapor cleanup. Either ship it or kill it.
+1. ⭐ **Block K — Agent CI (T285–T288)** — the next feature *anchor*.
+   Turns capabilities already shipped (LLM-judge + analytics + transcripts
+   + T94 lint) into the trust unlock for regulated verticals: a
+   non-engineer changes a prompt and a golden-set eval gate proves no
+   regression before publish. Best ROI because the parts already exist.
+2. ⭐ **MCP pillar (Block I + the §VIII.4 Groovy→MCP exporter)** — highest
+   *distribution* leverage at lowest build cost (mostly transport — see
+   §XIII.2). Ride the adoption curve of Claude/Cursor/ChatGPT instead of
+   asking customers to adopt our UI.
+3. **Block M — Verifiable answers (T292–T293)** — provider-agnostic
+   provenance UI over existing RAG hits. Cheap, visible, and the
+   Education/Finance trust differentiator vs source-less ChatGPT.
+4. **Block L — Cost governance (T289–T291)** — the screen that proves
+   "the bill drops 50%." Provider-agnostic, pairs with multi-tenancy (J).
+5. **T60 + T61 — Slot audit log + PII prefix** — compliance pre-req for
+   any bank/hospital conversation; also seeds Agent CI's anonymized
+   golden sets.
 
-**Defer**: T80 + T81 (resource limits) + T82 (pre-warmed pool) shipped.
-Most remaining Block D items wait on a customer to ask for them
-twice before scheduling.
+**Downgraded (courage to deprecate, applied to our own roadmap):**
+- **Jlama (former Block G, T193–T218) → a 2–3 day spike (T193-spike).**
+  Upstream is stagnant (last release 2025-01-01); **Ollama-as-sidecar**
+  already delivers air-gapped + tool-calling with far less risk. Do not
+  commit an 8-week pure-Java inference build before a spike beats that
+  default for a *named* customer requirement.
+
+**Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining
+Block D/F items wait on a customer to ask for them twice before
+scheduling. Note F.6/F.13 (vendor citations & Usage-API cost) are now
+the *enrichment* layer beneath Blocks M and L, not standalone priorities.
 
 ### VIII.8 The pergunta hard
 
