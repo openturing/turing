@@ -429,7 +429,7 @@ acting.
 | T78 | ✅ | — | Multi-tenant path isolation — session dirs scoped as `tenants/{agentId}/{convId}/...`. Eliminates cross-tenant filesystem accidents (`TurCodeInterpreterToolService.executePythonForTenant`). | §VII.9.c |
 | T79 | ✅ | — | HMAC-signed URLs + cookie-binding for `/api/v2/code-interpreter/{session}/{file}` — prevents URL replay / cross-browser leakage (`TurCodeInterpreterUrlSigner`). | §VII.9.d |
 | T80 | ✅ | T78 | ⭐ **Container sandbox (Docker)** — opt-in per-deployment execution mode (`NATIVE` default \| `DOCKER`) in Global Settings. DOCKER runs each execution in a throwaway container (`--rm --network none --cap-drop ALL --security-opt no-new-privileges --read-only`, tmpfs `/tmp`, only the session dir bind-mounted rw, deps dir mounted ro at `/deps`), with `--memory`/`--cpus`/`--pids-limit` caps. Configurable image (default `python:3.12-slim`); "Check Docker" admin probe (`TurCodeInterpreterToolService.checkDocker`). NATIVE path unchanged. **Gate item for multi-tenant SaaS pitch with customer-authored Custom Tools.** | §VII.9.e |
-| T81 | 💭 | T80 | Resource limits per execution (cgroups) — CPU/RAM cap. Today only the 30s timeout controls runaway scripts (`[x*x for x in range(10**9)]` still trashes the JVM). | §VII.9.f |
+| T81 | ✅ | T80 | Resource limits per execution (cgroups) for the **NATIVE** path — opt-in CPU/RAM cap (`turing.code-interpreter.native.limits.*`). Wraps the host Python in `prlimit` (RLIMIT_AS + RLIMIT_CPU) or `systemd-run --scope` (cgroup MemoryMax/CPUQuota); `auto` prefers prlimit. Disabled by default (NATIVE path unchanged); Windows / missing-binary degrade to a warning, never break. Closes the runaway-memory gap the 30s timeout couldn't (`[x*x for x in range(10**9)]`). | §VII.9.f |
 | T82 | 💭 | T76 | Pre-warmed Python interpreter pool — first call pays ~200ms startup. Keeping 2-3 warm cuts ~70% latency for frequently-invoked tools. | §VII.9.g |
 | T83 | 💭 | T36 | Structured output capture — return `{stdout, files: [...], duration_ms, exit_code}` JSON instead of markdown-with-links so callers don't regex-parse. | §VII.9.h |
 
@@ -2434,6 +2434,7 @@ challenger persona (peer voice) with 50/50 split.
 | Multi-tenant path isolation (`tenants/{agentId}/{convId}/...`) | Cross-tenant accidental cleanup; per-agent search scoping | ✅ T78 |
 | HMAC-signed URLs + cookie-binding | URL guessing / cross-browser leakage | ✅ T79 |
 | Container sandbox (Docker / gVisor / Firecracker) | Runtime escape — malicious Python reading `/etc/passwd` or cross-tenant files | ✅ T80 (opt-in DOCKER mode) — see VII.2.h |
+| Per-execution CPU/RAM cap (NATIVE) | Runaway memory/CPU trashing the JVM (`[x*x for x in range(10**9)]`) | ✅ T81 (opt-in `prlimit`/`systemd-run`) — see VII.2.k |
 
 #### VII.10.a Chat analytics (T84)
 9 timeseries metrics + 4 scorecard dimensions exposed at
@@ -2571,9 +2572,45 @@ UI probes daemon availability (`TurCodeInterpreterToolService.checkDocker`
 → `GET /api/system/global-settings/code-interpreter/docker/status`)
 before an operator commits to DOCKER mode.
 
-Follow-ups still open: seccomp profile + gVisor for defense-in-depth,
-and finer per-execution cgroup tuning (T81). **Gate item — this opens
-Turing Cloud (see §VIII).**
+Follow-ups still open: seccomp profile + gVisor for defense-in-depth.
+NATIVE-path resource caps shipped as T81 (see VII.2.k). **Gate item —
+this opens Turing Cloud (see §VIII).**
+
+#### VII.2.k Code Interpreter NATIVE resource limits (T81) ✅
+DOCKER mode (T80) gets hard CPU/RAM caps for free from the container
+runtime. The NATIVE path runs Python as a plain host subprocess, so a
+single runaway script — the canonical `[x*x for x in range(10**9)]` —
+could exhaust host RAM and OOM the JVM **well before** the 30s
+wall-clock timeout had a chance to fire. T81 closes that gap on the
+native path.
+
+**Shipped as opt-in** (`turing.code-interpreter.native.limits.enabled`,
+default `false`) so existing native deployments keep their exact current
+behavior — same "opt-in per-entity / NATIVE path unchanged" doctrine as
+T80. When enabled, the host Python invocation is wrapped with a limiter
+command prefix:
+
+- **`prlimit`** (util-linux, the `auto` preference) — POSIX rlimits:
+  `--as=<bytes>` caps virtual address space (a memory-bomb dies with
+  `MemoryError`) and `--cpu=<seconds>` caps CPU time (a busy loop gets
+  `SIGXCPU`). No privileges, no systemd; prlimit `exec`s into Python so
+  the limited process keeps the subprocess PID and the existing timeout
+  `destroyForcibly` kills it cleanly.
+- **`systemd-run --scope`** — a transient **cgroup** with
+  `MemoryMax`/`MemorySwapMax=0`/`CPUQuota=100%`. Memory is RSS-accounted
+  by the kernel and the bomb is OOM-killed inside the cgroup. Requires
+  systemd with user cgroup delegation.
+
+Config: `memory-max` (Docker-style size string, default `1g` — note
+RLIMIT_AS is virtual-memory-based and stricter than Docker's RSS cap,
+hence a more generous default than DOCKER's `512m`), `cpu-seconds`
+(default `35`, just above the wall-clock timeout so it's a
+defense-in-depth backstop; `<=0` disables), and `limiter`
+(`auto`|`prlimit`|`systemd-run`|`none`). On Windows or when no limiter
+binary is found, the wrapper degrades to "run without caps" + a warning
+log — it never breaks execution. Key classes:
+`TurCodeInterpreterResourceLimiter` (enum + lenient parse) and
+`TurCodeInterpreterToolService.nativeLimitPrefix()`.
 
 #### VII.2.i A/B multi-armed bandit (T70) + champion-challenger (T71)
 Current A/B is fixed split + scheduling window. Bandit math (Thompson
@@ -2846,8 +2883,8 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 5. **T46 OR TK4 — `functionCall` decision** (~1-3 days for decision +
    1-2 weeks if implemented). Vapor cleanup. Either ship it or kill it.
 
-**Defer**: T80 cascades unblock T81 (resource limits) and T82
-(pre-warmed pool). Most Block D items wait on a customer to ask for them
+**Defer**: T80 + T81 (resource limits) shipped; T82 (pre-warmed pool)
+remains. Most Block D items wait on a customer to ask for them
 twice before scheduling.
 
 ### VIII.8 The pergunta hard

@@ -58,6 +58,18 @@ turing:
       cpus: "1.0"               # CPU quota per execution
       pids-limit: 128           # max PIDs (fork-bomb containment)
       probe-timeout-seconds: 8  # timeout for the "Check Docker" availability probe
+    native:
+      # Per-execution CPU/RAM caps for the NATIVE host-subprocess path (Linux
+      # only). DOCKER mode already caps via the container runtime, so these
+      # apply only when the execution mode is NATIVE. Disabled by default to
+      # preserve exact legacy behavior; enable to stop a runaway script (e.g.
+      # `[x*x for x in range(10**9)]`) from exhausting host RAM before the
+      # wall-clock timeout fires.
+      limits:
+        enabled: false          # opt-in; false = legacy (timeout is the only guard)
+        memory-max: 1g          # hard RAM cap (prlimit --as / cgroup MemoryMax)
+        cpu-seconds: 35         # CPU-time cap (prlimit --cpu); <=0 disables
+        limiter: auto           # auto | prlimit | systemd-run | none
   git:
     server: false
   marketplace:

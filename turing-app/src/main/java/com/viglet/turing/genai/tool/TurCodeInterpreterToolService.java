@@ -54,12 +54,14 @@ public class TurCodeInterpreterToolService {
      */
     static final String TENANTS_DIR = "tenants";
 
+    /** True when running on Windows — native resource limiters are Linux-only. */
+    private static final boolean IS_WINDOWS = System.getProperty("os.name", "")
+            .toLowerCase(Locale.ROOT).startsWith("windows");
+
     /** Fixed, read-only system directories allowed in the subprocess PATH. */
     private static final String SAFE_PATH;
     static {
-        boolean isWindows = System.getProperty("os.name", "")
-                .toLowerCase(Locale.ROOT).startsWith("windows");
-        SAFE_PATH = isWindows
+        SAFE_PATH = IS_WINDOWS
                 ? String.join(File.pathSeparator, "C:\\Windows\\System32", "C:\\Windows")
                 : String.join(File.pathSeparator, "/usr/bin", "/usr/local/bin", "/bin");
     }
@@ -70,14 +72,20 @@ public class TurCodeInterpreterToolService {
      */
     private static final List<String> PYTHON_CANDIDATES;
     static {
-        boolean isWindows = System.getProperty("os.name", "")
-                .toLowerCase(Locale.ROOT).startsWith("windows");
-        PYTHON_CANDIDATES = isWindows
+        PYTHON_CANDIDATES = IS_WINDOWS
                 ? List.of("C:\\Python312\\python.exe", "C:\\Python311\\python.exe",
                         "C:\\Python310\\python.exe")
                 : List.of("/usr/bin/python3", "/usr/local/bin/python3",
                         "/usr/bin/python", "/usr/local/bin/python");
     }
+
+    /** Absolute {@code prlimit} candidates searched in order (util-linux). */
+    private static final List<String> PRLIMIT_CANDIDATES = List.of(
+            "/usr/bin/prlimit", "/bin/prlimit", "/usr/local/bin/prlimit");
+    /** Absolute {@code systemd-run} candidates searched in order. */
+    private static final List<String> SYSTEMD_RUN_CANDIDATES = List.of(
+            "/usr/bin/systemd-run", "/bin/systemd-run",
+            "/run/current-system/sw/bin/systemd-run");
 
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurCustomToolDependencyService dependencyService;
@@ -161,6 +169,39 @@ public class TurCodeInterpreterToolService {
     /** How long to wait for the `docker version` probe before giving up. */
     @Value("${turing.code-interpreter.docker.probe-timeout-seconds:8}")
     private int dockerProbeTimeoutSeconds;
+
+    // ───────────────── T81 NATIVE per-execution resource limits ──────────────
+    // Only consulted on the NATIVE path (DOCKER already caps via the container
+    // runtime). Opt-in (disabled by default) so existing native deployments
+    // keep their exact current behavior — see the "opt-in per-entity" doctrine.
+
+    /** Whether to wrap the native Python subprocess with a resource limiter. */
+    @Value("${turing.code-interpreter.native.limits.enabled:false}")
+    private boolean nativeLimitsEnabled;
+    /**
+     * Hard memory cap per execution. Docker-style size string ({@code 512m},
+     * {@code 1g}, {@code 2gb}, or a bare byte count). Applied as
+     * {@code prlimit --as} (virtual address space) or cgroup {@code MemoryMax}.
+     */
+    @Value("${turing.code-interpreter.native.limits.memory-max:1g}")
+    private String nativeMemoryMax;
+    /**
+     * CPU-time cap in seconds ({@code prlimit --cpu} / {@code RLIMIT_CPU}). A
+     * busy loop is killed with {@code SIGXCPU} after this much CPU time.
+     * {@code <= 0} disables the CPU cap (memory cap still applies). Defaults
+     * slightly above the 30s wall-clock {@link #TIMEOUT_SECONDS} so the
+     * wall-clock guard normally fires first; this is the defense-in-depth
+     * backstop. Ignored by the {@code systemd-run} backend.
+     */
+    @Value("${turing.code-interpreter.native.limits.cpu-seconds:35}")
+    private int nativeCpuSeconds;
+    /**
+     * Which limiter backend to use: {@code auto} (default), {@code prlimit},
+     * {@code systemd-run}, or {@code none}. See
+     * {@link TurCodeInterpreterResourceLimiter}.
+     */
+    @Value("${turing.code-interpreter.native.limits.limiter:auto}")
+    private String nativeLimiter;
 
     /** Mount point inside the container for the per-call session dir. */
     private static final String DOCKER_SANDBOX_MOUNT = "/sandbox";
@@ -429,6 +470,159 @@ public class TurCodeInterpreterToolService {
         env.remove("PYTHONUSERSITE");
     }
 
+    // ──────────────── T81 NATIVE resource-limit command prefix ───────────────
+
+    /**
+     * Builds the limiter command prefix prepended to the native Python
+     * invocation (e.g. {@code [prlimit, --as=1073741824, --cpu=35, --]}).
+     * Returns an empty list — i.e. legacy unwrapped behavior — when:
+     * <ul>
+     *   <li>limits are disabled ({@code turing.code-interpreter.native.limits.enabled=false});</li>
+     *   <li>running on Windows (rlimits / cgroups are Linux-only);</li>
+     *   <li>the selected / auto-detected limiter binary is not present;</li>
+     *   <li>the configured memory string can't be parsed.</li>
+     * </ul>
+     * Never throws — a misconfiguration degrades to "run without caps" + a
+     * warning rather than breaking the sandbox.
+     */
+    List<String> nativeLimitPrefix() {
+        if (!nativeLimitsEnabled) {
+            return List.of();
+        }
+        if (IS_WINDOWS) {
+            log.debug("[CodeInterpreter] native resource limits are Linux-only; ignoring on Windows");
+            return List.of();
+        }
+        try {
+            TurCodeInterpreterResourceLimiter requested =
+                    TurCodeInterpreterResourceLimiter.fromString(nativeLimiter);
+            String prlimit = findExecutable(PRLIMIT_CANDIDATES);
+            String systemdRun = findExecutable(SYSTEMD_RUN_CANDIDATES);
+
+            TurCodeInterpreterResourceLimiter chosen = switch (requested) {
+                case PRLIMIT -> prlimit != null
+                        ? TurCodeInterpreterResourceLimiter.PRLIMIT
+                        : TurCodeInterpreterResourceLimiter.NONE;
+                case SYSTEMD_RUN -> systemdRun != null
+                        ? TurCodeInterpreterResourceLimiter.SYSTEMD_RUN
+                        : TurCodeInterpreterResourceLimiter.NONE;
+                case NONE -> TurCodeInterpreterResourceLimiter.NONE;
+                case AUTO -> prlimit != null
+                        ? TurCodeInterpreterResourceLimiter.PRLIMIT
+                        : (systemdRun != null
+                                ? TurCodeInterpreterResourceLimiter.SYSTEMD_RUN
+                                : TurCodeInterpreterResourceLimiter.NONE);
+            };
+
+            return switch (chosen) {
+                case PRLIMIT -> buildPrlimitPrefix(prlimit);
+                case SYSTEMD_RUN -> buildSystemdRunPrefix(systemdRun);
+                default -> {
+                    log.warn("[CodeInterpreter] native resource limits enabled (limiter={}) but no "
+                            + "prlimit/systemd-run binary found — running without caps", nativeLimiter);
+                    yield List.of();
+                }
+            };
+        } catch (RuntimeException e) {
+            log.warn("[CodeInterpreter] could not build native resource-limit prefix ({}); "
+                    + "running without caps", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * {@code prlimit --as=<bytes> [--cpu=<seconds>] --} — POSIX rlimits via
+     * util-linux. {@code RLIMIT_AS} caps virtual address space (a memory-bomb
+     * fails with {@code MemoryError}); {@code RLIMIT_CPU} caps CPU seconds
+     * (a busy loop gets {@code SIGXCPU}). prlimit {@code exec}s into Python,
+     * so the limited process keeps the subprocess PID and the timeout
+     * {@code destroyForcibly} kills it cleanly.
+     */
+    private List<String> buildPrlimitPrefix(String prlimitPath) {
+        long bytes = parseMemoryToBytes(nativeMemoryMax);
+        List<String> prefix = new ArrayList<>();
+        prefix.add(prlimitPath);
+        prefix.add("--as=" + bytes);
+        if (nativeCpuSeconds > 0) {
+            prefix.add("--cpu=" + nativeCpuSeconds);
+        }
+        prefix.add("--");
+        return prefix;
+    }
+
+    /**
+     * {@code systemd-run --scope -p MemoryMax=<bytes> -p MemorySwapMax=0
+     * -p CPUQuota=100% --} — a transient cgroup. Memory is RSS-accounted by
+     * the kernel and a memory-bomb is OOM-killed inside the cgroup; CPU is
+     * bounded to one core. {@code --collect} GCs the unit on exit and
+     * {@code --quiet} suppresses the "Running as unit" banner.
+     * {@code cpu-seconds} has no cgroup equivalent, so the wall-clock timeout
+     * remains the CPU-time guard here.
+     */
+    private List<String> buildSystemdRunPrefix(String systemdRunPath) {
+        long bytes = parseMemoryToBytes(nativeMemoryMax);
+        List<String> prefix = new ArrayList<>();
+        prefix.add(systemdRunPath);
+        prefix.add("--scope");
+        prefix.add("--quiet");
+        prefix.add("--collect");
+        prefix.add("-p");
+        prefix.add("MemoryMax=" + bytes);
+        prefix.add("-p");
+        prefix.add("MemorySwapMax=0");
+        prefix.add("-p");
+        prefix.add("CPUQuota=100%");
+        prefix.add("--");
+        return prefix;
+    }
+
+    /** First executable path in {@code candidates}, or null if none exists. */
+    private static String findExecutable(List<String> candidates) {
+        for (String candidate : candidates) {
+            if (Files.isExecutable(Path.of(candidate))) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses a Docker-style memory size into bytes. Accepts a bare byte count
+     * ({@code 536870912}), a binary suffix {@code k}/{@code m}/{@code g}/{@code t}
+     * (1024-based, matching Docker), and an optional trailing {@code b}
+     * ({@code 512mb} == {@code 512m}). Case-insensitive.
+     *
+     * @throws IllegalArgumentException when the value is blank or non-numeric.
+     */
+    static long parseMemoryToBytes(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("memory limit is blank");
+        }
+        String v = value.trim().toLowerCase(Locale.ROOT);
+        if (v.endsWith("b")) {
+            v = v.substring(0, v.length() - 1);
+        }
+        long multiplier = 1L;
+        if (!v.isEmpty()) {
+            char suffix = v.charAt(v.length() - 1);
+            multiplier = switch (suffix) {
+                case 'k' -> 1024L;
+                case 'm' -> 1024L * 1024L;
+                case 'g' -> 1024L * 1024L * 1024L;
+                case 't' -> 1024L * 1024L * 1024L * 1024L;
+                default -> 1L;
+            };
+            if (multiplier != 1L) {
+                v = v.substring(0, v.length() - 1);
+            }
+        }
+        long base = Long.parseLong(v.trim());
+        if (base < 0) {
+            throw new IllegalArgumentException("memory limit must be non-negative: " + value);
+        }
+        return base * multiplier;
+    }
+
     /**
      * Builds the {@code docker run} command for one execution. Hardening:
      * <ul>
@@ -608,7 +802,13 @@ public class TurCodeInterpreterToolService {
         } else {
             Files.writeString(runnerPath,
                     buildRunnerScript(scriptPath.getFileName().toString(), depsDir));
-            pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
+            // T81 — optionally wrap the host Python in a resource limiter
+            // (prlimit / systemd-run) so a memory-bomb script is capped
+            // before it can exhaust host RAM. Empty prefix = legacy behavior.
+            List<String> nativeCmd = new ArrayList<>(nativeLimitPrefix());
+            nativeCmd.add(resolvePythonExecutable());
+            nativeCmd.add(runnerPath.toString());
+            pb = new ProcessBuilder(nativeCmd);
             pb.directory(sessionDir);
             pb.redirectErrorStream(false);
             configureNativeEnv(pb, depsDir);

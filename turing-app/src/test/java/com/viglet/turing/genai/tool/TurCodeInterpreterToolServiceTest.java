@@ -664,6 +664,108 @@ class TurCodeInterpreterToolServiceTest {
         f.set(target, value);
     }
 
+    // --- T81 native resource limits ---
+
+    @Test
+    void parseMemoryToBytesShouldHandleSuffixesAndBareBytes() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "parseMemoryToBytes", String.class);
+        method.setAccessible(true);
+
+        assertThat(method.invoke(null, "1g")).isEqualTo(1024L * 1024 * 1024);
+        assertThat(method.invoke(null, "512m")).isEqualTo(512L * 1024 * 1024);
+        assertThat(method.invoke(null, "1024k")).isEqualTo(1024L * 1024);
+        assertThat(method.invoke(null, "512mb")).isEqualTo(512L * 1024 * 1024); // trailing 'b'
+        assertThat(method.invoke(null, "2G")).isEqualTo(2L * 1024 * 1024 * 1024); // case-insensitive
+        assertThat(method.invoke(null, "536870912")).isEqualTo(536870912L); // bare bytes
+    }
+
+    @Test
+    void parseMemoryToBytesShouldRejectBlank() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "parseMemoryToBytes", String.class);
+        method.setAccessible(true);
+        try {
+            method.invoke(null, "   ");
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    void nativeLimitPrefixShouldBeEmptyWhenDisabled() throws Exception {
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(
+                mock(TurGlobalSettingsService.class));
+        setField(svc, "nativeLimitsEnabled", false);
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod("nativeLimitPrefix");
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> prefix = (java.util.List<String>) method.invoke(svc);
+        assertThat(prefix).isEmpty();
+    }
+
+    @Test
+    void buildPrlimitPrefixShouldSetAddressSpaceAndCpu() throws Exception {
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(
+                mock(TurGlobalSettingsService.class));
+        setField(svc, "nativeMemoryMax", "1g");
+        setField(svc, "nativeCpuSeconds", 35);
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildPrlimitPrefix", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> prefix = (java.util.List<String>) method.invoke(svc, "/usr/bin/prlimit");
+        assertThat(prefix).containsExactly(
+                "/usr/bin/prlimit",
+                "--as=" + (1024L * 1024 * 1024),
+                "--cpu=35",
+                "--");
+    }
+
+    @Test
+    void buildPrlimitPrefixShouldOmitCpuWhenNonPositive() throws Exception {
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(
+                mock(TurGlobalSettingsService.class));
+        setField(svc, "nativeMemoryMax", "512m");
+        setField(svc, "nativeCpuSeconds", 0);
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildPrlimitPrefix", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> prefix = (java.util.List<String>) method.invoke(svc, "/usr/bin/prlimit");
+        assertThat(prefix).containsExactly(
+                "/usr/bin/prlimit",
+                "--as=" + (512L * 1024 * 1024),
+                "--");
+        assertThat(prefix).noneMatch(arg -> arg.startsWith("--cpu="));
+    }
+
+    @Test
+    void buildSystemdRunPrefixShouldEmitCgroupMemoryCap() throws Exception {
+        TurCodeInterpreterToolService svc = new TurCodeInterpreterToolService(
+                mock(TurGlobalSettingsService.class));
+        setField(svc, "nativeMemoryMax", "512m");
+
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildSystemdRunPrefix", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> prefix = (java.util.List<String>) method.invoke(svc, "/usr/bin/systemd-run");
+        assertThat(prefix)
+                .startsWith("/usr/bin/systemd-run", "--scope", "--quiet", "--collect")
+                .endsWith("--")
+                .contains("MemoryMax=" + (512L * 1024 * 1024))
+                .contains("MemorySwapMax=0")
+                .contains("CPUQuota=100%");
+    }
+
     @Test
     void readStreamShouldReadNormalContent() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
