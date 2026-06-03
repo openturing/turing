@@ -167,6 +167,56 @@ class TurChatFlowRouterIndexCacheTest {
         verify(chatFlowRepository, never()).findByTurAIAgent_IdOrderByNameAsc(null);
     }
 
+    @Test
+    void explainedSurfacesPerCandidateScoresForDecisivePick() {
+        // T89 — proceduralRouteExplained must carry the full keyword-score map
+        // and the best/second/ratio numbers, not just the winning id.
+        var refund = flow("refund", "refund reimbursement chargeback",
+                TurChatFlowTriggerLanguage.EN);
+        var shipping = flow("shipping", "shipping delivery tracking",
+                TurChatFlowTriggerLanguage.EN);
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc("agent-1"))
+                .thenReturn(List.of(refund, shipping));
+
+        var outcome = engine.proceduralRouteExplained("agent-1",
+                candidates(refund, shipping), "refund reimbursement chargeback");
+
+        assertThat(outcome).isPresent();
+        var o = outcome.get();
+        assertThat(o.decided()).isTrue();
+        assertThat(o.pickedId()).isEqualTo("refund");
+        assertThat(o.scores()).containsKey("refund");
+        assertThat(o.scores().get("refund")).isGreaterThan(0f);
+        assertThat(o.bestScore()).isGreaterThan(0f);
+        assertThat(o.dominanceRatio()).isGreaterThan(0f);
+    }
+
+    @Test
+    void explainedEmptyWhenFewerThanTwoCandidates() {
+        var lone = flow("lone", "refund reimbursement chargeback",
+                TurChatFlowTriggerLanguage.EN);
+        assertThat(engine.proceduralRouteExplained("agent-1", candidates(lone), "refund"))
+                .isEmpty();
+    }
+
+    @Test
+    void explainedBlankAgentWrapsStaticPickWithEmptyScores() {
+        var refund = flow("refund", "refund reimbursement chargeback",
+                TurChatFlowTriggerLanguage.EN);
+        var shipping = flow("shipping", "shipping delivery tracking",
+                TurChatFlowTriggerLanguage.EN);
+
+        var outcome = engine.proceduralRouteExplained(null,
+                candidates(refund, shipping), "refund");
+
+        assertThat(outcome).isPresent();
+        assertThat(outcome.get().decided()).isTrue();
+        assertThat(outcome.get().pickedId()).isEqualTo("refund");
+        // Static fallback exposes only the pick — no per-candidate scores.
+        assertThat(outcome.get().scores()).isEmpty();
+        assertThat(engine.routerIndexCacheSize()).isZero();
+    }
+
     private static TurChatFlow flow(String id, String triggerDescription,
             TurChatFlowTriggerLanguage language) {
         TurChatFlow flow = new TurChatFlow();

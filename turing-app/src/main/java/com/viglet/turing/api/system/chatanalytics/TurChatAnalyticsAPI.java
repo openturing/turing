@@ -65,19 +65,22 @@ public class TurChatAnalyticsAPI {
     private final TurPersonaRepository personaRepository;
     private final com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService;
     private final com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService;
+    private final com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
             TurChatMemoryStore chatMemoryStore,
             TurAIAgentRepository agentRepository,
             TurPersonaRepository personaRepository,
             com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService,
-            com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService) {
+            com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService,
+            com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
         this.agentRepository = agentRepository;
         this.personaRepository = personaRepository;
         this.significanceService = significanceService;
         this.championChallengerService = championChallengerService;
+        this.routerDecisionLog = routerDecisionLog;
     }
 
     /**
@@ -266,6 +269,30 @@ public class TurChatAnalyticsAPI {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
         return analyticsService.getStore().toolLatency(fromInstant, toInstant, agentId, limit);
+    }
+
+    /**
+     * T89 / §VII.10.f — recent chat-flow <b>router</b> decisions: which
+     * candidate flows competed, the keyword score each earned, the winner,
+     * and the mechanism (procedural / LLM / cached-LLM) that picked it. The
+     * question an operator answers after a customer complains "<i>it sent me
+     * to the wrong track</i>" — pass {@code conversationId} to pull that one
+     * visitor's decisions, omit it for the global recency stream.
+     *
+     * <p>Unlike the other endpoints here this reads an in-memory, per-process
+     * ring rather than the analytics store — the durable copy is the
+     * {@code [FlowRouter] decision …} structured log line. Decisions evict
+     * after {@code MAX_PER_CONVERSATION}/{@code MAX_GLOBAL} or on restart.
+     *
+     * @since 2026.3.1
+     */
+    @GetMapping(value = "/router-decisions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<com.viglet.turing.genai.flow.router.TurChatFlowRouterDecision> routerDecisions(
+            @RequestParam(required = false) String conversationId,
+            @RequestParam(defaultValue = "100") int limit) {
+        return conversationId != null && !conversationId.isBlank()
+                ? routerDecisionLog.recentForConversation(conversationId, limit)
+                : routerDecisionLog.recent(limit);
     }
 
     /**

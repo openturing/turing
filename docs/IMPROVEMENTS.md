@@ -442,7 +442,7 @@ acting.
 | T86 | ✅ | T84 | **Conversation replay UI (V1)** — operators click `conversationId` in the scorecard and the existing chat-analytics `DetailPanel` now renders a unified **Replay timeline** card that interleaves chat-memory messages with T60 slot-audit entries by timestamp. Each row carries an absolute time, a source badge (user / assistant / NODE / TOOL / ENDPOINT / EXTRACT) and the payload — for messages the text, for slot writes a `(oldValue → newValue)` delta with `(empty)`/`—` fallbacks. **No new endpoints** — reuses the existing `useChatAnalyticsTranscript` hook for messages and the T60 `useChatSlotAudit` hook (polling disabled in the detail context — historical sessions don't move, no point keeping traffic alive). Sort is stable: timestamps parse to ms-epoch, messages with no timestamp degrade to insertion order at the tail. The pre-T86 standalone transcript card was replaced by the new unified `ReplayTimeline` component. Sheet width bumped from `sm:max-w-2xl` to `sm:max-w-3xl` so the slot delta `pii_enc:v1:...` envelopes don't wrap awkwardly. **Scope-deliberate omission**: no scrubber (yet) — the brief mentioned "scrubber temporal" but events are already chronologically rendered top-to-bottom and the scroll-position-driven discovery covers ~95% of the forensic value. A scrubber that filters events around a target ts is a clean follow-up once V1 reveals which scrub semantics the operators actually want (time-window vs current-turn-focused). Frontend `tsc -b` green. **Learning**: many "UI feature" tickets are really "render existing endpoint data in a new shape" — T60+T86 together took the same conversationId lookup the operator was already running and made the slot-write attribution visually adjacent to the messages that produced it, without any new backend surface. | §VII.10.c |
 | T87 | ✅ | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
 | T88 | ✅ | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
-| T89 | 💭 | — | Flow router decision logs — structured log per LLM router call: candidate flows + score + winner. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
+| T89 | ✅ | — | Flow router decision logs — structured log per router call: candidate flows + score + winner + method. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
 | T90 | 💭 | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
 
 #### D.7 — Multi-flow architecture & flow editor DX
@@ -2536,6 +2536,72 @@ of fast ones.
   `tsc -b` clean. **Learning**: percentiles force a different storage shape than
   averages — the moment a metric isn't sum-composable, the per-session rollup
   has to keep the raw distribution, not a counter.
+
+#### VII.10.f Flow router decision logs (T89)
+A structured record of every chat-flow **router** decision — the candidate
+flows that competed, the keyword score each earned, the winner, and the
+mechanism that picked it. Answers the post-mortem question an operator asks
+after a customer complains the conversation went down the wrong track:
+"*why did B2B lose to B2C on this message?*"
+
+- **Why it was hard before**: the router cascade
+  (`TurChatFlowEngineService.selectActiveFlow`) ran a deterministic keyword
+  (Lucene `MoreLikeThis`) pass → cached LLM decision → full LLM call, but each
+  phase collapsed to an `Optional<String>` *pick* — the per-candidate scores
+  and the runner-up margin were computed and thrown away. There was no way to
+  reconstruct "B2C scored 4.2, B2B 1.1, ratio 3.8 > 1.5 → committed" after the
+  fact.
+- **Model**: new `genai/flow/router/` package. `TurChatFlowRouterMethod`
+  (`PROCEDURAL` / `LLM` / `LLM_CACHE` / `NONE`) tags *which* phase chose the
+  winner. `TurChatFlowRouterDecision` is an immutable record carrying
+  `agentId`, `conversationId`, the (≤280-char truncated) `userMessage`,
+  `method`, `winnerFlowId`/`winnerFlowName`, the `List<Candidate>` (each
+  `flowId`, `flowName`, `score`, `winner`), and `bestScore`/`secondScore`/
+  `dominanceRatio` for the keyword pass.
+- **Surfacing the scores**: the production procedural path gained a
+  `proceduralRouteExplained(agentId, candidates, msg)` → `ProceduralOutcome`
+  (full `flowId→score` map + best/second/ratio + a `decided` flag). The legacy
+  `tryProceduralRoute` `Optional<String>` overload (used by 5 existing router
+  tests) now delegates to it (`.filter(decided).map(pickedId)`) — **behaviour
+  preserved**, verified by the unchanged 44-test router sweep. The cached-index
+  scorer was refactored from a top-2-only scan (`scoreCachedRoute` /
+  `searchBucket`) to a full-distribution collector (`scoreCachedRouteExplained`
+  / `collectBucketScores` / shared `decide(...)` gate) so every eligible
+  candidate's score is retained. Crucially `ProceduralOutcome` is returned
+  **even when undecided** (`decided=false`) — so an `LLM` pick still records
+  how close the keyword race was.
+- **Two outputs, one `record(...)` call**: `TurChatFlowRouterDecisionLog`
+  (a) emits one parseable `[FlowRouter] decision agent=… method=… winner=…
+  candidates=[*B2C:4.200, B2B:1.100] best=… second=… ratio=… msg="…"` log line
+  (the durable copy, survives in the aggregator), and (b) retains a bounded
+  in-memory ring — global (`MAX_GLOBAL=2000`) + per-conversation (access-order
+  LRU `MAX_CONVERSATIONS=2000`, each bucket `MAX_PER_CONVERSATION=50`) — for
+  live REST inspection.
+- **Wiring without constructor churn**: the engine already carries 11
+  collaborators and recording is a best-effort cross-cutting concern, so the
+  log is reached through the Spring-managed static singleton pattern
+  (`getInstance()` + null-safe `recordSafely(...)`, the same idiom as
+  `TurPiiSlotService`). Pure unit tests that don't bootstrap Spring see
+  `getInstance()==null` and recording no-ops — **no engine-test constructor
+  edits**. `askRouterCached` was widened to return `RouterCacheResult(pickedId,
+  cacheHit)` so the decision can distinguish a fresh `LLM` call from an
+  `LLM_CACHE` replay.
+- **REST**: `GET /api/system/chat-analytics/router-decisions?conversationId=&limit=`
+  on `TurChatAnalyticsAPI` — pass `conversationId` to pull one visitor's
+  decisions (complaint triage), omit it for the global recency stream. Reads
+  the in-memory ring (per-process, ephemeral) — distinct from the Mongo/Redis
+  analytics store the sibling endpoints query.
+- **Tests**: `TurChatFlowRouterDecisionLogTest` (12) pins newest-first
+  retention, the per-conversation + global + LRU caps, conversation scoping,
+  the limit cap, blank-conversation/null handling, `recordSafely` no-op when no
+  singleton is registered, and the log-line format (winner star, scores,
+  procedural-only `best=`/`ratio=`, message truncation). `TurChatFlowRouterIndexCacheTest`
+  gains 3 (`proceduralRouteExplained` surfaces the per-candidate score map +
+  decisive pick; empty on <2 candidates; blank-agent static fallback wraps the
+  pick with an empty score map). 117/117 green across the router + flow + ops +
+  analytics + cache/Liquibase-lint sweep; backend compile clean. **Note**: T90
+  (admin SSE-channel debug surface) is the companion live-panel task; T89 is the
+  backend capture + structured log + REST.
 
 #### VII.13.a SDK hooks (T104)
 `@viglet/turing-react-sdk` 2026.2.21 → .29 shipped 10 hooks:

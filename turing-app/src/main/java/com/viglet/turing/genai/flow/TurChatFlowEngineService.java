@@ -67,6 +67,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor;
+import com.viglet.turing.genai.flow.router.TurChatFlowRouterDecision;
+import com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog;
+import com.viglet.turing.genai.flow.router.TurChatFlowRouterMethod;
 import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
@@ -1466,20 +1469,32 @@ public class TurChatFlowEngineService {
         //     the runner-up by 1.5×, commit straight to it. Cuts ~1-3s
         //     of LLM latency from freshly-triggered turns where the
         //     trigger is obvious. Falls back to the LLM router otherwise.
-        String proceduralPick = tryProceduralRoute(agent.getId(), candidates, lastUserMessage)
-                .orElse(null);
+        Optional<ProceduralOutcome> proceduralOutcome =
+                proceduralRouteExplained(agent.getId(), candidates, lastUserMessage);
         final String pickedId;
-        if (proceduralPick != null) {
-            log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", proceduralPick);
-            pickedId = proceduralPick;
+        final TurChatFlowRouterMethod routerMethod;
+        if (proceduralOutcome.map(ProceduralOutcome::decided).orElse(false)) {
+            pickedId = proceduralOutcome.get().pickedId();
+            routerMethod = TurChatFlowRouterMethod.PROCEDURAL;
+            log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", pickedId);
         } else {
             // 3b) Cached LLM router. Same {agentId, userMessage} pair returns
             //     a cached decision on repeated calls (e.g. canned UI prompts,
             //     test runs, retries) so the LLM round-trip pays off once per
             //     unique message per agent. Cache is wiped on any
             //     TurChatFlow.save/delete so admin edits propagate.
-            pickedId = askRouterCached(agent.getId(), routerModel, candidates, lastUserMessage);
+            RouterCacheResult llm = askRouterCached(agent.getId(), routerModel, candidates,
+                    lastUserMessage);
+            pickedId = llm.pickedId();
+            routerMethod = pickedId == null
+                    ? TurChatFlowRouterMethod.NONE
+                    : (llm.cacheHit() ? TurChatFlowRouterMethod.LLM_CACHE
+                            : TurChatFlowRouterMethod.LLM);
         }
+        // T89 / §VII.10.f — structured router-decision log (candidate flows +
+        // scores + winner + method). Best-effort; never breaks the turn.
+        recordRouterDecision(agent, conversationId, lastUserMessage, candidates,
+                pickedId, routerMethod, proceduralOutcome.orElse(null));
         if (pickedId == null) {
             return Optional.empty();
         }
@@ -1875,6 +1890,19 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * T89 / §VII.10.f — explained result of the keyword (procedural) routing
+     * pass: the would-be pick, whether the pass was decisive, the best /
+     * second scores, the dominance ratio, and the full per-candidate score
+     * map (flowId → MoreLikeThis score). {@code decided} mirrors the gate the
+     * legacy {@code Optional<String>} overload applied — when {@code false}
+     * the engine falls through to the LLM router but still records these
+     * scores so a complaint triage can see how close the race was.
+     */
+    record ProceduralOutcome(boolean decided, String pickedId, float bestScore,
+            float secondScore, float dominanceRatio, Map<String, Float> scores) {
+    }
+
+    /**
      * Returns {@code true} when {@code userMessage} contains at least one
      * whitespace-separated token of length ≥ {@link #PROCEDURAL_MIN_TOKEN_LENGTH}
      * after stripping leading/trailing non-letter characters. The strip
@@ -1918,6 +1946,30 @@ public class TurChatFlowEngineService {
      */
     Optional<String> tryProceduralRoute(String agentId, List<RouterCandidate> candidates,
             String userMessage) {
+        return proceduralRouteExplained(agentId, candidates, userMessage)
+                .filter(ProceduralOutcome::decided)
+                .map(ProceduralOutcome::pickedId);
+    }
+
+    /**
+     * T89 / §VII.10.f — score-surfacing variant of
+     * {@link #tryProceduralRoute(String, List, String)}. Runs the same
+     * keyword pass but returns the full per-candidate score map and the
+     * best/second/ratio numbers — even when the pass is too ambiguous to
+     * commit ({@link ProceduralOutcome#decided()} is {@code false}). The flow
+     * engine records this on the router-decision log so an operator can see
+     * how close the keyword race was, including when the decision fell
+     * through to the LLM router.
+     *
+     * <p>Returns {@link Optional#empty()} only when the keyword pass did not
+     * run at all (blank message, fewer than two candidates, no substantive
+     * token, no agent index) or produced no scores — never wraps a
+     * "ran but scored nothing" result.
+     *
+     * @since 2026.3.1
+     */
+    Optional<ProceduralOutcome> proceduralRouteExplained(String agentId,
+            List<RouterCandidate> candidates, String userMessage) {
         if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
             return Optional.empty();
         }
@@ -1931,14 +1983,19 @@ public class TurChatFlowEngineService {
             return Optional.empty();
         }
         if (agentId == null || agentId.isBlank()) {
-            return tryProceduralRoute(candidates, userMessage);
+            // No agent id → on-demand static path, which only surfaces the
+            // pick (no per-candidate scores). Wrap it as a decided outcome
+            // with an empty score map so callers keep the same shape.
+            return tryProceduralRoute(candidates, userMessage)
+                    .map(id -> new ProceduralOutcome(true, id, 0f, 0f,
+                            Float.POSITIVE_INFINITY, Map.of()));
         }
         AgentRouterIndex index = routerIndexByAgent.computeIfAbsent(agentId,
                 this::buildRouterIndex);
         if (index.isEmpty()) {
             return Optional.empty();
         }
-        return scoreCachedRoute(index, candidates, userMessage);
+        return scoreCachedRouteExplained(index, candidates, userMessage);
     }
 
     /**
@@ -2042,47 +2099,67 @@ public class TurChatFlowEngineService {
         }
     }
 
-    private static Optional<String> scoreCachedRoute(AgentRouterIndex index,
+    private static Optional<ProceduralOutcome> scoreCachedRouteExplained(AgentRouterIndex index,
             List<RouterCandidate> candidates, String userMessage) {
         Set<String> eligibleIds = candidates.stream()
                 .map(c -> c.flow().getId())
                 .collect(Collectors.toSet());
+        Map<String, Float> scores = new HashMap<>();
+        for (AnalyzerBucket bucket : index.buckets().values()) {
+            collectBucketScores(bucket, eligibleIds, userMessage, scores);
+        }
+        return decide(scores);
+    }
+
+    /**
+     * T89 — applies the dominance gate to a flowId→score map and packages the
+     * outcome. Returns {@link Optional#empty()} only when nothing scored;
+     * otherwise the outcome carries the best pick, the runner-up, the ratio,
+     * and {@code decided=true} iff the best dominates the runner-up by
+     * {@link #PROCEDURAL_DOMINANCE_RATIO}× (or there is no runner-up). Kept as
+     * its own helper so the explained path and any future caller share the
+     * exact gate the legacy {@code Optional<String>} routing used.
+     */
+    private static Optional<ProceduralOutcome> decide(Map<String, Float> scores) {
+        String bestId = null;
         float bestScore = 0f;
         float secondScore = 0f;
-        String bestId = null;
-        for (AnalyzerBucket bucket : index.buckets().values()) {
-            ScoredRoute scored = searchBucket(bucket, eligibleIds, userMessage);
-            if (scored == null) {
-                continue;
-            }
-            if (scored.bestScore() > bestScore) {
+        for (Map.Entry<String, Float> e : scores.entrySet()) {
+            float s = e.getValue();
+            if (s > bestScore) {
                 if (bestScore > secondScore) {
                     secondScore = bestScore;
                 }
-                bestScore = scored.bestScore();
-                bestId = scored.bestId();
-            } else if (scored.bestScore() > secondScore) {
-                secondScore = scored.bestScore();
-            }
-            if (scored.secondScore() > secondScore) {
-                secondScore = scored.secondScore();
+                bestScore = s;
+                bestId = e.getKey();
+            } else if (s > secondScore) {
+                secondScore = s;
             }
         }
         if (bestId == null || bestScore <= 0f) {
             return Optional.empty();
         }
-        if (secondScore > 0f
-                && bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
+        float ratio = secondScore > 0f ? bestScore / secondScore : Float.POSITIVE_INFINITY;
+        boolean decided = !(secondScore > 0f
+                && bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO);
+        if (!decided) {
             log.debug("[FlowEngine] Cached router undecided "
                     + "(best={}, second={}, ratio<{}) — falling back to LLM",
                     bestScore, secondScore, PROCEDURAL_DOMINANCE_RATIO);
-            return Optional.empty();
         }
-        return Optional.of(bestId);
+        return Optional.of(new ProceduralOutcome(decided, bestId, bestScore, secondScore,
+                ratio, Map.copyOf(scores)));
     }
 
-    private static ScoredRoute searchBucket(AnalyzerBucket bucket,
-            Set<String> eligibleIds, String userMessage) {
+    /**
+     * Searches one analyzer bucket and merges every eligible flow's score
+     * into {@code sink}. Unlike a top-2-only scan it keeps the full
+     * distribution so {@link ProceduralOutcome} can report each candidate's
+     * score (T89). Each flow lives in exactly one bucket, so the merge across
+     * buckets never collides; the {@code max} guard is defensive.
+     */
+    private static void collectBucketScores(AnalyzerBucket bucket, Set<String> eligibleIds,
+            String userMessage, Map<String, Float> sink) {
         IndexSearcher searcher = null;
         try {
             searcher = bucket.searcherManager().acquire();
@@ -2097,34 +2174,18 @@ public class TurChatFlowEngineService {
             int topK = Math.max(2, bucket.docCount());
             TopDocs hits = searcher.search(query, topK);
             if (hits.scoreDocs.length == 0) {
-                return null;
+                return;
             }
             StoredFields storedFields = searcher.storedFields();
-            String bestId = null;
-            float bestScore = 0f;
-            float secondScore = 0f;
             for (ScoreDoc sd : hits.scoreDocs) {
                 String flowId = storedFields.document(sd.doc).get(MLT_FIELD_ID);
                 if (flowId == null || !eligibleIds.contains(flowId)) {
                     continue;
                 }
-                if (sd.score > bestScore) {
-                    if (bestScore > secondScore) {
-                        secondScore = bestScore;
-                    }
-                    bestScore = sd.score;
-                    bestId = flowId;
-                } else if (sd.score > secondScore) {
-                    secondScore = sd.score;
-                }
+                sink.merge(flowId, sd.score, Math::max);
             }
-            if (bestId == null) {
-                return null;
-            }
-            return new ScoredRoute(bestId, bestScore, secondScore);
         } catch (IOException e) {
             log.warn("[FlowEngine] Cached MoreLikeThis search failed: {}", e.getMessage());
-            return null;
         } finally {
             if (searcher != null) {
                 try {
@@ -2324,7 +2385,7 @@ public class TurChatFlowEngineService {
      *
      * @since 2026.2.8
      */
-    private String askRouterCached(String agentId, ChatModel routerModel,
+    private RouterCacheResult askRouterCached(String agentId, ChatModel routerModel,
             List<RouterCandidate> candidates, String userMessage) {
         Cache cache = cacheManager.getCache(CACHE_ROUTER_DECISION);
         String key = buildRouterCacheKey(agentId, userMessage);
@@ -2334,7 +2395,7 @@ public class TurChatFlowEngineService {
                 Object cached = hit.get();
                 log.info("[FlowEngine] Router cache HIT for agent='{}' key='{}' → '{}' (LLM skipped)",
                         agentId, key, cached);
-                return (String) cached;
+                return new RouterCacheResult((String) cached, true);
             }
             log.info("[FlowEngine] Router cache MISS for agent='{}' key='{}' — calling LLM",
                     agentId, key);
@@ -2343,7 +2404,60 @@ public class TurChatFlowEngineService {
         if (cache != null && key != null) {
             cache.put(key, picked);
         }
-        return picked;
+        return new RouterCacheResult(picked, false);
+    }
+
+    /**
+     * Outcome of {@link #askRouterCached}: the picked flow id (or {@code null}
+     * for "none") plus whether it was served from the
+     * {@code turChatFlowRouterDecision} cache rather than a fresh LLM call —
+     * lets the router-decision log (T89) distinguish an {@code LLM} pick from
+     * an {@code LLM_CACHE} replay.
+     */
+    private record RouterCacheResult(String pickedId, boolean cacheHit) {
+    }
+
+    /**
+     * T89 / §VII.10.f — builds and records a structured router decision on the
+     * {@link TurChatFlowRouterDecisionLog}. No-op when no sink is registered
+     * (unit tests without a Spring context) so the hot path skips the record
+     * construction entirely. The {@code proc} outcome (when present) supplies
+     * the per-candidate keyword scores and the best/second/ratio numbers —
+     * including for an LLM pick where the keyword pass ran but was too
+     * ambiguous to commit, so a complaint triage can still see how close the
+     * race was.
+     */
+    private void recordRouterDecision(TurAIAgent agent, String conversationId, String userMessage,
+            List<RouterCandidate> candidates, String pickedId, TurChatFlowRouterMethod method,
+            ProceduralOutcome proc) {
+        if (TurChatFlowRouterDecisionLog.getInstance() == null) {
+            return;
+        }
+        Map<String, Float> scores = proc != null ? proc.scores() : Map.of();
+        List<TurChatFlowRouterDecision.Candidate> cands = new ArrayList<>(candidates.size());
+        String winnerName = null;
+        for (RouterCandidate c : candidates) {
+            String id = c.flow().getId();
+            boolean winner = id.equals(pickedId);
+            if (winner) {
+                winnerName = c.flow().getName();
+            }
+            cands.add(new TurChatFlowRouterDecision.Candidate(id, c.flow().getName(),
+                    scores.get(id), winner));
+        }
+        Float bestScore = null;
+        Float secondScore = null;
+        Float ratio = null;
+        if (proc != null && !proc.scores().isEmpty()) {
+            bestScore = proc.bestScore();
+            secondScore = proc.secondScore();
+            ratio = proc.dominanceRatio();
+        }
+        TurChatFlowRouterDecision decision = new TurChatFlowRouterDecision(
+                System.currentTimeMillis(), agent.getId(), conversationId, userMessage,
+                method, pickedId, winnerName, cands,
+                bestScore, secondScore, ratio, bestScore != null, null);
+        TurChatFlowRouterDecisionLog.recordSafely(decision);
     }
 
     /**
