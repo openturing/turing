@@ -44,6 +44,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -243,6 +244,8 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
               </CardContent>
             </Card>
 
+            <SentimentTrajectoryChart trajectory={data.session.sentimentTrajectory} />
+
             <ReplayTimeline
               messages={data.messages}
               audit={auditData?.entries ?? []}
@@ -251,6 +254,127 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * T87 / §VII.10.d — per-turn sentiment trajectory. Maps each user turn's
+ * sentiment to a numeric score (POSITIVE +2 … FRUSTRATED -2) and plots a
+ * line chart 1..N so an operator can pinpoint the turn where the
+ * conversation soured instead of reading only the session-level rollup.
+ * Renders nothing when the session has no trajectory (catalog-driven
+ * classifier, or the enricher hasn't run yet).
+ */
+const SENTIMENT_SCORE: Record<string, number> = {
+  POSITIVE: 2,
+  NEUTRAL: 1,
+  UNKNOWN: 0,
+  NEGATIVE: -1,
+  FRUSTRATED: -2,
+};
+
+const SENTIMENT_SHORT: Record<number, string> = {
+  2: "Positive",
+  1: "Neutral",
+  0: "Unknown",
+  [-1]: "Negative",
+  [-2]: "Frustrated",
+};
+
+const SENTIMENT_COLOR: Record<string, string> = {
+  POSITIVE: "#059669", // emerald-600
+  NEUTRAL: "#64748b", // slate-500
+  UNKNOWN: "#94a3b8", // slate-400
+  NEGATIVE: "#dc2626", // red-600
+  FRUSTRATED: "#e11d48", // rose-600
+};
+
+function SentimentTrajectoryChart({
+  trajectory,
+}: Readonly<{ trajectory?: string[] | null }>) {
+  if (!trajectory || trajectory.length === 0) return null;
+
+  const chartData = trajectory.map((sentiment, idx) => {
+    const label = (sentiment ?? "UNKNOWN").toUpperCase();
+    return {
+      turn: idx + 1,
+      score: SENTIMENT_SCORE[label] ?? 0,
+      label,
+    };
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <IconChartLine className="size-4" />
+          Sentiment trajectory
+        </CardTitle>
+        <CardDescription>
+          Per-turn sentiment across the conversation ({chartData.length} turn
+          {chartData.length === 1 ? "" : "s"}) — a downward slope marks where it soured.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[220px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+              <XAxis
+                dataKey="turn"
+                stroke="var(--muted-foreground)"
+                fontSize={11}
+                tick={{ fill: "var(--muted-foreground)" }}
+                tickFormatter={(v) => `#${v}`}
+              />
+              <YAxis
+                stroke="var(--muted-foreground)"
+                fontSize={11}
+                tick={{ fill: "var(--muted-foreground)" }}
+                domain={[-2, 2]}
+                ticks={[-2, -1, 0, 1, 2]}
+                tickFormatter={(v) => SENTIMENT_SHORT[v] ?? ""}
+                width={80}
+                allowDecimals={false}
+              />
+              <ReferenceLine y={0} stroke="var(--border)" />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                }}
+                formatter={(_v, _n, item) => [item?.payload?.label ?? "—", "Sentiment"]}
+                labelFormatter={(v) => `Turn #${v}`}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#6366f1"
+                strokeWidth={2}
+                isAnimationActive={false}
+                dot={(props) => {
+                  const { cx, cy, payload } = props;
+                  return (
+                    <circle
+                      key={`sent-dot-${payload.turn}`}
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill={SENTIMENT_COLOR[payload.label] ?? SENTIMENT_COLOR.UNKNOWN}
+                      stroke="var(--card)"
+                      strokeWidth={1}
+                    />
+                  );
+                }}
+                name="Sentiment"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

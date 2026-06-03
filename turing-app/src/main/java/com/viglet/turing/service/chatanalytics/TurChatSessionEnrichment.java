@@ -39,7 +39,38 @@ public record TurChatSessionEnrichment(
         TurChatGoalAchieved goalAchieved,
         TurChatSentiment sentiment,
         List<String> keyTerms,
+        /**
+         * T87 / §VII.10.d — per-turn sentiment trajectory, one entry per user
+         * turn in chronological order (turn {@code 1..N}). Lets the drill-down
+         * render a line chart that pinpoints where a conversation soured rather
+         * than collapsing it to the single session-level {@link #sentiment}.
+         *
+         * <p>Only the LLM classifier populates it; the catalog-driven (Lucene /
+         * search-engine MLT) strategies leave it empty. Never {@code null} — the
+         * canonical constructor normalizes a {@code null} list to {@link List#of()}.
+         *
+         * @since 2026.3.1
+         */
+        List<TurChatSentiment> sentimentTrajectory,
         Instant processedAt) {
+
+    public TurChatSessionEnrichment {
+        // Keep the trajectory non-null so store/serialization paths never NPE
+        // and the frontend can treat "absent" and "empty" identically.
+        sentimentTrajectory = sentimentTrajectory == null ? List.of() : List.copyOf(sentimentTrajectory);
+    }
+
+    /**
+     * Legacy 7-arg constructor (pre-T87) — kept source-compatible for the
+     * catalog-driven classifier strategies and tests that don't compute a
+     * per-turn trajectory. Delegates with an empty trajectory.
+     */
+    public TurChatSessionEnrichment(TurChatIntentLabel intentLabel, double intentConfidence,
+            String goalSummary, TurChatGoalAchieved goalAchieved, TurChatSentiment sentiment,
+            List<String> keyTerms, Instant processedAt) {
+        this(intentLabel, intentConfidence, goalSummary, goalAchieved, sentiment,
+                keyTerms, List.of(), processedAt);
+    }
 
     /** Used by the enricher when the LLM is unavailable; marks the session
      *  processed so it isn't retried in a tight loop, but with UNCLASSIFIED. */
@@ -47,6 +78,6 @@ public record TurChatSessionEnrichment(
         return new TurChatSessionEnrichment(
                 TurChatIntentLabel.UNCLASSIFIED, 0.0, null,
                 TurChatGoalAchieved.UNKNOWN, TurChatSentiment.UNKNOWN,
-                List.of(), Instant.now());
+                List.of(), List.of(), Instant.now());
     }
 }

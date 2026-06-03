@@ -56,6 +56,16 @@ export interface TurChatAnalyticsSession {
   goalAchieved?: string | null;
   sentiment?: string | null;
   keyTerms?: string[] | null;
+  /**
+   * Per-turn sentiment trajectory (T87) — one sentiment label per user turn in
+   * chronological order, so the drill-down can chart where the conversation
+   * soured rather than collapsing it to the single session-level {@link sentiment}.
+   * Only the LLM classifier populates it; absent/empty for the catalog-driven
+   * strategies and until the scheduled enricher has run.
+   *
+   * @since 2026.3.1 (T87)
+   */
+  sentimentTrajectory?: string[] | null;
   processedAt?: string | null;
 }
 

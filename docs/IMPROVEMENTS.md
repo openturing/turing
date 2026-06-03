@@ -440,7 +440,7 @@ acting.
 | T84 | ✅ | — | Chat session analytics — 9 timeseries metrics (sessions, goal-achievement-rate, negative-sentiment-rate, avg-duration-ms, avg-tokens-out, tool-calls-per-session, tool-errors-per-session, avg-tool-latency-ms, tool-error-rate-pct) + 4 scorecard dimensions (agent/persona/experiment/variant). Mongo + Redis stores. | §VII.10.a |
 | T85 | ✅ | T84 | **Funnel visualization (V1)** — backend service + REST + sidebar panel. **Pragmatic scope**: without a per-turn node visit log (would need a new `chat_node_visit` table), the funnel reports what existing tables already track — `chat_flow_state.currentNodeId` ("currently parked here") + `chat_flow_submission.endNodeId` ("ended here"). Drop-off is read visually by comparing the cursor counts of consecutive interactive nodes in graph order; a full path-aware funnel is tracked as a T85 follow-up. New `TurChatFlowFunnelService.computeFunnel(flowId)` returns `FunnelReport(flowId, flowName, totalStates, totalSubmissions, abandonedAtFlow, List<FunnelNode>)`. FunnelNode = `(nodeId, label, type, cursorCount, completedCount, abandonedCount)`. Transparent nodes (`start`/`condition`/`switch`/`persona`/`subFlow`/`subFlowSwitch`/`writeSlot`/`functionCall`/`scheduleAgent`) are excluded so the funnel reads as user-facing steps only. New repository methods `TurChatFlowStateRepository.countByCurrentNodeForFlow(flowId)` + `TurChatFlowSubmissionRepository.countByEndNodeForFlow(flowId)` use `@Query` JPQL aggregations (group-by node id) — single round-trip per call, no per-row scan. REST: new `GET /api/ai-agent/{agentId}/chat-flow/{id}/funnel` on `TurChatFlowAPI` (secured `ROLE_ADMIN`/`AI_AGENT_VIEW`), 404 when the flow id is unknown / doesn't belong to the agent in the path. **Frontend**: new `TurChatFlowFunnelNode` + `TurChatFlowFunnelReport` models, `funnel(agentId, flowId)` method on `TurChatFlowService`, `useChatFlowFunnel` React Query hook (30s `refetchInterval` so an admin tweaking the graph watches the cursor counts shift live), new query key `queryKeys.chatFlows.funnel(...)`. New `ChatFlowFunnelPanel` component renders a vertical stack of nodes inside the editor's settings tab (positioned right under the existing lint panel): each row shows the type badge, label, parked count `●N` (amber) + completed count `✓N` (emerald), and a proportional bar (blue→indigo gradient) sized by `(cursor+completed)/maxCount`. Hidden when no states/submissions are captured yet — keeps a brand-new flow's editor uncluttered. 6 new unit tests (`TurChatFlowFunnelServiceTest`) pin: blank/null flow id returns empty, missing flow returns empty, unparseable graph returns empty, transparent nodes excluded with start/condition stripped + end kept as terminal anchor, empty stats tables return zero counters, malformed count rows (null id / short row / non-numeric count) tolerated. 6/6 green. Backend compile clean; frontend `tsc -b` green. **Learning**: shipping a useful V1 without the proper traversal log buys real value today (operator sees "12 conversations parked on ai-cargo" immediately) and leaves the door open for a future per-turn log to power the full path-aware version without changing the API surface — the report's `abandonedCount` field is already in the wire format ready for the follow-up. | §VII.10.b |
 | T86 | ✅ | T84 | **Conversation replay UI (V1)** — operators click `conversationId` in the scorecard and the existing chat-analytics `DetailPanel` now renders a unified **Replay timeline** card that interleaves chat-memory messages with T60 slot-audit entries by timestamp. Each row carries an absolute time, a source badge (user / assistant / NODE / TOOL / ENDPOINT / EXTRACT) and the payload — for messages the text, for slot writes a `(oldValue → newValue)` delta with `(empty)`/`—` fallbacks. **No new endpoints** — reuses the existing `useChatAnalyticsTranscript` hook for messages and the T60 `useChatSlotAudit` hook (polling disabled in the detail context — historical sessions don't move, no point keeping traffic alive). Sort is stable: timestamps parse to ms-epoch, messages with no timestamp degrade to insertion order at the tail. The pre-T86 standalone transcript card was replaced by the new unified `ReplayTimeline` component. Sheet width bumped from `sm:max-w-2xl` to `sm:max-w-3xl` so the slot delta `pii_enc:v1:...` envelopes don't wrap awkwardly. **Scope-deliberate omission**: no scrubber (yet) — the brief mentioned "scrubber temporal" but events are already chronologically rendered top-to-bottom and the scroll-position-driven discovery covers ~95% of the forensic value. A scrubber that filters events around a target ts is a clean follow-up once V1 reveals which scrub semantics the operators actually want (time-window vs current-turn-focused). Frontend `tsc -b` green. **Learning**: many "UI feature" tickets are really "render existing endpoint data in a new shape" — T60+T86 together took the same conversationId lookup the operator was already running and made the slot-write attribution visually adjacent to the messages that produced it, without any new backend surface. | §VII.10.c |
-| T87 | 💭 | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
+| T87 | ✅ | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
 | T88 | 💭 | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
 | T89 | 💭 | — | Flow router decision logs — structured log per LLM router call: candidate flows + score + winner. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
 | T90 | 💭 | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
@@ -2464,6 +2464,29 @@ install).
 9 timeseries metrics + 4 scorecard dimensions exposed at
 `/api/chat-analytics`. Frontend dashboard with `TimeseriesPanel` (line
 chart) + `ScorecardPanel` (dimension dropdown). Mongo + Redis stores.
+
+#### VII.10.d Sentiment trajectory per turn (T87)
+Extends the AI-on-AI enrichment (T84) with a **per-turn** sentiment array
+instead of only the single session-level rollup, so a drill-down can chart
+*where* a conversation soured.
+
+- **Classifier**: `TurLlmIntentClassifier` system prompt now also asks for a
+  `sentimentTrajectory` — one sentiment label per user turn, in order. Parsed
+  by the package-private, lenient `parseSentimentTrajectory(...)`: a non-array,
+  null, or unknown label collapses to `UNKNOWN` (never shrinks the array, so it
+  stays aligned to the turn index) and the list is capped at
+  `MAX_TRAJECTORY_TURNS = 200`. Catalog-driven strategies (Lucene / SE-MLT)
+  leave it empty.
+- **Record**: `TurChatSessionEnrichment` gains `List<TurChatSentiment>
+  sentimentTrajectory` (compact ctor normalizes `null → List.of()`); the
+  pre-T87 7-arg constructor is kept as a delegating overload so the other
+  strategies and tests stay source-compatible.
+- **Stores**: Mongo persists it as an array of enum names, Redis as a CSV
+  (same idiom as `keyTerms`); both surfaced on the session row via
+  `findSessionById` / `transcript`, so no new endpoint is needed.
+- **Frontend**: `SentimentTrajectoryChart` in the chat-analytics detail panel
+  — a recharts line chart 1..N (POSITIVE +2 … FRUSTRATED −2, zero reference
+  line, per-point colored dots). Renders nothing when the trajectory is absent.
 
 #### VII.13.a SDK hooks (T104)
 `@viglet/turing-react-sdk` 2026.2.21 → .29 shipped 10 hooks:

@@ -73,7 +73,10 @@ public class TurLlmIntentClassifier implements TurIntentClassifierStrategy {
               - whether that goal was ACHIEVED by the agent (YES, PARTIAL, NO, UNKNOWN),
               - the user's SENTIMENT toward the agent (POSITIVE, NEUTRAL, NEGATIVE, FRUSTRATED,
                 UNKNOWN; FRUSTRATED is reserved for repeated rephrasing or escalating tone),
-              - up to 5 KEY TERMS that capture the topic.
+              - up to 5 KEY TERMS that capture the topic,
+              - a SENTIMENT TRAJECTORY: one sentiment value (same vocabulary as SENTIMENT) for
+                EACH user turn, in chronological order, so a reader can see where the
+                conversation soured. The array length must equal the number of user turns.
             Respond with ONLY valid JSON, no Markdown fences, no commentary, exactly:
             {
               "intentLabel": "...",
@@ -81,7 +84,8 @@ public class TurLlmIntentClassifier implements TurIntentClassifierStrategy {
               "goalSummary": "...",
               "goalAchieved": "...",
               "sentiment": "...",
-              "keyTerms": ["...", "..."]
+              "keyTerms": ["...", "..."],
+              "sentimentTrajectory": ["...", "..."]
             }
             intentConfidence is a number between 0 and 1.
             """;
@@ -204,14 +208,38 @@ public class TurLlmIntentClassifier implements TurIntentClassifierStrategy {
                 }
                 keyTerms = tmp.stream().limit(5).toList();
             }
+            List<TurChatSentiment> trajectory = parseSentimentTrajectory(parsed.get("sentimentTrajectory"));
             return new TurChatSessionEnrichment(intent, confidence, goal, achieved,
-                    sentiment, keyTerms, Instant.now());
+                    sentiment, keyTerms, trajectory, Instant.now());
         } catch (JacksonException e) {
             log.warn("[LlmIntentClassifier] could not parse classifier output as JSON: {}",
                     e.getMessage());
             return TurChatSessionEnrichment.unclassified();
         }
     }
+
+    /**
+     * T87 — turn a raw {@code sentimentTrajectory} JSON value into a bounded
+     * list of {@link TurChatSentiment}. Tolerant by design: a non-array, a
+     * {@code null}, or unknown labels collapse to {@link TurChatSentiment#UNKNOWN}
+     * / an empty list rather than failing the whole classification. Capped at
+     * {@value #MAX_TRAJECTORY_TURNS} turns so a runaway model can't bloat the
+     * stored document.
+     */
+    static List<TurChatSentiment> parseSentimentTrajectory(Object raw) {
+        if (!(raw instanceof List<?> list) || list.isEmpty()) {
+            return List.of();
+        }
+        List<TurChatSentiment> trajectory = new ArrayList<>();
+        for (Object item : list) {
+            if (trajectory.size() >= MAX_TRAJECTORY_TURNS) break;
+            trajectory.add(parseEnum(TurChatSentiment.class, asString(item), TurChatSentiment.UNKNOWN));
+        }
+        return List.copyOf(trajectory);
+    }
+
+    /** Upper bound on the per-turn sentiment trajectory length stored per session. */
+    static final int MAX_TRAJECTORY_TURNS = 200;
 
     static String buildTranscript(String firstUserMessage, List<Map<String, Object>> messages) {
         StringBuilder sb = new StringBuilder();

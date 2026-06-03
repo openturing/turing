@@ -51,6 +51,8 @@ import redis.clients.jedis.JedisPoolConfig;
 @Slf4j
 public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
+    private static final String FIELD_SENTIMENT_TRAJECTORY = "sentimentTrajectory";
+
     private final JedisPool pool;
     private final String keyPrefix;
 
@@ -215,6 +217,12 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             if (enrichment.sentiment() != null) fields.put("sentiment", enrichment.sentiment().name());
             if (enrichment.keyTerms() != null) {
                 fields.put("keyTerms", String.join(",", enrichment.keyTerms()));
+            }
+            // T87 — per-turn sentiment trajectory as a CSV of enum names; absent
+            // when the catalog-driven classifiers ran (empty list).
+            if (enrichment.sentimentTrajectory() != null && !enrichment.sentimentTrajectory().isEmpty()) {
+                fields.put(FIELD_SENTIMENT_TRAJECTORY, String.join(",",
+                        enrichment.sentimentTrajectory().stream().map(Enum::name).toList()));
             }
             fields.put("processedAt", (enrichment.processedAt() == null
                     ? java.time.Instant.now() : enrichment.processedAt()).toString());
@@ -556,6 +564,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("sentiment",        hash.get("sentiment"));
         String keyTerms = hash.get("keyTerms");
         row.put("keyTerms",         StringUtils.isBlank(keyTerms) ? null : List.of(keyTerms.split(",")));
+        // T87 — per-turn sentiment trajectory (CSV of enum names), null until enriched.
+        String trajectory = hash.get(FIELD_SENTIMENT_TRAJECTORY);
+        row.put(FIELD_SENTIMENT_TRAJECTORY,
+                StringUtils.isBlank(trajectory) ? null : List.of(trajectory.split(",")));
         row.put("processedAt",      hash.get("processedAt"));
         return row;
     }

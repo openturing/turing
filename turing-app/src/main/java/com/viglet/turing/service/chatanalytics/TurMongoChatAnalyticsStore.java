@@ -52,6 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
 
+    private static final String FIELD_SENTIMENT_TRAJECTORY = "sentimentTrajectory";
+
     private final MongoClient client;
     private final String databaseName;
     private final String collectionName;
@@ -234,6 +236,12 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             }
             if (enrichment.keyTerms() != null) {
                 set.add(Updates.set("keyTerms", enrichment.keyTerms()));
+            }
+            // T87 — per-turn sentiment trajectory persisted as an array of enum
+            // names; absent when the catalog-driven classifiers ran (empty list).
+            if (enrichment.sentimentTrajectory() != null && !enrichment.sentimentTrajectory().isEmpty()) {
+                set.add(Updates.set(FIELD_SENTIMENT_TRAJECTORY,
+                        enrichment.sentimentTrajectory().stream().map(Enum::name).toList()));
             }
             Date stamp = Date.from(enrichment.processedAt() == null
                     ? java.time.Instant.now()
@@ -600,6 +608,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("goalAchieved",     doc.getString("goalAchieved"));
         row.put("sentiment",        doc.getString("sentiment"));
         row.put("keyTerms",         doc.get("keyTerms"));
+        // T87 — per-turn sentiment trajectory (array of enum names), null until enriched.
+        row.put(FIELD_SENTIMENT_TRAJECTORY, doc.get(FIELD_SENTIMENT_TRAJECTORY));
         row.put("processedAt",      toIsoString(doc.getDate("processedAt")));
         return row;
     }
