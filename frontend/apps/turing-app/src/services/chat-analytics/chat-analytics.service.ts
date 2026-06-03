@@ -7,6 +7,7 @@ import type {
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
   TurChatAnalyticsTimeseriesPoint,
+  TurChatAnalyticsRouterDecision,
   TurChatAnalyticsToolLatencyParams,
   TurChatAnalyticsToolLatencyRow,
   TurChatAnalyticsTranscript,
@@ -71,6 +72,22 @@ export class TurChatAnalyticsService {
     const response = await axios.get<TurChatAnalyticsToolLatencyRow[]>(
       "/system/chat-analytics/tool-latency",
       { params },
+    );
+    return response.data ?? [];
+  }
+
+  /**
+   * Recent chat-flow router decisions for one conversation (T89), newest
+   * first. Reads the in-memory ring on the server — returns an empty array
+   * when the conversation never routed or its decisions were evicted.
+   */
+  async routerDecisions(
+    conversationId: string,
+    limit = 50,
+  ): Promise<TurChatAnalyticsRouterDecision[]> {
+    const response = await axios.get<TurChatAnalyticsRouterDecision[]>(
+      "/system/chat-analytics/router-decisions",
+      { params: { conversationId, limit } },
     );
     return response.data ?? [];
   }

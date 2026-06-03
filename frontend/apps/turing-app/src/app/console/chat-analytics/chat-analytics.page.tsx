@@ -1,5 +1,6 @@
 import {
   useChatAnalyticsHealth,
+  useChatAnalyticsRouterDecisions,
   useChatAnalyticsScorecard,
   useChatAnalyticsSessions,
   useChatAnalyticsTimeseries,
@@ -35,6 +36,8 @@ import {
 } from "@/components/ui/table";
 import type {
   TurChatAnalyticsMetric,
+  TurChatAnalyticsRouterDecision,
+  TurChatAnalyticsRouterMethod,
   TurChatAnalyticsScorecardDimension,
   TurChatAnalyticsSession,
   TurChatAnalyticsToolLatencyRow,
@@ -134,6 +137,105 @@ function MetaRow({ label, value }: Readonly<{ label: string; value?: string | nu
   );
 }
 
+const ROUTER_METHOD_VARIANT: Record<TurChatAnalyticsRouterMethod, string> = {
+  PROCEDURAL: SECONDARY,
+  LLM: SUCCESS,
+  LLM_CACHE: NEUTRAL,
+  NONE: DESTRUCTIVE,
+};
+
+const ROUTER_METHOD_LABEL: Record<TurChatAnalyticsRouterMethod, string> = {
+  PROCEDURAL: "Keyword",
+  LLM: "LLM",
+  LLM_CACHE: "LLM (cached)",
+  NONE: "No match",
+};
+
+function formatScore(score: number | null): string {
+  return score == null ? "—" : score.toFixed(2);
+}
+
+function RouterDecisionRow({ decision }: Readonly<{ decision: TurChatAnalyticsRouterDecision }>) {
+  // Highest score sets the bar scale; guards a zero/absent best.
+  const maxScore = decision.candidates.reduce(
+    (max, c) => (c.score != null && c.score > max ? c.score : max),
+    0,
+  );
+  return (
+    <div className="border-border/60 rounded-md border p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={ROUTER_METHOD_VARIANT[decision.method] as never}>
+          {ROUTER_METHOD_LABEL[decision.method]}
+        </Badge>
+        <span className="text-sm font-medium">
+          {decision.winnerFlowName ?? decision.winnerFlowId ?? "no flow"}
+        </span>
+        {decision.procedural && decision.dominanceRatio != null && (
+          <span className="text-muted-foreground text-xs">
+            ratio {Number.isFinite(decision.dominanceRatio) ? decision.dominanceRatio.toFixed(2) : "∞"}×
+          </span>
+        )}
+      </div>
+      {decision.userMessage && (
+        <p className="text-muted-foreground mt-1.5 line-clamp-2 text-xs italic">
+          “{decision.userMessage}”
+        </p>
+      )}
+      <div className="mt-2 space-y-1">
+        {decision.candidates.map((c) => (
+          <div key={c.flowId} className="flex items-center gap-2 text-xs">
+            <span
+              className={`w-40 shrink-0 truncate ${
+                c.winner ? "text-foreground font-semibold" : "text-muted-foreground"
+              }`}
+              title={c.flowName ?? c.flowId}
+            >
+              {c.winner && "★ "}
+              {c.flowName ?? c.flowId}
+            </span>
+            <div className="bg-muted relative h-2 flex-1 overflow-hidden rounded-full">
+              <div
+                className={c.winner ? "bg-primary h-full" : "bg-muted-foreground/50 h-full"}
+                style={{
+                  width: `${maxScore > 0 && c.score != null ? (c.score / maxScore) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <span className="w-12 shrink-0 text-right tabular-nums">{formatScore(c.score)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RouterDecisionsCard({
+  decisions,
+}: Readonly<{ decisions: TurChatAnalyticsRouterDecision[] }>) {
+  // Mirrors SentimentTrajectoryChart — renders nothing when there's no data
+  // (clustered/ephemeral ring: a node restart or eviction empties it).
+  if (decisions.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Router decisions</CardTitle>
+        <CardDescription>
+          Which flow each turn activated, the keyword score every candidate earned, and the
+          mechanism that picked the winner. In-memory and ephemeral — empty after a restart.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {decisions.map((decision) => (
+          <RouterDecisionRow
+            key={`${decision.epochMillis}-${decision.winnerFlowId ?? "none"}`}
+            decision={decision}
+          />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 interface DetailPanelProps {
   conversationId: string | null;
   onClose: () => void;
@@ -146,6 +248,9 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
   // is off for the detail panel — the conversation is historical by
   // definition and the open sheet shouldn't keep generating traffic.
   const { data: auditData } = useChatSlotAudit(conversationId, { refetchInterval: 0 });
+  // T89 — the router decisions for this conversation (candidates + scores +
+  // winner + method). The complaint-triage view: "why did it send me here?"
+  const { data: routerDecisions } = useChatAnalyticsRouterDecisions(conversationId);
 
   return (
     <Sheet open={Boolean(conversationId)} onOpenChange={(open) => !open && onClose()}>
@@ -245,6 +350,8 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 )}
               </CardContent>
             </Card>
+
+            <RouterDecisionsCard decisions={routerDecisions ?? []} />
 
             <SentimentTrajectoryChart trajectory={data.session.sentimentTrajectory} />
 

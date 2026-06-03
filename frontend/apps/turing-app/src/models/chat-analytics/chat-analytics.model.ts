@@ -247,3 +247,48 @@ export interface TurChatAnalyticsToolLatencyParams {
   /** Top-N tools by p95. Defaults to 50 on the server, capped at 200. */
   limit?: number;
 }
+
+/**
+ * Which phase of the chat-flow router cascade picked the winner (T89).
+ * Mirrors the backend {@code TurChatFlowRouterMethod} enum.
+ *
+ * @since 2026.3.1
+ */
+export type TurChatAnalyticsRouterMethod = "PROCEDURAL" | "LLM" | "LLM_CACHE" | "NONE";
+
+/** One flow that competed in a router decision (T89). */
+export interface TurChatAnalyticsRouterCandidate {
+  flowId: string;
+  flowName: string | null;
+  /** Keyword (MoreLikeThis) score; null when the procedural pass didn't score it. */
+  score: number | null;
+  winner: boolean;
+}
+
+/**
+ * One chat-flow router decision (T89 / §VII.10.f) — the candidate flows that
+ * competed, the keyword score each earned, the winner, and the mechanism that
+ * picked it. Answers "why did B2B lose to B2C on this message?" when triaging
+ * a complaint. Read from the in-memory ring at
+ * {@code /system/chat-analytics/router-decisions}.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatAnalyticsRouterDecision {
+  epochMillis: number;
+  agentId: string;
+  conversationId: string;
+  /** The (≤280-char truncated) user message that triggered the routing pass. */
+  userMessage: string | null;
+  method: TurChatAnalyticsRouterMethod;
+  winnerFlowId: string | null;
+  winnerFlowName: string | null;
+  candidates: TurChatAnalyticsRouterCandidate[];
+  /** Procedural-pass numbers — null for an LLM pick that ran no keyword scoring. */
+  bestScore: number | null;
+  secondScore: number | null;
+  dominanceRatio: number | null;
+  /** True when the keyword pass produced scores (best/second/ratio populated). */
+  procedural: boolean;
+  detail: string | null;
+}

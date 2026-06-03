@@ -171,5 +171,7 @@ export const queryKeys = {
       [...queryKeys.chatAnalytics.all(), 'scorecard', params] as const,
     toolLatency: (params: Record<string, unknown>) =>
       [...queryKeys.chatAnalytics.all(), 'tool-latency', params] as const,
+    routerDecisions: (conversationId: string) =>
+      [...queryKeys.chatAnalytics.all(), 'router-decisions', conversationId] as const,
   },
 } as const;

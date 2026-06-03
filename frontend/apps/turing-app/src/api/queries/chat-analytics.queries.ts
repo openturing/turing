@@ -7,6 +7,7 @@ import type {
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
   TurChatAnalyticsTimeseriesPoint,
+  TurChatAnalyticsRouterDecision,
   TurChatAnalyticsToolLatencyParams,
   TurChatAnalyticsToolLatencyRow,
   TurChatAnalyticsTranscript,
@@ -50,6 +51,16 @@ export function useChatAnalyticsToolLatency(params: TurChatAnalyticsToolLatencyP
   return useQuery<TurChatAnalyticsToolLatencyRow[]>({
     queryKey: queryKeys.chatAnalytics.toolLatency(params as Record<string, unknown>),
     queryFn: () => service.toolLatency(params),
+  });
+}
+
+export function useChatAnalyticsRouterDecisions(conversationId: string | null) {
+  return useQuery<TurChatAnalyticsRouterDecision[]>({
+    queryKey: conversationId
+      ? queryKeys.chatAnalytics.routerDecisions(conversationId)
+      : ['chat-analytics', 'router-decisions', 'none'],
+    queryFn: () => service.routerDecisions(conversationId as string),
+    enabled: Boolean(conversationId),
   });
 }
 

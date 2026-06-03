@@ -2591,6 +2591,18 @@ after a customer complains the conversation went down the wrong track:
   decisions (complaint triage), omit it for the global recency stream. Reads
   the in-memory ring (per-process, ephemeral) — distinct from the Mongo/Redis
   analytics store the sibling endpoints query.
+- **Frontend**: the per-conversation drill-down `DetailPanel` (the Sheet that
+  opens on a session row in the chat-analytics dashboard — the exact
+  complaint-triage flow) gained a **Router decisions** card. `TurChatAnalyticsRouterDecision`
+  /`-Candidate`/`-Method` model types, a `routerDecisions(conversationId)`
+  service method, the `useChatAnalyticsRouterDecisions` React-Query hook +
+  `routerDecisions` query key, and a `RouterDecisionsCard` renderer: one block
+  per turn with a method badge (Keyword / LLM / LLM cached / No match), the
+  winning flow, the dominance ratio, the truncated user message, and a
+  proportional score bar per candidate (winner starred + primary-colored,
+  matching the `ToolLatencyPanel` bar idiom). Renders nothing when the ring is
+  empty (restart/eviction), mirroring `SentimentTrajectoryChart`. Frontend
+  `tsc -b --noEmit` exit 0; vitest 5/5 green.
 - **Tests**: `TurChatFlowRouterDecisionLogTest` (12) pins newest-first
   retention, the per-conversation + global + LRU caps, conversation scoping,
   the limit cap, blank-conversation/null handling, `recordSafely` no-op when no
