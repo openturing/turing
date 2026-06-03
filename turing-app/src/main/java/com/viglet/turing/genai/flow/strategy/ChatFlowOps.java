@@ -1150,6 +1150,136 @@ public final class ChatFlowOps {
         return text.substring(start, end + 1);
     }
 
+    // ─────────────────────────── Plan iteration (T108-2) ───────────────────────────
+
+    /**
+     * Reserved slot holding the id of the plan item an {@code iteratePlan}
+     * node is currently executing. Written when the engine descends into the
+     * body sub-flow, read on ascent to know which item to complete, and
+     * cleared when the iteration finishes. Exposed to the body sub-flow so it
+     * can branch on the specific item.
+     *
+     * @since 2026.3.1
+     */
+    public static final String PLAN_ITEM_ID_SLOT = "__planItemId";
+
+    /**
+     * Reserved slot holding the title of the in-flight plan item — the
+     * human-readable step text the body sub-flow executes. Interpolate it with
+     * {@code {{__planItemTitle}}} in a body node's instruction.
+     *
+     * @since 2026.3.1
+     */
+    public static final String PLAN_ITEM_TITLE_SLOT = "__planItemTitle";
+
+    /** {@code completionMode} value: flip the completed item's status to done (default). */
+    public static final String COMPLETION_MODE_MARK_DONE = "mark_done";
+
+    /** {@code completionMode} value: remove the completed item from the plan entirely. */
+    public static final String COMPLETION_MODE_REMOVE = "remove";
+
+    /**
+     * First still-{@link PlanItem#isPending() pending} item of {@code plan},
+     * or {@link Optional#empty()} when the plan is null/empty or every item is
+     * already done — the signal an {@code iteratePlan} node uses to stop
+     * iterating and advance on its outgoing edge.
+     *
+     * @since 2026.3.1
+     */
+    public static Optional<PlanItem> firstPendingItem(List<PlanItem> plan) {
+        if (plan == null) {
+            return Optional.empty();
+        }
+        return plan.stream().filter(PlanItem::isPending).findFirst();
+    }
+
+    /**
+     * Writes the reserved {@link #PLAN_ITEM_ID_SLOT} / {@link #PLAN_ITEM_TITLE_SLOT}
+     * markers for {@code item} into {@code state} so the body sub-flow about to
+     * run sees which plan item it's executing. No-op for a null item.
+     *
+     * @since 2026.3.1
+     */
+    public static void setPlanIterationMarkers(TurChatFlowState state, PlanItem item) {
+        if (state == null || item == null) {
+            return;
+        }
+        Map<String, String> variables = readVariables(state);
+        variables.put(PLAN_ITEM_ID_SLOT, item.id() == null ? "" : item.id());
+        variables.put(PLAN_ITEM_TITLE_SLOT, item.title() == null ? "" : item.title());
+        writeVariables(state, variables);
+    }
+
+    /**
+     * Removes the reserved plan-iteration markers from {@code state} — called
+     * when an {@code iteratePlan} node finishes (no more pending items) so
+     * downstream nodes don't read a stale {@code __planItemId} /
+     * {@code __planItemTitle}.
+     *
+     * @since 2026.3.1
+     */
+    public static void clearPlanIterationMarkers(TurChatFlowState state) {
+        if (state == null) {
+            return;
+        }
+        Map<String, String> variables = readVariables(state);
+        boolean changed = variables.remove(PLAN_ITEM_ID_SLOT) != null;
+        changed |= variables.remove(PLAN_ITEM_TITLE_SLOT) != null;
+        if (changed) {
+            writeVariables(state, variables);
+        }
+    }
+
+    /**
+     * Completes the plan item identified by {@code itemId} in the plan stored
+     * at {@code planSlot} of {@code state}, per {@code completionMode}:
+     * {@link #COMPLETION_MODE_REMOVE} drops the item, anything else (including
+     * {@code null}) marks it {@link PlanItem#DONE done}. Persists the rewritten
+     * plan. Returns {@code true} when the plan actually changed (item found and
+     * mutated), {@code false} otherwise — so callers can skip a redundant SSE
+     * publish.
+     *
+     * <p>Both modes are idempotent and monotonic: re-completing an item that's
+     * already done leaves a done item; removing an absent item is a no-op. This
+     * is what makes the {@code iteratePlan} loop terminate regardless of how
+     * the body sub-flow behaves.
+     *
+     * @since 2026.3.1
+     */
+    public static boolean completePlanItem(TurChatFlowState state, String planSlot,
+            String itemId, String completionMode) {
+        if (state == null || itemId == null || itemId.isBlank()) {
+            return false;
+        }
+        String key = (planSlot == null || planSlot.isBlank()) ? DEFAULT_PLAN_SLOT : planSlot.trim();
+        Map<String, String> variables = readVariables(state);
+        List<PlanItem> plan = parsePlan(variables.get(key));
+        if (plan.isEmpty()) {
+            return false;
+        }
+        boolean remove = COMPLETION_MODE_REMOVE.equalsIgnoreCase(
+                completionMode == null ? "" : completionMode.trim());
+        List<PlanItem> updated = new java.util.ArrayList<>(plan.size());
+        boolean changed = false;
+        for (PlanItem item : plan) {
+            if (item != null && itemId.equals(item.id())) {
+                changed = true;
+                if (remove) {
+                    continue; // drop it
+                }
+                updated.add(new PlanItem(item.id(), item.title(), PlanItem.DONE));
+            } else {
+                updated.add(item);
+            }
+        }
+        if (!changed) {
+            return false;
+        }
+        variables.put(key, serializePlan(updated));
+        writeVariables(state, variables);
+        return true;
+    }
+
     // ─────────────────────────── Suggested options lookup ───────────────────────────
 
     /**
