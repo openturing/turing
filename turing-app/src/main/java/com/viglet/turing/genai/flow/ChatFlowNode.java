@@ -117,6 +117,28 @@ public record ChatFlowNode(String id, String type, NodeData data) {
     }
 
     /**
+     * Declared fields of a {@code formCapture} node rendered as a NATIVE
+     * multi-field form by the SDK (T107). When non-empty, the chat-flow
+     * engine emits a structured {@code "form"} SSE event describing these
+     * fields instead of relying on a single free-text answer into
+     * {@link #outputVariable()}; the visitor fills the whole form at once and
+     * the SDK posts every value back through {@code POST .../chat/form-submit},
+     * which writes each field to its named slot. The node is considered
+     * "satisfied" — and {@code walkThroughSatisfiedQuestions} skips past it —
+     * once every {@code required != FALSE} field's slot holds a non-blank
+     * value.
+     *
+     * <p>Empty list (the default) preserves the legacy single-field
+     * {@code formCapture} behavior (regex-validated single-turn capture into
+     * {@link #outputVariable()}).
+     *
+     * @since 2026.3.1
+     */
+    public List<FormField> formFields() {
+        return data.formFields() == null ? List.of() : data.formFields();
+    }
+
+    /**
      * When {@code true} on an {@code aiQuestion} node, the engine always
      * asks the question and overwrites any value already collected into
      * {@link #outputVariable()}. When {@code false} (or {@code null}) and
@@ -455,12 +477,34 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             Integer routineTimeoutMs,
             Boolean continueOnFailure,
             String nodeExperimentKey,
-            List<NodeVariant> nodeVariants) {
+            List<NodeVariant> nodeVariants,
+            List<FormField> formFields) {
+
+        /**
+         * Back-compat constructor for callers/tests predating the T107
+         * {@code formCapture} multi-field form ({@code formFields}). Delegates
+         * to the canonical constructor with {@code formFields = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs, Boolean continueOnFailure,
+                String nodeExperimentKey, List<NodeVariant> nodeVariants) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, null);
+        }
 
         /**
          * Back-compat constructor for callers/tests predating the T72 per-node
          * A/B fields ({@code nodeExperimentKey} / {@code nodeVariants}).
-         * Delegates to the canonical constructor with both set to {@code null}.
+         * Delegates to the canonical constructor with all three trailing
+         * fields set to {@code null}.
          */
         public NodeData(String label, String type, String aiInstruction, String outputVariable,
                 String validationRule, String functionName, String conditionExpression, String toolSource,
@@ -473,7 +517,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
                     switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
                     slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
-                    routineTimeoutMs, continueOnFailure, null, null);
+                    routineTimeoutMs, continueOnFailure, null, null, null);
         }
 
         /**
@@ -506,7 +550,46 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     functionName, conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName,
                     personaId, switchVariable, switchOptions, inlineOptions, overrideExistingValue,
                     slotName, slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools,
-                    routineId, routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants);
+                    routineId, routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants,
+                    formFields);
+        }
+    }
+
+    /**
+     * A single field of a {@code formCapture} node's native multi-field form
+     * (T107). Each field maps to one conversation slot.
+     *
+     * <ul>
+     *   <li>{@code name} — the slot the captured value is written to. Required.</li>
+     *   <li>{@code label} — human-readable field label rendered above the input.</li>
+     *   <li>{@code type} — input widget hint for the SDK: {@code text} (default),
+     *       {@code email}, {@code tel}, {@code number}, {@code date},
+     *       {@code textarea}, or {@code select}. Free-form string — unknown
+     *       values degrade to a plain text input on the SDK side.</li>
+     *   <li>{@code required} — when {@code FALSE}, the field is optional and
+     *       does not block the node's "satisfied" check. {@code null} (the
+     *       default) is treated as required.</li>
+     *   <li>{@code placeholder} — optional input placeholder text.</li>
+     *   <li>{@code validationRule} — same vocabulary as
+     *       {@link ChatFlowNode#validationRule()} ({@code email}, {@code phone},
+     *       {@code cpf}, …) — surfaced to the SDK for client-side hinting.</li>
+     *   <li>{@code options} — choice labels for a {@code select} field; ignored
+     *       for other types. Never {@code null}.</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FormField(String name, String label, String type, Boolean required,
+            String placeholder, String validationRule, List<String> options) {
+
+        public FormField {
+            options = options == null ? List.of() : options;
+        }
+
+        /** {@code true} unless the author explicitly set {@code required = false}. */
+        public boolean isRequired() {
+            return !Boolean.FALSE.equals(required);
         }
     }
 

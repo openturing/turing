@@ -20,7 +20,10 @@ import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
-import type { FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowFormField, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+
+/** T107 — widget hints offered for a formCapture form field. */
+const FORM_FIELD_TYPES = ["text", "email", "tel", "number", "date", "textarea", "select"] as const;
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
@@ -236,6 +239,15 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 })}
               </span>
             </div>
+
+            {type === "formCapture" && (
+              <FormFieldsEditor
+                fields={data.formFields ?? []}
+                onChange={(fields) =>
+                  update({ formFields: fields.length > 0 ? fields : undefined })
+                }
+              />
+            )}
 
             {type === "aiQuestion" && (
               <div className="flex flex-col gap-1">
@@ -1218,6 +1230,137 @@ function SwitchOptionsEditor({ options, onChange, subFlowOptions }: SwitchOption
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+interface FormFieldsEditorProps {
+  readonly fields: FlowFormField[];
+  readonly onChange: (fields: FlowFormField[]) => void;
+}
+
+/**
+ * T107 — editor for a {@code formCapture} node's native multi-field form.
+ * Each row maps to one conversation slot; the SDK renders the whole set as a
+ * native form and posts every value back through `POST /chat/form-submit`.
+ */
+function FormFieldsEditor({ fields, onChange }: FormFieldsEditorProps) {
+  const { t } = useTranslation();
+  const patch = (idx: number, partial: Partial<FlowFormField>) =>
+    onChange(fields.map((f, i) => (i === idx ? { ...f, ...partial } : f)));
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-indigo-200 bg-indigo-50/40 p-2 dark:border-indigo-900 dark:bg-indigo-950/20">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+          {t("chatFlow.properties.formFields", { defaultValue: "Form fields (native form)" })}
+        </Label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onChange([...fields, { name: "", type: "text", required: true }])}
+        >
+          <IconPlus className="size-4" />
+          {t("chatFlow.properties.formFieldAdd", { defaultValue: "Add field" })}
+        </Button>
+      </div>
+      {fields.length === 0 ? (
+        <div className="rounded-md border border-dashed bg-muted/30 p-3 text-center text-[11px] text-muted-foreground">
+          {t("chatFlow.properties.formFieldsEmpty", {
+            defaultValue:
+              "No fields yet — this formCapture behaves as a single-field capture. Add fields to render a native multi-field form.",
+          })}
+        </div>
+      ) : (
+        fields.map((field, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <div key={idx} className="flex flex-col gap-1.5 rounded-md border bg-background p-2">
+            <div className="flex items-center gap-2">
+              <Input
+                className="h-8 font-mono text-[12px]"
+                value={field.name}
+                placeholder={t("chatFlow.properties.formFieldNamePlaceholder", {
+                  defaultValue: "slot_name",
+                })}
+                onChange={(e) => patch(idx, { name: e.target.value })}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t("chatFlow.properties.formFieldRemove", { defaultValue: "Remove field" })}
+                onClick={() => onChange(fields.filter((_, i) => i !== idx))}
+              >
+                <IconTrash className="size-4 text-destructive" />
+              </Button>
+            </div>
+            <Input
+              className="h-8 text-[12px]"
+              value={field.label ?? ""}
+              placeholder={t("chatFlow.properties.formFieldLabelPlaceholder", {
+                defaultValue: "Label",
+              })}
+              onChange={(e) => patch(idx, { label: e.target.value || undefined })}
+            />
+            <div className="flex items-center gap-2">
+              <Select
+                value={field.type ?? "text"}
+                onValueChange={(value) => patch(idx, { type: value })}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORM_FIELD_TYPES.map((ft) => (
+                    <SelectItem key={ft} value={ft}>
+                      {t(`chatFlow.properties.formFieldType.${ft}`, { defaultValue: ft })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={field.validationRule ?? "none"}
+                onValueChange={(value) =>
+                  patch(idx, { validationRule: value === "none" ? undefined : value })
+                }
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALIDATION_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`chatFlow.properties.validation.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {field.type === "select" && (
+              <Textarea
+                rows={2}
+                className="text-[12px]"
+                value={(field.options ?? []).join("\n")}
+                placeholder={"Option A\nOption B"}
+                onChange={(e) => {
+                  const opts = e.target.value
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 0);
+                  patch(idx, { options: opts.length > 0 ? opts : undefined });
+                }}
+              />
+            )}
+            <label className="flex items-center gap-2 text-[12px]">
+              <Checkbox
+                checked={field.required ?? true}
+                onCheckedChange={(checked) => patch(idx, { required: checked !== false })}
+              />
+              {t("chatFlow.properties.formFieldRequired", { defaultValue: "Required" })}
+            </label>
+          </div>
+        ))
+      )}
     </div>
   );
 }

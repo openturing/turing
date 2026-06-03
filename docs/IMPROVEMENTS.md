@@ -478,7 +478,9 @@ Remaining platform-relevant promotions:
 |-----|--------|------------|------|-----------|
 | T104 | ✅ | — | 10 hooks in `@viglet/turing-react-sdk`: `useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` · SSE in `useTuringSlots` · `useTuringVoice` · `useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>` generic with auto JSON.parse · SSE multiplexer (N→1 EventSource via refcount module-level). Storybook 100% coverage. | §VII.13.a |
 | T106 | ✅ | T92 | **`useTuringFlowChooser` hook** in `@viglet/turing-react-sdk` — imperative `chooseFlow(flow?)` pins a flow by UUID or case-insensitive name through the T92 `POST /chat/flow-select` endpoint (new `postSiteFlowSelect` API helper + `TurChatFlowSelectResponse` type). Exposes `status` (`idle/selecting/success/error`), `error`, `lastResult`, `pinnedFlowId/Name`. `mintSession` (default on) proactively mints the `TUR_SESSION` cookie so a deep-link landing pins before the visitor types — the chat hook reuses the same cookie. Opt-in `autoSelectFromParam` reads a URL query param once on mount (`?flow=in-company`), pinning the deep-linked persona; falls back to `options.flow` when the param is absent. Storybook story (track-picker simulation, latency/error variants). | §VII.13.c |
-| T107 | 💭 | — | `formCapture` form-event SSE — emit structured event so SDK renders a native form (multi-field capture) instead of single-turn validation. | §VII.13.d |
+| T107 | ✅ | — | **`formCapture` form-event SSE** — a `formCapture` node gains an optional `formFields` array (`ChatFlowNode.FormField`: name→slot, label, type, required, placeholder, validationRule, options). When present, the engine emits a structured `"form"` SSE event (`{nodeId,title,fields[]}`, sibling of the `"options"` event in `TurChatStreamingDispatcher`) so the SDK renders a NATIVE multi-field form instead of single-turn validation. Native forms are "satisfied" — and `walkThroughSatisfiedQuestions` skips them — once every `required != FALSE` field's slot is filled (not via `outputVariable`). New `POST /api/sn/{site}/chat/form-submit` (`TurChatFlowEngineService.submitForm`) writes every field to its slot (audit source `NODE`) then walks the conversation past the satisfied form node. SDK (vanilla `@viglet/turing-sdk` + `@viglet/turing-react-sdk`): SSE parser handles `type:"form"` → `onForm` callback + `form` on the response; chat controller/hook expose `activeForm` + `submitForm(values)` (site mode); `postSiteFormSubmit` helper. flow-dsl: `FormCaptureNode.formFields` + transpile whitelist. Admin editor: `FormFieldsEditor` on the formCapture properties panel + native-form rendering in the live-preview panel. | §VII.13.d |
+| T234 | 💭 | T107 | **Auto-convert a question sequence into a native form** — editor action that detects a linear run of question-like nodes (`aiQuestion` + single-field `formCapture`) with no branching between them and collapses it into one `formCapture` carrying a `formFields` array (one field per node, derived from `outputVariable`→`name`, `aiInstruction`→`label`, `validationRule`, `inlineOptions`→select `options`, `overrideExistingValue`). Pure client-side graph transform + confirm dialog with a before/after preview; rewires `pred → [form] → succ` and deletes the collapsed nodes. Safety rails: stop the run at any node with >1 in/out edge, a downstream `switch`/`condition`, or `inlineOptions` that route a switch (those chips are routing, not capture). Optional LLM "polish labels" pass reusing `TurLlmSummaryService` (T97 pattern). | §VII.13.e |
+| T235 | 💭 | T107 | **`formField.name` → slot picker (not free text) + lint** — replace the free-text slot input in `FormFieldsEditor` with the same slot `Select` the `outputVariable` field uses (`useAIAgentSlots` catalog), so every form field lands in a typed, declared slot; auto-suggest the field `type`/`validationRule` from the slot's `TurAIAgentSlotType` (e.g. `EMAIL`→`email`). Keep a "create slot" affordance / free-text fallback for power users. Extend `TurChatFlowLinterService` (T94) with native-form rules: `form_field_unknown_slot` (field name not in the agent's slot catalog), `form_field_blank_name`, `form_field_duplicate_name`, surfaced in the existing `ChatFlowLintPanel`. | §VII.13.f |
 
 #### D.10 — Kill list (deprecate or remove)
 
@@ -2693,6 +2695,96 @@ the conversation starts.
 - Pairs with T93 — slots already captured carry into the pinned flow via
   the engine's `applySlotInheritance`. Storybook story simulates the
   track-picker round-trip (latency + failure variants).
+
+#### VII.13.d Native multi-field form (T107)
+The legacy `formCapture` node collects one regex-validated answer per turn —
+collecting a lead's name + email + role meant three back-and-forth turns. T107
+lets a single `formCapture` node declare a `formFields` array so the visitor
+fills the whole form at once, the way a portal expects.
+
+- **Node model**: `ChatFlowNode.FormField` (`name`, `label`, `type` ∈
+  text/email/tel/number/date/textarea/select, `required`, `placeholder`,
+  `validationRule`, `options`). Additive — a `formCapture` with no `formFields`
+  behaves exactly as before (single-field capture into `outputVariable`).
+- **Emission**: `TurChatStreamingDispatcher.buildFormJson` emits a `"form"`
+  SSE event (`{nodeId,title,fields[]}`) when the post-walk cursor parks on a
+  native form, mirroring the `"options"` chip event. `emitTurn` now fans out
+  up to three events (token → options → form).
+- **Satisfaction**: `ChatFlowOps.isNativeForm` / `isNativeFormSatisfied`; the
+  satisfied-question walker skips a native form once every `required != FALSE`
+  field's slot is non-blank — its `outputVariable` is irrelevant.
+- **Submission**: `POST /api/sn/{site}/chat/form-submit`
+  (`TurChatFlowEngineService.submitForm`) writes each value via `writeSlot(…,
+  NODE, "formCapture")` then walks past the now-satisfied node, modelled on the
+  T121 `resumeSuspendedFlow` pattern.
+- **SDK**: both packages parse the `"form"` event (`onForm` callback + `form`
+  on the conversation response); the chat controller/hook expose `activeForm`
+  and `submitForm(values)` (posts the values, clears the pending form, streams
+  the next turn). Site mode only — the endpoint is site-scoped.
+- **DSL + editor**: `FormCaptureNode.formFields` (typed), transpile whitelist;
+  `FormFieldsEditor` on the properties panel + a native-form render in the
+  live-preview panel.
+
+#### VII.13.e Auto-convert a question sequence into a form (T234)
+T107 made the native form *possible*; today an author still rebuilds it by
+hand (drop a `formCapture`, retype each field, delete the old `aiQuestion`
+nodes, rewire edges). T234 is the one-click path: detect a run of consecutive
+question nodes and collapse it into a single native form.
+
+- **Detection** — walk forward from the selected (or first) question node while
+  the run stays a *simple linear chain*: each node is question-like
+  (`aiQuestion` or a single-field `formCapture`, i.e. no `formFields` yet), has
+  exactly one outgoing edge with no `sourceHandle`, and the next node has
+  exactly one incoming edge. Stop before any `switch`/`condition`/`subFlow`/
+  `functionCall`/`persona`/`slot` node, before a fan-in/fan-out, and before a
+  question whose `inlineOptions` feed a downstream `switch` (those chips
+  *route* — collapsing them would silently drop a branch). Surface why the run
+  stopped so the author isn't surprised it only grabbed 3 of 5 questions.
+- **Transform** (pure client-side, no backend) — build one `formCapture`:
+  - `formFields[i]` from node `i`: `name = outputVariable`,
+    `label` from `aiInstruction` (first line / stripped), `validationRule`
+    carried over, `required` from the inverse of "optional" heuristics,
+    `options` from `inlineOptions` when the node is a plain chip list,
+    `type` inferred from `validationRule`/slot type (`email`→`email`, …).
+  - `aiInstruction` (form title) = the first node's instruction or a generated
+    heading.
+  - Rewire `predecessor(firstNode) → [form] → successor(lastNode)`; delete the
+    collapsed nodes; re-run the existing auto-layout.
+- **UX** — a node context-action ("Convert run to form") and/or a flow-level
+  button; a confirm dialog renders the before/after (reusing the T95
+  live-preview `FormPreview`) so the author approves the collapse. Fully
+  undoable via the editor's normal dirty-state save (nothing persisted until
+  Save).
+- **Optional LLM polish** — a "tidy labels" toggle that runs the derived field
+  labels through `TurLlmSummaryService` (the T97 variant-generator pattern) to
+  turn *"Qual o seu e-mail corporativo?"* into a clean `E-mail` label. Off by
+  default; the deterministic transform is the contract.
+- **Tests** — unit tests on the pure collapse function: happy 3-node run →
+  one form + rewired edges + deleted nodes; run stops at a switch; single
+  node = no-op; chips-that-route are excluded.
+
+#### VII.13.f `formField.name` as a slot picker + lint (T235)
+In the T107 `FormFieldsEditor` the field's slot (`name`) is a free-text
+`Input`, while the sibling `outputVariable` field on `aiQuestion`/`formCapture`
+is a `Select` bound to the agent's declared slot catalog (`useAIAgentSlots`).
+Free text means a typo (`emai`) silently writes to a slot nobody reads — the
+value never reaches handoff (T55), webhooks (T62), or analytics.
+
+- **Picker** — swap the `name` `Input` for the same slot `Select` the
+  `outputVariable` field uses (same `slotOptions`, same empty-state hint). Keep
+  a "create slot" affordance (or a free-text fallback behind a toggle) so an
+  author isn't blocked when the slot doesn't exist yet.
+- **Type inference** — when a slot is picked, default the field `type` and
+  `validationRule` from its `TurAIAgentSlotType` (`EMAIL`→`email`,
+  `PHONE`→`tel`, `DATE`→`date`, multi-modal types → upload widget) — the author
+  can still override.
+- **Lint** (extends `TurChatFlowLinterService`, T94) — new codes surfaced in
+  `ChatFlowLintPanel`: `form_field_unknown_slot` (WARNING — name not in the
+  agent's slot catalog), `form_field_blank_name` (ERROR), and
+  `form_field_duplicate_name` (WARNING — two fields writing the same slot).
+- **Tests** — frontend: picker renders catalog + persists the chosen slot;
+  backend: linter unit tests for the three new codes (mirrors the existing
+  `TurChatFlowLinterServiceTest` cases).
 
 ### VII.2 Platform-pending items the engagement surfaced
 

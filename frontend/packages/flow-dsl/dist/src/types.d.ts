@@ -82,11 +82,43 @@ export interface AiQuestionNode extends NodeBase {
     toolsEnabled?: boolean;
     requiredTools?: readonly string[];
 }
+/**
+ * Widget hint for a {@link FormField}. Mirrors the loose string the backend
+ * accepts; unknown values degrade to a plain text input in the SDK.
+ */
+export type FormFieldType = "text" | "email" | "tel" | "number" | "date" | "textarea" | "select";
+/**
+ * One field of a {@code formCapture} node's native multi-field form (T107).
+ * Mirrors the backend {@code ChatFlowNode.FormField} record; each field maps
+ * to one conversation slot named {@link name}.
+ */
+export interface FormField {
+    /** Slot the captured value is written to. */
+    name: string;
+    /** Human-readable label rendered above the input. */
+    label?: string;
+    /** Widget hint; defaults to {@code "text"}. */
+    type?: FormFieldType;
+    /** When {@code false}, optional — does not block the node's satisfied check. */
+    required?: boolean;
+    /** Optional input placeholder text. */
+    placeholder?: string;
+    /** Validation-rule hint surfaced to the SDK for client-side checks. */
+    validationRule?: ValidationRule;
+    /** Choice labels for a {@code select} field; ignored for other types. */
+    options?: readonly string[];
+}
 export interface FormCaptureNode extends NodeBase {
     type: "formCapture";
     aiInstruction?: string;
     outputVariable?: string;
     validationRule?: ValidationRule;
+    /**
+     * T107 — when present, the node renders as a NATIVE multi-field form (the
+     * engine emits a `"form"` SSE event with these fields). Omit for the legacy
+     * single-field capture into {@link outputVariable}.
+     */
+    formFields?: readonly FormField[];
 }
 export interface ConditionNode extends NodeBase {
     type: "condition";

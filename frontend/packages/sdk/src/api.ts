@@ -2,6 +2,8 @@ import type { TuringClient } from "./client";
 import type {
   TurChatConversationMessage,
   TurChatConversationResponse,
+  TurChatForm,
+  TurChatFormSubmitResponse,
   TurChatResponse,
   TurChatStreamEvent,
   TurIntent,
@@ -178,6 +180,8 @@ export function fetchChatEnabled(
 export interface PostChatConversationOptions {
   readonly onToken?: (token: string) => void;
   readonly onOptions?: (options: string[]) => void;
+  /** Fired when the engine emits a native multi-field form schema (T107). */
+  readonly onForm?: (form: TurChatForm) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -191,15 +195,17 @@ export interface PostChatConversationOptions {
 }
 
 /**
- * Drains a Spring `Flux<ChatResponse>` SSE stream and returns both the
- * concatenated assistant text and any chip labels emitted by the chat-flow
- * engine via a `type === "options"` event.
+ * Drains a Spring `Flux<ChatResponse>` SSE stream and returns the
+ * concatenated assistant text, any chip labels (`type === "options"`), and any
+ * native multi-field form schema (`type === "form"`, T107) emitted by the
+ * chat-flow engine.
  */
 async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
   onOptions?: (options: string[]) => void,
-): Promise<{ text: string; options: string[] }> {
+  onForm?: (form: TurChatForm) => void,
+): Promise<{ text: string; options: string[]; form?: TurChatForm }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
   }
@@ -208,6 +214,7 @@ async function consumeAssistantStream(
   let buffer = "";
   let aggregated = "";
   let optionLabels: string[] = [];
+  let form: TurChatForm | undefined;
 
   function consumeLine(line: string) {
     if (!line.startsWith("data:")) return;
@@ -235,6 +242,18 @@ async function consumeAssistantStream(
       }
       return;
     }
+    if (parsed.type === "form") {
+      try {
+        const parsedForm = JSON.parse(parsed.content) as TurChatForm;
+        if (parsedForm && Array.isArray(parsedForm.fields) && parsedForm.fields.length > 0) {
+          form = parsedForm;
+          onForm?.(parsedForm);
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
     // Default to text — treat unknown/absent `type` as a token event.
     if (parsed.content) {
       aggregated += parsed.content;
@@ -255,7 +274,7 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return { text: aggregated, options: optionLabels };
+  return { text: aggregated, options: optionLabels, form };
 }
 
 /**
@@ -290,17 +309,20 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions } = await consumeAssistantStream(
+  const { text, options: chipOptions, form } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
+    options?.onForm,
   );
-  return { role: "assistant", content: text, options: chipOptions };
+  return { role: "assistant", content: text, options: chipOptions, form };
 }
 
 export interface PostAgentChatOptions {
   readonly onToken?: (token: string) => void;
   readonly onOptions?: (options: string[]) => void;
+  /** Fired when the engine emits a native multi-field form schema (T107). */
+  readonly onForm?: (form: TurChatForm) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -363,12 +385,32 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions } = await consumeAssistantStream(
+  const { text, options: chipOptions, form } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
+    options?.onForm,
   );
-  return { role: "assistant", content: text, options: chipOptions };
+  return { role: "assistant", content: text, options: chipOptions, form };
+}
+
+/**
+ * T107 — submit a native multi-field {@code formCapture} form. Writes every
+ * `values` entry to its named slot and advances the conversation past the
+ * satisfied form node. Server endpoint: `POST /sn/{site}/chat/form-submit`.
+ */
+export function postSiteFormSubmit(
+  client: TuringClient,
+  site: string,
+  conversationId: string,
+  values: Record<string, string>,
+  nodeId?: string,
+): Promise<TurChatFormSubmitResponse> {
+  return client.post<TurChatFormSubmitResponse>(`/sn/${site}/chat/form-submit`, {
+    conversationId,
+    nodeId,
+    values,
+  });
 }
 
 export interface PostLlmChatOptions {

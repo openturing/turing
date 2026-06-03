@@ -2,6 +2,8 @@ import axios from "axios";
 import type {
   TurChatConversationMessage,
   TurChatConversationResponse,
+  TurChatForm,
+  TurChatFormSubmitResponse,
   TurChatResponse,
   TurChatStreamEvent,
   TurIntent,
@@ -170,7 +172,8 @@ async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
   onOptions?: (options: string[]) => void,
-): Promise<{ text: string; options: string[] }> {
+  onForm?: (form: TurChatForm) => void,
+): Promise<{ text: string; options: string[]; form?: TurChatForm }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
   }
@@ -179,6 +182,7 @@ async function consumeAssistantStream(
   let buffer = "";
   let aggregated = "";
   let optionLabels: string[] = [];
+  let form: TurChatForm | undefined;
 
   function consumeLine(line: string) {
     if (!line.startsWith("data:")) return;
@@ -206,6 +210,18 @@ async function consumeAssistantStream(
       }
       return;
     }
+    if (parsed.type === "form") {
+      try {
+        const parsedForm = JSON.parse(parsed.content) as TurChatForm;
+        if (parsedForm && Array.isArray(parsedForm.fields) && parsedForm.fields.length > 0) {
+          form = parsedForm;
+          onForm?.(parsedForm);
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
     // Default to text. Treat any unknown `type` as a token event.
     if (parsed.content) {
       aggregated += parsed.content;
@@ -226,7 +242,7 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return { text: aggregated, options: optionLabels };
+  return { text: aggregated, options: optionLabels, form };
 }
 
 /**
@@ -290,12 +306,13 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions } = await consumeAssistantStream(
+  const { text, options: chipOptions, form } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
+    options?.onForm,
   );
-  return { role: "assistant", content: text, options: chipOptions };
+  return { role: "assistant", content: text, options: chipOptions, form };
 }
 
 /**
@@ -357,12 +374,13 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions } = await consumeAssistantStream(
+  const { text, options: chipOptions, form } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
+    options?.onForm,
   );
-  return { role: "assistant", content: text, options: chipOptions };
+  return { role: "assistant", content: text, options: chipOptions, form };
 }
 
 /**
@@ -612,6 +630,36 @@ export async function postSiteFlowSelect(
       pinnedFlowId: null,
       pinnedFlowName: null,
       reason: "empty response",
+    }
+  );
+}
+
+/**
+ * T107 — submits a native multi-field {@code formCapture} form: writes every
+ * `values` entry to its named slot and advances the conversation past the
+ * satisfied form node.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/form-submit}.
+ *
+ * @since 2026.3.1
+ */
+export async function postSiteFormSubmit(
+  site: string,
+  conversationId: string,
+  values: Record<string, string>,
+  nodeId?: string,
+): Promise<TurChatFormSubmitResponse> {
+  const { data } = await axios.post<TurChatFormSubmitResponse>(
+    `/sn/${site}/chat/form-submit`,
+    { conversationId, nodeId, values },
+  );
+  return (
+    data ?? {
+      success: false,
+      fieldsWritten: 0,
+      advancedStates: 0,
+      currentNodeId: null,
+      error: "empty response",
     }
   );
 }

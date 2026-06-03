@@ -108,6 +108,51 @@ public final class ChatFlowOps {
         return "aiQuestion".equals(type) || "formCapture".equals(type);
     }
 
+    /**
+     * {@code true} when {@code node} is a {@code formCapture} node that
+     * declares at least one {@link ChatFlowNode.FormField} — i.e. a NATIVE
+     * multi-field form (T107) rather than the legacy single-field
+     * {@code formCapture} that collects one regex-validated answer into
+     * {@link ChatFlowNode#outputVariable()}.
+     *
+     * @since 2026.3.1
+     */
+    public static boolean isNativeForm(ChatFlowNode node) {
+        return node != null && "formCapture".equals(node.type())
+                && !node.formFields().isEmpty();
+    }
+
+    /**
+     * {@code true} when every {@link ChatFlowNode.FormField#isRequired()
+     * required} field of a {@link #isNativeForm native form} node holds a
+     * non-blank value in {@code variables}. Optional fields ({@code required =
+     * false}) never block satisfaction. Returns {@code false} for nodes that
+     * are not native forms — callers should gate on {@link #isNativeForm}
+     * first.
+     *
+     * @since 2026.3.1
+     */
+    public static boolean isNativeFormSatisfied(ChatFlowNode node, Map<String, String> variables) {
+        if (!isNativeForm(node)) {
+            return false;
+        }
+        Map<String, String> vars = variables == null ? Map.of() : variables;
+        for (ChatFlowNode.FormField field : node.formFields()) {
+            if (field == null || !field.isRequired()) {
+                continue;
+            }
+            String name = field.name();
+            if (name == null || name.isBlank()) {
+                continue;
+            }
+            String value = vars.get(name.trim());
+            if (value == null || value.isBlank()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // ─────────────────────────── System-prompt building ───────────────────────────
 
     /**
@@ -646,18 +691,27 @@ public final class ChatFlowOps {
             if (!isQuestionLike(current)) {
                 return;
             }
-            String outVar = current.outputVariable();
-            if (outVar == null || outVar.isBlank()) {
-                return;
-            }
             // Author opted in to always asking — never skip.
             if (Boolean.TRUE.equals(current.overrideExistingValue())) {
                 return;
             }
             Map<String, String> variables = readVariables(state);
-            String existing = variables.get(outVar.trim());
-            if (existing == null || existing.isBlank()) {
-                return;
+            // T107 — a native multi-field formCapture is satisfied (and thus
+            // skippable) when every required field's slot is filled; its own
+            // outputVariable is not what advances it.
+            if (isNativeForm(current)) {
+                if (!isNativeFormSatisfied(current, variables)) {
+                    return;
+                }
+            } else {
+                String outVar = current.outputVariable();
+                if (outVar == null || outVar.isBlank()) {
+                    return;
+                }
+                String existing = variables.get(outVar.trim());
+                if (existing == null || existing.isBlank()) {
+                    return;
+                }
             }
             List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
             if (outgoing.isEmpty()) {
@@ -667,8 +721,10 @@ public final class ChatFlowOps {
             if (target.isEmpty()) {
                 return;
             }
-            log.info("[FlowOps] Skipping satisfied question '{}' → '{}' (slot '{}' already filled)",
-                    current.id(), target.get().id(), outVar.trim());
+            log.info("[FlowOps] Skipping satisfied question '{}' → '{}' ({})",
+                    current.id(), target.get().id(),
+                    isNativeForm(current) ? "form fields filled"
+                            : "slot '" + current.outputVariable() + "' already filled");
             state.setCurrentNodeId(target.get().id());
         }
         log.warn("[FlowOps] walkThroughSatisfiedQuestions hit the {}-hop safety cap",

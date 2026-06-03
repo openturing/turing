@@ -193,14 +193,54 @@ export interface TurChatConversationMessage {
 }
 
 /**
- * One Server-Sent Event emitted by the chat endpoints. `type === "options"`
- * carries a JSON-encoded `string[]` of chip labels; otherwise `content` is
- * assistant text to append.
+ * One Server-Sent Event emitted by the chat endpoints.
+ * - `type === "options"` carries a JSON-encoded `string[]` of chip labels;
+ * - `type === "form"` (T107) carries a JSON-encoded {@link TurChatForm} schema
+ *   so the SDK can render a native multi-field form;
+ * - otherwise `content` is assistant text to append.
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options";
+  type?: "token" | "options" | "form";
+}
+
+/**
+ * A single field of a native multi-field form (T107), mirrored from the
+ * backend `ChatFlowNode.FormField` record.
+ */
+export interface TurChatFormField {
+  /** Slot the captured value is written to. */
+  name: string;
+  /** Human-readable label rendered above the input. */
+  label?: string;
+  /**
+   * Input widget hint: `text` (default), `email`, `tel`, `number`, `date`,
+   * `textarea`, or `select`. Unknown values degrade to a plain text input.
+   */
+  type?: string;
+  /** When `false`, the field is optional and does not block submission. */
+  required?: boolean;
+  /** Optional input placeholder text. */
+  placeholder?: string;
+  /** Validation-rule hint (`email`, `phone`, `cpf`, …) for client-side checks. */
+  validationRule?: string;
+  /** Choice labels for a `select` field; ignored for other types. */
+  options?: string[];
+}
+
+/**
+ * Structured form schema carried by a `"form"` SSE event (T107). The portal
+ * renders these fields as a native form and submits every value at once via
+ * {@link createChatController}'s `submitForm`.
+ */
+export interface TurChatForm {
+  /** The form node's id (audit/debug metadata). */
+  nodeId?: string;
+  /** Prompt/heading shown above the form (the node's instruction or label). */
+  title?: string;
+  /** The fields to render, in order. */
+  fields: TurChatFormField[];
 }
 
 /** Aggregated response returned once an SSE chat stream is fully consumed. */
@@ -210,6 +250,17 @@ export interface TurChatConversationResponse {
   content: string;
   /** Suggested chip labels emitted by the chat-flow engine for the next turn. */
   options?: string[];
+  /** Native multi-field form to render for the next turn (T107), if any. */
+  form?: TurChatForm;
+}
+
+/** Result of {@link createChatController}'s `submitForm` round-trip (T107). */
+export interface TurChatFormSubmitResponse {
+  success: boolean;
+  fieldsWritten: number;
+  advancedStates: number;
+  currentNodeId?: string | null;
+  error?: string | null;
 }
 
 // ── Intents (curated quick prompts) ──

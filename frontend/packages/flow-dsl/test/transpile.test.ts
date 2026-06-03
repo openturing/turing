@@ -76,6 +76,51 @@ describe("transpileFlow", () => {
     assert.equal(askData.slotName, undefined);
   });
 
+  it("carries formCapture formFields through to the wire shape (T107)", () => {
+    const transpiled = transpileFlow({
+      name: "Native form",
+      nodes: [
+        { id: "start", type: "start" },
+        {
+          id: "lead-form",
+          type: "formCapture",
+          aiInstruction: "Fill in your details",
+          formFields: [
+            { name: "name", label: "Name", type: "text", required: true },
+            {
+              name: "email",
+              label: "Email",
+              type: "email",
+              required: true,
+              validationRule: "email",
+            },
+            {
+              name: "role",
+              label: "Role",
+              type: "select",
+              required: false,
+              options: ["Student", "Teacher"],
+            },
+          ],
+        },
+        { id: "end", type: "end" },
+      ],
+      edges: [
+        { source: "start", target: "lead-form" },
+        { source: "lead-form", target: "end" },
+      ],
+    });
+    const formNode = transpiled.graph.nodes[1];
+    assert.ok(formNode, "form node present");
+    const formData = formNode.data as Record<string, unknown>;
+    const fields = formData.formFields as Array<Record<string, unknown>>;
+    assert.equal(fields.length, 3);
+    assert.equal(fields[0]?.name, "name");
+    assert.equal(fields[1]?.validationRule, "email");
+    assert.deepEqual(fields[2]?.options, ["Student", "Teacher"]);
+    assert.equal(fields[2]?.required, false);
+  });
+
   it("validates condition branches", () => {
     assert.throws(
       () =>

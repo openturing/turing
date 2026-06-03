@@ -12,8 +12,13 @@ import {
   TUR_SESSION_DEFAULT_TTL_SECONDS,
   getOrCreateTurSession,
 } from "../session";
+import { postSiteFormSubmit } from "../api";
 import { createStore, type Store } from "../store";
-import type { TurChatConversationMessage } from "../types";
+import type {
+  TurChatConversationMessage,
+  TurChatForm,
+  TurChatFormSubmitResponse,
+} from "../types";
 
 /**
  * Vanilla chat controller — the framework-agnostic equivalent of the React
@@ -47,6 +52,12 @@ export interface ChatMessage extends TurChatConversationMessage {
   timestamp: number;
   /** Suggested chip labels for the next user turn (assistant messages only). */
   options?: string[];
+  /**
+   * Native multi-field form attached to this assistant message (T107). The UI
+   * renders it as a form and calls {@link ChatController.submitForm} with the
+   * collected values. Cleared once the form is submitted.
+   */
+  form?: TurChatForm;
 }
 
 export interface ChatControllerAgent {
@@ -104,11 +115,25 @@ export interface ChatControllerState {
   error: string | null;
   isStreaming: boolean;
   conversationId: string | null;
+  /**
+   * The native multi-field form awaiting submission (T107), or `null` when
+   * none is pending. Mirrors the `form` on the most recent assistant message.
+   */
+  activeForm: TurChatForm | null;
 }
 
 export interface ChatController extends Store<ChatControllerState> {
   /** Send a user message (streams the assistant reply). */
   send(content: string, overrides?: SendOverrides): Promise<void>;
+  /**
+   * Submit a native multi-field form (T107): writes every value to its slot
+   * via `POST /chat/form-submit`, then streams the next assistant turn. Site
+   * mode only — rejects in pure agent mode (the endpoint is site-scoped).
+   */
+  submitForm(
+    values: Record<string, string>,
+    overrides?: SendOverrides,
+  ): Promise<TurChatFormSubmitResponse | null>;
   /** Abort the in-flight assistant turn. */
   stop(): void;
   /** Clear all messages and reset error state. */
@@ -260,6 +285,7 @@ export function createChatController(
     error: null,
     isStreaming: false,
     conversationId: initialPersisted.conversationId,
+    activeForm: null,
   });
 
   // Server-driven session cookie config (`turing.chat.session.*`).
@@ -359,12 +385,33 @@ export function createChatController(
       setConversationId(activeConversationId);
     }
 
-    try {
-      const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+    const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    await streamAssistantTurn(
+      wire,
+      requestId,
+      controller,
+      activeConversationId,
+      effectiveLlmInstanceId,
+    );
+  }
 
+  /**
+   * Shared streaming body used by {@link send} and {@link submitForm}: opens an
+   * empty assistant bubble, streams tokens, and patches in the final text,
+   * chip options, and any native form (T107) once the SSE stream completes.
+   * Assumes `messages` already reflects the turn's input history.
+   */
+  async function streamAssistantTurn(
+    wire: TurChatConversationMessage[],
+    requestId: number,
+    controller: AbortController,
+    activeConversationId: string,
+    effectiveLlmInstanceId: string | undefined,
+  ): Promise<void> {
+    try {
       // Pre-commit an empty assistant bubble so a UI can render a typing
       // animation immediately, then patch it in place as tokens arrive.
       const assistantId = newId();
@@ -408,17 +455,69 @@ export function createChatController(
       if (requestId !== latestRequestId || aborted) return;
 
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
+      const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
           options: finalOptions,
+          form: finalForm,
         })),
         "success",
       );
+      store.setState({ activeForm: finalForm ?? null });
     } catch (err) {
       handleSendError(err, requestId);
     }
+  }
+
+  async function submitForm(
+    values: Record<string, string>,
+    overrides?: SendOverrides,
+  ): Promise<TurChatFormSubmitResponse | null> {
+    if (!site) {
+      store.setState({
+        error: "submitForm requires site mode (the form-submit endpoint is site-scoped)",
+        status: "error",
+        isStreaming: false,
+      });
+      return null;
+    }
+    const cid = conversationId;
+    if (!cid) {
+      return null;
+    }
+
+    const pendingForm = store.getState().activeForm;
+    const requestId = ++latestRequestId;
+    aborted = false;
+    abortController?.abort();
+    const controller = new AbortController();
+    abortController = controller;
+    store.setState({ error: null, status: "loading", isStreaming: true });
+
+    // Consume the pending form: clear it from state and from the assistant
+    // message that carried it so the UI stops rendering inputs immediately.
+    store.setState({ activeForm: null });
+    commitMessages(messages.map((m) => (m.form ? { ...m, form: undefined } : m)));
+
+    let result: TurChatFormSubmitResponse | null = null;
+    try {
+      result = await postSiteFormSubmit(client, site, cid, values, pendingForm?.nodeId);
+    } catch (err) {
+      handleSendError(err, requestId);
+      return null;
+    }
+    if (requestId !== latestRequestId || aborted) return result;
+
+    const effectiveLlmInstanceId =
+      overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
+    const wire: TurChatConversationMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    await streamAssistantTurn(wire, requestId, controller, cid, effectiveLlmInstanceId);
+    return result;
   }
 
   function stop(): void {
@@ -435,7 +534,7 @@ export function createChatController(
     abortController?.abort();
     abortController = null;
     commitMessages([]);
-    store.setState({ error: null, status: "idle", isStreaming: false });
+    store.setState({ error: null, status: "idle", isStreaming: false, activeForm: null });
   }
 
   async function resetFlow(): Promise<boolean> {
@@ -466,6 +565,7 @@ export function createChatController(
     setState: store.setState,
     subscribe: store.subscribe,
     send,
+    submitForm,
     stop,
     reset,
     resetFlow,

@@ -449,6 +449,41 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * T107 / §VII.13.d — submit a native multi-field {@code formCapture} form.
+	 * The SDK collects every field of the {@code "form"} SSE event into one
+	 * payload and POSTs it here; each {@code values} entry is written to its
+	 * named slot and the engine walks the conversation past the now-satisfied
+	 * form node, so the next chat turn renders the following node instead of
+	 * re-asking the visitor field-by-field.
+	 *
+	 * <p>{@code conversationId} must match the live {@code TUR_SESSION} cookie.
+	 * {@code nodeId} is optional metadata (the form node's id) carried for
+	 * audit/debug; the engine resolves the satisfied form node from the live
+	 * cursor, not from this field.
+	 *
+	 * @since 2026.3.1
+	 */
+	@PostMapping("/form-submit")
+	public ChatFormSubmitResponse submitChatForm(@PathVariable String siteName,
+			@RequestBody ChatFormSubmitRequest body) {
+		if (body == null || body.conversationId() == null || body.conversationId().isBlank()) {
+			return new ChatFormSubmitResponse(false, 0, 0, null, "conversationId is required");
+		}
+		TurChatFlowEngineService.FormSubmitResult result =
+				chatFlowEngineService.submitForm(body.conversationId(), body.values());
+		return new ChatFormSubmitResponse(true, result.fieldsWritten(),
+				result.advancedStates(), result.currentNodeId(), null);
+	}
+
+	public record ChatFormSubmitRequest(String conversationId, String nodeId,
+			java.util.Map<String, String> values) {
+	}
+
+	public record ChatFormSubmitResponse(boolean success, int fieldsWritten,
+			int advancedStates, String currentNodeId, String error) {
+	}
+
+	/**
 	 * T92 / §VII.11.b — pin a specific chat flow on the conversation,
 	 * overriding the LLM router for every subsequent turn. The portal hits
 	 * this once on page load (typically wiring a deep-link param like

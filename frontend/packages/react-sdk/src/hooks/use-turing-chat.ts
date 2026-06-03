@@ -5,6 +5,7 @@ import {
   fetchChatEnabled,
   postAgentChat,
   postChatConversation,
+  postSiteFormSubmit,
   type ChatDisabledReason,
 } from "../core/api";
 import { useOptionalTuringContext } from "../core/use-turing-context";
@@ -13,7 +14,11 @@ import {
   TUR_SESSION_DEFAULT_TTL_SECONDS,
   getOrCreateTurSession,
 } from "../core/session";
-import type { TurChatConversationMessage } from "../core/types";
+import type {
+  TurChatConversationMessage,
+  TurChatForm,
+  TurChatFormSubmitResponse,
+} from "../core/types";
 
 export type ChatStatus = "idle" | "loading" | "success" | "error";
 
@@ -53,6 +58,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.2.17
    */
   options?: string[];
+  /**
+   * Native multi-field form attached to this assistant message (T107). The
+   * host renders it as a form and calls {@link UseTuringChatReturn#submitForm}
+   * with the collected values. Cleared once submitted.
+   *
+   * @since 2026.3.1
+   */
+  form?: TurChatForm;
 }
 
 /**
@@ -217,6 +230,25 @@ export interface UseTuringChatReturn {
    * @since 2026.3.1 (overrides param)
    */
   send: (content: string, overrides?: SendOverrides) => Promise<void>;
+  /**
+   * The native multi-field form awaiting submission (T107), or `null` when
+   * none is pending. Mirrors the `form` on the latest assistant message.
+   *
+   * @since 2026.3.1
+   */
+  activeForm: TurChatForm | null;
+  /**
+   * Submit a native multi-field form (T107): writes every value to its slot
+   * via `POST /chat/form-submit`, then streams the next assistant turn. Site
+   * mode only — resolves `null` in pure agent mode (the endpoint is
+   * site-scoped) or when there is no active conversation.
+   *
+   * @since 2026.3.1
+   */
+  submitForm: (
+    values: Record<string, string>,
+    overrides?: SendOverrides,
+  ) => Promise<TurChatFormSubmitResponse | null>;
   /** Abort the in-flight assistant turn (rolls back the pending user message). */
   stop: () => void;
   /** Clear all messages and reset error state. */
@@ -400,6 +432,8 @@ export function useTuringChat(
   const [conversationId, setConversationId] = useState<string | null>(initialPersisted.conversationId);
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  // T107 — the native multi-field form awaiting submission, if any.
+  const [activeForm, setActiveForm] = useState<TurChatForm | null>(null);
   // Server-driven cookie config (`turing.chat.session.*`). Default values are
   // applied immediately so a `send` before the enabled-fetch resolves still
   // gets a TUR_SESSION cookie.
@@ -485,6 +519,75 @@ export function useTuringChat(
     setStatus("error");
   }, []);
 
+  // Shared streaming body for `send` and `submitForm`: opens an empty
+  // assistant bubble, streams tokens, then patches in the final text, chip
+  // options, and any native form (T107). Assumes `messagesRef.current`
+  // already reflects the turn's input history.
+  const runAssistantTurn = useCallback(
+    async (
+      wire: TurChatConversationMessage[],
+      requestId: number,
+      controller: AbortController,
+      activeConversationId: string,
+      effectiveLlmInstanceId: string | undefined,
+    ) => {
+      try {
+        const assistantId = newId();
+        const assistantMsgInitial: ChatMessage = {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          timestamp: Date.now(),
+        };
+        const streamingHistory = [...messagesRef.current, assistantMsgInitial];
+        const initialWithReply =
+          streamingHistory.length > maxMessages
+            ? streamingHistory.slice(-maxMessages)
+            : streamingHistory;
+        messagesRef.current = initialWithReply;
+        setMessages(initialWithReply);
+
+        const onToken = (token: string) => {
+          if (requestId !== requestRef.current || abortedRef.current) return;
+          setMessages((prev) => patchMessage(prev, assistantId,
+              (m) => ({ ...m, content: m.content + token })));
+        };
+
+        const res = agentId && effectiveLlmInstanceId
+          ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
+              conversationId: activeConversationId,
+              flowId,
+              forcedVariant,
+              onToken,
+              signal: controller.signal,
+            })
+          : await postChatConversation(siteName, wire, effectiveLocale, {
+              conversationId: activeConversationId,
+              flowId,
+              forcedVariant,
+              onToken,
+              signal: controller.signal,
+            });
+
+        if (requestId !== requestRef.current || abortedRef.current) return;
+
+        const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
+        const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
+        setMessages((prev) => patchMessage(prev, assistantId, (m) => ({
+          ...m,
+          content: res?.content ?? m.content,
+          options: finalOptions,
+          form: finalForm,
+        })));
+        setActiveForm(finalForm ?? null);
+        setStatus("success");
+      } catch (err) {
+        handleSendError(err, requestId);
+      }
+    },
+    [siteName, effectiveLocale, maxMessages, flowId, forcedVariant, agentId, handleSendError],
+  );
+
   const send = useCallback(
     async (rawContent: string, overrides?: SendOverrides) => {
       const content = rawContent.trim();
@@ -545,84 +648,70 @@ export function useTuringChat(
         setConversationId(activeConversationId);
       }
 
+      // A fresh user turn supersedes any pending native form (T107).
+      setActiveForm(null);
+
+      const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      await runAssistantTurn(
+        wire,
+        requestId,
+        controller,
+        activeConversationId,
+        effectiveLlmInstanceId,
+      );
+    },
+    [maxMessages, agentId, agentLlmInstanceId, controlledConversationId, runAssistantTurn],
+  );
+
+  const submitForm = useCallback(
+    async (
+      values: Record<string, string>,
+      overrides?: SendOverrides,
+    ): Promise<TurChatFormSubmitResponse | null> => {
+      if (!siteName) {
+        setError("submitForm requires site mode (the form-submit endpoint is site-scoped)");
+        setStatus("error");
+        return null;
+      }
+      const cid = conversationIdRef.current;
+      if (!cid) return null;
+
+      const pendingForm = activeForm;
+      const requestId = ++requestRef.current;
+      abortedRef.current = false;
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      setError(null);
+      setStatus("loading");
+
+      // Consume the pending form: clear it from state and from the assistant
+      // message that carried it so the inputs disappear immediately.
+      setActiveForm(null);
+      setMessages((prev) => prev.map((m) => (m.form ? { ...m, form: undefined } : m)));
+
+      let result: TurChatFormSubmitResponse | null = null;
       try {
-        const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        }));
-
-        // Token-by-token streaming. The backend (TurAgentChatExecutor STREAM
-        // mode, when the bound agent has chatMode=STREAM AND no flow context
-        // governs the turn) emits one SSE `token` event per LLM delta — the
-        // SDK's consumeAssistantStream forwards each to `onToken`. We
-        // pre-commit an empty assistant bubble so React can render the typing
-        // animation immediately, then patch it in place as tokens arrive.
-        //
-        // On flow-driven turns the backend silently downshifts to CALL mode
-        // (one big chunk at the end) — same code path here still works, the
-        // bubble just fills in one beat instead of streaming.
-        const assistantId = newId();
-        const assistantMsgInitial: ChatMessage = {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-          timestamp: Date.now(),
-        };
-        const streamingHistory = [...messagesRef.current, assistantMsgInitial];
-        const initialWithReply =
-          streamingHistory.length > maxMessages
-            ? streamingHistory.slice(-maxMessages)
-            : streamingHistory;
-        messagesRef.current = initialWithReply;
-        setMessages(initialWithReply);
-        // status="success" right after the first token so callers gating on
-        // `isStreaming` (status==="loading") can render the typing UI until
-        // tokens start arriving — and a non-streaming backend keeps showing
-        // "loading" until the single final chunk lands.
-        const onToken = (token: string) => {
-          if (requestId !== requestRef.current || abortedRef.current) return;
-          // Functional update so we don't trip on stale closure capture of
-          // messages. The ref stays in sync via the useEffect on line 288.
-          setMessages((prev) => patchMessage(prev, assistantId,
-              (m) => ({ ...m, content: m.content + token })));
-        };
-
-        const res = agentId && effectiveLlmInstanceId
-          ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              signal: controller.signal,
-            })
-          : await postChatConversation(siteName, wire, effectiveLocale, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              signal: controller.signal,
-            });
-
-        if (requestId !== requestRef.current || abortedRef.current) return;
-
-        // Replace the streamed bubble with the authoritative server response.
-        // For STREAM mode this is functionally identical to what onToken
-        // already accumulated (`res.content === aggregated tokens`); for
-        // CALL mode this is the first time the bubble gets text. Either way
-        // we also attach `options` (chip suggestions) which onToken can't
-        // carry — they arrive on a separate SSE event.
-        const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
-        setMessages((prev) => patchMessage(prev, assistantId, (m) => ({
-          ...m,
-          content: res?.content ?? m.content,
-          options: finalOptions,
-        })));
-        setStatus("success");
+        result = await postSiteFormSubmit(siteName, cid, values, pendingForm?.nodeId);
       } catch (err) {
         handleSendError(err, requestId);
+        return null;
       }
+      if (requestId !== requestRef.current || abortedRef.current) return result;
+
+      const effectiveLlmInstanceId =
+        overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
+      const wire: TurChatConversationMessage[] = messagesRef.current.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      await runAssistantTurn(wire, requestId, controller, cid, effectiveLlmInstanceId);
+      return result;
     },
-    [siteName, effectiveLocale, maxMessages, flowId, forcedVariant, agentId, agentLlmInstanceId, controlledConversationId, handleSendError],
+    [siteName, agentId, agentLlmInstanceId, activeForm, handleSendError, runAssistantTurn],
   );
 
   const stop = useCallback(() => {
@@ -642,6 +731,7 @@ export function useTuringChat(
     setMessages([]);
     setError(null);
     setStatus("idle");
+    setActiveForm(null);
     // Reset clears local history but never touches TUR_SESSION — the cookie
     // identifies the visitor across reloads, so the conversationId stays the
     // same. Server-side flow state should be cleared via `resetFlow()`.
@@ -677,6 +767,8 @@ export function useTuringChat(
     isStreaming: status === "loading",
     conversationId,
     send,
+    activeForm,
+    submitForm,
     stop,
     reset,
     resetFlow,

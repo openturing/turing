@@ -9,7 +9,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { FlowNodeData } from "../types";
+import type { FlowFormField, FlowNodeData } from "../types";
 
 /**
  * T95 / §VII.11.e — Live preview of a single node.
@@ -209,20 +209,28 @@ function NodeRendering({
         </SystemBubble>
       );
     case "aiQuestion":
-    case "formCapture":
+    case "formCapture": {
+      // T107 — a formCapture node with declared fields renders as a native
+      // multi-field form instead of a single free-text turn.
+      const formFields = data.type === "formCapture" ? (data.formFields ?? []) : [];
       return (
         <>
           <BotBubble>{interpolate(data.aiInstruction || data.label)}</BotBubble>
           {data.inlineOptions && data.inlineOptions.length > 0 && (
             <OptionsRow options={data.inlineOptions} />
           )}
-          <UserPlaceholder
-            outputVariable={data.outputVariable}
-            validationRule={data.validationRule}
-            t={t}
-          />
+          {formFields.length > 0 ? (
+            <FormPreview fields={formFields} t={t} />
+          ) : (
+            <UserPlaceholder
+              outputVariable={data.outputVariable}
+              validationRule={data.validationRule}
+              t={t}
+            />
+          )}
         </>
       );
+    }
     case "condition": {
       const expr = data.conditionExpression || "(no expression)";
       return (
@@ -436,6 +444,58 @@ function UserPlaceholder({
           <code className="font-mono">{validationRule}</code>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * T107 — renders a {@code formCapture} node's declared fields as a native
+ * multi-field form, the way the SDK would surface the `"form"` SSE event.
+ */
+function FormPreview({
+  fields,
+  t,
+}: Readonly<{
+  fields: FlowFormField[];
+  t: (key: string, options?: Record<string, unknown>) => string;
+}>) {
+  return (
+    <div className="max-w-[90%] self-end rounded-lg border border-indigo-300 bg-background p-3 dark:border-indigo-800">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+        {t("chatFlow.livePreview.form", { defaultValue: "native form" })}
+      </div>
+      <div className="flex flex-col gap-2">
+        {fields.map((field, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <div key={idx} className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-medium text-foreground">
+              {field.label || field.name || `field ${idx + 1}`}
+              {field.required !== false && <span className="ml-0.5 text-rose-500">*</span>}
+            </span>
+            {field.type === "select" ? (
+              <div className="flex flex-wrap gap-1">
+                {(field.options ?? []).map((opt) => (
+                  <span
+                    key={opt}
+                    className="rounded border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px]"
+                  >
+                    {opt}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded border border-dashed border-border/60 bg-background/50 px-2 py-1 text-[11px] italic text-muted-foreground">
+                {field.placeholder ||
+                  t("chatFlow.livePreview.formInput", {
+                    defaultValue: "{{type}} input",
+                    type: field.type || "text",
+                  })}
+              </div>
+            )}
+            <code className="text-[10px] font-mono text-muted-foreground">→ {field.name}</code>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

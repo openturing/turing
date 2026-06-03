@@ -388,7 +388,7 @@ const NODE_DATA_KEYS_BY_TYPE: Record<NodeType, readonly string[]> = {
     "toolsEnabled",
     "requiredTools",
   ],
-  formCapture: ["aiInstruction", "outputVariable", "validationRule"],
+  formCapture: ["aiInstruction", "outputVariable", "validationRule", "formFields"],
   condition: ["conditionExpression"],
   functionCall: [
     "toolSource",

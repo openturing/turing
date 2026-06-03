@@ -670,6 +670,86 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * T107 — outcome of a {@link #submitForm} call. {@code fieldsWritten} is
+     * the number of form fields persisted as slots; {@code advancedStates} is
+     * the number of chat-flow state rows that were parked on the now-satisfied
+     * native {@code formCapture} node and walked past it; {@code currentNodeId}
+     * is the cursor of the (first) state after the walk — the node the next
+     * chat turn will render.
+     *
+     * @since 2026.3.1
+     */
+    public record FormSubmitResult(int fieldsWritten, int advancedStates, String currentNodeId) {
+    }
+
+    /**
+     * T107 / §VII.13.d — apply a native multi-field {@code formCapture}
+     * submission. Each entry of {@code values} is written to its named slot
+     * (audit source {@code NODE}, origin {@code "formCapture"}); then every
+     * chat-flow state for the conversation whose cursor sits on a native
+     * {@code formCapture} node that is now {@link ChatFlowOps#isNativeFormSatisfied
+     * satisfied} is advanced past it (transparent walk included), so the next
+     * chat turn lands on the following node without re-asking the form
+     * field-by-field.
+     *
+     * <p>Idempotent and lenient: a blank field name is skipped; a state parked
+     * on a node that is not a satisfied native form is left untouched (its
+     * cursor is still reported so the caller can decide whether to continue
+     * the conversation).
+     *
+     * @since 2026.3.1
+     */
+    @Transactional
+    public FormSubmitResult submitForm(String conversationId, Map<String, String> values) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return new FormSubmitResult(0, 0, null);
+        }
+        int fieldsWritten = 0;
+        if (values != null) {
+            for (Map.Entry<String, String> e : values.entrySet()) {
+                if (e.getKey() == null || e.getKey().isBlank()) {
+                    continue;
+                }
+                writeSlot(conversationId, e.getKey(), e.getValue(),
+                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.NODE,
+                        "formCapture");
+                fieldsWritten++;
+            }
+        }
+        // Re-read after the writes so readVariables() sees the fresh slots.
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        int advanced = 0;
+        String currentNodeId = null;
+        for (TurChatFlowState state : states) {
+            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+            if (graph == null) {
+                continue;
+            }
+            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty()) {
+                currentNodeId = currentNodeId == null ? state.getCurrentNodeId() : currentNodeId;
+                continue;
+            }
+            ChatFlowNode current = currentOpt.get();
+            Map<String, String> vars = ChatFlowOps.readVariables(state);
+            if (ChatFlowOps.isNativeForm(current)
+                    && ChatFlowOps.isNativeFormSatisfied(current, vars)) {
+                log.info("[FlowEngine] form-submit: conv='{}' walking past satisfied form node '{}'",
+                        conversationId, state.getCurrentNodeId());
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                TurChatFlowState leaf = walkTransparentNodes(state, null);
+                if (leaf != state) {
+                    state = stateRepository.save(leaf);
+                }
+                advanced++;
+            }
+            currentNodeId = state.getCurrentNodeId();
+        }
+        return new FormSubmitResult(fieldsWritten, advanced, currentNodeId);
+    }
+
+    /**
      * T121 — returns true when any state attached to {@code conversationId}
      * is currently parked at a {@code suspend} node. The chat executor
      * checks this to short-circuit the LLM call and reply with a parked

@@ -347,10 +347,15 @@ public class TurChatStreamingDispatcher {
             // Emitted as a separate SSE event AFTER the assistant text so the UI
             // can render the chips below the freshly-rendered bubble.
             List<String> suggestedOptions = List.of();
+            // T107 — when the turn parks on a native multi-field formCapture
+            // node, emit a structured "form" SSE event so the SDK renders a
+            // native form instead of single-turn validation.
+            String formJson = null;
             if (flowContext != null && newState != null) {
                 ChatFlowGraph graph = flowContext.graph();
                 ChatFlowNode current = graph.nodeById(newState.getCurrentNodeId()).orElse(null);
                 suggestedOptions = ChatFlowOps.suggestedOptions(graph, current);
+                formJson = buildFormJson(current);
             }
             long tTotal = System.currentTimeMillis() - tStart;
             // Post = total - setup - llm_call. Captures the time AFTER the LLM
@@ -365,7 +370,7 @@ public class TurChatStreamingDispatcher {
             log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={} regen_ms={})",
                     tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
                     tAdvanceMs, tRegenMs);
-            return new AssistantTurn(text, suggestedOptions);
+            return new AssistantTurn(text, suggestedOptions, formJson);
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
@@ -410,34 +415,74 @@ public class TurChatStreamingDispatcher {
     }
 
     /**
-     * Single assistant turn: the final text plus any chips that should appear underneath.
-     * Internal record — never crosses the controller boundary; {@link #emitTurn(AssistantTurn)}
-     * fans it out into one or two {@link ChatResponse} events.
+     * Single assistant turn: the final text, any chips that should appear
+     * underneath, and an optional pre-serialized {@code "form"} payload (T107)
+     * when the turn parks on a native multi-field {@code formCapture} node.
+     * Internal record — never crosses the controller boundary;
+     * {@link #emitTurn(AssistantTurn)} fans it out into one to three
+     * {@link ChatResponse} events.
      */
-    private record AssistantTurn(String text, List<String> options) {
+    private record AssistantTurn(String text, List<String> options, String formJson) {
     }
 
     /**
-     * Fans an {@link AssistantTurn} out into the SSE stream: always one {@code "token"} event
-     * with the text (when non-empty), optionally followed by one {@code "options"} event whose
-     * {@code content} is the JSON-encoded chip labels.
+     * Fans an {@link AssistantTurn} out into the SSE stream: always one
+     * {@code "token"} event with the text (when non-empty), optionally
+     * followed by one {@code "options"} event whose {@code content} is the
+     * JSON-encoded chip labels, and optionally one {@code "form"} event whose
+     * {@code content} is the JSON-encoded form schema (T107). The form event
+     * is emitted last so the SDK can render the form below the freshly-shown
+     * assistant bubble and chips.
      */
     private static Flux<ChatResponse> emitTurn(AssistantTurn turn) {
-        Flux<ChatResponse> assistantText = turn.text() == null || turn.text().isEmpty()
+        Flux<ChatResponse> events = turn.text() == null || turn.text().isEmpty()
                 ? Flux.empty()
                 : Flux.just(new ChatResponse("assistant", turn.text()));
-        if (turn.options() == null || turn.options().isEmpty()) {
-            return assistantText;
+        if (turn.options() != null && !turn.options().isEmpty()) {
+            try {
+                String optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());
+                events = events.concatWith(
+                        Flux.just(new ChatResponse("assistant", optionsJson, "options")));
+            } catch (JacksonException e) {
+                log.warn("[AgentExec] could not serialize {} suggested option(s): {}",
+                        turn.options().size(), e.getMessage());
+            }
         }
-        String optionsJson;
+        if (turn.formJson() != null && !turn.formJson().isBlank()) {
+            events = events.concatWith(
+                    Flux.just(new ChatResponse("assistant", turn.formJson(), "form")));
+        }
+        return events;
+    }
+
+    /**
+     * Builds the JSON payload for a {@code "form"} SSE event when {@code node}
+     * is a native multi-field {@code formCapture} (T107), else returns
+     * {@code null}. The shape mirrors what the SDK expects:
+     * {@code {nodeId, title, submitLabel, fields:[{name,label,type,required,placeholder,validationRule,options}]}}.
+     */
+    private static String buildFormJson(ChatFlowNode node) {
+        if (!ChatFlowOps.isNativeForm(node)) {
+            return null;
+        }
+        String title = node.aiInstruction() != null && !node.aiInstruction().isBlank()
+                ? node.aiInstruction()
+                : node.label();
+        FormPrompt prompt = new FormPrompt(node.id(), title, node.formFields());
         try {
-            optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());
+            return OBJECT_MAPPER.writeValueAsString(prompt);
         } catch (JacksonException e) {
-            log.warn("[AgentExec] could not serialize {} suggested option(s): {}",
-                    turn.options().size(), e.getMessage());
-            return assistantText;
+            log.warn("[AgentExec] could not serialize form schema for node '{}': {}",
+                    node.id(), e.getMessage());
+            return null;
         }
-        return assistantText.concatWith(
-                Flux.just(new ChatResponse("assistant", optionsJson, "options")));
+    }
+
+    /**
+     * Wire shape of the {@code "form"} SSE event (T107). {@code fields} reuses
+     * the engine's {@link ChatFlowNode.FormField} record verbatim.
+     */
+    private record FormPrompt(String nodeId, String title,
+            List<ChatFlowNode.FormField> fields) {
     }
 }

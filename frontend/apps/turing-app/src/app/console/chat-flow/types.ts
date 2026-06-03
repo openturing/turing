@@ -241,6 +241,37 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   nodeVariants?: FlowNodeVariant[];
+  /**
+   * T107 — declared fields of a `formCapture` node rendered as a NATIVE
+   * multi-field form by the SDK. When present, the engine emits a structured
+   * `"form"` SSE event with these fields and the node is satisfied once every
+   * required field's slot is filled (instead of a single-turn capture into
+   * {@link outputVariable}). Omit for the legacy single-field behavior.
+   * @since 2026.3.1
+   */
+  formFields?: FlowFormField[];
+}
+
+/**
+ * One field of a `formCapture` node's native multi-field form (T107). Mirrors
+ * the backend `ChatFlowNode.FormField` record; each field maps to one slot.
+ * @since 2026.3.1
+ */
+export interface FlowFormField {
+  /** Slot the captured value is written to. */
+  name: string;
+  /** Human-readable label rendered above the input. */
+  label?: string;
+  /** Widget hint: text | email | tel | number | date | textarea | select. */
+  type?: string;
+  /** When false, the field is optional and does not block submission. */
+  required?: boolean;
+  /** Optional input placeholder text. */
+  placeholder?: string;
+  /** Validation-rule hint (email, phone, cpf, …) for client-side checks. */
+  validationRule?: string;
+  /** Choice labels for a `select` field; ignored for other types. */
+  options?: string[];
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
