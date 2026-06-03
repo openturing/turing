@@ -53,6 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
 
     private static final String FIELD_SENTIMENT_TRAJECTORY = "sentimentTrajectory";
+    private static final String FIELD_TOOL_LATENCIES = "toolLatencies";
 
     private final MongoClient client;
     private final String databaseName;
@@ -115,6 +116,18 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             putIfNotBlank(set, "variantLabel", event.variantLabel());
             // T110 — child-session linkage written once on start, preserved on end.
             putIfNotBlank(set, "parentConversationId", event.parentConversationId());
+            // T88 — raw per-tool latency samples; only written when present (the
+            // end record), so a re-upsert never wipes a populated array with the
+            // empty start one.
+            if (event.toolLatencies() != null && !event.toolLatencies().isEmpty()) {
+                List<Document> samples = new ArrayList<>(event.toolLatencies().size());
+                for (TurToolLatencySample s : event.toolLatencies()) {
+                    samples.add(new Document("tool", s.tool())
+                            .append("latencyMs", s.latencyMs())
+                            .append("success", s.success()));
+                }
+                set.add(Updates.set(FIELD_TOOL_LATENCIES, samples));
+            }
             set.add(Updates.set("durationMs", event.durationMs()));
             set.add(Updates.set("updatedAt", new Date()));
             if (event.completedAt() != null) {
@@ -435,6 +448,38 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             return result;
         } catch (Exception e) {
             log.warn("Chat analytics scorecard({}) failed: {}", dimension, e.getMessage());
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> toolLatency(Instant from, Instant to, String agentId, int maxTools) {
+        try {
+            List<Bson> filters = new ArrayList<>();
+            filters.add(Filters.gte("startedAt", Date.from(from)));
+            filters.add(Filters.lte("startedAt", Date.from(to)));
+            if (StringUtils.isNotBlank(agentId)) filters.add(Filters.eq("agentId", agentId));
+            // Only sessions that actually captured samples carry the array;
+            // skip the rest server-side so the in-process pool stays small.
+            filters.add(Filters.exists(FIELD_TOOL_LATENCIES, true));
+
+            FindIterable<Document> cursor = collection()
+                    .find(Filters.and(filters))
+                    .projection(new Document(FIELD_TOOL_LATENCIES, 1));
+
+            TurToolLatencyAccumulator acc = new TurToolLatencyAccumulator();
+            for (Document doc : cursor) {
+                List<Document> samples = doc.getList(FIELD_TOOL_LATENCIES, Document.class);
+                if (samples == null) continue;
+                for (Document s : samples) {
+                    acc.add(s.getString("tool"),
+                            numberAsLong(s.get("latencyMs")),
+                            Boolean.TRUE.equals(s.getBoolean("success")));
+                }
+            }
+            return acc.toRows(maxTools);
+        } catch (Exception e) {
+            log.warn("Chat analytics toolLatency failed: {}", e.getMessage());
             return List.of();
         }
     }

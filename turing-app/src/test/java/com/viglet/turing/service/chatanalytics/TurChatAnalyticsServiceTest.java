@@ -126,6 +126,40 @@ class TurChatAnalyticsServiceTest {
     }
 
     @Test
+    void startFactory_initializesToolLatenciesToEmptyList() {
+        // T88 — the start record never carries samples; they accrue at end.
+        TurChatSessionEvent event = TurChatSessionEvent.start(
+                "conv-1", "agent-1", null, "llm-1", null, null,
+                "user-1", "pt-BR", "Hello", Instant.now());
+        assertThat(event.toolLatencies()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void compactCtor_normalizesNullToolLatenciesToEmptyList() {
+        // T88 — a null array (e.g. legacy callers) must not blow up consumers.
+        TurChatSessionEvent event = new TurChatSessionEvent(
+                "conv-1", "agent-1", null, "llm-1", null, null, "user-1", "pt-BR",
+                null, Instant.now(), Instant.now(), TurChatSessionOutcome.COMPLETED,
+                3, 100L, 200L, 1500L, 2, 0, 80L, null, null, null, null, null, null);
+        assertThat(event.toolLatencies()).isNotNull().isEmpty();
+    }
+
+    @Test
+    void compactCtor_copiesProvidedToolLatencies() {
+        // T88 — supplied samples are preserved (defensively copied).
+        TurChatSessionEvent event = new TurChatSessionEvent(
+                "conv-1", "agent-1", null, "llm-1", null, null, "user-1", "pt-BR",
+                null, Instant.now(), Instant.now(), TurChatSessionOutcome.COMPLETED,
+                3, 100L, 200L, 1500L, 2, 0, 80L, null, null, null, null, null,
+                java.util.List.of(
+                        new TurToolLatencySample("search_site", 40, true),
+                        new TurToolLatencySample("code_exec", 1200, false)));
+        assertThat(event.toolLatencies()).hasSize(2);
+        assertThat(event.toolLatencies().get(0).tool()).isEqualTo("search_site");
+        assertThat(event.toolLatencies().get(1).success()).isFalse();
+    }
+
+    @Test
     void startFactory_cohortOverload_threadsTimezoneAndDeviceThrough() {
         Instant now = Instant.now();
         TurChatSessionEvent event = TurChatSessionEvent.start(

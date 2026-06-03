@@ -246,6 +246,29 @@ public class TurChatAnalyticsAPI {
     }
 
     /**
+     * T88 / §VII.10.e — per-tool latency percentiles over the time window, one
+     * row per distinct tool sorted by p95 descending. Surfaces "<i>which</i>
+     * tool is the p95 outlier?" — the {@code avg_tool_latency_ms} timeseries
+     * metric only exposes a session-wide average across every tool, hiding a
+     * single slow tool. Each row carries {@code tool}, {@code count},
+     * {@code errors}, {@code errorRatePct}, {@code avgMs}, {@code minMs},
+     * {@code p50Ms}, {@code p95Ms}, {@code p99Ms}, {@code maxMs}. Optional
+     * {@code agentId} narrows to one agent's tool mix.
+     *
+     * @since 2026.3.1
+     */
+    @GetMapping(value = "/tool-latency", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Map<String, Object>> toolLatency(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String agentId,
+            @RequestParam(defaultValue = "50") int limit) {
+        Instant fromInstant = parseInstant(from, defaultFrom());
+        Instant toInstant   = parseInstant(to,   defaultTo());
+        return analyticsService.getStore().toolLatency(fromInstant, toInstant, agentId, limit);
+    }
+
+    /**
      * Scorecard grouped by a categorical dimension — same metric columns
      * (sessions, goal-achievement rate, negative+frustrated sentiment rate,
      * avg duration, top intent), pivoted by {@code dimension}:

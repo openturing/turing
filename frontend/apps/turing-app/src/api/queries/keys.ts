@@ -169,5 +169,7 @@ export const queryKeys = {
       [...queryKeys.chatAnalytics.all(), 'timeseries', params] as const,
     scorecard: (params: Record<string, unknown>) =>
       [...queryKeys.chatAnalytics.all(), 'scorecard', params] as const,
+    toolLatency: (params: Record<string, unknown>) =>
+      [...queryKeys.chatAnalytics.all(), 'tool-latency', params] as const,
   },
 } as const;

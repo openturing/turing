@@ -52,6 +52,7 @@ import redis.clients.jedis.JedisPoolConfig;
 public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
     private static final String FIELD_SENTIMENT_TRAJECTORY = "sentimentTrajectory";
+    private static final String FIELD_TOOL_LATENCIES = "toolLatencies";
 
     private final JedisPool pool;
     private final String keyPrefix;
@@ -100,6 +101,11 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             putIfNotBlank(fields, "variantLabel",  event.variantLabel());
             // T110 — child-session linkage; written once on start, preserved on end.
             putIfNotBlank(fields, "parentConversationId", event.parentConversationId());
+            // T88 — raw per-tool latency samples, delimited string; only written
+            // when present (end record) so the empty start record can't clobber it.
+            if (event.toolLatencies() != null && !event.toolLatencies().isEmpty()) {
+                fields.put(FIELD_TOOL_LATENCIES, encodeToolLatencies(event.toolLatencies()));
+            }
             fields.put("durationMs",         String.valueOf(event.durationMs()));
             fields.put("updatedAt",      Instant.now().toString());
             if (event.completedAt() != null) {
@@ -359,6 +365,28 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     @Override
+    public List<Map<String, Object>> toolLatency(Instant from, Instant to, String agentId, int maxTools) {
+        TurToolLatencyAccumulator acc = new TurToolLatencyAccumulator();
+        try (Jedis jedis = pool.getResource()) {
+            List<String> ids = jedis.zrangeByScore(byTimeKey(),
+                    String.valueOf(from.toEpochMilli()),
+                    String.valueOf(to.toEpochMilli()));
+            for (String id : ids) {
+                Map<String, String> hash = jedis.hgetAll(sessionKey(id));
+                if (hash.isEmpty()) continue;
+                if (StringUtils.isNotBlank(agentId) && !agentId.equals(hash.get("agentId"))) continue;
+                String encoded = hash.get(FIELD_TOOL_LATENCIES);
+                if (StringUtils.isBlank(encoded)) continue;
+                decodeToolLatenciesInto(encoded, acc);
+            }
+        } catch (Exception e) {
+            log.warn("Chat analytics toolLatency(Redis) failed: {}", e.getMessage());
+            return List.of();
+        }
+        return acc.toRows(maxTools);
+    }
+
+    @Override
     @SuppressWarnings("java:S1168") // null = not found, distinct from empty map
     public Map<String, Object> findSessionById(String conversationId) {
         if (conversationId == null || conversationId.isBlank()) return null;
@@ -410,6 +438,44 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
     private static void putIfNotBlank(Map<String, String> map, String key, String value) {
         if (StringUtils.isNotBlank(value)) map.put(key, value);
+    }
+
+    /**
+     * T88 — encodes the per-tool latency samples as a compact delimited string
+     * (same family as the {@code keyTerms} CSV idiom, but a triple per entry):
+     * {@code tool|latencyMs|s} joined by {@code ;}, where {@code s} is
+     * {@code 1}/{@code 0} for success/failure. Tool names have the two
+     * delimiters stripped so a pathological name can't corrupt the framing
+     * (Spring AI tool names are {@code [A-Za-z0-9_-]} in practice).
+     */
+    private static String encodeToolLatencies(List<TurToolLatencySample> samples) {
+        StringBuilder sb = new StringBuilder();
+        for (TurToolLatencySample s : samples) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(s.tool().replace(';', '_').replace('|', '_'))
+              .append('|').append(s.latencyMs())
+              .append('|').append(s.success() ? '1' : '0');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Inverse of {@link #encodeToolLatencies} — folds each well-formed triple
+     * into the accumulator. Malformed entries (wrong arity, non-numeric
+     * latency) are skipped leniently so one corrupt row can't sink the whole
+     * window.
+     */
+    private static void decodeToolLatenciesInto(String encoded, TurToolLatencyAccumulator acc) {
+        for (String token : encoded.split(";")) {
+            if (token.isBlank()) continue;
+            String[] parts = token.split("\\|", 3);
+            if (parts.length != 3) continue;
+            try {
+                acc.add(parts[0], Long.parseLong(parts[1].trim()), "1".equals(parts[2].trim()));
+            } catch (NumberFormatException ignored) {
+                // skip a corrupt sample, keep the rest
+            }
+        }
     }
 
     /**

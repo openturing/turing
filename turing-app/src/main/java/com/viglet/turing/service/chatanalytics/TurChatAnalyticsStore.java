@@ -152,6 +152,31 @@ public interface TurChatAnalyticsStore {
             Map<String, String> filters, int maxRows);
 
     /**
+     * T88 / §VII.10.e — per-tool latency percentiles over {@code [from, to]},
+     * one row per distinct tool, sorted by p95 descending so the outlier floats
+     * to the top. Answers "<i>which</i> tool is the p95 outlier?" — the
+     * session-level {@code avg_tool_latency_ms} only exposes an average across
+     * every tool, hiding a single slow tool behind a sea of fast ones.
+     *
+     * <p>Computed by pooling the raw {@link TurToolLatencySample}s the store
+     * persisted per session ({@link TurChatSessionEvent#toolLatencies()}) and
+     * running {@link TurToolLatencyAccumulator} over them — both backends share
+     * the same percentile math so Mongo and Redis agree to the millisecond.
+     * Percentiles aren't composable from per-session sums, hence the raw
+     * samples rather than a re-aggregation of {@code totalToolLatencyMs}.
+     *
+     * <p>Each row carries: {@code tool}, {@code count}, {@code errors},
+     * {@code errorRatePct} (0-100), {@code avgMs}, {@code minMs}, {@code p50Ms},
+     * {@code p95Ms}, {@code p99Ms}, {@code maxMs}.
+     *
+     * @param from     window start (inclusive), matched on {@code startedAt}
+     * @param to       window end (inclusive)
+     * @param agentId  optional agent filter; null/blank means deployment-wide
+     * @param maxTools cap on returned rows (the top-N by p95), 1-200
+     */
+    List<Map<String, Object>> toolLatency(Instant from, Instant to, String agentId, int maxTools);
+
+    /**
      * Returns a single session document keyed by {@code conversationId}, or
      * {@code null} if not found. Same column shape as
      * {@link #findRecentSessions} so callers can render with the same mapper.

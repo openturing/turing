@@ -441,7 +441,7 @@ acting.
 | T85 | ✅ | T84 | **Funnel visualization (V1)** — backend service + REST + sidebar panel. **Pragmatic scope**: without a per-turn node visit log (would need a new `chat_node_visit` table), the funnel reports what existing tables already track — `chat_flow_state.currentNodeId` ("currently parked here") + `chat_flow_submission.endNodeId` ("ended here"). Drop-off is read visually by comparing the cursor counts of consecutive interactive nodes in graph order; a full path-aware funnel is tracked as a T85 follow-up. New `TurChatFlowFunnelService.computeFunnel(flowId)` returns `FunnelReport(flowId, flowName, totalStates, totalSubmissions, abandonedAtFlow, List<FunnelNode>)`. FunnelNode = `(nodeId, label, type, cursorCount, completedCount, abandonedCount)`. Transparent nodes (`start`/`condition`/`switch`/`persona`/`subFlow`/`subFlowSwitch`/`writeSlot`/`functionCall`/`scheduleAgent`) are excluded so the funnel reads as user-facing steps only. New repository methods `TurChatFlowStateRepository.countByCurrentNodeForFlow(flowId)` + `TurChatFlowSubmissionRepository.countByEndNodeForFlow(flowId)` use `@Query` JPQL aggregations (group-by node id) — single round-trip per call, no per-row scan. REST: new `GET /api/ai-agent/{agentId}/chat-flow/{id}/funnel` on `TurChatFlowAPI` (secured `ROLE_ADMIN`/`AI_AGENT_VIEW`), 404 when the flow id is unknown / doesn't belong to the agent in the path. **Frontend**: new `TurChatFlowFunnelNode` + `TurChatFlowFunnelReport` models, `funnel(agentId, flowId)` method on `TurChatFlowService`, `useChatFlowFunnel` React Query hook (30s `refetchInterval` so an admin tweaking the graph watches the cursor counts shift live), new query key `queryKeys.chatFlows.funnel(...)`. New `ChatFlowFunnelPanel` component renders a vertical stack of nodes inside the editor's settings tab (positioned right under the existing lint panel): each row shows the type badge, label, parked count `●N` (amber) + completed count `✓N` (emerald), and a proportional bar (blue→indigo gradient) sized by `(cursor+completed)/maxCount`. Hidden when no states/submissions are captured yet — keeps a brand-new flow's editor uncluttered. 6 new unit tests (`TurChatFlowFunnelServiceTest`) pin: blank/null flow id returns empty, missing flow returns empty, unparseable graph returns empty, transparent nodes excluded with start/condition stripped + end kept as terminal anchor, empty stats tables return zero counters, malformed count rows (null id / short row / non-numeric count) tolerated. 6/6 green. Backend compile clean; frontend `tsc -b` green. **Learning**: shipping a useful V1 without the proper traversal log buys real value today (operator sees "12 conversations parked on ai-cargo" immediately) and leaves the door open for a future per-turn log to power the full path-aware version without changing the API surface — the report's `abandonedCount` field is already in the wire format ready for the follow-up. | §VII.10.b |
 | T86 | ✅ | T84 | **Conversation replay UI (V1)** — operators click `conversationId` in the scorecard and the existing chat-analytics `DetailPanel` now renders a unified **Replay timeline** card that interleaves chat-memory messages with T60 slot-audit entries by timestamp. Each row carries an absolute time, a source badge (user / assistant / NODE / TOOL / ENDPOINT / EXTRACT) and the payload — for messages the text, for slot writes a `(oldValue → newValue)` delta with `(empty)`/`—` fallbacks. **No new endpoints** — reuses the existing `useChatAnalyticsTranscript` hook for messages and the T60 `useChatSlotAudit` hook (polling disabled in the detail context — historical sessions don't move, no point keeping traffic alive). Sort is stable: timestamps parse to ms-epoch, messages with no timestamp degrade to insertion order at the tail. The pre-T86 standalone transcript card was replaced by the new unified `ReplayTimeline` component. Sheet width bumped from `sm:max-w-2xl` to `sm:max-w-3xl` so the slot delta `pii_enc:v1:...` envelopes don't wrap awkwardly. **Scope-deliberate omission**: no scrubber (yet) — the brief mentioned "scrubber temporal" but events are already chronologically rendered top-to-bottom and the scroll-position-driven discovery covers ~95% of the forensic value. A scrubber that filters events around a target ts is a clean follow-up once V1 reveals which scrub semantics the operators actually want (time-window vs current-turn-focused). Frontend `tsc -b` green. **Learning**: many "UI feature" tickets are really "render existing endpoint data in a new shape" — T60+T86 together took the same conversationId lookup the operator was already running and made the slot-write attribution visually adjacent to the messages that produced it, without any new backend surface. | §VII.10.c |
 | T87 | ✅ | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
-| T88 | 💭 | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
+| T88 | ✅ | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
 | T89 | 💭 | — | Flow router decision logs — structured log per LLM router call: candidate flows + score + winner. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
 | T90 | 💭 | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
 
@@ -2487,6 +2487,55 @@ instead of only the single session-level rollup, so a drill-down can chart
 - **Frontend**: `SentimentTrajectoryChart` in the chat-analytics detail panel
   — a recharts line chart 1..N (POSITIVE +2 … FRUSTRATED −2, zero reference
   line, per-point colored dots). Renders nothing when the trajectory is absent.
+
+#### VII.10.e Tool execution latency p95 per tool (T88)
+Disaggregates the session-level `avg_tool_latency_ms` (a single average across
+*every* tool) into per-tool percentiles, so an operator can answer "*which*
+tool is the p95 outlier?" instead of watching one slow tool hide behind a sea
+of fast ones.
+
+- **Why raw samples**: p95 (any percentile) is **not composable** from
+  per-session sums — `totalToolLatencyMs / totalToolCalls` only ever yields an
+  average. So instead of re-aggregating the existing counter, each tool call's
+  `(tool, latencyMs, success)` is kept as a `TurToolLatencySample` and the
+  dashboard pools them across sessions at query time.
+- **Capture**: `TurLoggingToolCallback` already times every call and routes
+  `recordToolCall(conversationId, toolName, latencyMs, success)` to the
+  analytics service. The previously-discarded `toolName` is now threaded into
+  the `InFlight` bag, which appends a sample (bounded by `MAX_TOOL_SAMPLES =
+  1000` per session — the aggregate counters stay exact past the cap, only
+  percentile fidelity degrades on a runaway session). The samples flush onto
+  the session event at `recordSessionEnd`.
+- **Record**: `TurChatSessionEvent` gains
+  `List<TurToolLatencySample> toolLatencies`; a compact ctor normalizes
+  `null → List.of()` (the T87 `sentimentTrajectory` idiom) and defensively
+  copies. The start factory seeds an empty list — samples only exist at end.
+- **Stores**: Mongo persists an array of `{tool, latencyMs, success}` subdocs
+  (only when non-empty, so a re-upsert can't wipe it with the empty start
+  record); Redis encodes a delimited `tool|latencyMs|s;…` string (same family
+  as the `keyTerms` CSV, leniently decoded). Neither surfaces the array on the
+  session list/detail rows — it would bloat the 100-row listing — only the
+  aggregation reads it (Mongo via a projection, Redis via the hash field).
+- **Shared math**: `TurToolLatencyAccumulator` pools samples by tool and
+  emits one row per tool (`count`, `errors`, `errorRatePct`, `avgMs`, `minMs`,
+  `p50Ms`, `p95Ms`, `p99Ms`, `maxMs`) sorted by p95 descending. Both stores call
+  it, so Mongo and Redis agree to the millisecond. Percentiles use the
+  **nearest-rank** method (`rank = ceil(p/100 · n)`) — exact on the retained
+  samples, no interpolation, trivially testable.
+- **REST**: `GET /api/system/chat-analytics/tool-latency?from=&to=&agentId=&limit=`
+  on `TurChatAnalyticsAPI` (optional `agentId` narrows to one agent's tool mix).
+- **Frontend**: `TurChatAnalyticsToolLatencyRow` model, `toolLatency(...)`
+  service method, `useChatAnalyticsToolLatency` React Query hook + query key,
+  and a `ToolLatencyPanel` (between Trends and Scorecard) — a table sorted by
+  p95 with the outlier (row 1) badged and a proportional blue→indigo bar on the
+  p95 column. Empty state until a session captures a tool call.
+- **Tests**: `TurToolLatencyAccumulatorTest` (8) pins the nearest-rank math,
+  per-tool grouping/avg/error-rate, p95-descending sort, the top-N cap, and the
+  null/blank/negative edge cases; `TurChatAnalyticsServiceTest` gains 3 to pin
+  the `toolLatencies` normalization. 24/24 green; backend compile + frontend
+  `tsc -b` clean. **Learning**: percentiles force a different storage shape than
+  averages — the moment a metric isn't sum-composable, the per-session rollup
+  has to keep the raw distribution, not a counter.
 
 #### VII.13.a SDK hooks (T104)
 `@viglet/turing-react-sdk` 2026.2.21 → .29 shipped 10 hooks:

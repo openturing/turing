@@ -7,6 +7,8 @@ import type {
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
   TurChatAnalyticsTimeseriesPoint,
+  TurChatAnalyticsToolLatencyParams,
+  TurChatAnalyticsToolLatencyRow,
   TurChatAnalyticsTranscript,
 } from '@/models/chat-analytics/chat-analytics.model';
 import { TurChatAnalyticsService } from '@/services/chat-analytics/chat-analytics.service';
@@ -41,6 +43,13 @@ export function useChatAnalyticsScorecard(params: TurChatAnalyticsScorecardParam
   return useQuery<TurChatAnalyticsScorecardRow[]>({
     queryKey: queryKeys.chatAnalytics.scorecard(params as Record<string, unknown>),
     queryFn: () => service.scorecard(params),
+  });
+}
+
+export function useChatAnalyticsToolLatency(params: TurChatAnalyticsToolLatencyParams = {}) {
+  return useQuery<TurChatAnalyticsToolLatencyRow[]>({
+    queryKey: queryKeys.chatAnalytics.toolLatency(params as Record<string, unknown>),
+    queryFn: () => service.toolLatency(params),
   });
 }
 

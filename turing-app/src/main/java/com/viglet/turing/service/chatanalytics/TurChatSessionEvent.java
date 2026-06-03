@@ -17,6 +17,7 @@
 package com.viglet.turing.service.chatanalytics;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Snapshot of one chat conversation persisted by {@link TurChatAnalyticsStore}.
@@ -107,7 +108,30 @@ public record TurChatSessionEvent(
          *
          * @since 2026.3.1 (T74)
          */
-        String deviceType) {
+        String deviceType,
+        /**
+         * Raw per-tool-call latency samples captured during the session, one
+         * entry per invocation ({@code (tool, latencyMs, success)}). Empty on
+         * the start record and for sessions that never called a tool. Backs the
+         * T88 per-tool p95 view: the session-level {@link #totalToolLatencyMs}
+         * only yields an <em>average</em>, but p95 isn't composable from sums,
+         * so the individual samples are kept and the dashboard pools them across
+         * sessions at query time. The capture-side cap (see
+         * {@code TurChatAnalyticsService}) bounds this list per session.
+         *
+         * @since 2026.3.1 (T88)
+         */
+        List<TurToolLatencySample> toolLatencies) {
+
+    /**
+     * Compact canonical constructor — normalizes {@code toolLatencies} to an
+     * immutable empty list when {@code null} so the field is never null on the
+     * wire (mirrors the T87 {@code sentimentTrajectory} idiom) and callers can
+     * iterate it without a null guard.
+     */
+    public TurChatSessionEvent {
+        toolLatencies = toolLatencies == null ? List.of() : List.copyOf(toolLatencies);
+    }
 
     /** Builder of the start record (most aggregate fields zeroed/null). */
     public static TurChatSessionEvent start(String conversationId, String agentId,
@@ -151,6 +175,6 @@ public record TurChatSessionEvent(
                 llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
                 firstUserMessage, startedAt, null, TurChatSessionOutcome.IN_PROGRESS,
                 0, 0L, 0L, 0L, 0, 0, 0L, null, null, parentConversationId,
-                timezone, deviceType);
+                timezone, deviceType, List.of());
     }
 }

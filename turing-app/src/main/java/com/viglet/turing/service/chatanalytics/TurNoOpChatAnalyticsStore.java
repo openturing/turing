@@ -80,6 +80,11 @@ public class TurNoOpChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     @Override
+    public List<Map<String, Object>> toolLatency(Instant from, Instant to, String agentId, int maxTools) {
+        return Collections.emptyList();
+    }
+
+    @Override
     public Map<String, Object> findSessionById(String conversationId) {
         return null;
     }

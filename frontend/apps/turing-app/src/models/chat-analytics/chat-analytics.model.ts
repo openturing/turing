@@ -211,3 +211,39 @@ export interface TurChatAnalyticsCohortColumns {
   timezone?: string | null;
   deviceType?: TurChatDeviceType | string | null;
 }
+
+/**
+ * One row of the {@code /system/chat-analytics/tool-latency} response (T88).
+ * Per-tool latency percentiles pooled across every session in the window,
+ * sorted by {@link p95Ms} descending so the outlier is first. Disaggregates
+ * the session-level {@code avg_tool_latency_ms} timeseries metric — that one
+ * averages across all tools and hides a single slow tool.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatAnalyticsToolLatencyRow {
+  /** Sanitized tool name (Spring AI {@code ToolDefinition.name()}); "unknown" when blank. */
+  tool: string;
+  /** Total invocations of this tool in the window. */
+  count: number;
+  /** Subset of {@link count} that threw or returned an error envelope. */
+  errors: number;
+  /** errors / count × 100 (0-100). */
+  errorRatePct: number;
+  avgMs: number;
+  minMs: number;
+  p50Ms: number;
+  /** The headline T88 number — the p95 latency for this tool. */
+  p95Ms: number;
+  p99Ms: number;
+  maxMs: number;
+}
+
+export interface TurChatAnalyticsToolLatencyParams {
+  from?: string;
+  to?: string;
+  /** Optional — narrow to one agent's tool mix. */
+  agentId?: string;
+  /** Top-N tools by p95. Defaults to 50 on the server, capped at 200. */
+  limit?: number;
+}

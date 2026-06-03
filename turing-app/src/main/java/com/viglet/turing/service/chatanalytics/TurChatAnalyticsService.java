@@ -18,6 +18,7 @@ package com.viglet.turing.service.chatanalytics;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -245,7 +246,7 @@ public class TurChatAnalyticsService {
         if (conversationId == null || conversationId.isBlank()) return;
         InFlight inflight = inFlight.get(conversationId);
         if (inflight == null) return;
-        inflight.recordToolCall(latencyMs, success);
+        inflight.recordToolCall(toolName, latencyMs, success);
         log.debug("[ChatAnalytics] tool '{}' conv={} latencyMs={} success={}",
                 toolName, conversationId, latencyMs, success);
     }
@@ -350,7 +351,8 @@ public class TurChatAnalyticsService {
                     inflight == null ? null : inflight.variantLabel,
                     inflight == null ? null : inflight.parentConversationId,
                     inflight == null ? null : inflight.timezone,
-                    inflight == null ? null : inflight.deviceType));
+                    inflight == null ? null : inflight.deviceType,
+                    inflight == null ? List.of() : List.copyOf(inflight.toolSamples)));
             if (inflight != null && inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
@@ -399,6 +401,15 @@ public class TurChatAnalyticsService {
         int toolCalls;
         int toolErrors;
         long totalToolLatencyMs;
+        /**
+         * T88 — raw per-tool latency samples for the session, used to compute
+         * disaggregated p95 across sessions at query time. Bounded by
+         * {@link #MAX_TOOL_SAMPLES}: the aggregate counters above stay exact
+         * past the cap (so {@code avg_tool_latency_ms} is unaffected), only the
+         * percentile sample reservoir stops growing. Chat sessions invoke a
+         * handful of tools, so the cap is effectively never hit in practice.
+         */
+        final List<TurToolLatencySample> toolSamples = new java.util.ArrayList<>();
         // Set lazily after the flow router assigns an experiment variant —
         // happens on the FIRST turn that lands on an experimentKey'd flow.
         // Sticky thereafter (a conversation never reflows experiments mid-life).
@@ -429,11 +440,25 @@ public class TurChatAnalyticsService {
             this.lastTouchedAt = Instant.now();
         }
 
-        synchronized void recordToolCall(long latencyMs, boolean success) {
+        synchronized void recordToolCall(String toolName, long latencyMs, boolean success) {
             this.toolCalls += 1;
             if (!success) this.toolErrors += 1;
             this.totalToolLatencyMs += Math.max(0, latencyMs);
+            // T88 — keep the raw sample for per-tool percentiles, bounded so a
+            // pathologically chatty session can't grow the map without limit.
+            if (toolSamples.size() < MAX_TOOL_SAMPLES) {
+                toolSamples.add(new TurToolLatencySample(toolName, latencyMs, success));
+            }
             this.lastTouchedAt = Instant.now();
         }
     }
+
+    /**
+     * Per-session ceiling on retained per-tool latency samples (T88). The
+     * aggregate counters ({@code toolCalls}/{@code toolErrors}/
+     * {@code totalToolLatencyMs}) keep counting past it, so only percentile
+     * fidelity degrades on a runaway session — never the average or the call
+     * count.
+     */
+    private static final int MAX_TOOL_SAMPLES = 1000;
 }

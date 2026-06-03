@@ -7,6 +7,8 @@ import type {
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
   TurChatAnalyticsTimeseriesPoint,
+  TurChatAnalyticsToolLatencyParams,
+  TurChatAnalyticsToolLatencyRow,
   TurChatAnalyticsTranscript,
 } from "@/models/chat-analytics/chat-analytics.model";
 
@@ -58,6 +60,16 @@ export class TurChatAnalyticsService {
   ): Promise<TurChatAnalyticsTimeseriesPoint[]> {
     const response = await axios.get<TurChatAnalyticsTimeseriesPoint[]>(
       "/system/chat-analytics/timeseries",
+      { params },
+    );
+    return response.data ?? [];
+  }
+
+  async toolLatency(
+    params: TurChatAnalyticsToolLatencyParams = {},
+  ): Promise<TurChatAnalyticsToolLatencyRow[]> {
+    const response = await axios.get<TurChatAnalyticsToolLatencyRow[]>(
+      "/system/chat-analytics/tool-latency",
       { params },
     );
     return response.data ?? [];

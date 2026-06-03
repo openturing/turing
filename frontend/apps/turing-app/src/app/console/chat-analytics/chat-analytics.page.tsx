@@ -3,6 +3,7 @@ import {
   useChatAnalyticsScorecard,
   useChatAnalyticsSessions,
   useChatAnalyticsTimeseries,
+  useChatAnalyticsToolLatency,
   useChatAnalyticsTranscript,
 } from "@/api/queries/chat-analytics.queries";
 import { useChatSlotAudit } from "@/api/queries/chat-session.queries";
@@ -36,9 +37,10 @@ import type {
   TurChatAnalyticsMetric,
   TurChatAnalyticsScorecardDimension,
   TurChatAnalyticsSession,
+  TurChatAnalyticsToolLatencyRow,
   TurChatDeviceType,
 } from "@/models/chat-analytics/chat-analytics.model";
-import { IconChartLine, IconFlask, IconMessageOff } from "@tabler/icons-react";
+import { IconChartLine, IconFlask, IconGauge, IconMessageOff } from "@tabler/icons-react";
 import { useState } from "react";
 import {
   CartesianGrid,
@@ -635,6 +637,116 @@ function TimeseriesPanel() {
   );
 }
 
+/**
+ * T88 / §VII.10.e — per-tool latency percentiles. The timeseries
+ * {@code avg_tool_latency_ms} metric collapses every tool into one average,
+ * so a single slow tool hides behind a sea of fast ones. This table
+ * disaggregates: one row per tool, sorted by p95 descending (the outlier is
+ * row 1, accented). A proportional bar on the p95 column makes the outlier
+ * pop visually. Renders an empty state until at least one session has
+ * captured a tool call.
+ */
+function formatLatencyMs(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined || ms <= 0) return "—";
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
+}
+
+function ToolLatencyPanel() {
+  const { data: rows = [], isLoading, isError } = useChatAnalyticsToolLatency({ limit: 50 });
+  const maxP95 = rows.reduce((acc, r) => Math.max(acc, r.p95Ms ?? 0), 0);
+  const hasData = rows.length > 0;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <IconGauge className="size-4" />
+          Tool latency (p95 per tool)
+        </CardTitle>
+        <CardDescription>
+          Latency percentiles disaggregated by tool over the past 7 days — sorted by p95 so the
+          outlier is on top. The trends panel only shows the average across all tools.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <p className="text-muted-foreground py-8 text-center text-sm">Loading…</p>
+        )}
+        {isError && (
+          <p className="text-destructive py-8 text-center text-sm">Failed to load tool latency.</p>
+        )}
+        {!isLoading && !isError && !hasData && (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            No tool calls recorded yet — RAG search, custom tools, and code execution all show up
+            here once a conversation invokes them.
+          </p>
+        )}
+        {hasData && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tool</TableHead>
+                <TableHead className="text-right">Calls</TableHead>
+                <TableHead className="text-right">Err %</TableHead>
+                <TableHead className="text-right">p50</TableHead>
+                <TableHead className="text-right">p95</TableHead>
+                <TableHead className="text-right">p99</TableHead>
+                <TableHead className="text-right">Max</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, idx) => (
+                <ToolLatencyRow key={row.tool} row={row} maxP95={maxP95} outlier={idx === 0} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ToolLatencyRow({
+  row,
+  maxP95,
+  outlier,
+}: Readonly<{ row: TurChatAnalyticsToolLatencyRow; maxP95: number; outlier: boolean }>) {
+  const barPct = maxP95 > 0 ? Math.max(2, Math.round(((row.p95Ms ?? 0) / maxP95) * 100)) : 0;
+  const errPct = row.errorRatePct ?? 0;
+  return (
+    <TableRow>
+      <TableCell className="font-mono text-xs">
+        <span className="flex items-center gap-2">
+          {outlier && <Badge variant={DESTRUCTIVE}>p95 outlier</Badge>}
+          <span className="truncate" title={row.tool}>
+            {row.tool}
+          </span>
+        </span>
+      </TableCell>
+      <TableCell className="text-right tabular-nums">{row.count ?? 0}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {errPct > 0 ? (
+          <span className="text-destructive">{errPct.toFixed(1)}%</span>
+        ) : (
+          <span className="text-muted-foreground">0%</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right tabular-nums">{formatLatencyMs(row.p50Ms)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        <span className="flex items-center justify-end gap-2">
+          <span
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1.5 rounded-full"
+            style={{ width: `${barPct}px`, maxWidth: "100px" }}
+          />
+          <span className="font-medium">{formatLatencyMs(row.p95Ms)}</span>
+        </span>
+      </TableCell>
+      <TableCell className="text-right tabular-nums">{formatLatencyMs(row.p99Ms)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatLatencyMs(row.maxMs)}</TableCell>
+    </TableRow>
+  );
+}
+
 interface DimensionOption {
   readonly value: TurChatAnalyticsScorecardDimension;
   readonly label: string;
@@ -909,6 +1021,7 @@ export default function ChatAnalyticsPage() {
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <TimeseriesPanel />
+      <ToolLatencyPanel />
       <ScorecardPanel />
       <Card>
         <CardHeader>
