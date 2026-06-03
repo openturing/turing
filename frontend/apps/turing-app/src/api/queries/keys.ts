@@ -173,5 +173,6 @@ export const queryKeys = {
       [...queryKeys.chatAnalytics.all(), 'tool-latency', params] as const,
     routerDecisions: (conversationId: string) =>
       [...queryKeys.chatAnalytics.all(), 'router-decisions', conversationId] as const,
+    slotSseChannels: () => [...queryKeys.chatAnalytics.all(), 'slot-sse-channels'] as const,
   },
 } as const;

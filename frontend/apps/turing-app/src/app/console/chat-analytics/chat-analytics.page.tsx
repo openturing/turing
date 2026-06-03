@@ -6,6 +6,7 @@ import {
   useChatAnalyticsTimeseries,
   useChatAnalyticsToolLatency,
   useChatAnalyticsTranscript,
+  useChatSlotSseChannels,
 } from "@/api/queries/chat-analytics.queries";
 import { useChatSlotAudit } from "@/api/queries/chat-session.queries";
 import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service";
@@ -42,8 +43,15 @@ import type {
   TurChatAnalyticsSession,
   TurChatAnalyticsToolLatencyRow,
   TurChatDeviceType,
+  TurChatSlotSseChannel,
 } from "@/models/chat-analytics/chat-analytics.model";
-import { IconChartLine, IconFlask, IconGauge, IconMessageOff } from "@tabler/icons-react";
+import {
+  IconBroadcast,
+  IconChartLine,
+  IconFlask,
+  IconGauge,
+  IconMessageOff,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import {
   CartesianGrid,
@@ -854,6 +862,122 @@ function ToolLatencyRow({
   );
 }
 
+/**
+ * T90 / §VII.10.g — live slot-stream SSE channel debug surface. Polls
+ * {@code /slot-sse-channels} every 5s and renders the open channels + their
+ * connection refcounts — the server-side counterpart to the vanilla SDK's
+ * {@code _slotsSseOpenChannelCount()}. Lets an operator validate "12 portal
+ * tabs, 4 channels, refcount sane" and confirm channels are reclaimed when the
+ * last tab closes (no leaked subscriptions). Per-process + ephemeral: counts
+ * only this node and resets on restart.
+ */
+function formatRelative(epochMillis: number): string {
+  if (!epochMillis) return "—";
+  const deltaSec = Math.max(0, Math.round((Date.now() - epochMillis) / 1000));
+  if (deltaSec < 60) return `${deltaSec}s ago`;
+  const min = Math.floor(deltaSec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hours = Math.floor(min / 60);
+  return `${hours}h ago`;
+}
+
+function SseChannelsPanel() {
+  const { data, isLoading, isError } = useChatSlotSseChannels();
+  const channels = data?.channels ?? [];
+  const hasData = channels.length > 0;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <IconBroadcast className="size-4" />
+          Slot-stream SSE channels (live)
+        </CardTitle>
+        <CardDescription>
+          Open <span className="font-mono">/chat/slots/stream</span> channels on this node and their
+          connection refcount — refreshes every 5s. The browser SDK multiplexes tabs onto a single
+          channel; this is the server's view. Per-process and ephemeral (resets on restart).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <p className="text-muted-foreground py-8 text-center text-sm">Loading…</p>
+        )}
+        {isError && (
+          <p className="text-destructive py-8 text-center text-sm">
+            Failed to load SSE channels.
+          </p>
+        )}
+        {!isLoading && !isError && (
+          <>
+            <div className="mb-4 grid grid-cols-3 gap-3">
+              <SseStat label="Open channels" value={data?.openChannels ?? 0} />
+              <SseStat label="Connections" value={data?.openSubscribers ?? 0} />
+              <SseStat label="Conversations" value={data?.distinctConversations ?? 0} />
+            </div>
+            {!hasData ? (
+              <p className="text-muted-foreground py-6 text-center text-sm">
+                No open slot streams right now — open a chat with a slot-filling flow to see
+                channels appear here.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Conversation</TableHead>
+                    <TableHead>Mode</TableHead>
+                    <TableHead className="text-right">Refcount</TableHead>
+                    <TableHead className="text-right">Opened</TableHead>
+                    <TableHead className="text-right">Last change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {channels.map((channel) => (
+                    <SseChannelRow
+                      key={`${channel.conversationId}-${channel.mode}`}
+                      channel={channel}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SseStat({ label, value }: Readonly<{ label: string; value: number }>) {
+  return (
+    <div className="rounded-md border bg-background/40 p-3 text-center">
+      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="text-muted-foreground text-xs">{label}</div>
+    </div>
+  );
+}
+
+function SseChannelRow({ channel }: Readonly<{ channel: TurChatSlotSseChannel }>) {
+  return (
+    <TableRow>
+      <TableCell className="font-mono text-xs">
+        <span className="truncate" title={channel.conversationId}>
+          {channel.conversationId}
+        </span>
+      </TableCell>
+      <TableCell>
+        <Badge variant={channel.mode === "delta" ? SECONDARY : NEUTRAL}>{channel.mode}</Badge>
+      </TableCell>
+      <TableCell className="text-right tabular-nums font-medium">{channel.refcount}</TableCell>
+      <TableCell className="text-muted-foreground text-right text-xs">
+        {formatRelative(channel.firstOpenedEpochMillis)}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-right text-xs">
+        {formatRelative(channel.lastChangeEpochMillis)}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 interface DimensionOption {
   readonly value: TurChatAnalyticsScorecardDimension;
   readonly label: string;
@@ -1129,6 +1253,7 @@ export default function ChatAnalyticsPage() {
     <div className="space-y-6 px-4 lg:px-6">
       <TimeseriesPanel />
       <ToolLatencyPanel />
+      <SseChannelsPanel />
       <ScorecardPanel />
       <Card>
         <CardHeader>

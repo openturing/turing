@@ -66,6 +66,7 @@ public class TurChatAnalyticsAPI {
     private final com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService;
     private final com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService;
     private final com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog;
+    private final com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
             TurChatMemoryStore chatMemoryStore,
@@ -73,7 +74,8 @@ public class TurChatAnalyticsAPI {
             TurPersonaRepository personaRepository,
             com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService,
             com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService,
-            com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog) {
+            com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog,
+            com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
         this.agentRepository = agentRepository;
@@ -81,6 +83,7 @@ public class TurChatAnalyticsAPI {
         this.significanceService = significanceService;
         this.championChallengerService = championChallengerService;
         this.routerDecisionLog = routerDecisionLog;
+        this.slotSseRegistry = slotSseRegistry;
     }
 
     /**
@@ -293,6 +296,26 @@ public class TurChatAnalyticsAPI {
         return conversationId != null && !conversationId.isBlank()
                 ? routerDecisionLog.recentForConversation(conversationId, limit)
                 : routerDecisionLog.recent(limit);
+    }
+
+    /**
+     * T90 / §VII.10.g — live view of the open slot-stream SSE channels on this
+     * node: how many distinct {@code (conversationId, mode)} channels are open,
+     * the total live connection count, and per-channel refcounts. The
+     * server-side counterpart to the vanilla SDK's
+     * {@code _slotsSseOpenChannelCount()} — an operator validates "<i>12 portal
+     * tabs, 4 channels, refcount sane</i>" and that channels are reclaimed when
+     * the last tab closes (no leaked subscriptions).
+     *
+     * <p>Per-process and ephemeral, same caveat as the router-decision ring:
+     * the slot bus is single-node, so this counts only this node's channels and
+     * resets on restart.
+     *
+     * @since 2026.3.1
+     */
+    @GetMapping(value = "/slot-sse-channels", produces = MediaType.APPLICATION_JSON_VALUE)
+    public com.viglet.turing.persistence.dto.agent.TurChatSlotSseChannelsDto slotSseChannels() {
+        return slotSseRegistry.snapshot();
     }
 
     /**

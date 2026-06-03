@@ -443,7 +443,7 @@ acting.
 | T87 | ✅ | T84 | Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. | §VII.10.d |
 | T88 | ✅ | T84 | Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. Surfaces "this one tool is a p95 outlier." | §VII.10.e |
 | T89 | ✅ | — | Flow router decision logs — structured log per router call: candidate flows + score + winner + method. Captures "why did B2B lose to B2C on this message?" — needed when a customer complains. | §VII.10.f |
-| T90 | 💭 | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
+| T90 | ✅ | T54 | SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). Operator validates "12 portal tabs, 4 channels, refcount sane." | §VII.10.g |
 
 #### D.7 — Multi-flow architecture & flow editor DX
 
@@ -477,7 +477,6 @@ Remaining platform-relevant promotions:
 | #   | Status | Depends on | Task | Detail in |
 |-----|--------|------------|------|-----------|
 | T104 | ✅ | — | 10 hooks in `@viglet/turing-react-sdk`: `useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` · SSE in `useTuringSlots` · `useTuringVoice` · `useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>` generic with auto JSON.parse · SSE multiplexer (N→1 EventSource via refcount module-level). Storybook 100% coverage. | §VII.13.a |
-| T105 | 💭 | — | Promote `CompanyProposalCard` shape (header + pills + pricing hero + modules + timeline + similar cases) to SDK as a generic `ProposalCard<T>` taking a typed proposal payload. Reusable across customers (education / consulting / training). | §VII.13.b |
 | T106 | ✅ | T92 | **`useTuringFlowChooser` hook** in `@viglet/turing-react-sdk` — imperative `chooseFlow(flow?)` pins a flow by UUID or case-insensitive name through the T92 `POST /chat/flow-select` endpoint (new `postSiteFlowSelect` API helper + `TurChatFlowSelectResponse` type). Exposes `status` (`idle/selecting/success/error`), `error`, `lastResult`, `pinnedFlowId/Name`. `mintSession` (default on) proactively mints the `TUR_SESSION` cookie so a deep-link landing pins before the visitor types — the chat hook reuses the same cookie. Opt-in `autoSelectFromParam` reads a URL query param once on mount (`?flow=in-company`), pinning the deep-linked persona; falls back to `options.flow` when the param is absent. Storybook story (track-picker simulation, latency/error variants). | §VII.13.c |
 | T107 | 💭 | — | `formCapture` form-event SSE — emit structured event so SDK renders a native form (multi-field capture) instead of single-turn validation. | §VII.13.d |
 
@@ -2614,6 +2613,46 @@ after a customer complains the conversation went down the wrong track:
   analytics + cache/Liquibase-lint sweep; backend compile clean. **Note**: T90
   (admin SSE-channel debug surface) is the companion live-panel task; T89 is the
   backend capture + structured log + REST.
+
+#### VII.10.g Slot-stream SSE channel debug surface (T90)
+The operator-facing, live counterpart to the vanilla SDK's
+`_slotsSseOpenChannelCount()`. The SDK multiplexer collapses N
+`createSlotsController({ transport: "sse" })` subscriptions in one browser onto
+a single `EventSource`; T90 surfaces the *server's* view so an operator can
+validate "*12 portal tabs, 4 channels, refcount sane*" — and, more importantly,
+that channels are reclaimed when the last tab closes (no leaked subscriptions
+holding a reactive stream open).
+
+- **Why it was needed**: the slot stream (T54 `/chat/slots/stream` + T63
+  `/delta`) opens one reactive subscription per HTTP connection off
+  `TurChatSlotEventBus`'s single multicast sink. Nothing counted those
+  subscriptions, so "is the SDK multiplexing correctly / are connections
+  leaking?" could only be answered with a profiler.
+- **Registry**: `service/chatslots/TurChatSlotSseRegistry` — a refcounted map
+  keyed by `(conversationId, mode)` where `mode ∈ {SNAPSHOT, DELTA}` (mirrors
+  the SDK key suffix). `acquire`/`release` are lock-free per key via
+  `ConcurrentHashMap.compute`; a channel is created on first connection and
+  dropped when the last leaves. `refcount` is an `AtomicInteger` so the
+  `snapshot()` read is safe outside the compute lock. Per-process + ephemeral,
+  same single-node caveat as the slot bus and the T89 router-decision ring.
+- **Instrumentation**: both SSE endpoints in `TurSNSiteGenAiAPI` wrap their
+  merged Flux with `.doOnSubscribe(acquire)` / `.doFinally(release)` —
+  `doFinally` fires on complete/error/**cancel** (cancel being the normal SSE
+  disconnect when a tab closes).
+- **REST**: `GET /api/system/chat-analytics/slot-sse-channels` →
+  `TurChatSlotSseChannelsDto { openChannels, openSubscribers,
+  distinctConversations, channels[] }`, each channel carrying `conversationId`,
+  `mode`, `refcount`, `firstOpenedEpochMillis`, `lastChangeEpochMillis` (newest
+  change first).
+- **Frontend**: `SseChannelsPanel` on the chat-analytics page — three stat
+  tiles (channels / connections / conversations) + a per-channel table, polling
+  every 5s (`useChatSlotSseChannels`, `refetchInterval: 5000`) so it stays live
+  without itself opening a second SSE connection that would skew the count.
+- **Tests**: `TurChatSlotSseRegistryTest` (7) — empty snapshot, refcounting N
+  connections on one channel, channel reclamation on last release, SNAPSHOT vs
+  DELTA as distinct channels for the same conversation, the "12 tabs / 4
+  conversations" portal scenario, release-below-zero / unknown-channel no-op,
+  and blank/null-conversation ignore. Backend compile clean.
 
 #### VII.13.a SDK hooks (T104)
 `@viglet/turing-react-sdk` 2026.2.21 → .29 shipped 10 hooks:

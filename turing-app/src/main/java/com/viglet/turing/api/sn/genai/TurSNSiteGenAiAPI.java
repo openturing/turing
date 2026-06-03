@@ -91,6 +91,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurConfigProperties configProperties;
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
+	private final com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
 	private final TurChatSlotExtractionService slotExtractionService;
 	private final TurChatMultiModalSlotService multiModalSlotService;
 	private final TurChatHandoffService handoffService;
@@ -107,6 +108,7 @@ public class TurSNSiteGenAiAPI {
 			TurConfigProperties configProperties,
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
+			com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry,
 			TurChatSlotExtractionService slotExtractionService,
 			TurChatMultiModalSlotService multiModalSlotService,
 			TurChatHandoffService handoffService,
@@ -122,6 +124,7 @@ public class TurSNSiteGenAiAPI {
 		this.configProperties = configProperties;
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
+		this.slotSseRegistry = slotSseRegistry;
 		this.slotExtractionService = slotExtractionService;
 		this.multiModalSlotService = multiModalSlotService;
 		this.handoffService = handoffService;
@@ -545,7 +548,14 @@ public class TurSNSiteGenAiAPI {
 				Flux.interval(java.time.Duration.ofSeconds(25))
 						.map(tick -> org.springframework.http.codec.ServerSentEvent
 								.<TurChatSessionSlotsDto>builder().comment("heartbeat").build());
-		return Flux.merge(data, heartbeats);
+		// T90 — refcount this connection on the SSE channel registry so the
+		// admin debug surface can report open channels. doFinally fires on
+		// complete / error / cancel (cancel being the usual SSE disconnect).
+		return Flux.merge(data, heartbeats)
+				.doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.SNAPSHOT))
+				.doFinally(sig -> slotSseRegistry.release(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.SNAPSHOT));
 	}
 
 	/**
@@ -580,7 +590,12 @@ public class TurSNSiteGenAiAPI {
 				Flux.interval(java.time.Duration.ofSeconds(25))
 						.map(tick -> org.springframework.http.codec.ServerSentEvent
 								.<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>builder().comment("heartbeat").build());
-		return Flux.merge(data, heartbeats);
+		// T90 — same refcounting as the snapshot stream, on the DELTA channel.
+		return Flux.merge(data, heartbeats)
+				.doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA))
+				.doFinally(sig -> slotSseRegistry.release(conversationId,
+						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA));
 	}
 
 	/**

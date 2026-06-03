@@ -11,6 +11,7 @@ import type {
   TurChatAnalyticsToolLatencyParams,
   TurChatAnalyticsToolLatencyRow,
   TurChatAnalyticsTranscript,
+  TurChatSlotSseChannels,
 } from "@/models/chat-analytics/chat-analytics.model";
 
 /**
@@ -90,6 +91,18 @@ export class TurChatAnalyticsService {
       { params: { conversationId, limit } },
     );
     return response.data ?? [];
+  }
+
+  /**
+   * Live snapshot of the open slot-stream SSE channels on the node (T90) —
+   * open channels, total connections, and per-channel refcounts. Server-side
+   * counterpart to the vanilla SDK's {@code _slotsSseOpenChannelCount()}.
+   */
+  async slotSseChannels(): Promise<TurChatSlotSseChannels> {
+    const response = await axios.get<TurChatSlotSseChannels>(
+      "/system/chat-analytics/slot-sse-channels",
+    );
+    return response.data;
   }
 
   async transcript(conversationId: string, limit = 200): Promise<TurChatAnalyticsTranscript | null> {

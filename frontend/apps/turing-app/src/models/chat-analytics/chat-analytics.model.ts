@@ -292,3 +292,38 @@ export interface TurChatAnalyticsRouterDecision {
   procedural: boolean;
   detail: string | null;
 }
+
+/**
+ * One open slot-stream SSE channel (T90 / §VII.10.g) — a
+ * {@code (conversationId, mode)} pair with the count of live connections
+ * subscribed to it. The server-side view of what the vanilla SDK's
+ * {@code _slotsSseOpenChannelCount()} tracks per browser.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatSlotSseChannel {
+  conversationId: string;
+  /** "snapshot" (full map) or "delta" (T63 incremental stream). */
+  mode: "snapshot" | "delta";
+  /** Number of live SSE connections on this channel. */
+  refcount: number;
+  firstOpenedEpochMillis: number;
+  lastChangeEpochMillis: number;
+}
+
+/**
+ * Live snapshot of the open slot-stream SSE channels on the node (T90). Read
+ * from {@code /system/chat-analytics/slot-sse-channels}. Per-process and
+ * ephemeral — counts only this node and resets on restart.
+ *
+ * @since 2026.3.1
+ */
+export interface TurChatSlotSseChannels {
+  /** Distinct (conversationId, mode) channels open. */
+  openChannels: number;
+  /** Sum of every channel's refcount — total live connections. */
+  openSubscribers: number;
+  /** Distinct conversation ids across both modes. */
+  distinctConversations: number;
+  channels: TurChatSlotSseChannel[];
+}
