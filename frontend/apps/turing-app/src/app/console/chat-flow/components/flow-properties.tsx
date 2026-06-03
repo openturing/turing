@@ -243,6 +243,7 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             {type === "formCapture" && (
               <FormFieldsEditor
                 fields={data.formFields ?? []}
+                slotOptions={slotOptions}
                 onChange={(fields) =>
                   update({ formFields: fields.length > 0 ? fields : undefined })
                 }
@@ -1236,15 +1237,35 @@ function SwitchOptionsEditor({ options, onChange, subFlowOptions }: SwitchOption
 
 interface FormFieldsEditorProps {
   readonly fields: FlowFormField[];
+  readonly slotOptions: ReadonlyArray<{ readonly id: string; readonly name: string; readonly type: string }>;
   readonly onChange: (fields: FlowFormField[]) => void;
 }
 
 /**
- * T107 — editor for a {@code formCapture} node's native multi-field form.
- * Each row maps to one conversation slot; the SDK renders the whole set as a
- * native form and posts every value back through `POST /chat/form-submit`.
+ * T235 — maps a declared slot's type to a sensible default form-field widget.
+ * Slot types carry no email/phone semantics (that lives on the field's
+ * `validationRule`), so the inference is conservative: TEXT → textarea,
+ * INTEGER/FLOAT → number, everything else → text.
  */
-function FormFieldsEditor({ fields, onChange }: FormFieldsEditorProps) {
+function inferFieldType(slotType: string): string {
+  switch (slotType) {
+    case "TEXT":
+      return "textarea";
+    case "INTEGER":
+    case "FLOAT":
+      return "number";
+    default:
+      return "text";
+  }
+}
+
+/**
+ * T107/T235 — editor for a {@code formCapture} node's native multi-field form.
+ * Each row maps to one **declared** conversation slot (picked from the agent's
+ * catalog); the SDK renders the whole set as a native form and posts every
+ * value back through `POST /chat/form-submit`.
+ */
+function FormFieldsEditor({ fields, slotOptions, onChange }: FormFieldsEditorProps) {
   const { t } = useTranslation();
   const patch = (idx: number, partial: Partial<FlowFormField>) =>
     onChange(fields.map((f, i) => (i === idx ? { ...f, ...partial } : f)));
@@ -1276,14 +1297,57 @@ function FormFieldsEditor({ fields, onChange }: FormFieldsEditorProps) {
           // eslint-disable-next-line react/no-array-index-key
           <div key={idx} className="flex flex-col gap-1.5 rounded-md border bg-background p-2">
             <div className="flex items-center gap-2">
-              <Input
-                className="h-8 font-mono text-[12px]"
-                value={field.name}
-                placeholder={t("chatFlow.properties.formFieldNamePlaceholder", {
-                  defaultValue: "slot_name",
-                })}
-                onChange={(e) => patch(idx, { name: e.target.value })}
-              />
+              <Select
+                value={field.name || ""}
+                onValueChange={(value) => {
+                  const picked = slotOptions.find((s) => s.name === value);
+                  // Infer the widget when the field is still on its default
+                  // type — don't clobber an author's explicit choice.
+                  const inferred =
+                    picked && (!field.type || field.type === "text")
+                      ? { type: inferFieldType(picked.type) }
+                      : {};
+                  patch(idx, { name: value, ...inferred });
+                }}
+              >
+                <SelectTrigger className="h-8 font-mono text-[12px]">
+                  <SelectValue
+                    placeholder={t("chatFlow.properties.formFieldSlotPlaceholder", {
+                      defaultValue: "Pick a slot…",
+                    })}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {slotOptions.length === 0 && !field.name ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.outputVariableEmpty")}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Preserve an out-of-catalog (legacy/free-text) value so
+                          editing the row doesn't silently drop it. */}
+                      {field.name && !slotOptions.some((s) => s.name === field.name) && (
+                        <SelectItem value={field.name}>
+                          <span className="font-mono text-[12px]">{field.name}</span>
+                          <span className="ml-2 text-amber-600">
+                            — {t("chatFlow.properties.formFieldUndeclared", {
+                              defaultValue: "not declared",
+                            })}
+                          </span>
+                        </SelectItem>
+                      )}
+                      {slotOptions.map((slot) => (
+                        <SelectItem key={slot.id} value={slot.name}>
+                          <span className="font-mono text-[12px]">{slot.name}</span>
+                          <span className="ml-2 text-muted-foreground">
+                            — {t(`aiAgent.slot.types.${slot.type}`)}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 variant="ghost"

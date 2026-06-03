@@ -25,7 +25,9 @@ import org.springframework.cache.CacheManager;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowLintIssueDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
+import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowSubmissionRepository;
@@ -57,6 +59,8 @@ class TurChatFlowLinterServiceTest {
     private TurChatSlotEventBus slotEventBus;
     @Mock
     private CacheManager cacheManager;
+    @Mock
+    private TurAIAgentSlotRepository slotRepository;
 
     private TurTriggerConflictService triggerConflictService;
     private TurChatFlowLinterService linter;
@@ -77,7 +81,8 @@ class TurChatFlowLinterServiceTest {
                 org.mockito.Mockito.mock(TurChatWebhookNodeExecutor.class),
                 List.<TurChatFlowGuardrailStrategy>of());
         triggerConflictService = new TurTriggerConflictService(chatFlowRepository);
-        linter = new TurChatFlowLinterService(chatFlowRepository, engine, triggerConflictService);
+        linter = new TurChatFlowLinterService(chatFlowRepository, engine, triggerConflictService,
+                slotRepository);
     }
 
     @Test
@@ -305,6 +310,103 @@ class TurChatFlowLinterServiceTest {
         List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
         assertThat(issues).extracting(TurChatFlowLintIssueDto::severity)
                 .doesNotContain("ERROR");
+    }
+
+    @Test
+    void flagsFormFieldWithUnknownSlot() {
+        // Native form (T107) with two fields; only `name` is a declared slot.
+        TurChatFlow flow = flow("flow-1", formFlow(
+                "[{\"name\":\"name\",\"type\":\"text\",\"required\":true},"
+                        + "{\"name\":\"email\",\"type\":\"email\",\"required\":true}]"));
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name")));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues)
+                .filteredOn(i -> "form_field_unknown_slot".equals(i.code()))
+                .singleElement()
+                .satisfies(i -> {
+                    assertThat(i.severity()).isEqualTo("WARNING");
+                    assertThat(i.message()).contains("email");
+                });
+    }
+
+    @Test
+    void flagsBlankFormFieldNameAsError() {
+        TurChatFlow flow = flow("flow-1", formFlow(
+                "[{\"name\":\"\",\"type\":\"text\"}]"));
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+        lenient().when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of());
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues)
+                .filteredOn(i -> "form_field_blank_name".equals(i.code()))
+                .extracting(TurChatFlowLintIssueDto::severity)
+                .containsExactly("ERROR");
+    }
+
+    @Test
+    void flagsDuplicateFormFieldSlot() {
+        // Two fields write the same slot `email`.
+        TurChatFlow flow = flow("flow-1", formFlow(
+                "[{\"name\":\"email\",\"type\":\"email\"},"
+                        + "{\"name\":\"email\",\"type\":\"text\"}]"));
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("email")));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues)
+                .filteredOn(i -> "form_field_duplicate_name".equals(i.code()))
+                .singleElement()
+                .satisfies(i -> assertThat(i.message()).contains("email"));
+    }
+
+    @Test
+    void cleanNativeFormHasNoFormFieldIssues() {
+        TurChatFlow flow = flow("flow-1", formFlow(
+                "[{\"name\":\"name\",\"type\":\"text\"},"
+                        + "{\"name\":\"email\",\"type\":\"email\"}]"));
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name"), slot("email")));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues).extracting(TurChatFlowLintIssueDto::code)
+                .doesNotContain("form_field_unknown_slot", "form_field_blank_name",
+                        "form_field_duplicate_name");
+    }
+
+    /** A minimal flow whose single {@code formCapture} node carries the given JSON formFields array. */
+    private static String formFlow(String formFieldsJson) {
+        return "{"
+                + "\"nodes\":["
+                + "  {\"id\":\"start\",\"type\":\"start\",\"data\":{}},"
+                + "  {\"id\":\"form\",\"type\":\"formCapture\",\"data\":{"
+                + "      \"label\":\"Lead\",\"aiInstruction\":\"Fill in\","
+                + "      \"formFields\":" + formFieldsJson + "}},"
+                + "  {\"id\":\"end\",\"type\":\"end\",\"data\":{}}"
+                + "],"
+                + "\"edges\":["
+                + "  {\"id\":\"e1\",\"source\":\"start\",\"target\":\"form\"},"
+                + "  {\"id\":\"e2\",\"source\":\"form\",\"target\":\"end\",\"label\":\"continue\"}"
+                + "]}";
+    }
+
+    private static TurAIAgentSlot slot(String name) {
+        TurAIAgentSlot slot = new TurAIAgentSlot();
+        slot.setName(name);
+        return slot;
     }
 
     private static TurChatFlow flow(String id, String definitionJson) {

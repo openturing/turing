@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.persistence.dto.agent.TurChatFlowLintIssueDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
+import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 
 /**
@@ -52,6 +54,12 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
  *       is a {@code condition} or {@code switch} node and which carries no
  *       {@code sourceHandle} AND no {@code label}. The runtime needs the
  *       handle to pick the right branch; a missing one is ambiguous.</li>
+ *   <li><b>{@code form_field_blank_name}</b> (ERROR) /
+ *       <b>{@code form_field_duplicate_name}</b> (WARNING) /
+ *       <b>{@code form_field_unknown_slot}</b> (WARNING) — T235 native-form
+ *       ({@code formCapture} + {@code formFields}, T107) field checks: a field
+ *       with no slot, two fields writing the same slot, and a field whose slot
+ *       isn't declared on the agent (value lands outside the typed schema).</li>
  * </ul>
  *
  * @author Alexandre Oliveira
@@ -76,13 +84,16 @@ public class TurChatFlowLinterService {
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService engineService;
     private final TurTriggerConflictService triggerConflictService;
+    private final TurAIAgentSlotRepository slotRepository;
 
     public TurChatFlowLinterService(TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService engineService,
-            TurTriggerConflictService triggerConflictService) {
+            TurTriggerConflictService triggerConflictService,
+            TurAIAgentSlotRepository slotRepository) {
         this.chatFlowRepository = chatFlowRepository;
         this.engineService = engineService;
         this.triggerConflictService = triggerConflictService;
+        this.slotRepository = slotRepository;
     }
 
     /**
@@ -111,6 +122,7 @@ public class TurChatFlowLinterService {
             checkUnusedOutputVariables(flow, graph, agentFlows, issues);
             checkDeadEndNodes(graph, issues);
             checkBranchingEdgeLabels(graph, issues);
+            checkFormFields(graph, agentId, issues);
         }
         if (agentId != null && !agentId.isBlank()) {
             checkTriggerConflicts(agentId, flow, issues);
@@ -271,6 +283,72 @@ public class TurChatFlowLinterService {
                         "Edge from " + type + " node has no sourceHandle and no label",
                         "Pick which branch this edge represents ('yes'/'no' for condition, an option"
                                 + " id for switch) — the runtime cannot disambiguate without one."));
+            }
+        }
+    }
+
+    /**
+     * T235 — native-form ({@code formCapture} + {@code formFields}, T107)
+     * field validation. Three codes:
+     * <ul>
+     *   <li>{@code form_field_blank_name} (ERROR) — a field with no slot name:
+     *       its value can never be captured.</li>
+     *   <li>{@code form_field_duplicate_name} (WARNING) — two fields writing the
+     *       same slot; the later submitted value silently wins.</li>
+     *   <li>{@code form_field_unknown_slot} (WARNING) — a field whose slot is
+     *       not declared on the agent, so the value lands outside the typed
+     *       schema and no downstream reader (switch / interpolation / handoff)
+     *       can see it. Only checked when {@code agentId} resolves a catalog.</li>
+     * </ul>
+     */
+    private void checkFormFields(ChatFlowGraph graph, String agentId,
+            List<TurChatFlowLintIssueDto> out) {
+        List<ChatFlowNode> formNodes = new ArrayList<>();
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("formCapture".equals(node.type()) && !node.formFields().isEmpty()) {
+                formNodes.add(node);
+            }
+        }
+        if (formNodes.isEmpty()) {
+            // No native forms on this flow — skip the slot-catalog lookup.
+            return;
+        }
+        Set<String> declaredSlots = null;
+        if (agentId != null && !agentId.isBlank()) {
+            declaredSlots = new HashSet<>();
+            for (TurAIAgentSlot slot : slotRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)) {
+                if (slot.getName() != null && !slot.getName().isBlank()) {
+                    declaredSlots.add(slot.getName().trim());
+                }
+            }
+        }
+        for (ChatFlowNode node : formNodes) {
+            Set<String> seen = new HashSet<>();
+            for (ChatFlowNode.FormField field : node.formFields()) {
+                String name = field == null ? null : field.name();
+                if (name == null || name.isBlank()) {
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "ERROR",
+                            "form_field_blank_name",
+                            "A form field has no slot name — its value cannot be captured",
+                            "Pick a declared slot for every field on the form."));
+                    continue;
+                }
+                String trimmed = name.trim();
+                if (!seen.add(trimmed)) {
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "WARNING",
+                            "form_field_duplicate_name",
+                            "Two form fields write the same slot '" + trimmed
+                                    + "' — the later value wins",
+                            "Give each field its own slot, or remove the duplicate field."));
+                }
+                if (declaredSlots != null && !declaredSlots.contains(trimmed)) {
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "WARNING",
+                            "form_field_unknown_slot",
+                            "Form field writes slot '" + trimmed
+                                    + "' which is not declared on the agent",
+                            "Declare the slot in the agent's slot catalog so the value lands in the"
+                                    + " typed schema and is readable downstream."));
+                }
             }
         }
     }
