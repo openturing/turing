@@ -315,6 +315,23 @@ public record ChatFlowNode(String id, String type, NodeData data) {
     }
 
     /**
+     * Schema hint for a {@code planningStep} node (T108): a free-form
+     * description of the JSON shape the LLM should emit into
+     * {@link #outputVariable()} (the plan slot, conventionally {@code __plan}).
+     * The engine doesn't parse this string — it's passed verbatim into the
+     * planning prompt so the author can steer the structure (e.g.
+     * {@code "List<{id: string, title: string, status: 'pending'|'done'}>"}).
+     * Whatever the model returns is normalized to the canonical plan-item
+     * array by {@code ChatFlowOps.generatePlan(...)} regardless of this hint,
+     * so a blank value still yields a well-formed plan.
+     *
+     * @since 2026.3.1
+     */
+    public String planSchema() {
+        return data.planSchema();
+    }
+
+    /**
      * Per-node A/B experiment key (T72). When non-blank <em>and</em> the node
      * declares at least one {@link #nodeVariants() variant}, the engine swaps
      * this single node's behavior (currently its {@link #aiInstruction()}) for
@@ -478,7 +495,28 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             Boolean continueOnFailure,
             String nodeExperimentKey,
             List<NodeVariant> nodeVariants,
-            List<FormField> formFields) {
+            List<FormField> formFields,
+            String planSchema) {
+
+        /**
+         * Back-compat constructor for callers/tests predating the T108
+         * {@code planningStep} schema hint ({@code planSchema}) — this is the
+         * pre-T108 canonical signature. Delegates with {@code planSchema = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs, Boolean continueOnFailure,
+                String nodeExperimentKey, List<NodeVariant> nodeVariants, List<FormField> formFields) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, formFields, null);
+        }
 
         /**
          * Back-compat constructor for callers/tests predating the T107
@@ -497,7 +535,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
                     switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
                     slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
-                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, null);
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, null, null);
         }
 
         /**
@@ -551,7 +589,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     personaId, switchVariable, switchOptions, inlineOptions, overrideExistingValue,
                     slotName, slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools,
                     routineId, routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants,
-                    formFields);
+                    formFields, planSchema);
         }
     }
 

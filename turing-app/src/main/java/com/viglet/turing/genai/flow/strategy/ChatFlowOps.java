@@ -889,6 +889,267 @@ public final class ChatFlowOps {
         return wildcard;
     }
 
+    // ─────────────────────────── Planning step (T108) ───────────────────────────
+
+    /**
+     * Reserved slot a {@code planningStep} node writes to (and an
+     * {@code iteratePlan} node reads from) when the author leaves
+     * {@code outputVariable} blank. Conventionally surfaced in the chat-flow
+     * graph and the slot bus as {@code __plan}.
+     *
+     * @since 2026.3.1
+     */
+    public static final String DEFAULT_PLAN_SLOT = "__plan";
+
+    /** Hard cap on the number of plan items a planning step will keep. */
+    private static final int MAX_PLAN_ITEMS = 24;
+
+    private static final TypeReference<List<Map<String, Object>>> PLAN_LIST_TYPE = new TypeReference<>() {
+    };
+
+    /**
+     * A single item of a {@code planningStep} plan (T108): a typed TODO entry
+     * the LLM emitted and an {@code iteratePlan} node walks one by one.
+     *
+     * <ul>
+     *   <li>{@code id} — stable identifier (sequential {@code "1"}, {@code "2"},
+     *       … when the model omits one). Used by {@code iteratePlan} to mark
+     *       the right item done.</li>
+     *   <li>{@code title} — human-readable step text the sub-flow executes.</li>
+     *   <li>{@code status} — {@code "pending"} or {@code "done"}; anything else
+     *       normalizes to {@code "pending"}.</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    public record PlanItem(String id, String title, String status) {
+        public static final String PENDING = "pending";
+        public static final String DONE = "done";
+
+        /** {@code true} when this item still needs to be executed. */
+        public boolean isPending() {
+            return !DONE.equalsIgnoreCase(status);
+        }
+    }
+
+    /**
+     * Applies a {@code planningStep} node: asks {@code auxModel} to decompose
+     * the user's goal into a typed TODO list and writes the resulting JSON
+     * array into the node's plan slot ({@link ChatFlowNode#outputVariable()},
+     * defaulting to {@link #DEFAULT_PLAN_SLOT}). The node is transparent — no
+     * user round-trip — and the engine advances on its single outgoing edge.
+     *
+     * <p>Honors {@link ChatFlowNode#overrideExistingValue()}: when the plan
+     * slot already holds a non-blank value and override is not set, the call
+     * is a no-op so a plan computed on a previous turn (or seeded by an
+     * upstream node) is preserved across re-entries. When {@code auxModel} is
+     * {@code null} or the model fails, an empty array ({@code []}) is written
+     * so downstream {@code iteratePlan} nodes see a well-formed — if empty —
+     * plan instead of a missing slot.
+     *
+     * @since 2026.3.1
+     */
+    public static void applyPlanningStepNode(TurChatFlowState state, ChatFlowNode node, ChatModel auxModel) {
+        if (state == null || node == null) {
+            return;
+        }
+        String slot = node.outputVariable();
+        String key = (slot == null || slot.isBlank()) ? DEFAULT_PLAN_SLOT : slot.trim();
+        Map<String, String> variables = readVariables(state);
+        String existing = variables.get(key);
+        boolean alreadyFilled = existing != null && !existing.isBlank();
+        boolean override = Boolean.TRUE.equals(node.overrideExistingValue());
+        if (alreadyFilled && !override) {
+            log.info("[FlowOps] planningStep node '{}' on '{}' skipped (override=false, plan present)",
+                    node.id(), key);
+            return;
+        }
+        List<PlanItem> plan = generatePlan(auxModel, node, variables);
+        String planJson = serializePlan(plan);
+        variables.put(key, planJson);
+        log.info("[FlowOps] planningStep node '{}' wrote {} item(s) into slot '{}' on conv '{}'",
+                node.id(), plan.size(), key, state.getConversationId());
+        writeVariables(state, variables);
+    }
+
+    /**
+     * Asks {@code auxModel} to break the goal carried by the node's
+     * {@link ChatFlowNode#aiInstruction()} (plus the already-collected
+     * variables for context) into 3–6 concrete steps, then normalizes the
+     * model's reply into a canonical {@link PlanItem} list. Returns an empty
+     * list when {@code auxModel} is {@code null}, the instruction is blank, or
+     * the model returns nothing parseable — callers should treat an empty plan
+     * as "nothing to iterate".
+     */
+    public static List<PlanItem> generatePlan(ChatModel auxModel, ChatFlowNode node,
+            Map<String, String> variables) {
+        if (auxModel == null) {
+            log.info("[FlowOps] planningStep '{}' has no aux model — emitting empty plan",
+                    node == null ? "?" : node.id());
+            return List.of();
+        }
+        String instruction = node == null ? null : node.aiInstruction();
+        String goal = (instruction == null || instruction.isBlank())
+                ? "Decompose the user's current goal into concrete, ordered steps."
+                : instruction.trim();
+        String schemaHint = node == null ? null : node.planSchema();
+        String varsJson = serializeVariables(variables);
+        String sys = """
+                You are a planning assistant for a chat-flow engine. Break the goal into a SHORT
+                ordered list of 3-6 concrete, actionable steps.
+
+                Reply with ONLY a JSON array — no prose, no markdown fences. Each element is an
+                object with exactly these keys:
+                  - "id": a short stable string id ("1", "2", ...)
+                  - "title": the step text (imperative, one line)
+                  - "status": always "pending"
+
+                Example:
+                [{"id":"1","title":"Gather the user's requirements","status":"pending"},
+                 {"id":"2","title":"Draft the proposal","status":"pending"}]
+
+                Keep titles concise. Do NOT invent steps unrelated to the goal. Reply in the
+                language of the goal.
+                """;
+        StringBuilder user = new StringBuilder();
+        user.append("Goal: ").append(goal).append('\n');
+        if (schemaHint != null && !schemaHint.isBlank()) {
+            user.append("Desired item shape: ").append(schemaHint.trim()).append('\n');
+        }
+        user.append("Already collected (context): ").append(varsJson).append('\n');
+        user.append("Plan (JSON array only):");
+        try {
+            Prompt prompt = new Prompt(List.of(new SystemMessage(sys), new UserMessage(user.toString())));
+            var response = auxModel.call(prompt);
+            String reply = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText()
+                            : "";
+            List<PlanItem> plan = parsePlan(reply);
+            log.info("[FlowOps] planningStep '{}' generated {} item(s)",
+                    node == null ? "?" : node.id(), plan.size());
+            return plan;
+        } catch (Exception e) {
+            log.warn("[FlowOps] planningStep '{}' generation failed: {} — emitting empty plan",
+                    node == null ? "?" : node.id(), e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
+     * Parses an LLM reply (or a persisted plan slot value) into a canonical
+     * {@link PlanItem} list. Tolerant by design: strips markdown code fences,
+     * isolates the outermost {@code [...]} array, fills in a sequential
+     * {@code id} when the model omits one, defaults a missing/odd
+     * {@code status} to {@code "pending"}, drops items with a blank title, and
+     * caps the result at {@link #MAX_PLAN_ITEMS}. Returns an empty list when
+     * nothing parseable is found.
+     *
+     * @since 2026.3.1
+     */
+    public static List<PlanItem> parsePlan(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        String json = isolateJsonArray(raw);
+        if (json == null) {
+            return List.of();
+        }
+        List<Map<String, Object>> rows;
+        try {
+            rows = OBJECT_MAPPER.readValue(json, PLAN_LIST_TYPE);
+        } catch (JacksonException e) {
+            log.warn("[FlowOps] parsePlan could not parse plan JSON: {}", e.getMessage());
+            return List.of();
+        }
+        if (rows == null || rows.isEmpty()) {
+            return List.of();
+        }
+        List<PlanItem> out = new java.util.ArrayList<>();
+        int seq = 1;
+        for (Map<String, Object> row : rows) {
+            if (row == null) {
+                continue;
+            }
+            Object titleObj = row.get("title");
+            String title = titleObj == null ? null : titleObj.toString().trim();
+            if (title == null || title.isBlank()) {
+                continue;
+            }
+            Object idObj = row.get("id");
+            String id = (idObj == null || idObj.toString().isBlank())
+                    ? String.valueOf(seq)
+                    : idObj.toString().trim();
+            Object statusObj = row.get("status");
+            String status = (statusObj != null && PlanItem.DONE.equalsIgnoreCase(statusObj.toString().trim()))
+                    ? PlanItem.DONE
+                    : PlanItem.PENDING;
+            out.add(new PlanItem(id, title, status));
+            seq++;
+            if (out.size() >= MAX_PLAN_ITEMS) {
+                break;
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Serializes a {@link PlanItem} list back into the compact JSON array
+     * persisted in the plan slot. Always returns valid JSON — {@code "[]"}
+     * for an empty/null list.
+     *
+     * @since 2026.3.1
+     */
+    public static String serializePlan(List<PlanItem> plan) {
+        if (plan == null || plan.isEmpty()) {
+            return "[]";
+        }
+        List<Map<String, Object>> rows = new java.util.ArrayList<>(plan.size());
+        for (PlanItem item : plan) {
+            if (item == null) {
+                continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", item.id());
+            row.put("title", item.title());
+            row.put("status", item.status() == null ? PlanItem.PENDING : item.status());
+            rows.add(row);
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(rows);
+        } catch (JacksonException e) {
+            log.warn("[FlowOps] serializePlan failed: {}", e.getMessage());
+            return "[]";
+        }
+    }
+
+    /**
+     * Strips markdown code fences and isolates the outermost JSON array from a
+     * model reply. Returns {@code null} when no {@code [ ... ]} span is found.
+     */
+    private static String isolateJsonArray(String raw) {
+        String text = raw.trim();
+        // Drop a leading ```json / ``` fence and a trailing ``` fence if present.
+        if (text.startsWith("```")) {
+            int firstNewline = text.indexOf('\n');
+            if (firstNewline >= 0) {
+                text = text.substring(firstNewline + 1);
+            }
+            int closingFence = text.lastIndexOf("```");
+            if (closingFence >= 0) {
+                text = text.substring(0, closingFence);
+            }
+            text = text.trim();
+        }
+        int start = text.indexOf('[');
+        int end = text.lastIndexOf(']');
+        if (start < 0 || end < 0 || end <= start) {
+            return null;
+        }
+        return text.substring(start, end + 1);
+    }
+
     // ─────────────────────────── Suggested options lookup ───────────────────────────
 
     /**

@@ -2821,6 +2821,22 @@ public class TurChatFlowEngineService {
                 continue;
             }
 
+            // planningStep node (T108): the LLM decomposes the user's goal
+            // into a typed TODO list and the engine writes the JSON plan into
+            // the node's plan slot (outputVariable, default __plan). Transparent
+            // — no user round-trip — and the flow advances on its single
+            // outgoing edge. The plan IS a slot value, so the SSE bus surfaces
+            // it to subscribers exactly like slot / writeSlot writes do; an
+            // iteratePlan node (T108-2) downstream consumes it item by item.
+            if ("planningStep".equals(current.type())) {
+                ChatFlowOps.applyPlanningStepNode(state, current, auxModel);
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
             // functionCall node (T46): deterministic tool invocation from the
             // flow — NATIVE @Tool methods (incl. Custom Tools registered as
             // such) executed with aiInstruction as the JSON input template
