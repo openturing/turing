@@ -1,5 +1,5 @@
-import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
-import type { Node } from "@xyflow/react";
+import { IconForms, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import type { Edge, Node } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +10,14 @@ import { useRoutines } from "@/api/queries/routine.queries";
 import { useChatWebhooks } from "@/api/queries/webhook.queries";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +28,7 @@ import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
+import { planFormConversion, type FormConversionPlan } from "../chat-flow.form-converter";
 import type { FlowFormField, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 /** T107 — widget hints offered for a formCapture form field. */
@@ -37,7 +46,13 @@ const mcpServerService = new TurMcpServerService();
 
 interface FlowPropertiesProps {
   readonly node: Node<FlowNodeData> | null;
+  /** Full node list — needed by the T234 "convert run to form" planner. */
+  readonly nodes: Node<FlowNodeData>[];
+  /** Full edge list — needed by the T234 planner. */
+  readonly edges: Edge[];
   readonly onChange: (nodeId: string, patch: Partial<FlowNodeData>) => void;
+  /** T234 — replace the whole graph after a form conversion + select a node. */
+  readonly onApplyGraph: (nodes: Node<FlowNodeData>[], edges: Edge[], selectId: string | null) => void;
   readonly onClose: () => void;
   readonly agentId: string;
   /** Id of the chat flow currently being edited — excluded from the Sub Flow picker to prevent self-reference. */
@@ -49,7 +64,7 @@ const TOOL_SOURCE_OPTIONS: FlowToolSource[] = ["NATIVE", "MCP"];
 const SLOT_OPERATION_OPTIONS: FlowSlotOperation[] = ["SET", "DELETE"];
 const ON_JUDGE_REJECT_OPTIONS: FlowOnJudgeReject[] = ["reprompt", "advance_with_literal", "block"];
 
-export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
+export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
   const { t } = useTranslation();
   const [nativeToolGroups, setNativeToolGroups] = useState<NativeToolGroup[]>([]);
   const [mcpServers, setMcpServers] = useState<TurMcpServer[]>([]);
@@ -79,6 +94,14 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
   const webhookOptions = useMemo(
     () => (webhooks ?? []).filter((w) => w.enabled !== false),
     [webhooks],
+  );
+
+  // T234 — plan for collapsing the run starting at the selected node into a
+  // native form. Null when the node isn't the head of a collapsible 2+ chain.
+  const [convertOpen, setConvertOpen] = useState(false);
+  const formConversionPlan = useMemo<FormConversionPlan | null>(
+    () => (node ? planFormConversion(nodes, edges, node.id) : null),
+    [node, nodes, edges],
   );
 
   useEffect(() => {
@@ -144,6 +167,38 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
 
         {(type === "aiQuestion" || type === "formCapture") && (
           <>
+            {formConversionPlan && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="justify-start gap-2 border-indigo-300 text-indigo-700 dark:border-indigo-800 dark:text-indigo-300"
+                onClick={() => setConvertOpen(true)}
+              >
+                <IconForms className="size-4" />
+                {t("chatFlow.properties.convertToForm", {
+                  defaultValue: "Convert {{count}} questions to a form",
+                  count: formConversionPlan.runLength,
+                })}
+              </Button>
+            )}
+
+            {node && formConversionPlan && (
+              <ConvertToFormDialog
+                open={convertOpen}
+                plan={formConversionPlan}
+                onOpenChange={setConvertOpen}
+                onConfirm={() => {
+                  onApplyGraph(
+                    formConversionPlan.nextNodes,
+                    formConversionPlan.nextEdges,
+                    formConversionPlan.formNode.id,
+                  );
+                  setConvertOpen(false);
+                }}
+              />
+            )}
+
             <div className="flex flex-col gap-1">
               <Label>{t("chatFlow.properties.outputVariable")}</Label>
               <Select
@@ -1232,6 +1287,65 @@ function SwitchOptionsEditor({ options, onChange, subFlowOptions }: SwitchOption
         </div>
       ))}
     </div>
+  );
+}
+
+interface ConvertToFormDialogProps {
+  readonly open: boolean;
+  readonly plan: FormConversionPlan;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly onConfirm: () => void;
+}
+
+/**
+ * T234 — confirm dialog for collapsing a question run into a native form.
+ * Shows the fields the form will carry and why the walk stopped (so a partial
+ * collapse — "grabbed 3 of 5" — isn't a surprise). Applying is undoable: the
+ * graph only persists when the author hits Save.
+ */
+function ConvertToFormDialog({ open, plan, onOpenChange, onConfirm }: ConvertToFormDialogProps) {
+  const { t } = useTranslation();
+  const stopReasonText = t(`chatFlow.properties.formConvertStop.${plan.stopReason}`, {
+    defaultValue: "the run reached a node that can't be part of a form",
+  });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("chatFlow.properties.convertToFormTitle", { defaultValue: "Convert to a native form" })}
+          </DialogTitle>
+          <DialogDescription>
+            {t("chatFlow.properties.convertToFormDescription", {
+              defaultValue:
+                "These {{count}} consecutive questions become one multi-field form. The collapse stops because {{reason}}.",
+              count: plan.runLength,
+              reason: stopReasonText,
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="max-h-64 space-y-1 overflow-auto rounded-md border bg-muted/30 p-2 text-sm">
+          {plan.fields.map((field, idx) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <li key={idx} className="flex items-center justify-between gap-2">
+              <span className="truncate">{field.label || field.name || `field ${idx + 1}`}</span>
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span className="rounded bg-background px-1.5 py-0.5">{field.type ?? "text"}</span>
+                <code className="font-mono">{field.name || "—"}</code>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {t("common.cancel", { defaultValue: "Cancel" })}
+          </Button>
+          <Button onClick={onConfirm}>
+            {t("chatFlow.properties.convertToFormConfirm", { defaultValue: "Convert" })}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

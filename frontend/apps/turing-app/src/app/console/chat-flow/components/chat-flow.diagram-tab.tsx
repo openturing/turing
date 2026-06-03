@@ -42,6 +42,7 @@ interface DiagramTabProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   updateNodeData: (nodeId: string, patch: Partial<FlowNodeData>) => void;
+  applyGraph: (nodes: Node<FlowNodeData>[], edges: Edge[], selectId: string | null) => void;
   setSelectedNodeId: (id: string | null) => void;
   setPreviewOpen: (open: boolean) => void;
   setLivePreviewOpen: (open: boolean) => void;
@@ -73,6 +74,7 @@ export function ChatFlowDiagramTab({
   onDragOver,
   onDrop,
   updateNodeData,
+  applyGraph,
   setSelectedNodeId,
   setPreviewOpen,
   setLivePreviewOpen,
@@ -123,7 +125,10 @@ export function ChatFlowDiagramTab({
 
         <FlowProperties
           node={selectedNode}
+          nodes={nodes}
+          edges={edges}
           onChange={updateNodeData}
+          onApplyGraph={applyGraph}
           onClose={() => setSelectedNodeId(null)}
           agentId={agentId}
           currentFlowId={currentFlowId}

@@ -479,8 +479,9 @@ Remaining platform-relevant promotions:
 | T104 | ✅ | — | 10 hooks in `@viglet/turing-react-sdk`: `useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` · SSE in `useTuringSlots` · `useTuringVoice` · `useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>` generic with auto JSON.parse · SSE multiplexer (N→1 EventSource via refcount module-level). Storybook 100% coverage. | §VII.13.a |
 | T106 | ✅ | T92 | **`useTuringFlowChooser` hook** in `@viglet/turing-react-sdk` — imperative `chooseFlow(flow?)` pins a flow by UUID or case-insensitive name through the T92 `POST /chat/flow-select` endpoint (new `postSiteFlowSelect` API helper + `TurChatFlowSelectResponse` type). Exposes `status` (`idle/selecting/success/error`), `error`, `lastResult`, `pinnedFlowId/Name`. `mintSession` (default on) proactively mints the `TUR_SESSION` cookie so a deep-link landing pins before the visitor types — the chat hook reuses the same cookie. Opt-in `autoSelectFromParam` reads a URL query param once on mount (`?flow=in-company`), pinning the deep-linked persona; falls back to `options.flow` when the param is absent. Storybook story (track-picker simulation, latency/error variants). | §VII.13.c |
 | T107 | ✅ | — | **`formCapture` form-event SSE** — a `formCapture` node gains an optional `formFields` array (`ChatFlowNode.FormField`: name→slot, label, type, required, placeholder, validationRule, options). When present, the engine emits a structured `"form"` SSE event (`{nodeId,title,fields[]}`, sibling of the `"options"` event in `TurChatStreamingDispatcher`) so the SDK renders a NATIVE multi-field form instead of single-turn validation. Native forms are "satisfied" — and `walkThroughSatisfiedQuestions` skips them — once every `required != FALSE` field's slot is filled (not via `outputVariable`). New `POST /api/sn/{site}/chat/form-submit` (`TurChatFlowEngineService.submitForm`) writes every field to its slot (audit source `NODE`) then walks the conversation past the satisfied form node. SDK (vanilla `@viglet/turing-sdk` + `@viglet/turing-react-sdk`): SSE parser handles `type:"form"` → `onForm` callback + `form` on the response; chat controller/hook expose `activeForm` + `submitForm(values)` (site mode); `postSiteFormSubmit` helper. flow-dsl: `FormCaptureNode.formFields` + transpile whitelist. Admin editor: `FormFieldsEditor` on the formCapture properties panel + native-form rendering in the live-preview panel. | §VII.13.d |
-| T234 | 💭 | T107 | **Auto-convert a question sequence into a native form** — editor action that detects a linear run of question-like nodes (`aiQuestion` + single-field `formCapture`) with no branching between them and collapses it into one `formCapture` carrying a `formFields` array (one field per node, derived from `outputVariable`→`name`, `aiInstruction`→`label`, `validationRule`, `inlineOptions`→select `options`, `overrideExistingValue`). Pure client-side graph transform + confirm dialog with a before/after preview; rewires `pred → [form] → succ` and deletes the collapsed nodes. Safety rails: stop the run at any node with >1 in/out edge, a downstream `switch`/`condition`, or `inlineOptions` that route a switch (those chips are routing, not capture). Optional LLM "polish labels" pass reusing `TurLlmSummaryService` (T97 pattern). | §VII.13.e |
+| T234 | ✅ | T107 | **Auto-convert a question sequence into a native form** — pure client-side planner [`planFormConversion`](../frontend/apps/turing-app/src/app/console/chat-flow/chat-flow.form-converter.ts) walks the linear run of question-like nodes (`aiQuestion` + single-field `formCapture`) from the selected node and collapses it into one `formCapture` with a `formFields` array (one field per node: `outputVariable`→`name`, first line of `aiInstruction`→`label`, `validationRule` carried + inferred widget `type`, `inlineOptions`→`select` options). Rewires `pred → [form] → succ` (the form reuses the first node's id + position) and removes the folded nodes. Safety rails stop the walk at >1 in/out edge (`branching`), a fan-in (`fan_in`), a non-question node (`non_question`), or a question whose chips route a downstream `switch` (`routes_switch`) — the stop reason is surfaced so a partial collapse isn't a surprise. Editor: a "Convert N questions to a form" button on the question properties panel opens `ConvertToFormDialog` (lists the resulting fields + stop reason); confirming swaps the graph via a new `applyGraph` callback (undoable — persists only on Save). 8 vitest cases on the planner (happy 3-field run, stop-at-switch, routes_switch exclusion, fan-in, branching, single-node→null, native-form→null, non-question start→null). Deterministic; an LLM label-polish pass (T97 pattern) is left as a follow-up. | §VII.13.e |
 | T235 | ✅ | T107 | **`formField.name` → slot picker (not free text) + lint** — `FormFieldsEditor` now picks the field's slot from the agent's catalog (`useAIAgentSlots`, same `Select` as `outputVariable`); an out-of-catalog legacy value is preserved as a "not declared" item so editing never drops it. Picking a slot infers the widget `type` (`TEXT`→textarea, `INTEGER`/`FLOAT`→number) unless the author already set a non-default type. `TurChatFlowLinterService` (T94) gained three native-form rules surfaced in `ChatFlowLintPanel`: `form_field_blank_name` (ERROR), `form_field_duplicate_name` (WARNING), `form_field_unknown_slot` (WARNING — slot not in the agent catalog); the slot-catalog lookup is skipped entirely when a flow has no native-form nodes. 4 new `TurChatFlowLinterServiceTest` cases (unknown / blank / duplicate / clean) → 12/12 green; backend compile clean; frontend `tsc -b --noEmit` exit 0. | §VII.13.f |
+| T236 | 💭 | T234 | **LLM "tidy labels" for the form converter** — opt-in polish pass on the T234 conversion: take the derived field labels (raw question instructions like *"Qual o seu e-mail corporativo?"*) and rewrite them into clean form labels (*"E-mail"*) via the default LLM. Backend `POST /api/ai-agent/{agentId}/chat-flow/form-labels` (or a `TurChatFlowVariantService`-sibling) takes `[{name, label}]` + the flow's `triggerLanguage`, returns polished labels with the **structural fields untouched** (name/type/validationRule/options round-trip verbatim — same contract discipline as T97). Reuses `TurLlmSummaryService` + the bilingual `LlmJudge`-style guardrail (avoid `gpt-4o-mini` structured-output truncation — prefer provider tool calling with schema). Frontend: a "Tidy labels with AI" toggle in `ConvertToFormDialog`; off by default (the deterministic T234 collapse stays the contract), shows a regenerate + diff so the author approves each rewrite before applying. Degrades gracefully (keeps the raw labels) when no default LLM is configured / the call fails. | §VII.13.g |
 
 #### D.10 — Kill list (deprecate or remove)
 
@@ -2785,6 +2786,33 @@ value never reaches handoff (T55), webhooks (T62), or analytics.
 - **Tests** — frontend: picker renders catalog + persists the chosen slot;
   backend: linter unit tests for the three new codes (mirrors the existing
   `TurChatFlowLinterServiceTest` cases).
+
+#### VII.13.g LLM "tidy labels" for the form converter (T236)
+The T234 collapse derives a field label from each question's instruction
+(first line, trimmed). That's deterministic and predictable, but a label like
+*"Qual o seu e-mail corporativo para enviarmos a proposta?"* reads poorly as a
+form field. T236 is the optional polish that turns those into *"E-mail"* — and
+nothing else.
+
+- **Contract** — same discipline as T97's variant generator: the LLM rewrites
+  **only** the `label` strings. `name` (slot), `type`, `required`,
+  `validationRule`, and `options` round-trip verbatim — the model never sees a
+  reason to touch them, and the response is reconciled field-by-field so a
+  hallucinated structural change is dropped.
+- **Backend** — `POST /api/ai-agent/{agentId}/chat-flow/form-labels` taking
+  `{fields:[{name,label}], language}` → `{labels:[…]}`. Built on
+  `TurLlmSummaryService` (default LLM) with the bilingual guardrail; **avoid
+  `gpt-4o-mini` structured-output** (historic JSON truncation — see the repo
+  memory) by preferring provider tool calling with a schema, or the
+  `LlmJudge`-style bilingual path. `language` comes from the flow's
+  `triggerLanguage` so PT flows get PT labels.
+- **Frontend** — a "Tidy labels with AI" toggle in `ConvertToFormDialog` (off
+  by default). When on, the dialog shows the polished labels next to the raw
+  ones (diff) with a regenerate button; the author confirms before the graph is
+  swapped. The deterministic T234 output remains the fallback — a failed/absent
+  LLM call keeps the raw labels and the conversion still works.
+- **Why opt-in** — the collapse must stay usable with zero LLM configured
+  (T234's contract); the LLM is a finishing touch, never a dependency.
 
 ### VII.2 Platform-pending items the engagement surfaced
 

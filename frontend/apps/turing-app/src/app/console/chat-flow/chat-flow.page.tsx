@@ -208,6 +208,18 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     [setNodes],
   );
 
+  // T234 — replace the whole graph after collapsing a question run into a
+  // native form, then select the new form node. Dirty state is implicit:
+  // the user still clicks Save to persist.
+  const applyGraph = useCallback(
+    (nextNodes: Node<FlowNodeData>[], nextEdges: Edge[], selectId: string | null) => {
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      setSelectedNodeId(selectId);
+    },
+    [setNodes, setEdges],
+  );
+
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
 
   const onSave = useCallback(async () => {
@@ -484,6 +496,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           onDragOver={onDragOver}
           onDrop={onDrop}
           updateNodeData={updateNodeData}
+          applyGraph={applyGraph}
           setSelectedNodeId={setSelectedNodeId}
           setPreviewOpen={setPreviewOpen}
           setLivePreviewOpen={setLivePreviewOpen}
