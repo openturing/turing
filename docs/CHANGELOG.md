@@ -1,0 +1,184 @@
+# Turing — Shipped Ledger (CHANGELOG)
+
+> Concise index of work that has shipped. **`git log` is the authoritative
+> history** — this file is just a searchable map of *what* shipped and *where*
+> the rationale lived. Full implementation detail was intentionally removed from
+> the roadmap once shipped (see [IMPROVEMENTS.md](IMPROVEMENTS.md) header rule).
+>
+> Maintenance: when a task in [ROADMAP.md](ROADMAP.md) ships, move its one-line
+> entry here (under its block), reference the commit if useful, and delete it
+> from ROADMAP. See `agents.md` → "Roadmap & docs maintenance".
+
+## Block A — Safety net (test scaffolding + fixtures)
+
+- **T1** — Test infra: `TurAgentChatExecutorMockSupport` + `ChatModelHarness` + `AbstractAgentExecutorIT` + `llm-it` Maven profile (§VI.4, §VI.6 Phase 0)
+- **T2** — Migrated 15 existing skeletons into Structural (12) + Contract (2) + Behavioral shell; 3 old files deleted (§VI.6 Phase 0.5)
+- **T3** — Post-T16 audit deleted 6 obsolete skeletons (#7, #9, #10, #11, #12, #14 — all regen-related). (§VI.6 Phase 1)
+- **T4** — **5/5 implemented:** ✅ **#18** fallsBackToHeuristic, ✅ **#20** discardsForcedFlow, ✅ **BR-doc CPF** moved to `ChatFlowOpsBrDocUnitTest`, ✅ **#16** `persistsStateInsideTransparentWalkAndAgainAfterAdvance_doubleSavePattern` (`@MockitoSpyBean… (§VI.6 Phase 2)
+- **T5** — 3 harness fixtures + `HarnessFixtureSmokeIT` (3 real `@Test`s passing; substring/structural invariant guards) (§VI.5, §VI.6 Phase 3)
+- **T6** — Post-T16 audit deleted 5 obsolete skeletons (#2, #4, #8, #13, #15). (§VI.6 Phase 4)
+- **T7** — Post-T16 triage: **deleted 3** skeletons paired with removed code (#3 tautological with structural pair / #10 OVERRIDE block gone / #12 re-inline gone). (§VI.6 Phase 5)
+- **T8** — Cross-link pairing done; pairing matrix in §VI.3 annotated with T16 status (🗑 deleted / ⏳ redesign). (§VI.6 Phase 6, §VI.8)
+
+## Block B — Harness inversion (§I.5, COMPLETE)
+
+- **T9** — Inverted `advance → LLM call`: `chatFlowEngineService.advance(...)` runs in setup BEFORE `chatModel.call(prompt)`. (§I.5 step 1)
+- **T10** — Persona resolved ONCE per turn (post-flow-context, post-early-advance). (§I.5 step 2)
+- **T11** — Declarative `ChatFlowNode.toolsEnabled` field added (Boolean: TRUE/null = allowed, FALSE = stripped). (§I.5 step 3)
+- **T12** — `regenerateReplyForNewNode`, `buildRegenOverride`, `trimToRecentTurns`, `REGEN_HISTORY_TURN_BUDGET` were `@Deprecated(forRemoval=true)` in T12, then DELETED in T16 along with the legacy `else if (flowContext != null)` block in `execute()`. (§I.5 step 4)
+- **T13** — `TurChatFlowEngineService.advance(...)` now `@Transactional` — strategy mutation + intermediate walk saves + post-walk save coalesce into ONE commit per turn (was N+1 implicit commits). (§I.5 step 5)
+- **T14** — Second-opinion judge retry block was gated by `turing.chat.judge-retry.enabled` in T14, then DELETED in T16. (§I.5 step 6)
+- **T15** — Audited: #17 cycle cap (`TRANSPARENT_WALK_MAX=16` @ engine:1244), #18 strategy fallback (engine:418), #19 A/B window (`isInExperimentWindow` @ engine:881), #20 agent-owner check (executor:1223), silent telemetry (`recordSessionStartSafely`… (§I.5 step 7)
+- **T16** — Terminal refactor — all feature flags + all `@Deprecated(forRemoval=true)` symbols + the legacy `execute()` branch DELETED. (§I.5 step 8)
+
+## Block C — Post-refactor capabilities (Block B is shipped — all of these unblocked)
+
+- **T17** — Documented the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. (§IV.1.a)
+- **T18** — Hand-rolled `TurOpenAiStreamingChatModel` (`WebClient` → `/v1/chat/completions` with `stream:true` + SSE parser for `data: {...}` lines emitting one `ChatResponse` per `delta.content`). (§IV.1.b)
+- **T19** — `FIELD_CONTENT` now indexed as `TextField` (was `StoredField` — invisible to BM25). (§III.3)
+- **T20** — `TurSNSpotlightProcess.getSpotlightsFromQuery` substring `.contains(...)` replaced with locale-aware stem-overlap. (§III.4 (V1))
+- **T21** — `TurSNSpotlightProcess.matchesByLuceneQuery(MemoryIndex, term, Analyzer)` replaces V1's stem-overlap. (§III.4 (V2))
+- **T22** — `TurPersonaToneValidator` replaces whole-word regex with multi-locale Lucene stem matching: `BrazilianAnalyzer` (PT, aggressive Snowball stemmer — chosen over the default `PortugueseAnalyzer` which uses Light stemming and would still miss "… (§IV.3)
+- **T23** — New `ChatFlowOps.canonicalizeAgainstInlineOptions(value, options)` with a 4-tier match cascade — exact (case-fold) → substring containment (longest option wins) → Lucene `LevenshteinAutomata` edit-distance 1 → distance 2. (§IV.6)
+- **T24** — `TurLuceneVectorStore.hybridSearch(query, topK, threshold)` runs vector KNN + BM25 over `FIELD_CONTENT` in parallel, fuses via Reciprocal Rank Fusion (`k=60`, sum of `1/(k+rank_i)` across both lists). (§III.2)
+- **T24b** — **Production hybrid RAG via dedicated BM25 cores in Solr/ES (admin-facing zero-config)**. (§III.2 (production multi-language))
+- **T25** — Router language-aware: each flow's `triggerDescription` now tokenizes through the matching `Analyzer` in [TurChatFlowEngineService.analyzerFor](../turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowEngineService.java) — `Portu… (§II.2.1)
+- **T26** — Router scoring: overlap counter replaced with Lucene `MoreLikeThis` over tiny in-memory indexes of `triggerDescription`s. (§II.2.2)
+- **T27** — Router scaling: per-agent `SearcherManager` cache in `TurChatFlowEngineService.routerIndexByAgent` (one `AnalyzerBucket` per PT/EN bucket, `IndexWriterConfig.setSimilarity(new BM25Similarity())`); built lazily on first procedural route per… (§II.2.3)
+- **T28** — **Phases A+B+C shipped 2026.3.1** — pluggable chat-analytics classifier backbone: new entity `TurAnalyticsIntent` (per-agent catalog, `label` + newline-separated `samples` + `enabled` + `description`, Liquibase `v2026.3.1.1.yaml` with uniqu… (§III.5)
+- **T29** — Tool pre-filtering for large catalogs: `TurToolPreFilterService` does BM25 / MoreLikeThis over `prompts/tools/**/*.md` descriptions in an in-memory `ByteBuffersDirectory`, keeps top-K configured via `turing.genai.tool-prefilter.{top-k,min-t… (§IV.2)
+- **T30** — Conversation-relevance retrieval for chat memory: new `TurChatMemoryRelevanceRetriever` reads the persisted history, splits at the recent-N FIFO window, builds a per-call `ByteBuffersDirectory` + `BM25Similarity` index over the older pool,… (§IV.4)
+- **T31** — System-prompt fragment caching: new `TurPersonaStaticPromptCache` `@Cacheable("turPersonaStaticPrompt")` keyed by `personaId` for the deterministic persona block (instruction + style + mandatory/forbidden vocab + brand placeholder); few-sho… (§IV.5)
+- **T32** — Observability for the cache + retrieval features shipped in 2026.3.1: new `TurChatCacheStatsRegistrar` registers Micrometer gauges (`turing.chat.cache.{hits,misses,size}` tagged by `cache`) for the 9 Hazelcast `IMap`s the chat pipeline read… (§IV.7)
+- **T33** — Decomposed `TurAgentChatExecutor.execute()` (was 1074 lines / 13 timing substages) into 3 collaborator beans + a top-level `TurAgentChatFlowContext` record: `TurChatToolResolver` (native + MCP + custom + persona-brand callbacks → pipeline-d… (§I.8)
+- **T34** — Codified the caching conventions agents kept re-deriving. (§IV.8)
+
+## D.1 — Custom Tool helpers & DX
+
+- **T35** — `http`, `turingSearch` (with doc-level dedup), `slots` helpers exposed to Custom Tool Groovy scripts + `ToolContext` threading via `ChatOptions.toolContext` propagating `conversationId` end-to-end. (§VII.1.a)
+- **T36** — `code.executePython(...)` binding — `TurCodeInterpreterToolService` exposed to Custom Tools Groovy via `TurCustomToolCodeHelper`. (§VII.1.b)
+- **T37** — Hot-reload endpoint `POST /api/custom-tool/{id}/execute` for live Groovy testing without restart (`TurCustomToolCallbackService.executeForPreview`). (§VII.1.c)
+- **T38** — `turingSearch.sn(...)` helper — in-process call to `TurSNSearchProcess.search`, no HTTP self-call. (§VII.1.d)
+- **T39** — `http.bearer(token).postJson(...)` + `http.basic(user, pass)` chainable auth helpers on [`TurCustomToolHttpHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolHttpHelper.java) — immutable: each call returns a new… (§VII.2.a)
+- **T40** — Groovy editor with auto-complete via [`TurCustomToolDescriptorService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolDescriptorService.java) + `GET /api/custom-tool/descriptor` (new endpoint on [`TurCustomToolAPI`](… (§VII.2.b)
+- **T41** — Live unsaved-script preview via per-admin draft overlay. (§VII.2.c)
+
+## D.2 — Engine declarative additions (new node types & policies)
+
+- **T42** — `writeSlot` node type — slot SET with server-side `{{variable}}` interpolation via `ChatFlowOps.applyWriteSlotNode`. (§VII.3.a)
+- **T43** — `formCapture` node type — like `aiQuestion` but with strict regex validation (CPF, CNPJ, email, phone, CEP). (§VII.3.b)
+- **T44** — CPF/CNPJ digit-check (mod-11) on `formCapture` patterns — strict regex format + checksum validation. (§VII.3.b)
+- **T45** — `onJudgeReject` declarative policy (already documented as patch #22) — `advance_with_literal` / `reprompt` / `block` per `aiQuestion`. (§I.3 patch #22)
+- **T46** — `functionCall` node runtime — type is no longer vapor. (§VII.4.a)
+- **T47** — `subFlowSwitch` node — both backend runtime and frontend editor block shipped. (§VII.4.b)
+- **T48** — `scheduleAgent` integration node — fires a routine remote and waits for its slot-bus response. (§VII.4.c)
+- **T49** — `continueOnFailure: true` flag on nodes — authors mark a `functionCall` or `scheduleAgent` node where a tool/routine failure routes the flow along an outgoing edge whose `sourceHandle` is `"failure"` instead of advancing silently. (§VII.4.d)
+- **T50** — `onError` edges in editor visual — analogous to try/catch; red arrow that fires when the node fails. (§VII.4.d)
+- **T51** — Capture-first inversion — persists the user message into the slot BEFORE the judge runs; the judge becomes advisory (writes a `<slot>__confidence` low/high grade in a parallel slot) so the flow never stalls with `slot=null`. (§VII.4.e)
+
+## D.3 — Slot infrastructure & compliance
+
+- **T54** — SSE for slot updates — `TurChatSlotEventBus` in-memory bus + `GET /chat/slots/stream` (`Flux<TurChatSessionSlotsDto>`); three write paths (node, `slots.set`, `POST /chat/slots`) instrumented. (§VII.5.a)
+- **T55** — `POST /chat/handoff` — channel-agnostic handoff with transcript snapshot. (§VII.5.b)
+- **T56** — `GET /chat/share/og` — server-side rendered Open Graph card. (§VII.5.c)
+- **T57** — `GET /chat/state` — snapshot of active flow (`flowId`/`flowName`/`currentNodeId`/`guardrailMethod`/`experimentKey`/`variantLabel`). (§VII.5.d)
+- **T58** — `POST /chat/slot-extract` — multipart file → Tika → LLM structured output → write per slot. (§VII.5.e)
+- **T59** — `TurLlmSummaryService.generate(cacheKey, data, systemPrompt, regenerate)` — reusable LLM summary with cache (TTL from Global Settings) + regenerate. (§VII.5.f)
+- **T60** — **Slot audit log** — every slot write registers origin (`NODE`/`TOOL`/`ENDPOINT`/`EXTRACT`) in `chat_slot_write_log` (id, conversationId, slotName, oldValue, newValue, source, originDetail, ts). (§VII.6.a)
+- **T61** — **PII slot prefix `pii_*`** — three guarantees layered on the existing slot infrastructure. (§VII.6.b)
+- **T62** — **Webhook handoff channel + admin-declared slot-write webhooks.** New `TurChatWebhook` entity (`tur_chat_webhook`, Liquibase [`v2026.3.1.13.yaml`](../turing-app/src/main/resources/db/changelog/v2026.3.1.13.yaml), camelCase columns + `slotTr… (§VII.6.c)
+- **T63** — **Slot delta SSE** — opt-in `GET /chat/slots/stream/delta` emits only `{added, updated, removed}` deltas instead of re-serializing the full map per write (~10× fewer bytes on 20+ slot conversations). (§VII.6.d)
+- **T64** — **Multi-modal slots (`IMAGE`/`AUDIO`/`FILE`).** Three new members on [`TurAIAgentSlotType`](../turing-app/src/main/java/com/viglet/turing/persistence/model/agent/TurAIAgentSlotType.java) (+ `isMultiModal()` helper) whose runtime value is a… (§VII.6.e)
+- **T65** — **Snapshot export of conversation state.** New [`TurChatSessionExportDto`](../turing-app/src/main/java/com/viglet/turing/persistence/dto/agent/TurChatSessionExportDto.java) bundles everything a debugger / regression harness needs to reconst… (§VII.6.f)
+- **T66** — **Per-agent submission retention policy** (LGPD / GDPR compliance hook). (§VII.6.g)
+
+## D.4 — A/B testing evolution
+
+- **T67** — A/B testing native: 5 columns on `TurChatFlow` (`experimentKey`, `variantLabel`, `trafficWeight`, `experimentStartsAt`, `experimentEndsAt`) + `assignVariant` deterministic hash + sticky continuation + `isInExperimentWindow` scheduling filte… (§VII.7.a)
+- **T68** — A/B significance endpoint `/experiment/{key}/significance` — two-proportion z-test with Wald CI. (§VII.7.b)
+- **T69** — A/B analytics dimensions — `experimentKey` + `variantLabel` persisted in `TurChatSessionEvent`; scorecard supports 4 dimensions (agent / persona / experiment / variant). (§VII.7.c)
+- **T70** — **A/B multi-armed bandit (Thompson sampling)** — new per-flow `banditEnabled` Boolean column on `TurChatFlow` (Liquibase `v2026.3.1.9.yaml`); when at least one variant in an experimentKey has it set, the engine swaps the deterministic weigh… (§VII.8.a)
+- **T71** — **Champion-challenger auto-promotion** — closes the A/B loop: T68 says *whether* a variant won, T71 *acts* on it by pinning the winner to 100% traffic and archiving the losers. (§VII.8.b)
+- **T72** — **Per-node A/B** — A/B a single node's wording without duplicating the whole flow. (§VII.8.c)
+- **T73** — **Forced variant via URL param (`?_ab_variant=<label>`)** — QA + sales-demo override that hard-pins a specific A/B arm regardless of the deterministic hash (T67), Thompson sampling (T70), or the scheduled experiment window. (§VII.8.d)
+- **T74** — **Cohort filters in scorecard** — slice the A/B scorecard by visitor sub-population so an operator can answer "does this variant win on *mobile* / in *pt-BR* / in *America/Sao_Paulo*?". (§VII.8.e)
+- **T75** — **Variant trace logging** — `TurChatFlowEngineService.advance(...)` now emits one structured `[A/B Trace] experimentKey:variantLabel:nodeId:userMessage` log line per turn whenever the active flow has a non-blank `experimentKey`; plain (non-… (§VII.8.f)
+
+## D.5 — Code Interpreter hardening (the missing security layer)
+
+- **T76** — Date-bucketed sessions + cleanup task — disk-leak fix (was accumulating ~50MB/day on a moderate site). (§VII.9.a)
+- **T77** — Per-agent Python deps auto-install (global + per-agent UNION) — admin declares `pip install reportlab matplotlib qrcode` in a Custom Tool textarea; engine ensures deps before `executePython`. (§VII.9.b)
+- **T78** — Multi-tenant path isolation — session dirs scoped as `tenants/{agentId}/{convId}/...`. (§VII.9.c)
+- **T79** — HMAC-signed URLs + cookie-binding for `/api/v2/code-interpreter/{session}/{file}` — prevents URL replay / cross-browser leakage (`TurCodeInterpreterUrlSigner`). (§VII.9.d)
+- **T80** — ⭐ **Container sandbox (Docker)** — opt-in per-deployment execution mode (`NATIVE` default \| `DOCKER`) in Global Settings. (§VII.9.e)
+- **T81** — Resource limits per execution (cgroups) for the **NATIVE** path — opt-in CPU/RAM cap (`turing.code-interpreter.native.limits.*`). (§VII.9.f)
+- **T82** — Pre-warmed Python interpreter pool — first call pays ~200ms startup. (§VII.9.g)
+- **T83** — Structured output capture — `executePythonStructured(...)` returns a `TurCodeInterpreterResult` record (`stdout`, `stderr`, `files:[{name,url,image,sizeBytes}]`, `exitCode`, `timedOut`, `durationMs`, plus `markdown`); Groovy `code.executePy… (§VII.9.h)
+
+## D.6 — Analytics & observability gaps
+
+- **T84** — Chat session analytics — 9 timeseries metrics (sessions, goal-achievement-rate, negative-sentiment-rate, avg-duration-ms, avg-tokens-out, tool-calls-per-session, tool-errors-per-session, avg-tool-latency-ms, tool-error-rate-pct) + 4 scoreca… (§VII.10.a)
+- **T85** — **Funnel visualization (V1)** — backend service + REST + sidebar panel. (§VII.10.b)
+- **T86** — **Conversation replay UI (V1)** — operators click `conversationId` in the scorecard and the existing chat-analytics `DetailPanel` now renders a unified **Replay timeline** card that interleaves chat-memory messages with T60 slot-audit entri… (§VII.10.c)
+- **T87** — Sentiment trajectory per turn (line chart 1..N) — identifies where the conversation soured. (§VII.10.d)
+- **T88** — Tool execution latency p95 per tool (disaggregated) — today aggregated as `avg_tool_latency_ms`. (§VII.10.e)
+- **T89** — Flow router decision logs — structured log per router call: candidate flows + score + winner + method. (§VII.10.f)
+- **T90** — SSE channel debug surface in admin — live panel showing open channels + refcount (consuming the SDK's `_slotsSseOpenChannelCount`). (§VII.10.g)
+
+## D.7 — Multi-flow architecture & flow editor DX
+
+- **T91** — **Trigger conflict resolver UI** — `TurTriggerConflictService` runs Jaccard over analyzer-stemmed trigger descriptions on each agent and emits HIGH/WARNING pairs via `GET /chat-flow/trigger-conflicts`. (§VII.11.a)
+- **T92** — **Flow chooser endpoint** `POST /api/sn/{siteName}/chat/flow-select` — `{conversationId, flow}` pins a specific flow; `flow` resolves by UUID first, then by case-insensitive name (deep-link friendly: `?flow=in-company`). (§VII.11.b)
+- **T93** — **Cross-flow slot inheritance** — `TurChatFlow.slotInheritanceJson` (longtext) holds `{receivingSlot:sourceSlot}` map; `{"*":"*"}` is the wildcard "bring everything". (§VII.11.c)
+- **T94** — **Chat-flow lint** — `TurChatFlowLinterService.lint(agentId, flow)` returns `[{nodeId, edgeId, severity, code, message, hint}]` covering `ai_instruction_too_long` (500-char soft cap), `unused_output_variable` (cross-flow scan: counts inheri… (§VII.11.d)
+- **T95** — **Live preview of flow in editor** — `ChatFlowLivePreviewPanel` (toggled by the `IconBolt` action) shows the selected node rendered as the visitor would see it, with `{{slot}}` references interpolated from a `key=value` mock textarea persis… (§VII.11.e)
+- **T96** — **Flow Recipes — unified marketplace** — recipes are bundled JSON in `resources/flow-recipes/*.json` (3 shipped: `lead-capture-b2c`, `in-company-quote-b2b`, `micro-lesson-educational`) carrying flow(s)+personas+slots; reuses `/import-bundle… (§VII.11.f)
+- **T97** — **Variant generator via LLM** — `TurChatFlowVariantService` parses the source `definitionJson`, extracts a node-by-node copy table (`label` / `aiInstruction` / `conditionExpression` / `slotValue`) and asks the default LLM (via `TurLlmSummar… (§VII.11.g)
+- **T98** — **TypeScript DSL** for chat-flow — new monorepo package [`@viglet/turing-flow-dsl`](../frontend/packages/flow-dsl/) with literal-union types mirroring every backend enum (`GuardrailMethod`, `TriggerMode`/`Language`, `NodeType`, `ToolSource`… (§VII.11.h)
+
+## D.9 — SDK & frontend surface
+
+- **T104** — 10 hooks in `@viglet/turing-react-sdk`: `useTuringSlotWriter` · `useTuringSlotExtract` · `useTuringHandoff` · SSE in `useTuringSlots` · `useTuringVoice` · `useTuringFlowState` · `useTuringExperiment` · `useTuringSlot<T>` generic with auto J… (§VII.13.a)
+- **T106** — **`useTuringFlowChooser` hook** in `@viglet/turing-react-sdk` — imperative `chooseFlow(flow?)` pins a flow by UUID or case-insensitive name through the T92 `POST /chat/flow-select` endpoint (new `postSiteFlowSelect` API helper + `TurChatFlo… (§VII.13.c)
+- **T107** — **`formCapture` form-event SSE** — a `formCapture` node gains an optional `formFields` array (`ChatFlowNode.FormField`: name→slot, label, type, required, placeholder, validationRule, options). (§VII.13.d)
+- **T234** — **Auto-convert a question sequence into a native form** — pure client-side planner [`planFormConversion`](../frontend/apps/turing-app/src/app/console/chat-flow/chat-flow.form-converter.ts) walks the linear run of question-like nodes (`aiQue… (§VII.13.e)
+- **T235** — **`formField.name` → slot picker (not free text) + lint** — `FormFieldsEditor` now picks the field's slot from the agent's catalog (`useAIAgentSlots`, same `Select` as `outputVariable`); an out-of-catalog legacy value is preserved as a "not… (§VII.13.f)
+
+## E.1 — Planning & decomposition (parity)
+
+- **T108** — **`planningStep` + `iteratePlan` node types** — LLM emits a typed TODO list into a designated slot (`__plan` by convention), downstream `iteratePlan` nodes consume items one by one and mark complete. (§IX.2.a)
+- **T109** — **`agent.invoke(agentId, message, opts)` Custom Tool helper** — new [`TurCustomToolAgentHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolAgentHelper.java) bound to Groovy scripts as the `agent` variable. (§IX.2.b)
+- **T110** — **Sub-agent scorecard rows ✅ shipped 2026-05-26 (backend + UI dimension picker)**. (§IX.2.c)
+
+## E.2 — Agent Workspace (the key differentiator)
+
+- **T111** — **`TurAgentWorkspace` service ✅ shipped** — per-conversation key-value-blob store backed by `TurStorageService` (already pluggable: NoOp / filesystem / MinIO). (§IX.3.a)
+- **T112** — **`workspace` helper for Custom Tool Groovy ✅ shipped** — new Groovy binding [`TurCustomToolWorkspaceHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolWorkspaceHelper.java) bound as `workspace` by [`TurCustomToo… (§IX.3.b)
+- **T113** — **Workspace SSE bus ✅ shipped** — live "files this agent built for you" stream. (§IX.3.c)
+
+## E.5 — Long-horizon task primitives
+
+- **T121** — **`suspend` node + `POST /chat/resume`** — new chat-flow node type `suspend` parks the cursor indefinitely; the engine's `walkTransparentNodes` recognises the type and returns the state unchanged (cursor stays on the suspend node turn after… (§IX.6.a)
+
+## H.1 — SDK gaps (close before admin migration can start)
+
+- **T219** — **`fetchLlmInstances()` + `fetchLlmContextInfo(llmId)` + `fetchAgentContextInfo(agentId, llmId)` in `core/api.ts`** — three low-level API functions wrapping `GET /llm`, `GET /v2/llm/{id}/chat/context-info`, and `GET /v2/ai-agent/{agentId}/c… (§XII.1)
+- **T220** — **`useTuringLlmInstances()` hook** — new [use-turing-llm-instances.ts](../frontend/packages/react-sdk/src/hooks/use-turing-llm-instances.ts) wraps `fetchLlmInstances()` + `fetchLlmContextInfo()` / `fetchAgentContextInfo()` (when `agentId` i… (§XII.1)
+- **T221** — **Multipart agent chat in `postAgentChat`** — `PostAgentChatOptions` extended with `files?: ReadonlyArray<File>`. (§XII.1)
+- **T221a** — **Backend multipart variant of the agent chat endpoint** — added [`TurAIAgentChatAPI.chatMultipart`](../turing-app/src/main/java/com/viglet/turing/api/agent/TurAIAgentChatAPI.java) (`@PostMapping(consumes = MULTIPART_FORM_DATA_VALUE)`) alon… (§XII.1)
+- **T222** — **Per-turn LLM override on `useTuringChat`** — `UseTuringChatAgent` extended with `allowOverride?: boolean` (documentary flag for host UIs); `send(content, overrides?: SendOverrides)` takes an optional `{ llmInstanceId? }` bag honoured only… (§XII.1)
+- **T223** — **Real `AbortController` for `stop()`** — new `abortControllerRef = useRef<AbortController \| null>(null)` is minted at the top of every `send` (prior controller `.abort()`'d first so chained sends cancel cleanly), the controller's `signal`… (§XII.1)
+- **T224** — **`useTuringLlmChat({ llmInstanceId })`** — new [postLlmChat()](../frontend/packages/react-sdk/src/core/api.ts) API + [use-turing-llm-chat.ts](../frontend/packages/react-sdk/src/hooks/use-turing-llm-chat.ts) hook for the plain-LLM endpoint… (§XII.1)
+- **T225** — **`useTuringScheduleAgentWaiting({ agentId })`** — admin-flavoured alias of the existing `useTuringRoutineWaiting` hook (which already wraps `useTuringSlots` + filters the `__scheduleAgent_pending_` markers — see [use-turing-routine-waiting… (§XII.1)
+
+## H.2 — Admin migration (drop the duplicated transport)
+
+- **T226** — **Replace admin's `useLlmInstances` with `useTuringLlmInstances`** — local hook file [use-llm-instances.ts] deleted; `chat.page.tsx` now imports `useTuringLlmInstances` from `@viglet/turing-react-sdk` with `persistKey: LLM_STORAGE_KEY` + `d… (§XII.2)
+- **T227** — **Replaced `TurChatService.sendAgentStream` call sites with `useTuringChat({ agent })`** — new [AgentChatTab](../frontend/apps/turing-app/src/app/console/chat/components/agent-chat-tab.tsx) child owns one tab's `useTuringChat` (agent mode):… (§XII.2)
+- **T227a** — **`useTuringChat` context dependency optional in agent mode** — same shape as T228a but applied to [useTuringChat](../frontend/packages/react-sdk/src/hooks/use-turing-chat.ts): swapped `useTuringContext()` for `useOptionalTuringContext()` (… (§XII.2)
+- **T228a** — **`useTuringSlots` context dependency optional in agent mode** — new [useOptionalTuringContext()](../frontend/packages/react-sdk/src/core/use-turing-context.ts) helper (non-throwing variant of `useTuringContext`) plus a runtime guard inside… (§XII.2)
+- **T228** — **Replaced admin's `useScheduleAgentWaiting` with the SDK's `useTuringScheduleAgentWaiting`** — local hook file deleted; one-line import swap in [chat.page.tsx:35](../frontend/apps/turing-app/src/app/console/chat/chat.page.tsx#L35) (`import… (§XII.2)
+- **T229** — **Migrate admin's AI title generator to `postLlmChat`** — [use-chat-session.ts:40-58](../frontend/apps/turing-app/src/app/console/chat/hooks/use-chat-session.ts#L40-L58) now calls the SDK's `postLlmChat()` directly (one-shot is the right sh… (§XII.2)
+- **T230** — **Deleted `TurChatService` and `chat.service.ts`** — after T227 retired the last call sites, a frontend-wide sweep confirmed nothing imported the `TurChatService` class anymore and `sendSemanticStream` was dead code (defined, never called —… (§XII.2)
+- **T231** — **`chat.page.tsx` extraction** — T227 already extracted the per-agent tab content; T231 completed the structural goals. (§XII.2)
+- **T232** — **Admin smoke ITs (RTL)** — bootstrapped the **frontend's first test runner** (none existed in the monorepo): vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb, a standalone [vitest.config.ts](../frontend/apps/turing-app/vit… (§XII.2)
