@@ -8,9 +8,11 @@ import {
   IconFlag3,
   IconForms,
   IconHandStop,
+  IconListCheck,
   IconPencilPlus,
   IconPlayerPlayFilled,
   IconBell,
+  IconRepeat,
   IconRouteAltLeft,
   IconSparkles,
   IconSubtask,
@@ -585,6 +587,97 @@ export function WebhookNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+/**
+ * T108-1 — planningStep node. The LLM decomposes the user's goal into a typed
+ * TODO list written into the plan slot ({@link FlowNodeData.outputVariable},
+ * default `__plan`). Yellow signals "think before acting" — adjacent to the
+ * amber condition node but warmer.
+ *
+ * @since 2026.3.1
+ */
+export function PlanningStepNode({ data }: ChatFlowNodeProps) {
+  const planSlot =
+    typeof data.outputVariable === "string" && data.outputVariable.trim().length > 0
+      ? data.outputVariable.trim()
+      : "__plan";
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-yellow-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-yellow-500 px-3 py-2 text-white">
+        <IconListCheck className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Planning Step"}</div>
+      </div>
+      <div className="bg-yellow-50 p-3 text-xs leading-relaxed text-yellow-900 dark:bg-yellow-950/40 dark:text-yellow-100">
+        <div>
+          <span className="font-semibold">Plan slot: </span>
+          <code className="rounded bg-yellow-200/60 px-1 py-0.5 text-[11px] dark:bg-yellow-900/50">
+            {planSlot}
+          </code>
+        </div>
+        <div className="mt-1 opacity-90">
+          <span className="font-semibold">Goal: </span>
+          {data.aiInstruction?.trim() || <span className="italic opacity-60">No instruction yet</span>}
+        </div>
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-yellow-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-yellow-600!" />
+    </div>
+  );
+}
+
+/**
+ * T108-2 — iteratePlan node. Walks the plan in {@link FlowNodeData.outputVariable}
+ * (default `__plan`) one item at a time, descending into the body sub-flow
+ * ({@link FlowNodeData.subFlowId}) once per pending item and completing it per
+ * {@link FlowNodeData.completionMode}. Emerald signals a loop construct.
+ *
+ * @since 2026.3.1
+ */
+export function IteratePlanNode({ data }: ChatFlowNodeProps) {
+  const planSlot =
+    typeof data.outputVariable === "string" && data.outputVariable.trim().length > 0
+      ? data.outputVariable.trim()
+      : "__plan";
+  const bodyName =
+    typeof data.subFlowName === "string" && data.subFlowName.trim().length > 0
+      ? data.subFlowName
+      : null;
+  const body = bodyName ?? (typeof data.subFlowId === "string" ? data.subFlowId : null);
+  const mode = data.completionMode ?? "mark_done";
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-emerald-500 bg-background shadow-md">
+      <div className="flex items-center justify-between gap-2 bg-emerald-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconRepeat className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Iterate Plan"}</div>
+        </div>
+        <span className="rounded bg-emerald-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+          {mode === "remove" ? "REMOVE" : "DONE"}
+        </span>
+      </div>
+      <div className="bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+        <div>
+          <span className="font-semibold">Plan: </span>
+          <code className="rounded bg-emerald-200/60 px-1 py-0.5 text-[11px] dark:bg-emerald-900/50">
+            {planSlot}
+          </code>
+        </div>
+        <div className="mt-1 opacity-90">
+          <span className="font-semibold">Body: </span>
+          {body ? (
+            <code className="rounded bg-emerald-200/60 px-1 py-0.5 text-[11px] dark:bg-emerald-900/50">
+              {body}
+            </code>
+          ) : (
+            <span className="italic opacity-60">not selected</span>
+          )}
+        </div>
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-emerald-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-emerald-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -601,4 +694,6 @@ export const nodeTypes = {
   writeSlot: WriteSlotNode,
   webhook: WebhookNode,
   suspend: SuspendNode,
+  planningStep: PlanningStepNode,
+  iteratePlan: IteratePlanNode,
 };

@@ -19,6 +19,8 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   writeSlot: "WRITE SLOT",
   webhook: "WEBHOOK",
   suspend: "SUSPEND",
+  planningStep: "PLANNING STEP",
+  iteratePlan: "ITERATE PLAN",
 };
 
 /**
@@ -40,6 +42,15 @@ export function buildDefaultNodeData(type: FlowNodeType): FlowNodeData {
   }
   if (type === "slot") {
     base.slotOperation = "SET";
+  }
+  if (type === "planningStep" || type === "iteratePlan") {
+    // Both default to the reserved `__plan` slot (the backend's
+    // DEFAULT_PLAN_SLOT) so a planningStep → iteratePlan pair wires up with no
+    // extra config; the author can point them at a custom slot if needed.
+    base.outputVariable = "__plan";
+  }
+  if (type === "iteratePlan") {
+    base.completionMode = "mark_done";
   }
   return base;
 }
