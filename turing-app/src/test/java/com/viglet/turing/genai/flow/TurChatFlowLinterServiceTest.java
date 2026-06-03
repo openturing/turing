@@ -387,6 +387,89 @@ class TurChatFlowLinterServiceTest {
                         "form_field_duplicate_name");
     }
 
+    @Test
+    void flagsPlanningStepWhosePlanIsNeverConsumed() {
+        // planningStep writes __plan but nothing iterates or interpolates it.
+        String definition = "{"
+                + "\"nodes\":["
+                + "  {\"id\":\"start\",\"type\":\"start\",\"data\":{}},"
+                + "  {\"id\":\"plan\",\"type\":\"planningStep\",\"data\":{"
+                + "      \"label\":\"Plan\",\"outputVariable\":\"__plan\","
+                + "      \"aiInstruction\":\"Break the goal into steps\"}},"
+                + "  {\"id\":\"end\",\"type\":\"end\",\"data\":{}}"
+                + "],"
+                + "\"edges\":["
+                + "  {\"id\":\"e1\",\"source\":\"start\",\"target\":\"plan\"},"
+                + "  {\"id\":\"e2\",\"source\":\"plan\",\"target\":\"end\",\"label\":\"continue\"}"
+                + "]}";
+        TurChatFlow flow = flow("flow-1", definition);
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues)
+                .filteredOn(i -> "planning_step_unused_plan".equals(i.code()))
+                .extracting(TurChatFlowLintIssueDto::severity, TurChatFlowLintIssueDto::nodeId)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("WARNING", "plan"));
+    }
+
+    @Test
+    void doesNotFlagPlanningStepWhenIteratePlanConsumesThePlan() {
+        // planningStep → iteratePlan reading the same __plan slot (with a body
+        // sub-flow). Neither planning_step_unused_plan nor iterate_plan_no_body
+        // should fire.
+        String definition = "{"
+                + "\"nodes\":["
+                + "  {\"id\":\"start\",\"type\":\"start\",\"data\":{}},"
+                + "  {\"id\":\"plan\",\"type\":\"planningStep\",\"data\":{"
+                + "      \"label\":\"Plan\",\"outputVariable\":\"__plan\","
+                + "      \"aiInstruction\":\"Break the goal into steps\"}},"
+                + "  {\"id\":\"iter\",\"type\":\"iteratePlan\",\"data\":{"
+                + "      \"label\":\"Iterate\",\"outputVariable\":\"__plan\","
+                + "      \"subFlowId\":\"body-flow\"}},"
+                + "  {\"id\":\"end\",\"type\":\"end\",\"data\":{}}"
+                + "],"
+                + "\"edges\":["
+                + "  {\"id\":\"e1\",\"source\":\"start\",\"target\":\"plan\"},"
+                + "  {\"id\":\"e2\",\"source\":\"plan\",\"target\":\"iter\",\"label\":\"continue\"},"
+                + "  {\"id\":\"e3\",\"source\":\"iter\",\"target\":\"end\",\"label\":\"done\"}"
+                + "]}";
+        TurChatFlow flow = flow("flow-1", definition);
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues).extracting(TurChatFlowLintIssueDto::code)
+                .doesNotContain("planning_step_unused_plan", "iterate_plan_no_body");
+    }
+
+    @Test
+    void flagsIteratePlanWithoutBodySubFlow() {
+        String definition = "{"
+                + "\"nodes\":["
+                + "  {\"id\":\"start\",\"type\":\"start\",\"data\":{}},"
+                + "  {\"id\":\"iter\",\"type\":\"iteratePlan\",\"data\":{"
+                + "      \"label\":\"Iterate\",\"outputVariable\":\"__plan\"}},"
+                + "  {\"id\":\"end\",\"type\":\"end\",\"data\":{}}"
+                + "],"
+                + "\"edges\":["
+                + "  {\"id\":\"e1\",\"source\":\"start\",\"target\":\"iter\"},"
+                + "  {\"id\":\"e2\",\"source\":\"iter\",\"target\":\"end\",\"label\":\"done\"}"
+                + "]}";
+        TurChatFlow flow = flow("flow-1", definition);
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(flow));
+
+        List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
+
+        assertThat(issues)
+                .filteredOn(i -> "iterate_plan_no_body".equals(i.code()))
+                .extracting(TurChatFlowLintIssueDto::severity, TurChatFlowLintIssueDto::nodeId)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("WARNING", "iter"));
+    }
+
     /** A minimal flow whose single {@code formCapture} node carries the given JSON formFields array. */
     private static String formFlow(String formFieldsJson) {
         return "{"

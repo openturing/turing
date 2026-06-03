@@ -29,7 +29,7 @@ import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
 import { planFormConversion, type FormConversionPlan } from "../chat-flow.form-converter";
-import type { FlowFormField, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowCompletionMode, FlowFormField, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 /** T107 — widget hints offered for a formCapture form field. */
 const FORM_FIELD_TYPES = ["text", "email", "tel", "number", "date", "textarea", "select"] as const;
@@ -63,6 +63,7 @@ const VALIDATION_OPTIONS = ["none", "email", "phone", "url", "number", "date"];
 const TOOL_SOURCE_OPTIONS: FlowToolSource[] = ["NATIVE", "MCP"];
 const SLOT_OPERATION_OPTIONS: FlowSlotOperation[] = ["SET", "DELETE"];
 const ON_JUDGE_REJECT_OPTIONS: FlowOnJudgeReject[] = ["reprompt", "advance_with_literal", "block"];
+const COMPLETION_MODE_OPTIONS: FlowCompletionMode[] = ["mark_done", "remove"];
 
 export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
   const { t } = useTranslation();
@@ -976,6 +977,186 @@ export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onC
             </div>
           </>
         )}
+
+        {type === "planningStep" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-plan-goal">
+                {t("chatFlow.properties.planningGoal", { defaultValue: "Planning goal" })}
+              </Label>
+              <Textarea
+                id="flow-node-plan-goal"
+                rows={4}
+                value={data.aiInstruction ?? ""}
+                onChange={(e) => update({ aiInstruction: e.target.value })}
+                placeholder={t("chatFlow.properties.planningGoalPlaceholder", {
+                  defaultValue: "Break the user's goal into 3-6 concrete, ordered steps.",
+                })}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.planningGoalHint", {
+                  defaultValue:
+                    "The LLM decomposes this goal into a typed TODO list (id, title, status) written into the plan slot below.",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-plan-slot">
+                {t("chatFlow.properties.planSlot", { defaultValue: "Plan slot" })}
+              </Label>
+              <Input
+                id="flow-node-plan-slot"
+                value={data.outputVariable ?? ""}
+                onChange={(e) => update({ outputVariable: e.target.value || undefined })}
+                placeholder="__plan"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.planSlotHint", {
+                  defaultValue:
+                    "Conversation slot that receives the JSON plan (default __plan). Point a downstream Iterate Plan node at the same slot.",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-plan-schema">
+                {t("chatFlow.properties.planSchema", { defaultValue: "Item schema (optional)" })}
+              </Label>
+              <Textarea
+                id="flow-node-plan-schema"
+                rows={2}
+                value={data.planSchema ?? ""}
+                onChange={(e) => update({ planSchema: e.target.value || undefined })}
+                placeholder="List<{id: string, title: string, status: 'pending'|'done'}>"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.planSchemaHint", {
+                  defaultValue:
+                    "Free-form hint steering the JSON item shape. The backend normalizes the model's output to {id, title, status} regardless — leave blank for the default.",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="flow-node-plan-override" className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  id="flow-node-plan-override"
+                  checked={data.overrideExistingValue ?? false}
+                  onCheckedChange={(checked) =>
+                    update({ overrideExistingValue: checked === true ? true : undefined })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">
+                    {t("chatFlow.properties.planRegenerate", {
+                      defaultValue: "Always regenerate the plan",
+                    })}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("chatFlow.properties.planRegenerateHint", {
+                      defaultValue:
+                        "When off (default), a plan already present in the slot is kept across re-entries. When on, the step regenerates the plan every time it runs.",
+                    })}
+                  </span>
+                </div>
+              </label>
+            </div>
+          </>
+        )}
+
+        {type === "iteratePlan" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-iterate-slot">
+                {t("chatFlow.properties.planSlot", { defaultValue: "Plan slot" })}
+              </Label>
+              <Input
+                id="flow-node-iterate-slot"
+                value={data.outputVariable ?? ""}
+                onChange={(e) => update({ outputVariable: e.target.value || undefined })}
+                placeholder="__plan"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.iteratePlanSlotHint", {
+                  defaultValue:
+                    "Slot to read the plan from — must match the Planning Step that produced it (default __plan).",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.iteratePlanBody", { defaultValue: "Body sub-flow" })}</Label>
+              <Select
+                value={data.subFlowId ?? ""}
+                onValueChange={(value) => {
+                  const selected = subFlowOptions.find((f) => f.id === value);
+                  update({
+                    subFlowId: value || undefined,
+                    subFlowName: selected?.name ?? undefined,
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.subFlowPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subFlowOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.subFlowEmpty")}
+                    </div>
+                  ) : (
+                    subFlowOptions.map((flow) => (
+                      <SelectItem key={flow.id} value={flow.id as string}>
+                        {flow.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.iteratePlanBodyHint", {
+                  defaultValue:
+                    "Runs once per pending item. The current item is exposed to the sub-flow as {{__planItemTitle}} / {{__planItemId}}.",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.completionMode", { defaultValue: "On item completion" })}</Label>
+              <Select
+                value={data.completionMode ?? "mark_done"}
+                onValueChange={(value) =>
+                  update({
+                    // Keep the default ("mark_done") implicit in the export JSON.
+                    completionMode:
+                      value === "mark_done" ? undefined : (value as FlowCompletionMode),
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPLETION_MODE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`chatFlow.properties.completionModeOptions.${option}`, {
+                        defaultValue: option === "remove" ? "Remove the item" : "Mark the item done",
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.completionModeHint", {
+                  defaultValue:
+                    "After the body sub-flow finishes an item: mark it done (keeps an auditable plan) or remove it (queue-drain). Both terminate the loop.",
+                })}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );
@@ -1197,6 +1378,10 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.scheduleAgent";
     case "suspend":
       return "chatFlow.palette.suspend";
+    case "planningStep":
+      return "chatFlow.palette.planningStep";
+    case "iteratePlan":
+      return "chatFlow.palette.iteratePlan";
   }
 }
 

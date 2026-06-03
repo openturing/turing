@@ -20,7 +20,20 @@ export type FlowNodeType =
   | "slot"
   | "writeSlot"
   | "webhook"
-  | "suspend";
+  | "suspend"
+  | "planningStep"
+  | "iteratePlan";
+
+/**
+ * Completion policy for an {@code iteratePlan} node (T108-2): what happens to
+ * the in-flight plan item once its body sub-flow finishes.
+ * - {@code mark_done} (default): flip the item's status to "done" — the plan
+ *   is preserved as an auditable record of what ran.
+ * - {@code remove}: drop the item from the plan entirely (queue-drain).
+ * Both modes guarantee the iteration terminates.
+ * @since 2026.3.1
+ */
+export type FlowCompletionMode = "mark_done" | "remove";
 
 export type FlowToolSource = "NATIVE" | "MCP";
 
@@ -250,6 +263,22 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   formFields?: FlowFormField[];
+  /**
+   * T108-1 — schema hint for a `planningStep` node: a free-form description of
+   * the JSON item shape the LLM should emit into the plan slot (reuses
+   * {@link outputVariable}, default `__plan`). Passed verbatim into the
+   * planning prompt; the backend normalizes whatever the model returns to the
+   * canonical `{id, title, status}` array regardless. Optional.
+   * @since 2026.3.1
+   */
+  planSchema?: string;
+  /**
+   * T108-2 — completion policy for an `iteratePlan` node. See
+   * {@link FlowCompletionMode}. Omitted/`mark_done` is the default and stays
+   * implicit in the export JSON.
+   * @since 2026.3.1
+   */
+  completionMode?: FlowCompletionMode;
 }
 
 /**
@@ -367,5 +396,21 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-slate-50 dark:bg-slate-900/40",
     border: "border-slate-500",
     text: "text-slate-900 dark:text-slate-100",
+  },
+  planningStep: {
+    // T108 — amber/yellow signals "think before acting". Adjacent to
+    // condition's amber (both are reasoning steps) but warmer (yellow) so the
+    // planning family reads distinct on the canvas.
+    bg: "bg-yellow-50 dark:bg-yellow-950/40",
+    border: "border-yellow-500",
+    text: "text-yellow-900 dark:text-yellow-100",
+  },
+  iteratePlan: {
+    // T108 — emerald: a loop/iteration construct. Paired visually with
+    // planningStep (yellow) — plan then execute — while standing apart from the
+    // single-descent subFlow (violet).
+    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    border: "border-emerald-500",
+    text: "text-emerald-900 dark:text-emerald-100",
   },
 };

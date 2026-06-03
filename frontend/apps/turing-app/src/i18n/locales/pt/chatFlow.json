@@ -136,7 +136,9 @@
       "slot": "Slot",
       "writeSlot": "Gravar Slot (com template)",
       "scheduleAgent": "Rotina Agendada",
-      "suspend": "Suspender"
+      "suspend": "Suspender",
+      "planningStep": "Passo de Planejamento",
+      "iteratePlan": "Iterar Plano"
     },
     "properties": {
       "header": "Propriedades do Nó",

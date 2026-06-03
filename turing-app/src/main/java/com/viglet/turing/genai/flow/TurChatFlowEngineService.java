@@ -2821,6 +2821,68 @@ public class TurChatFlowEngineService {
                 continue;
             }
 
+            // planningStep node (T108): the LLM decomposes the user's goal
+            // into a typed TODO list and the engine writes the JSON plan into
+            // the node's plan slot (outputVariable, default __plan). Transparent
+            // — no user round-trip — and the flow advances on its single
+            // outgoing edge. The plan IS a slot value, so the SSE bus surfaces
+            // it to subscribers exactly like slot / writeSlot writes do; an
+            // iteratePlan node (T108-2) downstream consumes it item by item.
+            if ("planningStep".equals(current.type())) {
+                ChatFlowOps.applyPlanningStepNode(state, current, auxModel);
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
+            // iteratePlan node (T108-2): walks the plan produced by an upstream
+            // planningStep one item at a time. On each entry it picks the first
+            // PENDING item, exposes it to the body sub-flow via the reserved
+            // __planItemId / __planItemTitle slots, and descends into the body
+            // sub-flow (subFlowId) to execute it. On ascent the engine marks (or
+            // removes, per completionMode) the in-flight item and stays on this
+            // node so the next walk picks the next pending item. When nothing is
+            // pending, the markers are cleared and the flow advances on the
+            // single outgoing edge. The body-less case (no subFlowId, or a
+            // descent that can't happen) completes the item in place so the loop
+            // always terminates instead of re-picking the same item forever.
+            if ("iteratePlan".equals(current.type())) {
+                String planSlot = planSlotKeyOf(current);
+                Map<String, String> variables = ChatFlowOps.readVariables(state);
+                List<ChatFlowOps.PlanItem> plan = ChatFlowOps.parsePlan(variables.get(planSlot));
+                Optional<ChatFlowOps.PlanItem> next = ChatFlowOps.firstPendingItem(plan);
+                if (next.isEmpty()) {
+                    ChatFlowOps.clearPlanIterationMarkers(state);
+                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                    state = stateRepository.save(state);
+                    slotEventBus.publish(state.getConversationId(),
+                            listSlotsForConversation(state.getConversationId()).slots());
+                    continue;
+                }
+                ChatFlowOps.PlanItem item = next.get();
+                ChatFlowOps.setPlanIterationMarkers(state, item);
+                state = stateRepository.save(state);
+                Optional<TurChatFlowState> child = enterSubFlowById(state, current.subFlowId(), current);
+                if (child.isPresent()) {
+                    log.info("[FlowEngine] iteratePlan '{}' → item '{}' ('{}') → body subFlow '{}'",
+                            current.id(), item.id(), truncate(item.title(), 60), current.subFlowId());
+                    state = child.get();
+                    continue;
+                }
+                // No body sub-flow to descend into — complete the item in place
+                // (mark_done / remove) so the iteration advances instead of
+                // looping on the same pending item.
+                log.info("[FlowEngine] iteratePlan '{}' has no usable body subFlow — completing item '{}' in place",
+                        current.id(), item.id());
+                ChatFlowOps.completePlanItem(state, planSlot, item.id(), current.completionMode());
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
             // functionCall node (T46): deterministic tool invocation from the
             // flow — NATIVE @Tool methods (incl. Custom Tools registered as
             // such) executed with aiInstruction as the JSON input template
@@ -2955,6 +3017,19 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * Resolves the plan slot an {@code iteratePlan} (or {@code planningStep})
+     * node operates on: the node's {@code outputVariable}, or
+     * {@link ChatFlowOps#DEFAULT_PLAN_SLOT} when blank. Trimmed so the key
+     * matches what {@code applyPlanningStepNode} wrote.
+     *
+     * @since 2026.3.1
+     */
+    private static String planSlotKeyOf(ChatFlowNode node) {
+        String slot = node == null ? null : node.outputVariable();
+        return (slot == null || slot.isBlank()) ? ChatFlowOps.DEFAULT_PLAN_SLOT : slot.trim();
+    }
+
+    /**
      * Shared body for both the plain {@code subFlow} node (T18) and the
      * {@code subFlowSwitch} node (T47) — descent is identical once we know
      * the target sub-flow id; the only difference is where the id came from
@@ -3045,7 +3120,30 @@ public class TurChatFlowEngineService {
         // Propagate any variables captured by the sub-flow back to the parent.
         parent.setVariablesJson(child.getVariablesJson() == null ? "{}" : child.getVariablesJson());
         String previousParentNode = parent.getCurrentNodeId();
-        ChatFlowOps.advanceToFirstEdge(parent, parentGraph, subFlowNodeOpt.get());
+        ChatFlowNode parentNode = subFlowNodeOpt.get();
+
+        // T108-2 — when the parent is an iteratePlan node, the body sub-flow
+        // just finished executing ONE plan item. Complete that item (mark_done
+        // / remove, per completionMode) and STAY on the iteratePlan node so the
+        // transparent walk re-enters it and picks the next pending item, rather
+        // than advancing past it like a plain subFlow ascent does.
+        if ("iteratePlan".equals(parentNode.type())) {
+            String planSlot = planSlotKeyOf(parentNode);
+            String itemId = ChatFlowOps.readVariables(parent).get(ChatFlowOps.PLAN_ITEM_ID_SLOT);
+            boolean changed = ChatFlowOps.completePlanItem(parent, planSlot, itemId,
+                    parentNode.completionMode());
+            log.info("[FlowEngine] iteratePlan ascend: child='{}' → parent='{}' completed item '{}' (changed={}) — staying on '{}'",
+                    child.getId(), parent.getId(), itemId, changed, parent.getCurrentNodeId());
+            stateRepository.delete(child);
+            TurChatFlowState saved = stateRepository.save(parent);
+            if (changed) {
+                slotEventBus.publish(saved.getConversationId(),
+                        listSlotsForConversation(saved.getConversationId()).slots());
+            }
+            return saved;
+        }
+
+        ChatFlowOps.advanceToFirstEdge(parent, parentGraph, parentNode);
         log.info("[FlowEngine] Sub Flow ascend: child='{}' (flow '{}') → parent='{}' (flow '{}', '{}' → '{}')",
                 child.getId(), child.getFlow().getId(),
                 parent.getId(), parent.getFlow().getId(),

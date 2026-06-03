@@ -123,6 +123,7 @@ public class TurChatFlowLinterService {
             checkDeadEndNodes(graph, issues);
             checkBranchingEdgeLabels(graph, issues);
             checkFormFields(graph, agentId, issues);
+            checkPlanningNodes(graph, issues);
         }
         if (agentId != null && !agentId.isBlank()) {
             checkTriggerConflicts(agentId, flow, issues);
@@ -351,6 +352,74 @@ public class TurChatFlowLinterService {
                 }
             }
         }
+    }
+
+    /**
+     * T108 — planning-node validation:
+     * <ul>
+     *   <li>{@code planning_step_unused_plan} (WARNING) — a {@code planningStep}
+     *       whose plan slot is never consumed in this flow (no {@code iteratePlan}
+     *       reads it and no {@code {{slot}}} interpolation references it). The
+     *       expensive LLM planning call produces a value nobody walks.</li>
+     *   <li>{@code iterate_plan_no_body} (WARNING) — an {@code iteratePlan} with
+     *       no {@code subFlowId} (body flow). Without a body it just drains the
+     *       plan marking items done without executing anything per item.</li>
+     * </ul>
+     *
+     * <p>Scoped to the single flow graph — the common authoring shape keeps the
+     * {@code planningStep} and its {@code iteratePlan} consumer in the same flow.
+     */
+    private static void checkPlanningNodes(ChatFlowGraph graph,
+            List<TurChatFlowLintIssueDto> out) {
+        boolean hasPlanningNodes = false;
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("planningStep".equals(node.type()) || "iteratePlan".equals(node.type())) {
+                hasPlanningNodes = true;
+                break;
+            }
+        }
+        if (!hasPlanningNodes) {
+            return;
+        }
+        // Slots consumed as a plan: every iteratePlan's plan slot, plus any
+        // {{slot}} interpolation anywhere in the graph (a planningStep whose
+        // plan an author renders via {{__plan}} counts as consumed too).
+        Set<String> consumed = new HashSet<>();
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("iteratePlan".equals(node.type())) {
+                consumed.add(planSlotName(node));
+            }
+            collectInterpolated(consumed, node.aiInstruction());
+            collectInterpolated(consumed, node.slotValue());
+            collectInterpolated(consumed, node.label());
+            collectInterpolated(consumed, node.validationRule());
+            collectInterpolated(consumed, node.conditionExpression());
+        }
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("planningStep".equals(node.type()) && !consumed.contains(planSlotName(node))) {
+                out.add(new TurChatFlowLintIssueDto(
+                        node.id(), null, "WARNING", "planning_step_unused_plan",
+                        "Plan slot '" + planSlotName(node) + "' is generated here but never iterated"
+                                + " or read downstream",
+                        "Add an iteratePlan node reading this slot, or render it with {{"
+                                + planSlotName(node) + "}} — otherwise the planning LLM call is wasted."));
+            }
+            if ("iteratePlan".equals(node.type())
+                    && (node.subFlowId() == null || node.subFlowId().isBlank())) {
+                out.add(new TurChatFlowLintIssueDto(
+                        node.id(), null, "WARNING", "iterate_plan_no_body",
+                        "iteratePlan has no body sub-flow — it will mark every plan item done"
+                                + " without executing anything",
+                        "Set the node's sub-flow (subFlowId) to the flow that should run once per"
+                                + " plan item."));
+            }
+        }
+    }
+
+    /** Plan slot an iteratePlan/planningStep node operates on (outputVariable, default {@code __plan}). */
+    private static String planSlotName(ChatFlowNode node) {
+        String slot = node.outputVariable();
+        return (slot == null || slot.isBlank()) ? "__plan" : slot.trim();
     }
 
     private void checkTriggerConflicts(String agentId, TurChatFlow flow,

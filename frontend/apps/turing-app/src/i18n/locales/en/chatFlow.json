@@ -136,7 +136,9 @@
       "slot": "Slot",
       "writeSlot": "Write Slot (templated)",
       "scheduleAgent": "Scheduled Routine",
-      "suspend": "Suspend"
+      "suspend": "Suspend",
+      "planningStep": "Planning Step",
+      "iteratePlan": "Iterate Plan"
     },
     "properties": {
       "header": "Node Properties",

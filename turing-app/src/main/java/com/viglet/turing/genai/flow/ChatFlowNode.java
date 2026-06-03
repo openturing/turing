@@ -315,6 +315,46 @@ public record ChatFlowNode(String id, String type, NodeData data) {
     }
 
     /**
+     * Schema hint for a {@code planningStep} node (T108): a free-form
+     * description of the JSON shape the LLM should emit into
+     * {@link #outputVariable()} (the plan slot, conventionally {@code __plan}).
+     * The engine doesn't parse this string — it's passed verbatim into the
+     * planning prompt so the author can steer the structure (e.g.
+     * {@code "List<{id: string, title: string, status: 'pending'|'done'}>"}).
+     * Whatever the model returns is normalized to the canonical plan-item
+     * array by {@code ChatFlowOps.generatePlan(...)} regardless of this hint,
+     * so a blank value still yields a well-formed plan.
+     *
+     * @since 2026.3.1
+     */
+    public String planSchema() {
+        return data.planSchema();
+    }
+
+    /**
+     * Completion policy for an {@code iteratePlan} node (T108-2): what happens
+     * to the in-flight plan item once its body sub-flow finishes (the engine
+     * ascends back to the {@code iteratePlan} node). Two values:
+     *
+     * <ul>
+     *   <li>{@code "mark_done"} (default, also for {@code null}/unrecognized) —
+     *       flip the item's {@code status} to {@code "done"} in the plan slot;
+     *       the plan is preserved as an auditable record of what ran.</li>
+     *   <li>{@code "remove"} — drop the item from the plan entirely (queue-drain
+     *       semantics).</li>
+     * </ul>
+     *
+     * <p>Both modes guarantee forward progress, so the iteration always
+     * terminates: each completed item is either flipped to {@code done} (and
+     * thus skipped by the next "first pending" pick) or removed.
+     *
+     * @since 2026.3.1
+     */
+    public String completionMode() {
+        return data.completionMode();
+    }
+
+    /**
      * Per-node A/B experiment key (T72). When non-blank <em>and</em> the node
      * declares at least one {@link #nodeVariants() variant}, the engine swaps
      * this single node's behavior (currently its {@link #aiInstruction()}) for
@@ -478,7 +518,52 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             Boolean continueOnFailure,
             String nodeExperimentKey,
             List<NodeVariant> nodeVariants,
-            List<FormField> formFields) {
+            List<FormField> formFields,
+            String planSchema,
+            String completionMode) {
+
+        /**
+         * Back-compat constructor for callers/tests predating the T108-2
+         * {@code iteratePlan} completion mode ({@code completionMode}) — this is
+         * the post-T108-1 / pre-T108-2 canonical signature. Delegates with
+         * {@code completionMode = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs, Boolean continueOnFailure,
+                String nodeExperimentKey, List<NodeVariant> nodeVariants, List<FormField> formFields,
+                String planSchema) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, formFields,
+                    planSchema, null);
+        }
+
+        /**
+         * Back-compat constructor for callers/tests predating the T108
+         * {@code planningStep} schema hint ({@code planSchema}) — this is the
+         * pre-T108 canonical signature. Delegates with {@code planSchema = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs, Boolean continueOnFailure,
+                String nodeExperimentKey, List<NodeVariant> nodeVariants, List<FormField> formFields) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, formFields, null);
+        }
 
         /**
          * Back-compat constructor for callers/tests predating the T107
@@ -497,7 +582,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
                     switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
                     slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
-                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, null);
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, null, null);
         }
 
         /**
@@ -551,7 +636,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     personaId, switchVariable, switchOptions, inlineOptions, overrideExistingValue,
                     slotName, slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools,
                     routineId, routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants,
-                    formFields);
+                    formFields, planSchema, completionMode);
         }
     }
 
