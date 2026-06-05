@@ -51,6 +51,7 @@ simultaneously. That is why it is the lead sub-product.
 - **Short-term playbook** (the "almost no users → distribution before pricing"
   reality): [`../STRATEGY.md`](../STRATEGY.md) §IX.
 - **Sub-product briefs**: this folder.
+- **Outreach templates** (sell Agent Eval to the existing base): [`outreach-templates.md`](outreach-templates.md).
 
 The honest sequencing across all of the above: **services to the existing
 network pay first (weeks); the storefront converts inbound (passive); Agent Eval

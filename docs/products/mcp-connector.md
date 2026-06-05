@@ -76,3 +76,56 @@ rules out: uptime, multi-tenant auth, abuse handling. **Ship the self-hosted
 open-core + Pro license first;** consider managed only with a partner for ops or
 a customer who explicitly wants hosted. The self-hosted slice captures most of
 the value with none of the operational tail.
+
+## 7. Developer experience
+
+The whole pitch is *"30 seconds to connect."* The customer runs the self-hosted
+server (one container/jar) and adds it to the AI client they already use. For
+Claude Desktop that is a few lines of config:
+
+```json
+// claude_desktop_config.json
+{
+  "mcpServers": {
+    "turing": {
+      "type": "http",
+      "url": "https://intranet.acme.com/mcp",
+      "headers": { "Authorization": "Bearer ${TURING_MCP_KEY}" }
+    }
+  }
+}
+```
+
+From then on the user just asks, and the model calls Turing's tools with citations:
+
+```
+User:   What's our 2025 parental-leave policy?
+Claude: (calls turing.search_site → grounds on the indexed HR space)
+        Parental leave is 180 days for the primary caregiver…
+        ► Source: HR Handbook §4.2  (intranet.acme.com/hr/handbook#4.2)
+```
+
+The tools exposed are the Semantic Navigation set that already exists as `@Tool`
+methods — `list_sites`, `get_site_fields`, `search_site` — now reachable over MCP
+instead of only the in-app chat.
+
+## 8. MVP shape (self-hosted, realistic for a solo dev)
+
+1. **`/mcp` endpoint** — Streamable HTTP transport over the existing Semantic
+   Navigation tools. This is the bulk of the work and it's mostly transport
+   plumbing; the tool logic already exists.
+2. **API-key auth + per-connection scoping** — which sites/tools a given key may
+   reach. Reuse the existing encrypted-key infrastructure (`TurSecretCryptoService`).
+3. **Packaging** — a runnable jar / single container the customer drops next to
+   their Turing instance; a 10-line README and the `claude_desktop_config.json`
+   snippet above.
+4. **Citations/provenance in tool output** — the Pro differentiator: every result
+   carries a source URL so the host model can attribute (pairs with Block M).
+5. **Pro gate** — enterprise auth + citations + audit behind the same offline
+   Ed25519 license used by [Agent Eval](agent-eval.md) §5. No license server.
+6. **(Later)** the **Groovy → MCP exporter** (§VIII.4) so existing Custom Tools
+   become portable MCP servers — and, separately, the managed cloud once §6's
+   conditions are met.
+
+Nothing here needs a server of yours: the customer hosts the `/mcp` endpoint next
+to the Turing they already run, and connects the AI client they already pay for.
