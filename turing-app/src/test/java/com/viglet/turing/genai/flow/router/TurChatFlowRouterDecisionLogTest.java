@@ -12,6 +12,7 @@ package com.viglet.turing.genai.flow.router;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -121,15 +122,28 @@ class TurChatFlowRouterDecisionLogTest {
     }
 
     @Test
-    void recordSafelyIsNoOpWhenNoSingletonRegistered() {
-        // No Spring context here → getInstance() is null. recordSafely must
-        // neither throw nor populate the freshly-built (unregistered) log.
-        var log = new TurChatFlowRouterDecisionLog();
-        assertThat(TurChatFlowRouterDecisionLog.getInstance()).isNull();
-        assertThatCode(() -> TurChatFlowRouterDecisionLog
-                .recordSafely(decision("conv-1", "a", TurChatFlowRouterMethod.LLM)))
-                .doesNotThrowAnyException();
-        assertThat(log.recent(10)).isEmpty();
+    void recordSafelyIsNoOpWhenNoSingletonRegistered() throws Exception {
+        // recordSafely must, when no singleton is registered, neither throw nor
+        // populate the freshly-built (unregistered) log. We force the static
+        // singleton to null for the duration of the assertion rather than
+        // assuming it: a cached @SpringBootTest context in the same Surefire
+        // fork registers this @Service via @PostConstruct and never tears it
+        // down (Spring caches contexts), so getInstance() is otherwise
+        // order-dependent. Restore the prior value afterwards.
+        Field instanceField = TurChatFlowRouterDecisionLog.class.getDeclaredField("instance");
+        instanceField.setAccessible(true);
+        Object previous = instanceField.get(null);
+        instanceField.set(null, null);
+        try {
+            var log = new TurChatFlowRouterDecisionLog();
+            assertThat(TurChatFlowRouterDecisionLog.getInstance()).isNull();
+            assertThatCode(() -> TurChatFlowRouterDecisionLog
+                    .recordSafely(decision("conv-1", "a", TurChatFlowRouterMethod.LLM)))
+                    .doesNotThrowAnyException();
+            assertThat(log.recent(10)).isEmpty();
+        } finally {
+            instanceField.set(null, previous);
+        }
     }
 
     @Test
