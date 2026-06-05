@@ -239,11 +239,22 @@ both are sold **bundled with Turing**, not standalone.
 
 ### IX.3 The open-core pick — when it's time
 
-Per §VIII.1, the cleanest open-core wedge is **Turing Sandbox** (multi-tenant
-Code Interpreter, T80 shipped; hardening T239). It is usage-priceable, has a
-direct comp (Modal/E2B), and the moat (sandbox hardening) is already partly
-built. **But it is a quarter of work and operations cost** — it belongs in
-medium-term, not the short-term/minimum-effort ask. Gate it on a named customer
+The lead sub-product is **Agent Eval** — provider-agnostic regression / continuous-
+assurance for AI agents, with the LLM-as-judge as the paid differentiator. Full
+design + architecture in [`products/agent-eval.md`](products/agent-eval.md);
+the selection rationale (the constraints matrix) in
+[`products/README.md`](products/README.md). It wins because it is the only
+candidate that is *recurring* (agents rot every model release — the cure for
+"install and forget"), *zero-infra* (runs on the customer's CI; judge over HTTP
+on the customer's own Turing, like Dumont calls `TurSummaryAPI`), and *sellable
+to the existing base* (reactivates dormant consultancy installs). Reuses
+`LlmJudgeGuardrailStrategy` + `TurLlmSummaryService`; engine is new, slim code.
+Ties to T125–T127 and Block K (T285–T288).
+
+**Turing Sandbox** (multi-tenant Code Interpreter, T80 shipped; hardening T239)
+remains the higher-*upside* open-core wedge — usage-priceable, direct comp
+(Modal/E2B) — but its multi-tenant hosting is the **worst** fit for the
+solo/no-infra constraint. Defer behind Agent Eval; gate on a named customer
 requirement, not on hope.
 
 ### IX.4 Non-negotiable: distribution before pricing pages pay
