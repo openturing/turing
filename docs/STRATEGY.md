@@ -194,3 +194,74 @@ buyer knows in 5s if it's for them):
 
 Difference is not features. It is **focus, clarity, and the courage to
 deprecate what does not pay**.
+
+---
+
+## IX. Short-term monetization playbook (the "almost no users" reality)
+
+> Added 2026-06-05. Honest sequencing for turning 10 years of work into
+> revenue **now**, given the current state: copyright fully owned by a
+> single holder, but **almost no installed user base**. The constraint
+> this section answers: *fastest money, least effort.*
+
+**The hard truth**: with near-zero users, **pricing is not the bottleneck —
+distribution is.** A pricing page on a project nobody runs converts nothing.
+So the storefront (below) is necessary but **not sufficient**; the money in
+the next 90 days comes from *outbound services sold through the founder's
+network*, not inbound SaaS.
+
+### IX.1 The storefront (shipped — the cheap, durable part)
+
+Published so any inbound buyer self-qualifies without a sales call:
+
+- [`SUPPORT.md`](../SUPPORT.md) — commercial support tiers (Business/Enterprise),
+  installation, custom dev, training. One page, four revenue doors.
+- [`COMMERCIAL-LICENSE.md`](../COMMERCIAL-LICENSE.md) — dual licensing. Clean to
+  offer because copyright is single-owner (no CLA to clear).
+- `.github/FUNDING.yml` — GitHub Sponsors (`alegauss`), already live.
+
+Dumont and Shio carry lean `SUPPORT.md` variants pointing to the same channel;
+both are sold **bundled with Turing**, not standalone.
+
+### IX.2 Sequencing by effort vs. time-to-cash
+
+1. **Services first (week 1, zero new code).** Sell installation, support
+   contracts, and custom connectors to the founder's existing network and the
+   "Education" anchor account (§VIII proved the product there). This is the only
+   path that pays in <90 days with no user base.
+2. **Dual license (week 1–2, zero new code).** Offer the commercial license to
+   any org that wants warranty/indemnity/closed-embedding. One email thread,
+   one signed agreement — high margin, no engineering.
+3. **Sponsorship (live).** Passive, low yield until users exist; keep it on.
+4. **Open-core add-on (quarter, real build).** Deferred — see IX.3. Do **not**
+   build before §IX.2 produces a *paying* customer who asks for it twice
+   (the binding non-goal from CLAUDE.md §I).
+
+### IX.3 The open-core pick — when it's time
+
+The lead sub-product is **Agent Eval** — provider-agnostic regression / continuous-
+assurance for AI agents, with the LLM-as-judge as the paid differentiator. Full
+design + architecture in [`products/agent-eval.md`](products/agent-eval.md);
+the selection rationale (the constraints matrix) in
+[`products/README.md`](products/README.md). It wins because it is the only
+candidate that is *recurring* (agents rot every model release — the cure for
+"install and forget"), *zero-infra* (runs on the customer's CI; judge over HTTP
+on the customer's own Turing, like Dumont calls `TurSummaryAPI`), and *sellable
+to the existing base* (reactivates dormant consultancy installs). Reuses
+`LlmJudgeGuardrailStrategy` + `TurLlmSummaryService`; engine is new, slim code.
+Ties to T125–T127 and Block K (T285–T288).
+
+**Turing Sandbox** (multi-tenant Code Interpreter, T80 shipped; hardening T239)
+remains the higher-*upside* open-core wedge — usage-priceable, direct comp
+(Modal/E2B) — but its multi-tenant hosting is the **worst** fit for the
+solo/no-infra constraint. Defer behind Agent Eval; gate on a named customer
+requirement, not on hope.
+
+### IX.4 Non-negotiable: distribution before pricing pages pay
+
+The single highest-leverage *short-term* move is not in this repo — it's
+**visibility**: one public case study from the Education account, a Show HN /
+Spring community post, and direct outreach. Without that, §IX.1's storefront
+sits in the dark. Treat the storefront as "done and waiting", and spend the
+actual short-term effort on getting the first ten serious evaluators in front
+of it.
