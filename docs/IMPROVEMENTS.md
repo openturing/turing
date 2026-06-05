@@ -37,7 +37,6 @@ moved — verify against `git ls-files` before acting.
 - [XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped](#xii-admin-chat--vigletturing-react-sdk-convergence--shipped)
 - [XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform](#xiii-turing-as-an-mcp-server--let-claude-and-any-agent-drive-the-platform)
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
-- [XV. Agent CI — flow/prompt eval gate (Block K)](#xv-agent-ci--flowprompt-eval-gate-block-k)
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
 - [XVII. Verifiable answers — provider-agnostic provenance (Block M)](#xvii-verifiable-answers--provider-agnostic-provenance-block-m)
 
@@ -2326,56 +2325,6 @@ One task per resource in the XIV.1 table:
   this block does not force every instance to be tenant-owned.
 
 ---
-
----
-
-## XV. Agent CI — flow/prompt eval gate (Block K)
-
-> **The anchor bet (2026-06-03).** A non-engineer changes a prompt or a flow and a
-> golden-set eval gate proves it did not regress *before* publish. Built entirely
-> from primitives already shipped — the bilingual LLM-judge, chat analytics,
-> persisted transcripts, and the T94 chat-flow lint — so the marginal cost is
-> integration, not invention. This is what makes a bank/university CTO trust
-> letting their staff edit agent behaviour. Competitors (Copilot Studio, raw
-> ChatGPT) ship no equivalent. See STRATEGY §VIII.7 (#1).
-
-### XV.1 `TurAgentEvalSet` — the golden set (T285)
-
-Per-agent collection of eval **cases**, each `(seedTurns, expected)` where
-`expected` is some of: captured slot values, the node the flow should land on,
-an outcome label (`captured` / `abandoned` / `handoff`), and an optional natural
--language rubric for the judge. Cases are authored in admin **or seeded from
-anonymized real sessions** — this is where T61 (PII redaction) pays off: a green
-production transcript minus PII becomes a regression fixture. Stored as a normal
-JPA aggregate (`tur_agent_eval_set` + `tur_agent_eval_case`), exported/imported
-with the agent.
-
-### XV.2 Eval runner + judge scoring (T286)
-
-Replays each case through the real `TurChatFlowEngineService` + executor (the
-inverted Block-B path — no mock harness; we want the production code under test),
-captures the resulting slots / cursor / outcome, and scores against `expected`:
-deterministic diff for slots/outcome, the existing bilingual `LlmJudge` for the
-rubric. Output is a `TurAgentEvalReport` (`pass`, per-case score, slot-capture
-diff, judge verdict). Runs against the agent's configured LLM by default; can be
-pinned to a cheap judge model to keep CI cost down (and rides Block L cost capture
-so the eval run's own spend is visible).
-
-### XV.3 Pre-publish gate in the flow editor (T287)
-
-On save/publish the editor runs the agent's eval set and compares against the last
-**green baseline**. A regression (a case that flips pass->fail, or a score drop
-past a configurable delta) blocks publish (hard gate) or warns (soft gate),
-surfaced in the **existing chat-flow Lint UI panel** — same affordance authors
-already know from T94, so no new mental model. Passing promotes the new baseline.
-
-### XV.4 Agent-eval CI (T288)
-
-A `-Pagent-eval` Maven profile + `POST /api/ai-agent/{id}/eval/run` so the same
-gate runs in nightly CI and on PRs that touch flow/prompt fixtures — mirrors the
-existing `-Pllm-it` nightly pattern (T242). The PR comment reports the pass matrix
-and score deltas. This is the layer OpenAI Evals (F.9 T168) optionally federates
-*up* to; Agent CI is the local, provider-agnostic floor.
 
 ---
 

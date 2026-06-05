@@ -149,11 +149,11 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
 
 **Convicted choices, not exhaustive list** (revised 2026-06-03):
 
-1. ⭐ **Block K — Agent CI (T285–T288)** — the next feature *anchor*.
-   Turns capabilities already shipped (LLM-judge + analytics + transcripts
+1. ✅ **Block K — Agent CI (T285–T288)** — **shipped 2026-06-05.**
+   Turned capabilities already shipped (LLM-judge + analytics + transcripts
    + T94 lint) into the trust unlock for regulated verticals: a
    non-engineer changes a prompt and a golden-set eval gate proves no
-   regression before publish. Best ROI because the parts already exist.
+   regression before publish. The next anchor is now the MCP pillar (#2).
 2. ⭐ **MCP pillar (Block I + the §VIII.4 Groovy→MCP exporter)** — highest
    *distribution* leverage at lowest build cost (mostly transport — see
    §XIII.2). Ride the adoption curve of Claude/Cursor/ChatGPT instead of

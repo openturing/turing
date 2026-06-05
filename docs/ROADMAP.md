@@ -246,17 +246,11 @@
 - 📋 **T283** (deps: T280) **`docs/MULTI_TENANCY.md`** — the operator + developer guide: isolation model, the leak-surface checklist, "how to make a new entity tenant-safe", default-tenant/off behavior, teardown runbook. → §XIV.7.4
 - 💭 **T284** (deps: T257) **Hybrid escalation hook (future)** — keep the door open for migrating a heavy enterprise tenant to a dedicated schema/DB later (`TurTenant.isolationMode = SHARED \| SCHEMA \| DB`); pluggable `CurrentTenantIdentifierResolver` + `MultiTenant… → §XIV.7.5
 
-## Block K — Agent CI (flow/prompt eval gate) ⭐ next anchor (2026-06-03)
+## Block K — Agent CI (flow/prompt eval gate) ✅ shipped 2026-06-05
 
-> Turns capabilities you already shipped (bilingual LLM-judge, analytics,
-> transcripts, T94 lint) into a sales differentiator for the regulated verticals:
-> a non-engineer can change a prompt/flow and a **golden-set eval gate** proves it
-> didn't regress *before* publish. Deepens the audit-grade moat.
-
-- 📋 **T285** (deps: T94) **`TurAgentEvalSet` entity + CRUD** — per-agent golden set of cases `(seed user turns, expected captured slots / outcome, optional rubric)`; seedable from anonymized real sessions (pairs with T61 PII redaction). → §XV.1
-- 📋 **T286** (deps: T285) **Eval runner + judge scoring** — replays each case through `TurChatFlowEngineService` + executor, scores via the existing bilingual LLM-judge, emits pass/fail + per-case score + slot-capture diff vs expected. → §XV.2
-- 📋 **T287** (deps: T286) **Pre-publish gate in the flow editor** — on save/publish, run the agent's eval set; block (or warn) on regression vs the last green baseline; surfaced in the existing chat-flow Lint UI panel. → §XV.3
-- 📋 **T288** (deps: T286) **Agent-eval CI** — `-Pagent-eval` Maven profile + `POST /api/ai-agent/{id}/eval/run` for nightly + PR gating (mirrors the T242 `-Pllm-it` nightly pattern). → §XV.4
+> Shipped: T285–T288 (golden-set model + CRUD, eval runner + judge scoring,
+> pre-publish gate in the flow-editor Lint panel, `-Pagent-eval` CI). See
+> [CHANGELOG.md](CHANGELOG.md) → Block K. No active backlog remains here.
 
 ## Block L — Cost & token governance (provider-agnostic)
 

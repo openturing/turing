@@ -37,6 +37,7 @@ import com.viglet.turing.genai.authoring.AiAuthoringRequest;
 import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
+import com.viglet.turing.genai.eval.TurAgentEvalGateService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowLinterService;
 import com.viglet.turing.service.chatanalytics.TurChatFlowFunnelService;
@@ -96,6 +97,7 @@ public class TurChatFlowAPI {
     private final TurChatFlowRecipeService chatFlowRecipeService;
     private final TurChatFlowVariantService chatFlowVariantService;
     private final TurChatFlowFunnelService chatFlowFunnelService;
+    private final TurAgentEvalGateService agentEvalGateService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -109,7 +111,8 @@ public class TurChatFlowAPI {
             TurChatFlowLinterService chatFlowLinterService,
             TurChatFlowRecipeService chatFlowRecipeService,
             TurChatFlowVariantService chatFlowVariantService,
-            TurChatFlowFunnelService chatFlowFunnelService) {
+            TurChatFlowFunnelService chatFlowFunnelService,
+            TurAgentEvalGateService agentEvalGateService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -123,6 +126,7 @@ public class TurChatFlowAPI {
         this.chatFlowRecipeService = chatFlowRecipeService;
         this.chatFlowVariantService = chatFlowVariantService;
         this.chatFlowFunnelService = chatFlowFunnelService;
+        this.agentEvalGateService = agentEvalGateService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -516,6 +520,15 @@ public class TurChatFlowAPI {
     public TurChatFlowDto turChatFlowUpdate(@PathVariable String agentId,
             @PathVariable String id,
             @RequestBody TurChatFlowDto turChatFlowDto) {
+        // T287 / §XV.3 — pre-publish gate. When a golden set is marked
+        // blocking and the latest eval run is red/regressed, refuse the
+        // publish. Default sets are non-blocking (warn-only, surfaced in the
+        // Lint panel), so this never bites until an author opts in.
+        if (agentEvalGateService.shouldBlockPublish(agentId)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Publish blocked: the agent's eval gate is failing. "
+                            + "Fix the regression or re-run the gate to a green baseline.");
+        }
         TurChatFlow incoming = turChatFlowMapper.toEntity(turChatFlowDto);
         return turChatFlowRepository.findById(id)
                 .filter(flow -> flow.getTurAIAgent() != null

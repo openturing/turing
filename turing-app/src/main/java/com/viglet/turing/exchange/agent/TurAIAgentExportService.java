@@ -36,6 +36,7 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
+import com.viglet.turing.persistence.repository.agent.TurAgentEvalSetRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 
@@ -87,15 +88,18 @@ public class TurAIAgentExportService {
     private final TurChatFlowRepository chatFlowRepository;
     private final TurAIAgentSlotRepository slotRepository;
     private final TurIntentRepository intentRepository;
+    private final TurAgentEvalSetRepository evalSetRepository;
 
     public TurAIAgentExportService(TurAIAgentRepository agentRepository,
                                    TurChatFlowRepository chatFlowRepository,
                                    TurAIAgentSlotRepository slotRepository,
-                                   TurIntentRepository intentRepository) {
+                                   TurIntentRepository intentRepository,
+                                   TurAgentEvalSetRepository evalSetRepository) {
         this.agentRepository = agentRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.slotRepository = slotRepository;
         this.intentRepository = intentRepository;
+        this.evalSetRepository = evalSetRepository;
     }
 
     /**
@@ -134,6 +138,8 @@ public class TurAIAgentExportService {
         exchange.setIntents(intentRepository.findByTurAIAgent_IdOrderByTitleAsc(agent.getId()));
         List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId());
         exchange.setChatFlows(writeChatFlowFiles(exportDir, flows));
+        // T285 — golden eval sets (cases inline) travel with the agent.
+        exchange.setEvalSets(evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId()));
         return exchange;
     }
 

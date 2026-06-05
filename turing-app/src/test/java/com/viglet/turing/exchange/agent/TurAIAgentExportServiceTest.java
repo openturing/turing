@@ -43,6 +43,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
+import com.viglet.turing.persistence.repository.agent.TurAgentEvalSetRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 
@@ -63,6 +64,7 @@ class TurAIAgentExportServiceTest {
     @Mock private TurChatFlowRepository chatFlowRepository;
     @Mock private TurAIAgentSlotRepository slotRepository;
     @Mock private TurIntentRepository intentRepository;
+    @Mock private TurAgentEvalSetRepository evalSetRepository;
 
     private TurAIAgentExportService service;
     private Path producedZip;
@@ -70,7 +72,7 @@ class TurAIAgentExportServiceTest {
     @BeforeEach
     void setUp() {
         service = new TurAIAgentExportService(agentRepository, chatFlowRepository,
-                slotRepository, intentRepository);
+                slotRepository, intentRepository, evalSetRepository);
     }
 
     @AfterEach

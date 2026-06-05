@@ -659,6 +659,13 @@
                     -->
                     <excludes>
                         <exclude>**/*BehavioralIT.java</exclude>
+                        <!--
+                            AgentEvalIT classes (T288 Agent-CI gate, real-LLM,
+                            gated by OPENAI_API_KEY) are excluded from the
+                            default run for the same reason as BehavioralIT.
+                            Re-include them under -Pagent-eval (see profiles).
+                        -->
+                        <exclude>**/*AgentEvalIT.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -734,6 +741,37 @@
                             <excludes combine.self="override"/>
                             <includes>
                                 <include>**/*BehavioralIT.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!--
+            agent-eval: runs ONLY the Agent-CI eval ITs (*AgentEvalIT.java) —
+            the T288 golden-set gate that replays cases through the real
+            chat-flow engine and scores them with the bilingual LLM judge.
+            Gated by @EnabledIfEnvironmentVariable("OPENAI_API_KEY"), so it
+            short-circuits to "skipped" without the key (no cost). Use for
+            nightly / PR gating, mirroring -Pllm-it (T242):
+
+                mvn verify -Pagent-eval -pl turing-app -Dskip.npm=true
+
+            The default failsafe configuration excludes *AgentEvalIT.java
+            (see the maven-failsafe-plugin block above), so this profile is
+            additive only when explicitly activated.
+        -->
+        <profile>
+            <id>agent-eval</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/*AgentEvalIT.java</include>
                             </includes>
                         </configuration>
                     </plugin>

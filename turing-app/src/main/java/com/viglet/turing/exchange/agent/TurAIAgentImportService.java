@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -37,6 +39,7 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
+import com.viglet.turing.persistence.repository.agent.TurAgentEvalSetRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
@@ -81,6 +84,7 @@ public class TurAIAgentImportService {
     private final TurAIAgentRepository agentRepository;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurAIAgentSlotRepository slotRepository;
+    private final TurAgentEvalSetRepository evalSetRepository;
     private final TurIntentRepository intentRepository;
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmRepository;
@@ -92,6 +96,7 @@ public class TurAIAgentImportService {
     public TurAIAgentImportService(TurAIAgentRepository agentRepository,
                                    TurChatFlowRepository chatFlowRepository,
                                    TurAIAgentSlotRepository slotRepository,
+                                   TurAgentEvalSetRepository evalSetRepository,
                                    TurIntentRepository intentRepository,
                                    TurPersonaRepository personaRepository,
                                    TurLLMInstanceRepository llmRepository,
@@ -102,6 +107,7 @@ public class TurAIAgentImportService {
         this.agentRepository = agentRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.slotRepository = slotRepository;
+        this.evalSetRepository = evalSetRepository;
         this.intentRepository = intentRepository;
         this.personaRepository = personaRepository;
         this.llmRepository = llmRepository;
@@ -428,6 +434,30 @@ public class TurAIAgentImportService {
         replaceSlots(agent, a);
         replaceIntents(agent, a);
         replaceChatFlows(agent, a, refs, extractFolder);
+        replaceEvalSets(agent, a);
+    }
+
+    /**
+     * T285 — wholesale replace the agent's golden eval sets (cases inline).
+     * Fresh ids are assigned so a cross-environment import never collides with
+     * an existing set/case row; cascade persists the cases.
+     */
+    private void replaceEvalSets(TurAIAgent agent, TurAIAgentExchange a) {
+        evalSetRepository.deleteAll(evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId()));
+        if (a.getEvalSets() == null) {
+            return;
+        }
+        for (TurAgentEvalSet set : a.getEvalSets()) {
+            set.setId(null);
+            set.setTurAIAgent(agent);
+            if (set.getCases() != null) {
+                for (TurAgentEvalCase c : set.getCases()) {
+                    c.setId(null);
+                    c.setTurAgentEvalSet(set);
+                }
+            }
+            evalSetRepository.save(set);
+        }
     }
 
     private void replaceSlots(TurAIAgent agent, TurAIAgentExchange a) {

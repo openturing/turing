@@ -1,0 +1,230 @@
+databaseChangeLog:
+  # T285–T288 / §XV (Block K) — Agent CI: golden-set eval gate.
+  #
+  # Three tables:
+  #   tur_agent_eval_set    — per-agent golden set (owns cases)
+  #   tur_agent_eval_case   — one scripted conversation + expectations
+  #   tur_agent_eval_report — immutable record of one run (baseline tracking)
+  #
+  # Column names match the JPA field names exactly (camelCase) — Hibernate
+  # maps literally, no snake_case strategy is configured. Join columns use the
+  # explicit @JoinColumn names (agent_id, eval_set_id). Big text uses longtext
+  # (H2 + MySQL + Postgres portable). Idempotent: gated by tableExists.
+
+  - changeSet:
+      id: v2026.3.1.17-create-tur_agent_eval_set
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_agent_eval_set
+      changes:
+        - createTable:
+            tableName: tur_agent_eval_set
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(1000)
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: blocking
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: varchar(36)
+        - addUniqueConstraint:
+            tableName: tur_agent_eval_set
+            columnNames: agent_id, name
+            constraintName: uq_agent_eval_set_agent_name
+
+  - changeSet:
+      id: v2026.3.1.17-create-tur_agent_eval_case
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_agent_eval_case
+      changes:
+        - createTable:
+            tableName: tur_agent_eval_case
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(1000)
+              - column:
+                  name: seedTurnsJson
+                  type: longtext
+              - column:
+                  name: expectedSlotsJson
+                  type: longtext
+              - column:
+                  name: expectedOutcome
+                  type: varchar(16)
+                  defaultValue: ANY
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expectedNodeId
+                  type: varchar(200)
+              - column:
+                  name: rubric
+                  type: longtext
+              - column:
+                  name: sortOrder
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: eval_set_id
+                  type: varchar(36)
+        - addForeignKeyConstraint:
+            baseTableName: tur_agent_eval_case
+            baseColumnNames: eval_set_id
+            referencedTableName: tur_agent_eval_set
+            referencedColumnNames: id
+            constraintName: fk_agent_eval_case_set
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.17-create-tur_agent_eval_report
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_agent_eval_report
+      changes:
+        - createTable:
+            tableName: tur_agent_eval_report
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: score
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: caseCount
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: passedCount
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: baseline
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: regressed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resultsJson
+                  type: longtext
+              - column:
+                  name: agent_id
+                  type: varchar(36)
+        - createIndex:
+            tableName: tur_agent_eval_report
+            indexName: ix_agent_eval_report_agent_created
+            columns:
+              - column:
+                  name: agent_id
+              - column:
+                  name: createdAt
+
+  # Agent-scoped FKs with ON DELETE CASCADE so the bulk-DML agent delete
+  # (delete from TurAIAgent ... — bypasses JPA cascade) cleans up the agent's
+  # eval sets, cases (chained via fk_agent_eval_case_set), and reports.
+  - changeSet:
+      id: v2026.3.1.17-fk-agent_eval_set-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_agent_eval_set_agent
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_agent_eval_set
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_agent_eval_set_agent
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.17-fk-agent_eval_report-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_agent_eval_report_agent
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_agent_eval_report
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_agent_eval_report_agent
+            onDelete: CASCADE

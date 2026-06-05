@@ -25,6 +25,7 @@ import {
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 
+import { ChatFlowEvalGatePanel } from "./chat-flow.eval-gate-panel";
 import { ChatFlowFunnelPanel } from "./chat-flow.funnel-panel";
 import { ChatFlowLintPanel } from "./chat-flow.lint-panel";
 import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
@@ -134,6 +135,11 @@ export function ChatFlowSettingsTab({
             (dead-end node, …) blocking the runtime are unmissable. Renders
             nothing on a clean flow. */}
         {flowId && <ChatFlowLintPanel agentId={agentId} flowId={flowId} />}
+
+        {/* T287 — Agent-CI eval gate: replay the agent's golden set and block
+            (or warn) on regression before publish. Hidden when no golden set
+            is configured. */}
+        <ChatFlowEvalGatePanel agentId={agentId} />
 
         {/* T85 — per-node funnel under the lint panel: cursor + completion
             counts so the operator spots where conversations stall. Hidden

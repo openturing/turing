@@ -68,6 +68,13 @@ export const queryKeys = {
     funnel: (agentId: string, flowId: string) =>
       [...queryKeys.chatFlows.all(), 'funnel', agentId, flowId] as const,
   },
+  agentEval: {
+    all: () => ['agent-eval'] as const,
+    sets: (agentId: string) => [...queryKeys.agentEval.all(), 'sets', agentId] as const,
+    gate: (agentId: string) => [...queryKeys.agentEval.all(), 'gate', agentId] as const,
+    report: (agentId: string) => [...queryKeys.agentEval.all(), 'report', agentId] as const,
+    available: (agentId: string) => [...queryKeys.agentEval.all(), 'available', agentId] as const,
+  },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,
     list: () => [...queryKeys.chatFlowRecipes.all(), 'list'] as const,

@@ -182,3 +182,10 @@
 - **T230** — **Deleted `TurChatService` and `chat.service.ts`** — after T227 retired the last call sites, a frontend-wide sweep confirmed nothing imported the `TurChatService` class anymore and `sendSemanticStream` was dead code (defined, never called —… (§XII.2)
 - **T231** — **`chat.page.tsx` extraction** — T227 already extracted the per-agent tab content; T231 completed the structural goals. (§XII.2)
 - **T232** — **Admin smoke ITs (RTL)** — bootstrapped the **frontend's first test runner** (none existed in the monorepo): vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb, a standalone [vitest.config.ts](../frontend/apps/turing-app/vit… (§XII.2)
+
+## Block K — Agent CI (flow/prompt eval gate, §XV)
+
+- **T285** — **`TurAgentEvalSet` + `TurAgentEvalCase` golden-set model + CRUD** — per-agent regression cases `(seedTurnsJson, expectedSlotsJson, expectedOutcome, expectedNodeId, rubric)`; `TurAgentEvalSetAPI` under `/api/ai-agent/{id}/eval-set`; Liquibase `v2026.3.1.17.yaml`; exported/imported with the agent (cases inline) via `TurAIAgentExchange.evalSets`. (§XV.1)
+- **T286** — **Eval runner + judge scoring** — `TurAgentEvalRunnerService` replays each case through the real `TurAgentChatExecutor` + `TurChatFlowEngineService`, captures slots/cursor/outcome, scores via deterministic diff + the bilingual LLM judge, persists a `TurAgentEvalReport` (green run → new baseline; baseline-break → `regressed`). (§XV.2)
+- **T287** — **Pre-publish gate in the flow editor** — `TurAgentEvalGateService` (status GREEN/RED/REGRESSED/NEVER_RUN/NOT_CONFIGURED) surfaced in the editor Lint sidebar via `ChatFlowEvalGatePanel` (run button + findings); a blocking set hard-blocks the chat-flow `PUT` (422) when red/regressed. (§XV.3)
+- **T288** — **Agent-eval CI** — `POST /api/ai-agent/{id}/eval/run` + `-Pagent-eval` Maven profile (mirrors `-Pllm-it`; runs `*AgentEvalIT.java`, env-gated by `OPENAI_API_KEY`). (§XV.4)

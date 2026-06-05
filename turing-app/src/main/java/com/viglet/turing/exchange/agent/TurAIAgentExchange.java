@@ -15,6 +15,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
 import com.viglet.turing.persistence.model.intent.TurIntent;
 
 import lombok.Getter;
@@ -71,6 +72,8 @@ public class TurAIAgentExchange {
     private List<TurAIAgentSlot> slots = new ArrayList<>();
     private List<TurIntent> intents = new ArrayList<>();
     private List<TurChatFlowExchange> chatFlows = new ArrayList<>();
+    // T285 / §XV.1 — golden eval sets (with their cases) travel with the agent.
+    private List<TurAgentEvalSet> evalSets = new ArrayList<>();
 
     /**
      * Copies the agent's scalar fields and reference IDs. The caller is
