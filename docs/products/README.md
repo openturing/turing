@@ -33,9 +33,9 @@ A good sub-product scores well on **both** axes. That is the filter.
 | Candidate | Recurring need? | Infra burden (solo) | Sells to existing base? | Verdict |
 |---|---|---|---|---|
 | **[Agent Eval](agent-eval.md)** — regression/continuous-assurance for AI agents | ✅ high — agents rot every model update | ✅ near-zero — runs on customer CI; judge over HTTP | ✅ yes — reactivates dormant Turing installs | **★ primary pick** |
-| **Turing Sandbox** — standalone multi-tenant Code Interpreter (§VIII.1) | ✅ usage-based | ❌ heavy — multi-tenant sandbox hosting | ⚠️ partial | Defer — best upside, worst infra fit |
-| **Managed MCP server** — Turing-as-MCP hosted (§VIII.4) | ✅ | ❌ hosting required | ⚠️ | Defer — kills the zero-infra property |
-| **Vertical packs** — personas/flows/tools for Education/Finance | ❌ install-and-forget again | ✅ zero (digital download) | ✅ | Nice add-on, not a recurring engine alone |
+| **[Turing Sandbox](turing-sandbox.md)** — standalone multi-tenant Code Interpreter (§VIII.1) | ✅ usage-based | ❌ heavy — multi-tenant sandbox hosting | ⚠️ partial | Defer — best upside, worst infra fit (self-hosted add-on is the viable slice) |
+| **[MCP Connector](mcp-connector.md)** — Turing-as-MCP (§VIII.4) | ✅ | ⚠️ self-hosted = zero; managed = hosting | ✅ | Self-hosted viable now; managed cloud deferred |
+| **[Vertical Packs](vertical-packs.md)** — personas/flows/tools for Education/Finance | ❌ install-and-forget alone | ✅ zero (digital download) | ✅ | Add-on + content feedstock for Agent Eval, not a standalone engine |
 
 Only **Agent Eval** wins on recurrence *and* zero-infra *and* sell-to-existing-base
 simultaneously. That is why it is the lead sub-product.
@@ -51,6 +51,7 @@ simultaneously. That is why it is the lead sub-product.
 - **Short-term playbook** (the "almost no users → distribution before pricing"
   reality): [`../STRATEGY.md`](../STRATEGY.md) §IX.
 - **Sub-product briefs**: this folder.
+- **Outreach templates** (sell Agent Eval to the existing base): [`outreach-templates.md`](outreach-templates.md).
 
 The honest sequencing across all of the above: **services to the existing
 network pay first (weeks); the storefront converts inbound (passive); Agent Eval
