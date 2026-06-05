@@ -1,16 +1,0 @@
-
-> @viglet/turing-sdk@2026.3.1 build D:\Git\viglet\turing\2026.1\frontend\packages\sdk
-> vite build && tsc --emitDeclarationOnly
-
-[36mvite v8.0.8 [32mbuilding client environment for production...[36m[39m
-[2Ktransforming...✓ 13 modules transformed.
-rendering chunks...
-computing gzip size...
-dist/turing-sdk.js  31.07 kB │ gzip: 8.99 kB │ map: 125.45 kB
-
-[2Ktransforming...✓ 13 modules transformed.
-rendering chunks...
-computing gzip size...
-dist/turing-sdk.umd.cjs  23.17 kB │ gzip: 8.09 kB │ map: 121.97 kB
-
-[32m✓ built in 84ms[39m
