@@ -1,0 +1,15 @@
+/**
+ * `@viglet/turing-react-ui` — headless React UI primitives for Viglet Turing ES.
+ *
+ * Design-agnostic chat / rich-content components shared across the admin
+ * console and viglet.com. The package carries NO API or axios dependency (that
+ * lives in `@viglet/turing-react-sdk`) and NO baked-in styling — every
+ * component is skinned by the host app via `classNames` / `labels` / `icons`,
+ * so each surface keeps its own look while sharing one implementation.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.1
+ */
+export { TuringHtmlSandbox } from "./TuringHtmlSandbox";
+export type { TuringHtmlSandboxProps, TuringHtmlSandboxClassNames, TuringHtmlSandboxLabels, TuringHtmlSandboxIcons, } from "./TuringHtmlSandbox";
+//# sourceMappingURL=index.d.ts.map

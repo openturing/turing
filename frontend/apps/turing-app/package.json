@@ -48,6 +48,7 @@
     "@tanstack/react-query-devtools": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "@viglet/turing-react-sdk": "workspace:*",
+    "@viglet/turing-react-ui": "workspace:*",
     "@viglet/viglet-design-system": "^2026.2.55",
     "@xyflow/react": "^12.11.0",
     "axios": "^1.17.0",

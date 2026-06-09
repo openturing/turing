@@ -332,6 +332,9 @@ importers:
       '@viglet/turing-react-sdk':
         specifier: workspace:*
         version: link:../../packages/react-sdk
+      '@viglet/turing-react-ui':
+        specifier: workspace:*
+        version: link:../../packages/react-ui
       '@viglet/viglet-design-system':
         specifier: ^2026.2.55
         version: 2026.2.55(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(i18next-browser-languagedetector@8.2.1)(i18next@26.3.1(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-i18next@17.0.8(i18next@26.3.1(typescript@5.8.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@5.8.3))(react-router-dom@7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
@@ -538,6 +541,24 @@ importers:
       vite:
         specifier: ^8.0.7
         version: 8.0.8(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)
+
+  packages/react-ui:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
 
   packages/sdk:
     devDependencies:
