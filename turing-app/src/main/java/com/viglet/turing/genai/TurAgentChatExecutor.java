@@ -394,10 +394,12 @@ public class TurAgentChatExecutor {
         // preemptively on slot-capture nodes (e.g. ai-coupon-code) BEFORE
         // the guardrail strategy could capture the user's literal value.
         boolean activeNodeForbidsTools = TurChatToolResolver.forbidsToolCalls(activeNode);
+        // Spring AI 2.0.0-RC1 removed internalToolExecutionEnabled; the empty
+        // toolCallbacks list alone already guarantees the tool-free initial call
+        // (no callbacks means nothing for the model to invoke).
         ChatOptions initialOptions = activeNodeForbidsTools
                 ? DefaultToolCallingChatOptions.builder()
                         .toolCallbacks(List.<ToolCallback>of())
-                        .internalToolExecutionEnabled(false)
                         .build()
                 : chatOptions;
         if (activeNodeForbidsTools) {
@@ -530,9 +532,10 @@ public class TurAgentChatExecutor {
                     com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_INVOKE_DEPTH,
                     agentInvokeDepth);
         }
+        // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
+        // internal tool execution is now the default once callbacks are present.
         var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
-                .toolCallbacks(callbacks)
-                .internalToolExecutionEnabled(true);
+                .toolCallbacks(callbacks);
         if (!toolContextMap.isEmpty()) {
             chatOptionsBuilder.toolContext(toolContextMap);
         }

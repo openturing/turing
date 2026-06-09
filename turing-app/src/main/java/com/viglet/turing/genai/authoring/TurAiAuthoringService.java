@@ -154,9 +154,9 @@ public class TurAiAuthoringService {
         var optionsBuilder = DefaultToolCallingChatOptions.builder()
                 .maxTokens(MAX_OUTPUT_TOKENS);
         if (tools != null && tools.length > 0) {
-            optionsBuilder
-                    .toolCallbacks(tools)
-                    .internalToolExecutionEnabled(true);
+            // Spring AI 2.0.0-RC1 removed internalToolExecutionEnabled; internal
+            // tool execution is now the default once callbacks are registered.
+            optionsBuilder.toolCallbacks(tools);
         }
         Prompt prompt = new Prompt(messages, optionsBuilder.build());
 

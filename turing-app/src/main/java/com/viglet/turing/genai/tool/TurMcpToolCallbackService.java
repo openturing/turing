@@ -112,7 +112,9 @@ public class TurMcpToolCallbackService {
     private McpSyncClient createAndInitClient(TurMcpServerDomain server) {
         McpClientTransport transport = createTransport(server);
         McpSyncClient client = McpClient.sync(transport)
-                .clientInfo(new McpSchema.Implementation("turing", "2026.1"))
+                // MCP SDK 2.0.0-RC1 deprecated the Implementation(name, version)
+                // constructor in favour of the builder.
+                .clientInfo(McpSchema.Implementation.builder("turing", "2026.1").build())
                 .requestTimeout(Duration.ofSeconds(30))
                 .build();
         client.initialize();
@@ -120,6 +122,21 @@ public class TurMcpToolCallbackService {
         return client;
     }
 
+    // MCP SDK 2.0.0-RC1 deprecated HttpClientSseClientTransport in favour of
+    // HttpClientStreamableHttpTransport. We deliberately keep the SSE transport:
+    // it speaks the legacy two-endpoint HTTP+SSE protocol our configured MCP
+    // servers expose (GET /sse opens the stream + an `endpoint` event tells the
+    // client where to POST messages), whereas Streamable HTTP is a different
+    // wire protocol on a single endpoint (default /mcp) and does NOT fall back
+    // to the legacy handshake — pointing it at an SSE-only server would break
+    // the connection. Switching is therefore a per-server protocol decision,
+    // not a mechanical deprecation fix.
+    //
+    // The deprecation is a plain @Deprecated (NOT forRemoval), so the API is
+    // not going away in the short term and suppressing the warning is the
+    // sanctioned approach until our MCP servers move to Streamable HTTP.
+    // Tracked: docs/ROADMAP.md T294 (per-server transport opt-in).
+    @SuppressWarnings("deprecation")
     private McpClientTransport createTransport(TurMcpServerDomain server) {
         if (server.connectionType() == TurMcpServerConnectionType.HTTP) {
             return HttpClientSseClientTransport.builder(server.url()).build();

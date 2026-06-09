@@ -732,26 +732,18 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
                 (org.springframework.ai.model.tool.ToolCallingChatOptions) opts;
         // The CRITICAL invariant: when node.toolsEnabled == FALSE, the
         // executor builds ChatOptions with an EMPTY toolCallbacks list.
-        // No callbacks means no tools to execute — regardless of what
-        // internalToolExecutionEnabled says.
+        // No callbacks means no tools to execute.
         //
-        // Quirk observed in Spring AI 2.0.0-M6: even though the executor
-        // builds the stripped options with `.internalToolExecutionEnabled(false)`,
-        // the captured ChatOptions reads back `getInternalToolExecutionEnabled()
-        // == TRUE`. The exact mechanism (clone? copy via downstream
-        // resilience wrapper? default in ChatModel.call?) is unclear,
-        // but pragmatically harmless — an empty callbacks list yields a
-        // tool-free turn regardless of the flag.
-        //
-        // If a future Spring AI version preserves the flag, the executor's
-        // intent will be visible and we can tighten the assertion. For
-        // now, asserting on the OBSERVABLE outcome (empty callbacks) is
-        // what the patch #3 contract actually buys the runtime.
+        // Spring AI 2.0.0-RC1 removed the internalToolExecutionEnabled flag
+        // (and its getter) entirely — internal tool execution is now the
+        // default, gated only by whether the model returns tool calls. The
+        // executor therefore relies solely on the empty callbacks list to
+        // guarantee a tool-free turn, which is exactly what this assertion
+        // verifies.
         org.assertj.core.api.Assertions.assertThat(tco.getToolCallbacks())
                 .as("toolsEnabled=false on the active node MUST yield an empty toolCallbacks list — "
-                        + "opts class=%s, internalExec=%s",
-                        opts.getClass().getSimpleName(),
-                        tco.getInternalToolExecutionEnabled())
+                        + "opts class=%s",
+                        opts.getClass().getSimpleName())
                 .isEmpty();
     }
 

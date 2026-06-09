@@ -243,15 +243,16 @@ public class TurLLMChatAPI {
             log.debug("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
                     toolCallbacks.length, id, ragSearchToolService.isAvailable());
 
+            // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
+            // internal tool execution is now the default once callbacks are present.
             var chatOptions = DefaultToolCallingChatOptions.builder()
                     .toolCallbacks(toolCallbacks)
-                    .internalToolExecutionEnabled(true)
                     .build();
 
             Prompt prompt = new Prompt(springMessages, chatOptions);
 
             // Use call() instead of stream() to ensure tool calling works reliably.
-            // Spring AI's stream() + internalToolExecutionEnabled(true) does not execute
+            // Spring AI's stream() with internal tool execution does not execute
             // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
             return Mono.fromCallable(() -> {
                 log.info("[Chat] Calling LLM with tool support for instance {}", id);

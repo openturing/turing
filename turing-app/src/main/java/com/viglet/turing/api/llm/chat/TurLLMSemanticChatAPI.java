@@ -144,9 +144,12 @@ public class TurLLMSemanticChatAPI {
         log.info("[SemanticChat] Registered {} tool callbacks ({} semantic + {} MCP) for instance {}",
                 allCallbacks.length, semanticCallbacks.length, mcpCallbacks.length, id);
 
+        // Spring AI 2.0.0-RC1 removed the internalToolExecutionEnabled flag;
+        // internal tool execution is now the default when tool callbacks are
+        // present (eligibility is decided by whether the model returns tool
+        // calls), so we just register the callbacks.
         var chatOptions = DefaultToolCallingChatOptions.builder()
                 .toolCallbacks(allCallbacks)
-                .internalToolExecutionEnabled(true)
                 .build();
 
         List<Message> messages = new ArrayList<>();

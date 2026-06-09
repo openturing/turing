@@ -95,7 +95,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
 
         return OllamaChatModel.builder()
                 .ollamaApi(ollamaApi)
-                .defaultOptions(optionsBuilder.build())
+                .options(optionsBuilder.build())
                 .build();
     }
 
@@ -121,7 +121,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
 
         return OllamaEmbeddingModel.builder()
                 .ollamaApi(ollamaApi)
-                .defaultOptions(embeddingOptions)
+                .options(embeddingOptions)
                 .build();
     }
 

@@ -47,6 +47,7 @@
 - 📋 **T242** (deps: —) **CI nightly pipeline for `-Pllm-it`** — the `llm-it` Maven profile (real-LLM integration tests, gpt-4o-mini) runs locally; wire a nightly CI job that injects the `OPENAI_API_KEY` secret and runs it, so LLM-path regressions surface without… → §VI.6
 - 📋 **T243** (deps: T224) **Extract a shared `useStreamingChatCore` hook** — `useTuringChat` and `useTuringLlmChat` duplicate the streaming/bubble/abort state machine. → §XII.1
 - 📋 **T244** (deps: —) **Block A "cascade ascent" IT body** — the last deferred structural test body from the Block A harness audit: a multi-level sub-flow ascent case. → §0 Block A
+- 💭 **T294** (deps: —) **Outbound MCP client → Streamable HTTP transport (per-server opt-in)** — MCP SDK 2.0.0-RC1 deprecated `HttpClientSseClientTransport` (legacy two-endpoint HTTP+SSE) in favour of `HttpClientStreamableHttpTransport` (single `/mcp` endpoint). The new transport is a different wire protocol with no fallback to the legacy SSE handshake, so it can't silently replace the SSE one for SSE-only servers. The deprecation is plain `@Deprecated` (not `forRemoval`), so this is non-urgent; `TurMcpToolCallbackService.createTransport(...)` currently keeps SSE behind `@SuppressWarnings`. Add a per-server transport-type field on `TurMcpServer` (default = legacy SSE) so each HTTP server picks SSE or Streamable HTTP — entity + Liquibase column + admin UI — and drop the suppression once migrated.
 
 ## E.2 — Agent Workspace (the key differentiator)
 

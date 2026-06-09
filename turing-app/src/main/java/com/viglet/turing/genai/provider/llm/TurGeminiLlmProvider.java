@@ -69,7 +69,7 @@ public class TurGeminiLlmProvider implements TurGenAiLlmProvider {
 
         return GoogleGenAiChatModel.builder()
                 .genAiClient(genAiClient)
-                .defaultOptions(optionsBuilder.build())
+                .options(optionsBuilder.build())
                 .build();
     }
 

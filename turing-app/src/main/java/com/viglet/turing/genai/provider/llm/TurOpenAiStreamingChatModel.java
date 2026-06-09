@@ -117,7 +117,10 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
     }
 
     @Override
-    public ChatOptions getDefaultOptions() {
+    public ChatOptions getOptions() {
+        // Spring AI 2.0.0-RC1 deprecated getDefaultOptions() in favour of
+        // getOptions(); the deprecated method now delegates here by default,
+        // so legacy callers still resolve to this value.
         return defaultOptions;
     }
 
