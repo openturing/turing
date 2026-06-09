@@ -63,16 +63,19 @@ public class TurAiAuthoringService {
     private final TurLLMInstanceRepository llmRepository;
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
+    private final com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurAiAuthoringService(TurGlobalSettingsService globalSettings,
             TurLLMInstanceRepository llmRepository,
             TurLlmModelFactory llmModelFactory,
-            TurSecretCryptoService secretCryptoService) {
+            TurSecretCryptoService secretCryptoService,
+            com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop) {
         this.globalSettings = globalSettings;
         this.llmRepository = llmRepository;
         this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
+        this.toolExecutionLoop = toolExecutionLoop;
     }
 
     /**
@@ -162,7 +165,9 @@ public class TurAiAuthoringService {
 
         String text = "";
         try {
-            var aiResponse = chatModel.call(prompt);
+            // RC1 moved tool execution out of ChatModel.call(); drive the loop
+            // explicitly so authoring tools fire (see TurToolExecutionLoop).
+            var aiResponse = toolExecutionLoop.call(chatModel, prompt);
             text = aiResponse.getResult() != null
                     && aiResponse.getResult().getOutput() != null
                     && aiResponse.getResult().getOutput().getText() != null

@@ -92,12 +92,20 @@ public class TurCodeInterpreterFileAPI {
                 mimeType = mimeTypeFromExtension(filename);
             }
             Resource resource = new FileSystemResource(file);
+            // Images (matplotlib charts etc.) must render INLINE so the chat's
+            // `![](…)` markdown displays them; forcing `attachment` made the
+            // browser download the file and show a broken-image icon instead.
+            // Everything else (pdf/csv/xlsx/zip) keeps `attachment` so the
+            // "Download …" links still save the file.
+            boolean inline = mimeType.startsWith("image/");
+            ContentDisposition disposition = (inline
+                    ? ContentDisposition.inline()
+                    : ContentDisposition.attachment())
+                    .filename(filename)
+                    .build();
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            ContentDisposition.attachment()
-                                    .filename(filename)
-                                    .build().toString())
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                     .body(resource);
         } catch (IOException e) {
             log.error("Failed to serve code interpreter file {}/{}: {}", sessionId, filename, e.getMessage());

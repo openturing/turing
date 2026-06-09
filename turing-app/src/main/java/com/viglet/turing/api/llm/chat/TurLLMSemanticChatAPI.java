@@ -82,6 +82,7 @@ public class TurLLMSemanticChatAPI {
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurLLMTokenUsageService tokenUsageService;
+    private final com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop;
 
     public TurLLMSemanticChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort,
@@ -91,7 +92,8 @@ public class TurLLMSemanticChatAPI {
             TurDslToolService dslToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
             TurToolCallbackPipeline toolCallbackPipeline,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurLLMTokenUsageService tokenUsageService,
+            com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceRepositoryPort = turLLMInstanceRepositoryPort;
         this.llmProviderFactory = llmProviderFactory;
@@ -101,6 +103,7 @@ public class TurLLMSemanticChatAPI {
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.toolCallbackPipeline = toolCallbackPipeline;
         this.tokenUsageService = tokenUsageService;
+        this.toolExecutionLoop = toolExecutionLoop;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -166,7 +169,9 @@ public class TurLLMSemanticChatAPI {
 
         return Mono.fromCallable(() -> {
             log.info("[SemanticChat] Calling LLM for instance {}", id);
-            var response = chatModel.call(prompt);
+            // RC1 moved tool execution out of ChatModel.call(); drive the loop
+            // explicitly so semantic + MCP tools fire (see TurToolExecutionLoop).
+            var response = toolExecutionLoop.call(chatModel, prompt);
 
             tokenUsageService.recordUsage(turLLMInstance, response, username);
 

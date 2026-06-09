@@ -98,7 +98,8 @@ class TurLLMChatAPITest {
                 tokenUsageService, toolCallbackPipeline,
                 loggingToolService, integrationMonitoringToolService,
                 systemInfoToolService, iconifyToolService,
-                chatAttachmentService);
+                chatAttachmentService,
+                new com.viglet.turing.genai.TurToolExecutionLoop());
     }
 
     private static TurLLMInstanceDomain llmDomain(String id, Integer contextWindow) {

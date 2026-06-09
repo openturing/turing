@@ -32,6 +32,18 @@ public class TurCodeInterpreterToolService {
     private static final int MAX_OUTPUT_LENGTH = 15_000;
     private static final String SANDBOX_DIR = "code-interpreter";
     /**
+     * Turing's virtual URI scheme for sandboxed artifacts (code-interpreter
+     * output, workspace files). The LLM-facing markdown prefixes generated-file
+     * URLs with this scheme; the chat client (admin console + SDK) resolves it
+     * back to the served path. Adopting OpenAI's own {@code sandbox:} convention
+     * is deliberate: OpenAI-family models echo a {@code sandbox:} URL verbatim
+     * (it matches their Code Interpreter training) instead of corrupting a bare
+     * relative path — the root cause of the "image won't render" reports. The
+     * scheme carries no host, so the client decides whether to resolve it
+     * relative (same-origin admin) or against a configured base (embedded SDK).
+     */
+    static final String SANDBOX_SCHEME = "sandbox:";
+    /**
      * Subdir of {@link #SANDBOX_DIR} where ephemeral per-call session
      * directories live WHEN no tenant context is available (LLM-direct
      * {@code execute_python} calls, unit tests). Kept as a fallback for
@@ -1141,9 +1153,19 @@ public class TurCodeInterpreterToolService {
         if (generatedFiles == null || generatedFiles.length == 0) return;
         result.append("\n--- Generated Files ---\n");
         result.append(
-                "IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
+                "IMPORTANT: Copy the markdown below EXACTLY as-is, including the `sandbox:` URL scheme. "
+                        + "Do NOT rewrite, strip, or add a domain to these URLs — the chat client resolves "
+                        + "`sandbox:` to the real file location.\n");
         for (File f : generatedFiles) {
-            String fileUrl = signedFileUrl(sessionId, f.getName(), convId);
+            // LLM-facing markdown uses the Turing `sandbox:` virtual scheme
+            // (see SANDBOX_SCHEME): OpenAI-family models are trained on their
+            // own Code Interpreter, which emits `sandbox:/...` URIs, so they
+            // copy a `sandbox:`-prefixed URL verbatim instead of mangling a
+            // bare relative path (the recurring `sandbox:/api/...` artifact).
+            // The chat client resolves the scheme back to the served path.
+            // The STRUCTURED descriptor (buildFileDescriptors) keeps the clean
+            // relative URL for programmatic callers.
+            String fileUrl = SANDBOX_SCHEME + signedFileUrl(sessionId, f.getName(), convId);
             String prefix = isImageFile(f.getName()) ? "!" : "Download ";
             // Image markdown: ![alt](url). Plain link: [Download name](url).
             // The "Download " prefix label lives inside the [] for non-image

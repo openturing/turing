@@ -114,6 +114,15 @@ public class TurSecurityConfigProduction {
                                 .ignoringRequestMatchers(
                                                 mvc.matcher("/api/genai/chat"),
                                                 mvc.matcher("/api/v2/integration/**"),
+                                                // AI Agent chat consumed server-to-server (e.g. the
+                                                // viglet.com Next.js proxy) authenticated by a Dev Token
+                                                // in the `Key` header — no browser cookie jar, so no CSRF
+                                                // token can round-trip. Auth still required (endpoint is
+                                                // NOT in permitAll); only CSRF is skipped, mirroring the
+                                                // site chat under /api/sn/**.
+                                                mvc.matcher("/api/v2/ai-agent/*/chat"),
+                                                mvc.matcher("/api/v2/ai-agent/*/chat/**"),
+                                                mvc.matcher("/api/v2/ai-agent/*/chat-flow-state"),
                                                 mvc.matcher("/api/sn/**"),
                                                 mvc.matcher("/api/ann/**"),
                                                 mvc.matcher("/graphql"),

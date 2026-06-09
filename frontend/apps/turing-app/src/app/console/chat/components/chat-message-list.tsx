@@ -58,6 +58,11 @@ function encodeMarkdownLinkUrls(text: string): string {
 }
 
 function MarkdownBlock({ text }: Readonly<{ text: string }>) {
+  // Code-interpreter artifact URLs arrive here already normalized to a
+  // same-origin-relative /api/v2/... path (the backend strips the LLM's
+  // `sandbox:` scheme via TurChatArtifactUrls), so react-markdown's default
+  // urlTransform renders them as-is. Cross-origin consumers resolve the
+  // `sandbox:` scheme through @viglet/turing-sdk's resolveSandboxUrl instead.
   return (
     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
       {encodeMarkdownLinkUrls(text)}

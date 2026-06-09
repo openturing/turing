@@ -9,9 +9,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.io.File;
+import java.nio.file.Files;
+
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner.VerifyResult;
 
@@ -97,6 +102,48 @@ class TurCodeInterpreterFileAPITest {
         ResponseEntity<?> response = api.getFile("abc12345", "output.png", null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldServeImageInlineSoItRendersInChat() throws Exception {
+        // Pre-date-bucket fallback layout: code-interpreter/{sessionId}/{file}.
+        File dir = new File(TurCommonsUtils.addSubDirToStoreDir("code-interpreter"), "imgsess1");
+        Files.createDirectories(dir.toPath());
+        File png = new File(dir, "chart.png");
+        Files.write(png.toPath(), new byte[]{(byte) 0x89, 'P', 'N', 'G'});
+        try {
+            ResponseEntity<?> response = api.getFile("imgsess1", "chart.png", null, null, null);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getHeaders().getContentType())
+                    .hasToString("image/png");
+            // INLINE — otherwise the browser downloads the file and the chat's
+            // ![](…) image renders as a broken-image icon.
+            assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
+                    .startsWith("inline");
+        } finally {
+            Files.deleteIfExists(png.toPath());
+            Files.deleteIfExists(dir.toPath());
+        }
+    }
+
+    @Test
+    void shouldServeNonImageAsAttachment() throws Exception {
+        File dir = new File(TurCommonsUtils.addSubDirToStoreDir("code-interpreter"), "datasess1");
+        Files.createDirectories(dir.toPath());
+        File csv = new File(dir, "data.csv");
+        Files.write(csv.toPath(), "a,b\n1,2\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try {
+            ResponseEntity<?> response = api.getFile("datasess1", "data.csv", null, null, null);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            // Non-image stays a download.
+            assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
+                    .startsWith("attachment");
+        } finally {
+            Files.deleteIfExists(csv.toPath());
+            Files.deleteIfExists(dir.toPath());
+        }
     }
 
     @Test

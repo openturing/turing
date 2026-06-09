@@ -107,7 +107,11 @@ class TurCodeInterpreterToolServiceTest {
         assertThat(result)
                 .contains("Generated Files")
                 .contains("/api/v2/code-interpreter/session1/")
-                .contains("![");
+                .contains("![")
+                // LLM-facing markdown adopts the `sandbox:` virtual scheme so
+                // OpenAI-family models echo the URL verbatim instead of mangling
+                // it; the chat client resolves it back to the served path.
+                .contains("](sandbox:/api/v2/code-interpreter/session1/");
     }
 
     @Test
@@ -147,6 +151,7 @@ class TurCodeInterpreterToolServiceTest {
                 .contains("Generated Files")
                 .contains("[Download ")
                 .contains("/api/v2/code-interpreter/session2/")
+                .contains("](sandbox:/api/v2/code-interpreter/session2/")
                 .doesNotContain("![");
     }
 
@@ -858,8 +863,12 @@ class TurCodeInterpreterToolServiceTest {
         assertThat(imageFile.image()).isTrue();
         assertThat(imageFile.sizeBytes()).isEqualTo(png.length());
         // urlSigner is null in the 1-arg ctor → unsigned relative URL.
+        // The STRUCTURED url stays a clean served path (no `sandbox:` scheme) —
+        // the scheme is a LLM-facing markdown affordance only; programmatic
+        // callers (Groovy tools, webhooks, slot writers) get the real path.
         assertThat(imageFile.url())
-                .isEqualTo("/api/v2/code-interpreter/sess1/" + png.getName());
+                .isEqualTo("/api/v2/code-interpreter/sess1/" + png.getName())
+                .doesNotStartWith("sandbox:");
 
         TurCodeInterpreterToolService.TurCodeInterpreterFile dataFile = files.get(1);
         assertThat(dataFile.image()).isFalse();

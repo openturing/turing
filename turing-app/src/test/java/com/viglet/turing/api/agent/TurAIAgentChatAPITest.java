@@ -209,6 +209,64 @@ class TurAIAgentChatAPITest {
                 .hasMessageContaining("is not configured for agent");
     }
 
+    @Test
+    void chatShouldUseAgentFirstLlmWhenInstanceIdBlank() {
+        // Two LLMs on the agent; with a blank request id the endpoint must pick
+        // the agent's own LLM deterministically (lowest id = "llm-a"), never
+        // hitting the repository for an explicit lookup.
+        TurLLMInstance llmA = new TurLLMInstance();
+        llmA.setId("llm-a");
+        TurLLMInstance llmB = new TurLLMInstance();
+        llmB.setId("llm-b");
+
+        TurAIAgent agent = new TurAIAgent();
+        agent.setId("agent-1");
+        agent.setEnabled(1);
+        agent.setLlmInstances(Set.of(llmA, llmB));
+        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(agentChatExecutor.execute(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.nullable(String.class)))
+                .thenReturn(reactor.core.publisher.Flux.empty());
+
+        var request = new TurAIAgentChatAPI.AgentChatRequest(null,
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
+
+        var flux = api.chat("agent-1", request,
+                org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class));
+        flux.blockLast();
+
+        var captor = org.mockito.ArgumentCaptor.forClass(TurLLMInstance.class);
+        org.mockito.Mockito.verify(agentChatExecutor).execute(
+                org.mockito.ArgumentMatchers.any(), captor.capture(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.nullable(String.class));
+        assertThat(captor.getValue().getId()).isEqualTo("llm-a");
+        org.mockito.Mockito.verify(turLLMInstanceRepository, org.mockito.Mockito.never())
+                .findById(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void chatShouldThrowWhenBlankIdAndAgentHasNoLlm() {
+        TurAIAgent agent = new TurAIAgent();
+        agent.setId("agent-1");
+        agent.setEnabled(1);
+        // No LLM instances configured on the agent.
+        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+
+        var request = new TurAIAgentChatAPI.AgentChatRequest("",
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
+
+        assertThatThrownBy(() -> api.chat("agent-1", request,
+                org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("has no LLM instance configured");
+    }
+
     // --- contextInfo Tests ---
 
     @Test

@@ -1,5 +1,6 @@
 package com.viglet.turing.api.agent;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.MediaType;
@@ -149,14 +150,29 @@ public class TurAIAgentChatAPI {
         }
 
         String llmInstanceId = request.llmInstanceId();
-        TurLLMInstance turLLMInstance = turLLMInstanceRepository.findById(llmInstanceId)
-                .orElseThrow(() -> new IllegalArgumentException("LLM instance not found: " + llmInstanceId));
+        TurLLMInstance turLLMInstance;
+        if (llmInstanceId == null || llmInstanceId.isBlank()) {
+            // No explicit LLM in the request: fall back to the agent's own
+            // configuration. The agent owns a set of allowed LLM instances; when
+            // the caller doesn't pick one, use the agent's default. Sorting by id
+            // keeps the choice deterministic across calls (the relation is an
+            // unordered Set). This lets public/headless clients (e.g. viglet.com)
+            // depend only on the agentId.
+            turLLMInstance = agent.getLlmInstances().stream()
+                    .min(Comparator.comparing(TurLLMInstance::getId))
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "AI Agent '" + agentId + "' has no LLM instance configured"));
+        } else {
+            turLLMInstance = turLLMInstanceRepository.findById(llmInstanceId)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "LLM instance not found: " + llmInstanceId));
 
-        boolean llmAllowed = agent.getLlmInstances().stream()
-                .anyMatch(llm -> llm.getId().equals(llmInstanceId));
-        if (!llmAllowed) {
-            throw new IllegalArgumentException(
-                    "LLM instance '" + llmInstanceId + "' is not configured for agent '" + agentId + "'");
+            boolean llmAllowed = agent.getLlmInstances().stream()
+                    .anyMatch(llm -> llm.getId().equals(llmInstanceId));
+            if (!llmAllowed) {
+                throw new IllegalArgumentException(
+                        "LLM instance '" + llmInstanceId + "' is not configured for agent '" + agentId + "'");
+            }
         }
 
         int fileCount = files == null ? 0 : files.size();

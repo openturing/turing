@@ -59,7 +59,8 @@ class TurLLMSemanticChatAPITest {
         api = new TurLLMSemanticChatAPI(
                 turLLMInstanceRepository, turLLMInstanceRepositoryPort,
                 llmProviderFactory, llmModelFactory, turSecretCryptoService,
-                dslToolService, mcpToolCallbackService, toolCallbackPipeline, tokenUsageService);
+                dslToolService, mcpToolCallbackService, toolCallbackPipeline, tokenUsageService,
+                new com.viglet.turing.genai.TurToolExecutionLoop());
     }
 
     private static TurLLMInstanceDomain llmDomain(String id, Integer contextWindow) {

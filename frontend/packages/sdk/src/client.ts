@@ -37,6 +37,18 @@ export interface TuringClientConfig {
   /** Extra headers merged into every request (e.g. an API gateway key). */
   readonly headers?: Readonly<Record<string, string>>;
   /**
+   * Turing Developer Token for server-to-server (or otherwise unauthenticated)
+   * callers. Sent verbatim in the {@code Key} request header, which Turing's
+   * {@code TurAuthTokenHeaderFilter} resolves to the user who minted the token —
+   * so protected endpoints (e.g. {@code POST /v2/ai-agent/{id}/chat}) authorize
+   * without a browser session. Create one under admin → Developer Token.
+   *
+   * <p>Merged into {@link headers}; an explicit {@code Key} entry in
+   * {@link headers} takes precedence. Has no effect on CSRF — a token-authed
+   * call still relies on the endpoint being CSRF-exempt or a primed token.
+   */
+  readonly apiKey?: string;
+  /**
    * Overrides CSRF token resolution. Return {@code undefined} to send the
    * request without a token. When omitted, the built-in {@link ensureCsrfToken}
    * logic is used (read cookie → prime via {@code /csrf}).
@@ -116,7 +128,11 @@ export function createTuringClient(config: TuringClientConfig): TuringClient {
   }
   const baseURL = trimTrailingSlash(config.baseURL);
   const credentials: RequestCredentials = config.credentials ?? "include";
-  const baseHeaders = config.headers ?? {};
+  // The `Key` header carries the Dev Token; an explicit `headers.Key` wins.
+  const baseHeaders: Record<string, string> = {
+    ...(config.apiKey ? { Key: config.apiKey } : {}),
+    ...config.headers,
+  };
 
   async function ensureCsrfToken(): Promise<string | undefined> {
     if (config.getCsrfToken) return config.getCsrfToken();

@@ -82,6 +82,9 @@ export type { TurSessionOptions } from "./session";
 // ── Resolve utilities ──
 export { resolveDocuments, resolveGroups } from "./resolve";
 
+// ── Sandbox artifact URLs (code-interpreter / workspace) ──
+export { resolveSandboxUrl, isSandboxUrl, absolutizeArtifactUrls } from "./sandbox";
+
 // ── Slots SSE multiplexer (advanced) ──
 export { subscribeSlotsSse } from "./slots-sse";
 export type {

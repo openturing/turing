@@ -82,19 +82,22 @@ public class TurChatStreamingDispatcher {
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatMemoryService chatMemoryService;
     private final TurChatPipelineObservation chatPipelineObservation;
+    private final TurToolExecutionLoop toolExecutionLoop;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
             TurPersonaToneValidator personaToneValidator,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatMemoryService chatMemoryService,
-            TurChatPipelineObservation chatPipelineObservation) {
+            TurChatPipelineObservation chatPipelineObservation,
+            TurToolExecutionLoop toolExecutionLoop) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatMemoryService = chatMemoryService;
         this.chatPipelineObservation = chatPipelineObservation;
+        this.toolExecutionLoop = toolExecutionLoop;
     }
 
     /**
@@ -297,7 +300,12 @@ public class TurChatStreamingDispatcher {
             long tLlmStart = System.currentTimeMillis();
             log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
                     agent.getTitle(), llmInstance.getTitle());
-            org.springframework.ai.chat.model.ChatResponse response = chatModel.call(prompt);
+            // Spring AI 2.0.0-RC1 no longer runs the tool-execution loop inside
+            // ChatModel.call() — drive it explicitly so registered tools (native
+            // / MCP / custom) actually fire instead of the model returning a bare
+            // tool-call response (empty assistant text). See TurToolExecutionLoop.
+            org.springframework.ai.chat.model.ChatResponse response =
+                    toolExecutionLoop.call(chatModel, prompt);
             long tLlmEnd = System.currentTimeMillis();
             tokenUsageService.recordUsage(llmInstance, response, username);
             if (response.getResult() != null
@@ -334,6 +342,11 @@ public class TurChatStreamingDispatcher {
             TurPersonaValidationResult validation =
                     personaToneValidator.validate(effectivePersona, text);
             text = validation.sanitizedText();
+
+            // Translate the LLM's `sandbox:` artifact URLs (code-interpreter
+            // charts/files) into same-origin-relative /api/... paths so they
+            // render inline regardless of the client's markdown renderer.
+            text = TurChatArtifactUrls.normalize(text);
 
             // Telemetry: increment turn count + accumulate tokens for the
             // session, and append the turn to chat memory (NoOp when either

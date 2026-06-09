@@ -32,7 +32,9 @@ Note: This palette is for matplotlib only. Chart.js uses a different palette (se
 
 DISPLAYING FILES:
 The tool output includes ready-to-use markdown. Copy it VERBATIM — do not modify the URL.
-URLs are relative paths starting with /. Adding any prefix (https://, http://, domain) will break them.
+Generated-file URLs use the `sandbox:` scheme (e.g. `sandbox:/api/v2/code-interpreter/...`).
+Keep the `sandbox:` prefix exactly as given; do NOT strip it, rewrite it, or add a domain.
+The chat client resolves `sandbox:` to the real file location automatically.
 
 ERROR HANDLING:
 - On ModuleNotFoundError: install first, then retry (counts as one attempt).

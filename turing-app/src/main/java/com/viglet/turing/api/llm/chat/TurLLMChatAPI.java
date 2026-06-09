@@ -110,6 +110,7 @@ public class TurLLMChatAPI {
     private final TurSystemInfoToolService systemInfoToolService;
     private final TurIconifyToolService iconifyToolService;
     private final TurChatAttachmentService chatAttachmentService;
+    private final com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort,
@@ -129,7 +130,8 @@ public class TurLLMChatAPI {
             TurIntegrationMonitoringToolService integrationMonitoringToolService,
             TurSystemInfoToolService systemInfoToolService,
             TurIconifyToolService iconifyToolService,
-            TurChatAttachmentService chatAttachmentService) {
+            TurChatAttachmentService chatAttachmentService,
+            com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceRepositoryPort = turLLMInstanceRepositoryPort;
         this.llmProviderFactory = llmProviderFactory;
@@ -149,6 +151,7 @@ public class TurLLMChatAPI {
         this.systemInfoToolService = systemInfoToolService;
         this.iconifyToolService = iconifyToolService;
         this.chatAttachmentService = chatAttachmentService;
+        this.toolExecutionLoop = toolExecutionLoop;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -254,9 +257,11 @@ public class TurLLMChatAPI {
             // Use call() instead of stream() to ensure tool calling works reliably.
             // Spring AI's stream() with internal tool execution does not execute
             // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
+            // RC1 also stopped running the tool loop inside call(); drive it
+            // explicitly via TurToolExecutionLoop so the registered tools fire.
             return Mono.fromCallable(() -> {
                 log.info("[Chat] Calling LLM with tool support for instance {}", id);
-                var response = chatModel.call(prompt);
+                var response = toolExecutionLoop.call(chatModel, prompt);
 
                 tokenUsageService.recordUsage(turLLMInstance, response, username);
 
@@ -265,6 +270,9 @@ public class TurLLMChatAPI {
                         && response.getResult().getOutput().getText() != null
                                 ? response.getResult().getOutput().getText()
                                 : "";
+                // Translate `sandbox:` artifact URLs to relative /api/... paths
+                // so code-interpreter charts render inline (see TurChatArtifactUrls).
+                text = com.viglet.turing.genai.TurChatArtifactUrls.normalize(text);
                 log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
                 return new ChatResponse(ROLE_ASSISTANT, text);
             })
