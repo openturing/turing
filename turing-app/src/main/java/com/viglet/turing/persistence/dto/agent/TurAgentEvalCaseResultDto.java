@@ -14,8 +14,8 @@ import java.util.List;
 /**
  * T286 / §XV.2 — the scored result of replaying one
  * {@link com.viglet.turing.persistence.model.agent.TurAgentEvalCase} through
- * the chat-flow engine. Serialized into
- * {@link com.viglet.turing.persistence.model.agent.TurAgentEvalReport#getResultsJson()}.
+ * the chat-flow engine. Serialized into the {@code resultsJson} column of
+ * {@link com.viglet.turing.persistence.model.agent.TurAgentEvalReport}.
  *
  * @param caseId          id of the source case
  * @param caseName        human label of the case
