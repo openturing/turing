@@ -214,6 +214,10 @@ public class TurAIAgentAPI {
                     agentEdit.getLlmInstances(),
                     agentEdit.getTurEmbeddingModelInstance(),
                     agentEdit.getTurStoreInstance()));
+            // Rich-content rendering opt-in (```html / ```d2 live preview).
+            // Field-by-field copy like the other toggles — omitting it would
+            // silently drop the switch on save.
+            agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
             // Chat memory configuration — silently dropped before this fix,
             // which is why toggling the UI switch had no effect after save.
             agentEdit.setChatMemoryEnabled(turAIAgent.isChatMemoryEnabled());

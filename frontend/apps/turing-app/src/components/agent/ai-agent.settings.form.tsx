@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconX } from "@tabler/icons-react"
+import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconSparkles, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -113,6 +113,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // `?? 1` preserves an explicit 0 on existing agents.
       enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
+      richContentEnabled: value.richContentEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
@@ -474,6 +475,38 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   chat API is the only invocation path that exercises
                   RAG) and locale-aware retrieval depends on
                   TurSNSiteLocale, which the SN site owns. */}
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconSparkles}
+              title={t("forms.agentSettings.richContent")}
+              description={t("forms.agentSettings.richContentDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="richContentEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableRichContent")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enableRichContentDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
             </SectionCard.Content>
           </SectionCard>
 

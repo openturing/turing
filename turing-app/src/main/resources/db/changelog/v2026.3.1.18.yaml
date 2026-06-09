@@ -1,0 +1,28 @@
+databaseChangeLog:
+  # Per-agent opt-in for rich-content rendering. When true, the agent's system
+  # prompt is augmented with prompts/render.md so the model knows it may emit
+  # ```html (live preview / games / Chart.js) and ```d2 (diagrams) blocks that
+  # the chat client renders natively. Default false → existing agents keep
+  # their exact current behavior (no extra prompt tokens, no rich blocks).
+  #
+  # Idempotent: gated by columnExists so re-running on a DB that already has the
+  # column is a no-op.
+  - changeSet:
+      id: add-rich-content-enabled-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: rich_content_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: rich_content_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

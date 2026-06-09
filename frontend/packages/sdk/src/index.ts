@@ -85,6 +85,10 @@ export { resolveDocuments, resolveGroups } from "./resolve";
 // ── Sandbox artifact URLs (code-interpreter / workspace) ──
 export { resolveSandboxUrl, isSandboxUrl, absolutizeArtifactUrls } from "./sandbox";
 
+// ── Rich-content segmentation (```html live preview / games / charts) ──
+export { splitRichContent, hasHtmlBlock } from "./rich-content";
+export type { TurRichSegment } from "./rich-content";
+
 // ── Slots SSE multiplexer (advanced) ──
 export { subscribeSlotsSse } from "./slots-sse";
 export type {

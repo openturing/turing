@@ -67,6 +67,20 @@ public class TurAIAgent implements Serializable {
     private boolean ragEnabled = false;
 
     /**
+     * Per-agent opt-in for rich-content rendering. When {@code true}, the
+     * agent's system prompt is augmented with {@code prompts/render.md} so the
+     * model knows it may emit {@code ```html} (live preview / games / Chart.js)
+     * and {@code ```d2} (diagrams) blocks that the chat client renders natively.
+     * Default {@code false} keeps existing agents unchanged (no extra prompt
+     * tokens, no rich blocks). Surfaced as an explicit toggle in the agent
+     * settings so the capability is discoverable, not a hidden global.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "rich_content_enabled", nullable = false)
+    private boolean richContentEnabled = false;
+
+    /**
      * When {@code true}, the agent enqueues every chat turn into the chat
      * memory pipeline so it can be persisted by {@code turing.logging.engine}
      * (mongodb / redis) keyed by {@code conversationId}. Has no effect when

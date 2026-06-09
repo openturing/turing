@@ -13,6 +13,8 @@
 
 package com.viglet.turing.genai;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,8 +22,13 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
@@ -54,6 +61,7 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
+@Slf4j
 @Service
 public class TurChatPromptAssembler {
 
@@ -63,6 +71,29 @@ public class TurChatPromptAssembler {
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
     private final TurMcpInstructionsProvider mcpInstructionsProvider;
+
+    /**
+     * The rich-content rendering guidance ({@code ```html} live preview /
+     * {@code ```d2} diagrams / Chart.js). Appended to an agent's system prompt
+     * only when {@link TurAIAgent#isRichContentEnabled()} — the same file the
+     * plain-LLM chat ({@code TurLLMChatAPI}) injects unconditionally. Loaded
+     * once at startup.
+     */
+    @Value("classpath:prompts/render.md")
+    private Resource renderPromptResource;
+
+    private String renderPrompt = "";
+
+    @PostConstruct
+    void loadRenderPrompt() {
+        try {
+            renderPrompt = renderPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[PromptAssembler] could not load prompts/render.md — rich-content "
+                    + "agents will fall back to the model's own formatting: {}", e.getMessage());
+            renderPrompt = "";
+        }
+    }
 
     public TurChatPromptAssembler(TurChatFlowEngineService chatFlowEngineService,
             TurPersonaPromptComposer personaPromptComposer,
@@ -127,6 +158,12 @@ public class TurChatPromptAssembler {
         // or none carry instructions.
         String mcpAugmented = baseSystemPrompt
                 + mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
+        // Rich-content rendering opt-in: when the operator enabled it on this
+        // agent, teach the model the ```html / ```d2 conventions the chat client
+        // renders natively. Default-off agents are byte-for-byte unchanged.
+        if (agent.isRichContentEnabled() && !renderPrompt.isBlank()) {
+            mcpAugmented = mcpAugmented + "\n\n" + renderPrompt;
+        }
         String flowAugmented = flowContext == null
                 ? mcpAugmented
                 : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(

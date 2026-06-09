@@ -43,6 +43,8 @@ export interface TurAIAgent {
   systemPromptMetaPrompt?: string | null;
   enabled: number;
   ragEnabled: boolean;
+  /** Opt-in: augments the system prompt with the ```html / ```d2 live-preview rendering guidance so the agent can emit interactive blocks (games, demos, Chart.js, diagrams). Default false. */
+  richContentEnabled?: boolean;
   /** Persists every chat turn to the configured logging engine (mongodb/redis), keyed by conversationId. No-op when turing.logging.engine == none. */
   chatMemoryEnabled: boolean;
   /** Worker flush cadence in minutes. */
