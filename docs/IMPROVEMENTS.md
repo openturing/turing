@@ -1224,12 +1224,6 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T322 — Skill activation harness (progressive disclosure).** Inject
-  each available skill's `name` + `description` cheaply; when the model
-  judges a skill relevant, load its `SKILL.md` body; expose the
-  mounted-folder code-execution tool so it can read `references/`, run
-  `scripts/`, and write drafts. This is what makes a skill *run* — the
-  piece it's easy to underestimate.
 - **T323 — Use skill in chat.** Wire the harness into the chat path: a
   session's available skills activate by description (and/or an explicit
   user pick).
@@ -1247,9 +1241,12 @@ editor at `/admin/skill`), T319 (import ZIP — entry door) and T320
 (export ZIP — exit door). **T321 — the engine — has shipped**
 (`TurSkillSandbox*`: a persistent `bash`-driven Docker session with the
 skill folder mounted read-only and a workspace that survives across
-turns, gated on `DOCKER` mode). What remains is activation: T322 needs
-T317 + T321; T323/T324/T325 need T322. The public hosted registry (T118)
-layers on T320 and stays a deferred idea.
+turns, gated on `DOCKER` mode). **T322 — the activation harness — has
+shipped** (`TurSkillActivationHarness`: progressive-disclosure prompt
+block + `load_skill` / `skill_bash` tools over the T321 sandbox, gated on
+storage + `DOCKER`). What remains is wiring it in: T323/T324/T325 need
+T322. The public hosted registry (T118) layers on T320 and stays a
+deferred idea.
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
