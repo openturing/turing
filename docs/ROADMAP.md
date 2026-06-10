@@ -74,7 +74,6 @@
 > (`frontend/apps/turing-app/src/search/`, using `useTuringPagination`). Validate
 > each before marking a task done — `pnpm -r build` must stay green.
 
-- 💭 **T307** (deps: T306) **Split `TuringSearchField` (headless view ⇄ hook wiring)** — extract a headless compound (`Input`/`Button`/`Dropdown`, context-driven) to react-ui and **strip its baked Tailwind defaults** (the `w-full px-4 py-2.5 hover:bg-gray-100…` markup violates the headless contract); keep the orchestrating Root (`useTuringAutoComplete` + `useTuringSearchHistory` + `useTuringUrlSearch`, history-save effect) in react-sdk feeding the view its `classNames`/render props. → §XII.2.a
 - 💭 **T308** (deps: T306) **Split `TuringWorkspacePanel` (view ⇄ SSE wiring)** — extract headless `TuringWorkspacePanelView` (artifacts + status props, render-prop row, `formatBytes`) to react-ui; keep `TuringWorkspacePanel` in react-sdk as a thin wrapper that subscribes via `useTuringWorkspace` and forwards artifacts. Lets viglet.com render the workspace list with its own Next transport. → §XII.2.a
 
 ## E.2 — Agent Workspace (the key differentiator)

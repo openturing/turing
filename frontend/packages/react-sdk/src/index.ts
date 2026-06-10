@@ -199,6 +199,7 @@ export {
   TuringSearchBar,
   TuringResultList,
   TuringPagination,
+  TuringSearchFieldView,
   TURING_UI_THEME_CLASS,
   TURING_UI_TOKENS,
 } from "@viglet/turing-react-ui";
@@ -237,6 +238,11 @@ export type {
   TuringRawDocument,
   TuringPaginationProps,
   TuringPaginationItemData,
+  TuringSearchFieldViewProps,
+  TuringSearchFieldViewContextValue,
+  TuringSearchFieldViewInputProps,
+  TuringSearchFieldViewButtonProps,
+  TuringSearchFieldViewDropdownProps,
   TuringUiTheme,
   TuringUiTokenName,
 } from "@viglet/turing-react-ui";

@@ -1,42 +1,15 @@
+import { useCallback, useEffect, useRef, useState, type FC, type ReactNode } from "react";
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type InputHTMLAttributes,
-  type ReactNode,
-} from "react";
+  TuringSearchFieldView,
+  type TuringSearchFieldViewInputProps,
+  type TuringSearchFieldViewButtonProps,
+  type TuringSearchFieldViewDropdownProps,
+} from "@viglet/turing-react-ui";
 import { useTuringAutoComplete } from "../hooks/use-turing-autocomplete";
 import { useTuringSearchHistory } from "../hooks/use-turing-search-history";
 import type { UseTuringUrlSearchReturn } from "../hooks/use-turing-url-search";
 
-// ── Context ──
-
-interface SearchFieldContextValue {
-  turing: UseTuringUrlSearchReturn;
-  suggestions: string[];
-  filteredHistory: string[];
-  showDropdown: boolean;
-  handleInputChange: (value: string) => void;
-  handleFocus: () => void;
-  handleBlur: () => void;
-  handleSubmit: () => void;
-  handlePick: (term: string) => void;
-  removeFromHistory: (term: string) => void;
-  clearAllHistory: () => void;
-}
-
-const SearchFieldContext = createContext<SearchFieldContextValue | null>(null);
-
-function useSearchFieldContext() {
-  const ctx = useContext(SearchFieldContext);
-  if (!ctx) throw new Error("TuringSearchField.* must be used inside <TuringSearchField>");
-  return ctx;
-}
-
-// ── Root ──
+// ── Root (data-wiring wrapper) ──
 
 interface TuringSearchFieldProps {
   /** The return value of useTuringUrlSearch */
@@ -52,6 +25,13 @@ interface TuringSearchFieldProps {
 /**
  * Composite search field that encapsulates autocomplete, search history,
  * and dropdown logic. Use the sub-components to build your UI:
+ *
+ * <p>This is the data-wiring half of the component: it runs the
+ * {@link useTuringAutoComplete} / {@link useTuringSearchHistory} hooks and the
+ * results→history save effect, then forwards the resulting state + callbacks to
+ * the headless {@code TuringSearchFieldView} in {@code @viglet/turing-react-ui}
+ * (T307 split). The {@code .Input} / {@code .Button} / {@code .Dropdown}
+ * sub-components are re-attached from the view, so consumer markup is unchanged.</p>
  *
  * @example
  * ```tsx
@@ -137,185 +117,36 @@ function TuringSearchFieldRoot({
     setShowDropdown(false);
   }, [clearHist]);
 
-  const value: SearchFieldContextValue = {
-    turing,
-    suggestions,
-    filteredHistory,
-    showDropdown,
-    handleInputChange,
-    handleFocus,
-    handleBlur,
-    handleSubmit,
-    handlePick,
-    removeFromHistory,
-    clearAllHistory,
-  };
-
   return (
-    <SearchFieldContext.Provider value={value}>
-      <div className={className}>{children}</div>
-    </SearchFieldContext.Provider>
-  );
-}
-
-// ── Input ──
-
-interface SearchFieldInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "onFocus" | "onBlur" | "value"> {
-  className?: string;
-}
-
-function SearchFieldInput(props: SearchFieldInputProps) {
-  const { turing, handleInputChange, handleFocus, handleBlur, handleSubmit } = useSearchFieldContext();
-
-  return (
-    <input
-      type="search"
-      autoComplete="off"
-      {...props}
-      value={turing.inputValue}
-      onChange={(e) => handleInputChange(e.target.value)}
+    <TuringSearchFieldView
+      className={className}
+      inputValue={turing.inputValue}
+      suggestions={suggestions}
+      filteredHistory={filteredHistory}
+      showDropdown={showDropdown}
+      onInputChange={handleInputChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") handleSubmit();
-        props.onKeyDown?.(e);
-      }}
-    />
-  );
-}
-
-// ── Button ──
-
-interface SearchFieldButtonProps {
-  children: ReactNode;
-  className?: string;
-}
-
-function SearchFieldButton({ children, className }: SearchFieldButtonProps) {
-  const { handleSubmit } = useSearchFieldContext();
-
-  return (
-    <button type="button" className={className} onClick={handleSubmit}>
+      onSubmit={handleSubmit}
+      onPick={handlePick}
+      onRemoveHistory={removeFromHistory}
+      onClearHistory={clearAllHistory}
+    >
       {children}
-    </button>
+    </TuringSearchFieldView>
   );
-}
-
-// ── Dropdown ──
-
-interface SearchFieldDropdownProps {
-  className?: string;
-  /** Render a suggestion item */
-  renderSuggestion?: (term: string, onClick: () => void) => ReactNode;
-  /** Render a history item */
-  renderHistory?: (term: string, onClick: () => void, onRemove: () => void) => ReactNode;
-  /** Render the history header with "clear all" */
-  renderHistoryHeader?: (onClearAll: () => void) => ReactNode;
-  /** Label for the "Recent searches" header (default "Recent searches") */
-  historyLabel?: string;
-  /** Label for "Clear all" button (default "Clear all") */
-  clearAllLabel?: string;
-}
-
-function SearchFieldDropdown({
-  className,
-  renderSuggestion,
-  renderHistory,
-  renderHistoryHeader,
-  historyLabel = "Recent searches",
-  clearAllLabel = "Clear all",
-}: SearchFieldDropdownProps) {
-  const {
-    suggestions,
-    filteredHistory,
-    showDropdown,
-    handlePick,
-    removeFromHistory,
-    clearAllHistory,
-  } = useSearchFieldContext();
-
-  // Autocomplete suggestions take priority
-  if (suggestions.length > 0) {
-    return (
-      <div className={className} role="listbox">
-        {suggestions.map((term) =>
-          renderSuggestion ? (
-            renderSuggestion(term, () => handlePick(term))
-          ) : (
-            <button
-              key={term}
-              type="button"
-              role="option"
-              className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2 cursor-pointer"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handlePick(term)}
-            >
-              {term}
-            </button>
-          ),
-        )}
-      </div>
-    );
-  }
-
-  // History fallback
-  if (showDropdown && filteredHistory.length > 0) {
-    return (
-      <div className={className} role="listbox">
-        {renderHistoryHeader ? (
-          renderHistoryHeader(clearAllHistory)
-        ) : (
-          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {historyLabel}
-            </span>
-            <button
-              type="button"
-              className="text-xs text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={clearAllHistory}
-            >
-              {clearAllLabel}
-            </button>
-          </div>
-        )}
-        {filteredHistory.map((term) =>
-          renderHistory ? (
-            renderHistory(term, () => handlePick(term), () => removeFromHistory(term))
-          ) : (
-            <div key={term} className="flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <button
-                type="button"
-                role="option"
-                className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handlePick(term)}
-              >
-                {term}
-              </button>
-              <button
-                type="button"
-                title="Remove"
-                className="px-3 py-2.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => removeFromHistory(term)}
-              >
-                &times;
-              </button>
-            </div>
-          ),
-        )}
-      </div>
-    );
-  }
-
-  return null;
 }
 
 // ── Composite export ──
-
-export const TuringSearchField = Object.assign(TuringSearchFieldRoot, {
-  Input: SearchFieldInput,
-  Button: SearchFieldButton,
-  Dropdown: SearchFieldDropdown,
+// Re-attach the headless sub-components from react-ui so the public API stays
+// `<TuringSearchField.Input />` etc. — they read the view context this wrapper
+// provides through `TuringSearchFieldView`.
+export const TuringSearchField: typeof TuringSearchFieldRoot & {
+  Input: FC<TuringSearchFieldViewInputProps>;
+  Button: FC<TuringSearchFieldViewButtonProps>;
+  Dropdown: FC<TuringSearchFieldViewDropdownProps>;
+} = Object.assign(TuringSearchFieldRoot, {
+  Input: TuringSearchFieldView.Input,
+  Button: TuringSearchFieldView.Button,
+  Dropdown: TuringSearchFieldView.Dropdown,
 });

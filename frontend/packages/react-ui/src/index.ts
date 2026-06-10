@@ -92,6 +92,19 @@ export type {
   TuringPaginationItemData,
 } from "./TuringPagination";
 
+// Headless view half of the legacy `TuringSearchField`, split out in T307. The
+// orchestrating Root (autocomplete + history + url-search hooks) stays in
+// `@viglet/turing-react-sdk` and feeds this view its state/callbacks via props;
+// the baked Tailwind defaults were stripped here to honor the headless contract.
+export { TuringSearchFieldView } from "./TuringSearchFieldView";
+export type {
+  TuringSearchFieldViewProps,
+  TuringSearchFieldViewContextValue,
+  TuringSearchFieldViewInputProps,
+  TuringSearchFieldViewButtonProps,
+  TuringSearchFieldViewDropdownProps,
+} from "./TuringSearchFieldView";
+
 // Optional token theming (T305) — an alternative to `classNames`. Import the
 // stylesheet (`@viglet/turing-react-ui/styles.css`) and drive the look via
 // `--turing-ui-*` custom properties on a `.turing-ui-theme` wrapper.
