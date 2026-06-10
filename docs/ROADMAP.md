@@ -57,7 +57,6 @@
 > pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
 > the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
 
-- 💭 **T304** (deps: —) **a11y + SSR pass** — focus trap/restore for the fullscreen portal, ARIA roles/labels, and a `typeof document`/RSC-safety audit across all react-ui components (Next App Router). → §XII.2
 - 💭 **T305** (deps: —) **Optional token theming** — expose CSS custom properties (`--turing-ui-*`) as an alternative to `classNames`, so apps can theme via design tokens without per-slot class maps. → §XII.2
 
 ### D.12.a — Migrate the search-UI primitives `react-sdk → react-ui` (progressive)

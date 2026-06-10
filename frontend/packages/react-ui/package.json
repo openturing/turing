@@ -118,7 +118,7 @@
     "total": 14000,
     "entries": {
       "index.js": 800,
-      "TuringHtmlSandbox.js": 2600,
+      "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
       "TuringMarkdown.js": 2400,
       "TuringRichContent.js": 2100,

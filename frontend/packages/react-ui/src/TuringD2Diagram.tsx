@@ -27,6 +27,11 @@ export interface TuringD2DiagramLabels {
   loading?: string;
   /** Caption shown above the source when rendering fails. Default `"Could not render diagram"`. */
   error?: string;
+  /**
+   * Accessible name for the rendered diagram (the `role="img"` SVG container).
+   * Default `"Diagram"`.
+   */
+  diagram?: string;
 }
 
 export interface TuringD2DiagramProps {
@@ -133,7 +138,9 @@ export function TuringD2Diagram({
     return (
       <div className={wrapperClass} data-turing-d2="error">
         {labels?.error && (
-          <span className={classNames?.error}>{labels.error}</span>
+          <span className={classNames?.error} role="alert">
+            {labels.error}
+          </span>
         )}
         <pre className={classNames?.code}>
           <code>{code}</code>
@@ -144,7 +151,12 @@ export function TuringD2Diagram({
 
   if (status === "loading") {
     return (
-      <div className={wrapperClass} data-turing-d2="loading">
+      <div
+        className={wrapperClass}
+        data-turing-d2="loading"
+        role="status"
+        aria-live="polite"
+      >
         {loadingFallback ?? (
           <span className={classNames?.loading}>
             {labels?.loading ?? "Rendering diagram…"}
@@ -161,6 +173,11 @@ export function TuringD2Diagram({
           emits no <script>, so this is the conventional, safe embed for D2. */}
       <div
         className={classNames?.diagram}
+        // role="img" is the conventional a11y wrapper for INLINE svg markup —
+        // an <img> would need the SVG serialized to a data URL, losing the
+        // crisp inline render. NOSONAR S6819
+        role="img"
+        aria-label={labels?.diagram ?? "Diagram"}
         dangerouslySetInnerHTML={{ __html: svg ?? "" }}
       />
     </div>

@@ -107,6 +107,7 @@ export function TuringCopyButton({
       className={buttonClass || undefined}
       onClick={handleClick}
       aria-label={activeLabel}
+      aria-live="polite"
       title={activeLabel}
       data-turing-copy-button={copied ? "copied" : "idle"}
     >

@@ -80,6 +80,48 @@ describe("TuringHtmlSandbox — fullscreen open/close", () => {
   });
 });
 
+describe("TuringHtmlSandbox — fullscreen a11y (T304)", () => {
+  it("exposes the portal as a labelled modal dialog", () => {
+    render(<TuringHtmlSandbox code="x" labels={{ title: "Demo" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Fullscreen" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Demo" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+  });
+
+  it("moves focus into the dialog on open and restores it to the trigger on close", () => {
+    render(<TuringHtmlSandbox code="x" />);
+    const trigger = screen.getByRole("button", { name: "Fullscreen" });
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    // Focus lands on the first focusable inside the dialog (the close button).
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Close" }),
+    );
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    // Focus returns to whatever opened the dialog.
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("gives the code/preview toggle an accessible name even with an icon", () => {
+    render(
+      <TuringHtmlSandbox
+        code="x"
+        showCodeToggle
+        icons={{ code: <span data-testid="code-icon">{"</>"}</span> }}
+      />,
+    );
+    // Icon replaces the text, but the button still has an accessible name.
+    expect(screen.getByTestId("code-icon")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Code" }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("TuringHtmlSandbox — classNames / labels / icons passthrough", () => {
   it("applies per-slot class names (and `className` as the root alias)", () => {
     const { container } = render(

@@ -97,3 +97,4 @@ frontend/apps/marketplace/mythical-creatures/mythical-creatures.zip
 frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /turing-app/src/test/resources/h2-snapshot
 /frontend/packages/sdk/.turbo
+/frontend/packages/react-ui/dist

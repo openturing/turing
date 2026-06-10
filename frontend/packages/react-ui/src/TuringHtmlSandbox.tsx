@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -120,6 +121,8 @@ export function TuringHtmlSandbox({
               <button
                 type="button"
                 className={classNames?.button}
+                aria-label={showCode ? previewLabel : codeLabel}
+                title={showCode ? previewLabel : codeLabel}
                 onClick={() => setShowCode((v) => !v)}
               >
                 {showCode
@@ -166,6 +169,20 @@ export function TuringHtmlSandbox({
   );
 }
 
+/**
+ * Focusable descendants of {@code root}, in DOM order. Used by the fullscreen
+ * dialog's focus trap. Deliberately unfiltered by visibility — the dialog only
+ * holds the close button and the iframe, both always visible, and `offsetParent`
+ * checks would mis-fire under jsdom.
+ */
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])';
+
+function getFocusable(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
 function TuringHtmlSandboxFullscreen({
   code,
   title,
@@ -181,12 +198,52 @@ function TuringHtmlSandboxFullscreen({
   classNames?: TuringHtmlSandboxClassNames;
   onClose: () => void;
 }>) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  // a11y: Esc-to-close, a focus trap (Tab / Shift+Tab cycle inside the dialog),
+  // initial focus into the dialog, and focus restoration to the trigger on
+  // close. The effect only runs client-side, so it never touches `document` on
+  // the server (the createPortal branch below is additionally SSR-guarded).
   useEffect(() => {
+    // Remember what had focus so we can restore it when the dialog unmounts.
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+
+    // Move focus into the dialog — first focusable (the close button), else the
+    // dialog container itself (focusable via tabIndex={-1}).
+    const focusables = getFocusable(dialog);
+    (focusables[0] ?? dialog)?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialog) return;
+      const items = getFocusable(dialog);
+      if (items.length === 0) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      // Focus return — send the caret back to whatever opened the dialog.
+      previouslyFocused?.focus?.();
+    };
   }, [onClose]);
 
   // SSR guard: the portal target only exists in the browser. Fullscreen is
@@ -194,7 +251,19 @@ function TuringHtmlSandboxFullscreen({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className={classNames?.fullscreenRoot}>
+    // Intentionally an ARIA dialog rather than a native <dialog>: this is a
+    // host-skinned element portaled to <body>; showModal()'s browser-managed
+    // top-layer/backdrop can't be overridden via the classNames contract, and
+    // it would route Esc through a native `cancel` event instead of the
+    // documented keydown listener. Focus trap + restore are handled above. NOSONAR
+    <div
+      ref={dialogRef}
+      className={classNames?.fullscreenRoot}
+      role="dialog" // NOSONAR S6819 — see comment above
+      aria-modal="true"
+      aria-label={title}
+      tabIndex={-1}
+    >
       <div className={classNames?.fullscreenHeader}>
         <span className={classNames?.fullscreenLabel}>{title}</span>
         <button
