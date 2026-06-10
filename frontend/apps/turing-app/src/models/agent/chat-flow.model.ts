@@ -262,6 +262,43 @@ export interface TurChatFlowVariantResponse {
   rewrittenNodes: string[];
 }
 
+/* ─────────────────── T236 — Form-label tidy pass ─────────────────── */
+
+/**
+ * T236 / §VII.13.g — one form field carried into/out of the "tidy labels"
+ * pass. {@code name} (slot) and {@code type} (widget) are context only and
+ * echoed back untouched; only {@code label} is rewritten.
+ *
+ * @since 2026.3.1
+ */
+export interface TurFormLabelTidyField {
+  name: string;
+  label: string;
+  type?: string;
+}
+
+/**
+ * T236 / §VII.13.g — request body for the form-label tidy endpoint.
+ *
+ * @since 2026.3.1
+ */
+export interface TurFormLabelTidyRequest {
+  fields: TurFormLabelTidyField[];
+}
+
+/**
+ * T236 / §VII.13.g — server response from the form-label tidy endpoint.
+ * Nothing is persisted — the dialog applies the tidied labels only when the
+ * author confirms the conversion. {@code fields} mirrors the request order.
+ *
+ * @since 2026.3.1
+ */
+export interface TurFormLabelTidyResponse {
+  success: boolean;
+  error?: string | null;
+  fields?: TurFormLabelTidyField[] | null;
+}
+
 /* ─────────────────── AI Authoring shapes ─────────────────── */
 
 /**

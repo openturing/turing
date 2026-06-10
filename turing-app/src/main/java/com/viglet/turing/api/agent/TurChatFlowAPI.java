@@ -42,6 +42,7 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowLinterService;
 import com.viglet.turing.service.chatanalytics.TurChatFlowFunnelService;
 import com.viglet.turing.genai.flow.TurChatFlowVariantService;
+import com.viglet.turing.genai.flow.TurFormLabelTidyService;
 import com.viglet.turing.genai.flow.TurTriggerConflictService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
@@ -52,6 +53,8 @@ import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowTriggerConflictDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowVariantRequest;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowVariantResponse;
+import com.viglet.turing.persistence.dto.agent.TurFormLabelTidyRequest;
+import com.viglet.turing.persistence.dto.agent.TurFormLabelTidyResponse;
 import com.viglet.turing.service.chatflow.TurChatFlowRecipeService;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
@@ -98,6 +101,7 @@ public class TurChatFlowAPI {
     private final TurChatFlowVariantService chatFlowVariantService;
     private final TurChatFlowFunnelService chatFlowFunnelService;
     private final TurAgentEvalGateService agentEvalGateService;
+    private final TurFormLabelTidyService formLabelTidyService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -112,7 +116,8 @@ public class TurChatFlowAPI {
             TurChatFlowRecipeService chatFlowRecipeService,
             TurChatFlowVariantService chatFlowVariantService,
             TurChatFlowFunnelService chatFlowFunnelService,
-            TurAgentEvalGateService agentEvalGateService) {
+            TurAgentEvalGateService agentEvalGateService,
+            TurFormLabelTidyService formLabelTidyService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -127,6 +132,7 @@ public class TurChatFlowAPI {
         this.chatFlowVariantService = chatFlowVariantService;
         this.chatFlowFunnelService = chatFlowFunnelService;
         this.agentEvalGateService = agentEvalGateService;
+        this.formLabelTidyService = formLabelTidyService;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -618,6 +624,25 @@ public class TurChatFlowAPI {
                 .map(flow -> chatFlowVariantService.generate(flow, request))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Chat flow not found"));
+    }
+
+    /**
+     * T236 / §VII.13.g — opt-in "tidy labels" polish on the T234 form
+     * conversion. The editor's convert-to-form dialog sends the fields it
+     * derived client-side (whose labels are raw question instructions like
+     * "Qual o seu e-mail corporativo?") and gets back the same fields with
+     * short, clean form labels ("E-mail"). Nothing is persisted — the dialog
+     * applies the tidied labels only when the author confirms the conversion.
+     *
+     * @since 2026.3.1
+     */
+    @Operation(summary = "Tidy the labels of a converted form via the default LLM (T236)")
+    @PostMapping("/tidy-labels")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE", "AI_AGENT_EDIT" })
+    public TurFormLabelTidyResponse turChatFlowTidyLabels(@PathVariable String agentId,
+            @RequestBody TurFormLabelTidyRequest request) {
+        requireAgentExists(agentId);
+        return formLabelTidyService.tidy(request == null ? null : request.fields());
     }
 
     /**

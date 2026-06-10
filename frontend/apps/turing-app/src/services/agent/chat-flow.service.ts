@@ -8,6 +8,8 @@ import type {
   TurChatFlowTriggerConflict,
   TurChatFlowVariantRequest,
   TurChatFlowVariantResponse,
+  TurFormLabelTidyRequest,
+  TurFormLabelTidyResponse,
 } from "@/models/agent/chat-flow.model";
 import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
 import type { AiAuthoringRequest, AiAuthoringResponse } from "@/models/ai-authoring/ai-authoring.model";
@@ -155,6 +157,24 @@ export class TurChatFlowService {
   ): Promise<TurChatFlowVariantResponse> {
     const response = await axios.post<TurChatFlowVariantResponse>(
       `/ai-agent/${agentId}/chat-flow/${flowId}/variant`,
+      request,
+    );
+    return response.data;
+  }
+
+  /**
+   * T236 / §VII.13.g — opt-in "tidy labels" pass on a T234 form conversion.
+   * Sends the fields the converter derived client-side (whose labels are raw
+   * question instructions) and gets back the same fields with short, clean
+   * form labels. Nothing is persisted — the convert-to-form dialog applies
+   * the tidied labels only when the author confirms.
+   */
+  async tidyFormLabels(
+    agentId: string,
+    request: TurFormLabelTidyRequest,
+  ): Promise<TurFormLabelTidyResponse> {
+    const response = await axios.post<TurFormLabelTidyResponse>(
+      `/ai-agent/${agentId}/chat-flow/tidy-labels`,
       request,
     );
     return response.data;

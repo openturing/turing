@@ -1,4 +1,4 @@
-import { IconForms, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import { IconForms, IconPlus, IconSparkles, IconTrash, IconX } from "@tabler/icons-react";
 import type { Edge, Node } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import type { NativeToolGroup } from "@/models/genai/native-tool.model";
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model";
+import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
@@ -36,6 +37,7 @@ const FORM_FIELD_TYPES = ["text", "email", "tel", "number", "date", "textarea", 
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
+const chatFlowService = new TurChatFlowService();
 
 /**
  * Right-hand properties panel. Re-renders whenever the selected node changes; all edits flow back
@@ -188,13 +190,18 @@ export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onC
               <ConvertToFormDialog
                 open={convertOpen}
                 plan={formConversionPlan}
+                agentId={agentId}
                 onOpenChange={setConvertOpen}
-                onConfirm={() => {
-                  onApplyGraph(
-                    formConversionPlan.nextNodes,
-                    formConversionPlan.nextEdges,
-                    formConversionPlan.formNode.id,
+                onConfirm={(fields) => {
+                  // T236 — the dialog may have tidied the field labels; apply
+                  // them onto the planned form node before committing the graph.
+                  const formNodeId = formConversionPlan.formNode.id;
+                  const nextNodes = formConversionPlan.nextNodes.map((n) =>
+                    n.id === formNodeId
+                      ? { ...n, data: { ...n.data, formFields: fields } }
+                      : n,
                   );
+                  onApplyGraph(nextNodes, formConversionPlan.nextEdges, formNodeId);
                   setConvertOpen(false);
                 }}
               />
@@ -1478,8 +1485,9 @@ function SwitchOptionsEditor({ options, onChange, subFlowOptions }: SwitchOption
 interface ConvertToFormDialogProps {
   readonly open: boolean;
   readonly plan: FormConversionPlan;
+  readonly agentId: string;
   readonly onOpenChange: (open: boolean) => void;
-  readonly onConfirm: () => void;
+  readonly onConfirm: (fields: FlowFormField[]) => void;
 }
 
 /**
@@ -1487,12 +1495,65 @@ interface ConvertToFormDialogProps {
  * Shows the fields the form will carry and why the walk stopped (so a partial
  * collapse — "grabbed 3 of 5" — isn't a surprise). Applying is undoable: the
  * graph only persists when the author hits Save.
+ *
+ * T236 — an opt-in "Tidy labels with AI" button rewrites the raw labels (which
+ * the converter derived from each question's instruction, e.g. "Qual o seu
+ * e-mail corporativo?") into short, clean form labels ("E-mail") via the
+ * default LLM. The tidied labels are previewed here and only committed when the
+ * author confirms; the slot names + widget types are never touched.
  */
-function ConvertToFormDialog({ open, plan, onOpenChange, onConfirm }: ConvertToFormDialogProps) {
+function ConvertToFormDialog({ open, plan, agentId, onOpenChange, onConfirm }: ConvertToFormDialogProps) {
   const { t } = useTranslation();
+  // Local working copy of the fields so the AI tidy pass can mutate the labels
+  // without rebuilding the (memoised) plan. Re-seeded whenever the plan changes.
+  const [fields, setFields] = useState<FlowFormField[]>(plan.fields);
+  const [tidying, setTidying] = useState(false);
+  const [tidyError, setTidyError] = useState<string | null>(null);
+  const [tidyNote, setTidyNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFields(plan.fields);
+    setTidyError(null);
+    setTidyNote(null);
+  }, [plan]);
+
   const stopReasonText = t(`chatFlow.properties.formConvertStop.${plan.stopReason}`, {
     defaultValue: "the run reached a node that can't be part of a form",
   });
+
+  const handleTidy = async () => {
+    setTidying(true);
+    setTidyError(null);
+    setTidyNote(null);
+    try {
+      const response = await chatFlowService.tidyFormLabels(agentId, {
+        fields: fields.map((f) => ({ name: f.name, label: f.label ?? "", type: f.type })),
+      });
+      if (!response.success || !response.fields) {
+        setTidyError(
+          response.error ??
+            t("chatFlow.properties.tidyLabelsError", { defaultValue: "Could not tidy labels." }),
+        );
+        return;
+      }
+      // Re-pair by slot name (unique per agent) so order drift in the response
+      // can't mismatch labels; fall back to the existing label when absent.
+      const tidyByName = new Map(response.fields.map((f) => [f.name, f.label]));
+      setFields((prev) =>
+        prev.map((f) => ({ ...f, label: tidyByName.get(f.name)?.trim() || f.label })),
+      );
+      setTidyNote(
+        t("chatFlow.properties.tidyLabelsDone", { defaultValue: "Labels tidied — review below." }),
+      );
+    } catch {
+      setTidyError(
+        t("chatFlow.properties.tidyLabelsError", { defaultValue: "Could not tidy labels." }),
+      );
+    } finally {
+      setTidying(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -1509,8 +1570,25 @@ function ConvertToFormDialog({ open, plan, onOpenChange, onConfirm }: ConvertToF
             })}
           </DialogDescription>
         </DialogHeader>
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2 border-indigo-300 text-indigo-700 dark:border-indigo-800 dark:text-indigo-300"
+            onClick={handleTidy}
+            disabled={tidying}
+          >
+            <IconSparkles className="size-4" />
+            {tidying
+              ? t("chatFlow.properties.tidyLabelsBusy", { defaultValue: "Tidying labels…" })
+              : t("chatFlow.properties.tidyLabels", { defaultValue: "Tidy labels with AI" })}
+          </Button>
+          {tidyNote && <span className="text-[11px] text-emerald-600 dark:text-emerald-400">{tidyNote}</span>}
+          {tidyError && <span className="text-[11px] text-destructive">{tidyError}</span>}
+        </div>
         <ul className="max-h-64 space-y-1 overflow-auto rounded-md border bg-muted/30 p-2 text-sm">
-          {plan.fields.map((field, idx) => (
+          {fields.map((field, idx) => (
             // eslint-disable-next-line react/no-array-index-key
             <li key={idx} className="flex items-center justify-between gap-2">
               <span className="truncate">{field.label || field.name || `field ${idx + 1}`}</span>
@@ -1525,7 +1603,7 @@ function ConvertToFormDialog({ open, plan, onOpenChange, onConfirm }: ConvertToF
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("common.cancel", { defaultValue: "Cancel" })}
           </Button>
-          <Button onClick={onConfirm}>
+          <Button onClick={() => onConfirm(fields)}>
             {t("chatFlow.properties.convertToFormConfirm", { defaultValue: "Convert" })}
           </Button>
         </DialogFooter>

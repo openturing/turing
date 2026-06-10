@@ -33,10 +33,6 @@
 - 💭 **T102** (deps: T58) Extraction confidence per field — LLM returns `{value, confidence: 0-1}`; UI shows warning when `confidence < 0.7`. → §VII.12.d
 - 💭 **T103** (deps: T58) Anthropic Files API / OpenAI Files — pass binary PDF/DOCX directly to the LLM (preserves tables/layout) instead of Tika→text. → §VII.12.e
 
-## D.9 — SDK & frontend surface
-
-- 💭 **T236** (deps: T234) **LLM "tidy labels" for the form converter** — opt-in polish pass on the T234 conversion: take the derived field labels (raw question instructions like *"Qual o seu e-mail corporativo?"*) and rewrite them into clean form labels (*"E-mail"*)… → §VII.13.g
-
 ## D.11 — Tracked follow-ups (promoted from inline notes, 2026-06-03)
 
 - 💭 **T237** (deps: T85) **Full path-aware funnel** — T85 shipped the funnel V1 over the existing session events (the API already exposes `abandonedCount`), but a true per-node drop-off funnel needs a per-turn node-visit log. → §VII.10.b
