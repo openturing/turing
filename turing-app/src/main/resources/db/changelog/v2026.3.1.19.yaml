@@ -1,0 +1,109 @@
+databaseChangeLog:
+  # T115 / §IX.3.e — per-agent workspace-backed memory compression.
+  # Adds four columns on ai_agent:
+  #   - chat_memory_compression_enabled          : opt-in toggle (default false
+  #                                                so existing agents keep the
+  #                                                recent-N FIFO + T30 behavior)
+  #   - chat_memory_compression_threshold_tokens : older-pool token estimate
+  #                                                above which a summary LLM
+  #                                                call fires (default 8192)
+  #   - chat_memory_compression_llm_id           : LLM instance used for the
+  #                                                summary (null → Global
+  #                                                Settings default LLM)
+  #   - chat_memory_compression_interval         : ISO-8601 Duration minimum
+  #                                                between summaries for one
+  #                                                conversation (default PT1H)
+  #
+  # Idempotent: each addColumn is gated by columnExists so re-running the
+  # changeset on databases that already have any of the columns is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.19-add-chat-memory-compression-enabled-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_compression_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_compression_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T115/§IX.3.e — opt-in workspace-backed compression of the older chat-memory pool."
+
+  - changeSet:
+      id: v2026.3.1.19-add-chat-memory-compression-threshold-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_compression_threshold_tokens
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_compression_threshold_tokens
+                  type: INT
+                  defaultValueNumeric: 8192
+                  constraints:
+                    nullable: false
+                  remarks: "T115/§IX.3.e — older-pool token estimate above which compression triggers."
+
+  - changeSet:
+      id: v2026.3.1.19-add-chat-memory-compression-llm-id-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_compression_llm_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_compression_llm_id
+                  type: varchar(36)
+                  constraints:
+                    nullable: true
+                  remarks: "T115/§IX.3.e — LLM instance used to summarize older turns; null → Global Settings default LLM."
+
+  - changeSet:
+      id: v2026.3.1.19-add-chat-memory-compression-interval-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_compression_interval
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_compression_interval
+                  type: varchar(32)
+                  defaultValue: "PT1H"
+                  constraints:
+                    nullable: false
+                  remarks: "T115/§IX.3.e — ISO-8601 Duration minimum between summaries for one conversation."

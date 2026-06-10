@@ -53,6 +53,11 @@ public class TurAIAgentExchange {
     private boolean chatMemoryRelevanceEnabled;
     private int chatMemoryRelevanceTopK;
     private int chatMemoryRecentN;
+    // T115 / §IX.3.e — workspace-backed memory compression (since 2026.3.1)
+    private boolean chatMemoryCompressionEnabled;
+    private int chatMemoryCompressionThresholdTokens;
+    private String chatMemoryCompressionLlmId;
+    private String chatMemoryCompressionInterval;
     private String nativeTools;
     private String pythonRequirements;
     // T66 / §VII.6.g — submission retention policy travels with the agent.
@@ -97,6 +102,10 @@ public class TurAIAgentExchange {
         e.chatMemoryRelevanceEnabled = agent.isChatMemoryRelevanceEnabled();
         e.chatMemoryRelevanceTopK = agent.getChatMemoryRelevanceTopK();
         e.chatMemoryRecentN = agent.getChatMemoryRecentN();
+        e.chatMemoryCompressionEnabled = agent.isChatMemoryCompressionEnabled();
+        e.chatMemoryCompressionThresholdTokens = agent.getChatMemoryCompressionThresholdTokens();
+        e.chatMemoryCompressionLlmId = agent.getChatMemoryCompressionLlmId();
+        e.chatMemoryCompressionInterval = agent.getChatMemoryCompressionInterval();
         e.nativeTools = agent.getNativeTools();
         e.pythonRequirements = agent.getPythonRequirements();
         e.submissionRetention = agent.getSubmissionRetention();

@@ -81,6 +81,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   // T30 — gates the topK + recentN inputs; only meaningful when the base
   // chat memory is also active, hence the && composition below.
   const chatMemoryRelevanceEnabled = form.watch("chatMemoryRelevanceEnabled");
+  // T115 — gates the compression threshold input; only meaningful when the
+  // base chat memory is also active.
+  const chatMemoryCompressionEnabled = form.watch("chatMemoryCompressionEnabled");
   const loggingActive = loggingEngine !== "none";
 
   // RAG can only be ON if both an embedding model AND a store are resolvable
@@ -123,6 +126,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryRelevanceEnabled: value.chatMemoryRelevanceEnabled ?? false,
       chatMemoryRelevanceTopK: value.chatMemoryRelevanceTopK ?? 5,
       chatMemoryRecentN: value.chatMemoryRecentN ?? 10,
+      // T115 / §IX.3.e — compression defaults match the backend entity so
+      // existing agents keep the prior behavior until the operator opts in.
+      chatMemoryCompressionEnabled: value.chatMemoryCompressionEnabled ?? false,
+      chatMemoryCompressionThresholdTokens: value.chatMemoryCompressionThresholdTokens ?? 8192,
+      chatMemoryCompressionInterval: value.chatMemoryCompressionInterval ?? "PT1H",
       // T123 / §IX.7 — defaults: 0 disables the check; WARN is the
       // backend enum default. Existing agents keep their pre-T123
       // behaviour (no enforcement) until the operator opts in.
@@ -696,6 +704,69 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           ref={field.ref}
                           name={field.name}
                           disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryRelevanceEnabled}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              {/*
+                T115 / §IX.3.e — workspace-backed memory compression. When the
+                older pool exceeds the token threshold, those turns are
+                summarized once per interval and replaced by a compact summary
+                block in the prompt. Gates on loggingActive && chatMemoryEnabled
+                (nothing to compress without persisted memory); the threshold
+                input additionally gates on chatMemoryCompressionEnabled.
+              */}
+              <FormField
+                control={form.control}
+                name="chatMemoryCompressionEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryCompression")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryCompressionDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          disabled={!loggingActive || !chatMemoryEnabled}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryCompressionThresholdTokens"
+                rules={{
+                  min: { value: 1, message: t("forms.agentSettings.chatMemoryMinValue") },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryCompressionThreshold")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryCompressionThresholdDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={field.value ?? 8192}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryCompressionEnabled}
                         />
                       </FormControl>
                       <FormMessage />

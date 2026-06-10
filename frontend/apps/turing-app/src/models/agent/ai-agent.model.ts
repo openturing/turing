@@ -63,6 +63,20 @@ export interface TurAIAgent {
   /** Size of the recent FIFO window kept verbatim; the retriever only scores turns OLDER than this. @since 2026.3.1 */
   chatMemoryRecentN: number;
   /**
+   * T115 / §IX.3.e — opt-in to workspace-backed memory compression. When the
+   * older pool (turns past `chatMemoryRecentN`) exceeds
+   * `chatMemoryCompressionThresholdTokens`, those turns are summarized via one
+   * cheap LLM call, stored in the conversation workspace, and replaced by a
+   * compact summary block in the prompt. Composes with T30. @since 2026.3.1
+   */
+  chatMemoryCompressionEnabled: boolean;
+  /** Older-pool token estimate above which compression fires (default 8192). @since 2026.3.1 */
+  chatMemoryCompressionThresholdTokens: number;
+  /** LLM instance id used for the summary; empty → Global Settings default LLM. @since 2026.3.1 */
+  chatMemoryCompressionLlmId?: string | null;
+  /** ISO-8601 Duration min interval between summaries per conversation (default "PT1H"). @since 2026.3.1 */
+  chatMemoryCompressionInterval: string;
+  /**
    * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
    * `0` (default) disables the check; the executor estimates the prompt
    * size before the LLM call and applies {@link overBudgetBehavior} when

@@ -1139,25 +1139,6 @@ Mirrors `TurChatSlotEventBus` (T54). Endpoint
 list as a sidebar — "files this agent built for you." Sub-100ms
 latency, multiplexer pattern reused from T104.
 
-#### IX.3.e Memory compression to workspace (T115)
-
-When the persisted history for a conversation exceeds
-`chatMemoryCompressionThresholdTokens` (default 8k tokens), the oldest
-turns past the T30 recent-N window get summarized via a dedicated LLM
-call → stored as `memory/summary-{from}-{to}.md` in workspace → the
-summary URL replaces those turns in the prompt context. **Composes
-with T30 relevance retrieval**: relevance still surfaces the original
-turns when the BM25 score matches a current query (high-signal
-recovery); summary is the cheap default for low-signal context.
-
-```yaml
-# Per-agent settings (Liquibase migration in T115):
-chatMemoryCompressionEnabled: true
-chatMemoryCompressionThresholdTokens: 8192
-chatMemoryCompressionModel: gpt-4o-mini    # explicitly cheap; summary doesn't need flagship model
-chatMemoryCompressionInterval: PT1H        # don't re-compress more than once per hour
-```
-
 ### IX.4 Skills as first-class — the marketplace moat
 
 Deep Agents mentions "skills" in passing. Turing makes them **typed,

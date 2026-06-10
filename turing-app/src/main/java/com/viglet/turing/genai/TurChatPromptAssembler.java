@@ -38,6 +38,7 @@ import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.persona.TurPersona;
+import com.viglet.turing.service.chatmemory.TurChatMemoryCompressionService;
 import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 
 /**
@@ -68,6 +69,7 @@ public class TurChatPromptAssembler {
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurPersonaPromptComposer personaPromptComposer;
     private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
+    private final TurChatMemoryCompressionService chatMemoryCompressionService;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
     private final TurMcpInstructionsProvider mcpInstructionsProvider;
@@ -98,12 +100,14 @@ public class TurChatPromptAssembler {
     public TurChatPromptAssembler(TurChatFlowEngineService chatFlowEngineService,
             TurPersonaPromptComposer personaPromptComposer,
             TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
+            TurChatMemoryCompressionService chatMemoryCompressionService,
             TurChatPipelineObservation chatPipelineObservation,
             TurChatAttachmentService chatAttachmentService,
             TurMcpInstructionsProvider mcpInstructionsProvider) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
+        this.chatMemoryCompressionService = chatMemoryCompressionService;
         this.chatPipelineObservation = chatPipelineObservation;
         this.chatAttachmentService = chatAttachmentService;
         this.mcpInstructionsProvider = mcpInstructionsProvider;
@@ -188,6 +192,22 @@ public class TurChatPromptAssembler {
         // the store has nothing older than the recent window.
         List<ChatMessageItem> effectiveHistory = chatMemoryRelevanceRetriever.enrich(
                 agent, conversationId, lastUserMessage, history);
+
+        // T115 / §IX.3.e — workspace-backed memory compression. When the agent
+        // has opted in AND the older pool (turns past the recent-N window)
+        // exceeds the configured token threshold, prepend a single compact
+        // summary of those older turns ahead of the T30-retrieved turns and
+        // the recent window. The summary LLM call is throttled to once per
+        // configured interval per conversation (cached in the service). No-op
+        // when disabled or the pool is small.
+        java.util.Optional<ChatMessageItem> summary =
+                chatMemoryCompressionService.summaryBlock(agent, conversationId);
+        if (summary.isPresent()) {
+            List<ChatMessageItem> withSummary = new ArrayList<>(effectiveHistory.size() + 1);
+            withSummary.add(summary.get());
+            withSummary.addAll(effectiveHistory);
+            effectiveHistory = withSummary;
+        }
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));

@@ -151,6 +151,57 @@ public class TurAIAgent implements Serializable {
     private int chatMemoryRecentN = 10;
 
     /**
+     * T115 / §IX.3.e — opt-in to workspace-backed memory compression. When
+     * {@code true} and the older pool (turns OLDER than the
+     * {@link #chatMemoryRecentN} window) is estimated to exceed
+     * {@link #chatMemoryCompressionThresholdTokens}, those older turns are
+     * summarized in a single dedicated LLM call, the summary is stored in the
+     * conversation workspace at {@code memory/summary-1-{to}.md}, and a compact
+     * summary block replaces them in the prompt context. Composes with T30:
+     * the BM25 retriever still surfaces specific high-signal older turns; the
+     * summary is the cheap default for the low-signal remainder. Default
+     * {@code false} so existing agents are byte-for-byte unchanged.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_compression_enabled", nullable = false)
+    private boolean chatMemoryCompressionEnabled = false;
+
+    /**
+     * T115 / §IX.3.e — token estimate (older pool) above which compression
+     * triggers. Below this the older turns are cheap enough to leave to the
+     * T30 retriever / FIFO window, so no summary LLM call is made. Default
+     * {@code 8192}.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_compression_threshold_tokens", nullable = false)
+    private int chatMemoryCompressionThresholdTokens = 8192;
+
+    /**
+     * T115 / §IX.3.e — id of the {@link TurLLMInstance} used for the
+     * summarization call. Intended to be an explicitly cheap model (the
+     * summary doesn't need a flagship). {@code null}/blank falls back to the
+     * default LLM configured in Global Settings.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_compression_llm_id", length = 36)
+    private String chatMemoryCompressionLlmId;
+
+    /**
+     * T115 / §IX.3.e — minimum wall-clock interval between two summarization
+     * calls for the same conversation (ISO-8601 {@link java.time.Duration},
+     * e.g. {@code PT1H}). Between regenerations the last summary is reused so
+     * a long conversation doesn't pay an LLM call every turn. Default
+     * {@code PT1H}.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_compression_interval", length = 32, nullable = false)
+    private String chatMemoryCompressionInterval = "PT1H";
+
+    /**
      * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
      * {@code 0} (default) disables enforcement: the executor never
      * estimates tokens and never short-circuits the LLM call. Positive

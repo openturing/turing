@@ -389,6 +389,15 @@ public class TurAIAgentImportService {
         agent.setChatMemoryRelevanceEnabled(a.isChatMemoryRelevanceEnabled());
         agent.setChatMemoryRelevanceTopK(a.getChatMemoryRelevanceTopK());
         agent.setChatMemoryRecentN(a.getChatMemoryRecentN());
+        // T115 / §IX.3.e — compression knobs. Interval is null-guarded so
+        // pre-T115 exports keep the entity default (PT1H) instead of nulling a
+        // non-null column.
+        agent.setChatMemoryCompressionEnabled(a.isChatMemoryCompressionEnabled());
+        agent.setChatMemoryCompressionThresholdTokens(a.getChatMemoryCompressionThresholdTokens());
+        agent.setChatMemoryCompressionLlmId(a.getChatMemoryCompressionLlmId());
+        if (a.getChatMemoryCompressionInterval() != null && !a.getChatMemoryCompressionInterval().isBlank()) {
+            agent.setChatMemoryCompressionInterval(a.getChatMemoryCompressionInterval());
+        }
         agent.setNativeTools(a.getNativeTools());
         agent.setPythonRequirements(a.getPythonRequirements());
         // T66 / §VII.6.g — null-guarded so pre-T66 exports keep the entity
