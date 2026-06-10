@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { TuringResultList } from "../../ui/TuringResultList";
+import { TuringResultList } from "@viglet/turing-react-ui";
 import {
   resolveDocsMock,
   creatureDocuments,

@@ -54,6 +54,21 @@
       "import": "./dist/TuringChatMessage.js",
       "default": "./dist/TuringChatMessage.js"
     },
+    "./TuringSearchBar": {
+      "types": "./dist/TuringSearchBar.d.ts",
+      "import": "./dist/TuringSearchBar.js",
+      "default": "./dist/TuringSearchBar.js"
+    },
+    "./TuringResultList": {
+      "types": "./dist/TuringResultList.d.ts",
+      "import": "./dist/TuringResultList.js",
+      "default": "./dist/TuringResultList.js"
+    },
+    "./TuringPagination": {
+      "types": "./dist/TuringPagination.d.ts",
+      "import": "./dist/TuringPagination.js",
+      "default": "./dist/TuringPagination.js"
+    },
     "./styles.css": "./dist/styles/turing-ui.css",
     "./package.json": "./package.json"
   },
@@ -116,9 +131,9 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 15000,
+    "total": 17000,
     "entries": {
-      "index.js": 900,
+      "index.js": 1100,
       "tokens.js": 1100,
       "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
@@ -127,7 +142,10 @@
       "TuringCopyButton.js": 1800,
       "TuringChatMessage.js": 1700,
       "TuringCodeBlock.js": 1500,
-      "TuringThinkingDots.js": 1200
+      "TuringThinkingDots.js": 1200,
+      "TuringSearchBar.js": 900,
+      "TuringResultList.js": 700,
+      "TuringPagination.js": 900
     }
   },
   "keywords": ["viglet", "turing", "react", "ui", "headless", "chat"]

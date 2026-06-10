@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { TuringSearchBar } from "../../ui/TuringSearchBar";
+import { TuringSearchBar } from "@viglet/turing-react-ui";
 
 /**
  * # TuringSearchBar

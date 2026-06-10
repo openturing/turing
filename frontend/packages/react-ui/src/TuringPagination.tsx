@@ -1,12 +1,25 @@
 import type { ReactNode } from "react";
-import type { TurPaginationItem } from "../core/types";
 
-interface TuringPaginationProps {
-  items: TurPaginationItem[];
+/**
+ * Minimal structural shape of a Turing pagination entry — redeclared locally so
+ * this package stays zero-runtime-dependency (it cannot import the core
+ * `@viglet/turing-sdk` types without breaking viglet.com's `file:` install).
+ * Structurally compatible with the SDK's `TurPaginationItem`, so the SDK can
+ * re-export this component with no consumer churn.
+ */
+export interface TuringPaginationItemData {
+  href: string;
+  page: number;
+  text: string;
+  type: string;
+}
+
+export interface TuringPaginationProps {
+  items: TuringPaginationItemData[];
   onNavigate: (href: string) => void;
-  /** Custom render for each pagination entry */
+  /** Custom render for each pagination entry. */
   itemComponent?: (props: {
-    item: TurPaginationItem;
+    item: TuringPaginationItemData;
     isCurrent: boolean;
     isEllipsis: boolean;
     onClick: () => void;
@@ -23,16 +36,22 @@ function camelize(text: string): string {
 }
 
 /**
- * Pagination component that renders Turing pagination items.
+ * Headless pagination — renders Turing pagination items as a nav of buttons,
+ * with a render-prop (`itemComponent`) escape hatch and ellipsis handling.
  *
- * @since 2026.2.0
+ * <p>Pure renderer: data + callbacks via props, no hook, no API/axios coupling,
+ * no baked-in styling. Migrated from {@code @viglet/turing-react-sdk} (T306);
+ * the SDK keeps re-exporting it so existing imports are unchanged.</p>
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.1
  */
 export function TuringPagination({
   items,
   onNavigate,
   itemComponent,
   className,
-}: TuringPaginationProps) {
+}: Readonly<TuringPaginationProps>) {
   if (!items.length) return null;
 
   return (
@@ -73,3 +92,5 @@ export function TuringPagination({
     </nav>
   );
 }
+
+TuringPagination.displayName = "TuringPagination";

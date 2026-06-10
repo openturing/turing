@@ -70,6 +70,28 @@ export type {
   TuringChatMessageClassNames,
 } from "./TuringChatMessage";
 
+// Design-less search primitives migrated from `@viglet/turing-react-sdk` (T306).
+// Pure renderers (props + render-props, no hook/API coupling); their structural
+// data types are redeclared locally to keep this package zero-runtime-dep.
+export { TuringSearchBar } from "./TuringSearchBar";
+export type {
+  TuringSearchBarProps,
+  TuringSearchBarInputProps,
+} from "./TuringSearchBar";
+
+export { TuringResultList } from "./TuringResultList";
+export type {
+  TuringResultListProps,
+  TuringResolvedDocument,
+  TuringRawDocument,
+} from "./TuringResultList";
+
+export { TuringPagination } from "./TuringPagination";
+export type {
+  TuringPaginationProps,
+  TuringPaginationItemData,
+} from "./TuringPagination";
+
 // Optional token theming (T305) — an alternative to `classNames`. Import the
 // stylesheet (`@viglet/turing-react-ui/styles.css`) and drive the look via
 // `--turing-ui-*` custom properties on a `.turing-ui-theme` wrapper.

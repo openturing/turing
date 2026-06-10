@@ -171,10 +171,10 @@ export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 
 // ── UI Components ──
-export { TuringSearchBar } from "./ui/TuringSearchBar";
+// TuringSearchBar / TuringResultList / TuringPagination moved to
+// @viglet/turing-react-ui (T306) and are re-exported below alongside the other
+// headless components, so SDK consumers' imports are unchanged.
 export { TuringSearchField } from "./ui/TuringSearchField";
-export { TuringResultList } from "./ui/TuringResultList";
-export { TuringPagination } from "./ui/TuringPagination";
 export { TuringWorkspacePanel } from "./ui/TuringWorkspacePanel";
 export type { TuringWorkspacePanelProps } from "./ui/TuringWorkspacePanel";
 
@@ -196,6 +196,9 @@ export {
   TuringThinkingDots,
   TuringCodeBlock,
   TuringChatMessage,
+  TuringSearchBar,
+  TuringResultList,
+  TuringPagination,
   TURING_UI_THEME_CLASS,
   TURING_UI_TOKENS,
 } from "@viglet/turing-react-ui";
@@ -227,6 +230,13 @@ export type {
   TuringChatMessageProps,
   TuringChatMessageRole,
   TuringChatMessageClassNames,
+  TuringSearchBarProps,
+  TuringSearchBarInputProps,
+  TuringResultListProps,
+  TuringResolvedDocument,
+  TuringRawDocument,
+  TuringPaginationProps,
+  TuringPaginationItemData,
   TuringUiTheme,
   TuringUiTokenName,
 } from "@viglet/turing-react-ui";

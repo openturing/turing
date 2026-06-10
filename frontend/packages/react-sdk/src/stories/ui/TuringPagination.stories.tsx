@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { TuringPagination } from "../../ui/TuringPagination";
+import { TuringPagination } from "@viglet/turing-react-ui";
 import { samplePagination, simplePagination } from "../__mocks__/fixtures";
 
 /**
