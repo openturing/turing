@@ -21,7 +21,10 @@
     "dist",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/**/*.stories.tsx",
+    "src/stories",
     "src/test",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    ".storybook"
   ]
 }

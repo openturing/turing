@@ -78,6 +78,7 @@ turing-marketplace/*/export/*.zip
 __pycache__/
 /turing-react/.mf
 turing-react-sdk/debug-storybook.log
+**/storybook-static/
 /.github/modernize
 /frontend/.turbo
 /frontend/apps/marketplace/space-missions/dist

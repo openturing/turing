@@ -1,0 +1,44 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Headless UI/Introduction" />
+
+# `@viglet/turing-react-ui` — the two-skin design contract
+
+These headless React primitives are shared by the **Turing admin console**
+(React + Vite + shadcn/Tailwind) and **viglet.com** (Next.js, its own brand)
+without either committing the other to a look. The package carries **no API /
+axios dependency** (that lives in `@viglet/turing-react-sdk`) and **no baked-in
+styling** — every component renders _structure only_.
+
+## How "design-agnostic" works
+
+The host supplies the look through three injection points:
+
+- **`classNames`** — a per-slot class map (`{ root, header, button, … }`). The
+  classes are literal in the app's source, so each app's Tailwind/CSS scan
+  resolves them and the library stays Tailwind-free.
+- **`labels`** — localized strings (the app owns i18n).
+- **`icons`** — `ReactNode` slots that default to the label text, so the library
+  has no icon-library dependency.
+
+## The living contract
+
+Every component's **"Two skins, one implementation"** story renders the _same_
+component twice, dressed only by different `classNames` / `labels` / `icons`:
+
+- **shadcn · admin console** — neutral zinc palette, subtle borders.
+- **viglet brand · viglet.com** — blue-600 → indigo-600 gradient.
+
+If a change to a component forces a skin to diverge structurally, the contract
+broke — that's the signal these stories exist to catch. The demo skins
+(`src/stories/skins.css` + `skins.tsx`) are story-only; a real host passes its
+own classes.
+
+## Components
+
+`TuringHtmlSandbox` · `TuringRichContent` · `TuringMarkdown` ·
+`TuringD2Diagram` · `TuringCodeBlock` · `TuringCopyButton` ·
+`TuringThinkingDots` · `TuringChatMessage`
+
+Use the **Controls** tab on each component's _Playground_ story to tweak props,
+and the **Accessibility** panel (axe) for the a11y report.

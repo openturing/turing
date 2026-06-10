@@ -14,6 +14,7 @@
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
     "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
+    "build-storybook:react-ui": "turbo run build-storybook --filter=@viglet/turing-react-ui",
     "package:marketplace": "pnpm --filter @viglet/turing-react-sdk run build && pnpm --filter=\"./apps/marketplace/*\" run package",
     "dev:app": "turbo run dev --filter=turing-app",
     "dev:sdk": "turbo run dev --filter=@viglet/turing-sdk",
@@ -21,6 +22,7 @@
     "dev:space-missions": "turbo run dev --filter=turing-example-space-missions",
     "dev:vinyl-records": "turbo run dev --filter=turing-example-vinyl-records",
     "storybook:react-sdk": "turbo run storybook --filter=@viglet/turing-react-sdk",
+    "storybook:react-ui": "turbo run storybook --filter=@viglet/turing-react-ui",
     "lint": "turbo run lint",
     "clean": "rimraf \"**/node_modules\" \"**/dist\" \"**/build\""
   },

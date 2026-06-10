@@ -57,7 +57,6 @@
 > pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
 > the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
 
-- 💭 **T302** (deps: —) **react-ui Storybook** — stories skinning each headless component **two ways** (shadcn vs viglet brand) as the living design contract + a11y/controls docs. → §XII.2
 - 💭 **T303** (deps: —) **Packaging hardening** — `exports` subpath map, ESM/types correctness, `sideEffects`/tree-shaking verification + bundle-size budget in CI, semver/changesets, publish to npm for external embedders. → §XII.2
 - 💭 **T304** (deps: —) **a11y + SSR pass** — focus trap/restore for the fullscreen portal, ARIA roles/labels, and a `typeof document`/RSC-safety audit across all react-ui components (Next App Router). → §XII.2
 - 💭 **T305** (deps: —) **Optional token theming** — expose CSS custom properties (`--turing-ui-*`) as an alternative to `classNames`, so apps can theme via design tokens without per-slot class maps. → §XII.2

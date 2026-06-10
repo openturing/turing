@@ -1,0 +1,600 @@
+/**
+ * Two demo skins for the `@viglet/turing-react-ui` Storybook — the living
+ * "design contract". Every headless component is dressed two ways from the SAME
+ * implementation, proving the library bakes in NO look of its own:
+ *
+ *   .shadcn-*  — neutral shadcn/ui-style skin (zinc palette, subtle borders),
+ *                mirrors the Turing admin console.
+ *   .viglet-*  — Viglet brand skin (blue-600 → indigo-600 gradient), mirrors
+ *                viglet.com.
+ *
+ * These classes only exist for the stories. In a real app the host passes its
+ * OWN literal Tailwind / CSS-module classes through the `classNames` props — the
+ * package never sees this file.
+ */
+
+/* ───────────────────────── story scaffolding ───────────────────────── */
+
+.sb-skin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (max-width: 720px) {
+  .sb-skin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sb-skin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.sb-skin-caption {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.sb-skin-caption[data-skin="viglet"] {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* =====================================================================
+   SHADCN SKIN
+   ===================================================================== */
+
+.shadcn-surface {
+  border: 1px solid #e4e4e7;
+  border-radius: 0.625rem;
+  background: #ffffff;
+  overflow: hidden;
+  color: #18181b;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.shadcn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e4e4e7;
+  background: #fafafa;
+}
+
+.shadcn-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #52525b;
+}
+
+.shadcn-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.shadcn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.75rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: #3f3f46;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shadcn-btn:hover {
+  background: #f4f4f5;
+}
+
+.shadcn-btn[data-turing-copy-button="copied"] {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.shadcn-iframe {
+  display: block;
+  width: 100%;
+}
+
+.shadcn-pre,
+.shadcn-code-pre {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  background: #fafafa;
+  color: #27272a;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  overflow: auto;
+}
+
+/* code block */
+.shadcn-code {
+  border: 1px solid #e4e4e7;
+  border-radius: 0.625rem;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.shadcn-code-lang {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+/* thinking dots */
+.shadcn-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0;
+}
+
+.shadcn-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: #a1a1aa;
+  animation: sb-dot-bounce 1.1s infinite ease-in-out;
+}
+
+/* d2 / preview wrapper */
+.shadcn-d2 {
+  border: 1px solid #e4e4e7;
+  border-radius: 0.625rem;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.shadcn-d2-loading {
+  font-size: 0.8125rem;
+  color: #71717a;
+}
+
+.shadcn-d2-error {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+/* prose */
+.shadcn-prose {
+  color: #27272a;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.shadcn-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.shadcn-prose code {
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: #f4f4f5;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+/* chat message */
+.shadcn-msg {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+}
+
+.shadcn-msg[data-role="assistant"] {
+  background: #fafafa;
+  border: 1px solid #f4f4f5;
+}
+
+.shadcn-msg-avatar {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: #18181b;
+}
+
+.shadcn-msg[data-role="user"] .shadcn-msg-avatar {
+  background: #71717a;
+}
+
+.shadcn-msg-body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.shadcn-msg-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shadcn-msg-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.shadcn-msg-status {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.shadcn-msg-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.shadcn-msg-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.shadcn-chip {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  color: #3f3f46;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+/* =====================================================================
+   VIGLET BRAND SKIN  (blue-600 → indigo-600)
+   ===================================================================== */
+
+.viglet-surface {
+  border: 1px solid #c7d2fe;
+  border-radius: 1rem;
+  background: #ffffff;
+  overflow: hidden;
+  color: #1e1b4b;
+  box-shadow: 0 8px 24px -16px rgba(79, 70, 229, 0.45);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.viglet-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+}
+
+.viglet-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.viglet-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.viglet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.75rem;
+  padding: 0 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.viglet-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* standalone (no gradient bar behind it) brand button — used by copy button */
+.viglet-btn-solo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.75rem;
+  padding: 0 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.viglet-btn-solo:hover {
+  background: #e0e7ff;
+}
+
+.viglet-btn-solo[data-turing-copy-button="copied"] {
+  color: #ffffff;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  border-color: transparent;
+}
+
+.viglet-iframe {
+  display: block;
+  width: 100%;
+}
+
+.viglet-pre,
+.viglet-code-pre {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  background: #f5f3ff;
+  color: #312e81;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  overflow: auto;
+}
+
+/* code block */
+.viglet-code {
+  border: 1px solid #c7d2fe;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.viglet-code-lang {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+/* thinking dots */
+.viglet-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0;
+}
+
+.viglet-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  animation: sb-dot-bounce 1.1s infinite ease-in-out;
+}
+
+/* d2 / preview wrapper */
+.viglet-d2 {
+  border: 1px solid #c7d2fe;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.viglet-d2-loading {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.viglet-d2-error {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e11d48;
+}
+
+/* prose */
+.viglet-prose {
+  color: #1e1b4b;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.viglet-prose a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.viglet-prose code {
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: #eef2ff;
+  color: #4338ca;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+/* chat message */
+.viglet-msg {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 1rem;
+}
+
+.viglet-msg[data-role="assistant"] {
+  background: #f5f3ff;
+  border: 1px solid #e0e7ff;
+}
+
+.viglet-msg-avatar {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
+
+.viglet-msg[data-role="user"] .viglet-msg-avatar {
+  background: linear-gradient(135deg, #475569, #334155);
+}
+
+.viglet-msg-body {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.viglet-msg-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.viglet-msg-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.viglet-msg-status {
+  font-size: 0.75rem;
+  color: #6366f1;
+}
+
+.viglet-msg-actions {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.viglet-msg-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.viglet-chip {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.viglet-chip:hover {
+  background: #e0e7ff;
+}
+
+/* ───────────────────────── shared keyframes ───────────────────────── */
+/* The component only staggers `animation-delay` per dot — the keyframe itself
+   is the host app's to define, exactly as the TuringThinkingDots contract says. */
+@keyframes sb-dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-0.35rem);
+    opacity: 1;
+  }
+}
+
+/* fullscreen overlay (shared shape; both skins reuse it) */
+.sb-fullscreen-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: rgba(9, 9, 11, 0.92);
+}
+
+.sb-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+}
+
+.sb-fullscreen-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.sb-fullscreen-btn {
+  height: 2rem;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #18181b;
+  background: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
