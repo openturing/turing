@@ -1,0 +1,29 @@
+databaseChangeLog:
+  # T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When true
+  # (and the skill sandbox is available: storage configured AND Code Interpreter
+  # mode DOCKER), every enabled indexed skill folder is offered to the agent's
+  # chat turns through the progressive-disclosure harness (cheap name+description
+  # prompt block + load_skill / skill_bash tools). Default false → existing
+  # agents are byte-for-byte unchanged.
+  #
+  # Idempotent: gated by columnExists so re-running on a DB that already has the
+  # column is a no-op.
+  - changeSet:
+      id: add-skills-enabled-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: skills_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: skills_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
+import com.viglet.turing.genai.skill.activation.TurRunSkillToolCallback;
+import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurNativeToolService;
@@ -60,6 +62,7 @@ public class TurChatToolResolver {
     private final TurToolPreFilterService toolPreFilterService;
     private final TurPersonaBrandContextProvider personaBrandContextProvider;
     private final TurChatPipelineObservation chatPipelineObservation;
+    private final TurSkillRunnerService skillRunnerService;
 
     public TurChatToolResolver(TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -67,7 +70,8 @@ public class TurChatToolResolver {
             TurToolCallbackPipeline toolCallbackPipeline,
             TurToolPreFilterService toolPreFilterService,
             TurPersonaBrandContextProvider personaBrandContextProvider,
-            TurChatPipelineObservation chatPipelineObservation) {
+            TurChatPipelineObservation chatPipelineObservation,
+            TurSkillRunnerService skillRunnerService) {
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
@@ -75,6 +79,7 @@ public class TurChatToolResolver {
         this.toolPreFilterService = toolPreFilterService;
         this.personaBrandContextProvider = personaBrandContextProvider;
         this.chatPipelineObservation = chatPipelineObservation;
+        this.skillRunnerService = skillRunnerService;
     }
 
     /**
@@ -111,8 +116,19 @@ public class TurChatToolResolver {
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
         ToolCallback[] personaBrandCallbacks =
                 personaBrandContextProvider.getToolCallbacks(activePersona);
+        // T323 / §IX.4.d — skill delegation. When the operator enabled skills on
+        // this agent AND the delegation layer is available (storage + Code
+        // Interpreter DOCKER + a Default LLM), add the single `run_skill` tool so
+        // the model can delegate a task to a skill. The skill runs on the Global
+        // Settings Default LLM, not this agent's model. Empty for default-off
+        // agents or when the layer is unavailable.
+        ToolCallback[] skillCallbacks =
+                agent.isSkillsEnabled() && skillRunnerService.isAvailable()
+                        ? skillRunnerService.buildToolCallbacks(skillRunnerService.availableSkills())
+                        : new ToolCallback[0];
         ToolCallback[] decorated = toolCallbackPipeline.decorate(
-                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks)
+                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
+                        skillCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
         // Belt-and-suspenders: native tools (operator-curated) and the
@@ -124,6 +140,11 @@ public class TurChatToolResolver {
         // them in the top-K in practice.
         Set<String> alwaysKeep = new HashSet<>();
         alwaysKeep.addAll(selectedNativeTools);
+        // The skill delegation tool is infrastructure (one per turn, not a
+        // domain tool) — keep it regardless of BM25 relevance to the message.
+        if (skillCallbacks.length > 0) {
+            alwaysKeep.add(TurRunSkillToolCallback.TOOL_NAME);
+        }
         if (activeNode != null) {
             for (String required : activeNode.requiredTools()) {
                 if (required != null && !required.isBlank()) {

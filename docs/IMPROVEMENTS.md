@@ -1224,13 +1224,23 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T323 — Use skill in chat.** Wire the harness into the chat path: a
-  session's available skills activate by description (and/or an explicit
-  user pick).
-- **T324 — Use skill in semantic navigation.** Wire the same harness into
-  the SN AI path, and expose Turing search to the skill as a tool inside
-  the sandbox (the first place a skill leverages Turing's own data — the
-  v2 "integrate, via standard tools" step).
+- **T323 — Use skill in chat. (shipped)** A session's available skills
+  activate by description, but with a key design rule: **a skill always
+  runs on the Global Settings Default LLM, never the caller's own model**,
+  so a portable skill behaves identically regardless of which agent (or SN
+  site) triggers it. Since a tool cannot switch the model that drives it,
+  this is realised as a *delegated sub-loop*: the parent turn sees only the
+  cheap name+description block + a single `run_skill(skill, task)` tool;
+  invoking it spins a separate agentic loop on the Default LLM (reusing the
+  T322 harness for the sub-loop's prompt + `load_skill`/`skill_bash` tools)
+  that operates the skill end-to-end and returns the result. T324/T325
+  inherit this rule.
+- **T324 — Use skill in semantic navigation.** Because the SN AI chat
+  shares `TurAgentChatExecutor`, T323's per-agent toggle already activates
+  skills in SN mode (on the Default LLM, per the rule above). What remains
+  is exposing Turing search to the skill as a tool inside the sandbox (the
+  first place a skill leverages Turing's own data — the v2 "integrate, via
+  standard tools" step).
 - **T325 — Multi-skill ZIP as independent units.** Each skill in an
   imported ZIP is independently activatable (progressive disclosure) and
   optionally selectable in chat as a distinct mode/"flow".
@@ -1244,8 +1254,12 @@ skill folder mounted read-only and a workspace that survives across
 turns, gated on `DOCKER` mode). **T322 — the activation harness — has
 shipped** (`TurSkillActivationHarness`: progressive-disclosure prompt
 block + `load_skill` / `skill_bash` tools over the T321 sandbox, gated on
-storage + `DOCKER`). What remains is wiring it in: T323/T324/T325 need
-T322. The public hosted registry (T118) layers on T320 and stays a
+storage + `DOCKER`). **T323 — use skill in chat — has shipped**
+(`TurSkillRunnerService` + `run_skill` delegation, per-agent `skillsEnabled`
+toggle, skill always driven by the Default LLM). What remains: T324
+(Turing-search-as-a-sandbox-tool — note skill *activation* in SN already
+works via the shared executor) and T325 (multi-skill ZIP as independent
+units). The public hosted registry (T118) layers on T320 and stays a
 deferred idea.
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic

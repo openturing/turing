@@ -73,8 +73,7 @@
 > T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
 > Rationale → §IX.4.d.
 
-- 📋 **T323** (deps: T322) **Use skill in chat** — wire the harness into the chat path; available skills activate by description and/or explicit pick. → §IX.4.d
-- 📋 **T324** (deps: T322) **Use skill in semantic navigation** — wire the same harness into the SN AI path; expose Turing search to the skill as a tool inside the sandbox. → §IX.4.d
+- 📋 **T324** (deps: T323) **Use skill in semantic navigation** — the shared chat executor already activates skills in SN AI mode (via T323's per-agent toggle); what remains is exposing Turing search to the skill as a tool inside the sandbox. → §IX.4.d
 - 📋 **T325** (deps: T319, T322) **Multi-skill ZIP as independent units** — each skill in a ZIP is independently activatable and optionally selectable in chat as a distinct mode/"flow". → §IX.4.d
 - 💭 **T118** (deps: T320) **Public skill registry** (`skills.turing.io`) — hosted, community/vendor-curated catalog of skill ZIPs; layers on import/export. Deferred. → §IX.4.c
 

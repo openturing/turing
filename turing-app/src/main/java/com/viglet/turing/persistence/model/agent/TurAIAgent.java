@@ -81,6 +81,25 @@ public class TurAIAgent implements Serializable {
     private boolean richContentEnabled = false;
 
     /**
+     * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
+     * {@code true} (and the skill sandbox is available — object storage
+     * configured AND Code Interpreter mode {@code DOCKER}), every enabled,
+     * indexed skill folder is offered to this agent's chat turns through the
+     * progressive-disclosure harness: a cheap name + description block is
+     * appended to the system prompt and the {@code load_skill} / {@code skill_bash}
+     * activation tools are added to the toolset so the model can load a skill's
+     * instructions and drive its sandboxed container on demand. Default
+     * {@code false} keeps existing agents byte-for-byte unchanged (no extra
+     * prompt tokens, no skill tools). Has no effect on a {@code NATIVE} or
+     * storage-disabled deployment — the harness reports itself unavailable and
+     * both contributions are skipped.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "skills_enabled", nullable = false)
+    private boolean skillsEnabled = false;
+
+    /**
      * When {@code true}, the agent enqueues every chat turn into the chat
      * memory pipeline so it can be persisted by {@code turing.logging.engine}
      * (mongodb / redis) keyed by {@code conversationId}. Has no effect when

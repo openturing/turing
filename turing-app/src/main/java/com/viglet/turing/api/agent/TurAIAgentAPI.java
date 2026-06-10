@@ -218,6 +218,9 @@ public class TurAIAgentAPI {
             // Field-by-field copy like the other toggles — omitting it would
             // silently drop the switch on save.
             agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
+            // T323 — skills opt-in (run_skill delegation to the Default LLM).
+            // Field-by-field copy like the other toggles.
+            agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());
             // Chat memory configuration — silently dropped before this fix,
             // which is why toggling the UI switch had no effect after save.
             agentEdit.setChatMemoryEnabled(turAIAgent.isChatMemoryEnabled());

@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
+import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
 import com.viglet.turing.genai.tool.TurMcpInstructionsProvider;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
@@ -73,6 +74,7 @@ public class TurChatPromptAssembler {
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
     private final TurMcpInstructionsProvider mcpInstructionsProvider;
+    private final TurSkillRunnerService skillRunnerService;
 
     /**
      * The rich-content rendering guidance ({@code ```html} live preview /
@@ -103,7 +105,8 @@ public class TurChatPromptAssembler {
             TurChatMemoryCompressionService chatMemoryCompressionService,
             TurChatPipelineObservation chatPipelineObservation,
             TurChatAttachmentService chatAttachmentService,
-            TurMcpInstructionsProvider mcpInstructionsProvider) {
+            TurMcpInstructionsProvider mcpInstructionsProvider,
+            TurSkillRunnerService skillRunnerService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
@@ -111,6 +114,7 @@ public class TurChatPromptAssembler {
         this.chatPipelineObservation = chatPipelineObservation;
         this.chatAttachmentService = chatAttachmentService;
         this.mcpInstructionsProvider = mcpInstructionsProvider;
+        this.skillRunnerService = skillRunnerService;
     }
 
     /**
@@ -167,6 +171,18 @@ public class TurChatPromptAssembler {
         // renders natively. Default-off agents are byte-for-byte unchanged.
         if (agent.isRichContentEnabled() && !renderPrompt.isBlank()) {
             mcpAugmented = mcpAugmented + "\n\n" + renderPrompt;
+        }
+        // T323 / §IX.4.d — skill delegation. When the operator enabled skills on
+        // this agent AND the delegation layer is available (object storage +
+        // Code Interpreter DOCKER + a Default LLM), append the cheap
+        // progressive-disclosure block (each enabled skill's name + description)
+        // and the instruction to call `run_skill`. The skill itself runs on the
+        // Global Settings Default LLM (TurSkillRunnerService), never on this
+        // agent's model. No-op (empty block) for default-off agents or when the
+        // layer is unavailable, so existing agents are byte-for-byte unchanged.
+        if (agent.isSkillsEnabled() && skillRunnerService.isAvailable()) {
+            mcpAugmented = mcpAugmented
+                    + skillRunnerService.buildSystemPromptBlock(skillRunnerService.availableSkills());
         }
         String flowAugmented = flowContext == null
                 ? mcpAugmented

@@ -70,6 +70,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const [globalDefaultEmbeddingModelId, setGlobalDefaultEmbeddingModelId] = useState<string>("");
   const [globalDefaultEmbeddingStoreId, setGlobalDefaultEmbeddingStoreId] = useState<string>("");
   const [loggingEngine, setLoggingEngine] = useState<LoggingEngine>("none");
+  // T323 — whether the skills feature is usable on this deployment. The
+  // backend flag tracks object storage; the runtime also needs Code Interpreter
+  // DOCKER mode + a Default LLM, so when those are missing the toggle still
+  // saves but the backend simply offers no skills (graceful no-op).
+  const [skillsFeatureAvailable, setSkillsFeatureAvailable] = useState(false);
 
   const createMutation = useCreateAiAgent();
   const updateMutation = useUpdateAiAgent();
@@ -117,6 +122,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
       richContentEnabled: value.richContentEnabled ?? false,
+      skillsEnabled: value.skillsEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
@@ -169,8 +175,14 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       setGlobalDefaultEmbeddingStoreId(settings.defaultEmbeddingStoreId ?? "");
     });
     turFeaturesService.getFeatures()
-      .then((features) => setLoggingEngine(features.loggingEngine ?? "none"))
-      .catch(() => setLoggingEngine("none"));
+      .then((features) => {
+        setLoggingEngine(features.loggingEngine ?? "none");
+        setSkillsFeatureAvailable(features.skillsEnabled ?? false);
+      })
+      .catch(() => {
+        setLoggingEngine("none");
+        setSkillsFeatureAvailable(false);
+      });
   }, []);
 
   // If the user changes embedding model/store and RAG is no longer resolvable,
@@ -510,6 +522,41 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormControl>
                         <GradientSwitch
                           checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconBolt}
+              title={t("forms.agentSettings.skills")}
+              description={t("forms.agentSettings.skillsDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="skillsEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableSkills")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {skillsFeatureAvailable
+                          ? t("forms.agentSettings.enableSkillsDesc")
+                          : t("forms.agentSettings.enableSkillsBlocked")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          disabled={!skillsFeatureAvailable}
                           onCheckedChange={(checked) => field.onChange(checked)}
                         />
                       </FormControl>
