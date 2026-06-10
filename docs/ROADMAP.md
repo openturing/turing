@@ -59,6 +59,7 @@
 
 ## E.2 — Agent Workspace (the key differentiator)
 
+- 📋 **T309** (deps: T115) **Async memory compression (off the hot path)** — move T115's summarization LLM call out of the synchronous `TurChatPromptAssembler` turn. When the older pool crosses the threshold, enqueue a background job (Artemis/`@Async` + ShedLock for cluster-once) that generates `memory/summary-1-{to}.md`; the triggering turn proceeds uncompressed (reuses the last cached summary if present), and the next turn picks up the freshly-stored summary. Removes the once-per-interval latency spike on the turn that regenerates. → §IX.3.f
 
 ## E.3 — Skills as first-class (differentiator)
 
