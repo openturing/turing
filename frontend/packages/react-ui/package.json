@@ -74,6 +74,11 @@
       "import": "./dist/TuringSearchFieldView.js",
       "default": "./dist/TuringSearchFieldView.js"
     },
+    "./TuringWorkspacePanelView": {
+      "types": "./dist/TuringWorkspacePanelView.d.ts",
+      "import": "./dist/TuringWorkspacePanelView.js",
+      "default": "./dist/TuringWorkspacePanelView.js"
+    },
     "./styles.css": "./dist/styles/turing-ui.css",
     "./package.json": "./package.json"
   },
@@ -136,9 +141,9 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 19200,
+    "total": 20800,
     "entries": {
-      "index.js": 1250,
+      "index.js": 1350,
       "tokens.js": 1100,
       "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
@@ -151,7 +156,8 @@
       "TuringSearchBar.js": 900,
       "TuringResultList.js": 700,
       "TuringPagination.js": 900,
-      "TuringSearchFieldView.js": 1850
+      "TuringSearchFieldView.js": 1850,
+      "TuringWorkspacePanelView.js": 1400
     }
   },
   "keywords": ["viglet", "turing", "react", "ui", "headless", "chat"]

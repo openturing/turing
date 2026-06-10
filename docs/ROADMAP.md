@@ -57,25 +57,6 @@
 > pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
 > the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
 
-### D.12.a — Migrate the search-UI primitives `react-sdk → react-ui` (progressive)
-
-> The 5 components in `react-sdk/src/ui/` predate react-ui; the **design-less**
-> ones belong in react-ui (so viglet.com can use them axios-free), while the
-> **hook-coupled** ones split into a headless view (react-ui) + a thin
-> data-wiring wrapper (react-sdk). Each task keeps the react-sdk export working
-> via the T300 re-export surface, so consumers don't change. Order by
-> design-weight: clean moves first, splits after. → §XII.2.a
->
-> **Live consumers — every task in this block must keep these building & rendering**
-> (they import the primitives via `@viglet/turing-react-sdk`, so the T300
-> re-export is what protects them): the 3 marketplace apps
-> (`frontend/apps/marketplace/{vinyl-records,space-missions,mythical-creatures}`,
-> using `TuringSearchField` + `useTuringPagination`) and the Turing React search
-> (`frontend/apps/turing-app/src/search/`, using `useTuringPagination`). Validate
-> each before marking a task done — `pnpm -r build` must stay green.
-
-- 💭 **T308** (deps: T306) **Split `TuringWorkspacePanel` (view ⇄ SSE wiring)** — extract headless `TuringWorkspacePanelView` (artifacts + status props, render-prop row, `formatBytes`) to react-ui; keep `TuringWorkspacePanel` in react-sdk as a thin wrapper that subscribes via `useTuringWorkspace` and forwards artifacts. Lets viglet.com render the workspace list with its own Next transport. → §XII.2.a
-
 ## E.2 — Agent Workspace (the key differentiator)
 
 - 📋 **T114** (deps: T111) **Auto-offload large tool results** — when a tool returns >`TOOL_RESULT_INLINE_MAX` chars (default 4096), `TurToolCallbackPipeline` stores the full payload in workspace at `tool-results/{toolName}-{ts}.json`, replaces inline text with `Stor… → §IX.3.d

@@ -105,6 +105,19 @@ export type {
   TuringSearchFieldViewDropdownProps,
 } from "./TuringSearchFieldView";
 
+// Headless view half of the legacy `TuringWorkspacePanel`, split out in T308.
+// The SSE subscription (`useTuringWorkspace`) stays in `@viglet/turing-react-sdk`
+// and forwards `artifacts` + `status` to this view; `formatBytes` ships here too.
+export {
+  TuringWorkspacePanelView,
+  formatBytes,
+} from "./TuringWorkspacePanelView";
+export type {
+  TuringWorkspacePanelViewProps,
+  TuringWorkspaceArtifact,
+  TuringWorkspaceStatus,
+} from "./TuringWorkspacePanelView";
+
 // Optional token theming (T305) — an alternative to `classNames`. Import the
 // stylesheet (`@viglet/turing-react-ui/styles.css`) and drive the look via
 // `--turing-ui-*` custom properties on a `.turing-ui-theme` wrapper.

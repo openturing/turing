@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TuringWorkspacePanelView } from "@viglet/turing-react-ui";
 import type { TurWorkspaceArtifact } from "../core/api";
 import {
   useTuringWorkspace,
@@ -25,10 +26,14 @@ export interface TuringWorkspacePanelProps extends UseTuringWorkspaceOptions {
  * every {@code put}/{@code delete} the agent performs updates the list in
  * &lt;100&nbsp;ms with no polling.
  *
- * <p>Headless-ish, like the other SDK UI components: structural markup +
- * caller-supplied {@code className}, with a render-prop ({@code itemComponent})
- * for full control over each row. Wrap in a {@code <TuringProvider>} (for the
- * site name) and pass the {@code agentId} so the initial snapshot back-fills.
+ * <p>This is the data-wiring half of the component: it owns the SSE
+ * subscription and forwards the resulting {@code artifacts} + {@code status} to
+ * the headless {@code TuringWorkspacePanelView} in
+ * {@code @viglet/turing-react-sdk}'s react-ui peer (T308 split). The structural
+ * markup, {@code formatBytes}, and the default row live there; this wrapper
+ * keeps the same props, so consumers are unchanged. Wrap in a
+ * {@code <TuringProvider>} (for the site name) and pass the {@code agentId} so
+ * the initial snapshot back-fills.
  *
  * @example
  * ```tsx
@@ -38,7 +43,7 @@ export interface TuringWorkspacePanelProps extends UseTuringWorkspaceOptions {
  * @since 2026.3.1
  */
 export function TuringWorkspacePanel({
-  title = "Files",
+  title,
   itemComponent,
   emptyComponent,
   className,
@@ -47,59 +52,13 @@ export function TuringWorkspacePanel({
   const { artifacts, status } = useTuringWorkspace(workspaceOptions);
 
   return (
-    <aside className={className} aria-label={title}>
-      <h3>{title}</h3>
-      {artifacts.length === 0 ? (
-        emptyComponent ? (
-          emptyComponent()
-        ) : (
-          <p data-turing-workspace-empty>
-            {status === "error" ? "Workspace unavailable." : "No files yet."}
-          </p>
-        )
-      ) : (
-        <ul role="list" data-turing-workspace-list>
-          {artifacts.map((artifact, index) => (
-            <li key={artifact.key} role="listitem">
-              {itemComponent ? (
-                itemComponent({ artifact, index })
-              ) : (
-                <DefaultArtifactRow artifact={artifact} />
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </aside>
+    <TuringWorkspacePanelView
+      artifacts={artifacts}
+      status={status}
+      title={title}
+      itemComponent={itemComponent}
+      emptyComponent={emptyComponent}
+      className={className}
+    />
   );
-}
-
-/** Default row: a download link to the signed URL + a human-readable size. */
-function DefaultArtifactRow({ artifact }: { readonly artifact: TurWorkspaceArtifact }) {
-  return (
-    <a
-      href={artifact.signedUrl ?? "#"}
-      target="_blank"
-      rel="noopener noreferrer"
-      download
-      data-turing-workspace-item
-      title={artifact.contentType ?? undefined}
-    >
-      <span data-turing-workspace-key>{artifact.key}</span>
-      <span data-turing-workspace-size>{formatBytes(artifact.size)}</span>
-    </a>
-  );
-}
-
-/** Compact, locale-free byte formatter (B / KB / MB / GB). */
-function formatBytes(bytes: number): string {
-  if (!bytes || bytes < 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1,
-  );
-  const value = bytes / Math.pow(1024, exponent);
-  const rounded = exponent === 0 ? value : Math.round(value * 10) / 10;
-  return `${rounded} ${units[exponent]}`;
 }
