@@ -100,6 +100,10 @@
         "title": "Assets",
         "description": "Browse and manage files stored in the MinIO object storage."
       },
+      "skills": {
+        "title": "Skills",
+        "description": "Author Anthropic-compatible skill folders or import them from a ZIP."
+      },
       "import": {
         "title": "Import",
         "description": "Import configurations, sites, and data from exported packages."

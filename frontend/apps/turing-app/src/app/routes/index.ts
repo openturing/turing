@@ -3,6 +3,7 @@ export { AIAgentRoutes } from "./ai-agent.routes";
 export { BentoRoutes } from "./bento.routes";
 export { EmbeddingModelRoutes } from "./embedding-model.routes";
 export { AssetRoutes } from "./asset.routes";
+export { SkillRoutes } from "./skill.routes";
 export { GitRoutes } from "./git.routes";
 export { PageRoutes } from "./page.routes";
 export { ChatRoutes } from "./chat.routes";

@@ -11,17 +11,24 @@ package com.viglet.turing.api.skill;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.genai.skill.TurSkillCatalogService;
+import com.viglet.turing.genai.skill.TurSkillFileService;
 import com.viglet.turing.persistence.model.skill.TurSkill;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,9 +51,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSkillAPI {
 
     private final TurSkillCatalogService catalogService;
+    private final TurSkillFileService fileService;
 
-    public TurSkillAPI(TurSkillCatalogService catalogService) {
+    public TurSkillAPI(TurSkillCatalogService catalogService, TurSkillFileService fileService) {
         this.catalogService = catalogService;
+        this.fileService = fileService;
     }
 
     /** Compact view of an indexed skill — enough to render a catalog card. */
@@ -98,5 +107,80 @@ public class TurSkillAPI {
                 .map(TurSkillSummary::of)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // ---- T318: skill folder editor (mini-VS-Code) ---------------------------
+
+    /** A file's relative path plus its UTF-8 text contents. */
+    public record TurSkillFileContent(String path, String content) {
+    }
+
+    @Operation(summary = "Create a new, empty skill folder with a starter SKILL.md")
+    @PostMapping
+    public ResponseEntity<TurSkillSummary> create(@RequestParam("name") String name) {
+        return ResponseEntity.ok(TurSkillSummary.of(fileService.createSkill(name)));
+    }
+
+    @Operation(summary = "List the file tree of a skill folder (paths relative to the skill root)")
+    @GetMapping("/{id}/files")
+    public List<TurSkillFileNode> files(@PathVariable String id) {
+        return fileService.listFiles(id);
+    }
+
+    @Operation(summary = "Read a file inside the skill folder")
+    @GetMapping("/{id}/file")
+    public ResponseEntity<TurSkillFileContent> readFile(@PathVariable String id,
+            @RequestParam("path") String path) {
+        return fileService.readFile(id, path)
+                .map(content -> ResponseEntity.ok(new TurSkillFileContent(path, content)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Create or overwrite a file inside the skill folder")
+    @PutMapping(value = "/{id}/file", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<Void> writeFile(@PathVariable String id, @RequestParam("path") String path,
+            @RequestBody(required = false) String content) {
+        fileService.writeFile(id, path, content == null ? "" : content);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Create a folder inside the skill folder")
+    @PostMapping("/{id}/folder")
+    public ResponseEntity<Void> createFolder(@PathVariable String id, @RequestParam("path") String path) {
+        fileService.createFolder(id, path);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Rename/move a file or folder inside the skill folder")
+    @PostMapping("/{id}/rename")
+    public ResponseEntity<Void> rename(@PathVariable String id, @RequestParam("from") String from,
+            @RequestParam("to") String to) {
+        fileService.rename(id, from, to);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Delete a file or folder inside the skill folder")
+    @DeleteMapping("/{id}/file")
+    public ResponseEntity<Void> deleteFile(@PathVariable String id, @RequestParam("path") String path) {
+        fileService.deletePath(id, path);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Import one or many skills from an uploaded ZIP")
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public List<String> importZip(@RequestParam("file") MultipartFile file) {
+        return fileService.importZip(file);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String onBadRequest(IllegalArgumentException e) {
+        return e.getMessage();
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String onConflict(IllegalStateException e) {
+        return e.getMessage();
     }
 }

@@ -12,6 +12,13 @@ export const queryKeys = {
     list: () => [...queryKeys.embeddingModels.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.embeddingModels.all(), 'detail', id] as const,
   },
+  skills: {
+    all: () => ['skills'] as const,
+    list: () => [...queryKeys.skills.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.skills.all(), 'detail', id] as const,
+    files: (id: string) => [...queryKeys.skills.all(), 'files', id] as const,
+    file: (id: string, path: string) => [...queryKeys.skills.all(), 'file', id, path] as const,
+  },
   snSites: {
     all: () => ['sn-sites'] as const,
     list: () => [...queryKeys.snSites.all(), 'list'] as const,

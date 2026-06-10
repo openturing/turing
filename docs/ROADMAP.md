@@ -73,8 +73,6 @@
 > T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
 > Rationale → §IX.4.d.
 
-- 📋 **T318** (deps: T317) **Skill folder editor (mini-VS-Code)** — evolve `/admin/assets` (or a `/skill` editor) into a file-tree + Monaco editor over the skill folder via `TurStorageService` (create/rename/delete/edit `SKILL.md`, scripts, references, assets); built-in folders read-only. → §IX.4.d
-- 📋 **T319** (deps: T317) **Import skill ZIP (one or many)** — unpack each top-level folder containing a `SKILL.md` into storage and index it; a single ZIP may carry multiple skills (the entry door). → §IX.4.d
 - 📋 **T320** (deps: T317) **Export skill → Anthropic-compatible ZIP** — serialize a stored skill folder back to a `.zip` usable in Claude (the exit door). → §IX.4.d
 - 📋 **T321** (deps: T80, T81) **Anthropic-compatible Docker session** — evolve the Code Interpreter from snippet-execution to an interactive container session with the skill folder mounted + a persistent filesystem + a `bash`/code-execution tool the model drives across turns; configurable image matching Anthropic's container (python+node+bash). Docker mode + hardening mandatory. → §IX.4.d
 - 📋 **T322** (deps: T317, T321) **Skill activation harness (progressive disclosure)** — inject each skill's `name`+`description`; load the `SKILL.md` body when relevant; expose the mounted-folder code-execution tool. The piece that makes a skill actually *run*. → §IX.4.d

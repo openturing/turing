@@ -1224,14 +1224,6 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T318 — Skill folder editor (mini-VS-Code).** Evolve `/admin/assets`
-  (or a dedicated `/skill` editor) into a file-tree + Monaco editor over
-  the skill folder via `TurStorageService`: create/rename/delete/edit
-  `SKILL.md`, scripts, references, assets. Built-in/platform folders are
-  shown read-only (subsumes the old T315 "read-only view").
-- **T319 — Import skill ZIP (one or many).** Unpack each top-level folder
-  containing a `SKILL.md` into storage and index it; a single ZIP may
-  carry multiple skills (the entry door).
 - **T320 — Export skill → Anthropic-compatible ZIP.** Serialize a stored
   skill folder back to a `.zip` usable in Claude (the exit door). Pair of
   T319; together they are the interop boundary.
@@ -1259,10 +1251,10 @@ independently-activatable unit.
   imported ZIP is independently activatable (progressive disclosure) and
   optionally selectable in chat as a distinct mode/"flow".
 
-**Sequencing.** T326 (rollback) and T317 (the storage/index shape
-everything depends on) shipped — the catalog index over skill folders is
-in place. T318/T319/T320 are the authoring + interop layer and can
-proceed in parallel now that T317 has landed.
+**Sequencing.** T326 (rollback), T317 (the storage/index shape everything
+depends on), T318 (the mini-VS-Code folder editor at `/admin/skill`) and
+T319 (import ZIP — the entry door) have shipped. T320 (export ZIP — the
+exit door) remains to complete the interop boundary.
 T321 is the engine and can be built in parallel with the authoring layer.
 T322 needs T317 + T321; T323/T324/T325 need T322. The public hosted
 registry (T118) layers on T320 and stays a deferred idea.

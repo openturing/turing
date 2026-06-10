@@ -21,6 +21,7 @@ import {
   IconRobot,
   IconServer2,
   IconShieldCog,
+  IconSparkles,
   IconUserCircle,
   IconWebhook,
   IconZoomCode
@@ -92,6 +93,7 @@ const searchItems: SidebarNavItem[] = [
 
 const managementItems: SidebarNavItem[] = [
   { key: "assets", titleKey: "home.features.assets.title", url: ROUTES.ASSET_ROOT, icon: IconFolder },
+  { key: "skills", titleKey: "home.features.skills.title", url: ROUTES.SKILL_ROOT, icon: IconSparkles },
   { key: "git", titleKey: "home.features.git.title", url: ROUTES.GIT_ROOT, icon: IconGitBranch },
   { key: "marketplace", titleKey: "home.features.marketplace.title", url: ROUTES.MARKETPLACE_ROOT, icon: IconBuildingStore },
   { key: "import", titleKey: "home.features.import.title", url: "/admin/exchange/import", icon: IconFileImport },
@@ -109,6 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [storageEnabled, setStorageEnabled] = React.useState(false);
   const [gitServerEnabled, setGitServerEnabled] = React.useState(false);
   const [marketplaceEnabled, setMarketplaceEnabled] = React.useState(false);
+  const [skillsEnabled, setSkillsEnabled] = React.useState(false);
   const { toggleSidebar, state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -120,7 +123,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setStorageEnabled(features.storageEnabled);
       setGitServerEnabled(features.gitServerEnabled ?? false);
       setMarketplaceEnabled(features.marketplaceEnabled ?? false);
-    }).catch(() => { setStorageEnabled(false); setGitServerEnabled(false); setMarketplaceEnabled(false); });
+      setSkillsEnabled(features.skillsEnabled ?? false);
+    }).catch(() => { setStorageEnabled(false); setGitServerEnabled(false); setMarketplaceEnabled(false); setSkillsEnabled(false); });
   }, [])
 
   const isAdmin = !!user?.admin
@@ -148,12 +152,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const filteredManagement = React.useMemo(
     () => managementItems.filter((item) => {
       if (item.key === "assets" && !storageEnabled) return false
+      if (item.key === "skills" && !skillsEnabled) return false
       if (item.key === "git" && !gitServerEnabled) return false
       if (item.key === "marketplace" && !marketplaceEnabled) return false
       if (item.key === "administration" && !isAdmin) return false
       return true
     }),
-    [storageEnabled, gitServerEnabled, marketplaceEnabled, isAdmin]
+    [storageEnabled, skillsEnabled, gitServerEnabled, marketplaceEnabled, isAdmin]
   )
 
   const toNavItems = React.useCallback(

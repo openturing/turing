@@ -100,6 +100,10 @@
         "title": "Ativos",
         "description": "Navegue e gerencie arquivos armazenados no MinIO."
       },
+      "skills": {
+        "title": "Skills",
+        "description": "Crie pastas de skills compatíveis com a Anthropic ou importe-as de um ZIP."
+      },
       "import": {
         "title": "Importar",
         "description": "Importe configurações, sites e dados de pacotes exportados."
