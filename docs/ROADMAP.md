@@ -62,7 +62,7 @@
 
 ## E.3 — Skills as first-class (differentiator)
 
-- 💭 **T118** (deps: T116) **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. → §IX.4.c
+- 💭 **T118** (deps: T116) **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. *v1 in-app registry — Skills as a `/admin/marketplace` kind + editable `/skill` CRUD — shipped (see CHANGELOG); only the hosted/public step remains here.* → §IX.4.c
 
 ## E.4 — Human-in-the-loop (parity, made graph-visible)
 

@@ -1176,6 +1176,17 @@ authors publish there because customers are there; customers go there
 because skills are there. LangChain has community packages but no
 deterministic catalog with vendor signing.
 
+**v1 registry is in-app, not hosted.** Rather than stand up
+`skills.turing.io` immediately, the first registry is the existing
+**`/admin/marketplace`** storefront: Skills are a marketplace *kind*
+(alongside Sites and Flow Recipes) for browse + install, while the
+editable `/skill` CRUD authors user skills. This proves the
+manifest/version/signature model end-to-end against the bundled
+platform catalog before any hosting, multi-tenant publishing, or
+moderation surface is built. The hosted public registry (community
+publishing, vendor-curated tiers) remains the T118 endgame — it layers
+on top of the same `TurSkillManifest` contract.
+
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
 Deep Agents has HITL as middleware (the harness pauses for you when

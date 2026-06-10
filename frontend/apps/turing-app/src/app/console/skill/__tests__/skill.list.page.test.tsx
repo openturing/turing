@@ -2,24 +2,23 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { TurSkill, TurSkillManifest } from "@/models/skill/skill.model";
+import type { TurSkill } from "@/models/skill/skill.model";
 
-// ── Hook mocks (the page reads only these; no axios / QueryClient needed) ──
-const installMutate = vi.fn();
+// ── Hook mocks (the CRUD page + form dialog read only these) ──
 const uninstallMutate = vi.fn();
+const installMutate = vi.fn();
 
-let installedData: TurSkill[] = [];
-let catalogData: TurSkillManifest[] = [];
+let skillsData: TurSkill[] = [];
 
 vi.mock("@/api/queries/skill.queries", () => ({
-  useSkills: () => ({ data: installedData, isError: false }),
-  useSkillCatalog: () => ({ data: catalogData, isError: false }),
-  useInstallSkillFromCatalog: () => ({ mutate: installMutate, isPending: false, variables: undefined }),
-  useUninstallSkill: () => ({ mutate: uninstallMutate, isPending: false, variables: undefined }),
+  useSkills: () => ({ data: skillsData, isError: false }),
+  useUninstallSkill: () => ({ mutate: uninstallMutate, isPending: false }),
+  useSkill: () => ({ data: undefined }),
+  useInstallSkill: () => ({ mutate: installMutate, isPending: false }),
 }));
 
-// toast isn't globally mocked — override just `toast` while keeping the real
-// design-system exports (Card/Button/Input/… re-export from this module).
+// toast isn't globally mocked — override just `toast`, keep the real DS exports
+// (Card/Button/Input/… re-export from this module).
 vi.mock("@viglet/viglet-design-system", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@viglet/viglet-design-system")>();
   return { ...actual, toast: { success: vi.fn(), error: vi.fn() } };
@@ -27,33 +26,18 @@ vi.mock("@viglet/viglet-design-system", async (importOriginal) => {
 
 import SkillListPage from "../skill.list.page";
 
-const markdownManifest: TurSkillManifest = {
-  name: "scaffold-markdown",
-  version: "1.0.0",
-  author: "viglet",
-  description: "Beat-structured markdown scaffolds.",
-  tools: ["scaffold.markdown"],
-};
-
-const mindmapManifest: TurSkillManifest = {
-  name: "scaffold-mindmap",
-  version: "1.0.0",
-  author: "viglet",
-  description: "Mermaid mind-map trees.",
-  tools: ["scaffold.buildMindMap"],
-};
-
-function installedFrom(manifest: TurSkillManifest): TurSkill {
+function skill(overrides: Partial<TurSkill> = {}): TurSkill {
   return {
-    id: `id-${manifest.name}`,
-    name: manifest.name,
-    version: manifest.version,
-    author: manifest.author ?? null,
-    description: manifest.description ?? null,
+    id: "id-1",
+    name: "scaffold-markdown",
+    version: "1.0.0",
+    author: "viglet",
+    description: "Beat-structured markdown scaffolds.",
     signature: "sha256:abc",
     builtIn: true,
     enabled: true,
-    tools: manifest.tools ?? null,
+    tools: ["scaffold.markdown"],
+    ...overrides,
   };
 }
 
@@ -65,64 +49,64 @@ function renderPage() {
   );
 }
 
-describe("SkillListPage", () => {
+describe("SkillListPage (CRUD)", () => {
   beforeEach(() => {
-    installMutate.mockClear();
     uninstallMutate.mockClear();
-    installedData = [];
-    catalogData = [];
+    installMutate.mockClear();
+    skillsData = [];
   });
 
-  it("renders catalog skills with an install button when not installed", () => {
-    catalogData = [markdownManifest, mindmapManifest];
+  it("lists installed skills", () => {
+    skillsData = [skill(), skill({ id: "id-2", name: "my-skill", builtIn: false })];
     renderPage();
-
     expect(screen.getByText("scaffold-markdown")).toBeInTheDocument();
-    expect(screen.getByText("scaffold-mindmap")).toBeInTheDocument();
-    // two available skills → two install buttons
-    expect(screen.getAllByText("skill.install").length).toBe(2);
+    expect(screen.getByText("my-skill")).toBeInTheDocument();
   });
 
-  it("marks installed skills and offers details instead of install", () => {
-    catalogData = [markdownManifest];
-    installedData = [installedFrom(markdownManifest)];
+  it("locks built-in skills (no edit/delete, platform-managed)", () => {
+    skillsData = [skill({ builtIn: true })];
     renderPage();
-
     const card = screen.getByText("scaffold-markdown").closest("div.group") as HTMLElement;
-    expect(within(card).getByText("skill.installed")).toBeInTheDocument();
-    // installed → no per-card install button, only the details button
-    expect(within(card).queryByText("skill.install")).not.toBeInTheDocument();
-    expect(within(card).getByText("skill.details")).toBeInTheDocument();
+    expect(within(card).getByText("skill.platformManaged")).toBeInTheDocument();
+    expect(within(card).queryByText("skill.edit")).not.toBeInTheDocument();
+  });
+
+  it("offers edit + delete on user skills", () => {
+    skillsData = [skill({ id: "id-2", name: "my-skill", builtIn: false })];
+    renderPage();
+    const card = screen.getByText("my-skill").closest("div.group") as HTMLElement;
+    expect(within(card).getByText("skill.edit")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "skill.uninstall" })).toBeInTheDocument();
+  });
+
+  it("opens the create form from the New Skill button", () => {
+    skillsData = [skill()];
+    renderPage();
+    // toolbar New button
+    fireEvent.click(screen.getAllByText("skill.new")[0]);
+    expect(screen.getByText("skill.newTitle")).toBeInTheDocument();
+  });
+
+  it("confirms then uninstalls a user skill", () => {
+    skillsData = [skill({ id: "id-2", name: "my-skill", builtIn: false })];
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "skill.uninstall" }));
+    // confirmation dialog appears
+    expect(screen.getByText("skill.deleteTitle")).toBeInTheDocument();
+    // the dialog's confirm button carries the uninstall label text
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByText("skill.uninstall"));
+    expect(uninstallMutate).toHaveBeenCalledTimes(1);
+    expect(uninstallMutate.mock.calls[0][0]).toBe("id-2");
   });
 
   it("filters by search query", () => {
-    catalogData = [markdownManifest, mindmapManifest];
+    skillsData = [skill(), skill({ id: "id-2", name: "my-skill", builtIn: false })];
     renderPage();
-
     fireEvent.change(screen.getByPlaceholderText("skill.searchPlaceholder"), {
-      target: { value: "mindmap" },
+      target: { value: "my-skill" },
     });
-
     expect(screen.queryByText("scaffold-markdown")).not.toBeInTheDocument();
-    expect(screen.getByText("scaffold-mindmap")).toBeInTheDocument();
-  });
-
-  it("installs from the catalog when the install button is clicked", () => {
-    catalogData = [markdownManifest];
-    renderPage();
-
-    fireEvent.click(screen.getByText("skill.install"));
-    expect(installMutate).toHaveBeenCalledTimes(1);
-    expect(installMutate.mock.calls[0][0]).toBe("scaffold-markdown");
-  });
-
-  it("shows the empty state when nothing matches", () => {
-    catalogData = [markdownManifest];
-    renderPage();
-
-    fireEvent.change(screen.getByPlaceholderText("skill.searchPlaceholder"), {
-      target: { value: "no-such-skill" },
-    });
-    expect(screen.getByText("skill.emptyTitle")).toBeInTheDocument();
+    expect(screen.getByText("my-skill")).toBeInTheDocument();
   });
 });

@@ -27,8 +27,26 @@ export function useSkillCatalog() {
   });
 }
 
+/** Full manifest of an installed skill — prefills the CRUD edit form. */
+export function useSkill(id: string | undefined) {
+  return useQuery<TurSkillManifest>({
+    queryKey: id ? queryKeys.skills.detail(id) : ["skills", "detail", "pending"],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateSkills(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.skills.all() });
+}
+
+/** Create or update a user-authored skill from a manifest (upserts by name+version). */
+export function useInstallSkill() {
+  const queryClient = useQueryClient();
+  return useMutation<TurSkillInstallResponse, Error, TurSkillManifest>({
+    mutationFn: (manifest) => service.install(manifest),
+    onSuccess: () => invalidateSkills(queryClient),
+  });
 }
 
 /** Install a bundled skill by manifest name. */

@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { TurSkill, TurSkillManifest } from "@/models/skill/skill.model";
+import type { SkillGroup } from "./skill.utils";
 import {
     IconCircleCheck,
     IconFileText,
@@ -32,26 +33,6 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-/**
- * One marketplace row keyed by skill `name`, merging the bundled catalog entry
- * (the installable version) with any installed versions of the same name.
- *
- * @since 2026.3.1
- */
-export interface SkillGroup {
-    name: string;
-    author: string | null;
-    description: string | null;
-    /** Bundled manifest, when this name exists in the platform catalog. */
-    catalog: TurSkillManifest | null;
-    /** Installed rows for this name, newest version first. */
-    installed: TurSkill[];
-    /** Distinct tool names contributed by the skill (from catalog or installed). */
-    tools: string[];
-    /** True when every installed row is a delete-protected platform skill. */
-    builtIn: boolean;
-}
 
 interface SkillDetailDialogProps {
     group: SkillGroup | null;
