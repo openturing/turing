@@ -75,10 +75,7 @@ export class TurSkillService {
   }
 
   async writeFile(id: string, path: string, content: string): Promise<void> {
-    await axios.put(`/skill/${id}/file`, content, {
-      params: { path },
-      headers: { "Content-Type": "text/plain" },
-    });
+    await axios.put(`/skill/${id}/file`, { content }, { params: { path } });
   }
 
   async createFolder(id: string, path: string): Promise<void> {

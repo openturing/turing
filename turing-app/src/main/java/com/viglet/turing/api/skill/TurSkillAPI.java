@@ -116,6 +116,10 @@ public class TurSkillAPI {
     public record TurSkillFileContent(String path, String content) {
     }
 
+    /** Write payload — the file's new UTF-8 text contents (path is a query param). */
+    public record TurSkillFileWrite(String content) {
+    }
+
     @Operation(summary = "Create a new, empty skill folder with a starter SKILL.md")
     @PostMapping
     public ResponseEntity<TurSkillSummary> create(@RequestParam("name") String name) {
@@ -138,10 +142,10 @@ public class TurSkillAPI {
     }
 
     @Operation(summary = "Create or overwrite a file inside the skill folder")
-    @PutMapping(value = "/{id}/file", consumes = MediaType.TEXT_PLAIN_VALUE)
+    @PutMapping("/{id}/file")
     public ResponseEntity<Void> writeFile(@PathVariable String id, @RequestParam("path") String path,
-            @RequestBody(required = false) String content) {
-        fileService.writeFile(id, path, content == null ? "" : content);
+            @RequestBody(required = false) TurSkillFileWrite body) {
+        fileService.writeFile(id, path, body == null || body.content() == null ? "" : body.content());
         return ResponseEntity.ok().build();
     }
 
