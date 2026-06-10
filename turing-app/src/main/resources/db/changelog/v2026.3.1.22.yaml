@@ -1,0 +1,19 @@
+databaseChangeLog:
+  # T326 / §IX.4.d — roll back the shipped T116/T117/T118 skill entity. The
+  # decomposed `skill` table (created in v2026.3.1.21) is dropped: the folder
+  # model (T317+) treats a skill as a storage folder + thin catalog index, not
+  # a structured DB row, so the old table is removed for a clean slate.
+  #
+  # Idempotent: gated by `tableExists` so re-running on a database that never
+  # had the table (fresh install where create + drop both run) is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.22-drop-skill-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: skill
+      changes:
+        - dropTable:
+            tableName: skill

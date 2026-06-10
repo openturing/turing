@@ -60,15 +60,29 @@
 ## E.2 — Agent Workspace (the key differentiator)
 
 
-## E.3 — Skills as first-class (differentiator)
+## E.3 — Skills (Anthropic-standard, portable) (differentiator)
 
-- 📋 **T310** (deps: T116) **Attach skills to an agent** (`TurAIAgent.skills` M:N) — attach/detach in agent settings; travels on agent export/import. The gate for all skill→agent runtime wiring; opt-in, default empty. → §IX.4.d
-- 📋 **T311** (deps: T310) **Skill persona-fragment injection** — `TurChatPromptAssembler` grafts each attached+enabled skill's `personaFragment.instruction` into the system prompt (additive to the active persona). Tone vocabulary stays the Persona's job (`TurPersona` mandatory/forbidden terms), not the skill's. → §IX.4.d
-- 📋 **T312** (deps: T310) **Skill tool registration** — resolve a skill's declared `tools` (by name → `TurCustomTool`/native) and register them for the agent's chat via `TurToolCallbackPipeline`; tools a skill names but the instance lacks are surfaced (lint), not fatal. → §IX.4.d
-- 📋 **T313** (deps: T310, T111) **Skill workspaceDefaults seeding** — on conversation start, seed the skill's `workspaceDefaults` files into the conversation workspace (`TurAgentWorkspace`) with `{{var}}` templating; idempotent (never clobber an edited file). → §IX.4.d
-- 📋 **T314** (deps: T310) **Skill dependency resolution** — on attach/install, resolve a skill's `dependencies` transitively (auto-attach required skills); surface missing/version-conflicting deps in the lint UI. → §IX.4.d
-- 📋 **T315** (deps: T116) **Read-only skill view in the `/skill` CRUD** — open a skill's full manifest (persona fragment, tools, workspace files, dependencies, signature) in a read-only detail; built-in/platform skills are view-only (no edit/delete). → §IX.4.d
-- 💭 **T118** (deps: T116) **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. *v1 in-app registry — Skills as a `/admin/marketplace` kind + editable `/skill` CRUD — shipped (see CHANGELOG); only the hosted/public step remains here.* → §IX.4.c
+> **Direction (locked 2026-06-10).** A Skill is an **Anthropic-compatible folder**
+> (`SKILL.md` + `references/` + `scripts/` + `assets/`), stored in object storage,
+> edited like a mini-VS-Code, and **executed in a Docker sandbox compatible with
+> Anthropic's skill container** — Turing does **not** port skills into its own
+> entities. Goal: the *same* skill runs in **chat** and **semantic navigation**, and
+> is ZIP import/export-able (one ZIP may carry many skills, each independently
+> activatable). **Docker is a hard requirement** for the feature. This **supersedes**
+> the shipped T116 decomposed-manifest model (→ T317) and **retires** the old
+> T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
+> Rationale → §IX.4.d.
+
+- 📋 **T317** (deps: storage) **Skill = folder-in-storage + thin index** — a skill is a storage folder (`SKILL.md` at root); the DB row is a thin catalog index (name, description, version, author, path, enabled) parsed from the `SKILL.md` frontmatter. Gated on storage. (T326 rollback shipped — clean slate.) → §IX.4.d
+- 📋 **T318** (deps: T317) **Skill folder editor (mini-VS-Code)** — evolve `/admin/assets` (or a `/skill` editor) into a file-tree + Monaco editor over the skill folder via `TurStorageService` (create/rename/delete/edit `SKILL.md`, scripts, references, assets); built-in folders read-only. → §IX.4.d
+- 📋 **T319** (deps: T317) **Import skill ZIP (one or many)** — unpack each top-level folder containing a `SKILL.md` into storage and index it; a single ZIP may carry multiple skills (the entry door). → §IX.4.d
+- 📋 **T320** (deps: T317) **Export skill → Anthropic-compatible ZIP** — serialize a stored skill folder back to a `.zip` usable in Claude (the exit door). → §IX.4.d
+- 📋 **T321** (deps: T80, T81) **Anthropic-compatible Docker session** — evolve the Code Interpreter from snippet-execution to an interactive container session with the skill folder mounted + a persistent filesystem + a `bash`/code-execution tool the model drives across turns; configurable image matching Anthropic's container (python+node+bash). Docker mode + hardening mandatory. → §IX.4.d
+- 📋 **T322** (deps: T317, T321) **Skill activation harness (progressive disclosure)** — inject each skill's `name`+`description`; load the `SKILL.md` body when relevant; expose the mounted-folder code-execution tool. The piece that makes a skill actually *run*. → §IX.4.d
+- 📋 **T323** (deps: T322) **Use skill in chat** — wire the harness into the chat path; available skills activate by description and/or explicit pick. → §IX.4.d
+- 📋 **T324** (deps: T322) **Use skill in semantic navigation** — wire the same harness into the SN AI path; expose Turing search to the skill as a tool inside the sandbox. → §IX.4.d
+- 📋 **T325** (deps: T319, T322) **Multi-skill ZIP as independent units** — each skill in a ZIP is independently activatable and optionally selectable in chat as a distinct mode/"flow". → §IX.4.d
+- 💭 **T118** (deps: T320) **Public skill registry** (`skills.turing.io`) — hosted, community/vendor-curated catalog of skill ZIPs; layers on import/export. Deferred. → §IX.4.c
 
 ## E.4 — Human-in-the-loop (parity, made graph-visible)
 

@@ -142,12 +142,6 @@ export const queryKeys = {
     all: () => ['marketplace-items'] as const,
     list: () => [...queryKeys.marketplaceItems.all(), 'list'] as const,
   },
-  skills: {
-    all: () => ['skills'] as const,
-    list: () => [...queryKeys.skills.all(), 'list'] as const,
-    detail: (id: string) => [...queryKeys.skills.all(), 'detail', id] as const,
-    catalog: () => [...queryKeys.skills.all(), 'catalog'] as const,
-  },
   authDiscovery: {
     all: () => ['auth-discovery'] as const,
     current: () => [...queryKeys.authDiscovery.all(), 'current'] as const,

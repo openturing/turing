@@ -1186,60 +1186,89 @@ moderation surface is built. The hosted public registry (community
 publishing, vendor-curated tiers) remains the T118 endgame — it layers
 on top of the same `TurSkillManifest` contract.
 
-#### IX.4.d Skill ↔ agent runtime integration (T310–T314)
+#### IX.4.d The pivot — Skill = Anthropic-standard folder, run in Docker (T317–T325)
 
-T116–T118 deliver skills as *data*: a versioned, signed bundle that can
-be discovered, installed and edited. What's still missing is the runtime
-wiring that makes a skill actually *change how an agent behaves*. That
-splits into one foundation task plus four consumers, each touching an
-already-built seam so a skill is consumed the same way its hand-authored
-equivalent already is.
+> **Direction locked 2026-06-10.** After working the model end to end we
+> reframed what a Skill *is*. The earlier design (T310–T315: attach a
+> decomposed `TurSkill` to an agent, inject `personaFragment`, register
+> `tools`, seed `workspaceDefaults`, persona-by-FK) is **superseded** and
+> those task numbers are retired. The shipped T116 decomposed-manifest
+> model (JSON columns for persona/tools/workspace/deps) is likewise
+> **superseded by T317** — kept in CHANGELOG as history.
 
-- **T310 — attach skills to an agent.** A `TurAIAgent.skills` M:N
-  (mirrors the existing `personas` / `customTools` join tables) plus an
-  attach/detach control in agent settings, carried on agent
-  export/import. This is the gate: nothing else can run until an agent
-  *has* skills. Opt-in per agent, default empty, so existing agents are
-  byte-for-byte unchanged.
-- **T311 — persona-fragment injection.** `TurChatPromptAssembler` grafts
-  each attached + enabled skill's `personaFragment.instruction` onto the
-  system prompt (same insertion path the persona prompt already uses).
-  Several skills compose by concatenation in a deterministic order. Tone
-  vocabulary (mandatory/forbidden terms) is deliberately **not** carried
-  by the skill — it would duplicate what `TurPersona` already owns and
-  `TurPersonaToneValidator` already enforces, so vocab stays a
-  persona-only concern.
-- **T312 — tool registration.** A skill's declared `tools` are resolved
-  by name (to a `TurCustomTool` or a native tool) and registered for the
-  agent's chat through `TurToolCallbackPipeline`, exactly like tools
-  attached directly to the agent. A tool a skill names but the instance
-  doesn't have is surfaced (lint warning) rather than failing the turn —
-  this is also what links the platform skills to their
-  `scaffold.*` helpers once those ship (§VII.4).
-- **T313 — workspaceDefaults seeding.** On conversation start, the
-  skill's `workspaceDefaults` files are written into the conversation
-  workspace (`TurAgentWorkspace`, T111) with `{{var}}` templating from
-  the flow/slot context. Idempotent: an already-present (e.g. user-edited)
-  file is never clobbered.
-- **T314 — dependency resolution.** A skill's `dependencies` (other
-  skills) are resolved transitively when it is attached/installed —
-  auto-attaching what's required and surfacing missing or
-  version-conflicting deps in the existing lint UI, so a skill that
-  builds on `http@^1.0.0` doesn't silently half-work.
-- **T315 — read-only view in the CRUD.** The `/skill` CRUD currently
-  leaves built-in (platform) skills as dead cards — locked, with no way
-  to inspect what they actually contribute. T315 adds a read-only detail
-  (reusing `SkillDetailDialog`) so any skill's full manifest — persona
-  fragment, tools, workspace files, dependencies, signature — is
-  inspectable from the CRUD without an edit/delete affordance. Built-in
-  skills become view-only (a "View" action); user skills keep view
-  alongside edit/delete. Lets an operator audit *what a skill does*
-  before attaching it (T310) without leaving the management page.
+**The new definition.** A Skill is an **Anthropic-compatible folder** —
+`SKILL.md` at the root plus `references/`, `scripts/`, `assets/` — stored
+in object storage, edited like a mini-VS-Code, and **executed in a Docker
+sandbox compatible with Anthropic's skill container**. Turing does **not**
+port the skill into its own entities; it treats the folder as the truth
+and runs it to the standard. Reference bundle (a deliberately complex
+example) lives at `turing-marketplace/anthropic-skills/brand-content-studio/`.
 
-The whole block is deliberately additive: each task reuses an existing
-extension point (`TurChatPromptAssembler`, `TurToolCallbackPipeline`,
-`TurAgentWorkspace`, the tone validator), so an agent with no skills
-attached behaves identically to today.
+**Why this shape wins.** It resolves every tension we hit:
+- *No porting.* Scripts run as-is in Docker; no "script → Custom Tool"
+  translation, no persona-FK, no decomposed manifest.
+- *Compatibility is the moat.* The same folder runs in Claude and in
+  Turing → Turing becomes an **entry/exit door** for capabilities
+  (import any Anthropic skill ZIP; export Turing folders as Anthropic
+  skills). Differentiation = following the market standard, not inventing.
+- *Files-as-truth* reuses `TurStorageService` (a skill is just objects in
+  storage) and Turing's existing ZIP export/import muscle.
+
+**Hard requirement.** The feature is gated on **Docker** being configured
+(Code Interpreter `DOCKER` mode, T80) — analogous to how `storageEnabled`
+gates `/admin/assets`. NATIVE-only deployments don't get skills.
+
+**The goal state.** The *same* skill runs in **chat** and in **semantic
+navigation**, and a single imported **ZIP may carry many skills**, each an
+independently-activatable unit.
+
+**Tasks (dependency-ordered, each executable on its own):**
+
+- **T317 — Skill = folder-in-storage + thin index.** A skill is a storage
+  folder (`SKILL.md` at root), and the DB row is a catalog index (name,
+  description, version, author, path, enabled) parsed from the `SKILL.md`
+  YAML frontmatter. Gated on storage. The foundation the rest builds on.
+- **T318 — Skill folder editor (mini-VS-Code).** Evolve `/admin/assets`
+  (or a dedicated `/skill` editor) into a file-tree + Monaco editor over
+  the skill folder via `TurStorageService`: create/rename/delete/edit
+  `SKILL.md`, scripts, references, assets. Built-in/platform folders are
+  shown read-only (subsumes the old T315 "read-only view").
+- **T319 — Import skill ZIP (one or many).** Unpack each top-level folder
+  containing a `SKILL.md` into storage and index it; a single ZIP may
+  carry multiple skills (the entry door).
+- **T320 — Export skill → Anthropic-compatible ZIP.** Serialize a stored
+  skill folder back to a `.zip` usable in Claude (the exit door). Pair of
+  T319; together they are the interop boundary.
+- **T321 — Anthropic-compatible Docker session.** The real engine work:
+  evolve the Code Interpreter from *snippet execution* ("run this Python
+  string, return output") to an **interactive container session** with the
+  skill folder mounted and a persistent filesystem across turns, driven by
+  a `bash`/code-execution tool. Configurable image matching Anthropic's
+  container (python + node + bash). Hardening (T81) + Docker mode are
+  mandatory here.
+- **T322 — Skill activation harness (progressive disclosure).** Inject
+  each available skill's `name` + `description` cheaply; when the model
+  judges a skill relevant, load its `SKILL.md` body; expose the
+  mounted-folder code-execution tool so it can read `references/`, run
+  `scripts/`, and write drafts. This is what makes a skill *run* — the
+  piece it's easy to underestimate.
+- **T323 — Use skill in chat.** Wire the harness into the chat path: a
+  session's available skills activate by description (and/or an explicit
+  user pick).
+- **T324 — Use skill in semantic navigation.** Wire the same harness into
+  the SN AI path, and expose Turing search to the skill as a tool inside
+  the sandbox (the first place a skill leverages Turing's own data — the
+  v2 "integrate, via standard tools" step).
+- **T325 — Multi-skill ZIP as independent units.** Each skill in an
+  imported ZIP is independently activatable (progressive disclosure) and
+  optionally selectable in chat as a distinct mode/"flow".
+
+**Sequencing.** T326 (rollback) shipped — clean slate. Then T317 (the
+storage/index shape everything depends on). T318/T319/T320 are the
+authoring + interop layer and can proceed in parallel once T317 lands.
+T321 is the engine and can be built in parallel with the authoring layer.
+T322 needs T317 + T321; T323/T324/T325 need T322. The public hosted
+registry (T118) layers on T320 and stays a deferred idea.
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 

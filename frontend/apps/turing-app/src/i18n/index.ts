@@ -34,7 +34,6 @@ import enMcp from "./locales/en/mcp.json";
 import enNav from "./locales/en/nav.json";
 import enPersona from "./locales/en/persona.json";
 import enRoutine from "./locales/en/routine.json";
-import enSkill from "./locales/en/skill.json";
 import enWebhook from "./locales/en/webhook.json";
 import enPage from "./locales/en/page.json";
 import enSe from "./locales/en/se.json";
@@ -78,7 +77,6 @@ import ptMcp from "./locales/pt/mcp.json";
 import ptNav from "./locales/pt/nav.json";
 import ptPersona from "./locales/pt/persona.json";
 import ptRoutine from "./locales/pt/routine.json";
-import ptSkill from "./locales/pt/skill.json";
 import ptWebhook from "./locales/pt/webhook.json";
 import ptPage from "./locales/pt/page.json";
 import ptSe from "./locales/pt/se.json";
@@ -99,7 +97,6 @@ const en = {
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
-  ...enSkill,
 };
 
 const pt = {
@@ -110,7 +107,6 @@ const pt = {
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
-  ...ptSkill,
 };
 
 /**

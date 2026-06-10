@@ -1,11 +1,5 @@
 import { useMarketplaceItems } from "@/api/queries/marketplace.queries";
 import { useChatFlowRecipes } from "@/api/queries/chat-flow-recipe.queries";
-import {
-    useInstallSkillFromCatalog,
-    useSkillCatalog,
-    useSkills,
-    useUninstallSkill,
-} from "@/api/queries/skill.queries";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Button } from "@/components/ui/button";
@@ -21,9 +15,6 @@ import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import type { TurMarketplaceItem } from "@/models/marketplace/marketplace-item.model";
 import type { TurChatFlowRecipeSummary } from "@/models/agent/chat-flow-recipe.model";
-import type { TurSkill } from "@/models/skill/skill.model";
-import { buildSkillGroups, type SkillGroup } from "../skill/skill.utils";
-import { SkillDetailDialog } from "../skill/skill-detail-dialog";
 import type { TurImportResult, TurSiteConflict } from "@/models/marketplace/import-result.model";
 import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import { ImportOptionsPanel } from "@/components/ui/import-options-panel";
@@ -41,9 +32,7 @@ import {
     IconDatabase,
     IconLoader2,
     IconPackageImport,
-    IconPackages,
     IconSparkles,
-    IconTool,
     IconX,
 } from "@tabler/icons-react";
 import { useCallback, useMemo, useState } from "react";
@@ -68,7 +57,7 @@ type ImportStatus = "idle" | "importing" | "indexing" | "success" | "error";
  * marketplace categories (e.g. Skills) would extend this union without
  * having to restructure the page.
  */
-type MarketplaceKind = "site" | "flow-recipe" | "skill";
+type MarketplaceKind = "site" | "flow-recipe";
 
 const ALL_VERTICALS = "all";
 const ALL_KINDS = "all";
@@ -93,13 +82,6 @@ export default function MarketplaceListPage() {
     const { t } = useTranslation();
     const { data: items, isError } = useMarketplaceItems();
     const { data: recipes, isError: recipesError } = useChatFlowRecipes();
-    // T118 — skills become a marketplace kind: browse the bundled catalog +
-    // installed state, install in one click. Additive like recipes, so a
-    // catalog load failure must not break the site storefront.
-    const { data: skillCatalog } = useSkillCatalog();
-    const { data: installedSkills } = useSkills();
-    const installSkillMutation = useInstallSkillFromCatalog();
-    const uninstallSkillMutation = useUninstallSkill();
     // Don't surface recipe loading errors on the main error panel: the
     // site marketplace is the long-standing feature, recipes are additive.
     const error = isError ? t("common.connectionError", { resource: "marketplace" }) : null;
@@ -110,9 +92,6 @@ export default function MarketplaceListPage() {
 
     /* ─── Recipe install dialog ─── */
     const [selectedRecipe, setSelectedRecipe] = useState<TurChatFlowRecipeSummary | null>(null);
-
-    /* ─── T118 skill detail dialog ─── */
-    const [selectedSkill, setSelectedSkill] = useState<SkillGroup | null>(null);
 
     const [selectedItem, setSelectedItem] = useState<TurMarketplaceItem | null>(null);
     const [includeContent, setIncludeContent] = useState(true);
@@ -229,7 +208,7 @@ export default function MarketplaceListPage() {
     // shipping a new vertical only needs a JSON drop — no UI edit.
     const visibleSites = useMemo(() => {
         if (!items) return [];
-        if (kindFilter === "flow-recipe" || kindFilter === "skill") return [];
+        if (kindFilter === "flow-recipe") return [];
         if (verticalFilter !== ALL_VERTICALS) {
             // Sites don't carry a structured `vertical` field — match by
             // tag overlap so "education" tagged sites surface under the
@@ -243,53 +222,12 @@ export default function MarketplaceListPage() {
 
     const visibleRecipes = useMemo(() => {
         if (!recipes) return [];
-        if (kindFilter === "site" || kindFilter === "skill") return [];
+        if (kindFilter === "site") return [];
         if (verticalFilter !== ALL_VERTICALS) {
             return recipes.filter((recipe) => recipe.vertical === verticalFilter);
         }
         return recipes;
     }, [recipes, kindFilter, verticalFilter]);
-
-    // T118 — merge catalog + installed into one row per skill name. Skills
-    // carry no vertical, so a vertical filter hides them (same as the kind
-    // filter narrowing). Shown only under "All" or the "Skills" kind.
-    const skillGroups = useMemo(
-        () => buildSkillGroups(skillCatalog ?? [], installedSkills ?? []),
-        [skillCatalog, installedSkills],
-    );
-    const visibleSkills = useMemo(() => {
-        if (kindFilter === "site" || kindFilter === "flow-recipe") return [];
-        if (verticalFilter !== ALL_VERTICALS) return [];
-        return skillGroups;
-    }, [skillGroups, kindFilter, verticalFilter]);
-
-    const installSkill = useCallback((name: string) => {
-        installSkillMutation.mutate(name, {
-            onSuccess: (res) => {
-                if (res.success) {
-                    toast.success(t("skill.installSuccess", { name }));
-                    setSelectedSkill(null);
-                } else {
-                    toast.error(res.error ?? t("skill.installFailed", { name }));
-                }
-            },
-            onError: () => toast.error(t("skill.installFailed", { name })),
-        });
-    }, [installSkillMutation, t]);
-
-    const uninstallSkill = useCallback((skill: TurSkill) => {
-        uninstallSkillMutation.mutate(skill.id, {
-            onSuccess: (ok) => {
-                if (ok) {
-                    toast.success(t("skill.uninstallSuccess", { name: skill.name }));
-                    setSelectedSkill(null);
-                } else {
-                    toast.error(t("skill.cannotUninstallBuiltIn"));
-                }
-            },
-            onError: () => toast.error(t("skill.cannotUninstallBuiltIn")),
-        });
-    }, [uninstallSkillMutation, t]);
 
     const availableVerticals = useMemo(() => {
         const verts = new Set<string>();
@@ -304,11 +242,10 @@ export default function MarketplaceListPage() {
         { id: ALL_KINDS, label: t("marketplace.kindAll", { defaultValue: "All" }), icon: IconBox },
         { id: "site", label: t("marketplace.kindSites", { defaultValue: "Sites" }), icon: IconBrowserCheck },
         { id: "flow-recipe", label: t("marketplace.kindFlowRecipes", { defaultValue: "Flow Recipes" }), icon: IconSparkles },
-        { id: "skill", label: t("marketplace.kindSkills", { defaultValue: "Skills" }), icon: IconPackages },
     ];
 
     const showingNothing =
-        visibleSites.length === 0 && visibleRecipes.length === 0 && visibleSkills.length === 0;
+        visibleSites.length === 0 && visibleRecipes.length === 0;
 
     return (
         <div className="px-4 md:px-6 lg:px-8 py-2 space-y-4">
@@ -384,17 +321,6 @@ export default function MarketplaceListPage() {
                                 key={recipe.id}
                                 recipe={recipe}
                                 onInstall={() => setSelectedRecipe(recipe)}
-                                t={t}
-                            />
-                        ))}
-                        {visibleSkills.map((group) => (
-                            <SkillMarketplaceCard
-                                key={group.name}
-                                group={group}
-                                onInstall={() => installSkill(group.name)}
-                                onView={() => setSelectedSkill(group)}
-                                installing={installSkillMutation.isPending
-                                    && installSkillMutation.variables === group.name}
                                 t={t}
                             />
                         ))}
@@ -506,18 +432,6 @@ export default function MarketplaceListPage() {
             <RecipeInstallDialog
                 recipe={selectedRecipe}
                 onClose={() => setSelectedRecipe(null)}
-            />
-
-            {/* T118 — skill detail / install / uninstall */}
-            <SkillDetailDialog
-                group={selectedSkill}
-                onClose={() => setSelectedSkill(null)}
-                onInstall={installSkill}
-                onUninstall={uninstallSkill}
-                installing={installSkillMutation.isPending}
-                uninstallingId={uninstallSkillMutation.isPending
-                    ? uninstallSkillMutation.variables ?? null
-                    : null}
             />
 
             {/* Import dialog */}
@@ -791,96 +705,6 @@ function FlowRecipeCard({
                     <IconPackageImport className="size-4" />
                     {t("marketplace.installRecipe", { defaultValue: "Install" })}
                 </GradientButton>
-            </CardFooter>
-        </Card>
-    );
-}
-
-/**
- * T118 — skill card inside the unified marketplace storefront. Merges the
- * catalog (installable) version with installed state; a not-yet-installed
- * skill shows an Install button, an installed one shows the badge + Details.
- */
-function SkillMarketplaceCard({
-    group,
-    onInstall,
-    onView,
-    installing,
-    t,
-}: Readonly<{
-    group: SkillGroup;
-    onInstall: () => void;
-    onView: () => void;
-    installing: boolean;
-    t: (key: string, options?: Record<string, unknown>) => string;
-}>) {
-    const isInstalled = group.installed.length > 0;
-    const displayVersion = group.catalog?.version ?? group.installed[0]?.version;
-    return (
-        <Card className="group flex flex-col transition-all hover:shadow-md hover:border-indigo-500/30">
-            <CardHeader className="pb-3">
-                <div className="flex items-start gap-3">
-                    <div className="shrink-0 flex items-center justify-center size-10 rounded-lg bg-linear-to-br from-indigo-500/10 to-blue-500/10 text-indigo-600 dark:text-indigo-400">
-                        <IconPackages className="size-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                            <Badge
-                                variant="outline"
-                                className="text-[9px] uppercase tracking-wide border-indigo-500/40 text-indigo-600 dark:text-indigo-400"
-                            >
-                                {t("marketplace.kindSkillBadge", { defaultValue: "Skill" })}
-                            </Badge>
-                            {isInstalled && (
-                                <Badge variant="secondary" className="text-[9px] uppercase tracking-wide">
-                                    {t("skill.installed")}
-                                </Badge>
-                            )}
-                        </div>
-                        <CardTitle className="text-base leading-tight">{group.name}</CardTitle>
-                        <CardDescription className="text-xs mt-0.5">
-                            {t("skill.byAuthor", { author: group.author ?? t("skill.unknownAuthor") })}
-                            {displayVersion ? <> {" "}&middot;{" "}v{displayVersion}</> : null}
-                        </CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-
-            <CardContent className="flex-1 pb-3">
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                    {group.description}
-                </p>
-                {group.tools.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                        {group.tools.slice(0, 4).map((tool) => (
-                            <Badge key={tool} variant="secondary" className="text-[10px] gap-1 font-mono">
-                                <IconTool className="size-3" />
-                                {tool}
-                            </Badge>
-                        ))}
-                        {group.tools.length > 4 && (
-                            <Badge variant="outline" className="text-[10px]">
-                                +{group.tools.length - 4}
-                            </Badge>
-                        )}
-                    </div>
-                )}
-            </CardContent>
-
-            <CardFooter className="pt-0 flex gap-2">
-                {!isInstalled && group.catalog ? (
-                    <GradientButton className="flex-1" size="sm" onClick={onInstall} disabled={installing}>
-                        {installing ? (
-                            <IconLoader2 className="size-4 animate-spin" />
-                        ) : (
-                            <IconPackageImport className="size-4" />
-                        )}
-                        {t("skill.install")}
-                    </GradientButton>
-                ) : null}
-                <Button variant="outline" size="sm" className={isInstalled ? "flex-1" : ""} onClick={onView}>
-                    {t("skill.details")}
-                </Button>
             </CardFooter>
         </Card>
     );
