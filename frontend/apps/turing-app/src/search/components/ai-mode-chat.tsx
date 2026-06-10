@@ -1,5 +1,5 @@
 import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar";
-import { useTuringChat } from "@viglet/turing-react-sdk";
+import { TuringMarkdown, useTuringChat } from "@viglet/turing-react-sdk";
 import {
   IconArrowUp,
   IconCpu2,
@@ -8,7 +8,6 @@ import {
   IconSparkles,
   IconUser,
 } from "@tabler/icons-react";
-import { TuringMarkdown } from "@viglet/turing-react-ui";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import rehypeHighlight from "rehype-highlight";

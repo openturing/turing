@@ -501,9 +501,18 @@ importers:
 
   packages/react-sdk:
     dependencies:
+      '@terrastruct/d2':
+        specifier: ^0.1.0
+        version: 0.1.33
+      '@viglet/turing-react-ui':
+        specifier: workspace:*
+        version: link:../react-ui
       '@viglet/turing-sdk':
         specifier: workspace:*
         version: link:../sdk
+      react-markdown:
+        specifier: ^9.0.0 || ^10.0.0
+        version: 10.1.0(@types/react@19.2.17)(react@19.2.7)
     devDependencies:
       '@storybook/addon-docs':
         specifier: ^10.4.2

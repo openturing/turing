@@ -178,6 +178,55 @@ export { TuringPagination } from "./ui/TuringPagination";
 export { TuringWorkspacePanel } from "./ui/TuringWorkspacePanel";
 export type { TuringWorkspacePanelProps } from "./ui/TuringWorkspacePanel";
 
+// ── Headless UI (re-exported from @viglet/turing-react-ui) ──
+// Single import surface for the admin console: it can pull the design-agnostic
+// chat / rich-content components from this SDK alongside the API hooks above.
+// react-ui itself stays axios-free so viglet.com keeps consuming it directly
+// (core SDK + react-ui + its own Next transport) without ever seeing axios.
+// react-markdown / @terrastruct/d2 are optional peers here, mirroring react-ui:
+// the components that need them lazy-load them, so re-exporting adds no hard dep.
+export {
+  TuringHtmlSandbox,
+  TuringRichContent,
+  splitRichContent,
+  TuringMarkdown,
+  resolveSandboxUrl,
+  TuringD2Diagram,
+  TuringCopyButton,
+  TuringThinkingDots,
+  TuringCodeBlock,
+  TuringChatMessage,
+} from "@viglet/turing-react-ui";
+export type {
+  TuringHtmlSandboxProps,
+  TuringHtmlSandboxClassNames,
+  TuringHtmlSandboxLabels,
+  TuringHtmlSandboxIcons,
+  TuringRichContentProps,
+  TuringRichContentClassNames,
+  TuringRichSegment,
+  TuringMarkdownSegmentProps,
+  TuringD2Props,
+  TuringHtmlSegmentProps,
+  TuringMarkdownProps,
+  TuringD2DiagramProps,
+  TuringD2DiagramClassNames,
+  TuringD2DiagramLabels,
+  TuringD2Renderer,
+  TuringCopyButtonProps,
+  TuringCopyButtonClassNames,
+  TuringCopyButtonLabels,
+  TuringCopyButtonIcons,
+  TuringThinkingDotsProps,
+  TuringThinkingDotsClassNames,
+  TuringCodeBlockProps,
+  TuringCodeBlockClassNames,
+  TuringCodeBlockLabels,
+  TuringChatMessageProps,
+  TuringChatMessageRole,
+  TuringChatMessageClassNames,
+} from "@viglet/turing-react-ui";
+
 // ── Types ──
 export type {
   TuringConfig,

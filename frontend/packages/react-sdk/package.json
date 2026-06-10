@@ -28,11 +28,22 @@
   "author": "Viglet",
   "license": "Apache-2.0",
   "dependencies": {
-    "@viglet/turing-sdk": "workspace:*"
+    "@viglet/turing-sdk": "workspace:*",
+    "@viglet/turing-react-ui": "workspace:*"
   },
   "peerDependencies": {
     "axios": "^1.0.0",
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-markdown": "^9.0.0 || ^10.0.0",
+    "@terrastruct/d2": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react-markdown": {
+      "optional": true
+    },
+    "@terrastruct/d2": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@storybook/addon-links": "^10.4.2",

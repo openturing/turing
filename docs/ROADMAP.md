@@ -57,12 +57,24 @@
 > pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
 > the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
 
-- 💭 **T300** (deps: —) **react-sdk re-exports react-ui** — single import surface for the admin (`@viglet/turing-react-sdk` re-exports the UI components) while react-ui stays axios-free for viglet.com. → §XII.2
 - 📋 **T301** (deps: —) **react-ui vitest (jsdom)** — render tests for the headless contract: iframe `sandbox`/`srcDoc` attrs, fullscreen open/Esc, `classNames`/`labels`/`icons` passthrough, SSR `document` guard. → §XII.2
 - 💭 **T302** (deps: —) **react-ui Storybook** — stories skinning each headless component **two ways** (shadcn vs viglet brand) as the living design contract + a11y/controls docs. → §XII.2
 - 💭 **T303** (deps: —) **Packaging hardening** — `exports` subpath map, ESM/types correctness, `sideEffects`/tree-shaking verification + bundle-size budget in CI, semver/changesets, publish to npm for external embedders. → §XII.2
 - 💭 **T304** (deps: —) **a11y + SSR pass** — focus trap/restore for the fullscreen portal, ARIA roles/labels, and a `typeof document`/RSC-safety audit across all react-ui components (Next App Router). → §XII.2
 - 💭 **T305** (deps: —) **Optional token theming** — expose CSS custom properties (`--turing-ui-*`) as an alternative to `classNames`, so apps can theme via design tokens without per-slot class maps. → §XII.2
+
+### D.12.a — Migrate the search-UI primitives `react-sdk → react-ui` (progressive)
+
+> The 5 components in `react-sdk/src/ui/` predate react-ui; the **design-less**
+> ones belong in react-ui (so viglet.com can use them axios-free), while the
+> **hook-coupled** ones split into a headless view (react-ui) + a thin
+> data-wiring wrapper (react-sdk). Each task keeps the react-sdk export working
+> via the T300 re-export surface, so consumers don't change. Order by
+> design-weight: clean moves first, splits after. → §XII.2.a
+
+- 💭 **T306** (deps: T300) **Move design-less search primitives to react-ui** — `TuringSearchBar` (pure `onSearch` + render props), `TuringResultList` and `TuringPagination` (render-prop lists). No API/hook coupling; define **local structural prop types** in react-ui (item/document/pagination shapes) instead of importing `@viglet/turing-sdk` core types (zero-dep constraint). react-sdk keeps exporting them via the T300 re-export — zero consumer churn. → §XII.2.a
+- 💭 **T307** (deps: T306) **Split `TuringSearchField` (headless view ⇄ hook wiring)** — extract a headless compound (`Input`/`Button`/`Dropdown`, context-driven) to react-ui and **strip its baked Tailwind defaults** (the `w-full px-4 py-2.5 hover:bg-gray-100…` markup violates the headless contract); keep the orchestrating Root (`useTuringAutoComplete` + `useTuringSearchHistory` + `useTuringUrlSearch`, history-save effect) in react-sdk feeding the view its `classNames`/render props. → §XII.2.a
+- 💭 **T308** (deps: T306) **Split `TuringWorkspacePanel` (view ⇄ SSE wiring)** — extract headless `TuringWorkspacePanelView` (artifacts + status props, render-prop row, `formatBytes`) to react-ui; keep `TuringWorkspacePanel` in react-sdk as a thin wrapper that subscribes via `useTuringWorkspace` and forwards artifacts. Lets viglet.com render the workspace list with its own Next transport. → §XII.2.a
 
 ## E.2 — Agent Workspace (the key differentiator)
 

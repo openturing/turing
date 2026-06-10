@@ -1,5 +1,5 @@
 import { IconCode, IconEye, IconMaximize, IconX } from "@tabler/icons-react"
-import { TuringHtmlSandbox } from "@viglet/turing-react-ui"
+import { TuringHtmlSandbox } from "@viglet/turing-react-sdk"
 
 interface SandboxPlayerProps {
   /** The ```html fragment to preview. Matches the headless `{ code }` segment

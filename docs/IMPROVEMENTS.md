@@ -1878,7 +1878,7 @@ dependency:
 |---|---|---|---|
 | `@viglet/turing-sdk` | core logic — client, controllers, **pure helpers** (`splitRichContent`, `resolveSandboxUrl`, `absolutizeArtifactUrls`) | zero runtime deps | viglet.com, admin (via react-sdk), EDS |
 | **`@viglet/turing-react-ui`** | **headless React components** | peer `react`/`react-dom` only — **no axios, no API** | viglet.com, admin |
-| `@viglet/turing-react-sdk` | API hooks + observable stores | axios + the SDK core | admin (and may re-export react-ui) |
+| `@viglet/turing-react-sdk` | API hooks + observable stores | axios + the SDK core | admin (re-exports react-ui as a single import surface, T300) |
 
 Pure, framework-agnostic logic belongs in the **core SDK** (tested there,
 reused by every surface). React rendering belongs in **react-ui**. API/transport
@@ -1920,6 +1920,45 @@ it early produces an abstraction that fights both designs. DX backstops:
 Storybook as the living "two-skin" design contract, jsdom render tests for the
 headless contract, and packaging hardening (`exports` subpaths, a11y, SSR,
 bundle-size budget) before a public release.
+
+### XII.2.a Migrating the legacy search-UI primitives (`react-sdk → react-ui`)
+
+The 5 components in `react-sdk/src/ui/` (`TuringSearchBar`, `TuringResultList`,
+`TuringPagination`, `TuringSearchField`, `TuringWorkspacePanel`) predate
+react-ui — they were the SDK's first stab at "headless-ish" rendering. They're
+the same kind of design-agnostic React that react-ui now owns, but they live in
+the **axios-carrying** package, so viglet.com can't reuse them without pulling
+the API layer. The fix is to relocate them, but **not uniformly** — the
+deciding axis is whether a component *fetches* or merely *renders*:
+
+- **Pure renderers move whole** (T306). `TuringSearchBar`, `TuringResultList`,
+  `TuringPagination` take data + callbacks via props/render-props and touch no
+  hook. They belong in react-ui as-is. The only snag is their type imports
+  (`ResolvedDocument`/`TurDocument`/`TurPaginationItem` from the core SDK):
+  react-ui must stay zero-runtime-dep (it can't take `@viglet/turing-sdk` as a
+  `workspace:*` dep — that breaks viglet.com's `file:` install, see the html/d2
+  splitter precedent), so the move **redeclares minimal structural prop types**
+  locally rather than importing them. react-sdk keeps re-exporting the moved
+  symbols through the T300 surface, so no consumer import changes.
+
+- **Fetchers split** (T307, T308) into a headless *view* (react-ui) and a thin
+  *wiring wrapper* (react-sdk) — the same shape as `TuringWorkspacePanel`'s own
+  `DefaultArtifactRow`, just hoisted one package up. `TuringSearchField` is the
+  harder one: its `Root` orchestrates three hooks (`useTuringAutoComplete`,
+  `useTuringSearchHistory`, `useTuringUrlSearch`) and a results→history effect,
+  while its `Input`/`Button`/`Dropdown` are pure presentation **except** their
+  default markup bakes Tailwind classes (`w-full px-4 py-2.5 hover:bg-gray-100
+  dark:hover:bg-gray-800 …`) — a direct violation of the headless contract
+  (react-ui ships no colors/spacing of its own). The split therefore both
+  relocates the presentation *and* strips the baked classes, pushing them back
+  to the host via `classNames`/render-props. `TuringWorkspacePanel` is the
+  gentler split: lift the structural `aside/ul/li` + `formatBytes` into a
+  `TuringWorkspacePanelView` (props: `artifacts`, `status`), and leave a
+  one-line wrapper in react-sdk that calls `useTuringWorkspace` and forwards.
+
+Net effect: viglet.com gets the search/result/pagination/workspace primitives
+without axios, the admin's imports stay put (T300 re-export), and the headless
+contract is enforced uniformly across the package.
 
 ## XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform
 
