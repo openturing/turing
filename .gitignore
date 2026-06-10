@@ -98,3 +98,4 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /turing-app/src/test/resources/h2-snapshot
 /frontend/packages/sdk/.turbo
 /frontend/packages/react-ui/dist
+/frontend/packages/react-ui/.turbo

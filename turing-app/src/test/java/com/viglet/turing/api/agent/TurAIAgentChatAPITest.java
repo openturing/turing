@@ -228,6 +228,7 @@ class TurAIAgentChatAPITest {
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.nullable(String.class),
                 org.mockito.ArgumentMatchers.nullable(String.class)))
                 .thenReturn(reactor.core.publisher.Flux.empty());
 
@@ -244,6 +245,7 @@ class TurAIAgentChatAPITest {
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.nullable(String.class),
                 org.mockito.ArgumentMatchers.nullable(String.class));
         assertThat(captor.getValue().getId()).isEqualTo("llm-a");
         org.mockito.Mockito.verify(turLLMInstanceRepository, org.mockito.Mockito.never())
