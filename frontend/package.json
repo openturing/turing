@@ -24,9 +24,14 @@
     "storybook:react-sdk": "turbo run storybook --filter=@viglet/turing-react-sdk",
     "storybook:react-ui": "turbo run storybook --filter=@viglet/turing-react-ui",
     "lint": "turbo run lint",
-    "clean": "rimraf \"**/node_modules\" \"**/dist\" \"**/build\""
+    "clean": "rimraf \"**/node_modules\" \"**/dist\" \"**/build\"",
+    "size:react-ui": "pnpm --filter @viglet/turing-react-ui run build && pnpm --filter @viglet/turing-react-ui run size",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build --filter=@viglet/turing-react-ui --filter=@viglet/turing-react-sdk --filter=@viglet/turing-sdk && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.10",
     "turbo": "^2.9.16"
   },
   "pnpm": {

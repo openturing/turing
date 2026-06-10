@@ -18,7 +18,8 @@
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "size": "node ../../scripts/check-size.mjs",
+    "prepublishOnly": "npm run build && npm run size"
   },
   "publishConfig": {
     "access": "public",
@@ -50,5 +51,14 @@
   },
   "files": [
     "dist/**/*"
-  ]
+  ],
+  "sizeBudget": {
+    "extensions": [".js", ".cjs"],
+    "strict": true,
+    "total": 23000,
+    "entries": {
+      "turing-sdk.js": 12500,
+      "turing-sdk.umd.cjs": 11000
+    }
+  }
 }

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "2026.3",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "turing-app",
+    "turing-example-mythical-creatures",
+    "turing-example-space-missions",
+    "turing-example-vinyl-records"
+  ]
+}

@@ -8,14 +8,63 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": ["dist/**/*"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./TuringHtmlSandbox": {
+      "types": "./dist/TuringHtmlSandbox.d.ts",
+      "import": "./dist/TuringHtmlSandbox.js",
+      "default": "./dist/TuringHtmlSandbox.js"
+    },
+    "./TuringRichContent": {
+      "types": "./dist/TuringRichContent.d.ts",
+      "import": "./dist/TuringRichContent.js",
+      "default": "./dist/TuringRichContent.js"
+    },
+    "./TuringMarkdown": {
+      "types": "./dist/TuringMarkdown.d.ts",
+      "import": "./dist/TuringMarkdown.js",
+      "default": "./dist/TuringMarkdown.js"
+    },
+    "./TuringD2Diagram": {
+      "types": "./dist/TuringD2Diagram.d.ts",
+      "import": "./dist/TuringD2Diagram.js",
+      "default": "./dist/TuringD2Diagram.js"
+    },
+    "./TuringCopyButton": {
+      "types": "./dist/TuringCopyButton.d.ts",
+      "import": "./dist/TuringCopyButton.js",
+      "default": "./dist/TuringCopyButton.js"
+    },
+    "./TuringThinkingDots": {
+      "types": "./dist/TuringThinkingDots.d.ts",
+      "import": "./dist/TuringThinkingDots.js",
+      "default": "./dist/TuringThinkingDots.js"
+    },
+    "./TuringCodeBlock": {
+      "types": "./dist/TuringCodeBlock.d.ts",
+      "import": "./dist/TuringCodeBlock.js",
+      "default": "./dist/TuringCodeBlock.js"
+    },
+    "./TuringChatMessage": {
+      "types": "./dist/TuringChatMessage.d.ts",
+      "import": "./dist/TuringChatMessage.js",
+      "default": "./dist/TuringChatMessage.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "size": "node ../../scripts/check-size.mjs",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm run size"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -55,5 +104,29 @@
     "registry": "https://registry.npmjs.org"
   },
   "license": "Apache-2.0",
+  "author": "Viglet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openviglet/turing.git",
+    "directory": "frontend/packages/react-ui"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "sizeBudget": {
+    "strict": true,
+    "total": 14000,
+    "entries": {
+      "index.js": 800,
+      "TuringHtmlSandbox.js": 2600,
+      "TuringD2Diagram.js": 2400,
+      "TuringMarkdown.js": 2400,
+      "TuringRichContent.js": 2100,
+      "TuringCopyButton.js": 1800,
+      "TuringChatMessage.js": 1700,
+      "TuringCodeBlock.js": 1500,
+      "TuringThinkingDots.js": 1200
+    }
+  },
   "keywords": ["viglet", "turing", "react", "ui", "headless", "chat"]
 }

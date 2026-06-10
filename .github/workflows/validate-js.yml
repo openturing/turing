@@ -11,6 +11,8 @@ jobs:
       matrix:
         workspace:
           - "@viglet/turing-react-sdk"
+          - "@viglet/turing-react-ui"
+          - "@viglet/turing-sdk"
           - turing-example-mythical-creatures
           - turing-example-space-missions
           - turing-example-vinyl-records
@@ -38,3 +40,10 @@ jobs:
       - name: Build
         working-directory: frontend
         run: pnpm --filter "${{ matrix.workspace }}..." run build
+
+      # Bundle-size budget for the publishable packages (T303). The
+      # marketplace example apps are not @viglet/-scoped and have no size script.
+      - name: Bundle-size budget
+        if: startsWith(matrix.workspace, '@viglet/')
+        working-directory: frontend
+        run: pnpm --filter "${{ matrix.workspace }}" run size

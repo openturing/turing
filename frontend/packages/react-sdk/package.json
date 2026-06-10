@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build",
+    "size": "node ../../scripts/check-size.mjs",
+    "prepublishOnly": "npm run build && npm run size",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -67,5 +68,10 @@
   },
   "files": [
     "dist/**/*"
-  ]
+  ],
+  "sizeBudget": {
+    "exclude": ["stories/", "__mocks__/", "__tests__/"],
+    "strict": false,
+    "total": 75000
+  }
 }

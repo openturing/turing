@@ -1,0 +1,46 @@
+name: Validate @viglet/turing-react-ui
+
+# T303 packaging-hardening gate: build the headless UI library, enforce the
+# per-entry + total gzip bundle-size budget, and run its jsdom render tests.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/packages/react-ui/**"
+      - "frontend/.changeset/**"
+      - ".github/workflows/validate-react-ui.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: build + size budget + test
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install workspace deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm --filter "@viglet/turing-react-ui..." run build
+
+      - name: Bundle-size budget
+        working-directory: frontend/packages/react-ui
+        run: pnpm run size
+
+      - name: Test
+        working-directory: frontend/packages/react-ui
+        run: pnpm run test
