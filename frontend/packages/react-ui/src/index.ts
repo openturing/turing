@@ -38,3 +38,24 @@ export type {
   TuringD2DiagramLabels,
   TuringD2Renderer,
 } from "./TuringD2Diagram";
+
+export { TuringCopyButton } from "./TuringCopyButton";
+export type {
+  TuringCopyButtonProps,
+  TuringCopyButtonClassNames,
+  TuringCopyButtonLabels,
+  TuringCopyButtonIcons,
+} from "./TuringCopyButton";
+
+export { TuringThinkingDots } from "./TuringThinkingDots";
+export type {
+  TuringThinkingDotsProps,
+  TuringThinkingDotsClassNames,
+} from "./TuringThinkingDots";
+
+export { TuringCodeBlock } from "./TuringCodeBlock";
+export type {
+  TuringCodeBlockProps,
+  TuringCodeBlockClassNames,
+  TuringCodeBlockLabels,
+} from "./TuringCodeBlock";

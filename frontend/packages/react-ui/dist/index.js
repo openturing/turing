@@ -14,4 +14,7 @@ export { TuringHtmlSandbox } from "./TuringHtmlSandbox";
 export { TuringRichContent, splitRichContent } from "./TuringRichContent";
 export { TuringMarkdown, resolveSandboxUrl } from "./TuringMarkdown";
 export { TuringD2Diagram } from "./TuringD2Diagram";
+export { TuringCopyButton } from "./TuringCopyButton";
+export { TuringThinkingDots } from "./TuringThinkingDots";
+export { TuringCodeBlock } from "./TuringCodeBlock";
 //# sourceMappingURL=index.js.map

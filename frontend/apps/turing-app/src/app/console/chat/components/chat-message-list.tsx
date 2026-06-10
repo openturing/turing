@@ -2,8 +2,7 @@ import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
 import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
-import { TuringD2Diagram, TuringMarkdown, TuringRichContent } from "@viglet/turing-react-ui"
-import { useState } from "react"
+import { TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent } from "@viglet/turing-react-ui"
 import { useTranslation } from "react-i18next"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -72,13 +71,6 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
 export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef, onOptionClick }: Readonly<ChatMessageListProps>) {
   const { t } = useTranslation()
   const { user } = useCurrentUser()
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-
-  const handleCopy = (id: string, content: string) => {
-    navigator.clipboard.writeText(content)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId((prev) => prev === id ? null : prev), 2000)
-  }
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
@@ -117,14 +109,16 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
             )}
             {message.role === "assistant" ? (
               <div className="relative group/msg text-sm leading-relaxed prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-headings:text-foreground prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[13px] prose-code:font-semibold prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-th:text-foreground prose-a:text-primary prose-blockquote:border-primary/40 prose-blockquote:text-muted-foreground prose-li:marker:text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => handleCopy(message.id, message.content)}
-                  title={t("chat.copyToClipboard")}
-                  className={`not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all ${copiedId === message.id ? "opacity-100 text-emerald-500" : "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground"}`}
-                >
-                  {copiedId === message.id ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}
-                </button>
+                <TuringCopyButton
+                  value={message.content}
+                  labels={{ copy: t("chat.copyToClipboard"), copied: t("chat.copyToClipboard") }}
+                  icons={{ copy: <IconCopy className="size-4" />, copied: <IconCheck className="size-4" /> }}
+                  classNames={{
+                    button: "not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all",
+                    idle: "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground",
+                    copied: "opacity-100 text-emerald-500",
+                  }}
+                />
                 <AssistantContent content={message.content} />
               </div>
             ) : (
