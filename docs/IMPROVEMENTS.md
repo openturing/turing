@@ -1960,6 +1960,19 @@ Net effect: viglet.com gets the search/result/pagination/workspace primitives
 without axios, the admin's imports stay put (T300 re-export), and the headless
 contract is enforced uniformly across the package.
 
+**Don't regress the live consumers.** These primitives aren't theoretical —
+they already ship in three marketplace apps
+(`frontend/apps/marketplace/{vinyl-records,space-missions,mythical-creatures}`,
+which build a full search UI out of `TuringSearchField` + `useTuringPagination`)
+and in the Turing React search itself
+(`frontend/apps/turing-app/src/search/`, which pulls `useTuringPagination`).
+All of them import from `@viglet/turing-react-sdk`, never from react-ui, so the
+T300 re-export surface is precisely what keeps their imports valid after each
+move/split. The acceptance bar for every task in this block is therefore not
+just "react-ui compiles" but "the marketplace apps and the turing-app search
+still build and render unchanged" — run `pnpm -r build` and smoke the search
+pages before closing a task.
+
 ## XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform
 
 > **The pitch in one line**: stop asking customers to integrate Turing

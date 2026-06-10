@@ -259,6 +259,7 @@ function TuringHtmlSandboxFullscreen({
     <div
       ref={dialogRef}
       className={classNames?.fullscreenRoot}
+      data-turing-fullscreen=""
       role="dialog" // NOSONAR S6819 — see comment above
       aria-modal="true"
       aria-label={title}

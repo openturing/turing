@@ -67,6 +67,14 @@
 > data-wiring wrapper (react-sdk). Each task keeps the react-sdk export working
 > via the T300 re-export surface, so consumers don't change. Order by
 > design-weight: clean moves first, splits after. → §XII.2.a
+>
+> **Live consumers — every task in this block must keep these building & rendering**
+> (they import the primitives via `@viglet/turing-react-sdk`, so the T300
+> re-export is what protects them): the 3 marketplace apps
+> (`frontend/apps/marketplace/{vinyl-records,space-missions,mythical-creatures}`,
+> using `TuringSearchField` + `useTuringPagination`) and the Turing React search
+> (`frontend/apps/turing-app/src/search/`, using `useTuringPagination`). Validate
+> each before marking a task done — `pnpm -r build` must stay green.
 
 - 💭 **T306** (deps: T300) **Move design-less search primitives to react-ui** — `TuringSearchBar` (pure `onSearch` + render props), `TuringResultList` and `TuringPagination` (render-prop lists). No API/hook coupling; define **local structural prop types** in react-ui (item/document/pagination shapes) instead of importing `@viglet/turing-sdk` core types (zero-dep constraint). react-sdk keeps exporting them via the T300 re-export — zero consumer churn. → §XII.2.a
 - 💭 **T307** (deps: T306) **Split `TuringSearchField` (headless view ⇄ hook wiring)** — extract a headless compound (`Input`/`Button`/`Dropdown`, context-driven) to react-ui and **strip its baked Tailwind defaults** (the `w-full px-4 py-2.5 hover:bg-gray-100…` markup violates the headless contract); keep the orchestrating Root (`useTuringAutoComplete` + `useTuringSearchHistory` + `useTuringUrlSearch`, history-save effect) in react-sdk feeding the view its `classNames`/render props. → §XII.2.a

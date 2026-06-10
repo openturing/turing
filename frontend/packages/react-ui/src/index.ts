@@ -5,7 +5,10 @@
  * console and viglet.com. The package carries NO API or axios dependency (that
  * lives in `@viglet/turing-react-sdk`) and NO baked-in styling — every
  * component is skinned by the host app via `classNames` / `labels` / `icons`,
- * so each surface keeps its own look while sharing one implementation.
+ * so each surface keeps its own look while sharing one implementation. As an
+ * alternative to per-slot `classNames`, apps can import the optional token
+ * stylesheet (`@viglet/turing-react-ui/styles.css`) and theme via `--turing-ui-*`
+ * CSS custom properties on a `.turing-ui-theme` wrapper (T305).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -66,3 +69,12 @@ export type {
   TuringChatMessageRole,
   TuringChatMessageClassNames,
 } from "./TuringChatMessage";
+
+// Optional token theming (T305) — an alternative to `classNames`. Import the
+// stylesheet (`@viglet/turing-react-ui/styles.css`) and drive the look via
+// `--turing-ui-*` custom properties on a `.turing-ui-theme` wrapper.
+export {
+  TURING_UI_THEME_CLASS,
+  TURING_UI_TOKENS,
+} from "./tokens";
+export type { TuringUiTheme, TuringUiTokenName } from "./tokens";
