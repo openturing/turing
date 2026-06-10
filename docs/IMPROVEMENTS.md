@@ -1139,39 +1139,6 @@ Mirrors `TurChatSlotEventBus` (T54). Endpoint
 list as a sidebar — "files this agent built for you." Sub-100ms
 latency, multiplexer pattern reused from T104.
 
-#### IX.3.f Async memory compression — off the hot path (T309)
-
-T115 (shipped) runs the summarization LLM call **synchronously** inside
-`TurChatPromptAssembler.assemble(...)`: on the turn where the cached
-summary has expired (once per `chatMemoryCompressionInterval`), that
-turn pays the full summary round-trip before the user's reply even
-starts streaming. The interval cap keeps it rare, but the spike is
-real and lands on a random user turn.
-
-T309 moves regeneration **off the hot path**:
-
-1. The assembler still decides *whether* a fresh summary is due (same
-   older-pool + token-threshold + interval logic), but instead of
-   calling the LLM inline it **enqueues a background job** keyed by
-   `conversationId` (dedup so concurrent turns don't double-summarize).
-2. The triggering turn proceeds **uncompressed** — reusing the last
-   cached/stored summary if one exists (covers `[0, prevTo)`), or just
-   the T30 + recent window when there's no prior summary yet.
-3. The worker generates `memory/summary-1-{to}.md`, refreshes the
-   in-memory cache, and (optionally) publishes a T113 workspace event so
-   any open portal sees the new artifact. The **next** turn picks it up.
-
-**Reuse, don't reinvent**: the job runner is either Spring `@Async` on a
-bounded executor or the existing Artemis queue (mirrors T62
-`TurChatWebhookDispatcher` / the routine queue); cluster-once is
-`@SchedulerLock`/Hazelcast (already wired in `TurSchedulerLockConfig`).
-The trade-off T309 accepts is **eventual** compression — the first turn
-past the threshold is uncompressed — in exchange for never blocking a
-user turn on the summary call. For agents that want the summary applied
-*immediately*, the T115 synchronous mode stays available behind the
-per-agent flag (T309 adds a `chatMemoryCompressionAsync` toggle, default
-async once shipped).
-
 ### IX.4 Skills as first-class — the marketplace moat
 
 Deep Agents mentions "skills" in passing. Turing makes them **typed,

@@ -41,14 +41,16 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
+import com.viglet.turing.service.chatmemory.TurChatMemoryCompressionService.CompressionJob;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 /**
- * Unit tests for {@link TurChatMemoryCompressionService} (T115) — the
- * workspace-backed memory-compression service that summarizes the older pool
- * of a conversation and returns a compact block to prepend to the prompt.
+ * Unit tests for {@link TurChatMemoryCompressionService} (T115 + T309) — the
+ * memory-compression service that summarizes the older pool of a conversation
+ * and returns a compact block, either synchronously (legacy T115) or by
+ * enqueuing a background regeneration off the hot path (T309).
  */
 class TurChatMemoryCompressionServiceTest {
 
@@ -63,6 +65,7 @@ class TurChatMemoryCompressionServiceTest {
     private TurSecretCryptoService secretCryptoService;
     private TurLLMTokenUsageService tokenUsageService;
     private TurGlobalSettingsService globalSettingsService;
+    private TurChatMemoryCompressionWorker worker;
     private ChatModel chatModel;
 
     private TurChatMemoryCompressionService service;
@@ -76,10 +79,11 @@ class TurChatMemoryCompressionServiceTest {
         secretCryptoService = mock(TurSecretCryptoService.class);
         tokenUsageService = mock(TurLLMTokenUsageService.class);
         globalSettingsService = mock(TurGlobalSettingsService.class);
+        worker = mock(TurChatMemoryCompressionWorker.class);
         chatModel = mock(ChatModel.class);
 
         service = new TurChatMemoryCompressionService(store, workspace, llmInstanceRepository,
-                llmModelFactory, secretCryptoService, tokenUsageService, globalSettingsService);
+                llmModelFactory, secretCryptoService, tokenUsageService, globalSettingsService, worker);
         // @PostConstruct doesn't run outside Spring — set the prompt directly.
         ReflectionTestUtils.setField(service, "compressionSystemPrompt", "Summarize the older turns.");
 
@@ -95,11 +99,20 @@ class TurChatMemoryCompressionServiceTest {
         lenient().when(store.isEnabled()).thenReturn(true);
     }
 
+    /** Synchronous (legacy T115) agent — summary applies on the same turn. */
     private static TurAIAgent agent() {
+        TurAIAgent a = asyncAgent();
+        a.setChatMemoryCompressionAsync(false);
+        return a;
+    }
+
+    /** Async (T309 default) agent — summary regeneration runs off the hot path. */
+    private static TurAIAgent asyncAgent() {
         TurAIAgent a = new TurAIAgent();
         a.setId("agent-1");
         a.setChatMemoryEnabled(true);
         a.setChatMemoryCompressionEnabled(true);
+        a.setChatMemoryCompressionAsync(true);
         a.setChatMemoryRecentN(2);
         a.setChatMemoryMaxMessages(100);
         a.setChatMemoryCompressionThresholdTokens(10);
@@ -120,8 +133,14 @@ class TurChatMemoryCompressionServiceTest {
         return list;
     }
 
+    private static CompressionJob job() {
+        return new CompressionJob("agent-1", CONV, LLM_ID, "[1 | user]: hi\n[2 | assistant]: hello\n", 6);
+    }
+
+    // ─── synchronous (T115) path ──────────────────────────────────────────
+
     @Test
-    void summarizesOlderPoolAndReturnsBlock() {
+    void summarizesOlderPoolAndReturnsBlockSync() {
         when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
 
         Optional<ChatMessageItem> block = service.summaryBlock(agent(), CONV);
@@ -133,50 +152,14 @@ class TurChatMemoryCompressionServiceTest {
                 .contains(SUMMARY);
 
         verify(chatModel).call(any(Prompt.class));
-        // The summary was persisted to the conversation workspace under memory/.
         verify(workspace).put(eq("agent-1"), eq(CONV), eq("memory/summary-1-6.md"),
                 any(byte[].class), eq("text/markdown"));
+        // Sync mode never touches the async worker.
+        verifyNoInteractions(worker);
     }
 
     @Test
-    void bypassesWhenCompressionDisabled() {
-        TurAIAgent a = agent();
-        a.setChatMemoryCompressionEnabled(false);
-
-        assertThat(service.summaryBlock(a, CONV)).isEmpty();
-        verifyNoInteractions(workspace);
-        verify(chatModel, never()).call(any(Prompt.class));
-    }
-
-    @Test
-    void bypassesWhenOlderPoolTooSmall() {
-        // 5 turns, recentN=2 → 3 older < MIN_OLDER_TURNS (4)
-        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(5));
-
-        assertThat(service.summaryBlock(agent(), CONV)).isEmpty();
-        verify(chatModel, never()).call(any(Prompt.class));
-    }
-
-    @Test
-    void bypassesWhenUnderTokenThreshold() {
-        TurAIAgent a = agent();
-        a.setChatMemoryCompressionThresholdTokens(1_000_000);
-        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
-
-        assertThat(service.summaryBlock(a, CONV)).isEmpty();
-        verify(chatModel, never()).call(any(Prompt.class));
-    }
-
-    @Test
-    void bypassesWhenStoreDisabled() {
-        when(store.isEnabled()).thenReturn(false);
-
-        assertThat(service.summaryBlock(agent(), CONV)).isEmpty();
-        verify(chatModel, never()).call(any(Prompt.class));
-    }
-
-    @Test
-    void reusesCachedSummaryWithinInterval() {
+    void reusesCachedSummaryWithinIntervalSync() {
         when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
         TurAIAgent a = agent();
 
@@ -191,7 +174,7 @@ class TurChatMemoryCompressionServiceTest {
     }
 
     @Test
-    void fallsBackToGlobalDefaultLlmWhenCompressionLlmIdBlank() {
+    void fallsBackToGlobalDefaultLlmWhenCompressionLlmIdBlankSync() {
         TurAIAgent a = agent();
         a.setChatMemoryCompressionLlmId(null);
         when(globalSettingsService.getDefaultLlmId()).thenReturn(LLM_ID);
@@ -202,7 +185,7 @@ class TurChatMemoryCompressionServiceTest {
     }
 
     @Test
-    void bypassesWhenNoLlmResolves() {
+    void bypassesWhenNoLlmResolvesSync() {
         TurAIAgent a = agent();
         a.setChatMemoryCompressionLlmId(null);
         when(globalSettingsService.getDefaultLlmId()).thenReturn(null);
@@ -210,5 +193,102 @@ class TurChatMemoryCompressionServiceTest {
 
         assertThat(service.summaryBlock(a, CONV)).isEmpty();
         verify(chatModel, never()).call(any(Prompt.class));
+    }
+
+    // ─── bypass conditions (mode-independent) ─────────────────────────────
+
+    @Test
+    void bypassesWhenCompressionDisabled() {
+        TurAIAgent a = agent();
+        a.setChatMemoryCompressionEnabled(false);
+
+        assertThat(service.summaryBlock(a, CONV)).isEmpty();
+        verifyNoInteractions(workspace);
+        verifyNoInteractions(worker);
+        verify(chatModel, never()).call(any(Prompt.class));
+    }
+
+    @Test
+    void bypassesWhenOlderPoolTooSmall() {
+        // 5 turns, recentN=2 → 3 older < MIN_OLDER_TURNS (4)
+        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(5));
+
+        assertThat(service.summaryBlock(agent(), CONV)).isEmpty();
+        verify(chatModel, never()).call(any(Prompt.class));
+        verifyNoInteractions(worker);
+    }
+
+    @Test
+    void bypassesWhenUnderTokenThreshold() {
+        TurAIAgent a = agent();
+        a.setChatMemoryCompressionThresholdTokens(1_000_000);
+        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
+
+        assertThat(service.summaryBlock(a, CONV)).isEmpty();
+        verify(chatModel, never()).call(any(Prompt.class));
+        verifyNoInteractions(worker);
+    }
+
+    @Test
+    void bypassesWhenStoreDisabled() {
+        when(store.isEnabled()).thenReturn(false);
+
+        assertThat(service.summaryBlock(agent(), CONV)).isEmpty();
+        verify(chatModel, never()).call(any(Prompt.class));
+        verifyNoInteractions(worker);
+    }
+
+    // ─── async (T309) path ────────────────────────────────────────────────
+
+    @Test
+    void asyncModeEnqueuesAndReturnsEmptyWhenNoCache() {
+        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
+
+        Optional<ChatMessageItem> block = service.summaryBlock(asyncAgent(), CONV);
+
+        // Hot path proceeds uncompressed; regeneration handed to the worker.
+        assertThat(block).isEmpty();
+        verify(worker).regenerate(any(CompressionJob.class));
+        // No inline LLM call on the request thread.
+        verify(chatModel, never()).call(any(Prompt.class));
+    }
+
+    @Test
+    void asyncModeDedupesConcurrentEnqueues() {
+        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
+        TurAIAgent a = asyncAgent();
+
+        // Worker is a mock → it never clears the in-flight guard, so the second
+        // turn must NOT enqueue a duplicate regeneration for the same conversation.
+        service.summaryBlock(a, CONV);
+        service.summaryBlock(a, CONV);
+
+        verify(worker, times(1)).regenerate(any(CompressionJob.class));
+    }
+
+    @Test
+    void asyncModeReusesFreshCacheWithoutEnqueue() {
+        // Prime the cache via a direct generate, then a fresh async turn must
+        // reuse it (no new enqueue, no LLM call).
+        service.generateAndStore(job());
+        when(store.findMessages(eq(CONV), anyInt())).thenReturn(history(8));
+
+        Optional<ChatMessageItem> block = service.summaryBlock(asyncAgent(), CONV);
+
+        assertThat(block).isPresent();
+        assertThat(block.get().content()).contains(SUMMARY);
+        verify(worker, never()).regenerate(any(CompressionJob.class));
+    }
+
+    // ─── generateAndStore (shared by sync + worker) ───────────────────────
+
+    @Test
+    void generateAndStoreRunsLlmPersistsAndCaches() {
+        String summary = service.generateAndStore(job());
+
+        assertThat(summary).isEqualTo(SUMMARY);
+        verify(chatModel).call(any(Prompt.class));
+        verify(workspace).put(eq("agent-1"), eq(CONV), eq("memory/summary-1-6.md"),
+                any(byte[].class), eq("text/markdown"));
     }
 }

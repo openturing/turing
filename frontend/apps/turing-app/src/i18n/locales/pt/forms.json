@@ -977,6 +977,8 @@
       "chatMemoryCompressionDesc": "Em conversas longas, resume os turnos antigos (além da janela recente) em uma única chamada barata ao LLM, guarda o resumo no workspace da conversa e substitui esses turnos por um bloco de resumo compacto no prompt. Limitado a uma vez por intervalo; desativado por padrão.",
       "chatMemoryCompressionThreshold": "Limite de compressão (tokens)",
       "chatMemoryCompressionThresholdDesc": "Só resume quando o conjunto de turnos antigos for estimado acima desta quantidade de tokens — abaixo disso, os turnos são baratos o suficiente para deixar com a janela recente e a recuperação por relevância. Padrão 8192.",
+      "chatMemoryCompressionAsync": "Comprimir em segundo plano",
+      "chatMemoryCompressionAsyncDesc": "Executa a chamada de resumo fora do caminho crítico para que nenhum turno do chat espere por ela: o turno que dispara a atualização segue sem compressão (reusando o último resumo) e o próximo turno aproveita o novo. Desligue para resumir de forma síncrona, aplicando no mesmo turno (adiciona latência a esse turno). Padrão ligado.",
       "codeInterpreter": "Code Interpreter",
       "codeInterpreterDesc": "Configuração do sandbox Python específica deste agente. O que estiver declarado aqui é unido com o pythonRequirements global antes do pip install.",
       "pythonRequirements": "Dependências Python do Agente",

@@ -58,6 +58,8 @@ public class TurAIAgentExchange {
     private int chatMemoryCompressionThresholdTokens;
     private String chatMemoryCompressionLlmId;
     private String chatMemoryCompressionInterval;
+    // T309 / §IX.3.f — run compression off the hot path (default true).
+    private Boolean chatMemoryCompressionAsync;
     private String nativeTools;
     private String pythonRequirements;
     // T66 / §VII.6.g — submission retention policy travels with the agent.
@@ -106,6 +108,7 @@ public class TurAIAgentExchange {
         e.chatMemoryCompressionThresholdTokens = agent.getChatMemoryCompressionThresholdTokens();
         e.chatMemoryCompressionLlmId = agent.getChatMemoryCompressionLlmId();
         e.chatMemoryCompressionInterval = agent.getChatMemoryCompressionInterval();
+        e.chatMemoryCompressionAsync = agent.isChatMemoryCompressionAsync();
         e.nativeTools = agent.getNativeTools();
         e.pythonRequirements = agent.getPythonRequirements();
         e.submissionRetention = agent.getSubmissionRetention();

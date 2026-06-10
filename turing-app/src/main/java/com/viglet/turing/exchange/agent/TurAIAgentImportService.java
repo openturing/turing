@@ -398,6 +398,10 @@ public class TurAIAgentImportService {
         if (a.getChatMemoryCompressionInterval() != null && !a.getChatMemoryCompressionInterval().isBlank()) {
             agent.setChatMemoryCompressionInterval(a.getChatMemoryCompressionInterval());
         }
+        // T309 — null-guarded so pre-T309 exports keep the entity default (async on).
+        if (a.getChatMemoryCompressionAsync() != null) {
+            agent.setChatMemoryCompressionAsync(a.getChatMemoryCompressionAsync());
+        }
         agent.setNativeTools(a.getNativeTools());
         agent.setPythonRequirements(a.getPythonRequirements());
         // T66 / §VII.6.g — null-guarded so pre-T66 exports keep the entity

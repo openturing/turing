@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.ai.chat.messages.Message;
@@ -99,9 +100,18 @@ public class TurChatMemoryCompressionService {
     private final TurSecretCryptoService secretCryptoService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurGlobalSettingsService globalSettingsService;
+    private final TurChatMemoryCompressionWorker compressionWorker;
 
     /** Per-conversation last-summary cache for the interval guard. */
     private final ConcurrentHashMap<String, CachedSummary> cache = new ConcurrentHashMap<>();
+
+    /**
+     * T309 — conversation ids with a background regeneration in flight, so two
+     * concurrent turns of the same conversation don't double-enqueue. Cleared
+     * by {@link #generateAndStore(CompressionJob)}'s {@code finally} (per-JVM;
+     * cluster-wide a duplicate just overwrites the same idempotent key).
+     */
+    private final Set<String> inFlight = ConcurrentHashMap.newKeySet();
 
     @Value("classpath:prompts/chat-memory-compression.md")
     private Resource compressionPromptResource;
@@ -114,7 +124,8 @@ public class TurChatMemoryCompressionService {
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService,
             TurLLMTokenUsageService tokenUsageService,
-            TurGlobalSettingsService globalSettingsService) {
+            TurGlobalSettingsService globalSettingsService,
+            TurChatMemoryCompressionWorker compressionWorker) {
         this.store = store;
         this.workspace = workspace;
         this.llmInstanceRepository = llmInstanceRepository;
@@ -122,6 +133,7 @@ public class TurChatMemoryCompressionService {
         this.secretCryptoService = secretCryptoService;
         this.tokenUsageService = tokenUsageService;
         this.globalSettingsService = globalSettingsService;
+        this.compressionWorker = compressionWorker;
     }
 
     @PostConstruct
@@ -143,42 +155,20 @@ public class TurChatMemoryCompressionService {
      * @param conversationId persisted-memory key; blank → no-op.
      */
     public Optional<ChatMessageItem> summaryBlock(TurAIAgent agent, String conversationId) {
-        if (agent == null || !agent.isChatMemoryEnabled() || !agent.isChatMemoryCompressionEnabled()) {
-            return Optional.empty();
-        }
-        if (!store.isEnabled() || conversationId == null || conversationId.isBlank()) {
-            return Optional.empty();
-        }
-        if (compressionSystemPrompt.isBlank()) {
+        if (!eligible(agent, conversationId)) {
             return Optional.empty();
         }
 
         int recentN = Math.max(0, agent.getChatMemoryRecentN());
         int readLimit = clamp(agent.getChatMemoryMaxMessages(), 1, MAX_READ_LIMIT);
 
-        List<Map<String, Object>> persisted;
-        try {
-            persisted = store.findMessages(conversationId, readLimit);
-        } catch (RuntimeException e) {
-            log.warn("[ChatMemoryCompression] store read failed for conv '{}': {}",
-                    conversationId, e.getMessage());
-            return Optional.empty();
-        }
-        if (persisted == null || persisted.size() - recentN < MIN_OLDER_TURNS) {
+        List<Map<String, Object>> persisted = readPersisted(conversationId, readLimit);
+        if (persisted.size() - recentN < MIN_OLDER_TURNS) {
             return Optional.empty();
         }
 
         int olderCount = persisted.size() - recentN;
-        List<OlderTurn> older = new ArrayList<>(olderCount);
-        for (int i = 0; i < olderCount; i++) {
-            Map<String, Object> raw = persisted.get(i);
-            String role = asString(raw.get("role"));
-            String content = asString(raw.get("content"));
-            if (role == null || role.isBlank() || content == null || content.isBlank()) {
-                continue;
-            }
-            older.add(new OlderTurn(i, role, content));
-        }
+        List<OlderTurn> older = buildOlderPool(persisted, olderCount);
         if (older.size() < MIN_OLDER_TURNS) {
             return Optional.empty();
         }
@@ -197,34 +187,129 @@ public class TurChatMemoryCompressionService {
             return Optional.of(block(cached.content(), cached.coveredTo()));
         }
 
-        String summary = generateSummary(agent, older);
+        // Regeneration is due. The snapshot is built on this (request) thread so
+        // the background worker never touches the lazy agent/store again.
+        CompressionJob job = new CompressionJob(agent.getId(), conversationId,
+                agent.getChatMemoryCompressionLlmId(), renderOlderTurns(older), olderCount);
+
+        // T309 — async (default): enqueue the summary LLM call off the hot path
+        // and proceed THIS turn uncompressed (reusing a stale summary if present).
+        // The fresh summary lands in the cache for the next turn. Sync path
+        // (legacy T115) blocks here for the LLM call so the summary applies now.
+        if (agent.isChatMemoryCompressionAsync()) {
+            enqueueAsync(job);
+            return cached == null ? Optional.empty()
+                    : Optional.of(block(cached.content(), cached.coveredTo()));
+        }
+
+        String summary = generateAndStore(job);
         if (summary == null || summary.isBlank()) {
             // Regeneration failed — fall back to a stale cache if we have one,
             // otherwise just skip compression this turn.
             return cached == null ? Optional.empty()
                     : Optional.of(block(cached.content(), cached.coveredTo()));
         }
-
-        persistToWorkspace(agent.getId(), conversationId, olderCount, summary);
-        cache.put(conversationId, new CachedSummary(now, olderCount, summary));
-        log.info("[ChatMemoryCompression] conv '{}': summarized {} older turn(s) into {} chars",
-                conversationId, older.size(), summary.length());
         return Optional.of(block(summary, olderCount));
     }
 
     /**
-     * Visible for tests — drops the per-conversation interval cache so a test
-     * can force regeneration without waiting out the interval.
+     * Visible for tests — drops the per-conversation interval cache and the
+     * in-flight guard so a test can force regeneration without waiting out the
+     * interval.
      */
     void clearCache() {
         cache.clear();
+        inFlight.clear();
     }
 
-    private String generateSummary(TurAIAgent agent, List<OlderTurn> older) {
-        TurLLMInstance instance = resolveInstance(agent.getChatMemoryCompressionLlmId());
+    /** True when this agent + conversation is a candidate for compression at all. */
+    private boolean eligible(TurAIAgent agent, String conversationId) {
+        return agent != null
+                && agent.isChatMemoryEnabled()
+                && agent.isChatMemoryCompressionEnabled()
+                && store.isEnabled()
+                && conversationId != null && !conversationId.isBlank()
+                && !compressionSystemPrompt.isBlank();
+    }
+
+    /** Reads persisted history, returning an empty list on a store error. */
+    private List<Map<String, Object>> readPersisted(String conversationId, int readLimit) {
+        try {
+            List<Map<String, Object>> messages = store.findMessages(conversationId, readLimit);
+            return messages == null ? List.of() : messages;
+        } catch (RuntimeException e) {
+            log.warn("[ChatMemoryCompression] store read failed for conv '{}': {}",
+                    conversationId, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Projects the first {@code olderCount} persisted entries into the older pool, skipping blanks. */
+    private static List<OlderTurn> buildOlderPool(List<Map<String, Object>> persisted, int olderCount) {
+        List<OlderTurn> older = new ArrayList<>(olderCount);
+        for (int i = 0; i < olderCount; i++) {
+            Map<String, Object> raw = persisted.get(i);
+            String role = asString(raw.get("role"));
+            String content = asString(raw.get("content"));
+            if (role == null || role.isBlank() || content == null || content.isBlank()) {
+                continue;
+            }
+            older.add(new OlderTurn(i, role, content));
+        }
+        return older;
+    }
+
+    /**
+     * T309 — hand a due regeneration to the background worker, deduplicated per
+     * conversation so concurrent turns don't double-summarize. A rejected
+     * submission (saturated pool) is treated as "skip this round" — the
+     * interval guard retries on a later turn.
+     */
+    private void enqueueAsync(CompressionJob job) {
+        if (!inFlight.add(job.conversationId())) {
+            return; // a regeneration for this conversation is already running
+        }
+        try {
+            compressionWorker.regenerate(job);
+        } catch (RuntimeException e) {
+            // e.g. TaskRejectedException when the bounded pool is saturated.
+            inFlight.remove(job.conversationId());
+            log.debug("[ChatMemoryCompression] async enqueue skipped for conv '{}': {}",
+                    job.conversationId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Runs the summary LLM call, persists the result to the workspace, and
+     * refreshes the interval cache. Invoked synchronously on the request thread
+     * (sync mode) or on the {@link TurChatMemoryCompressionWorker} pool (async
+     * mode). Never throws — failures return {@code null} and leave any prior
+     * summary in place. Package-visible so the worker and tests can drive it.
+     *
+     * @return the generated summary text, or {@code null} on any failure.
+     */
+    String generateAndStore(CompressionJob job) {
+        try {
+            String summary = callLlm(job.compressionLlmId(), job.olderText());
+            if (summary == null || summary.isBlank()) {
+                return null;
+            }
+            persistToWorkspace(job.agentId(), job.conversationId(), job.coveredTo(), summary);
+            cache.put(job.conversationId(),
+                    new CachedSummary(System.currentTimeMillis(), job.coveredTo(), summary));
+            log.info("[ChatMemoryCompression] conv '{}': summarized older pool (covered 1–{}) into {} chars",
+                    job.conversationId(), job.coveredTo(), summary.length());
+            return summary;
+        } finally {
+            inFlight.remove(job.conversationId());
+        }
+    }
+
+    private String callLlm(String compressionLlmId, String olderText) {
+        TurLLMInstance instance = resolveInstance(compressionLlmId);
         if (instance == null || instance.getEnabled() != 1) {
-            log.warn("[ChatMemoryCompression] no usable LLM instance (agent compression llm id '{}', "
-                    + "global default may be unset/disabled) — skipping", agent.getChatMemoryCompressionLlmId());
+            log.warn("[ChatMemoryCompression] no usable LLM instance (compression llm id '{}', "
+                    + "global default may be unset/disabled) — skipping", compressionLlmId);
             return null;
         }
         try {
@@ -232,7 +317,7 @@ public class TurChatMemoryCompressionService {
             ChatModel chatModel = llmModelFactory.createChatModel(instance, apiKey);
             List<Message> messages = List.of(
                     new SystemMessage(compressionSystemPrompt),
-                    new UserMessage(renderOlderTurns(older)));
+                    new UserMessage(olderText));
             var response = chatModel.call(new Prompt(messages));
             tokenUsageService.recordUsage(instance, response, "system");
             return response.getResult().getOutput().getText();
@@ -323,5 +408,21 @@ public class TurChatMemoryCompressionService {
 
     /** Per-conversation cached summary for the interval guard. */
     private record CachedSummary(long generatedAtMillis, int coveredTo, String content) {
+    }
+
+    /**
+     * Immutable snapshot of one compression unit of work — everything the
+     * summarizer needs, captured on the request thread so the (possibly async)
+     * worker never re-reads the lazy agent entity or the store.
+     *
+     * @param agentId         owning agent id (workspace scope).
+     * @param conversationId  owning conversation id (workspace scope + cache key).
+     * @param compressionLlmId explicit summary LLM id, or null → Global default.
+     * @param olderText       the older turns already rendered to prompt text.
+     * @param coveredTo       1-based upper bound of the summarized range (drives
+     *                        the workspace key {@code memory/summary-1-{to}.md}).
+     */
+    public record CompressionJob(String agentId, String conversationId, String compressionLlmId,
+            String olderText, int coveredTo) {
     }
 }

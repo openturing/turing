@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T309 / §IX.3.f — run T115 memory compression off the hot path.
+  # Adds one column on ai_agent:
+  #   - chat_memory_compression_async : when true (default) the summary LLM
+  #                                     call runs in a background worker and the
+  #                                     triggering turn proceeds uncompressed;
+  #                                     false = legacy synchronous T115 behavior.
+  #
+  # Idempotent: gated by columnExists so re-running on a database that already
+  # has the column is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.20-add-chat-memory-compression-async-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_compression_async
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_compression_async
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "T309/§IX.3.f — run the summary LLM call in a background worker (true) vs synchronously in the prompt assembler (false)."

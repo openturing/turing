@@ -77,6 +77,13 @@ export interface TurAIAgent {
   /** ISO-8601 Duration min interval between summaries per conversation (default "PT1H"). @since 2026.3.1 */
   chatMemoryCompressionInterval: string;
   /**
+   * T309 / §IX.3.f — run the summary LLM call off the hot path. When true
+   * (default) the triggering turn proceeds uncompressed and a background worker
+   * generates the summary for the next turn; false = synchronous (legacy T115).
+   * @since 2026.3.1
+   */
+  chatMemoryCompressionAsync: boolean;
+  /**
    * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
    * `0` (default) disables the check; the executor estimates the prompt
    * size before the LLM call and applies {@link overBudgetBehavior} when

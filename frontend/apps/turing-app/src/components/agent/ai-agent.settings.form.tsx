@@ -131,6 +131,8 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryCompressionEnabled: value.chatMemoryCompressionEnabled ?? false,
       chatMemoryCompressionThresholdTokens: value.chatMemoryCompressionThresholdTokens ?? 8192,
       chatMemoryCompressionInterval: value.chatMemoryCompressionInterval ?? "PT1H",
+      // T309 — async (off the hot path) is the default once compression is on.
+      chatMemoryCompressionAsync: value.chatMemoryCompressionAsync ?? true,
       // T123 / §IX.7 — defaults: 0 disables the check; WARN is the
       // backend enum default. Existing agents keep their pre-T123
       // behaviour (no enforcement) until the operator opts in.
@@ -770,6 +772,29 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryCompressionAsync"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryCompressionAsync")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryCompressionAsyncDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={field.value !== false}
+                          disabled={!loggingActive || !chatMemoryEnabled || !chatMemoryCompressionEnabled}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
                     </FormItemTwoColumns.Right>
                   </FormItemTwoColumns>
                 )}

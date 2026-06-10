@@ -202,6 +202,20 @@ public class TurAIAgent implements Serializable {
     private String chatMemoryCompressionInterval = "PT1H";
 
     /**
+     * T309 / §IX.3.f — run the T115 summarization off the hot path. When
+     * {@code true} (default) and a fresh summary is due, the triggering turn
+     * enqueues a background regeneration and proceeds uncompressed (reusing the
+     * last stored summary if present); the next turn picks up the new summary.
+     * When {@code false} the summary LLM call runs synchronously inside the
+     * prompt assembler (legacy T115 behavior) — pick this when the summary must
+     * be applied on the very turn it becomes due.
+     *
+     * @since 2026.3.1
+     */
+    @Column(name = "chat_memory_compression_async", nullable = false)
+    private boolean chatMemoryCompressionAsync = true;
+
+    /**
      * T123 / §IX.7 — enforceable token budget for the per-turn prompt.
      * {@code 0} (default) disables enforcement: the executor never
      * estimates tokens and never short-circuits the LLM call. Positive
