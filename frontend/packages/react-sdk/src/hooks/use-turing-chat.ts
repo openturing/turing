@@ -138,6 +138,15 @@ export interface UseTuringChatOptions {
    */
   readonly forcedVariant?: string;
   /**
+   * Pins this conversation to a single skill (by id or name) so the agent runs
+   * that one skill as a distinct "mode/flow" (T325), instead of offering the
+   * whole enabled skill set for progressive disclosure. Agent mode only; leave
+   * unset for the legacy all-skills behaviour.
+   *
+   * @since 2026.3.1
+   */
+  readonly selectedSkillId?: string;
+  /**
    * Whether to auto-read the forced A/B variant from the `?_ab_variant` URL
    * query param when {@link UseTuringChatOptions.forcedVariant} is not set
    * explicitly. Defaults to `true`.
@@ -391,6 +400,7 @@ export function useTuringChat(
     persist = false,
     maxMessages = DEFAULT_MAX_MESSAGES,
     flowId,
+    selectedSkillId,
     agent,
     locale: localeOverride,
     conversationId: controlledConversationId,
@@ -558,6 +568,7 @@ export function useTuringChat(
               conversationId: activeConversationId,
               flowId,
               forcedVariant,
+              selectedSkillId,
               onToken,
               signal: controller.signal,
             })
@@ -585,7 +596,8 @@ export function useTuringChat(
         handleSendError(err, requestId);
       }
     },
-    [siteName, effectiveLocale, maxMessages, flowId, forcedVariant, agentId, handleSendError],
+    [siteName, effectiveLocale, maxMessages, flowId, selectedSkillId, forcedVariant, agentId,
+      handleSendError],
   );
 
   const send = useCallback(

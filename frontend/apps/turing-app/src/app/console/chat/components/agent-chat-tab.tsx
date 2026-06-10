@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
+import type { TurSkillSummary } from "@/models/skill/skill.model"
 import { estimateTokens, toAdminMessages } from "../chat.types"
 import { ChatEmptyState } from "./chat-empty-state"
 import { ChatInput } from "./chat-input"
@@ -20,6 +21,9 @@ import { ContextBar } from "./context-bar"
 
 /** Sentinel: dropdown option that lets the backend's LLM router decide. */
 export const FLOW_AUTO = "__auto__"
+
+/** Sentinel (T325): "no skill mode" — offer all skills via progressive disclosure. */
+export const SKILL_NONE = "__none__"
 
 /** Subset of the LLM instance these views read for the empty-state label. */
 interface DisplayInstance {
@@ -45,6 +49,16 @@ interface AgentChatTabProps {
   activeFlows: TurChatFlow[]
   selectedFlowId: string
   onFlowChange: (value: string) => void
+  // ── Skill-mode selector (T325) — all optional; absent = legacy all-skills ──
+  /** Pinned skill id sent on each turn, or undefined for all-skills mode. */
+  selectedSkillIdForSend?: string
+  /** Whether the skill-mode selector should render (agent.skillsEnabled + catalog non-empty). */
+  skillModeEnabled?: boolean
+  /** Enabled skills the user can pin as a distinct conversation mode. */
+  skills?: TurSkillSummary[]
+  /** Currently selected skill id, or {@link SKILL_NONE}. */
+  selectedSkillId?: string
+  onSkillChange?: (value: string) => void
   // ── Context compaction (parent orchestrates summarize + reseed) ──
   compacting: boolean
   onCompactRequested: (messages: TuringChatMessage[]) => void
@@ -121,6 +135,11 @@ export function AgentChatTab({
   activeFlows,
   selectedFlowId,
   onFlowChange,
+  selectedSkillIdForSend,
+  skillModeEnabled = false,
+  skills = [],
+  selectedSkillId = SKILL_NONE,
+  onSkillChange,
   compacting,
   onCompactRequested,
   onResponseComplete,
@@ -135,6 +154,7 @@ export function AgentChatTab({
   const { messages, isStreaming, status, send, resetFlow } = useTuringChat({
     agent: { id: agent.id, llmInstanceId },
     flowId,
+    selectedSkillId: selectedSkillIdForSend,
     conversationId,
     initialMessages,
   })
@@ -302,6 +322,21 @@ export function AgentChatTab({
                     </Button>
                   )}
                 </>
+              )}
+              {skillModeEnabled && (
+                <Select value={selectedSkillId} onValueChange={onSkillChange ?? (() => {})}>
+                  <SelectTrigger className="h-7 text-xs w-44">
+                    <SelectValue placeholder={t("chat.skill.selector.placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SKILL_NONE}>{t("chat.skill.selector.auto")}</SelectItem>
+                    {skills.map((skill) => (
+                      <SelectItem key={skill.id} value={skill.id}>
+                        {skill.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
             {messages.length > 0 && (

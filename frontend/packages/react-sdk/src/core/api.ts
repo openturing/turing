@@ -346,6 +346,7 @@ export async function postAgentChat(
     conversationId: options?.conversationId,
     flowId: options?.flowId,
     forcedVariant: options?.forcedVariant,
+    selectedSkillId: options?.selectedSkillId,
   };
 
   let body: BodyInit;

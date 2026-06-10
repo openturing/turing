@@ -161,6 +161,39 @@ class TurSkillRunnerServiceTest {
     }
 
     @Test
+    void offeredSkillsBlankPinReturnsAllAvailable() {
+        // T325 — a blank/null pin offers the full available set (legacy
+        // progressive disclosure).
+        List<TurSkill> all = List.of(skill("1", "alpha"), skill("2", "zebra"));
+        when(harness.availableSkills()).thenReturn(all);
+        assertThat(service.offeredSkills(null)).isEqualTo(all);
+        assertThat(service.offeredSkills("  ")).isEqualTo(all);
+    }
+
+    @Test
+    void offeredSkillsPinsSingleSkillByIdOrName() {
+        // T325 — a pin narrows to exactly one skill; matches by id or by
+        // case-insensitive name (the SDK-friendly form).
+        List<TurSkill> all = List.of(skill("id-a", "alpha"), skill("id-z", "Zebra"));
+        when(harness.availableSkills()).thenReturn(all);
+
+        assertThat(service.offeredSkills("id-z")).singleElement()
+                .extracting(TurSkill::getName).isEqualTo("Zebra");
+        assertThat(service.offeredSkills("alpha")).singleElement()
+                .extracting(TurSkill::getId).isEqualTo("id-a");
+        assertThat(service.offeredSkills("ZEBRA")).singleElement()
+                .extracting(TurSkill::getId).isEqualTo("id-z");
+    }
+
+    @Test
+    void offeredSkillsUnknownPinReturnsEmptyNotAll() {
+        // T325 — an unknown/disabled pin must NOT silently fall back to the
+        // whole set (a pinned mode can't widen).
+        when(harness.availableSkills()).thenReturn(List.of(skill("id-a", "alpha")));
+        assertThat(service.offeredSkills("does-not-exist")).isEmpty();
+    }
+
+    @Test
     void runSkillUnavailableReturnsMessage() {
         when(harness.isAvailable()).thenReturn(false);
         assertThat(service.runSkill(skill("1", "alpha"), "task", "agentA", "conv1"))

@@ -332,6 +332,13 @@ export interface PostAgentChatOptions {
    * Typically sourced from the `?_ab_variant=<label>` URL param.
    */
   readonly forcedVariant?: string;
+  /**
+   * Skill-mode pin (T325) — selects a single skill (by id or name) for this
+   * turn so the agent operates that one skill as a distinct "mode/flow",
+   * instead of offering the full enabled skill set for progressive disclosure.
+   * Blank/undefined keeps the legacy all-skills behaviour.
+   */
+  readonly selectedSkillId?: string;
   /** Optional file attachments — switches the request to multipart/form-data. */
   readonly files?: ReadonlyArray<File>;
 }
@@ -353,6 +360,7 @@ export async function postAgentChat(
     conversationId: options?.conversationId,
     flowId: options?.flowId,
     forcedVariant: options?.forcedVariant,
+    selectedSkillId: options?.selectedSkillId,
   };
 
   const headers: Record<string, string> = {

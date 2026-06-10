@@ -141,6 +141,36 @@ public class TurSkillRunnerService {
     }
 
     /**
+     * T325 / §IX.4.d — the skills offered to a turn, honouring an optional
+     * <strong>skill-mode pin</strong>. A multi-skill ZIP imports as independent
+     * units (each its own {@link TurSkill}); this lets a chat caller select one
+     * of them as a distinct "mode/flow" for the conversation:
+     * <ul>
+     *   <li>when {@code selectedSkillId} is blank/null — the legacy path — the
+     *       full {@link #availableSkills()} candidate set is offered for
+     *       progressive disclosure (the model picks via {@code run_skill});</li>
+     *   <li>when it pins one skill (by {@code id} or, for SDK convenience, by
+     *       case-insensitive {@code name}) only that single enabled, indexed
+     *       skill is offered — so the parent prompt names just it and
+     *       {@code run_skill} is constrained to it.</li>
+     * </ul>
+     * An unknown or disabled pin yields an empty list (no skill offered),
+     * never a fall-back to the whole set, so a pinned mode can't silently widen.
+     */
+    public List<TurSkill> offeredSkills(String selectedSkillId) {
+        List<TurSkill> all = availableSkills();
+        if (!StringUtils.hasText(selectedSkillId)) {
+            return all;
+        }
+        String pin = selectedSkillId.trim();
+        return all.stream()
+                .filter(skill -> pin.equals(skill.getId()) || pin.equalsIgnoreCase(safe(skill.getName())))
+                .findFirst()
+                .map(List::<TurSkill>of)
+                .orElseGet(List::of);
+    }
+
+    /**
      * The cheap parent-turn system-prompt block: each offered skill's
      * {@code name} (+ optional version) and {@code description}, plus the
      * instruction to invoke {@code run_skill} when one matches the task. Returns

@@ -278,6 +278,29 @@ public class TurAgentChatExecutor {
     }
 
     /**
+     * Overload accepting visitor attachments + a forced A/B variant label + an
+     * optional {@code selectedSkillId} skill-mode pin (T325 / §IX.4.d) — the
+     * entry point the chat REST controller uses. Runs at
+     * {@code agentInvokeDepth = 0} (a top-level visitor turn). A blank
+     * {@code selectedSkillId} offers all enabled skills (legacy progressive
+     * disclosure); a set value pins the turn to that single skill.
+     *
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files,
+            String forcedVariant,
+            String selectedSkillId) {
+        return execute(agent, llmInstance, history, systemPromptOverride,
+                conversationId, flowId, files, 0, forcedVariant, selectedSkillId);
+    }
+
+    /**
      * Overload accepting the current {@code agent.invoke(...)} recursion
      * depth. Published into the Spring AI {@code ToolContext} via
      * {@link com.viglet.turing.genai.tool.TurCustomToolCallbackService#TOOL_CONTEXT_AGENT_INVOKE_DEPTH}
@@ -322,6 +345,32 @@ public class TurAgentChatExecutor {
             List<MultipartFile> files,
             int agentInvokeDepth,
             String forcedVariant) {
+        return execute(agent, llmInstance, history, systemPromptOverride, conversationId,
+                flowId, files, agentInvokeDepth, forcedVariant, null);
+    }
+
+    /**
+     * Deepest overload — additionally accepts an optional {@code selectedSkillId}
+     * (T325 / §IX.4.d) that pins this turn to a single skill (the "skill mode" of
+     * a multi-skill ZIP). When blank/null the full enabled skill set is offered
+     * for progressive disclosure, exactly as the legacy overloads; when set, both
+     * the system-prompt skill block and the {@code run_skill} tool are scoped to
+     * that one skill. The skill still runs on the Global Settings Default LLM.
+     *
+     * @param selectedSkillId nullable skill id/name to pin; null/blank → all
+     *                        enabled skills (legacy progressive disclosure)
+     * @since 2026.3.1
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride,
+            String conversationId,
+            String flowId,
+            List<MultipartFile> files,
+            int agentInvokeDepth,
+            String forcedVariant,
+            String selectedSkillId) {
 
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown
@@ -381,7 +430,7 @@ public class TurAgentChatExecutor {
         // records STAGE_CHAT_SETUP_TOOLS internally.
         final long tBeforeTools = System.currentTimeMillis();
         ToolCallback[] callbacks = toolResolver.resolve(agent, activePersona,
-                lastUserMessageEarly, activeNode);
+                lastUserMessageEarly, activeNode, selectedSkillId);
         final long tAfterTools = System.currentTimeMillis();
 
         // Build chat options + per-turn tool context map (drives Custom
@@ -412,7 +461,8 @@ public class TurAgentChatExecutor {
         // call (matches the pre-T33 substage boundary).
         final long tBeforeCompose = System.currentTimeMillis();
         List<Message> messages = promptAssembler.assemble(agent, history, conversationId,
-                flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt, files);
+                flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt, files,
+                selectedSkillId);
         final long tAfterCompose = System.currentTimeMillis();
 
         // T123 / §IX.7 — enforceable token-budget check. Disabled when

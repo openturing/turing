@@ -103,11 +103,18 @@ public class TurAIAgentChatAPI {
             List<ChatMessageItem> messages,
             String conversationId,
             String flowId,
-            String forcedVariant) {
+            String forcedVariant,
+            String selectedSkillId) {
         /** Back-compat constructor (pre-T73): defaults {@code forcedVariant} to null. */
         public AgentChatRequest(String llmInstanceId, List<ChatMessageItem> messages,
                 String conversationId, String flowId) {
-            this(llmInstanceId, messages, conversationId, flowId, null);
+            this(llmInstanceId, messages, conversationId, flowId, null, null);
+        }
+
+        /** Back-compat constructor (pre-T325): defaults {@code selectedSkillId} to null. */
+        public AgentChatRequest(String llmInstanceId, List<ChatMessageItem> messages,
+                String conversationId, String flowId, String forcedVariant) {
+            this(llmInstanceId, messages, conversationId, flowId, forcedVariant, null);
         }
     }
 
@@ -204,7 +211,8 @@ public class TurAIAgentChatAPI {
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
                 .toList();
         return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
-                        request.conversationId(), request.flowId(), files, request.forcedVariant())
+                        request.conversationId(), request.flowId(), files, request.forcedVariant(),
+                        request.selectedSkillId())
                 .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
     }
 

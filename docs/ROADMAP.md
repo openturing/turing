@@ -73,8 +73,9 @@
 > T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
 > Rationale → §IX.4.d.
 
-- 📋 **T325** (deps: T319, T322) **Multi-skill ZIP as independent units** — each skill in a ZIP is independently activatable and optionally selectable in chat as a distinct mode/"flow". → §IX.4.d
-- 💭 **T118** (deps: T320) **Public skill registry** (`skills.turing.io`) — hosted, community/vendor-curated catalog of skill ZIPs; layers on import/export. Deferred. → §IX.4.c
+> **Block complete (2026-06-10).** All skill tasks (T316–T326) have shipped;
+> there is no remaining skills backlog. A hosted public registry was considered
+> and **dropped** — it is not a product direction.
 
 ## E.4 — Human-in-the-loop (parity, made graph-visible)
 

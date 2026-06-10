@@ -89,7 +89,7 @@ public class TurChatToolResolver {
      * and any non-chat surface that doesn't have a user message in hand.
      */
     public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona) {
-        return resolve(agent, activePersona, null, null);
+        return resolve(agent, activePersona, null, null, null);
     }
 
     /**
@@ -103,6 +103,21 @@ public class TurChatToolResolver {
      */
     public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
             String userMessage, ChatFlowNode activeNode) {
+        return resolve(agent, activePersona, userMessage, activeNode, null);
+    }
+
+    /**
+     * T325 overload — same as
+     * {@link #resolve(TurAIAgent, TurPersona, String, ChatFlowNode)} but with an
+     * optional {@code selectedSkillId} that pins the turn to a single skill (the
+     * "skill mode"). When blank/null the full enabled skill set is offered for
+     * progressive disclosure (legacy); when set, only the pinned skill's
+     * {@code run_skill} tool is exposed.
+     *
+     * @since 2026.3.1
+     */
+    public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
+            String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
         long t0 = System.currentTimeMillis();
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
@@ -122,9 +137,13 @@ public class TurChatToolResolver {
         // the model can delegate a task to a skill. The skill runs on the Global
         // Settings Default LLM, not this agent's model. Empty for default-off
         // agents or when the layer is unavailable.
+        // T325 / §IX.4.d — honour an optional skill-mode pin: when the caller
+        // selected a single skill for this turn, offer only that one; otherwise
+        // the full enabled set is offered for progressive disclosure (legacy).
         ToolCallback[] skillCallbacks =
                 agent.isSkillsEnabled() && skillRunnerService.isAvailable()
-                        ? skillRunnerService.buildToolCallbacks(skillRunnerService.availableSkills())
+                        ? skillRunnerService.buildToolCallbacks(
+                                skillRunnerService.offeredSkills(selectedSkillId))
                         : new ToolCallback[0];
         ToolCallback[] decorated = toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,

@@ -72,6 +72,12 @@
       "workspace": "Workspace files",
       "workspaceEmpty": "No files have been built for this conversation yet.",
       "workspaceError": "Workspace stream unavailable for this conversation."
+    },
+    "skill": {
+      "selector": {
+        "placeholder": "Skill mode",
+        "auto": "All skills (auto)"
+      }
     }
   }
 }

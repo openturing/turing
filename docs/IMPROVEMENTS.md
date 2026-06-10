@@ -1169,22 +1169,14 @@ versioned, marketplace-distributable units**:
 - `scaffold-mindmap` — `buildMindMap(abstracts, term)` for Mermaid trees
 
 **The moat**: Deep Agents has skills as a *concept*; Turing makes them a
-**distributable, versioned package format with vendor signatures**.
-Once `skills.turing.io` (T118) lives, the network effect is one-way —
-authors publish there because customers are there; customers go there
-because skills are there. LangChain has community packages but no
-deterministic catalog with vendor signing.
+**portable, ZIP-distributable folder format** that round-trips with
+Anthropic's own skill container (see §IX.4.d, which supersedes the
+decomposed-manifest framing above).
 
-**v1 registry is in-app, not hosted.** Rather than stand up
-`skills.turing.io` immediately, the first registry is the existing
-**`/admin/marketplace`** storefront: Skills are a marketplace *kind*
-(alongside Sites and Flow Recipes) for browse + install, while the
-editable `/skill` CRUD authors user skills. This proves the
-manifest/version/signature model end-to-end against the bundled
-platform catalog before any hosting, multi-tenant publishing, or
-moderation surface is built. The hosted public registry (community
-publishing, vendor-curated tiers) remains the T118 endgame — it layers
-on top of the same `TurSkillManifest` contract.
+> **A hosted public registry was dropped.** An earlier idea (a hosted
+> `skills.turing.io` community/vendor catalog) was considered and is **not**
+> a product direction — import/export ZIP (T319/T320) is the interop boundary;
+> distribution beyond that is out of scope.
 
 #### IX.4.d The pivot — Skill = Anthropic-standard folder, run in Docker (T317–T325)
 
@@ -1246,9 +1238,13 @@ independently-activatable unit.
   results into the sandbox `/workspace` via `skill_bash`. This is the first
   place a skill leverages Turing's own data — the v2 "integrate, via
   standard tools" step.
-- **T325 — Multi-skill ZIP as independent units.** Each skill in an
-  imported ZIP is independently activatable (progressive disclosure) and
-  optionally selectable in chat as a distinct mode/"flow".
+- **T325 — Multi-skill ZIP as independent units. (shipped)** Each skill
+  in an imported ZIP is independently activatable (already true via T319,
+  which splits every `SKILL.md`-bearing folder into its own indexed
+  `TurSkill`) and now optionally selectable in chat as a distinct
+  mode/"flow": an optional `selectedSkillId` rides the chat request and,
+  when set, narrows the turn to that one skill (prompt block + `run_skill`
+  tool); blank keeps the legacy all-skills progressive disclosure.
 
 **Sequencing.** The whole authoring + interop layer has shipped: T326
 (rollback), T317 (storage/index shape), T318 (the mini-VS-Code folder
@@ -1264,9 +1260,12 @@ storage + `DOCKER`). **T323 — use skill in chat — has shipped**
 toggle, skill always driven by the Default LLM). **T324 — use skill in
 semantic navigation — has shipped** (skill activation is free via the
 shared executor; the skill sub-loop also gets the `TurDslToolService`
-Turing-search tools). What remains: T325 (multi-skill ZIP as independent
-units). The public hosted registry (T118) layers on T320 and stays a
-deferred idea.
+Turing-search tools). **T325 — multi-skill ZIP as independent units — has
+shipped** (independent units via T319 import; per-conversation skill-mode
+selection via an optional `selectedSkillId` on the chat request). The
+whole §IX.4.d skill block is now complete. (A hosted public registry was
+considered and dropped — not a product direction; ZIP import/export is the
+interop boundary.)
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
@@ -1440,8 +1439,8 @@ Three groups, ranked by ratio of differentiation × Turing-infra reuse:
 
 **Total: ~14 weeks of focused work to reach Deep Agents parity +
 overtake on three dimensions** (workspace, skills marketplace, eval
-harness). T118 public skills registry (`skills.turing.io`) is a
-separate product launch, not a feature.
+harness). (A hosted public skills registry, once floated as `skills.turing.io`,
+was dropped — not a product direction.)
 
 ### IX.12 The competitive narrative — one paragraph
 

@@ -159,6 +159,29 @@ public class TurChatPromptAssembler {
             String lastUserMessage,
             String baseSystemPrompt,
             List<MultipartFile> files) {
+        return assemble(agent, history, conversationId, flowContext, effectivePersona,
+                lastUserMessage, baseSystemPrompt, files, null);
+    }
+
+    /**
+     * Same as the files overload but with an optional {@code selectedSkillId}
+     * (T325). When set, the progressive-disclosure skill block lists only the
+     * pinned skill (the "skill mode" of a multi-skill ZIP); when blank/null the
+     * full enabled set is listed, exactly as before.
+     *
+     * @param selectedSkillId nullable skill id/name to pin this turn to a single
+     *                        skill; null/blank offers all enabled skills
+     * @since 2026.3.1
+     */
+    public List<Message> assemble(TurAIAgent agent,
+            List<ChatMessageItem> history,
+            String conversationId,
+            TurAgentChatFlowContext flowContext,
+            TurPersona effectivePersona,
+            String lastUserMessage,
+            String baseSystemPrompt,
+            List<MultipartFile> files,
+            String selectedSkillId) {
         long t0 = System.currentTimeMillis();
         // Append the per-agent MCP server instructions (enabled servers with
         // non-blank llmInstructions) so the model knows how/when to use the
@@ -181,8 +204,11 @@ public class TurChatPromptAssembler {
         // agent's model. No-op (empty block) for default-off agents or when the
         // layer is unavailable, so existing agents are byte-for-byte unchanged.
         if (agent.isSkillsEnabled() && skillRunnerService.isAvailable()) {
+            // T325 — honour an optional skill-mode pin (single skill) over the
+            // full enabled set; offeredSkills(null) returns all (legacy).
             mcpAugmented = mcpAugmented
-                    + skillRunnerService.buildSystemPromptBlock(skillRunnerService.availableSkills());
+                    + skillRunnerService.buildSystemPromptBlock(
+                            skillRunnerService.offeredSkills(selectedSkillId));
         }
         String flowAugmented = flowContext == null
                 ? mcpAugmented

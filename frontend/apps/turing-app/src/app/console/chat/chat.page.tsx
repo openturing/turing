@@ -8,9 +8,11 @@ import { BlankSlate } from "@/components/blank-slate"
 import { PageHeader } from "@/components/page-header"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
+import type { TurSkillSummary } from "@/models/skill/skill.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
+import { TurSkillService } from "@/services/skill/skill.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconMessageChatbot, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
@@ -31,12 +33,13 @@ import {
 } from "./chat.types"
 import { ChatHeader } from "./components/chat-header"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
-import { AgentChatTab, AgentNoLlmFallback, FLOW_AUTO } from "./components/agent-chat-tab"
+import { AgentChatTab, AgentNoLlmFallback, FLOW_AUTO, SKILL_NONE } from "./components/agent-chat-tab"
 import { useChatSession } from "./hooks/use-chat-session"
 
 const turAIAgentService = new TurAIAgentService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
 const turChatFlowService = new TurChatFlowService()
+const turSkillService = new TurSkillService()
 
 export default function ChatPage() {
   const { t } = useTranslation()
@@ -52,6 +55,12 @@ export default function ChatPage() {
   // Per-agent: list of flows fetched on demand + the currently selected flow.
   const [flowsByAgent, setFlowsByAgent] = useState<Record<string, TurChatFlow[]>>({})
   const [selectedFlowByAgent, setSelectedFlowByAgent] = useState<Record<string, string>>({})
+
+  // T325 — enabled skills (catalog-wide) + the per-agent skill-mode pin. An
+  // empty/SKILL_NONE pin means the agent offers all skills via progressive
+  // disclosure (legacy); picking one runs that single skill as a distinct mode.
+  const [skills, setSkills] = useState<TurSkillSummary[]>([])
+  const [selectedSkillByAgent, setSelectedSkillByAgent] = useState<Record<string, string>>({})
 
   // Per-tab chat hosting. `chatEpoch` keys the AgentChatTab so a new chat /
   // session restore / post-compaction summary remounts it with a fresh seed.
@@ -115,6 +124,15 @@ export default function ChatPage() {
   const activeFlows = activeAgentId ? flowsByAgent[activeAgentId] ?? [] : []
   const selectedFlowId = activeAgentId ? selectedFlowByAgent[activeAgentId] ?? FLOW_AUTO : FLOW_AUTO
   const flowIdForSend = selectedFlowId === FLOW_AUTO ? undefined : selectedFlowId
+
+  // T325 — skill-mode selection for the active agent. Only meaningful when the
+  // agent has skills enabled and the catalog has any enabled skill. SKILL_NONE
+  // (the default) keeps the legacy all-skills progressive-disclosure behaviour.
+  const skillModeEnabled = Boolean(activeAgent?.skillsEnabled) && skills.length > 0
+  const selectedSkillId =
+    activeAgentId ? selectedSkillByAgent[activeAgentId] ?? SKILL_NONE : SKILL_NONE
+  const selectedSkillIdForSend =
+    skillModeEnabled && selectedSkillId !== SKILL_NONE ? selectedSkillId : undefined
 
   const modelLabel = selectedInstance
     ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}`
@@ -230,6 +248,14 @@ export default function ChatPage() {
     [activeAgentId],
   )
 
+  const handleSkillChange = useCallback(
+    (value: string) => {
+      if (!activeAgentId) return
+      setSelectedSkillByAgent((prev) => ({ ...prev, [activeAgentId]: value }))
+    },
+    [activeAgentId],
+  )
+
   const handleAutoSendConsumed = useCallback(() => setPendingAutoSend(null), [])
 
   // ── Effects ──
@@ -252,6 +278,15 @@ export default function ChatPage() {
       setAgents(sorted)
       setAgentsLoaded(true)
     })
+  }, [])
+
+  // T325 — load the enabled skill catalog once. Degrades to [] when storage is
+  // disabled or the endpoint errors, so the skill-mode selector simply hides.
+  useEffect(() => {
+    turSkillService
+      .query()
+      .then((list) => setSkills(list.filter((s) => s.enabled)))
+      .catch(() => setSkills([]))
   }, [])
 
   // Once agents have loaded, pick the initial active tab.
@@ -383,6 +418,11 @@ export default function ChatPage() {
               activeFlows={activeFlows}
               selectedFlowId={selectedFlowId}
               onFlowChange={handleFlowChange}
+              selectedSkillIdForSend={selectedSkillIdForSend}
+              skillModeEnabled={skillModeEnabled}
+              skills={skills}
+              selectedSkillId={selectedSkillId}
+              onSkillChange={handleSkillChange}
               compacting={compacting}
               onCompactRequested={handleCompactRequested}
               onResponseComplete={handleResponseComplete}

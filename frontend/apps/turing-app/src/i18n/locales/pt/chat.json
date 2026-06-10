@@ -72,6 +72,12 @@
       "workspace": "Arquivos do workspace",
       "workspaceEmpty": "Nenhum arquivo foi gerado para esta conversa ainda.",
       "workspaceError": "Stream do workspace indisponível para esta conversa."
+    },
+    "skill": {
+      "selector": {
+        "placeholder": "Modo skill",
+        "auto": "Todas as skills (auto)"
+      }
     }
   }
 }
