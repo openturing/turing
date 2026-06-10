@@ -49,6 +49,23 @@
 - 📋 **T244** (deps: —) **Block A "cascade ascent" IT body** — the last deferred structural test body from the Block A harness audit: a multi-level sub-flow ascent case. → §0 Block A
 - 💭 **T294** (deps: —) **Outbound MCP client → Streamable HTTP transport (per-server opt-in)** — MCP SDK 2.0.0-RC1 deprecated `HttpClientSseClientTransport` (legacy two-endpoint HTTP+SSE) in favour of `HttpClientStreamableHttpTransport` (single `/mcp` endpoint). The new transport is a different wire protocol with no fallback to the legacy SSE handshake, so it can't silently replace the SSE one for SSE-only servers. The deprecation is plain `@Deprecated` (not `forRemoval`), so this is non-urgent; `TurMcpToolCallbackService.createTransport(...)` currently keeps SSE behind `@SuppressWarnings`. Add a per-server transport-type field on `TurMcpServer` (default = legacy SSE) so each HTTP server picks SSE or Streamable HTTP — entity + Liquibase column + admin UI — and drop the suppression once migrated.
 
+## D.12 — Headless React UI library (`@viglet/turing-react-ui`)
+
+> New package for **design-agnostic** React chat/rich-content components shared
+> by the admin console and viglet.com **without** viglet.com depending on
+> `@viglet/turing-react-sdk` (axios). Skin via `classNames`/`labels`/`icons`;
+> pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
+> the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
+
+- 💭 **T298** (deps: —) **Chat atoms** — design-less primitives shared today by copy: `TuringCodeBlock` (with copy button), `TuringThinkingDots`, `TuringCopyButton`. → §XII.2
+- 💭 **T299** (deps: T295) **`TuringChatMessage` shell** — slot/render-prop driven bubble (avatar, actions, attachments) for apps that want it; the fully-branded app shell (layout, input, chips) stays per-app on purpose. → §XII.2
+- 💭 **T300** (deps: —) **react-sdk re-exports react-ui** — single import surface for the admin (`@viglet/turing-react-sdk` re-exports the UI components) while react-ui stays axios-free for viglet.com. → §XII.2
+- 📋 **T301** (deps: —) **react-ui vitest (jsdom)** — render tests for the headless contract: iframe `sandbox`/`srcDoc` attrs, fullscreen open/Esc, `classNames`/`labels`/`icons` passthrough, SSR `document` guard. → §XII.2
+- 💭 **T302** (deps: —) **react-ui Storybook** — stories skinning each headless component **two ways** (shadcn vs viglet brand) as the living design contract + a11y/controls docs. → §XII.2
+- 💭 **T303** (deps: —) **Packaging hardening** — `exports` subpath map, ESM/types correctness, `sideEffects`/tree-shaking verification + bundle-size budget in CI, semver/changesets, publish to npm for external embedders. → §XII.2
+- 💭 **T304** (deps: —) **a11y + SSR pass** — focus trap/restore for the fullscreen portal, ARIA roles/labels, and a `typeof document`/RSC-safety audit across all react-ui components (Next App Router). → §XII.2
+- 💭 **T305** (deps: —) **Optional token theming** — expose CSS custom properties (`--turing-ui-*`) as an alternative to `classNames`, so apps can theme via design tokens without per-slot class maps. → §XII.2
+
 ## E.2 — Agent Workspace (the key differentiator)
 
 - 📋 **T114** (deps: T111) **Auto-offload large tool results** — when a tool returns >`TOOL_RESULT_INLINE_MAX` chars (default 4096), `TurToolCallbackPipeline` stores the full payload in workspace at `tool-results/{toolName}-{ts}.json`, replaces inline text with `Stor… → §IX.3.d

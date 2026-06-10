@@ -57,6 +57,10 @@ vi.mock("react-i18next", () => ({
 // this mock doesn't affect the options assertions.
 vi.mock("react-markdown", () => ({
   default: ({ children }: { children?: ReactNode }) => children,
+  // TuringMarkdown (@viglet/turing-react-ui) imports this named export to
+  // sanitize URLs after resolving the `sandbox:` scheme; the default mock above
+  // never calls urlTransform, but provide it so the named import isn't undefined.
+  defaultUrlTransform: (url: string) => url,
 }));
 vi.mock("remark-gfm", () => ({ default: () => undefined }));
 vi.mock("rehype-highlight", () => ({ default: () => undefined }));

@@ -37,6 +37,7 @@
     "@radix-ui/react-toggle": "^1.1.11",
     "@radix-ui/react-toggle-group": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.9",
+    "@terrastruct/d2": "^0.1.33",
     "@codemirror/language": "^6.10.5",
     "@codemirror/legacy-modes": "^6.5.3",
     "@codemirror/theme-one-dark": "^6.1.2",

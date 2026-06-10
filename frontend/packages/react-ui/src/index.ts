@@ -17,3 +17,24 @@ export type {
   TuringHtmlSandboxLabels,
   TuringHtmlSandboxIcons,
 } from "./TuringHtmlSandbox";
+
+export { TuringRichContent, splitRichContent } from "./TuringRichContent";
+export type {
+  TuringRichContentProps,
+  TuringRichContentClassNames,
+  TuringRichSegment,
+  TuringMarkdownSegmentProps,
+  TuringD2Props,
+  TuringHtmlSegmentProps,
+} from "./TuringRichContent";
+
+export { TuringMarkdown, resolveSandboxUrl } from "./TuringMarkdown";
+export type { TuringMarkdownProps } from "./TuringMarkdown";
+
+export { TuringD2Diagram } from "./TuringD2Diagram";
+export type {
+  TuringD2DiagramProps,
+  TuringD2DiagramClassNames,
+  TuringD2DiagramLabels,
+  TuringD2Renderer,
+} from "./TuringD2Diagram";

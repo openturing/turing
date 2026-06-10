@@ -8,9 +8,9 @@ import {
   IconSparkles,
   IconUser,
 } from "@tabler/icons-react";
+import { TuringMarkdown } from "@viglet/turing-react-ui";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 
@@ -26,13 +26,6 @@ interface AiModeChatProps {
 export interface AiModeChatHandle {
   /** Imperatively submit a question to the chat (e.g. from the top search bar). */
   ask: (query: string) => void;
-}
-
-function encodeMarkdownLinkUrls(text: string): string {
-  return text.replaceAll(
-    /\[([^\]]*)\]\(([^)]+)\)/g,
-    (_match, label: string, url: string) => `[${label}](<${url.replaceAll(" ", "%20")}>)`,
-  );
 }
 
 export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function AiModeChat(
@@ -156,12 +149,12 @@ export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function
                 {message.role === "assistant" ? (
                   <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-a:text-blue-600 dark:prose-a:text-blue-400">
                     {message.content ? (
-                      <ReactMarkdown
+                      <TuringMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight]}
                       >
-                        {encodeMarkdownLinkUrls(message.content)}
-                      </ReactMarkdown>
+                        {message.content}
+                      </TuringMarkdown>
                     ) : null}
                   </div>
                 ) : (

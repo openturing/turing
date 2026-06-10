@@ -1859,6 +1859,68 @@ customer value — there is no monolithic "Block F is done" gate.
 > See [CHANGELOG.md](CHANGELOG.md). Active follow-up: T243 (shared
 > `useStreamingChatCore`) — see [ROADMAP.md](ROADMAP.md).
 
+### XII.2 Headless UI library — `@viglet/turing-react-ui` (the what/why)
+
+**Problem.** Turing's chat surfaces now live in two apps that must stay
+visually independent: the **admin console** (React 19 + Vite + shadcn/Tailwind +
+`@viglet/viglet-design-system`) and **viglet.com** (Next.js 15, its own brand).
+As features land in both — code-interpreter HTML/canvas previews, `sandbox:`
+artifact URLs, rich-content segmentation — components get **copy-pasted**
+between them (the `SandboxPlayer` ⇄ `HtmlSandbox` duplication that triggered
+this block). Putting them in `@viglet/turing-react-sdk` is wrong: that package
+carries the **axios/API hooks** layer, and viglet.com deliberately stays on the
+zero-dep, fetch-based `@viglet/turing-sdk` core (it must not pull axios).
+
+**The layering decision (binding).** Three packages, one direction of
+dependency:
+
+| Package | Holds | Deps | Consumers |
+|---|---|---|---|
+| `@viglet/turing-sdk` | core logic — client, controllers, **pure helpers** (`splitRichContent`, `resolveSandboxUrl`, `absolutizeArtifactUrls`) | zero runtime deps | viglet.com, admin (via react-sdk), EDS |
+| **`@viglet/turing-react-ui`** | **headless React components** | peer `react`/`react-dom` only — **no axios, no API** | viglet.com, admin |
+| `@viglet/turing-react-sdk` | API hooks + observable stores | axios + the SDK core | admin (and may re-export react-ui) |
+
+Pure, framework-agnostic logic belongs in the **core SDK** (tested there,
+reused by every surface). React rendering belongs in **react-ui**. API/transport
+stays in **react-sdk**. viglet.com composes core + react-ui + its own Next BFF
+transport; it never sees axios.
+
+**The headless contract (how we "don't commit to design").** A react-ui
+component renders **structure only** — no colors, borders, or spacing of its
+own (only functional layout, e.g. an iframe's `width:100%`/`border:0`). The host
+app supplies the look through three injection points:
+
+- `classNames` — a **per-slot** class map (`{ root, header, label, button,
+  iframe, fullscreenRoot, … }`). The app passes its own Tailwind / CSS-module /
+  vanilla classes. Crucially the classes are **literal in the app's source**, so
+  each app's Tailwind scan resolves them and the **library stays Tailwind-free**
+  (no shared config, no `content` globbing into `node_modules`).
+- `labels` — localized strings (the app owns i18n).
+- `icons` — `ReactNode` slots that **default to the label text**, so the library
+  has **no icon-library dependency**; the app plugs in @tabler / lucide / svg.
+
+This is why the admin (shadcn look) and viglet.com (its brand) share one
+`TuringHtmlSandbox` implementation while keeping distinct appearances — each
+app's `*-sandbox.tsx` is now a **thin skin adapter** (props only, zero logic).
+
+**Packaging principles.** `tsc` → ESM `dist` (`"type":"module"`,
+`sideEffects:false` for tree-shaking), peer-dep React (never bundled), consumed
+via `workspace:*` (admin) / `file:` (viglet.com) symlinks — **rebuild the dist**
+for consumers to pick up changes. SSR-safe (Next RSC): client-only concerns
+(`createPortal`, `document`) are guarded; consumers import into `"use client"`
+boundaries. Keep the package **publishable** (npm, semver) so external embedders
+can use it too.
+
+**Roadmap shape (see ROADMAP.md D.12).** Migrate by **ROI and design-weight**,
+not all at once: design-less primitives first (sandbox preview ✅, rich-content
+segmentation, markdown wrapper, D2 diagrams, code-block/loading atoms), then a
+slot-driven message shell only if duplication keeps hurting. The fully-branded
+**app shell** (layout, input bar, suggestion chips) stays per-app — extracting
+it early produces an abstraction that fights both designs. DX backstops:
+Storybook as the living "two-skin" design contract, jsdom render tests for the
+headless contract, and packaging hardening (`exports` subpaths, a11y, SSR,
+bundle-size budget) before a public release.
+
 ## XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform
 
 > **The pitch in one line**: stop asking customers to integrate Turing

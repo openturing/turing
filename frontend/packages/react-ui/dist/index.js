@@ -11,4 +11,7 @@
  * @since 2026.3.1
  */
 export { TuringHtmlSandbox } from "./TuringHtmlSandbox";
+export { TuringRichContent, splitRichContent } from "./TuringRichContent";
+export { TuringMarkdown, resolveSandboxUrl } from "./TuringMarkdown";
+export { TuringD2Diagram } from "./TuringD2Diagram";
 //# sourceMappingURL=index.js.map

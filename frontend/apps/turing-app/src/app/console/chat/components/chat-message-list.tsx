@@ -2,9 +2,9 @@ import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
 import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
-import { useMemo, useState } from "react"
+import { TuringD2Diagram, TuringMarkdown, TuringRichContent } from "@viglet/turing-react-ui"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import ReactMarkdown from "react-markdown"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 import { type ChatMessage, formatFileSize } from "../chat.types"
@@ -27,58 +27,45 @@ interface ChatMessageListProps {
   onOptionClick?: (label: string) => void
 }
 
-type ContentSegment =
-  | { type: "markdown"; text: string }
-  | { type: "html"; code: string }
-
-const SPECIAL_BLOCK_RE = /```(html)\n([\s\S]*?)```/g
-
-function splitContent(content: string): ContentSegment[] {
-  const segments: ContentSegment[] = []
-  let lastIndex = 0
-  for (const match of content.matchAll(SPECIAL_BLOCK_RE)) {
-    const before = content.slice(lastIndex, match.index)
-    if (before) segments.push({ type: "markdown", text: before })
-    segments.push({ type: "html", code: match[2].replace(/\n$/, "") })
-    lastIndex = match.index + match[0].length
-  }
-  const after = content.slice(lastIndex)
-  if (after) segments.push({ type: "markdown", text: after })
-  return segments
-}
-
-function encodeMarkdownLinkUrls(text: string): string {
-  return text.replaceAll(
-    /\[([^\]]*)\]\(([^)]+)\)/g,
-    (_match, label: string, url: string) => {
-      const encoded = url.replaceAll(" ", "%20")
-      return `[${label}](<${encoded}>)`
-    }
+function MarkdownBlock({ text }: Readonly<{ text: string }>) {
+  // Shared markdown contract (`@viglet/turing-react-ui`): handles `sandbox:`
+  // artifact URLs (resolve + XSS-safe sanitize) and space-escaping; we just
+  // supply this app's plugin set. Code-interpreter URLs arrive same-origin
+  // (backend strips `sandbox:` via TurChatArtifactUrls), so no baseUrl needed.
+  return (
+    <TuringMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+      {text}
+    </TuringMarkdown>
   )
 }
 
-function MarkdownBlock({ text }: Readonly<{ text: string }>) {
-  // Code-interpreter artifact URLs arrive here already normalized to a
-  // same-origin-relative /api/v2/... path (the backend strips the LLM's
-  // `sandbox:` scheme via TurChatArtifactUrls), so react-markdown's default
-  // urlTransform renders them as-is. Cross-origin consumers resolve the
-  // `sandbox:` scheme through @viglet/turing-sdk's resolveSandboxUrl instead.
+function D2Block({ code }: Readonly<{ code: string }>) {
+  // Admin skin over the shared headless TuringD2Diagram. The D2 engine
+  // (@terrastruct/d2) is lazy-imported inside the shared component, so this
+  // chunk is only fetched when a reply actually contains a ```d2 block; until
+  // it resolves we show the loading caption, and on failure the source.
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-      {encodeMarkdownLinkUrls(text)}
-    </ReactMarkdown>
+    <TuringD2Diagram
+      code={code}
+      labels={{ loading: "Rendering diagram…", error: "Could not render diagram" }}
+      classNames={{
+        root: "not-prose my-2 rounded-lg border bg-background p-3 overflow-auto",
+        diagram: "flex justify-center [&_svg]:max-w-full [&_svg]:h-auto",
+        loading: "text-xs text-muted-foreground",
+        error: "block text-xs text-muted-foreground mb-1",
+        code: "overflow-auto text-xs bg-muted/30 rounded-md p-2",
+      }}
+    />
   )
 }
 
 function AssistantContent({ content }: Readonly<{ content: string }>) {
-  const segments = useMemo(() => splitContent(content), [content])
+  // Shared headless dispatcher (`@viglet/turing-react-ui`): splits the reply into
+  // markdown / ```html / ```d2 and renders each — prose via this app's
+  // MarkdownBlock skin, ```html via the SandboxPlayer skin, ```d2 via the
+  // D2Block skin. viglet.com renders the same segments with its own skins.
   return (
-    <>
-      {segments.map((seg, i) =>
-        seg.type === "html" ? <SandboxPlayer key={i} htmlCode={seg.code} />
-        : <MarkdownBlock key={i} text={seg.text} />
-      )}
-    </>
+    <TuringRichContent content={content} markdown={MarkdownBlock} html={SandboxPlayer} d2={D2Block} />
   )
 }
 

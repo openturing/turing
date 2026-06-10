@@ -2,7 +2,9 @@ import { IconCode, IconEye, IconMaximize, IconX } from "@tabler/icons-react"
 import { TuringHtmlSandbox } from "@viglet/turing-react-ui"
 
 interface SandboxPlayerProps {
-  htmlCode: string
+  /** The ```html fragment to preview. Matches the headless `{ code }` segment
+   * shape so it can be passed straight to `TuringRichContent`'s `html` slot. */
+  code: string
 }
 
 /**
@@ -13,10 +15,10 @@ interface SandboxPlayerProps {
  * design as before, now with zero duplicated logic (viglet.com applies its own
  * skin to the same component).
  */
-export function SandboxPlayer({ htmlCode }: Readonly<SandboxPlayerProps>) {
+export function SandboxPlayer({ code }: Readonly<SandboxPlayerProps>) {
   return (
     <TuringHtmlSandbox
-      code={htmlCode}
+      code={code}
       height={300}
       showCodeToggle
       labels={{ title: "HTML Preview", fullscreen: "Open fullscreen", close: "Close" }}

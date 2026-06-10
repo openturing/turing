@@ -31,6 +31,21 @@ describe("splitRichContent", () => {
     });
   });
 
+  it("splits a ```d2 diagram block out of prose", () => {
+    const md = "Here is the flow:\n\n```d2\na -> b\n```\n\nDone.";
+    const segs = splitRichContent(md);
+    expect(segs).toEqual([
+      { type: "markdown", text: "Here is the flow:\n\n" },
+      { type: "d2", code: "a -> b" },
+      { type: "markdown", text: "\n\nDone." },
+    ]);
+  });
+
+  it("interleaves html and d2 blocks in order", () => {
+    const segs = splitRichContent("```html\n<b/>\n```\nx\n```d2\nc -> d\n```");
+    expect(segs.map((s) => s.type)).toEqual(["html", "markdown", "d2"]);
+  });
+
   it("returns [] for empty input", () => {
     expect(splitRichContent("")).toEqual([]);
   });
