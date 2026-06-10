@@ -1235,12 +1235,17 @@ independently-activatable unit.
   T322 harness for the sub-loop's prompt + `load_skill`/`skill_bash` tools)
   that operates the skill end-to-end and returns the result. T324/T325
   inherit this rule.
-- **T324 — Use skill in semantic navigation.** Because the SN AI chat
-  shares `TurAgentChatExecutor`, T323's per-agent toggle already activates
-  skills in SN mode (on the Default LLM, per the rule above). What remains
-  is exposing Turing search to the skill as a tool inside the sandbox (the
-  first place a skill leverages Turing's own data — the v2 "integrate, via
-  standard tools" step).
+- **T324 — Use skill in semantic navigation. (shipped)** Two parts. (1)
+  *Activation* came free: the SN AI chat shares `TurAgentChatExecutor`, so
+  T323's per-agent toggle already activates skills in SN mode (on the
+  Default LLM, per the rule above). (2) *Turing search as a skill tool*:
+  the skill's Default-LLM sub-loop now also gets the Semantic Navigation
+  DSL toolset (`TurDslToolService` — list indices / get mappings / search /
+  …, the same surface the semantic chat uses) alongside
+  `load_skill`/`skill_bash`. The tools run in-process; the model bridges
+  results into the sandbox `/workspace` via `skill_bash`. This is the first
+  place a skill leverages Turing's own data — the v2 "integrate, via
+  standard tools" step.
 - **T325 — Multi-skill ZIP as independent units.** Each skill in an
   imported ZIP is independently activatable (progressive disclosure) and
   optionally selectable in chat as a distinct mode/"flow".
@@ -1256,9 +1261,10 @@ shipped** (`TurSkillActivationHarness`: progressive-disclosure prompt
 block + `load_skill` / `skill_bash` tools over the T321 sandbox, gated on
 storage + `DOCKER`). **T323 — use skill in chat — has shipped**
 (`TurSkillRunnerService` + `run_skill` delegation, per-agent `skillsEnabled`
-toggle, skill always driven by the Default LLM). What remains: T324
-(Turing-search-as-a-sandbox-tool — note skill *activation* in SN already
-works via the shared executor) and T325 (multi-skill ZIP as independent
+toggle, skill always driven by the Default LLM). **T324 — use skill in
+semantic navigation — has shipped** (skill activation is free via the
+shared executor; the skill sub-loop also gets the `TurDslToolService`
+Turing-search tools). What remains: T325 (multi-skill ZIP as independent
 units). The public hosted registry (T118) layers on T320 and stays a
 deferred idea.
 

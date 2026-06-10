@@ -9,10 +9,12 @@
  */
 package com.viglet.turing.genai.skill.activation;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -22,6 +24,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.TurToolExecutionLoop;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
+import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.skill.TurSkill;
@@ -63,6 +67,12 @@ import lombok.extern.slf4j.Slf4j;
  *       {@link TurSkillActivationHarness} (its prompt block as the system message
  *       and its {@code load_skill} / {@code skill_bash} callbacks as the toolset),
  *       so the sub-loop reads the skill's {@code SKILL.md} and drives its sandbox;</li>
+ *   <li>also exposes Turing's Semantic Navigation search to the skill (T324):
+ *       the {@link TurDslToolService} toolset ({@code dsl_list_indices} /
+ *       {@code dsl_get_mappings} / {@code dsl_search} / …) is added to the sub-loop
+ *       so the skill can leverage Turing's own indexed content — the tools run
+ *       in-process and the model bridges results into the sandbox {@code /workspace}
+ *       via {@code skill_bash} (no container network required);</li>
  *   <li>runs the agentic tool loop ({@link TurToolExecutionLoop}) on the Default
  *       LLM until it produces a final answer, and returns that text to the parent
  *       turn as the {@code run_skill} tool result.</li>
@@ -94,6 +104,7 @@ public class TurSkillRunnerService {
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurToolExecutionLoop toolExecutionLoop;
+    private final TurDslToolService dslToolService;
 
     public TurSkillRunnerService(TurSkillActivationHarness harness,
             TurGlobalSettingsService globalSettingsService,
@@ -102,7 +113,8 @@ public class TurSkillRunnerService {
             TurSecretCryptoService secretCryptoService,
             TurLLMTokenUsageService tokenUsageService,
             TurToolCallbackPipeline toolCallbackPipeline,
-            TurToolExecutionLoop toolExecutionLoop) {
+            TurToolExecutionLoop toolExecutionLoop,
+            TurDslToolService dslToolService) {
         this.harness = harness;
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
@@ -111,6 +123,7 @@ public class TurSkillRunnerService {
         this.tokenUsageService = tokenUsageService;
         this.toolCallbackPipeline = toolCallbackPipeline;
         this.toolExecutionLoop = toolExecutionLoop;
+        this.dslToolService = dslToolService;
     }
 
     /**
@@ -223,8 +236,28 @@ public class TurSkillRunnerService {
             String system = "You are operating a skill to accomplish the task the calling assistant"
                     + " delegated to you. Use the skill below: read its instructions and run it in its"
                     + " sandbox, then reply with ONLY the final result the caller needs (no preamble)."
+                    + " You also have Turing Semantic Navigation search tools (list indices, get"
+                    + " mappings, search): use them when the skill needs Turing's own indexed content"
+                    + " — discover an index, inspect its fields, query it, and write any results you"
+                    + " need into the skill's /workspace via skill_bash."
                     + harness.buildSystemPromptBlock(one);
-            ToolCallback[] tools = toolCallbackPipeline.decorate(harness.buildToolCallbacks(one));
+            // T324 / §IX.4.d — expose Turing search to the skill as a tool. The
+            // sub-loop gets the skill activation callbacks (load_skill/skill_bash)
+            // PLUS the Semantic Navigation DSL toolset (dsl_list_indices /
+            // dsl_get_mappings / dsl_search / …) — the same surface the semantic
+            // chat exposes — so a skill can leverage Turing's own data. The tools
+            // execute in-process (no container network needed); the model bridges
+            // results into the sandbox workspace through skill_bash. All decorated
+            // together so descriptions (prompts/tools/**) + logging apply uniformly.
+            ToolCallback[] turingSearchCallbacks = MethodToolCallbackProvider.builder()
+                    .toolObjects(dslToolService)
+                    .build()
+                    .getToolCallbacks();
+            ToolCallback[] tools = toolCallbackPipeline.decorate(
+                    Stream.concat(
+                            Arrays.stream(harness.buildToolCallbacks(one)),
+                            Arrays.stream(turingSearchCallbacks))
+                            .toArray(ToolCallback[]::new));
 
             Map<String, Object> toolContext = new LinkedHashMap<>();
             if (StringUtils.hasText(agentId)) {

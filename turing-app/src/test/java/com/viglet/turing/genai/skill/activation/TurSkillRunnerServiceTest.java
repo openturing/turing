@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -33,6 +34,7 @@ import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.tool.ToolCallback;
 
 import com.viglet.turing.genai.TurToolExecutionLoop;
+import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.skill.TurSkill;
@@ -73,11 +75,17 @@ class TurSkillRunnerServiceTest {
 
     private TurSkillRunnerService service;
 
+    // Real instance (not a mock) so MethodToolCallbackProvider discovers the
+    // genuine @Tool methods deterministically. Null deps are fine — tool
+    // discovery only reflects over the methods, it never invokes them.
+    private final TurDslToolService dslToolService =
+            new TurDslToolService(null, null, null, null, null);
+
     @BeforeEach
     void setUp() {
         service = new TurSkillRunnerService(harness, globalSettingsService, llmInstanceRepository,
                 llmModelFactory, secretCryptoService, tokenUsageService, toolCallbackPipeline,
-                toolExecutionLoop);
+                toolExecutionLoop, dslToolService);
     }
 
     private TurSkill skill(String id, String name) {
@@ -183,6 +191,33 @@ class TurSkillRunnerServiceTest {
         assertThat(out).isEqualTo("the final result");
         verify(toolExecutionLoop).call(any(), any());
         verify(tokenUsageService).recordUsage(any(TurLLMInstance.class), any(ChatResponse.class), anyString());
+    }
+
+    @Test
+    void runSkillExposesTuringSearchToolsToSubLoop() {
+        // T324 — the sub-loop's raw toolset (handed to the pipeline) must include
+        // the activation tools PLUS the Semantic Navigation DSL search tools, so a
+        // skill can leverage Turing's own indexed data.
+        stubDefaultLlmAvailable();
+        TurSkill alpha = skill("id-alpha", "alpha");
+        TurLoadSkillToolCallback loadSkill = new TurLoadSkillToolCallback(List.of(alpha), null);
+        when(secretCryptoService.decrypt("enc")).thenReturn("key");
+        when(llmModelFactory.createChatModel(any(TurLLMInstance.class), anyString()))
+                .thenReturn(mock(ChatModel.class));
+        when(harness.buildSystemPromptBlock(any())).thenReturn("block");
+        when(harness.buildToolCallbacks(any())).thenReturn(new ToolCallback[] { loadSkill });
+        ArgumentCaptor<ToolCallback[]> captor = ArgumentCaptor.forClass(ToolCallback[].class);
+        when(toolCallbackPipeline.decorate(captor.capture())).thenReturn(new ToolCallback[0]);
+        when(toolExecutionLoop.call(any(), any())).thenReturn(responseWith("done"));
+
+        service.runSkill(alpha, "search the catalog", "agentA", "conv1");
+
+        List<String> toolNames = java.util.Arrays.stream(captor.getValue())
+                .map(cb -> cb.getToolDefinition().name())
+                .toList();
+        assertThat(toolNames)
+                .contains(TurLoadSkillToolCallback.TOOL_NAME)
+                .contains("dsl_list_indices", "dsl_search");
     }
 
     @Test
