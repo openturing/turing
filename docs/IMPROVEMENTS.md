@@ -1153,8 +1153,7 @@ versioned, marketplace-distributable units**:
   "signature": "sha256:...",
   "description": "Generate beat-by-beat markdown scaffolds for narrative content",
   "personaFragment": {
-    "instruction": "When asked to compose narrative content, structure as beats with timestamps...",
-    "vocab": { "mandatory": ["beat"], "forbidden": [] }
+    "instruction": "When asked to compose narrative content, structure as beats with timestamps..."
   },
   "tools": ["scaffold.markdown", "scaffold.pickQuote"],
   "workspaceDefaults": {
@@ -1186,6 +1185,61 @@ platform catalog before any hosting, multi-tenant publishing, or
 moderation surface is built. The hosted public registry (community
 publishing, vendor-curated tiers) remains the T118 endgame — it layers
 on top of the same `TurSkillManifest` contract.
+
+#### IX.4.d Skill ↔ agent runtime integration (T310–T314)
+
+T116–T118 deliver skills as *data*: a versioned, signed bundle that can
+be discovered, installed and edited. What's still missing is the runtime
+wiring that makes a skill actually *change how an agent behaves*. That
+splits into one foundation task plus four consumers, each touching an
+already-built seam so a skill is consumed the same way its hand-authored
+equivalent already is.
+
+- **T310 — attach skills to an agent.** A `TurAIAgent.skills` M:N
+  (mirrors the existing `personas` / `customTools` join tables) plus an
+  attach/detach control in agent settings, carried on agent
+  export/import. This is the gate: nothing else can run until an agent
+  *has* skills. Opt-in per agent, default empty, so existing agents are
+  byte-for-byte unchanged.
+- **T311 — persona-fragment injection.** `TurChatPromptAssembler` grafts
+  each attached + enabled skill's `personaFragment.instruction` onto the
+  system prompt (same insertion path the persona prompt already uses).
+  Several skills compose by concatenation in a deterministic order. Tone
+  vocabulary (mandatory/forbidden terms) is deliberately **not** carried
+  by the skill — it would duplicate what `TurPersona` already owns and
+  `TurPersonaToneValidator` already enforces, so vocab stays a
+  persona-only concern.
+- **T312 — tool registration.** A skill's declared `tools` are resolved
+  by name (to a `TurCustomTool` or a native tool) and registered for the
+  agent's chat through `TurToolCallbackPipeline`, exactly like tools
+  attached directly to the agent. A tool a skill names but the instance
+  doesn't have is surfaced (lint warning) rather than failing the turn —
+  this is also what links the platform skills to their
+  `scaffold.*` helpers once those ship (§VII.4).
+- **T313 — workspaceDefaults seeding.** On conversation start, the
+  skill's `workspaceDefaults` files are written into the conversation
+  workspace (`TurAgentWorkspace`, T111) with `{{var}}` templating from
+  the flow/slot context. Idempotent: an already-present (e.g. user-edited)
+  file is never clobbered.
+- **T314 — dependency resolution.** A skill's `dependencies` (other
+  skills) are resolved transitively when it is attached/installed —
+  auto-attaching what's required and surfacing missing or
+  version-conflicting deps in the existing lint UI, so a skill that
+  builds on `http@^1.0.0` doesn't silently half-work.
+- **T315 — read-only view in the CRUD.** The `/skill` CRUD currently
+  leaves built-in (platform) skills as dead cards — locked, with no way
+  to inspect what they actually contribute. T315 adds a read-only detail
+  (reusing `SkillDetailDialog`) so any skill's full manifest — persona
+  fragment, tools, workspace files, dependencies, signature — is
+  inspectable from the CRUD without an edit/delete affordance. Built-in
+  skills become view-only (a "View" action); user skills keep view
+  alongside edit/delete. Lets an operator audit *what a skill does*
+  before attaching it (T310) without leaving the management page.
+
+The whole block is deliberately additive: each task reuses an existing
+extension point (`TurChatPromptAssembler`, `TurToolCallbackPipeline`,
+`TurAgentWorkspace`, the tone validator), so an agent with no skills
+attached behaves identically to today.
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 

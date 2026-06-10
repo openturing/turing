@@ -18,7 +18,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.genai.skill.TurSkillManifest.PersonaFragment;
-import com.viglet.turing.genai.skill.TurSkillManifest.Vocab;
 import com.viglet.turing.genai.skill.TurSkillManifestService.SignatureStatus;
 import com.viglet.turing.genai.skill.TurSkillManifestService.ValidationResult;
 import com.viglet.turing.persistence.model.skill.TurSkill;
@@ -38,7 +37,7 @@ class TurSkillManifestServiceTest {
         return new TurSkillManifest(
                 "scaffold-markdown", "1.2.0", "viglet", null,
                 "Generate beat-by-beat markdown scaffolds.",
-                new PersonaFragment("Structure as beats.", new Vocab(List.of("beat"), List.of())),
+                new PersonaFragment("Structure as beats."),
                 null,
                 List.of("scaffold.markdown", "scaffold.pickQuote"),
                 Map.of("draft.md", "# {{title}}"),
@@ -53,7 +52,7 @@ class TurSkillManifestServiceTest {
                   "version": "1.2.0",
                   "author": "viglet",
                   "description": "desc",
-                  "personaFragment": { "instruction": "do it", "vocab": { "mandatory": ["beat"], "forbidden": [] } },
+                  "personaFragment": { "instruction": "do it", "vocab": { "mandatory": ["beat"] } },
                   "tools": ["scaffold.markdown"],
                   "workspaceDefaults": { "draft.md": "# x" },
                   "dependencies": []
@@ -63,8 +62,9 @@ class TurSkillManifestServiceTest {
         assertThat(manifest.name()).isEqualTo("scaffold-markdown");
         assertThat(manifest.version()).isEqualTo("1.2.0");
         assertThat(manifest.tools()).containsExactly("scaffold.markdown");
+        // `vocab` is no longer part of the schema — a manifest that still
+        // carries it parses fine (unknown fields tolerated) and is simply dropped.
         assertThat(manifest.personaFragment().instruction()).isEqualTo("do it");
-        assertThat(manifest.personaFragment().vocab().mandatory()).containsExactly("beat");
     }
 
     @Test

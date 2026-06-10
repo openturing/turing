@@ -4,11 +4,7 @@
   "author": "viglet",
   "description": "Generate beat-by-beat markdown scaffolds for narrative content.",
   "personaFragment": {
-    "instruction": "When asked to compose narrative content, structure the draft as a sequence of beats. Each beat has a short title and one paragraph of body. Open with a Hook beat and close with a Call-to-Action beat. Keep beats self-contained so they can be reordered.",
-    "vocab": {
-      "mandatory": ["beat"],
-      "forbidden": []
-    }
+    "instruction": "When asked to compose narrative content, structure the draft as a sequence of beats. Each beat has a short title and one paragraph of body. Open with a Hook beat and close with a Call-to-Action beat. Keep beats self-contained so they can be reordered."
   },
   "tools": ["scaffold.markdown"],
   "workspaceDefaults": {

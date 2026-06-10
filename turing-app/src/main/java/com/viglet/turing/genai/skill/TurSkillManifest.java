@@ -35,8 +35,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  *   "signature": "sha256:...",
  *   "description": "Generate beat-by-beat markdown scaffolds...",
  *   "personaFragment": {
- *     "instruction": "When asked to compose narrative content...",
- *     "vocab": { "mandatory": ["beat"], "forbidden": [] }
+ *     "instruction": "When asked to compose narrative content..."
  *   },
  *   "flowSnippet": { "nodes": [...], "edges": [...] },
  *   "tools": ["scaffold.markdown", "scaffold.pickQuote"],
@@ -63,17 +62,13 @@ public record TurSkillManifest(
 
     /**
      * The persona contribution a skill makes — an instruction snippet grafted
-     * onto the agent's system prompt plus optional tone-validator vocabulary.
+     * onto the agent's system prompt. Tone-validator vocabulary
+     * (mandatory/forbidden terms) is deliberately <em>not</em> modeled here:
+     * that lives solely on {@code TurPersona} ({@code mandatoryTerms} /
+     * {@code forbiddenTerms}), enforced by {@code TurPersonaToneValidator}, to
+     * avoid duplicating the same concept in two places.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record PersonaFragment(String instruction, Vocab vocab) {
-    }
-
-    /**
-     * Tone-validator vocabulary contributed by the skill — words that must
-     * appear ({@code mandatory}) and words that must not ({@code forbidden}).
-     */
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Vocab(List<String> mandatory, List<String> forbidden) {
+    public record PersonaFragment(String instruction) {
     }
 }

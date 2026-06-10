@@ -62,6 +62,12 @@
 
 ## E.3 — Skills as first-class (differentiator)
 
+- 📋 **T310** (deps: T116) **Attach skills to an agent** (`TurAIAgent.skills` M:N) — attach/detach in agent settings; travels on agent export/import. The gate for all skill→agent runtime wiring; opt-in, default empty. → §IX.4.d
+- 📋 **T311** (deps: T310) **Skill persona-fragment injection** — `TurChatPromptAssembler` grafts each attached+enabled skill's `personaFragment.instruction` into the system prompt (additive to the active persona). Tone vocabulary stays the Persona's job (`TurPersona` mandatory/forbidden terms), not the skill's. → §IX.4.d
+- 📋 **T312** (deps: T310) **Skill tool registration** — resolve a skill's declared `tools` (by name → `TurCustomTool`/native) and register them for the agent's chat via `TurToolCallbackPipeline`; tools a skill names but the instance lacks are surfaced (lint), not fatal. → §IX.4.d
+- 📋 **T313** (deps: T310, T111) **Skill workspaceDefaults seeding** — on conversation start, seed the skill's `workspaceDefaults` files into the conversation workspace (`TurAgentWorkspace`) with `{{var}}` templating; idempotent (never clobber an edited file). → §IX.4.d
+- 📋 **T314** (deps: T310) **Skill dependency resolution** — on attach/install, resolve a skill's `dependencies` transitively (auto-attach required skills); surface missing/version-conflicting deps in the lint UI. → §IX.4.d
+- 📋 **T315** (deps: T116) **Read-only skill view in the `/skill` CRUD** — open a skill's full manifest (persona fragment, tools, workspace files, dependencies, signature) in a read-only detail; built-in/platform skills are view-only (no edit/delete). → §IX.4.d
 - 💭 **T118** (deps: T116) **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. *v1 in-app registry — Skills as a `/admin/marketplace` kind + editable `/skill` CRUD — shipped (see CHANGELOG); only the hosted/public step remains here.* → §IX.4.c
 
 ## E.4 — Human-in-the-loop (parity, made graph-visible)

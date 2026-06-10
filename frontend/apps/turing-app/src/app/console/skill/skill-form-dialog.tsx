@@ -33,8 +33,6 @@ interface FormState {
     tools: string;
     dependencies: string;
     instruction: string;
-    mandatory: string;
-    forbidden: string;
     workspaceDefaults: string;
 }
 
@@ -46,8 +44,6 @@ const EMPTY: FormState = {
     tools: "",
     dependencies: "",
     instruction: "",
-    mandatory: "",
-    forbidden: "",
     workspaceDefaults: "",
 };
 
@@ -82,8 +78,6 @@ export function SkillFormDialog({ skillId, open, onClose }: Readonly<SkillFormDi
                 tools: (loaded.tools ?? []).join(", "),
                 dependencies: (loaded.dependencies ?? []).join(", "),
                 instruction: loaded.personaFragment?.instruction ?? "",
-                mandatory: (loaded.personaFragment?.vocab?.mandatory ?? []).join(", "),
-                forbidden: (loaded.personaFragment?.vocab?.forbidden ?? []).join(", "),
                 workspaceDefaults: loaded.workspaceDefaults
                     ? JSON.stringify(loaded.workspaceDefaults, null, 2)
                     : "",
@@ -118,14 +112,8 @@ export function SkillFormDialog({ skillId, open, onClose }: Readonly<SkillFormDi
             version: form.version.trim(),
             author: form.author.trim() || null,
             description: form.description.trim() || null,
-            personaFragment: form.instruction.trim() || form.mandatory.trim() || form.forbidden.trim()
-                ? {
-                    instruction: form.instruction.trim() || undefined,
-                    vocab: {
-                        mandatory: csv(form.mandatory),
-                        forbidden: csv(form.forbidden),
-                    },
-                }
+            personaFragment: form.instruction.trim()
+                ? { instruction: form.instruction.trim() }
                 : null,
             flowSnippet: flowSnippet ?? null,
             tools: csv(form.tools),
@@ -175,17 +163,9 @@ export function SkillFormDialog({ skillId, open, onClose }: Readonly<SkillFormDi
                     <Field label={t("skill.fieldDependencies")} hint={t("skill.csvHint")}>
                         <Input value={form.dependencies} onChange={set("dependencies")} placeholder="http@^1.0.0" />
                     </Field>
-                    <Field label={t("skill.fieldInstruction")}>
+                    <Field label={t("skill.fieldInstruction")} hint={t("skill.vocabHint")}>
                         <Textarea value={form.instruction} onChange={set("instruction")} rows={3} />
                     </Field>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Field label={t("skill.fieldMandatory")} hint={t("skill.csvHint")}>
-                            <Input value={form.mandatory} onChange={set("mandatory")} placeholder="beat" />
-                        </Field>
-                        <Field label={t("skill.fieldForbidden")} hint={t("skill.csvHint")}>
-                            <Input value={form.forbidden} onChange={set("forbidden")} />
-                        </Field>
-                    </div>
                     <Field label={t("skill.fieldWorkspaceDefaults")} hint={t("skill.jsonHint")}>
                         <Textarea
                             value={form.workspaceDefaults}

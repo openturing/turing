@@ -12,13 +12,13 @@
 /** Outcome of comparing a manifest's declared signature to the recomputed digest. */
 export type TurSkillSignatureStatus = "UNSIGNED" | "VALID" | "INVALID";
 
-/** Persona contribution a skill grafts onto the agent system prompt. */
+/**
+ * Persona contribution a skill grafts onto the agent system prompt. Tone
+ * vocabulary (mandatory/forbidden terms) is NOT modeled here — it lives solely
+ * on the Persona, so the skill carries only the instruction snippet.
+ */
 export interface TurSkillPersonaFragment {
   instruction?: string;
-  vocab?: {
-    mandatory?: string[];
-    forbidden?: string[];
-  };
 }
 
 /** Compact view of an installed skill — one marketplace card. */

@@ -163,20 +163,6 @@ export function SkillDetailDialog({
                             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                 {persona.instruction}
                             </p>
-                            {(persona.vocab?.mandatory?.length || persona.vocab?.forbidden?.length) ? (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                    {persona.vocab?.mandatory?.map((w) => (
-                                        <Badge key={`m-${w}`} variant="secondary" className="text-[10px]">
-                                            +{w}
-                                        </Badge>
-                                    ))}
-                                    {persona.vocab?.forbidden?.map((w) => (
-                                        <Badge key={`f-${w}`} variant="outline" className="text-[10px] text-red-600 dark:text-red-400">
-                                            −{w}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            ) : null}
                         </Section>
                     )}
 
