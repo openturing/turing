@@ -6,7 +6,7 @@
   "personaFragment": {
     "instruction": "When asked to compose narrative content, structure the draft as a sequence of beats. Each beat has a short title and one paragraph of body. Open with a Hook beat and close with a Call-to-Action beat. Keep beats self-contained so they can be reordered."
   },
-  "tools": ["scaffold.markdown"],
+  "tools": ["scaffold_markdown"],
   "workspaceDefaults": {
     "draft.md": "# {{title}}\n\n## Hook\n\n## Beats\n\n## Call to Action\n"
   },

@@ -6,7 +6,7 @@
   "personaFragment": {
     "instruction": "When asked to summarize a topic visually, produce a Mermaid mindmap with the central term at the root and one branch per distinct sub-theme found in the source abstracts. Keep node labels short (a few words). Render the diagram inside a ```mermaid code block."
   },
-  "tools": ["scaffold.buildMindMap"],
+  "tools": ["scaffold_build_mind_map"],
   "workspaceDefaults": {
     "mindmap.mmd": "mindmap\n  root(({{term}}))\n"
   },
