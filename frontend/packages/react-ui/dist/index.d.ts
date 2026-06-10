@@ -24,4 +24,6 @@ export { TuringThinkingDots } from "./TuringThinkingDots";
 export type { TuringThinkingDotsProps, TuringThinkingDotsClassNames, } from "./TuringThinkingDots";
 export { TuringCodeBlock } from "./TuringCodeBlock";
 export type { TuringCodeBlockProps, TuringCodeBlockClassNames, TuringCodeBlockLabels, } from "./TuringCodeBlock";
+export { TuringChatMessage } from "./TuringChatMessage";
+export type { TuringChatMessageProps, TuringChatMessageRole, TuringChatMessageClassNames, } from "./TuringChatMessage";
 //# sourceMappingURL=index.d.ts.map

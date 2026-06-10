@@ -57,7 +57,6 @@
 > pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
 > the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
 
-- 💭 **T299** (deps: T295) **`TuringChatMessage` shell** — slot/render-prop driven bubble (avatar, actions, attachments) for apps that want it; the fully-branded app shell (layout, input, chips) stays per-app on purpose. → §XII.2
 - 💭 **T300** (deps: —) **react-sdk re-exports react-ui** — single import surface for the admin (`@viglet/turing-react-sdk` re-exports the UI components) while react-ui stays axios-free for viglet.com. → §XII.2
 - 📋 **T301** (deps: —) **react-ui vitest (jsdom)** — render tests for the headless contract: iframe `sandbox`/`srcDoc` attrs, fullscreen open/Esc, `classNames`/`labels`/`icons` passthrough, SSR `document` guard. → §XII.2
 - 💭 **T302** (deps: —) **react-ui Storybook** — stories skinning each headless component **two ways** (shadcn vs viglet brand) as the living design contract + a11y/controls docs. → §XII.2

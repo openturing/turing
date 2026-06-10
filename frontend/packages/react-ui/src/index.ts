@@ -59,3 +59,10 @@ export type {
   TuringCodeBlockClassNames,
   TuringCodeBlockLabels,
 } from "./TuringCodeBlock";
+
+export { TuringChatMessage } from "./TuringChatMessage";
+export type {
+  TuringChatMessageProps,
+  TuringChatMessageRole,
+  TuringChatMessageClassNames,
+} from "./TuringChatMessage";

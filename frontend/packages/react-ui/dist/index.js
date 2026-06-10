@@ -17,4 +17,5 @@ export { TuringD2Diagram } from "./TuringD2Diagram";
 export { TuringCopyButton } from "./TuringCopyButton";
 export { TuringThinkingDots } from "./TuringThinkingDots";
 export { TuringCodeBlock } from "./TuringCodeBlock";
+export { TuringChatMessage } from "./TuringChatMessage";
 //# sourceMappingURL=index.js.map
