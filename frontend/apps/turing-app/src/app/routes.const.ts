@@ -35,6 +35,8 @@ export const ROUTES = {
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
   CUSTOM_TOOL_ROOT: `${consolePath}/custom-tool`,
   CUSTOM_TOOL_INSTANCE: `${consolePath}/custom-tool/instance`,
+  SKILL_ROOT: `${consolePath}/skill`,
+  SKILL_INSTANCE: `${consolePath}/skill/instance`,
   ROUTINE_ROOT: `${consolePath}/routine`,
   ROUTINE_INSTANCE: `${consolePath}/routine/instance`,
   CHAT_WEBHOOK_ROOT: `${consolePath}/chat-webhook`,

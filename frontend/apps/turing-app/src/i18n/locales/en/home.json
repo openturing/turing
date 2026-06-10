@@ -44,6 +44,10 @@
         "title": "Custom Tool",
         "description": "Define your own Spring AI tool callings backed by Groovy scripts."
       },
+      "skill": {
+        "title": "Skills",
+        "description": "Browse and install versioned, signed skill bundles — persona, tools, workspace defaults and dependencies in one package."
+      },
       "routine": {
         "title": "Routines",
         "description": "Async jobs fired by scheduleAgent chat-flow nodes — long-running work without blocking the chat turn."

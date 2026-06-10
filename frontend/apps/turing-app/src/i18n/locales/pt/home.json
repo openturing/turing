@@ -44,6 +44,10 @@
         "title": "Ferramenta Customizada",
         "description": "Defina suas próprias tool callings do Spring AI implementadas com scripts Groovy."
       },
+      "skill": {
+        "title": "Skills",
+        "description": "Navegue e instale pacotes de skills versionados e assinados — persona, ferramentas, arquivos de workspace e dependências em um único pacote."
+      },
       "routine": {
         "title": "Rotinas",
         "description": "Jobs assíncronos disparados pelos nós scheduleAgent — trabalho de longa duração sem bloquear o turno do chat."
