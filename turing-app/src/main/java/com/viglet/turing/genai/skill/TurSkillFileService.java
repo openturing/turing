@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.skill;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -241,6 +243,49 @@ public class TurSkillFileService {
                 Explain the skill here. Reference supporting files under `references/`,
                 executable helpers under `scripts/`, and static files under `assets/`.
                 """.formatted(slug, title);
+    }
+
+    // ---- export ZIP ---------------------------------------------------------
+
+    /**
+     * Serialize a skill folder into an Anthropic-compatible ZIP: every file is
+     * written under a single top-level folder named after the skill, so the
+     * archive both uploads to Claude and round-trips back through
+     * {@link #importZip(MultipartFile)} (a top-level folder carrying a
+     * {@code SKILL.md}).
+     *
+     * @return the ZIP bytes (skill folders are small, so an in-memory buffer is fine)
+     */
+    public byte[] exportZip(String skillId) {
+        TurSkill skill = requireSkill(skillId);
+        String root = stripTrailingSlash(skill.getPath());
+        String topFolder = slug(skill.getName() != null && !skill.getName().isBlank()
+                ? skill.getName()
+                : lastSegment(root));
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(buffer)) {
+            for (TurSkillFileNode node : listFiles(skillId)) {
+                if (node.directory()) {
+                    continue;
+                }
+                try (InputStream in = storageService.downloadObject(root + "/" + node.path())) {
+                    zos.putNextEntry(new ZipEntry(topFolder + "/" + node.path()));
+                    in.transferTo(zos);
+                    zos.closeEntry();
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not build the skill export ZIP.", e);
+        }
+        return buffer.toByteArray();
+    }
+
+    /** Suggested download file name for {@link #exportZip(String)}. */
+    public String exportFileName(String skillId) {
+        TurSkill skill = requireSkill(skillId);
+        return slug(skill.getName() != null && !skill.getName().isBlank()
+                ? skill.getName()
+                : lastSegment(stripTrailingSlash(skill.getPath()))) + ".zip";
     }
 
     // ---- import ZIP ---------------------------------------------------------

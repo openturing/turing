@@ -32,6 +32,7 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconDeviceFloppy,
+  IconDownload,
   IconFile,
   IconFilePlus,
   IconFolder,
@@ -178,6 +179,15 @@ export default function SkillEditorPage() {
     }
   }
 
+  const handleExport = async () => {
+    if (!id) return
+    try {
+      await service.download(id, skill?.name ?? "skill")
+    } catch {
+      toast.error("Export failed.")
+    }
+  }
+
   const handleCreate = async () => {
     if (!id || !dialog) return
     const raw = dialogName.trim()
@@ -282,7 +292,11 @@ export default function SkillEditorPage() {
           <div className="font-semibold truncate">{skill?.name ?? "…"}</div>
           {skill?.version && <div className="text-xs text-muted-foreground">v{skill.version}</div>}
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={!skill}>
+            <IconDownload className="size-4! mr-1.5" />
+            Export
+          </Button>
           <GradientButton size="sm" onClick={handleSave} disabled={!selectedPath || !dirty || saving}>
             {saving ? <IconLoader2 className="size-4! mr-1.5 animate-spin" /> : <IconDeviceFloppy className="size-4! mr-1.5" />}
             Save

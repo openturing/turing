@@ -45,6 +45,23 @@ export class TurSkillService {
     return response.data;
   }
 
+  /** Download a skill folder as an Anthropic-compatible ZIP (triggers a browser download). */
+  async download(id: string, name: string): Promise<void> {
+    const response = await axios.get<Blob>(`/skill/${id}/export`, { responseType: "blob" });
+    const safe = (name || "skill").replace(/[^A-Za-z0-9._-]/g, "-").toLowerCase();
+    const url = URL.createObjectURL(response.data);
+    try {
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${safe}.zip`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+  }
+
   // ---- file tree (scoped to the skill root) ----
 
   async listFiles(id: string): Promise<TurSkillFileNode[]> {

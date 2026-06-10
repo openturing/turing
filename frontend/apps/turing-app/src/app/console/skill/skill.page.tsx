@@ -18,7 +18,9 @@ import {
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
+import { TurSkillService } from "@/services/skill/skill.service"
 import {
+  IconDownload,
   IconFileImport,
   IconPlus,
   IconSparkles,
@@ -26,6 +28,8 @@ import {
 import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+
+const service = new TurSkillService()
 
 export default function SkillPage() {
   const navigate = useNavigate()
@@ -50,6 +54,14 @@ export default function SkillPage() {
       navigate(`${ROUTES.SKILL_ROOT}/${created.id}`)
     } catch {
       toast.error("Failed to create skill.")
+    }
+  }
+
+  const handleExport = async (id: string, name: string) => {
+    try {
+      await service.download(id, name)
+    } catch {
+      toast.error("Export failed.")
     }
   }
 
@@ -110,13 +122,15 @@ export default function SkillPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {skills?.map((skill) => (
-              <button
+              <div
                 key={skill.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => navigate(`${ROUTES.SKILL_ROOT}/${skill.id}`)}
-                className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:border-blue-500/50 hover:bg-accent"
+                onKeyDown={(e) => { if (e.key === "Enter") navigate(`${ROUTES.SKILL_ROOT}/${skill.id}`) }}
+                className="group flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:border-blue-500/50 hover:bg-accent"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-blue-600 to-indigo-600 text-white">
                   <IconSparkles className="size-4.5" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -126,7 +140,15 @@ export default function SkillPage() {
                   )}
                 </span>
                 {!skill.enabled && <Badge variant="outline" className="shrink-0">Disabled</Badge>}
-              </button>
+                <button
+                  type="button"
+                  title="Export as ZIP"
+                  className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); handleExport(skill.id, skill.name) }}
+                >
+                  <IconDownload className="size-4" />
+                </button>
+              </div>
             ))}
           </div>
         )}

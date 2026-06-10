@@ -11,6 +11,7 @@ package com.viglet.turing.api.skill;
 
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -170,6 +171,17 @@ public class TurSkillAPI {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<String> importZip(@RequestParam("file") MultipartFile file) {
         return fileService.importZip(file);
+    }
+
+    @Operation(summary = "Export a skill folder as an Anthropic-compatible ZIP")
+    @GetMapping(value = "/{id}/export", produces = "application/zip")
+    public ResponseEntity<byte[]> exportZip(@PathVariable String id) {
+        byte[] zip = fileService.exportZip(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileService.exportFileName(id) + "\"")
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .body(zip);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

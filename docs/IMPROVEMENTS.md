@@ -1224,9 +1224,6 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T320 — Export skill → Anthropic-compatible ZIP.** Serialize a stored
-  skill folder back to a `.zip` usable in Claude (the exit door). Pair of
-  T319; together they are the interop boundary.
 - **T321 — Anthropic-compatible Docker session.** The real engine work:
   evolve the Code Interpreter from *snippet execution* ("run this Python
   string, return output") to an **interactive container session** with the
@@ -1251,10 +1248,10 @@ independently-activatable unit.
   imported ZIP is independently activatable (progressive disclosure) and
   optionally selectable in chat as a distinct mode/"flow".
 
-**Sequencing.** T326 (rollback), T317 (the storage/index shape everything
-depends on), T318 (the mini-VS-Code folder editor at `/admin/skill`) and
-T319 (import ZIP — the entry door) have shipped. T320 (export ZIP — the
-exit door) remains to complete the interop boundary.
+**Sequencing.** The whole authoring + interop layer has shipped: T326
+(rollback), T317 (storage/index shape), T318 (the mini-VS-Code folder
+editor at `/admin/skill`), T319 (import ZIP — entry door) and T320
+(export ZIP — exit door). What remains is the engine + activation.
 T321 is the engine and can be built in parallel with the authoring layer.
 T322 needs T317 + T321; T323/T324/T325 need T322. The public hosted
 registry (T118) layers on T320 and stays a deferred idea.

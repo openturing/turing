@@ -185,6 +185,34 @@ class TurSkillFileServiceTest {
     }
 
     @Test
+    void exportZipWrapsFilesUnderASingleSkillFolder() throws IOException {
+        TurSkill skill = fileService.createSkill("Exportable");
+        fileService.writeFile(skill.getId(), "scripts/run.py", "print('go')");
+
+        Map<String, String> entries = unzip(fileService.exportZip(skill.getId()));
+
+        assertThat(entries).containsKeys("exportable/SKILL.md", "exportable/scripts/run.py");
+        assertThat(entries.get("exportable/scripts/run.py")).contains("print('go')");
+        assertThat(fileService.exportFileName(skill.getId())).isEqualTo("exportable.zip");
+    }
+
+    @Test
+    void exportThenImportRoundTrips() throws IOException {
+        TurSkill original = fileService.createSkill("round-trip");
+        fileService.writeFile(original.getId(), "references/notes.md", "# notes");
+        byte[] exported = fileService.exportZip(original.getId());
+
+        List<String> imported = fileService.importZip(
+                new MockMultipartFile("file", "round-trip.zip", "application/zip", exported));
+
+        // Re-imported as a fresh, deduplicated folder carrying the same files.
+        assertThat(imported).containsExactly("round-trip-2");
+        TurSkill copy = store.values().stream().filter(s -> "skills/round-trip-2".equals(s.getPath()))
+                .findFirst().orElseThrow();
+        assertThat(fileService.readFile(copy.getId(), "references/notes.md")).contains("# notes");
+    }
+
+    @Test
     void importZipWithNoSkillMdIsRejected() throws IOException {
         byte[] zip = zip(Map.of("README.md", "not a skill"));
         assertThatThrownBy(() -> fileService.importZip(new MockMultipartFile("file", "x.zip", "application/zip", zip)))
@@ -218,6 +246,19 @@ class TurSkillFileServiceTest {
             }
         }
         return out.toByteArray();
+    }
+
+    private static Map<String, String> unzip(byte[] bytes) throws IOException {
+        Map<String, String> entries = new LinkedHashMap<>();
+        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(
+                new java.io.ByteArrayInputStream(bytes))) {
+            java.util.zip.ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                entries.put(entry.getName(), new String(zis.readAllBytes(), StandardCharsets.UTF_8));
+                zis.closeEntry();
+            }
+        }
+        return entries;
     }
 
     private static TurSkillRepository inMemoryRepository(Map<String, TurSkill> backing) {
