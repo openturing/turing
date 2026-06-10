@@ -73,7 +73,6 @@
 > T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
 > Rationale → §IX.4.d.
 
-- 📋 **T321** (deps: T80, T81) **Anthropic-compatible Docker session** — evolve the Code Interpreter from snippet-execution to an interactive container session with the skill folder mounted + a persistent filesystem + a `bash`/code-execution tool the model drives across turns; configurable image matching Anthropic's container (python+node+bash). Docker mode + hardening mandatory. → §IX.4.d
 - 📋 **T322** (deps: T317, T321) **Skill activation harness (progressive disclosure)** — inject each skill's `name`+`description`; load the `SKILL.md` body when relevant; expose the mounted-folder code-execution tool. The piece that makes a skill actually *run*. → §IX.4.d
 - 📋 **T323** (deps: T322) **Use skill in chat** — wire the harness into the chat path; available skills activate by description and/or explicit pick. → §IX.4.d
 - 📋 **T324** (deps: T322) **Use skill in semantic navigation** — wire the same harness into the SN AI path; expose Turing search to the skill as a tool inside the sandbox. → §IX.4.d

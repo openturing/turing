@@ -22,6 +22,8 @@
     "codeInterpreterModeDocker": "Docker (containerized sandbox)",
     "codeInterpreterImage": "Docker Image",
     "codeInterpreterImageDesc": "Image used to run each execution when Docker mode is active. Should bundle Python plus the packages your agents rely on (reportlab, matplotlib, qrcode, …). Defaults to python:3.12-slim; most deployments publish their own image.",
+    "codeInterpreterSkillImage": "Skill Sandbox Image",
+    "codeInterpreterSkillImageDesc": "Image for the Anthropic-compatible skill session — a bash-driven container with the skill folder mounted that the model drives across turns. Should bundle python + node + bash to match Anthropic's skill container. Defaults to python:3.12-slim; publish your own to add node or extra tools.",
     "dockerCheckAction": "Check Docker",
     "dockerCheckSuccess": "Docker is available (server {{version}}).",
     "dockerCheckFailed": "Docker is not available. {{error}}",

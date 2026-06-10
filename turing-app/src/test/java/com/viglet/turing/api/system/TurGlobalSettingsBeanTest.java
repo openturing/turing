@@ -28,6 +28,7 @@ class TurGlobalSettingsBeanTest {
                 null,  // pythonRequirements (new in 2026.2.7)
                 null,  // codeInterpreterExecutionMode (T80)
                 null,  // codeInterpreterDockerImage (T80)
+                null,  // codeInterpreterSkillImage (T321)
                 null,  // defaultLlmId
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,

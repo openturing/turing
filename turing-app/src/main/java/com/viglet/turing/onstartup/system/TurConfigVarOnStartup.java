@@ -69,6 +69,20 @@ public class TurConfigVarOnStartup {
 	public static final String CODE_INTERPRETER_DOCKER_IMAGE =
 			"GLOBAL_CODE_INTERPRETER_DOCKER_IMAGE";
 	public static final String CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
+	/**
+	 * T321 — Docker image for the Anthropic-compatible <em>skill</em> sandbox
+	 * session. Unlike the one-shot snippet image
+	 * ({@link #CODE_INTERPRETER_DOCKER_IMAGE}), a skill session runs arbitrary
+	 * {@code bash} the model drives across turns, so the image should match
+	 * Anthropic's skill container — <b>python + node + bash</b>. The default is
+	 * the upstream slim Python image (python + bash, no node); operators that
+	 * need node (or extra packages) publish their own and point this setting at
+	 * it. Used only when the execution mode is {@code DOCKER} — the skill
+	 * sandbox is gated on containerization.
+	 */
+	public static final String CODE_INTERPRETER_SKILL_IMAGE =
+			"GLOBAL_CODE_INTERPRETER_SKILL_IMAGE";
+	public static final String CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
@@ -114,6 +128,8 @@ public class TurConfigVarOnStartup {
 				CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE);
 		ensureConfigVar(CODE_INTERPRETER_DOCKER_IMAGE, GLOBAL_PATH,
 				CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE);
+		ensureConfigVar(CODE_INTERPRETER_SKILL_IMAGE, GLOBAL_PATH,
+				CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");

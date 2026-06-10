@@ -31,6 +31,13 @@ export interface TurGlobalSettings {
    * back to the server default (`python:3.12-slim`).
    */
   codeInterpreterDockerImage?: string;
+  /**
+   * T321 — Docker image for the Anthropic-compatible skill sandbox session
+   * (a `bash`-driven container with the skill folder mounted). Should bundle
+   * python + node + bash. Blank falls back to the server default
+   * (`python:3.12-slim`). Used only in `DOCKER` mode.
+   */
+  codeInterpreterSkillImage?: string;
   defaultLlmId?: string;
   llmCacheEnabled?: boolean;
   llmCacheTtlMs?: number;

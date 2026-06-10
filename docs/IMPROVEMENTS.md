@@ -1224,13 +1224,6 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T321 — Anthropic-compatible Docker session.** The real engine work:
-  evolve the Code Interpreter from *snippet execution* ("run this Python
-  string, return output") to an **interactive container session** with the
-  skill folder mounted and a persistent filesystem across turns, driven by
-  a `bash`/code-execution tool. Configurable image matching Anthropic's
-  container (python + node + bash). Hardening (T81) + Docker mode are
-  mandatory here.
 - **T322 — Skill activation harness (progressive disclosure).** Inject
   each available skill's `name` + `description` cheaply; when the model
   judges a skill relevant, load its `SKILL.md` body; expose the
@@ -1251,10 +1244,12 @@ independently-activatable unit.
 **Sequencing.** The whole authoring + interop layer has shipped: T326
 (rollback), T317 (storage/index shape), T318 (the mini-VS-Code folder
 editor at `/admin/skill`), T319 (import ZIP — entry door) and T320
-(export ZIP — exit door). What remains is the engine + activation.
-T321 is the engine and can be built in parallel with the authoring layer.
-T322 needs T317 + T321; T323/T324/T325 need T322. The public hosted
-registry (T118) layers on T320 and stays a deferred idea.
+(export ZIP — exit door). **T321 — the engine — has shipped**
+(`TurSkillSandbox*`: a persistent `bash`-driven Docker session with the
+skill folder mounted read-only and a workspace that survives across
+turns, gated on `DOCKER` mode). What remains is activation: T322 needs
+T317 + T321; T323/T324/T325 need T322. The public hosted registry (T118)
+layers on T320 and stays a deferred idea.
 
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 

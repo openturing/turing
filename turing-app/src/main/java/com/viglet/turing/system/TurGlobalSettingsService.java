@@ -254,6 +254,38 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    /**
+     * T321 — Docker image used for the Anthropic-compatible skill sandbox
+     * session (a {@code bash}-driven interactive container with the skill
+     * folder mounted). Should bundle python + node + bash to match Anthropic's
+     * skill container; blank falls back to the documented default
+     * ({@code python:3.12-slim}). Only consulted when the execution mode is
+     * {@code DOCKER}.
+     *
+     * @since 2026.3.1
+     */
+    public String getCodeInterpreterSkillImage() {
+        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE)
+                .map(TurConfigVar::getValue)
+                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
+        return (value == null || value.isBlank())
+                ? TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE
+                : value.trim();
+    }
+
+    public String updateCodeInterpreterSkillImage(String image) {
+        String value = (image == null || image.isBlank())
+                ? TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE
+                : image.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)

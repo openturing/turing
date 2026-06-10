@@ -43,6 +43,7 @@ public class TurGlobalSettingsAPI {
                 .pythonRequirements(turGlobalSettingsService.getPythonRequirements())
                 .codeInterpreterExecutionMode(turGlobalSettingsService.getCodeInterpreterExecutionMode())
                 .codeInterpreterDockerImage(turGlobalSettingsService.getCodeInterpreterDockerImage())
+                .codeInterpreterSkillImage(turGlobalSettingsService.getCodeInterpreterSkillImage())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
@@ -74,6 +75,8 @@ public class TurGlobalSettingsAPI {
                         .updateCodeInterpreterExecutionMode(globalSettings.getCodeInterpreterExecutionMode()))
                 .codeInterpreterDockerImage(turGlobalSettingsService
                         .updateCodeInterpreterDockerImage(globalSettings.getCodeInterpreterDockerImage()))
+                .codeInterpreterSkillImage(turGlobalSettingsService
+                        .updateCodeInterpreterSkillImage(globalSettings.getCodeInterpreterSkillImage()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
                 .llmCacheEnabled(turGlobalSettingsService

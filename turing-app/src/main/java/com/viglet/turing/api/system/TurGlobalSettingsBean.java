@@ -42,6 +42,15 @@ public class TurGlobalSettingsBean {
      * @since 2026.3.1
      */
     private String codeInterpreterDockerImage;
+    /**
+     * T321 — Docker image for the Anthropic-compatible skill sandbox session
+     * ({@code bash}-driven, skill folder mounted). Should bundle python + node
+     * + bash. Blank → server default ({@code python:3.12-slim}). Used only in
+     * {@code DOCKER} mode.
+     *
+     * @since 2026.3.1
+     */
+    private String codeInterpreterSkillImage;
     private String defaultLlmId;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;

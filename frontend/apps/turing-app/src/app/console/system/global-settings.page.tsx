@@ -52,6 +52,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     pythonRequirements: "",
     codeInterpreterExecutionMode: "NATIVE",
     codeInterpreterDockerImage: "python:3.12-slim",
+    codeInterpreterSkillImage: "python:3.12-slim",
     llmCacheEnabled: false,
     llmCacheTtlMs: 3600000,
     llmCacheRegenerate: false,
@@ -354,6 +355,30 @@ export default function GlobalSettingsPage() {
                                                 <FormLabel>{t("globalSettings.codeInterpreterImage")}</FormLabel>
                                                 <FormDescription>
                                                     {t("globalSettings.codeInterpreterImageDesc")}
+                                                </FormDescription>
+                                                <FormControl>
+                                                    <Input
+                                                        className="max-w-md font-mono text-sm"
+                                                        placeholder="python:3.12-slim"
+                                                        autoComplete="off"
+                                                        spellCheck={false}
+                                                        disabled={isLoading}
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="codeInterpreterSkillImage"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t("globalSettings.codeInterpreterSkillImage")}</FormLabel>
+                                                <FormDescription>
+                                                    {t("globalSettings.codeInterpreterSkillImageDesc")}
                                                 </FormDescription>
                                                 <FormControl>
                                                     <Input
