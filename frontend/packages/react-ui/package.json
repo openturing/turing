@@ -54,10 +54,11 @@
       "import": "./dist/TuringChatMessage.js",
       "default": "./dist/TuringChatMessage.js"
     },
+    "./styles.css": "./dist/styles/turing-ui.css",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node copy-assets.mjs",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -115,9 +116,10 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 14000,
+    "total": 15000,
     "entries": {
-      "index.js": 800,
+      "index.js": 900,
+      "tokens.js": 1100,
       "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
       "TuringMarkdown.js": 2400,

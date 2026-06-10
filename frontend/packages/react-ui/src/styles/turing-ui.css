@@ -290,7 +290,7 @@
 .turing-ui-theme [data-turing-chat-message] {
   display: flex;
   gap: var(--turing-ui-gap);
-  padding: 0.875rem;
+  padding: var(--turing-ui-pad);
   border-radius: var(--turing-ui-radius);
 }
 
@@ -333,6 +333,10 @@
   color: var(--turing-ui-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.turing-ui-theme a:hover {
+  color: var(--turing-ui-accent-hover);
 }
 
 .turing-ui-theme :not(pre) > code {

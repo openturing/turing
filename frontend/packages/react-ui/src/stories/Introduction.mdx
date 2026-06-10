@@ -21,6 +21,26 @@ The host supplies the look through three injection points:
 - **`icons`** — `ReactNode` slots that default to the label text, so the library
   has no icon-library dependency.
 
+## Or: token theming (no class maps)
+
+As an **alternative to per-slot `classNames`**, import the optional stylesheet
+and theme via CSS custom properties — no class map per component:
+
+```tsx
+import "@viglet/turing-react-ui/styles.css";
+
+<div className="turing-ui-theme" style={{ "--turing-ui-accent": "#7c3aed" }}>
+  <TuringChatMessage role="assistant" name="Turing">…</TuringChatMessage>
+</div>
+```
+
+Rules are scoped under `.turing-ui-theme`, so importing the file is inert until
+you opt a subtree in; every `--turing-ui-*` token has a baked-in default (so it
+works with zero tokens) and a typed `TuringUiTheme` / `TURING_UI_TOKENS` surface
+for autocomplete. See the **Token theming** story for live presets (defaults /
+brand / dark). The two approaches are alternatives — pick `classNames` for full
+per-slot control, or tokens for a fast, consistent reskin.
+
 ## The living contract
 
 Every component's **"Two skins, one implementation"** story renders the _same_

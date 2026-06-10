@@ -196,6 +196,8 @@ export {
   TuringThinkingDots,
   TuringCodeBlock,
   TuringChatMessage,
+  TURING_UI_THEME_CLASS,
+  TURING_UI_TOKENS,
 } from "@viglet/turing-react-ui";
 export type {
   TuringHtmlSandboxProps,
@@ -225,6 +227,8 @@ export type {
   TuringChatMessageProps,
   TuringChatMessageRole,
   TuringChatMessageClassNames,
+  TuringUiTheme,
+  TuringUiTokenName,
 } from "@viglet/turing-react-ui";
 
 // ── Types ──
