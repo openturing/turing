@@ -1,0 +1,59 @@
+databaseChangeLog:
+  # T317 / §IX.4.d — recreate the `skill` table as a THIN catalog index over
+  # Anthropic-compatible skill folders in object storage. The old decomposed
+  # bundle table (v2026.3.1.21) was dropped by v2026.3.1.22; this is the clean
+  # slate. Each row indexes one storage folder containing a SKILL.md: the
+  # fields (name, description, version, author) are parsed from the SKILL.md
+  # YAML frontmatter and re-synced on reindex; `path` (the folder) is the
+  # unique identity and `enabled` is the only field not derived from storage.
+  #
+  # Idempotent: gated by `not tableExists` so re-running on a database that
+  # already has the table is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.23-create-skill-index-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: skill
+      changes:
+        - createTable:
+            tableName: skill
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: longtext
+              - column:
+                  name: version
+                  type: VARCHAR(32)
+              - column:
+                  name: author
+                  type: VARCHAR(150)
+              - column:
+                  name: path
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: skill
+            columnNames: path
+            constraintName: uq_skill_path

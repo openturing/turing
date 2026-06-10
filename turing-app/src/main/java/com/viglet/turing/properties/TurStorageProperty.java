@@ -17,6 +17,13 @@ public class TurStorageProperty {
     private TurMinioProperty minio;
     private TurFilesystemProperty filesystem;
 
+    /**
+     * T317 — storage prefix (folder) under which skill folders live. Each
+     * immediate child folder containing a {@code SKILL.md} is indexed as a
+     * skill. Defaults to {@code skills}.
+     */
+    private String skillsPath = "skills";
+
     @Getter
     @Setter
     public static class TurFilesystemProperty {

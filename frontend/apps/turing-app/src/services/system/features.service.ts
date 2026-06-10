@@ -8,6 +8,8 @@ export interface FeaturesResponse {
   gitServerEnabled: boolean
   marketplaceEnabled: boolean
   seInstanceReadOnly: boolean
+  /** T317 — skill folders feature (gated on storage being configured). */
+  skillsEnabled: boolean
   loggingEngine: LoggingEngine
 }
 

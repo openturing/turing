@@ -1224,10 +1224,6 @@ independently-activatable unit.
 
 **Tasks (dependency-ordered, each executable on its own):**
 
-- **T317 — Skill = folder-in-storage + thin index.** A skill is a storage
-  folder (`SKILL.md` at root), and the DB row is a catalog index (name,
-  description, version, author, path, enabled) parsed from the `SKILL.md`
-  YAML frontmatter. Gated on storage. The foundation the rest builds on.
 - **T318 — Skill folder editor (mini-VS-Code).** Evolve `/admin/assets`
   (or a dedicated `/skill` editor) into a file-tree + Monaco editor over
   the skill folder via `TurStorageService`: create/rename/delete/edit
@@ -1263,9 +1259,10 @@ independently-activatable unit.
   imported ZIP is independently activatable (progressive disclosure) and
   optionally selectable in chat as a distinct mode/"flow".
 
-**Sequencing.** T326 (rollback) shipped — clean slate. Then T317 (the
-storage/index shape everything depends on). T318/T319/T320 are the
-authoring + interop layer and can proceed in parallel once T317 lands.
+**Sequencing.** T326 (rollback) and T317 (the storage/index shape
+everything depends on) shipped — the catalog index over skill folders is
+in place. T318/T319/T320 are the authoring + interop layer and can
+proceed in parallel now that T317 has landed.
 T321 is the engine and can be built in parallel with the authoring layer.
 T322 needs T317 + T321; T323/T324/T325 need T322. The public hosted
 registry (T118) layers on T320 and stays a deferred idea.

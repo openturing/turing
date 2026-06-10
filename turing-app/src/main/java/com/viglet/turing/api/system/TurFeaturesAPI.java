@@ -43,18 +43,23 @@ public class TurFeaturesAPI {
 
     public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled,
                                    boolean marketplaceEnabled, boolean seInstanceReadOnly,
+                                   boolean skillsEnabled,
                                    String loggingEngine) {}
 
     @GetMapping
     public FeaturesResponse getFeatures() {
         var marketplace = configProperties.getMarketplace();
         boolean marketplaceEnabled = marketplace != null && marketplace.isEnabled();
+        // T317 — skills live as folders in object storage, so the feature is
+        // gated on storage being configured (same gate as /admin/assets).
+        boolean skillsEnabled = storageService.isEnabled();
         return new FeaturesResponse(
                 storageService.isEnabled(),
                 globalSettingsService.isRagEnabled(),
                 gitServerService.isEnabled(),
                 marketplaceEnabled,
                 solrInstanceSource != null && solrInstanceSource.isReadOnly(),
+                skillsEnabled,
                 loggingEngine);
     }
 }

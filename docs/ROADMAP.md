@@ -73,7 +73,6 @@
 > T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
 > Rationale → §IX.4.d.
 
-- 📋 **T317** (deps: storage) **Skill = folder-in-storage + thin index** — a skill is a storage folder (`SKILL.md` at root); the DB row is a thin catalog index (name, description, version, author, path, enabled) parsed from the `SKILL.md` frontmatter. Gated on storage. (T326 rollback shipped — clean slate.) → §IX.4.d
 - 📋 **T318** (deps: T317) **Skill folder editor (mini-VS-Code)** — evolve `/admin/assets` (or a `/skill` editor) into a file-tree + Monaco editor over the skill folder via `TurStorageService` (create/rename/delete/edit `SKILL.md`, scripts, references, assets); built-in folders read-only. → §IX.4.d
 - 📋 **T319** (deps: T317) **Import skill ZIP (one or many)** — unpack each top-level folder containing a `SKILL.md` into storage and index it; a single ZIP may carry multiple skills (the entry door). → §IX.4.d
 - 📋 **T320** (deps: T317) **Export skill → Anthropic-compatible ZIP** — serialize a stored skill folder back to a `.zip` usable in Claude (the exit door). → §IX.4.d
