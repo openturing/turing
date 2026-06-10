@@ -1,0 +1,79 @@
+databaseChangeLog:
+  # T116 / §IX.4 — `skill` table: typed, versioned, marketplace-distributable
+  # skill bundles (personaFragment + flowSnippet + tools + workspaceDefaults +
+  # dependencies). The structured bundle members are stored as opaque longtext
+  # JSON columns; (name, version) is unique so the marketplace (T117) can pin
+  # versions. Built-in platform skills are re-synced from the classpath on
+  # every boot by TurSkillOnStartup.
+  #
+  # Idempotent: gated by `not tableExists` so re-running on a database that
+  # already has the table is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.21-create-skill-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: skill
+      changes:
+        - createTable:
+            tableName: skill
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: author
+                  type: VARCHAR(100)
+              - column:
+                  name: signature
+                  type: VARCHAR(100)
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: personaFragmentJson
+                  type: longtext
+              - column:
+                  name: flowSnippetJson
+                  type: longtext
+              - column:
+                  name: toolsJson
+                  type: longtext
+              - column:
+                  name: workspaceDefaultsJson
+                  type: longtext
+              - column:
+                  name: dependenciesJson
+                  type: longtext
+              - column:
+                  name: builtIn
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: skill
+            columnNames: name, version
+            constraintName: uq_skill_name_version

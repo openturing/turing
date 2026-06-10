@@ -1,0 +1,18 @@
+{
+  "name": "scaffold-mindmap",
+  "version": "1.0.0",
+  "author": "viglet",
+  "description": "Build a Mermaid mind-map tree from a set of abstracts around a central term (buildMindMap helper).",
+  "personaFragment": {
+    "instruction": "When asked to summarize a topic visually, produce a Mermaid mindmap with the central term at the root and one branch per distinct sub-theme found in the source abstracts. Keep node labels short (a few words). Render the diagram inside a ```mermaid code block.",
+    "vocab": {
+      "mandatory": ["mindmap"],
+      "forbidden": []
+    }
+  },
+  "tools": ["scaffold.buildMindMap"],
+  "workspaceDefaults": {
+    "mindmap.mmd": "mindmap\n  root(({{term}}))\n"
+  },
+  "dependencies": []
+}

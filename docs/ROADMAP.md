@@ -62,7 +62,6 @@
 
 ## E.3 — Skills as first-class (differentiator)
 
-- 📋 **T116** (deps: —) **`TurSkill` entity** — composable bundle of `(personaFragment + flowSnippet + tools + workspaceDefaults + dependencies)`. → §IX.4.a
 - 📋 **T117** (deps: T116) **Skills marketplace UI** in admin — browse, search, version-pin, vendor-filter, install. → §IX.4.b
 - 💭 **T118** (deps: T116) **Public skill registry** (`skills.turing.io`) — community-maintained, vendor-curated tiers, like crates.io / pypi. → §IX.4.c
 

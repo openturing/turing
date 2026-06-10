@@ -1,0 +1,16 @@
+{
+  "name": "scaffold-quote-extraction",
+  "version": "1.0.0",
+  "author": "viglet",
+  "description": "Pick the most representative quote for a term from a body of text (pickQuote heuristic).",
+  "personaFragment": {
+    "instruction": "When you need a pull quote, prefer a single self-contained sentence that mentions the target term and reads well out of context. Never fabricate quotes; only extract from the supplied source text.",
+    "vocab": {
+      "mandatory": [],
+      "forbidden": []
+    }
+  },
+  "tools": ["scaffold.pickQuote"],
+  "workspaceDefaults": {},
+  "dependencies": []
+}
