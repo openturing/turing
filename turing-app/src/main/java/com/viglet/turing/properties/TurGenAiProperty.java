@@ -18,6 +18,9 @@ public class TurGenAiProperty {
     /** Tool pre-filtering knobs (§IV.2 / T29). */
     private TurGenAiToolPreFilterProperty toolPrefilter = new TurGenAiToolPreFilterProperty();
 
+    /** Auto-offload-large-tool-results knobs (§IX.3.d / T114). */
+    private TurGenAiToolResultOffloadProperty toolResultOffload = new TurGenAiToolResultOffloadProperty();
+
     @Getter
     @Setter
     public static class TurGenAiReindexProperty {
@@ -68,5 +71,42 @@ public class TurGenAiProperty {
          * bloat only becomes a problem with dozens of tools.
          */
         private int minToolsThreshold = 20;
+    }
+
+    /**
+     * Auto-offload large tool results (§IX.3.d / T114). When a decorated
+     * tool returns more than {@link #inlineMaxChars} characters, the
+     * {@code TurToolCallbackPipeline} stores the full payload in the agent
+     * workspace ({@code tool-results/{toolName}-{ts}.json}) and replaces the
+     * inline result with a short reference the LLM can resolve via the
+     * always-present {@code workspace_read} tool. Cuts prompt-token bloat on
+     * tools that return large catalogs / JSON arrays / search dumps.
+     *
+     * <p>Offloading is only active when storage is enabled
+     * ({@code turing.storage.type != none}); without a storage backend there
+     * is nowhere to put the payload, so the pipeline leaves results inline
+     * and never adds the {@code workspace_read} tool. This keeps the default
+     * {@code none} deployment (and every test running on it) byte-for-byte
+     * unchanged.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.1
+     */
+    @Getter
+    @Setter
+    public static class TurGenAiToolResultOffloadProperty {
+        /**
+         * Master switch. When {@code false} tool results are always left
+         * inline regardless of size, and the {@code workspace_read} tool is
+         * not added.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Maximum tool-result length (in characters) kept inline. Results
+         * longer than this are written to the workspace and replaced with a
+         * reference. Default {@code 4096}.
+         */
+        private int inlineMaxChars = 4096;
     }
 }

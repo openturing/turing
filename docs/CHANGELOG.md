@@ -170,6 +170,7 @@
 - **T111** — **`TurAgentWorkspace` service ✅ shipped** — per-conversation key-value-blob store backed by `TurStorageService` (already pluggable: NoOp / filesystem / MinIO). (§IX.3.a)
 - **T112** — **`workspace` helper for Custom Tool Groovy ✅ shipped** — new Groovy binding [`TurCustomToolWorkspaceHelper`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurCustomToolWorkspaceHelper.java) bound as `workspace` by [`TurCustomToo… (§IX.3.b)
 - **T113** — **Workspace SSE bus ✅ shipped** — live "files this agent built for you" stream. (§IX.3.c)
+- **T114** — **Auto-offload large tool results ✅ shipped** — `TurToolCallbackPipeline` wraps each tool with `TurToolResultOffloadCallback`: a result over `turing.genai.tool-result-offload.inline-max-chars` (default 4096) is written to the agent workspace at `tool-results/{toolName}-{ts}.json` and replaced inline with a `workspace://` reference; the always-present `workspace_read` tool pulls it back on demand. Active only when storage is enabled, so `turing.storage.type=none` deployments are unchanged. (§IX.3.d)
 
 ## E.5 — Long-horizon task primitives
 

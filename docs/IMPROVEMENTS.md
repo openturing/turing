@@ -1139,24 +1139,6 @@ Mirrors `TurChatSlotEventBus` (T54). Endpoint
 list as a sidebar — "files this agent built for you." Sub-100ms
 latency, multiplexer pattern reused from T104.
 
-#### IX.3.d Auto-offload large tool results (T114)
-
-When `TurToolCallbackPipeline.decorate(...)` wraps a `ToolCallback`,
-the wrapper intercepts the result. If the returned string > 4096 chars,
-the pipeline:
-1. Generates a key `tool-results/{toolName}-{timestamp}.json`
-2. Writes the full payload to `workspace.put(key, ...)`
-3. Replaces the returned content with:
-   `Stored at workspace://${key} (${size} KB). Call workspace.read(key) when needed.`
-
-The LLM sees the reference; if it needs the data, it calls a
-`workspace.read` tool (new platform-level callback, always present).
-Cuts prompt-token bloat dramatically on tools that return large
-catalogs / search results / JSON arrays — addresses the same problem
-Deep Agents' "offload large tool results" middleware solves, but with
-**audit trail** (workspace stores the artifact; T60 audit log tracks
-the write).
-
 #### IX.3.e Memory compression to workspace (T115)
 
 When the persisted history for a conversation exceeds

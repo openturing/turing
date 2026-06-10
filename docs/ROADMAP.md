@@ -59,7 +59,6 @@
 
 ## E.2 — Agent Workspace (the key differentiator)
 
-- 📋 **T114** (deps: T111) **Auto-offload large tool results** — when a tool returns >`TOOL_RESULT_INLINE_MAX` chars (default 4096), `TurToolCallbackPipeline` stores the full payload in workspace at `tool-results/{toolName}-{ts}.json`, replaces inline text with `Stor… → §IX.3.d
 - 📋 **T115** (deps: T111) **Memory compression to workspace** — when persisted history exceeds `chatMemoryCompressionThresholdTokens` (default 8k), the oldest turns past the T30 recent-N window get summarized via a single dedicated LLM call → stored as `memory/summa… → §IX.3.e
 
 ## E.3 — Skills as first-class (differentiator)
