@@ -65,7 +65,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
-import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -93,7 +92,6 @@ public class TurSNSiteAPI {
     private final TurSNTemplate turSNTemplate;
     private final TurSNQueue turSNQueue;
     private final TurSearchEnginePluginFactory pluginFactory;
-    private final TurConfigProperties turConfigProperties;
     private final TurSNSiteMapper turSNSiteMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -101,10 +99,11 @@ public class TurSNSiteAPI {
     @GetMapping
     @Transactional(readOnly = true)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
-    public List<TurSNSiteListDto> turSNSiteList(Principal principal) {
-        List<TurSNSite> sites = turConfigProperties.isMultiTenant()
-                ? turSNSiteRepository.findAllForListingByCreatedBy(principal.getName().toLowerCase())
-                : turSNSiteRepository.findAllForListing();
+    public List<TurSNSiteListDto> turSNSiteList() {
+        // T262 / §XIV.2.6 — the legacy createdBy pseudo-tenant filter is retired;
+        // tenant isolation is now enforced automatically by the Hibernate
+        // @TenantId discriminator on TurSNSite (T260).
+        List<TurSNSite> sites = turSNSiteRepository.findAllForListing();
         return turSNSiteMapper.toListDtoList(sites);
     }
 

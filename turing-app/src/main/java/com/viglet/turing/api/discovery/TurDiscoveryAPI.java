@@ -52,7 +52,8 @@ public class TurDiscoveryAPI {
     public TurAPIBean info() throws JSONException {
         turAPIBean.setProduct("Viglet Turing");
         turAPIBean.setKeycloak(turConfigProperties.isKeycloak());
-        turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
+        // T262: legacy multi-tenant flag retired — discovery now reflects tenancy.enabled.
+        turAPIBean.setMultiTenant(turConfigProperties.getTenancy().isEnabled());
         turAPIBean.setAuthThirdparty(turConfigProperties.getAuthentication() == null
                 || turConfigProperties.getAuthentication().isThirdparty());
         turAPIBean.setSelfRegistration(turConfigProperties.getAuthentication() != null

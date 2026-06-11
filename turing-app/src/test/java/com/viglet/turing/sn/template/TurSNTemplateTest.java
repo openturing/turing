@@ -74,12 +74,12 @@ class TurSNTemplateTest {
                 localeRepository, instanceRepository, configProperties, pluginFactory);
     }
 
-    private TurConfigProperties config(boolean cloud, boolean multiTenant) {
+    private TurConfigProperties config(boolean cloud, boolean tenancyEnabled) {
         TurConfigProperties config = new TurConfigProperties();
         TurSolrProperty solr = new TurSolrProperty();
         solr.setCloud(cloud);
         config.setSolr(solr);
-        config.setMultiTenant(multiTenant);
+        config.getTenancy().setEnabled(tenancyEnabled);
         return config;
     }
 
@@ -180,7 +180,10 @@ class TurSNTemplateTest {
     }
 
     @Test
-    void testCreateSolrCoreUsesCloudCollectionAndMultitenantName() {
+    void testCreateSolrCoreUsesPlainCoreNameAfterPseudoTenantRetired() {
+        // T262: the legacy `<username>_<site>_<lang>` pseudo-tenant core name is
+        // retired; isolation is the @TenantId discriminator, so the core name is
+        // always `<site>_<lang>` regardless of the principal.
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
         TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
@@ -202,8 +205,8 @@ class TurSNTemplateTest {
 
         String coreName = template.createSolrCore(locale, "alex");
 
-        assertThat(coreName).isEqualTo("alex_my_site_pt_BR");
-        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("alex_my_site_pt_BR"), eq(Map.of()));
+        assertThat(coreName).isEqualTo("my_site_pt_BR");
+        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("my_site_pt_BR"), eq(Map.of()));
     }
 
     @Test

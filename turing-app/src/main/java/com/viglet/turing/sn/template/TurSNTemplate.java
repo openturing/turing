@@ -148,15 +148,12 @@ public class TurSNTemplate {
                 if (StringUtils.hasText(turSNSiteLocale.getCore())) {
                         return turSNSiteLocale.getCore();
                 }
-                if (turConfigProperties.isMultiTenant()) {
-                        return String.format("%s_%s_%s", username,
-                                        turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
-                                        turSNSiteLocale.getLanguage());
-                } else {
-                        return String.format("%s_%s",
-                                        turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
-                                        turSNSiteLocale.getLanguage());
-                }
+                // T262 / §XIV.2.6 — the legacy `username`-prefixed pseudo-tenant core
+                // name is retired; isolation is now the Hibernate @TenantId column.
+                // Proper per-tenant CORE prefixing (`t<shortId>_…`) is T268's job.
+                return String.format("%s_%s",
+                                turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
+                                turSNSiteLocale.getLanguage());
         }
 
         private void sendFieldsToService(TurSNSite turSNSite, List<TurSNFieldDefinition> fieldDefinitions) {

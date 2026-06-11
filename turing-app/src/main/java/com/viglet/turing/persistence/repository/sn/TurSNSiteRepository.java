@@ -67,18 +67,13 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales ORDER BY LOWER(s.name)")
 	List<TurSNSite> findAllForListing();
 
-	/**
-	 * Multi-tenant variant of {@link #findAllForListing()} that filters by the
-	 * {@code createdBy} audit column.
-	 */
-	@Cacheable("turSNSitefindAllForListingByCreatedBy")
-	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales "
-			+ "WHERE LOWER(s.createdBy) = LOWER(:createdBy) ORDER BY LOWER(s.name)")
-	List<TurSNSite> findAllForListingByCreatedBy(@Param("createdBy") String createdBy);
+	// T262 / §XIV.2.6 — findAllForListingByCreatedBy (the legacy createdBy
+	// pseudo-tenant filter) is retired; isolation is the Hibernate @TenantId
+	// discriminator, applied automatically to findAllForListing().
 
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
 			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing", "turSNSitefindAllForListingByCreatedBy" }, allEntries = true)
+			"turSNSitefindAllForListing" }, allEntries = true)
 	@NotNull
 	@Override
 	<S extends TurSNSite> S save(@NotNull S entity);
@@ -86,6 +81,6 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	@Override
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
 			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing", "turSNSitefindAllForListingByCreatedBy" }, allEntries = true)
+			"turSNSitefindAllForListing" }, allEntries = true)
 	void delete(@NotNull TurSNSite turSNSite);
 }

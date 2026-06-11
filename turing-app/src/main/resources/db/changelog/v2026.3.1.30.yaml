@@ -1,0 +1,232 @@
+databaseChangeLog:
+  # T262 / §XIV.2.6 — flip the @TenantId discriminator columns to NOT NULL now
+  # that v..28 / v..29 have backfilled every existing row to DEFAULT. Separate
+  # follow-up changelog (never edit a shipped one). defaultNullValue=DEFAULT is
+  # belt-and-suspenders in case any row slipped through as NULL.
+  #
+  # Idempotent: guarded by columnExists with onFail:MARK_RAN.
+
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-sn_site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: sn_site
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-ai_agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: ai_agent
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: ai_agent
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-chat_flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: chat_flow
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: chat_flow
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-chat_flow_state
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: chat_flow_state
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: chat_flow_state
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-chat_flow_submission
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: chat_flow_submission
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: chat_flow_submission
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-tur_chat_webhook
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: tur_chat_webhook
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: tur_chat_webhook
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-tur_routine
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: tur_routine
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: tur_routine
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-tur_agent_eval_set
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: tur_agent_eval_set
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: tur_agent_eval_set
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-tur_agent_eval_report
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: tur_agent_eval_report
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: tur_agent_eval_report
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-custom_tool
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: custom_tool
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: custom_tool
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: intent
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: intent
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-ai_persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: ai_persona
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: ai_persona
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-skill
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: skill
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: skill
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-analytics_intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: analytics_intent
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: analytics_intent
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-dev_token
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: dev_token
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: dev_token
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT
+  - changeSet:
+      id: v2026.3.1.30-tenantId-notnull-asset_training_record
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: asset_training_record
+            columnName: tenantId
+      changes:
+        - addNotNullConstraint:
+            tableName: asset_training_record
+            columnName: tenantId
+            columnDataType: VARCHAR(40)
+            defaultNullValue: DEFAULT

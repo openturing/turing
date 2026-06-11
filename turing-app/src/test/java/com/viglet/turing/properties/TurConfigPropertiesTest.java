@@ -16,12 +16,12 @@ class TurConfigPropertiesTest {
         turSolrProperty.setTimeout(2500);
         turSolrProperty.setCloud(true);
 
-        properties.setMultiTenant(true);
+        properties.getTenancy().setEnabled(true);
         properties.setKeycloak(true);
         properties.setAllowedOrigins("http://localhost:5173,http://localhost:2700");
         properties.setSolr(turSolrProperty);
 
-        assertTrue(properties.isMultiTenant());
+        assertTrue(properties.getTenancy().isEnabled());
         assertTrue(properties.isKeycloak());
         assertEquals("http://localhost:5173,http://localhost:2700", properties.getAllowedOrigins());
         assertSame(turSolrProperty, properties.getSolr());

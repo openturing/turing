@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.viglet.turing.api.TurAPIBean;
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.properties.TurTenancyProperty;
 
 import java.util.Optional;
 
@@ -35,7 +36,7 @@ class TurDiscoveryAPITest {
     @Test
     void testInfo() throws Exception {
         when(turConfigProperties.isKeycloak()).thenReturn(true);
-        when(turConfigProperties.isMultiTenant()).thenReturn(false);
+        when(turConfigProperties.getTenancy()).thenReturn(new TurTenancyProperty());
 
         TurAPIBean realApiBean = new TurAPIBean();
         TurDiscoveryAPI realController = new TurDiscoveryAPI(realApiBean, turConfigProperties, Optional.empty());
@@ -48,6 +49,6 @@ class TurDiscoveryAPITest {
                 .andExpect(jsonPath("$.multiTenant").value(false));
 
         verify(turConfigProperties, times(1)).isKeycloak();
-        verify(turConfigProperties, times(1)).isMultiTenant();
+        verify(turConfigProperties, times(1)).getTenancy();
     }
 }

@@ -9,7 +9,6 @@ turing:
   ai.crypto.key: sample-key-for-crypto
   allowedOrigins: http://localhost:4200,http://localhost:5173
   permissions: false
-  multi-tenant: false
   tenancy:
     enabled: false
   keycloak: false
