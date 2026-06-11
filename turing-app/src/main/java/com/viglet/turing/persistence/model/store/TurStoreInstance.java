@@ -55,6 +55,16 @@ public class TurStoreInstance implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	/**
+	 * T275 / §XIV.5.1 — owning tenant for BYO infra. A non-null value is a
+	 * tenant's own instance (their key/endpoint); {@code null} is a
+	 * platform-provided GLOBAL instance every tenant may use. Deliberately
+	 * NOT {@code @TenantId} — that would filter the shared NULLs out; the
+	 * repositories use an explicit {@code tenantId = :current OR IS NULL}.
+	 */
+	@jakarta.persistence.Column(name = "tenantId", length = 40)
+	private String tenantId;
+
 	@Column(nullable = false, length = 100)
 	private String title;
 

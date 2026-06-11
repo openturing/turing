@@ -1,0 +1,104 @@
+databaseChangeLog:
+  # T275 / §XIV.5.1 — add a NULLABLE tenantId to the shared-infra tables. These
+  # are deliberately NOT under Hibernate @TenantId: a non-null value is a
+  # tenant-owned instance (BYO keys), NULL is a platform-provided global
+  # instance every tenant may use. No backfill — existing rows stay NULL, i.e.
+  # they become the global pool, which is exactly the desired default.
+  # Repositories filter with `tenantId = :current OR tenantId IS NULL`.
+
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-llm_instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-embedding_model
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: embedding_model
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: embedding_model
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-store_instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: store_instance
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: store_instance
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-se_instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: se_instance
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: se_instance
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-mcp_server
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: mcp_server
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+  - changeSet:
+      id: v2026.3.1.31-add-tenantId-to-integration_instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: integration_instance
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: integration_instance
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)

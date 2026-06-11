@@ -25,9 +25,17 @@ import com.viglet.turing.persistence.model.integration.TurIntegrationInstance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface TurIntegrationInstanceRepository extends JpaRepository<TurIntegrationInstance, String> {
     @Modifying
     @Query("delete from TurIntegrationInstance iv where iv.id = ?1")
     void delete(String id);
+
+    /**
+     * T275 / §XIV.5.1 — instances visible to a tenant: its own ({@code tenantId = :tenantId})
+     * plus the platform-provided global pool ({@code tenantId IS NULL}).
+     */
+    @Query("select e from TurIntegrationInstance e where e.tenantId = :tenantId or e.tenantId is null")
+    java.util.List<TurIntegrationInstance> findVisibleToTenant(@Param("tenantId") String tenantId);
 }

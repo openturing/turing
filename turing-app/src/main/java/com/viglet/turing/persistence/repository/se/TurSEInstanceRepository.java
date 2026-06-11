@@ -30,6 +30,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 
@@ -52,4 +53,11 @@ public interface TurSEInstanceRepository extends JpaRepository<TurSEInstance, St
 	@Query("delete from  TurSEInstance si where si.id = ?1")
 	@CacheEvict(value = { "turSEInstancefindAll", "turSEInstancefindById" }, allEntries = true)
 	void delete(String id);
+
+    /**
+     * T275 / §XIV.5.1 — instances visible to a tenant: its own ({@code tenantId = :tenantId})
+     * plus the platform-provided global pool ({@code tenantId IS NULL}).
+     */
+    @Query("select e from TurSEInstance e where e.tenantId = :tenantId or e.tenantId is null")
+    java.util.List<TurSEInstance> findVisibleToTenant(@Param("tenantId") String tenantId);
 }
