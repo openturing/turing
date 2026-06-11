@@ -189,4 +189,8 @@ export const queryKeys = {
       [...queryKeys.chatAnalytics.all(), 'router-decisions', conversationId] as const,
     slotSseChannels: () => [...queryKeys.chatAnalytics.all(), 'slot-sse-channels'] as const,
   },
+  parkedConversations: {
+    all: () => ['parked-conversations'] as const,
+    list: () => [...queryKeys.parkedConversations.all(), 'list'] as const,
+  },
 } as const;

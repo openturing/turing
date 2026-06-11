@@ -1,0 +1,25 @@
+{
+  "parkedConversations": {
+    "title": "Parked Conversations",
+    "description": "Conversations suspended on a chat-flow suspend node, awaiting an external event. Unblock to resume the flow.",
+    "blankTitle": "No parked conversations",
+    "blankDescription": "Nothing is currently waiting on a suspend node. Conversations appear here when a flow calls suspend and stay until an external resume or a manual unblock.",
+    "unblock": "Unblock",
+    "unblocked": "Conversation resumed ({{count}} flow state(s) advanced).",
+    "nothingToResume": "This conversation was already resumed.",
+    "notUnblocked": "Could not unblock this conversation.",
+    "fields": {
+      "conversation": "Conversation",
+      "agent": "Agent",
+      "flow": "Flow",
+      "reason": "Reason",
+      "waiting": "Waiting"
+    },
+    "waiting": {
+      "seconds": "{{count}}s",
+      "minutes": "{{count}}m",
+      "hours": "{{count}}h",
+      "days": "{{count}}d"
+    }
+  }
+}

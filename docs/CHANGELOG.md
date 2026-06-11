@@ -195,6 +195,7 @@
 ## E.5 — Long-horizon task primitives
 
 - **T121** — **`suspend` node + `POST /chat/resume`** — new chat-flow node type `suspend` parks the cursor indefinitely; the engine's `walkTransparentNodes` recognises the type and returns the state unchanged (cursor stays on the suspend node turn after… (§IX.6.a)
+- **T122** — **Parked-conversations dashboard** — `TurParkedConversationService` scans flow graphs for `suspend` nodes (parsed once per flow) + loads only the matching `TurChatFlowState` rows via `findByFlow_IdAndCurrentNodeIdIn`; admin `GET /api/system/parked-conversations` + `POST /{id}/resume` (delegates to T121's `resumeSuspendedFlow`); React page at `/parked-conversations` (reason badge, waiting time, unblock action, sidebar entry, 15s poll). (§IX.6.b)
 
 ## H.1 — SDK gaps (close before admin migration can start)
 

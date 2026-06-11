@@ -45,6 +45,7 @@ import enStore from "./locales/en/store.json";
 import enSystemInfo from "./locales/en/systemInfo.json";
 import enTheme from "./locales/en/theme.json";
 import enTokenUsage from "./locales/en/tokenUsage.json";
+import enParkedConversations from "./locales/en/parkedConversations.json";
 
 // Portuguese segments
 import ptAccount from "./locales/pt/account.json";
@@ -88,13 +89,14 @@ import ptStore from "./locales/pt/store.json";
 import ptSystemInfo from "./locales/pt/systemInfo.json";
 import ptTheme from "./locales/pt/theme.json";
 import ptTokenUsage from "./locales/pt/tokenUsage.json";
+import ptParkedConversations from "./locales/pt/parkedConversations.json";
 
 const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
-  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
+  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
 };
@@ -104,7 +106,7 @@ const pt = {
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
-  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
+  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
 };

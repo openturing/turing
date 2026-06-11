@@ -72,6 +72,10 @@
         "title": "Chat Analytics",
         "description": "Drill into recent chat sessions, intent and sentiment classification, and full transcripts."
       },
+      "parkedConversations": {
+        "title": "Parked Conversations",
+        "description": "Monitor conversations suspended on a chat-flow suspend node and unblock them to resume."
+      },
       "chat": {
         "title": "Chat",
         "description": "Start conversations with your configured LLMs, agents, and semantic search."

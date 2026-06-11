@@ -9,6 +9,7 @@
     "new": "New",
     "loading": "Loading...",
     "actions": "Actions",
+    "refresh": "Refresh",
     "goBack": "Go back",
     "tryAgain": "Try again",
     "errorLoading": "Error while loading data",

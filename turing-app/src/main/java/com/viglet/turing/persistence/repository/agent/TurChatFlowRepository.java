@@ -90,4 +90,16 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
      * here would only add an eviction obligation for no read-throughput gain.
      */
     List<TurChatFlow> findByExperimentKey(String experimentKey);
+
+    /**
+     * T122 — owning agent id for a flow, fetched as a scalar so the
+     * parked-conversations dashboard can resolve the agent title without
+     * navigating the LAZY {@code turAIAgent} association on a {@code @Cacheable}
+     * (potentially detached) {@code findAll} result. Deliberately not cached:
+     * called only on the rare dashboard read.
+     *
+     * @since 2026.3.1
+     */
+    @Query("select f.turAIAgent.id from TurChatFlow f where f.id = :id")
+    Optional<String> findAgentIdByFlowId(@org.springframework.data.repository.query.Param("id") String id);
 }

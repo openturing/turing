@@ -69,10 +69,6 @@
 - 📋 **T119** (deps: —) **`humanApproval` node type** — pauses the flow, sends notification to a configured channel (Slack/Email/webhook), persists a pending-approval record, returns a resume URL. → §IX.5.a
 - 💭 **T120** (deps: T119) **Spectator + Co-pilot mode** — operator opens `/conversation/{id}?spectate=true`, sees live chat + slots + workspace, can take the wheel by toggling `manual=true` (LLM step is skipped on that turn; operator's text becomes the assistant mes… → §IX.5.b
 
-## E.5 — Long-horizon task primitives
-
-- 💭 **T122** (deps: T121) **Parked-conversations dashboard** — admin panel listing all suspended conversations + reasons + waiting time + unblock action. → §IX.6.b
-
 ## E.6 — Context engineering enforcement
 
 - ⏳ **T123** (deps: T31) **Token-budget enforcement per turn (V1: WARN/ERROR; COMPACT degrades to WARN until T115 ships)**. → §IX.7.a

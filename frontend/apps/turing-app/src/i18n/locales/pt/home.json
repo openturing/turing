@@ -72,6 +72,10 @@
         "title": "Análise de Chat",
         "description": "Investigue sessões de chat recentes, classificação de intenção e sentimento, e transcrições completas."
       },
+      "parkedConversations": {
+        "title": "Conversas Pausadas",
+        "description": "Monitore conversas suspensas em um nó de pausa do chat-flow e desbloqueie-as para retomar."
+      },
       "chat": {
         "title": "Chat",
         "description": "Inicie conversas com seus LLMs, agentes e busca semântica configurados."

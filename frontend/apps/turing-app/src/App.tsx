@@ -34,6 +34,7 @@ import {
   StoreRoutes,
   TokenUsageRoutes,
   ChatAnalyticsRoutes,
+  ParkedConversationsRoutes,
   UserRoutes
 } from "./app/routes"
 import { ROUTES } from "./app/routes.const"
@@ -87,6 +88,7 @@ function App() {
                 {ChatRoutes}
                 {TokenUsageRoutes}
                 {ChatAnalyticsRoutes}
+                {ParkedConversationsRoutes}
                 {UserRoutes}
                 {AdminRoutes}
               </Route>

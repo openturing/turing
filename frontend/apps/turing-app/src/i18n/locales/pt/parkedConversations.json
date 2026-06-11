@@ -1,0 +1,25 @@
+{
+  "parkedConversations": {
+    "title": "Conversas Pausadas",
+    "description": "Conversas suspensas em um nó de pausa do chat-flow, aguardando um evento externo. Desbloqueie para retomar o fluxo.",
+    "blankTitle": "Nenhuma conversa pausada",
+    "blankDescription": "Nada está aguardando em um nó de pausa no momento. As conversas aparecem aqui quando um fluxo chama suspend e permanecem até uma retomada externa ou um desbloqueio manual.",
+    "unblock": "Desbloquear",
+    "unblocked": "Conversa retomada ({{count}} estado(s) de fluxo avançado(s)).",
+    "nothingToResume": "Esta conversa já havia sido retomada.",
+    "notUnblocked": "Não foi possível desbloquear esta conversa.",
+    "fields": {
+      "conversation": "Conversa",
+      "agent": "Agente",
+      "flow": "Fluxo",
+      "reason": "Motivo",
+      "waiting": "Aguardando"
+    },
+    "waiting": {
+      "seconds": "{{count}}s",
+      "minutes": "{{count}}min",
+      "hours": "{{count}}h",
+      "days": "{{count}}d"
+    }
+  }
+}

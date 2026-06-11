@@ -16,6 +16,7 @@ import {
   IconLayoutDashboard,
   IconMessageChatbot,
   IconMessageCircle2,
+  IconPlayerPause,
   IconPlugConnectedX,
   IconReceiptRupee,
   IconRobot,
@@ -64,6 +65,7 @@ const ITEM_PRIVILEGE: Record<string, string> = {
   embeddingStore: "STORE_VIEW",
   aiAgent: "AI_AGENT_VIEW",
   persona: "AI_AGENT_VIEW",
+  parkedConversations: "AI_AGENT_VIEW",
   searchEngine: "SE_VIEW",
   semanticNavigation: "SN_VIEW",
 }
@@ -80,6 +82,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
   { key: "chatAnalytics", titleKey: "home.features.chatAnalytics.title", url: ROUTES.CHAT_ANALYTICS, icon: IconMessageCircle2 },
+  { key: "parkedConversations", titleKey: "home.features.parkedConversations.title", url: ROUTES.PARKED_CONVERSATIONS, icon: IconPlayerPause },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 

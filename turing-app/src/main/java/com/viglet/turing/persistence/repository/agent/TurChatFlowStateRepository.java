@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.persistence.repository.agent;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,6 +59,18 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      * @since 2026.2.7
      */
     List<TurChatFlowState> findByConversationId(String conversationId);
+
+    /**
+     * T122 — every state for a given flow whose cursor currently sits on one
+     * of {@code nodeIds}. The parked-conversations dashboard resolves the
+     * {@code suspend} node ids per flow first (parsing each flow graph once),
+     * then loads only the matching states — avoiding a full {@code findAll}
+     * scan of the runtime-state table.
+     *
+     * @since 2026.3.1
+     */
+    List<TurChatFlowState> findByFlow_IdAndCurrentNodeIdIn(
+            String flowId, Collection<String> nodeIds);
 
     /**
      * T85 — count of in-flight states per cursor node id for a given
