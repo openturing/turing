@@ -1,0 +1,21 @@
+databaseChangeLog:
+  # T276 / §XIV.5.2 — tag llm_token_usage with the owning tenant for per-tenant
+  # cost attribution. Plain nullable column (NOT @TenantId) so platform billing
+  # can GROUP BY tenantId across tenants. Stamped from the current tenant on
+  # write; existing rows stay NULL (pre-tenancy usage).
+  - changeSet:
+      id: v2026.3.1.32-add-tenantId-to-llm_token_usage
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_token_usage
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)

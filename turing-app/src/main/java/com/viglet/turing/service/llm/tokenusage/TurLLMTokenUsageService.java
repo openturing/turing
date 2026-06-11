@@ -19,11 +19,14 @@ public class TurLLMTokenUsageService {
 
     private final TurLLMTokenUsageRepository tokenUsageRepository;
     private final TurLlmObservation observation;
+    private final com.viglet.turing.tenant.TurTenantContext tenantContext;
 
     public TurLLMTokenUsageService(TurLLMTokenUsageRepository tokenUsageRepository,
-            TurLlmObservation observation) {
+            TurLlmObservation observation,
+            com.viglet.turing.tenant.TurTenantContext tenantContext) {
         this.tokenUsageRepository = tokenUsageRepository;
         this.observation = observation;
+        this.tenantContext = tenantContext;
     }
 
     public void recordUsage(TurLLMInstance instance, ChatResponse response, String username) {
@@ -55,6 +58,8 @@ public class TurLLMTokenUsageService {
             turLLMTokenUsage.setOutputTokens(outputTokens);
             turLLMTokenUsage.setTotalTokens(totalTokens > 0 ? totalTokens : inputTokens + outputTokens);
             turLLMTokenUsage.setCreatedAt(LocalDateTime.now());
+            // T276 / §XIV.5.2 — attribute the cost to the current tenant.
+            turLLMTokenUsage.setTenantId(tenantContext.resolveCurrentTenant());
 
             tokenUsageRepository.save(turLLMTokenUsage);
 

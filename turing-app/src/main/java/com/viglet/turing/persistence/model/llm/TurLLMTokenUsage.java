@@ -52,4 +52,13 @@ public class TurLLMTokenUsage implements Serializable {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    /**
+     * T276 / §XIV.5.2 — owning tenant for cost attribution. Plain column (not
+     * {@code @TenantId}) so platform billing can roll usage up <em>across</em>
+     * tenants with a {@code GROUP BY tenantId}; stamped from the current tenant
+     * on write. {@code DEFAULT} for single-tenant installs.
+     */
+    @Column(name = "tenantId", length = 40)
+    private String tenantId;
 }

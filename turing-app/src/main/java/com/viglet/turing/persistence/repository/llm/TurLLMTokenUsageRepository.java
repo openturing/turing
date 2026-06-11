@@ -44,4 +44,22 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
             ORDER BY totalTokens DESC
             """)
     List<Object[]> findMonthlySummary(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * T276 / §XIV.5.2 — platform billing roll-up grouped by tenant. Returns
+     * {@code [tenantId, inputTokens, outputTokens, totalTokens, requestCount]}
+     * per tenant in a window. Cross-tenant by design (platform-admin / billing).
+     */
+    @Query("""
+            SELECT u.tenantId AS tenantId,
+                   SUM(u.inputTokens) AS inputTokens,
+                   SUM(u.outputTokens) AS outputTokens,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY u.tenantId
+            ORDER BY totalTokens DESC
+            """)
+    List<Object[]> findUsageByTenant(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

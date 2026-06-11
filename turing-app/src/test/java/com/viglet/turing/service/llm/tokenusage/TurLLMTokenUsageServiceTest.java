@@ -46,7 +46,10 @@ class TurLLMTokenUsageServiceTest {
     @BeforeEach
     void setUp() {
         TurLlmObservation observation = new TurLlmObservation(ObservationRegistry.NOOP, new SimpleMeterRegistry());
-        service = new TurLLMTokenUsageService(tokenUsageRepository, observation);
+        com.viglet.turing.tenant.TurTenantContext tenantContext =
+                new com.viglet.turing.tenant.TurTenantContext(
+                        new com.viglet.turing.properties.TurConfigProperties());
+        service = new TurLLMTokenUsageService(tokenUsageRepository, observation, tenantContext);
 
         instance = new TurLLMInstance();
         instance.setId("inst-1");
