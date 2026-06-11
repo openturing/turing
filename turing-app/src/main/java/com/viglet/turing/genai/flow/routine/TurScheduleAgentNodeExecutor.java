@@ -74,11 +74,14 @@ public class TurScheduleAgentNodeExecutor {
 
     private final TurRoutineRepository routineRepository;
     private final JmsMessagingTemplate jmsMessagingTemplate;
+    private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
 
     public TurScheduleAgentNodeExecutor(TurRoutineRepository routineRepository,
-            JmsMessagingTemplate jmsMessagingTemplate) {
+            JmsMessagingTemplate jmsMessagingTemplate,
+            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation) {
         this.routineRepository = routineRepository;
         this.jmsMessagingTemplate = jmsMessagingTemplate;
+        this.turJmsTenantPropagation = turJmsTenantPropagation;
     }
 
     /**
@@ -139,7 +142,8 @@ public class TurScheduleAgentNodeExecutor {
                 inputJson);
 
         try {
-            jmsMessagingTemplate.convertAndSend(TurSNConstants.ROUTINE_QUEUE, message);
+            jmsMessagingTemplate.convertAndSend(TurSNConstants.ROUTINE_QUEUE, message,
+                    turJmsTenantPropagation.headers());
         } catch (RuntimeException e) {
             log.warn("[FlowOps/scheduleAgent] failed to enqueue routine '{}' for node '{}': {}",
                     routineId, node.id(), e.getMessage(), e);

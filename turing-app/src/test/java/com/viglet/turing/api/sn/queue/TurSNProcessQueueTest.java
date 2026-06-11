@@ -68,6 +68,10 @@ class TurSNProcessQueueTest {
     @Mock
     private TurSEInstanceRepository turSEInstanceRepository;
 
+    @Mock
+    private com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
+    @Mock
+    private TurSNProcessQueue self;
     @InjectMocks
     private TurSNProcessQueue processQueue;
 
@@ -100,7 +104,7 @@ class TurSNProcessQueueTest {
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(plugin, times(1)).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
@@ -128,7 +132,7 @@ class TurSNProcessQueueTest {
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         when(plugin.deIndex(site, Locale.US, "1")).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(plugin, times(1)).deIndex(site, Locale.US, "1");
     }
@@ -154,7 +158,7 @@ class TurSNProcessQueueTest {
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         when(plugin.commit(site, Locale.US)).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(plugin, times(1)).commit(site, Locale.US);
     }
@@ -193,7 +197,7 @@ class TurSNProcessQueueTest {
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(true);
         when(turSNSpotlightProcess.createUnmanagedSpotlight(item, site)).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(turSNSpotlightProcess).createUnmanagedSpotlight(item, site);
         verify(pluginFactory, never()).getPluginForSite(any());
@@ -215,7 +219,7 @@ class TurSNProcessQueueTest {
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(true);
         when(turSNSpotlightProcess.deleteUnmanagedSpotlight(item, site)).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(turSNSpotlightProcess).deleteUnmanagedSpotlight(item, site);
         verify(pluginFactory, never()).getPluginForSite(any());
@@ -241,7 +245,7 @@ class TurSNProcessQueueTest {
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         when(plugin.deIndexByType(site, Locale.US, "news")).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(plugin).deIndexByType(site, Locale.US, "news");
         verify(plugin, never()).deIndex(any(), any(), any());
@@ -266,7 +270,7 @@ class TurSNProcessQueueTest {
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
         when(plugin.commit(site, Locale.US)).thenReturn(false);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(plugin).commit(site, Locale.US);
     }
@@ -337,7 +341,7 @@ class TurSNProcessQueueTest {
         when(plugin.fieldExists(seInstance, "core_en", "customField")).thenReturn(false);
         when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
 
-        processQueue.receiveIndexingQueue(jobItems);
+        processQueue.processIndexingQueue(jobItems);
 
         verify(turSNSiteFieldRepository).save(any(TurSNSiteField.class));
         verify(turSNSiteFieldExtRepository).save(any(TurSNSiteFieldExt.class));

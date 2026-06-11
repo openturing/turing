@@ -76,6 +76,8 @@ public class TurSNProcessQueue {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
+    private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
+    private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
             TurSNSiteRepository turSNSiteRepository,
@@ -85,7 +87,9 @@ public class TurSNProcessQueue {
             TurSNSiteFieldRepository turSNSiteFieldRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
-            TurSEInstanceRepository turSEInstanceRepository) {
+            TurSEInstanceRepository turSEInstanceRepository,
+            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
+            @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -95,11 +99,25 @@ public class TurSNProcessQueue {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
         this.turSEInstanceRepository = turSEInstanceRepository;
+        this.turJmsTenantPropagation = turJmsTenantPropagation;
+        this.self = self;
     }
 
+    /**
+     * T272 / §XIV.4.6 — bind the tenant from the message header <em>before</em>
+     * the {@code @Transactional} session opens (so the Hibernate tenant filter
+     * sees the right tenant), then delegate through the Spring proxy.
+     */
     @JmsListener(destination = TurSNConstants.INDEXING_QUEUE, id = TurSNConstants.INDEXING_QUEUE_LISTENER, concurrency = "${turing.jms.concurrency:1-1}")
+    public void receiveIndexingQueue(TurSNJobItems turSNJobItems,
+            @org.springframework.messaging.handler.annotation.Header(
+                    name = com.viglet.turing.tenant.TurJmsTenantPropagation.HEADER,
+                    required = false) String tenantId) {
+        turJmsTenantPropagation.runForHeader(tenantId, () -> self.processIndexingQueue(turSNJobItems));
+    }
+
     @Transactional
-    public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
+    public void processIndexingQueue(TurSNJobItems turSNJobItems) {
         receiveQueueLog(turSNJobItems);
         Optional.of(turSNJobItems).ifPresentOrElse(jobItems -> jobItems.forEach(
                 turSNJobItem -> turSNJobItem.getSiteNames().forEach(siteName -> {

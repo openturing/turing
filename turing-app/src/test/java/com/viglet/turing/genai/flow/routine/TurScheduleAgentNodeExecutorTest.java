@@ -11,6 +11,7 @@ package com.viglet.turing.genai.flow.routine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -56,14 +57,14 @@ class TurScheduleAgentNodeExecutorTest {
         when(repo.findById(ROUTINE_ID)).thenReturn(Optional.of(enabledRoutine()));
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
 
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
         TurChatFlowState state = stateWithSlots(Map.of("cargo", "CEO"));
         ChatFlowNode node = scheduleAgentNode(ROUTINE_ID, "{\"cargo\":\"{{cargo}}\"}", OUTPUT_SLOT, null);
 
         Outcome outcome = executor.execute(state, node);
 
         assertThat(outcome).isEqualTo(Outcome.WAITING_FIRED);
-        verify(jms).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE), any(TurScheduleAgentMessage.class));
+        verify(jms).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE), any(TurScheduleAgentMessage.class), anyMap());
         Map<String, String> vars = ChatFlowOps.readVariables(state);
         assertThat(vars).containsKey("__scheduleAgent_pending_" + NODE_ID);
         assertThat(vars).containsKey("__scheduleAgent_startedAt_" + NODE_ID);
@@ -74,7 +75,7 @@ class TurScheduleAgentNodeExecutorTest {
     void reEntry_outputSlotFilled_isCompleted() {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         TurChatFlowState state = stateWithSlots(Map.of(
                 "__scheduleAgent_pending_" + NODE_ID, ROUTINE_ID,
@@ -99,7 +100,7 @@ class TurScheduleAgentNodeExecutorTest {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         when(repo.findById(ROUTINE_ID)).thenReturn(Optional.of(enabledRoutine()));
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         TurChatFlowState state = stateWithSlots(Map.of(
                 "__scheduleAgent_pending_" + NODE_ID, ROUTINE_ID,
@@ -119,7 +120,7 @@ class TurScheduleAgentNodeExecutorTest {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         when(repo.findById(ROUTINE_ID)).thenReturn(Optional.of(enabledRoutine()));
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         long ancient = System.currentTimeMillis() - 999_999L;
         TurChatFlowState state = stateWithSlots(Map.of(
@@ -140,7 +141,7 @@ class TurScheduleAgentNodeExecutorTest {
     void missingRoutineId_isFailed() {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         Outcome outcome = executor.execute(stateWithSlots(Map.of()),
                 scheduleAgentNode(null, null, OUTPUT_SLOT, null));
@@ -156,7 +157,7 @@ class TurScheduleAgentNodeExecutorTest {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         when(repo.findById(ROUTINE_ID)).thenReturn(Optional.empty());
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         Outcome outcome = executor.execute(stateWithSlots(Map.of()),
                 scheduleAgentNode(ROUTINE_ID, null, OUTPUT_SLOT, null));
@@ -174,7 +175,7 @@ class TurScheduleAgentNodeExecutorTest {
         disabled.setEnabled(false);
         when(repo.findById(ROUTINE_ID)).thenReturn(Optional.of(disabled));
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         Outcome outcome = executor.execute(stateWithSlots(Map.of()),
                 scheduleAgentNode(ROUTINE_ID, null, OUTPUT_SLOT, null));
@@ -189,7 +190,7 @@ class TurScheduleAgentNodeExecutorTest {
     void nullInputs_failGracefully() {
         TurRoutineRepository repo = mock(TurRoutineRepository.class);
         JmsMessagingTemplate jms = mock(JmsMessagingTemplate.class);
-        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms);
+        TurScheduleAgentNodeExecutor executor = new TurScheduleAgentNodeExecutor(repo, jms, noTenantPropagation());
 
         assertThat(executor.execute(null, scheduleAgentNode(ROUTINE_ID, null, OUTPUT_SLOT, null)))
                 .isEqualTo(Outcome.FAILED);
@@ -225,5 +226,12 @@ class TurScheduleAgentNodeExecutorTest {
                 List.of(), List.of(),
                 null, null, null, null, null, null, List.of(),
                 routineId, timeoutMs));
+    }
+
+    private static com.viglet.turing.tenant.TurJmsTenantPropagation noTenantPropagation() {
+        com.viglet.turing.properties.TurConfigProperties props =
+                new com.viglet.turing.properties.TurConfigProperties();
+        return new com.viglet.turing.tenant.TurJmsTenantPropagation(
+                new com.viglet.turing.tenant.TurTenantContext(props));
     }
 }

@@ -64,13 +64,16 @@ public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
     private final TurSNGenAi turGenAi;
+    private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
 
     public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate,
             TurSNSiteRepositoryPort turSNSiteRepositoryPort,
-            TurSNGenAi turGenAi) {
+            TurSNGenAi turGenAi,
+            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
         this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
         this.turGenAi = turGenAi;
+        this.turJmsTenantPropagation = turJmsTenantPropagation;
     }
 
     @PostMapping
@@ -145,7 +148,9 @@ public class TurSNImportAPI {
             log.debug("Sent job - {}", TurSNConstants.INDEXING_QUEUE);
             log.debug("turSNJob: {}", turSNJobItems);
         }
-        this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJobItems);
+        // T272 / §XIV.4.6 — stamp the current tenant so the consumer thread can restore it.
+        this.jmsMessagingTemplate.convertAndSend(TurSNConstants.INDEXING_QUEUE, turSNJobItems,
+                turJmsTenantPropagation.headers());
     }
 
     private void sendToGenAi(TurSNJobItems turSNJobItems) {

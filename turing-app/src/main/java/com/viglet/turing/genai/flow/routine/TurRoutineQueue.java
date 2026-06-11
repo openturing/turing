@@ -50,21 +50,32 @@ public class TurRoutineQueue {
     private final TurNativeToolService nativeToolService;
     private final TurRoutineGroovyExecutor groovyExecutor;
     private final TurChatFlowEngineService engine;
+    private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
 
     public TurRoutineQueue(TurRoutineRepository routineRepository,
             TurNativeToolService nativeToolService,
             TurRoutineGroovyExecutor groovyExecutor,
-            @Lazy TurChatFlowEngineService engine) {
+            @Lazy TurChatFlowEngineService engine,
+            com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation) {
         this.routineRepository = routineRepository;
         this.nativeToolService = nativeToolService;
         this.groovyExecutor = groovyExecutor;
         this.engine = engine;
+        this.turJmsTenantPropagation = turJmsTenantPropagation;
     }
 
     @JmsListener(destination = TurSNConstants.ROUTINE_QUEUE,
             id = TurSNConstants.ROUTINE_QUEUE_LISTENER,
             concurrency = "${turing.jms.routine.concurrency:1-2}")
-    public void receive(TurScheduleAgentMessage message) {
+    public void receive(TurScheduleAgentMessage message,
+            @org.springframework.messaging.handler.annotation.Header(
+                    name = com.viglet.turing.tenant.TurJmsTenantPropagation.HEADER,
+                    required = false) String tenantId) {
+        // T272 / §XIV.4.6 — restore the originating tenant on this consumer thread.
+        turJmsTenantPropagation.runForHeader(tenantId, () -> process(message));
+    }
+
+    private void process(TurScheduleAgentMessage message) {
         if (message == null || message.getRoutineId() == null) {
             log.warn("[RoutineQueue] dropped null/empty message");
             return;
