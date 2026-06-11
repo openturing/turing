@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T284 / §XIV.7.5 — add the escalation-seam column tenant.isolationMode. Only
+  # SHARED is implemented; SCHEMA/DB are reserved. Default + backfill SHARED so
+  # the column is NOT NULL with no behavioural change.
+  - changeSet:
+      id: v2026.3.1.33-add-isolationMode-to-tenant
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tenant
+                columnName: isolationMode
+      changes:
+        - addColumn:
+            tableName: tenant
+            columns:
+              - column:
+                  name: isolationMode
+                  type: VARCHAR(16)
+                  defaultValue: SHARED
+        - update:
+            tableName: tenant
+            columns:
+              - column:
+                  name: isolationMode
+                  value: SHARED
+            where: isolationMode IS NULL
+        - addNotNullConstraint:
+            tableName: tenant
+            columnName: isolationMode
+            columnDataType: VARCHAR(16)
+            defaultNullValue: SHARED

@@ -222,7 +222,38 @@
 
 ## Block J — Multi-tenancy (§XIV)
 
-- **T257** — **`TurTenant` + `TurTenantMembership` model** — multi-tenancy aggregate root `TurTenant` (UUID PK, unique `slug`/subdomain, `name`, `status` ACTIVE/SUSPENDED, free-form `plan`, `createdAt`) + `TurTenantMembership` join (`tenant_id` FK, `username`, `role` OWNER/ADMIN/MEMBER, `status`, unique `(tenant_id, username)`). Cache-paired repositories (`findBySlug`, `findByUsername`, `findByTenant_IdAndUsername`); Liquibase `v2026.3.1.27.yaml` seeds the immutable `DEFAULT` tenant (id `DEFAULT`) so tenancy-off installs resolve a constant discriminator. (§XIV.2.1)
+> Shipped 2026-06-11 (T257–T284). One JVM, many isolated tenants, behind
+> `turing.tenancy.enabled` (default off = legacy). See
+> [MULTI_TENANCY.md](MULTI_TENANCY.md) for the operator + developer guide.
+
+- **T257** — **`TurTenant` + `TurTenantMembership` model** — aggregate root (UUID PK, unique `slug`, `status`, `plan`, `isolationMode`) + membership join (role OWNER/ADMIN/MEMBER); cache-paired repos; Liquibase seeds the immutable `DEFAULT` tenant. (§XIV.2.1)
+- **T258** — **`TurTenantContext`** — flag-aware thread-local current-tenant holder with `runAs`/`runAsSystem`; `resolveCurrentTenant()` short-circuits to `DEFAULT` when tenancy is off. (§XIV.2.2)
+- **T259** — **`TurTenantResolutionFilter`** — resolves the tenant (JWT claim → session → subdomain → header), validates active membership (403), blocks suspended tenants, clears in `finally`; no-op when off. (§XIV.2.3)
+- **T260** — **Hibernate `@TenantId` pilot on `TurSNSite`** — `CurrentTenantIdentifierResolver` → `TurTenantContext`; IT proves auto-stamp on write + auto-filter on read + B blind to A. (§XIV.2.4)
+- **T261** — **Roll `@TenantId` across tenant-owned entities** — field + Liquibase column (nullable + DEFAULT backfill) on 15 aggregate roots (ai_agent, chat_flow, …). (§XIV.2.5)
+- **T262** — **Backfill + retire legacy pseudo-tenant** — flip discriminator columns NOT NULL; delete the `turing.multi-tenant` / `findAllForListingByCreatedBy` branch. (§XIV.2.6)
+- **T263** — **Keycloak tenant claim + membership authorities** — `TENANT_<id>` / `TENANT_<id>_<ROLE>` authorities in both OIDC and session paths. (§XIV.3.1)
+- **T264** — **Self-service signup** — `POST /api/signup` creates tenant + OWNER membership; idempotent, slug + reserved-word validated. (§XIV.3.2)
+- **T265** — **Current-tenant switch + my tenants** — `GET /api/tenants/mine`, `POST /api/tenants/{slug}/switch` (sets the session attribute). (§XIV.3.3)
+- **T266** — **Platform-admin cross-tenant context** — `ROLE_PLATFORM_ADMIN` + audited `TurPlatformAdminService` (`runForTenant`/`runAsSystem`) — the only sanctioned bypass. (§XIV.3.4)
+- **T267** — **Cache tenant-awareness** — `TurTenantCacheKeyGenerator` as the default key generator partitions every `@Cacheable` by tenant. (§XIV.4.1)
+- **T268** — **Search-engine core tenant prefixing** — `TurTenantCoreNaming` `t<shortId>_` prefix on the name-keyed SN core + RAG core persistence. (§XIV.4.2)
+- **T269** — **Storage path tenant scoping** — `TurTenantScopedStorageService` prepends `tenants/<id>/`, strips it from listings, guards traversal. (§XIV.4.3)
+- **T270** — **Lucene vector store per-tenant base path** — `TurLuceneStoreProvider` resolves under `…/<tenantId>/`; cache key gains the prefix. (§XIV.4.4)
+- **T271** — **Per-tenant secret key derivation** — `TurSecretCryptoService` derives `PBKDF2(master, tenantId)`; DEFAULT keeps the legacy key. (§XIV.4.5)
+- **T272** — **JMS tenant propagation** — `turingTenantId` header on indexing/routine sends; listeners restore + clear via `TurJmsTenantPropagation`. (§XIV.4.6)
+- **T273** — **Scheduled-job tenant fan-out** — `TurTenantScheduledFanOut` runs `@TenantId`-touching sweeps once per active tenant. (§XIV.4.7)
+- **T274** — **Reactive + async context propagation** — Micrometer `ThreadLocalAccessor` + `Hooks.enableAutomaticContextPropagation()` + a `TaskDecorator`. (§XIV.4.8)
+- **T275** — **Tenant-owned infra + shared pool** — nullable `tenantId` on 6 infra tables + `findVisibleToTenant` (`current ∪ NULL`). (§XIV.5.1)
+- **T276** — **Per-tenant cost attribution** — `llm_token_usage.tenantId` + `findUsageByTenant` billing roll-up. (§XIV.5.2)
+- **T277** — **Plan-based quotas** — `TurTenantQuotaService` (FREE bounded, paid unlimited); 402 at create, 429 at LLM admission. (§XIV.5.3)
+- **T278** — **Frontend tenant context** — `X-Turing-Tenant` axios interceptor, tenant service/queries, org switcher + signup/settings page, cache re-scope on switch. (§XIV.6.1)
+- **T279** — **Platform-admin tenant console** — `/api/platform/tenants` (list/suspend/activate/impersonate) + admin page. (§XIV.6.2)
+- **T280** — **Cross-tenant isolation IT gate** — `TurCrossTenantIsolationIT` (secret crypto end-to-end) + `TurSNSiteTenantIsolationIT` + `TurTenantInfraVisibilityIT`. (§XIV.7.1)
+- **T281** — **Tenant lifecycle teardown** — `TurTenantTeardownService` suspend + delete (storage prefix, Lucene dir, caches, registry rows); audited, idempotent, dry-run. (§XIV.7.2)
+- **T282** — **MCP server multi-tenant scoping** — design-resolved: the future `/mcp` endpoint inherits tenant binding from `TurTenantResolutionFilter` (no separate code until Block I ships). (§XIV.7.3)
+- **T283** — **`docs/MULTI_TENANCY.md`** — operator + developer guide: model, leak-surface checklist, new-entity recipe, teardown runbook. (§XIV.7.4)
+- **T284** — **Hybrid escalation seam** — `TurTenant.isolationMode` (SHARED|SCHEMA|DB, default SHARED) reserves the path to schema/DB isolation; only SHARED implemented. (§XIV.7.5)
 
 ## Block K — Agent CI (flow/prompt eval gate, §XV)
 

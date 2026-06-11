@@ -19,6 +19,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -93,6 +95,15 @@ public class TurTenant implements Serializable {
      */
     @Column(name = "plan", nullable = false, length = 50)
     private String plan = "FREE";
+
+    /**
+     * T284 / §XIV.7.5 — physical isolation seam. {@link TurTenantIsolationMode#SHARED}
+     * (default) is the only implemented mode; SCHEMA/DB are reserved for a future
+     * heavy-tenant escalation without a data-model change.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "isolationMode", nullable = false, length = 16)
+    private TurTenantIsolationMode isolationMode = TurTenantIsolationMode.SHARED;
 
     /** Creation instant; stamped on first persist (DB also defaults it for seeds). */
     @Column(name = "createdAt", nullable = false)
