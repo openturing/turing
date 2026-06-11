@@ -75,6 +75,20 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     static final String CONFIDENCE_HIGH = "high";
     static final String CONFIDENCE_LOW = "low";
 
+    /**
+     * T53 / §VII.4.g — abandonment auto-escalation. When the flow opts in via
+     * {@link TurChatFlow#getAbandonHandoffMessage()}, a judge-detected
+     * abandonment writes this tracking slot (value {@link #HANDOFF_OFFERED_ABANDON})
+     * so the chat UI can surface a handoff CTA and analytics can measure the
+     * abandon → handoff conversion. Distinct from the {@code handoff_status}
+     * slot written by {@code TurChatHandoffService} once the visitor actually
+     * clicks through — this one records the system-initiated OFFER.
+     *
+     * @since 2026.3.1
+     */
+    static final String HANDOFF_OFFERED_SLOT = "handoff_offered";
+    static final String HANDOFF_OFFERED_ABANDON = "abandon";
+
     // §I.5 step 6 / T16 — deleted: RETRY_MIN_USER_MESSAGE_LENGTH constant
     // and the judgeRetryEnabled flag. The second-opinion retry block they
     // gated was removed entirely; onJudgeReject (#22) is the sole driver
@@ -201,13 +215,15 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                 verdict.abandoned(),
                 verdict.collectedValue());
 
-        // Abandon → end gracefully and use the judge's farewell as the reply.
+        // Abandon → end gracefully. T53 may turn the goodbye into a handoff
+        // offer (writes the handoff_offered slot into `variables`) when the
+        // flow opts in; otherwise the judge's plain farewell is used.
         if (verdict.abandoned()) {
             log.info("[LlmJudge] Abandon detected on node '{}' — ending flow", node.id());
+            String farewell = resolveAbandonReply(ctx, variables, verdict);
             ChatFlowOps.writeVariables(state, variables);
             ChatFlowOps.transitionToEnd(state, ctx.graph());
-            String farewell = verdict.redirectMessage();
-            return (farewell != null && !farewell.isBlank()) ? farewell.trim() : null;
+            return farewell;
         }
 
         // ─── Capture + advance evaluation runs FIRST ─────────────────
@@ -412,10 +428,10 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         // stall T51 targets. Persist whatever was captured so far.
         if (verdict != null && verdict.abandoned()) {
             log.info("[LlmJudge/captureFirst] Abandon detected on node '{}' — ending flow", node.id());
+            String farewell = resolveAbandonReply(ctx, variables, verdict);
             ChatFlowOps.writeVariables(state, variables);
             ChatFlowOps.transitionToEnd(state, ctx.graph());
-            String farewell = verdict.redirectMessage();
-            return (farewell != null && !farewell.isBlank()) ? farewell.trim() : null;
+            return farewell;
         }
 
         // ── 3. Refine: prefer the judge's cleaner extraction over the raw reply ──
@@ -516,6 +532,40 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             return true;
         }
         return valid;
+    }
+
+    /**
+     * T53 / §VII.4.g — resolves the reply shown when the judge detects
+     * abandonment, shared by the legacy and capture-first paths.
+     *
+     * <p>When the flow opts in (non-blank {@link
+     * TurChatFlow#getAbandonHandoffMessage()}), writes the {@link
+     * #HANDOFF_OFFERED_SLOT} tracking slot into {@code variables} (so the SSE
+     * channel + analytics see the offer and the UI can render a handoff CTA)
+     * and returns the configured offer text instead of just closing. Otherwise
+     * returns the judge's plain farewell ({@code null} when blank) — the legacy
+     * "say goodbye and close" behaviour.
+     *
+     * @since 2026.3.1
+     */
+    private static String resolveAbandonReply(AdvanceContext ctx,
+            Map<String, String> variables, JudgeVerdict verdict) {
+        String judgeFarewell = verdict.redirectMessage();
+        judgeFarewell = (judgeFarewell != null && !judgeFarewell.isBlank())
+                ? judgeFarewell.trim()
+                : null;
+
+        TurChatFlow flow = ctx.flow();
+        String offer = flow == null ? null : flow.getAbandonHandoffMessage();
+        if (offer == null || offer.isBlank()) {
+            return judgeFarewell;
+        }
+
+        variables.put(HANDOFF_OFFERED_SLOT, HANDOFF_OFFERED_ABANDON);
+        String conversationId = ctx.state() == null ? "?" : ctx.state().getConversationId();
+        log.info("[LlmJudge] Abandonment handoff offered (conv={}) — escalating to a human "
+                + "consultant instead of closing", conversationId);
+        return offer.trim();
     }
 
     private static String offTopicRedirect(JudgeVerdict verdict) {

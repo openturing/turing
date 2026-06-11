@@ -550,6 +550,8 @@ public class TurChatFlowAPI {
                     if (incoming.getCaptureMode() != null) {
                         existing.setCaptureMode(incoming.getCaptureMode());
                     }
+                    // T53 / §VII.4.g — opt-in abandonment handoff offer (null/blank = legacy close).
+                    existing.setAbandonHandoffMessage(incoming.getAbandonHandoffMessage());
                     existing.setTriggerDescription(incoming.getTriggerDescription());
                     if (incoming.getTriggerMode() != null) {
                         existing.setTriggerMode(incoming.getTriggerMode());

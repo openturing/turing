@@ -76,6 +76,7 @@
 - **T50** — `onError` edges in editor visual — analogous to try/catch; red arrow that fires when the node fails. (§VII.4.d)
 - **T51** — Capture-first inversion — persists the user message into the slot BEFORE the judge runs; the judge becomes advisory (writes a `<slot>__confidence` low/high grade in a parallel slot) so the flow never stalls with `slot=null`. (§VII.4.e)
 - **T52** — Few-shot baked into the platform-level judge system prompt (`LlmJudgeGuardrailStrategy.askJudge`) — 3 worked examples (compound `cargo`+tempo → capture cargo only; informal `objetivo` → capture intent; stale option click on the wrong step → reject + redirect). Cuts stochastic rejects across all flows without per-customer `aiInstruction` tuning. (§VII.4.f)
+- **T53** — `abandoned` auto-escalation — opt-in per-flow `TurChatFlow.abandonHandoffMessage`; when non-blank, a judge-detected abandonment ends with that human-consultant offer and writes a `handoff_offered=abandon` tracking slot instead of just closing. Null/blank = legacy goodbye. Liquibase `v2026.3.1.25`. (§VII.4.g)
 
 ## D.3 — Slot infrastructure & compliance
 

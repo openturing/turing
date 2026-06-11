@@ -90,6 +90,16 @@ export interface TurChatFlow {
    * @since 2026.3.1
    */
   captureMode?: TurChatFlowCaptureMode;
+  /**
+   * T53 / §VII.4.g — opt-in abandonment auto-escalation (LLM_JUDGE only).
+   * When non-blank, a judge-detected abandonment ends the flow with this
+   * message (an offer to talk to a human consultant) and writes a
+   * {@code handoff_offered=abandon} tracking slot, instead of just closing.
+   * Null/blank keeps the legacy goodbye-and-close behaviour.
+   *
+   * @since 2026.3.1
+   */
+  abandonHandoffMessage?: string | null;
   /** Natural-language description used by the LLM router. Empty disables auto-trigger. */
   triggerDescription?: string | null;
   triggerMode: TurChatFlowTriggerMode;

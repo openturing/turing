@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # T53 / §VII.4.g — opt-in abandonment auto-escalation. When this text is
+  # non-blank and the LLM_JUDGE guardrail detects abandonment, the flow ends
+  # with this message (an offer to talk to a human consultant) and writes a
+  # handoff_offered=abandon tracking slot, instead of just closing the session.
+  # Null/blank keeps the legacy goodbye-and-close behaviour, so existing flows
+  # are byte-for-byte unchanged.
+  #
+  # Idempotent: gated by columnExists so re-running on a DB that already has the
+  # column is a no-op. longtext for cross-DB (H2/MySQL/PostgreSQL) portability.
+  - changeSet:
+      id: add-abandon-handoff-message-to-chat-flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: abandonHandoffMessage
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: abandonHandoffMessage
+                  type: longtext

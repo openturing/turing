@@ -101,6 +101,23 @@ public class TurChatFlow implements Serializable {
     private TurChatFlowCaptureMode captureMode = TurChatFlowCaptureMode.VALIDATE_THEN_CAPTURE;
 
     /**
+     * T53 / §VII.4.g — opt-in abandonment auto-escalation. When this text is
+     * non-blank and the {@code LLM_JUDGE} guardrail detects abandonment, the
+     * flow ends with THIS message (an offer to talk to a human consultant)
+     * instead of the judge's plain goodbye, and writes a {@code
+     * handoff_offered=abandon} tracking slot so the chat UI can surface a
+     * handoff CTA and analytics can measure the abandon → handoff conversion.
+     * Null/blank keeps the legacy behaviour: say goodbye and close the
+     * session. Only honoured by the {@code LLM_JUDGE} guardrail (the other
+     * methods have no abandonment signal).
+     *
+     * @since 2026.3.1
+     */
+    @Lob
+    @Column(name = "abandonHandoffMessage", columnDefinition = "longtext")
+    private String abandonHandoffMessage;
+
+    /**
      * Natural-language description that the LLM router uses to decide whether
      * a user message should auto-trigger this flow. Empty/blank disables
      * auto-trigger — the flow can still be picked manually from the chat

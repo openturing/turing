@@ -77,6 +77,8 @@ interface SettingsTabProps {
   setGuardrailMethod: (value: TurChatFlowGuardrailMethod) => void;
   captureMode: TurChatFlowCaptureMode;
   setCaptureMode: (value: TurChatFlowCaptureMode) => void;
+  abandonHandoffMessage: string;
+  setAbandonHandoffMessage: (value: string) => void;
   triggerDescription: string;
   setTriggerDescription: (value: string) => void;
   triggerMode: TurChatFlowTriggerMode;
@@ -108,6 +110,8 @@ export function ChatFlowSettingsTab({
   setGuardrailMethod,
   captureMode,
   setCaptureMode,
+  abandonHandoffMessage,
+  setAbandonHandoffMessage,
   triggerDescription,
   setTriggerDescription,
   triggerMode,
@@ -237,6 +241,29 @@ export function ChatFlowSettingsTab({
                     ))}
                   </SelectContent>
                 </Select>
+              </FormRow>
+
+              {/* T53 / §VII.4.g — abandonment auto-escalation. When the judge
+                  detects the visitor wants to quit, offer a human consultant
+                  instead of just closing. Non-blank text = opt-in; only the
+                  LLM_JUDGE guardrail has an abandonment signal. */}
+              <FormRow
+                htmlFor="chat-flow-abandon-handoff"
+                label={t("chatFlow.fields.abandonHandoffMessage")}
+                description={
+                  guardrailMethod === "LLM_JUDGE"
+                    ? t("chatFlow.fields.abandonHandoffMessageHint")
+                    : t("chatFlow.fields.abandonHandoffMessageJudgeOnly")
+                }
+              >
+                <Textarea
+                  id="chat-flow-abandon-handoff"
+                  value={abandonHandoffMessage}
+                  onChange={(event) => setAbandonHandoffMessage(event.target.value)}
+                  disabled={guardrailMethod !== "LLM_JUDGE"}
+                  rows={2}
+                  placeholder={t("chatFlow.fields.abandonHandoffMessagePlaceholder")}
+                />
               </FormRow>
             </div>
           </SectionCard.Content>

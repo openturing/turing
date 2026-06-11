@@ -56,6 +56,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 class LlmJudgeCaptureFirstTest {
 
     private static final String CONF = LlmJudgeGuardrailStrategy.CONFIDENCE_SUFFIX;
+    private static final String HANDOFF_OFFERED = LlmJudgeGuardrailStrategy.HANDOFF_OFFERED_SLOT;
 
     private LlmJudgeGuardrailStrategy newStrategy() {
         // Capture-first never touches the heuristic fallback or the prompt
@@ -236,6 +237,67 @@ class LlmJudgeCaptureFirstTest {
 
         assertThat(reply).isEqualTo("Sem problema, até mais!");
         assertThat(state.getCurrentNodeId()).isEqualTo("end-1");
+        // Legacy close: no handoff offered.
+        assertThat(ChatFlowOps.readVariables(state)).doesNotContainKey(HANDOFF_OFFERED);
+    }
+
+    // ───────────────── T53 — abandonment auto-escalation (handoff) ─────────────────
+
+    @Test
+    void abandoned_withHandoffMessage_offersHandoffAndWritesSlot_captureFirst() {
+        ChatFlowNode node = aiQuestion("ask-email", "email", null);
+        TurChatFlowState state = stateOn("ask-email");
+        ChatModel judge = judge(
+                "{\"on_topic\":false,\"collected_value\":null,\"ready_to_advance\":false,"
+                        + "\"abandoned\":true,\"redirect_message\":\"Sem problema, até mais!\"}");
+
+        String reply = newStrategy().advance(
+                ctx(state, graphWith(node), node, "desisto", "ok", judge,
+                        flowWithAbandonHandoff(TurChatFlowCaptureMode.CAPTURE_THEN_GRADE,
+                                "Antes de você ir — quer falar com um consultor?")));
+
+        // The configured offer replaces the judge's plain goodbye…
+        assertThat(reply).isEqualTo("Antes de você ir — quer falar com um consultor?");
+        // …and the handoff_offered tracking slot is written for UI/analytics.
+        assertThat(ChatFlowOps.readVariables(state)).containsEntry(HANDOFF_OFFERED, "abandon");
+        assertThat(state.getCurrentNodeId()).isEqualTo("end-1");
+    }
+
+    @Test
+    void abandoned_withHandoffMessage_offersHandoffAndWritesSlot_legacyPath() {
+        // VALIDATE_THEN_CAPTURE exercises the legacy advance() abandonment branch.
+        ChatFlowNode node = aiQuestion("ask-email", "email", null);
+        TurChatFlowState state = stateOn("ask-email");
+        ChatModel judge = judge(
+                "{\"on_topic\":false,\"collected_value\":null,\"ready_to_advance\":false,"
+                        + "\"abandoned\":true,\"redirect_message\":\"Tudo bem, até logo!\"}");
+
+        String reply = newStrategy().advance(
+                ctx(state, graphWith(node), node, "cancelar", "ok", judge,
+                        flowWithAbandonHandoff(TurChatFlowCaptureMode.VALIDATE_THEN_CAPTURE,
+                                "Posso te conectar com um especialista, quer?")));
+
+        assertThat(reply).isEqualTo("Posso te conectar com um especialista, quer?");
+        assertThat(ChatFlowOps.readVariables(state)).containsEntry(HANDOFF_OFFERED, "abandon");
+        assertThat(state.getCurrentNodeId()).isEqualTo("end-1");
+    }
+
+    @Test
+    void abandoned_blankHandoffMessage_keepsLegacyFarewellAndNoSlot() {
+        ChatFlowNode node = aiQuestion("ask-email", "email", null);
+        TurChatFlowState state = stateOn("ask-email");
+        ChatModel judge = judge(
+                "{\"on_topic\":false,\"collected_value\":null,\"ready_to_advance\":false,"
+                        + "\"abandoned\":true,\"redirect_message\":\"Sem problema!\"}");
+
+        String reply = newStrategy().advance(
+                ctx(state, graphWith(node), node, "desisto", "ok", judge,
+                        flowWithAbandonHandoff(TurChatFlowCaptureMode.CAPTURE_THEN_GRADE, "   ")));
+
+        // Blank message → opt-out → judge's plain farewell, no tracking slot.
+        assertThat(reply).isEqualTo("Sem problema!");
+        assertThat(ChatFlowOps.readVariables(state)).doesNotContainKey(HANDOFF_OFFERED);
+        assertThat(state.getCurrentNodeId()).isEqualTo("end-1");
     }
 
     // ─────────────────────────── resolveCaptureMode ───────────────────────────
@@ -269,6 +331,12 @@ class LlmJudgeCaptureFirstTest {
     private static TurChatFlow flow(TurChatFlowCaptureMode mode) {
         TurChatFlow flow = new TurChatFlow();
         flow.setCaptureMode(mode);
+        return flow;
+    }
+
+    private static TurChatFlow flowWithAbandonHandoff(TurChatFlowCaptureMode mode, String message) {
+        TurChatFlow flow = flow(mode);
+        flow.setAbandonHandoffMessage(message);
         return flow;
     }
 

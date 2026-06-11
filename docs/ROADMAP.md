@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## D.2 — Engine declarative additions (new node types & policies)
-
-- 💭 **T53** (deps: —) `abandoned` auto-escalation — when judge detects abandonment, offer human consultant via handoff instead of just closing the session. → §VII.4.g
-
 ## D.3 — Slot infrastructure & compliance
 
 - 💭 **T233** (deps: —) **API-Key auth layer for the public chat/search surface (reusing Turing-registered API keys).** Today the visitor-facing endpoints — `/api/sn/*/search`, `/api/sn/*/ac`, `/api/sn/*/query/**`, `/api/sn/*/click`, `/api/sn/*/chat`, `/api/sn/*/c… → §VII.6.h

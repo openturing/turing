@@ -125,6 +125,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [captureMode, setCaptureMode] = useState<TurChatFlowCaptureMode>(
     flow.captureMode ?? "VALIDATE_THEN_CAPTURE",
   );
+  const [abandonHandoffMessage, setAbandonHandoffMessage] = useState(
+    flow.abandonHandoffMessage ?? "",
+  );
   const [triggerDescription, setTriggerDescription] = useState(flow.triggerDescription ?? "");
   const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
     flow.triggerMode ?? "ONCE",
@@ -237,6 +240,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       enabled: flow.enabled ?? 1,
       guardrailMethod,
       captureMode,
+      abandonHandoffMessage: abandonHandoffMessage.trim() || null,
       triggerDescription: triggerDescription.trim() || null,
       triggerMode,
       triggerLanguage,
@@ -265,7 +269,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     } finally {
       setSaving(false);
     }
-  }, [name, description, guardrailMethod, captureMode, triggerDescription, triggerMode, triggerLanguage,
+  }, [name, description, guardrailMethod, captureMode, abandonHandoffMessage, triggerDescription, triggerMode, triggerLanguage,
       experimentKey, variantLabel, trafficWeight, banditEnabled, autoPromote, slotInheritanceJson,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
@@ -457,6 +461,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setGuardrailMethod={setGuardrailMethod}
           captureMode={captureMode}
           setCaptureMode={setCaptureMode}
+          abandonHandoffMessage={abandonHandoffMessage}
+          setAbandonHandoffMessage={setAbandonHandoffMessage}
           triggerDescription={triggerDescription}
           setTriggerDescription={setTriggerDescription}
           triggerMode={triggerMode}
