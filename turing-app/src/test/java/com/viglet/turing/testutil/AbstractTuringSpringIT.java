@@ -158,6 +158,13 @@ public abstract class AbstractTuringSpringIT {
         String artemisDir = DB_DIR.resolve("queue").toString().replace('\\', '/');
         registry.add("spring.artemis.embedded.data-directory", () -> artemisDir);
         registry.add("spring.artemis.embedded.persistent", () -> "false");
+        // Multiple distinct @SpringBootTest contexts can be cached in ONE Maven
+        // fork (ITs with different @DynamicPropertySource values each load their
+        // own context). With spring.jmx.enabled=true they would otherwise collide
+        // on the fixed Hikari `dataSource` MBean name
+        // (InstanceAlreadyExistsException → context load failure). Unique JMX
+        // names let the contexts coexist.
+        registry.add("spring.jmx.unique-names", () -> "true");
     }
 
     /**
