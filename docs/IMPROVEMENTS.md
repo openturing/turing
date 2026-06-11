@@ -2323,12 +2323,6 @@ This is the single most likely silent cross-tenant bug.
 
 ### XIV.2 Foundation — tenant model, context, filter, discriminator
 
-- **XIV.2.1 (T257)** — `TurTenant` (`id` UUID, unique `slug`, `name`,
-  `status`, `plan`, `createdAt`) + `TurTenantMembership` (`tenant_id`,
-  `username`, `role` OWNER/ADMIN/MEMBER, `status`; unique
-  `(tenant_id, username)`). Liquibase per convention (camelCase columns,
-  `longtext` where needed, idempotent preconditions). Seed the `DEFAULT`
-  tenant. Repositories follow the `@Cacheable`/`@CacheEvict` pairing rule.
 - **XIV.2.2 (T258)** — `TurTenantContext`: a `ThreadLocal<String>` holder
   with `set/get/clear` and a `runAs(tenantId, Runnable)` + `runAsSystem`
   helper. `resolveCurrentTenant()` short-circuits to `DEFAULT` when the

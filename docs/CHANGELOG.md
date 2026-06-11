@@ -220,6 +220,10 @@
 - **T231** — **`chat.page.tsx` extraction** — T227 already extracted the per-agent tab content; T231 completed the structural goals. (§XII.2)
 - **T232** — **Admin smoke ITs (RTL)** — bootstrapped the **frontend's first test runner** (none existed in the monorepo): vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb, a standalone [vitest.config.ts](../frontend/apps/turing-app/vit… (§XII.2)
 
+## Block J — Multi-tenancy (§XIV)
+
+- **T257** — **`TurTenant` + `TurTenantMembership` model** — multi-tenancy aggregate root `TurTenant` (UUID PK, unique `slug`/subdomain, `name`, `status` ACTIVE/SUSPENDED, free-form `plan`, `createdAt`) + `TurTenantMembership` join (`tenant_id` FK, `username`, `role` OWNER/ADMIN/MEMBER, `status`, unique `(tenant_id, username)`). Cache-paired repositories (`findBySlug`, `findByUsername`, `findByTenant_IdAndUsername`); Liquibase `v2026.3.1.27.yaml` seeds the immutable `DEFAULT` tenant (id `DEFAULT`) so tenancy-off installs resolve a constant discriminator. (§XIV.2.1)
+
 ## Block K — Agent CI (flow/prompt eval gate, §XV)
 
 - **T285** — **`TurAgentEvalSet` + `TurAgentEvalCase` golden-set model + CRUD** — per-agent regression cases `(seedTurnsJson, expectedSlotsJson, expectedOutcome, expectedNodeId, rubric)`; `TurAgentEvalSetAPI` under `/api/ai-agent/{id}/eval-set`; Liquibase `v2026.3.1.17.yaml`; exported/imported with the agent (cases inline) via `TurAIAgentExchange.evalSets`. (§XV.1)

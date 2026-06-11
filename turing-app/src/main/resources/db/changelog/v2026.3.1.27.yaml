@@ -1,0 +1,150 @@
+databaseChangeLog:
+  # T257 / §XIV.2.1 — Multi-tenancy foundation: the `tenant` registry and the
+  # `tenant_membership` (user <-> tenant <-> role) join. These two tables are
+  # the aggregate root of Block J; they are themselves NOT under Hibernate
+  # @TenantId (that arrives on owned entities in T260/T261).
+  #
+  # Columns follow the project convention (camelCase, lowercase portable types,
+  # `longtext` where large). Each changeSet is idempotent via a
+  # `not tableExists` / `not rowsExist`-style precondition with onFail:MARK_RAN,
+  # so re-running against a database that already has the objects is a no-op.
+
+  - changeSet:
+      id: v2026.3.1.27-create-tenant-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tenant
+      changes:
+        - createTable:
+            tableName: tenant
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: slug
+                  type: VARCHAR(63)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: plan
+                  type: VARCHAR(50)
+                  defaultValue: FREE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: tenant
+            columnNames: slug
+            constraintName: uq_tenant_slug
+
+  - changeSet:
+      id: v2026.3.1.27-create-tenant-membership-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tenant_membership
+      changes:
+        - createTable:
+            tableName: tenant_membership
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(16)
+                  defaultValue: MEMBER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: tenant_membership
+            columnNames: tenant_id, username
+            constraintName: uq_tenant_membership
+        - addForeignKeyConstraint:
+            baseTableName: tenant_membership
+            baseColumnNames: tenant_id
+            referencedTableName: tenant
+            referencedColumnNames: id
+            constraintName: fk_tenant_membership_tenant
+
+  # Seed the immutable DEFAULT tenant. With turing.tenancy.enabled=false every
+  # request resolves this tenant, so the discriminator collapses to a constant
+  # and single-tenant installs are unchanged. Guarded so it inserts at most once.
+  - changeSet:
+      id: v2026.3.1.27-seed-default-tenant
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - sqlCheck:
+                expectedResult: "1"
+                sql: SELECT COUNT(*) FROM tenant WHERE id = 'DEFAULT'
+      changes:
+        - insert:
+            tableName: tenant
+            columns:
+              - column:
+                  name: id
+                  value: DEFAULT
+              - column:
+                  name: slug
+                  value: default
+              - column:
+                  name: name
+                  value: Default
+              - column:
+                  name: status
+                  value: ACTIVE
+              - column:
+                  name: plan
+                  value: FREE

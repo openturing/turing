@@ -218,8 +218,7 @@
 
 ## Block J — Multi-tenancy (T257–T284)
 
-- 📋 **T257** (deps: —) **`TurTenant` + `TurTenantMembership` model** — new aggregate `TurTenant` (UUID PK, unique `slug`/subdomain, `name`, `status` ACTIVE/SUSPENDED, `plan`, `createdAt`) and `TurTenantMembership` (tenant_id, username, `role` OWNER/ADMIN/MEMBER,… → §XIV.2.1
-- 📋 **T258** (deps: T257) **`TurTenantContext` (ThreadLocal holder)** — `set/get/clear(currentTenantId)` + a `SYSTEM`/privileged mode that bypasses the filter (for platform-admin + scheduled jobs). → §XIV.2.2
+- 📋 **T258** (deps: T257 ✅) **`TurTenantContext` (ThreadLocal holder)** — `set/get/clear(currentTenantId)` + a `SYSTEM`/privileged mode that bypasses the filter (for platform-admin + scheduled jobs). → §XIV.2.2
 - 📋 **T259** (deps: T258) **Tenant resolution filter** — a `OncePerRequestFilter` (ordered after auth) that resolves the tenant from, in priority: JWT `tenant` claim → session attribute → subdomain → `X-Turing-Tenant` header, validates the authenticated principal ha… → §XIV.2.3
 - 📋 **T260** (deps: T259) **Hibernate `@TenantId` wiring — pilot on `TurSNSite`** — register a `CurrentTenantIdentifierResolver` reading `TurTenantContext`, add a `@TenantId String tenantId` field + Liquibase column to `TurSNSite` only, and prove end-to-end with an… → §XIV.2.4
 - 📋 **T261** (deps: T260) **Roll `@TenantId` across all tenant-owned entities** — add the field + Liquibase column (nullable first) to every aggregate root and any child with a non-parent-scoped finder: `ai_agent`, `chat_flow`, `chat_flow_state`, `chat_flow_submissi… → §XIV.2.5
