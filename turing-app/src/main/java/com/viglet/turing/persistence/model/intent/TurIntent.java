@@ -43,6 +43,11 @@ public class TurIntent implements Serializable {
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
+    /** T261 / §XIV.2.5 — multi-tenancy discriminator (see TurSNSite pilot). Hibernate-managed. */
+    @org.hibernate.annotations.TenantId
+    @jakarta.persistence.Column(name = "tenantId", length = 40)
+    private String tenantId;
+
     @Column(nullable = false, length = 150)
     private String title;
 

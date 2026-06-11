@@ -1,0 +1,372 @@
+databaseChangeLog:
+  # T261 / §XIV.2.5 — fan the Hibernate @TenantId discriminator column across
+  # every tenant-owned aggregate root (the TurSNSite pilot shipped in v..28).
+  # Shared infra tables (llm_instance, embedding_model, store_instance,
+  # se_instance, mcp_server, integration_instance) are intentionally EXCLUDED
+  # here — they use the nullable `tenantId = current ∪ NULL` model in T275.
+  # RBAC / global-settings tables stay global (Block J non-goal).
+  #
+  # Same contract as v..28: column nullable + defaultValue DEFAULT (so even
+  # non-Hibernate inserts get DEFAULT), then backfill existing NULLs. NOT NULL
+  # is flipped later in T262. Each changeSet is idempotent (not columnExists).
+
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-ai_agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-chat_flow
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-chat_flow_state
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: chat_flow_state
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: chat_flow_state
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: chat_flow_state
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-chat_flow_submission
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: chat_flow_submission
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: chat_flow_submission
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: chat_flow_submission
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-tur_chat_webhook
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-tur_routine
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_routine
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: tur_routine
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: tur_routine
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-tur_agent_eval_set
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_set
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_set
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: tur_agent_eval_set
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-tur_agent_eval_report
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_report
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_report
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: tur_agent_eval_report
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-custom_tool
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: custom_tool
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: intent
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: intent
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: intent
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-ai_persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-skill
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: skill
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: skill
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: skill
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-analytics_intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: analytics_intent
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: analytics_intent
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: analytics_intent
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-dev_token
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: dev_token
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: dev_token
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: dev_token
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
+  - changeSet:
+      id: v2026.3.1.29-add-tenantId-to-asset_training_record
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: asset_training_record
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: asset_training_record
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: asset_training_record
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
