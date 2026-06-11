@@ -61,7 +61,12 @@ class TurRagBm25CoreProvisionerTest {
 
     @BeforeEach
     void setUp() {
-        provisioner = new TurRagBm25CoreProvisioner(coreRepository, pluginFactory);
+        com.viglet.turing.properties.TurConfigProperties props =
+                new com.viglet.turing.properties.TurConfigProperties();
+        com.viglet.turing.tenant.TurTenantCoreNaming coreNaming =
+                new com.viglet.turing.tenant.TurTenantCoreNaming(
+                        new com.viglet.turing.tenant.TurTenantContext(props));
+        provisioner = new TurRagBm25CoreProvisioner(coreRepository, pluginFactory, coreNaming);
         store = new TurStoreInstance();
         store.setId("a3b2c1d4-9876-5432-1098-abcdef012345");
         seInstance = new TurSEInstance();

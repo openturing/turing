@@ -58,7 +58,7 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.tenant.TurTenantCoreNaming;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNFieldType;
 
@@ -78,7 +78,7 @@ public class TurSNTemplate {
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
         private final TurSEInstanceRepository turSEInstanceRepository;
-        private final TurConfigProperties turConfigProperties;
+        private final TurTenantCoreNaming turTenantCoreNaming;
         private final TurSearchEnginePluginFactory pluginFactory;
 
         public TurSNTemplate(TurSNSiteFieldRepository turSNSiteFieldRepository,
@@ -86,14 +86,14 @@ public class TurSNTemplate {
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                         TurSEInstanceRepository turSEInstanceRepository,
-                        TurConfigProperties turConfigProperties,
+                        TurTenantCoreNaming turTenantCoreNaming,
                         TurSearchEnginePluginFactory pluginFactory) {
                 this.turSNSiteFieldRepository = turSNSiteFieldRepository;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
                 this.turSEInstanceRepository = turSEInstanceRepository;
-                this.turConfigProperties = turConfigProperties;
+                this.turTenantCoreNaming = turTenantCoreNaming;
                 this.pluginFactory = pluginFactory;
         }
 
@@ -148,12 +148,13 @@ public class TurSNTemplate {
                 if (StringUtils.hasText(turSNSiteLocale.getCore())) {
                         return turSNSiteLocale.getCore();
                 }
-                // T262 / §XIV.2.6 — the legacy `username`-prefixed pseudo-tenant core
-                // name is retired; isolation is now the Hibernate @TenantId column.
-                // Proper per-tenant CORE prefixing (`t<shortId>_…`) is T268's job.
-                return String.format("%s_%s",
+                // T268 / §XIV.4.2 — prefix the core with the current tenant so two
+                // tenants' same-named sites never share a Solr/ES core. No-op when
+                // tenancy is off (legacy `<site>_<lang>` name preserved).
+                String baseCoreName = String.format("%s_%s",
                                 turSNSiteLocale.getTurSNSite().getName().toLowerCase().replace(" ", "_"),
                                 turSNSiteLocale.getLanguage());
+                return turTenantCoreNaming.scoped(baseCoreName);
         }
 
         private void sendFieldsToService(TurSNSite turSNSite, List<TurSNFieldDefinition> fieldDefinitions) {

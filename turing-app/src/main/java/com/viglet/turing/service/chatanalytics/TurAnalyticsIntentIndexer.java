@@ -77,6 +77,11 @@ public class TurAnalyticsIntentIndexer {
     private final TurSearchEnginePluginFactory pluginFactory;
     private final String configuredSeInstanceId;
 
+    // T268 / §XIV.4.2 note: the intent index name is `intent_<agentId>` where
+    // agentId is a globally-unique UUID, so it cannot collide across tenants —
+    // no tenant prefix is required here (unlike the SN core, which is keyed by
+    // the human-chosen site name and IS prefixed in TurSNTemplate).
+
     public TurAnalyticsIntentIndexer(TurAnalyticsIntentRepository intentRepository,
             TurSEInstanceRepository seInstanceRepository,
             TurAIAgentRepository agentRepository,

@@ -59,7 +59,12 @@ class TurRagBm25CoreAPITest {
             TurRagBm25CoreProvisioner provisioner,
             TurGlobalSettingsService settings,
             TurRagContextBuilder builder) {
-        return new TurRagBm25CoreAPI(siteRepo, localeRepo, coreRepo, provisioner, settings, builder);
+        com.viglet.turing.tenant.TurTenantCoreNaming coreNaming =
+                new com.viglet.turing.tenant.TurTenantCoreNaming(
+                        new com.viglet.turing.tenant.TurTenantContext(
+                                new com.viglet.turing.properties.TurConfigProperties()));
+        return new TurRagBm25CoreAPI(siteRepo, localeRepo, coreRepo, provisioner, settings, builder,
+                coreNaming);
     }
 
     private TurSNSiteLocale localeFor(String tag) {

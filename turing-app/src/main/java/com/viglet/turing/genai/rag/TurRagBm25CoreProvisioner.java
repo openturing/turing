@@ -77,11 +77,14 @@ public class TurRagBm25CoreProvisioner {
 
     private final TurRagBm25CoreRepository coreRepository;
     private final TurSearchEnginePluginFactory pluginFactory;
+    private final com.viglet.turing.tenant.TurTenantCoreNaming turTenantCoreNaming;
 
     public TurRagBm25CoreProvisioner(TurRagBm25CoreRepository coreRepository,
-            TurSearchEnginePluginFactory pluginFactory) {
+            TurSearchEnginePluginFactory pluginFactory,
+            com.viglet.turing.tenant.TurTenantCoreNaming turTenantCoreNaming) {
         this.coreRepository = coreRepository;
         this.pluginFactory = pluginFactory;
+        this.turTenantCoreNaming = turTenantCoreNaming;
     }
 
     /**
@@ -131,7 +134,8 @@ public class TurRagBm25CoreProvisioner {
         }
         TurRagBm25Core core = coreRepository
                 .findByTurStoreInstance_IdAndLocale(store.getId(), locale)
-                .orElseGet(() -> newRowFor(store, locale, seInstance));
+                .orElseGet(() -> newRowFor(store, locale, seInstance,
+                        turTenantCoreNaming.scoped(coreNameFor(store, locale))));
 
         if (core.getStatus() == TurRagBm25Core.Status.DELETING) {
             throw new IllegalStateException(
@@ -216,12 +220,13 @@ public class TurRagBm25CoreProvisioner {
         return coreRepository.findByTurStoreInstance_IdAndLocale(store.getId(), locale);
     }
 
-    private static TurRagBm25Core newRowFor(TurStoreInstance store, Locale locale, TurSEInstance seInstance) {
+    private static TurRagBm25Core newRowFor(TurStoreInstance store, Locale locale,
+            TurSEInstance seInstance, String coreName) {
         TurRagBm25Core core = new TurRagBm25Core();
         core.setTurStoreInstance(store);
         core.setTurSEInstance(seInstance);
         core.setLocale(locale);
-        core.setCoreName(coreNameFor(store, locale));
+        core.setCoreName(coreName);
         core.setStatus(TurRagBm25Core.Status.NOT_PROVISIONED);
         core.setDocCount(0L);
         return core;

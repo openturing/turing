@@ -70,8 +70,11 @@ class TurSNTemplateTest {
             TurSEInstanceRepository instanceRepository,
             TurConfigProperties configProperties,
             TurSearchEnginePluginFactory pluginFactory) {
+        com.viglet.turing.tenant.TurTenantCoreNaming coreNaming =
+                new com.viglet.turing.tenant.TurTenantCoreNaming(
+                        new com.viglet.turing.tenant.TurTenantContext(configProperties));
         return new TurSNTemplate(fieldRepository, fieldExtRepository, facetRepository,
-                localeRepository, instanceRepository, configProperties, pluginFactory);
+                localeRepository, instanceRepository, coreNaming, pluginFactory);
     }
 
     private TurConfigProperties config(boolean cloud, boolean tenancyEnabled) {

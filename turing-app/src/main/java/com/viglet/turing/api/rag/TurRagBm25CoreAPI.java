@@ -87,6 +87,7 @@ public class TurRagBm25CoreAPI {
     private final TurRagBm25CoreProvisioner provisioner;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
+    private final com.viglet.turing.tenant.TurTenantCoreNaming turTenantCoreNaming;
 
     /**
      * Admin status row for one (site locale, BM25 core) pair. Sent to the
@@ -136,8 +137,8 @@ public class TurRagBm25CoreAPI {
             } else {
                 rows.add(new CoreStatusDto(
                         tag,
-                        TurRagBm25CoreProvisioner.coreNameFor(
-                                resolveStoreInstance(storeInstanceId), loc.getLanguage()),
+                        turTenantCoreNaming.scoped(TurRagBm25CoreProvisioner.coreNameFor(
+                                resolveStoreInstance(storeInstanceId), loc.getLanguage())),
                         TurRagBm25Core.Status.NOT_PROVISIONED.name(),
                         0L,
                         null,
