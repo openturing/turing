@@ -13,6 +13,7 @@ import {
   AIAgentRoutes,
   AssetRoutes,
   SkillRoutes,
+  TenantRoutes,
   BentoRoutes,
   GitRoutes,
   PageRoutes,
@@ -83,6 +84,7 @@ function App() {
                 {GraphqlRoutes}
                 {AssetRoutes}
                 {SkillRoutes}
+                {TenantRoutes}
                 {GitRoutes}
                 {PageRoutes}
                 {ChatRoutes}

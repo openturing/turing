@@ -7,6 +7,11 @@
  * equality on the array contents).
  */
 export const queryKeys = {
+  tenants: {
+    all: () => ['tenants'] as const,
+    mine: () => [...queryKeys.tenants.all(), 'mine'] as const,
+    adminList: () => [...queryKeys.tenants.all(), 'admin', 'list'] as const,
+  },
   embeddingModels: {
     all: () => ['embedding-models'] as const,
     list: () => [...queryKeys.embeddingModels.all(), 'list'] as const,

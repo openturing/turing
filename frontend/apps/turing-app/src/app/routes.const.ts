@@ -46,6 +46,8 @@ export const ROUTES = {
   PERSONA_INSTANCE: `${consolePath}/persona/instance`,
   ASSET_ROOT: `${consolePath}/asset`,
   SKILL_ROOT: `${consolePath}/skill`,
+  TENANT_SETTINGS: `${consolePath}/tenant`,
+  TENANT_ADMIN: `${consolePath}/tenant-admin`,
   PAGE_ROOT: `${consolePath}/page`,
   EMBEDDING_MODEL_ROOT: `${consolePath}/embedding-model`,
   EMBEDDING_MODEL_INSTANCE: `${consolePath}/embedding-model/instance`,

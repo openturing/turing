@@ -17,6 +17,33 @@ const CSRF_HEADER = "X-XSRF-TOKEN";
 const CSRF_ENDPOINT = "/csrf";
 let csrfToken: string | null = null;
 
+// T278 / §XIV.6.1 — multi-tenancy: the active tenant slug/id is sent on every
+// request via the X-Turing-Tenant header so the backend resolution filter (T259)
+// can bind it. Persisted in localStorage so it survives reloads; updated by the
+// org switcher (useSwitchTenant).
+const TENANT_HEADER = "X-Turing-Tenant";
+const TENANT_STORAGE_KEY = "turing.currentTenant";
+
+export function setCurrentTenant(tenant: string | null): void {
+  try {
+    if (tenant) {
+      globalThis.localStorage?.setItem(TENANT_STORAGE_KEY, tenant);
+    } else {
+      globalThis.localStorage?.removeItem(TENANT_STORAGE_KEY);
+    }
+  } catch {
+    // localStorage unavailable (SSR/sandbox) — header simply won't be sent.
+  }
+}
+
+export function getCurrentTenant(): string | null {
+  try {
+    return globalThis.localStorage?.getItem(TENANT_STORAGE_KEY) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const csrfClient = axios.create({ withCredentials: true });
 
 function isMutatingMethod(method?: string): boolean {
@@ -51,7 +78,11 @@ function readCsrfTokenFromHeaders(headers: unknown): string | null {
   return null;
 }
 
-function setRequestHeader(config: { headers?: unknown }, token: string): void {
+function setNamedHeader(
+  config: { headers?: unknown },
+  name: string,
+  value: string,
+): void {
   if (
     typeof config.headers === "object" &&
     config.headers !== null &&
@@ -60,15 +91,19 @@ function setRequestHeader(config: { headers?: unknown }, token: string): void {
       .set === "function"
   ) {
     (config.headers as { set: (name: string, value: string) => void }).set(
-      CSRF_HEADER,
-      token,
+      name,
+      value,
     );
     return;
   }
 
   const headers = (config.headers as Record<string, string | undefined>) || {};
-  headers[CSRF_HEADER] = token;
+  headers[name] = value;
   config.headers = headers;
+}
+
+function setRequestHeader(config: { headers?: unknown }, token: string): void {
+  setNamedHeader(config, CSRF_HEADER, token);
 }
 
 function clearCsrfToken(): void {
@@ -108,6 +143,12 @@ axios.interceptors.request.use(
     const requestBaseUrl = config.baseURL || axios.defaults.baseURL;
 
     csrfClient.defaults.baseURL = requestBaseUrl;
+
+    // T278 — attach the active tenant to every request (GET included).
+    const tenant = getCurrentTenant();
+    if (tenant) {
+      setNamedHeader(config, TENANT_HEADER, tenant);
+    }
 
     if (
       requestUrl.includes(CSRF_ENDPOINT) ||

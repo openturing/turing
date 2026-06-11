@@ -24,6 +24,7 @@ import com.viglet.turing.persistence.model.tenant.TurTenant;
 import com.viglet.turing.persistence.model.tenant.TurTenantMembership;
 import com.viglet.turing.persistence.model.tenant.TurTenantMembershipStatus;
 import com.viglet.turing.persistence.model.tenant.TurTenantRole;
+import com.viglet.turing.persistence.model.tenant.TurTenantStatus;
 import com.viglet.turing.persistence.repository.tenant.TurTenantMembershipRepository;
 import com.viglet.turing.persistence.repository.tenant.TurTenantRepository;
 
@@ -119,6 +120,21 @@ public class TurTenantService {
         return membershipRepository.findByTenant_IdAndUsername(tenantId, username)
                 .map(m -> m.getStatus() == TurTenantMembershipStatus.ACTIVE)
                 .orElse(false);
+    }
+
+    /** All tenants (platform-admin console, T279). The registry has no @TenantId. */
+    @Transactional(readOnly = true)
+    public List<TurTenant> findAll() {
+        return tenantRepository.findAll();
+    }
+
+    /** Set a tenant's lifecycle status (T279 suspend / reactivate). */
+    @Transactional
+    public TurTenant setStatus(String tenantId, TurTenantStatus status) {
+        TurTenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown tenant"));
+        tenant.setStatus(status);
+        return tenantRepository.save(tenant);
     }
 
     /** Validate + normalize a slug, rejecting malformed or reserved values (400). */
