@@ -19,14 +19,22 @@ public class TurStorageConfig {
     private static final Logger log = LoggerFactory.getLogger(TurStorageConfig.class);
 
     @Bean
-    public TurStorageService turStorageService(TurConfigProperties configProperties) {
+    public TurStorageService turStorageService(TurConfigProperties configProperties,
+            com.viglet.turing.tenant.TurTenantContext tenantContext) {
         TurStorageType type = resolveType(configProperties);
         log.info("Storage backend: {}", type);
-        return switch (type) {
+        TurStorageService delegate = switch (type) {
             case MINIO -> new TurMinioStorageService(configProperties);
             case FILESYSTEM -> new TurFilesystemStorageService(configProperties);
             case NONE -> new TurNoOpStorageService();
         };
+        // T269 / §XIV.4.3 — wrap real backends so every object key is scoped under
+        // tenants/<tenantId>/. No-op when tenancy is off (empty prefix); pointless
+        // for the disabled NoOp backend, so it stays unwrapped.
+        if (type == TurStorageType.NONE) {
+            return delegate;
+        }
+        return new TurTenantScopedStorageService(delegate, tenantContext);
     }
 
     static TurStorageType resolveType(TurConfigProperties config) {
