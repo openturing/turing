@@ -85,10 +85,13 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
     private static final List<String> DOCUMENT_IDENTIFIER_KEYS = List.of("source_id", "objectName", "fileName");
 
     private final TurProviderOptionsParser optionsParser;
+    private final com.viglet.turing.tenant.TurTenantContext tenantContext;
     private final ConcurrentHashMap<String, TurLuceneVectorIndex> indexCache = new ConcurrentHashMap<>();
 
-    public TurLuceneStoreProvider(TurProviderOptionsParser optionsParser) {
+    public TurLuceneStoreProvider(TurProviderOptionsParser optionsParser,
+            com.viglet.turing.tenant.TurTenantContext tenantContext) {
         this.optionsParser = optionsParser;
+        this.tenantContext = tenantContext;
     }
 
     @Override
@@ -399,7 +402,25 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
                 optionsParser.stringValue(options, BASE_PATH_OPTION),
                 turStoreInstance.getUrl(),
                 DEFAULT_BASE_PATH);
-        return Path.of(raw).toAbsolutePath().normalize();
+        Path basePath = Path.of(raw).toAbsolutePath().normalize();
+        // T270 / §XIV.4.4 — resolve under a per-tenant subdirectory so two tenants'
+        // same-named collections never share a Lucene directory (and the index
+        // cache key, derived from basePath, is tenant-distinct). No-op (no extra
+        // segment) when tenancy is off or the tenant is DEFAULT.
+        String tenantSegment = tenantSegment();
+        return tenantSegment.isEmpty() ? basePath : basePath.resolve(tenantSegment).normalize();
+    }
+
+    private String tenantSegment() {
+        if (tenantContext == null || !tenantContext.isTenancyEnabled()) {
+            return "";
+        }
+        String tenant = tenantContext.resolveCurrentTenant();
+        if (tenant == null
+                || com.viglet.turing.persistence.model.tenant.TurTenant.DEFAULT_TENANT_ID.equals(tenant)) {
+            return "";
+        }
+        return tenant;
     }
 
     private String resolveCollectionName(TurStoreInstance turStoreInstance,
