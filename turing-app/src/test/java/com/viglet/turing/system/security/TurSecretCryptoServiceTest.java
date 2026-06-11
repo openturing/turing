@@ -239,4 +239,33 @@ class TurSecretCryptoServiceTest {
     private TurSecretCryptoService createService(String key) {
         return new TurSecretCryptoService(new MockEnvironment(), key);
     }
+
+    // ---- T271 / §XIV.4.5 per-tenant key derivation ------------------------------
+
+    @org.junit.jupiter.api.Test
+    void perTenantRoundTripWorksAndIsIsolatedAcrossTenants() {
+        var service = createService("master-key");
+
+        String forA = service.encrypt("sk-secret", "tenantA");
+        String forB = service.encrypt("sk-secret", "tenantB");
+
+        // Each tenant decrypts its own ciphertext.
+        assertThat(service.decrypt(forA, "tenantA")).isEqualTo("sk-secret");
+        assertThat(service.decrypt(forB, "tenantB")).isEqualTo("sk-secret");
+
+        // Tenant B cannot decrypt tenant A's ciphertext (different derived key).
+        org.assertj.core.api.Assertions
+                .assertThatThrownBy(() -> service.decrypt(forA, "tenantB"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @org.junit.jupiter.api.Test
+    void defaultTenantUsesLegacyKeySoExistingCiphertextStillDecrypts() {
+        var service = createService("master-key");
+
+        // Encrypt with the legacy global path (no tenant), decrypt as DEFAULT.
+        String legacy = service.encrypt("token");
+        assertThat(service.decrypt(legacy, com.viglet.turing.persistence.model.tenant.TurTenant.DEFAULT_TENANT_ID))
+                .isEqualTo("token");
+    }
 }
