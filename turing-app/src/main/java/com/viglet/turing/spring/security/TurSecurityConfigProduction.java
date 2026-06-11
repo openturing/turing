@@ -147,6 +147,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH),
                                                 mvc.matcher("/api/v2/user/register"),
+                                                mvc.matcher("/api/signup"),
                                                 mvc.matcher("/login/oauth2/**"),
                                                 mvc.matcher("/oauth2/**")))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -196,6 +197,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/ann/*/search"),
                                                 mvc.matcher("/ann/**"),
                                                 mvc.matcher("/pages/**"),
+                                                mvc.matcher("/api/signup"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                 authorizeRequests.anyRequest().authenticated();
@@ -263,6 +265,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/console/**"),
                                                                 mvc.matcher("/api/v2/guest/**"),
                                                                 mvc.matcher("/api/v2/user/register"),
+                                                                mvc.matcher("/api/signup"),
                                                                 mvc.matcher(LOGIN_PATH),
                                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                                 authorizeRequests.anyRequest().authenticated();
