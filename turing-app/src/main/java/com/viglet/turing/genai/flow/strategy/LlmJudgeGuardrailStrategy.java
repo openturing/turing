@@ -590,6 +590,42 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                 no explanations. Example:
                 {"on_topic": true, "collected_value": "x@y.com", "ready_to_advance": true, "abandoned": false, "redirect_message": ""}
 
+                Worked examples — study these. They cover the three judgment calls that
+                smaller models most often get wrong; copy the same reasoning, not the
+                literal values. Each shows the relevant inputs followed by the one
+                correct JSON line.
+
+                — Example A — compound answer: capture the slot, ignore the extra —
+                Goal: ask for the visitor's job title (cargo)
+                Output variable to collect: cargo
+                User said: sou gerente de compras há uns 5 anos
+                Assistant said: Perfeito! E qual é o seu principal objetivo?
+                {"on_topic": true, "collected_value": "Gerente de Compras", "ready_to_advance": true, "abandoned": false, "redirect_message": ""}
+                Why: the message carries BOTH a job title and a tenure. Extract only what
+                the Goal asks for (the cargo) and drop the "5 anos" — a compound reply is
+                still a valid answer.
+
+                — Example B — informal phrasing still answers the Goal —
+                Goal: ask what the visitor wants to achieve (objetivo)
+                Output variable to collect: objetivo
+                User said: ah sei lá, queria vender mais, sabe? aumentar as vendas
+                Assistant said: Ótimo, vou te ajudar com isso.
+                {"on_topic": true, "collected_value": "aumentar as vendas", "ready_to_advance": true, "abandoned": false, "redirect_message": ""}
+                Why: hedging and filler ("ah sei lá", "sabe?") are NOT politeness markers —
+                the sentence DOES answer the Goal. Capture the intent, not the filler, and
+                advance.
+
+                — Example C — stale option click routed to the wrong step: reject + redirect —
+                Goal: ask for the visitor's email
+                Output variable to collect: email
+                User said: portuguesa
+                Assistant said: Boa escolha de sabor!
+                {"on_topic": false, "collected_value": null, "ready_to_advance": false, "abandoned": false, "redirect_message": "Só preciso do seu e-mail para continuar — pode me passar?"}
+                Why: "portuguesa" is a leftover option click from an earlier step; it does
+                NOT answer the email Goal, so collected_value stays null and the flow must
+                not advance. The assistant also drifted, so on_topic is false and a one-line
+                redirect brings the user back to the goal.
+
                 Active step: %s
                 Goal: %s
                 Output variable to collect: %s

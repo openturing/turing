@@ -75,6 +75,7 @@
 - **T49** — `continueOnFailure: true` flag on nodes — authors mark a `functionCall` or `scheduleAgent` node where a tool/routine failure routes the flow along an outgoing edge whose `sourceHandle` is `"failure"` instead of advancing silently. (§VII.4.d)
 - **T50** — `onError` edges in editor visual — analogous to try/catch; red arrow that fires when the node fails. (§VII.4.d)
 - **T51** — Capture-first inversion — persists the user message into the slot BEFORE the judge runs; the judge becomes advisory (writes a `<slot>__confidence` low/high grade in a parallel slot) so the flow never stalls with `slot=null`. (§VII.4.e)
+- **T52** — Few-shot baked into the platform-level judge system prompt (`LlmJudgeGuardrailStrategy.askJudge`) — 3 worked examples (compound `cargo`+tempo → capture cargo only; informal `objetivo` → capture intent; stale option click on the wrong step → reject + redirect). Cuts stochastic rejects across all flows without per-customer `aiInstruction` tuning. (§VII.4.f)
 
 ## D.3 — Slot infrastructure & compliance
 

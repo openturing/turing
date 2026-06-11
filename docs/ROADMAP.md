@@ -18,7 +18,6 @@
 
 ## D.2 — Engine declarative additions (new node types & policies)
 
-- 💭 **T52** (deps: —) Few-shot baked into platform-level judge system prompt — 2-3 positive examples (compound `cargo+tempo` → capture; informal `objetivo` → capture) + 1 negative (clicked chip routed to wrong node → reject with redirect). → §VII.4.f
 - 💭 **T53** (deps: —) `abandoned` auto-escalation — when judge detects abandonment, offer human consultant via handoff instead of just closing the session. → §VII.4.g
 
 ## D.3 — Slot infrastructure & compliance

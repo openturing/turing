@@ -555,13 +555,6 @@ stuck" class at the root (vs. T45's per-node `onJudgeReject` mitigation).
 Risk: affects every existing flow, requires full IT revalidation.
 Filosofia change: "validate-then-capture" → "capture-then-grade."
 
-#### VII.2.f Platform-level judge few-shot (T52)
-Bake 2-3 positive examples (compound `cargo+tempo`, informal `objetivo`)
-+ 1 negative (chip-routed-to-wrong-node) into the **platform-level**
-judge system prompt, not into per-customer `aiInstruction` strings.
-Reduces stochastic rejects across all flows without each customer
-re-discovering. `gpt-4o-mini` improves dramatically with few-shot.
-
 #### VII.2.g Slot audit log + PII prefix (T60, T61)
 - **Audit log**: `chat_slot_write_log` (conversationId, slot, oldValue,
   newValue, source ∈ {`node`, `tool`, `endpoint`, `extract`}, ts). LGPD
