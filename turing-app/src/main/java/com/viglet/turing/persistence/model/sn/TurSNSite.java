@@ -84,6 +84,20 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
+	/**
+	 * T260 / §XIV.2.4 — multi-tenancy discriminator. Hibernate's native
+	 * {@code @TenantId} stamps this on insert from the
+	 * {@code CurrentTenantIdentifierResolver} (which reads
+	 * {@code TurTenantContext}) and adds {@code WHERE tenantId = ?} to every
+	 * read automatically. The field is Hibernate-managed (not set by callers).
+	 * When {@code turing.tenancy.enabled=false} the resolver always yields
+	 * {@code DEFAULT}, so this is a constant and single-tenant behaviour is
+	 * unchanged. <strong>Pilot entity</strong> for the fan-out in T261.
+	 */
+	@org.hibernate.annotations.TenantId
+	@Column(name = "tenantId", length = 40)
+	private String tenantId;
+
 	@Column(nullable = false, length = 50)
 	private String name;
 

@@ -1,0 +1,35 @@
+databaseChangeLog:
+  # T260 / §XIV.2.4 — add the Hibernate @TenantId discriminator column to the
+  # PILOT entity sn_site. The column is nullable for now (T261 fans the field
+  # out; T262 flips NOT NULL in a follow-up changelog), but every EXISTING row
+  # MUST be backfilled to DEFAULT immediately: the moment @TenantId is active,
+  # reads gain `WHERE tenantId = :current` and the resolver yields DEFAULT when
+  # tenancy is off — a NULL row would be invisible. So: add column, then set all
+  # NULLs to DEFAULT.
+  #
+  # Idempotent: guarded by `not columnExists` with onFail:MARK_RAN.
+
+  - changeSet:
+      id: v2026.3.1.28-add-tenantId-to-sn_site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site
+                columnName: tenantId
+      changes:
+        - addColumn:
+            tableName: sn_site
+            columns:
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+                  defaultValue: DEFAULT
+        - update:
+            tableName: sn_site
+            columns:
+              - column:
+                  name: tenantId
+                  value: DEFAULT
+            where: tenantId IS NULL
