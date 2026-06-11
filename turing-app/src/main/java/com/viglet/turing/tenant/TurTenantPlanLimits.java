@@ -15,7 +15,7 @@ import java.util.Locale;
  * T277 / §XIV.5.3 — per-plan resource limits. A value of {@code -1} means
  * <em>unlimited</em>.
  *
- * <p>Plans are matched case-insensitively by {@link com.viglet.turing.persistence.model.tenant.TurTenant#getPlan()}.
+ * <p>Plans are matched case-insensitively by {@code TurTenant.getPlan()}.
  * The default {@code FREE} plan is bounded; any other (paid / custom) plan is
  * unlimited until a richer billing model lands — so this never blocks a paying
  * tenant by accident.
