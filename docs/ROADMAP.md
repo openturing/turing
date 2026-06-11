@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## D.3 — Slot infrastructure & compliance
-
-- 💭 **T233** (deps: —) **API-Key auth layer for the public chat/search surface (reusing Turing-registered API keys).** Today the visitor-facing endpoints — `/api/sn/*/search`, `/api/sn/*/ac`, `/api/sn/*/query/**`, `/api/sn/*/click`, `/api/sn/*/chat`, `/api/sn/*/c… → §VII.6.h
-
 ## D.8 — Document extraction & document AI
 
 - 💭 **T99** (deps: T58) OCR de CV (image) — phone-photo of CV bypasses Tika text extraction; integrate Tesseract (already a Tika parser dep) or Vision API. → §VII.12.a

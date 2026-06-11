@@ -27,6 +27,7 @@ import {
   IconHighlight,
   IconLayoutListFilled,
   IconListDetails,
+  IconLock,
   IconProgressHelp,
   IconScale,
   IconSettings,
@@ -152,6 +153,39 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormControl>
                 </FormItemTwoColumns.Right>
               </FormItemTwoColumns>
+            )}
+          />
+          </SectionCard.Content>
+        </SectionCard>
+
+        {/* API Access — T233 / §VII.6.h: public vs API-key for the visitor-facing API */}
+        <SectionCard variant="slate">
+          <SectionCard.Header icon={IconLock} title={t("forms.snBehavior.apiAccess")} description={t("forms.snBehavior.apiAccessDesc")} />
+          <SectionCard.Content>
+          <FormField
+            control={form.control}
+            name="apiAuthMode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("forms.snBehavior.apiAuthMode")}</FormLabel>
+                <FormDescription>
+                  {field.value === "API_KEY"
+                    ? t("forms.snBehavior.apiAuthModeApiKeyDesc")
+                    : t("forms.snBehavior.apiAuthModePublicDesc")}
+                </FormDescription>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value ?? "PUBLIC"}>
+                    <SelectTrigger className="max-w-xs w-full">
+                      <SelectValue placeholder={t("forms.snBehavior.select")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUBLIC">{t("forms.snBehavior.apiAuthModePublic")}</SelectItem>
+                      <SelectItem value="API_KEY">{t("forms.snBehavior.apiAuthModeApiKey")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
           />
           </SectionCard.Content>

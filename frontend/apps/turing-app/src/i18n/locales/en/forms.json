@@ -313,6 +313,13 @@
     "snBehavior": {
       "general": "General",
       "generalDesc": "Core search behavior and pagination.",
+      "apiAccess": "API Access",
+      "apiAccessDesc": "Control who can call this site's public search, autocomplete, query, click and chat API.",
+      "apiAuthMode": "Authentication",
+      "apiAuthModePublic": "Public (no key)",
+      "apiAuthModeApiKey": "Require API Key",
+      "apiAuthModePublicDesc": "Anyone can call the visitor-facing API without a credential (default).",
+      "apiAuthModeApiKeyDesc": "Callers must send a Turing-registered API key in the 'Key' header or 'apiKey' query parameter; requests without a valid key get HTTP 401.",
       "resultsPerPage": "Results per Page",
       "resultsPerPageDesc": "Set the number of search results displayed per page.",
       "exactMatch": "Exact Match",

@@ -313,6 +313,13 @@
     "snBehavior": {
       "general": "Geral",
       "generalDesc": "Comportamento principal da busca e paginação.",
+      "apiAccess": "Acesso à API",
+      "apiAccessDesc": "Controle quem pode chamar a API pública deste site (busca, autocomplete, query, clique e chat).",
+      "apiAuthMode": "Autenticação",
+      "apiAuthModePublic": "Pública (sem chave)",
+      "apiAuthModeApiKey": "Exigir API Key",
+      "apiAuthModePublicDesc": "Qualquer um pode chamar a API pública sem credencial (padrão).",
+      "apiAuthModeApiKeyDesc": "Os chamadores devem enviar uma API key registrada no Turing no cabeçalho 'Key' ou no parâmetro 'apiKey'; requisições sem uma chave válida recebem HTTP 401.",
       "resultsPerPage": "Resultados por Página",
       "resultsPerPageDesc": "Defina o número de resultados exibidos por página.",
       "exactMatch": "Correspondência Exata",

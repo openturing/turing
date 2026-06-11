@@ -52,6 +52,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
+import com.viglet.turing.spring.security.auth.TurSNSiteApiKeyGateFilter;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -88,6 +89,7 @@ public class TurSecurityConfigProduction {
         @SuppressWarnings("java:S4502")
         SecurityFilterChain filterChain(HttpSecurity http,
                         TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+                        TurSNSiteApiKeyGateFilter turSNSiteApiKeyGateFilter,
                         TurLogoutHandler turLogoutHandler,
                         TurConfigProperties turConfigProperties,
                         TurAuthenticationEntryPoint turAuthenticationEntryPoint,
@@ -100,6 +102,10 @@ public class TurSecurityConfigProduction {
                                                 .cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
                 http.cors(Customizer.withDefaults());
                 http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
+                // T233 / §VII.6.h — runs after the Dev-Token filter so a valid `Key`
+                // header is already authenticated; gates per-site API_KEY mode on the
+                // public SN surface (PUBLIC sites pass straight through).
+                http.addFilterAfter(turSNSiteApiKeyGateFilter, TurAuthTokenHeaderFilter.class);
                 http.userDetailsService(userDetailsService);
                 http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
                 http.securityContext(securityContext -> securityContext

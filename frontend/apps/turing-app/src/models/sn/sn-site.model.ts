@@ -38,4 +38,13 @@ export type TurSNSite = {
   turSNSiteGenAi: TurSNSiteGenAi;
   icon?: string | null;
   searchTemplate?: string | null;
+  /**
+   * T233 / §VII.6.h — whether the visitor-facing API (search / autocomplete /
+   * query / click / chat / spell-check) is open or requires a Turing-registered
+   * API key (Dev Token). Defaults to {@code "PUBLIC"} server-side.
+   */
+  apiAuthMode?: TurSNSiteApiAuthMode;
 };
+
+/** T233 / §VII.6.h — public vs API-key access for the visitor-facing API. */
+export type TurSNSiteApiAuthMode = "PUBLIC" | "API_KEY";

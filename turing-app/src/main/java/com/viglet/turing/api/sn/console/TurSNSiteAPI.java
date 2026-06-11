@@ -171,6 +171,8 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
             turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
             turSNSiteEdit.setSearchTemplate(turSNSite.getSearchTemplate());
+            // T233 / §VII.6.h — public vs API-key access for the visitor-facing API.
+            Optional.ofNullable(turSNSite.getApiAuthMode()).ifPresent(turSNSiteEdit::setApiAuthMode);
             Optional.ofNullable(turSNSite.getTurSNSiteGenAi()).ifPresent(genAi -> {
                 TurSNSiteGenAi turSNSiteGenAi = Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi())
                         .orElse(new TurSNSiteGenAi());

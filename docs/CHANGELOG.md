@@ -93,6 +93,7 @@
 - **T64** — **Multi-modal slots (`IMAGE`/`AUDIO`/`FILE`).** Three new members on [`TurAIAgentSlotType`](../turing-app/src/main/java/com/viglet/turing/persistence/model/agent/TurAIAgentSlotType.java) (+ `isMultiModal()` helper) whose runtime value is a… (§VII.6.e)
 - **T65** — **Snapshot export of conversation state.** New [`TurChatSessionExportDto`](../turing-app/src/main/java/com/viglet/turing/persistence/dto/agent/TurChatSessionExportDto.java) bundles everything a debugger / regression harness needs to reconst… (§VII.6.f)
 - **T66** — **Per-agent submission retention policy** (LGPD / GDPR compliance hook). (§VII.6.g)
+- **T233** — **API-key auth layer for the public SN surface.** Per-site `TurSNSite.apiAuthMode` (`PUBLIC` default / `API_KEY`); when `API_KEY`, the visitor-facing endpoints (search/ac/query/click/chat/spell-check) require a Turing-registered Dev Token in the `Key` header or `apiKey` query param via `TurSNSiteApiKeyGateFilter` (else HTTP 401). Admin picker in the SN Behavior form. Liquibase `v2026.3.1.26`. (§VII.6.h)
 
 ## D.4 — A/B testing evolution
 

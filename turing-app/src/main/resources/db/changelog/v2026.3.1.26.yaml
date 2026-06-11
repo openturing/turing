@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # T233 / §VII.6.h — per-site API-key auth for the visitor-facing Semantic
+  # Navigation surface. PUBLIC (default) keeps the open, unauthenticated
+  # behaviour; API_KEY requires a Turing-registered Dev Token in the `Key`
+  # header or `apiKey` query parameter. Stored as a String (enum convention).
+  #
+  # Idempotent: gated by columnExists so re-running on a DB that already has the
+  # column is a no-op. Backfills existing rows to PUBLIC so behaviour is
+  # byte-for-byte unchanged.
+  - changeSet:
+      id: add-api-auth-mode-to-sn-site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site
+                columnName: apiAuthMode
+      changes:
+        - addColumn:
+            tableName: sn_site
+            columns:
+              - column:
+                  name: apiAuthMode
+                  type: varchar(16)
+                  defaultValue: PUBLIC

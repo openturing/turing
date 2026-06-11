@@ -50,6 +50,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -171,6 +173,18 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 
 	@Column(length = 255)
 	private String searchTemplate;
+
+	/**
+	 * T233 / §VII.6.h — whether the visitor-facing API of this site is open or
+	 * requires a Turing-registered API key (Dev Token). Persisted as a String
+	 * (per the project enum convention) and defaults to {@link
+	 * TurSNSiteApiAuthMode#PUBLIC} so existing sites stay open.
+	 *
+	 * @since 2026.3.1
+	 */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "apiAuthMode", length = 16)
+	private TurSNSiteApiAuthMode apiAuthMode = TurSNSiteApiAuthMode.PUBLIC;
 
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
