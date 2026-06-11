@@ -46,9 +46,41 @@ class TurAuthorityResolverTest {
     @Mock
     private TurPrivilegeRepository turPrivilegeRepository;
     @Mock
+    private com.viglet.turing.persistence.repository.tenant.TurTenantMembershipRepository turTenantMembershipRepository;
+    @Mock
     private TurConfigProperties turConfigProperties;
     @InjectMocks
     private TurAuthorityResolver resolver;
+
+    @org.junit.jupiter.api.Test
+    void tenantAuthoritiesAddsMembershipAndRoleWhenTenancyEnabled() {
+        com.viglet.turing.properties.TurTenancyProperty tenancy =
+                new com.viglet.turing.properties.TurTenancyProperty();
+        tenancy.setEnabled(true);
+        when(turConfigProperties.getTenancy()).thenReturn(tenancy);
+
+        com.viglet.turing.persistence.model.tenant.TurTenant tenant =
+                new com.viglet.turing.persistence.model.tenant.TurTenant();
+        tenant.setId("t-1");
+        com.viglet.turing.persistence.model.tenant.TurTenantMembership m =
+                new com.viglet.turing.persistence.model.tenant.TurTenantMembership();
+        m.setTenant(tenant);
+        m.setRole(com.viglet.turing.persistence.model.tenant.TurTenantRole.OWNER);
+        m.setStatus(com.viglet.turing.persistence.model.tenant.TurTenantMembershipStatus.ACTIVE);
+        when(turTenantMembershipRepository.findByUsername("alice")).thenReturn(List.of(m));
+
+        assertThat(resolver.tenantAuthorities("alice"))
+                .containsExactlyInAnyOrder("TENANT_t-1", "TENANT_t-1_OWNER");
+    }
+
+    @org.junit.jupiter.api.Test
+    void tenantAuthoritiesEmptyWhenTenancyDisabled() {
+        com.viglet.turing.properties.TurTenancyProperty tenancy =
+                new com.viglet.turing.properties.TurTenancyProperty();
+        when(turConfigProperties.getTenancy()).thenReturn(tenancy); // enabled=false
+        assertThat(resolver.tenantAuthorities("alice")).isEmpty();
+        verifyNoInteractions(turTenantMembershipRepository);
+    }
 
     @Test
     void shouldGrantAllAuthoritiesWhenPermissionsDisabled() {

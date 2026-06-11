@@ -48,17 +48,20 @@ public class TurCustomUserDetailsService implements UserDetailsService {
     private final TurRoleRepository turRoleRepository;
     private final TurGroupRepository turGroupRepository;
     private final TurPrivilegeRepository turPrivilegeRepository;
+    private final TurAuthorityResolver turAuthorityResolver;
     private final TurConfigProperties turConfigProperties;
 
     public TurCustomUserDetailsService(TurUserRepository turUserRepository,
             TurRoleRepository turRoleRepository,
             TurGroupRepository turGroupRepository,
             TurPrivilegeRepository turPrivilegeRepository,
+            TurAuthorityResolver turAuthorityResolver,
             TurConfigProperties turConfigProperties) {
         this.turUserRepository = turUserRepository;
         this.turRoleRepository = turRoleRepository;
         this.turGroupRepository = turGroupRepository;
         this.turPrivilegeRepository = turPrivilegeRepository;
+        this.turAuthorityResolver = turAuthorityResolver;
         this.turConfigProperties = turConfigProperties;
     }
 
@@ -74,6 +77,9 @@ public class TurCustomUserDetailsService implements UserDetailsService {
             } else {
                 authorities = allAuthorities();
             }
+            // T263 / §XIV.3.1 — append per-tenant membership authorities (no-op
+            // when tenancy is off) so the session path mirrors the OIDC path.
+            authorities.addAll(turAuthorityResolver.tenantAuthorities(username));
             return new TurCustomUserDetails(turUser, authorities);
         }
     }

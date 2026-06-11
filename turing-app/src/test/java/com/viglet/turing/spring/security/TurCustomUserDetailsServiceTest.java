@@ -47,9 +47,18 @@ class TurCustomUserDetailsServiceTest {
     @Mock
     private TurPrivilegeRepository turPrivilegeRepository;
     @Mock
+    private TurAuthorityResolver turAuthorityResolver;
+    @Mock
     private TurConfigProperties turConfigProperties;
     @InjectMocks
     private TurCustomUserDetailsService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubTenantAuthorities() {
+        org.mockito.Mockito.lenient()
+                .when(turAuthorityResolver.tenantAuthorities(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Set.of());
+    }
 
     @Test
     void loadUserByUsernameShouldReturnUserDetailsWithRoles() {
