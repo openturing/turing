@@ -115,12 +115,20 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
 
             if (isAuthenticated(authentication)
                     && !TurTenant.DEFAULT_TENANT_ID.equals(tenantId)
-                    && !isPlatformAdmin(authentication)
-                    && !hasActiveMembership(tenantId, authentication.getName())) {
-                log.warn("Principal '{}' has no active membership in tenant '{}'",
-                        authentication.getName(), tenantId);
-                reject(response);
-                return;
+                    && !isPlatformAdmin(authentication)) {
+                // T281 / §XIV.7.2 — a suspended tenant blocks its members' access.
+                if (isSuspended(tenantId)) {
+                    log.warn("Tenant '{}' is suspended — blocking access for '{}'",
+                            tenantId, authentication.getName());
+                    reject(response);
+                    return;
+                }
+                if (!hasActiveMembership(tenantId, authentication.getName())) {
+                    log.warn("Principal '{}' has no active membership in tenant '{}'",
+                            authentication.getName(), tenantId);
+                    reject(response);
+                    return;
+                }
             }
 
             tenantContext.setCurrentTenant(tenantId);
@@ -202,6 +210,12 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
         }
         return membershipRepository.findByTenant_IdAndUsername(tenantId, username)
                 .map(m -> m.getStatus() == TurTenantMembershipStatus.ACTIVE)
+                .orElse(false);
+    }
+
+    private boolean isSuspended(String tenantId) {
+        return tenantRepository.findById(tenantId)
+                .map(t -> t.getStatus() == com.viglet.turing.persistence.model.tenant.TurTenantStatus.SUSPENDED)
                 .orElse(false);
     }
 
