@@ -66,6 +66,7 @@ public class TurWeeklySearchReportService {
     private final TurSNSiteDataCollectorService siteDataCollectorService;
     private final TurLlmCacheService llmCacheService;
     private final TurLLMTokenUsageService tokenUsageService;
+    private final com.viglet.turing.tenant.TurTenantScheduledFanOut tenantFanOut;
 
     public TurWeeklySearchReportService(TurEmailService emailService,
             TurSNSiteRepository snSiteRepository,
@@ -78,7 +79,9 @@ public class TurWeeklySearchReportService {
             TurSecretCryptoService secretCryptoService,
             TurSNSiteDataCollectorService siteDataCollectorService,
             TurLlmCacheService llmCacheService,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurLLMTokenUsageService tokenUsageService,
+            com.viglet.turing.tenant.TurTenantScheduledFanOut tenantFanOut) {
+        this.tenantFanOut = tenantFanOut;
         this.emailService = emailService;
         this.snSiteRepository = snSiteRepository;
         this.snSiteLocaleRepository = snSiteLocaleRepository;
@@ -96,6 +99,12 @@ public class TurWeeklySearchReportService {
     @Scheduled(cron = "0 0 8 1 * *")
     @SchedulerLock(name = "monthlySearchReport", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
     public void sendWeeklyReport() {
+        // T273 / §XIV.4.7 — one report per active tenant; buildReportHtml() reads
+        // snSiteRepository.findAll() which is @TenantId-filtered to the bound tenant.
+        tenantFanOut.forEachActiveTenant(this::sendReportForCurrentTenant);
+    }
+
+    private void sendReportForCurrentTenant() {
         log.info("Generating monthly search report...");
         try {
             String html = buildReportHtml();

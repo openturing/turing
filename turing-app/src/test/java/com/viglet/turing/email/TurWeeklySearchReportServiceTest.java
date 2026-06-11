@@ -67,11 +67,18 @@ class TurWeeklySearchReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        com.viglet.turing.properties.TurConfigProperties props =
+                new com.viglet.turing.properties.TurConfigProperties();
+        com.viglet.turing.tenant.TurTenantScheduledFanOut fanOut =
+                new com.viglet.turing.tenant.TurTenantScheduledFanOut(
+                        new com.viglet.turing.tenant.TurTenantContext(props),
+                        org.mockito.Mockito.mock(
+                                com.viglet.turing.persistence.repository.tenant.TurTenantRepository.class));
         service = new TurWeeklySearchReportService(emailService, snSiteRepository,
                 snSiteLocaleRepository, metricAccessRepository, pluginFactory,
                 globalSettingsService, llmInstanceRepository, llmModelFactory,
                 secretCryptoService, siteDataCollectorService, llmCacheService,
-                tokenUsageService);
+                tokenUsageService, fanOut);
     }
 
     @Test

@@ -35,15 +35,23 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 public class TurChampionChallengerPromotionJob {
 
     private final TurChampionChallengerService championChallengerService;
+    private final com.viglet.turing.tenant.TurTenantScheduledFanOut tenantFanOut;
 
-    public TurChampionChallengerPromotionJob(TurChampionChallengerService championChallengerService) {
+    public TurChampionChallengerPromotionJob(TurChampionChallengerService championChallengerService,
+            com.viglet.turing.tenant.TurTenantScheduledFanOut tenantFanOut) {
         this.championChallengerService = championChallengerService;
+        this.tenantFanOut = tenantFanOut;
     }
 
     @Scheduled(cron = "${turing.chat.champion.promote.cron:0 47 3 * * *}")
     @SchedulerLock(name = "championChallengerPromote",
             lockAtMostFor = "PT30M", lockAtLeastFor = "PT1S")
     public void run() {
+        // T273 / §XIV.4.7 — run the promotion sweep once per active tenant.
+        tenantFanOut.forEachActiveTenant(this::promoteForCurrentTenant);
+    }
+
+    private void promoteForCurrentTenant() {
         int promoted = championChallengerService.runScheduledPromotions();
         if (promoted > 0) {
             log.info("[ChampionChallenger] daily sweep promoted a winner in {} experiment(s)", promoted);
