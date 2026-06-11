@@ -53,6 +53,7 @@ import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 import com.viglet.turing.spring.security.auth.TurSNSiteApiKeyGateFilter;
+import com.viglet.turing.tenant.TurTenantResolutionFilter;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -90,6 +91,7 @@ public class TurSecurityConfigProduction {
         SecurityFilterChain filterChain(HttpSecurity http,
                         TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
                         TurSNSiteApiKeyGateFilter turSNSiteApiKeyGateFilter,
+                        TurTenantResolutionFilter turTenantResolutionFilter,
                         TurLogoutHandler turLogoutHandler,
                         TurConfigProperties turConfigProperties,
                         TurAuthenticationEntryPoint turAuthenticationEntryPoint,
@@ -106,6 +108,9 @@ public class TurSecurityConfigProduction {
                 // header is already authenticated; gates per-site API_KEY mode on the
                 // public SN surface (PUBLIC sites pass straight through).
                 http.addFilterAfter(turSNSiteApiKeyGateFilter, TurAuthTokenHeaderFilter.class);
+                // T259 / §XIV.2.3 — resolve + bind the current tenant once the
+                // principal is known. No-op when turing.tenancy.enabled=false.
+                http.addFilterAfter(turTenantResolutionFilter, TurSNSiteApiKeyGateFilter.class);
                 http.userDetailsService(userDetailsService);
                 http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
                 http.securityContext(securityContext -> securityContext
