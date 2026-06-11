@@ -1,6 +1,7 @@
 package com.viglet.turing.api.sn.job;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -55,6 +56,9 @@ class TurSNImportAPITest {
     @Mock
     private TurSNGenAi turGenAi;
 
+    @Mock
+    private com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
+
     @InjectMocks
     private TurSNImportAPI api;
 
@@ -62,6 +66,8 @@ class TurSNImportAPITest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient()
+                .when(turJmsTenantPropagation.headers()).thenReturn(java.util.Map.of());
         mockMvc = MockMvcBuilders.standaloneSetup(api).build();
     }
 
@@ -98,7 +104,7 @@ class TurSNImportAPITest {
                 .andExpect(content().string("true"));
 
         verify(turGenAi, times(1)).addDocuments(any(TurSNJobItems.class));
-        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class));
+        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
     }
 
     @Test
@@ -124,7 +130,7 @@ class TurSNImportAPITest {
                 .andExpect(content().string("true"));
 
         verify(turGenAi, never()).addDocuments(any(TurSNJobItems.class));
-        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class));
+        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
     }
 
     @Test
@@ -166,7 +172,7 @@ class TurSNImportAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class));
+        verify(jmsMessagingTemplate, times(1)).convertAndSend(anyString(), any(TurSNJobItems.class), anyMap());
 
         tempZip.delete();
     }
