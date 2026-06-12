@@ -157,6 +157,23 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
         }
     }
 
+    @Test
+    void mcpEndpoint_exposesPromptsCapability() {
+        McpSyncClient client = newClient();
+        try {
+            client.initialize();
+            // Personas in the test DB are not guaranteed, so assert the prompts
+            // capability is wired and the call succeeds (non-null list) rather
+            // than a specific persona. The persona→prompt mapping is unit-tested
+            // in TurMcpPromptConfigTest.
+            McpSchema.ListPromptsResult prompts = client.listPrompts();
+            assertNotNull(prompts);
+            assertNotNull(prompts.prompts());
+        } finally {
+            client.closeGracefully();
+        }
+    }
+
     private McpSyncClient newClient() {
         HttpClientStreamableHttpTransport transport =
                 HttpClientStreamableHttpTransport.builder("http://localhost:" + port)
