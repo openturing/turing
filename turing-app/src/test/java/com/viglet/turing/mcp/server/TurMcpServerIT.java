@@ -1,0 +1,131 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ */
+package com.viglet.turing.mcp.server;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+import com.viglet.turing.testutil.AbstractTuringSpringIT;
+
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
+import io.modelcontextprotocol.spec.McpSchema;
+
+/**
+ * Integration test for T245 — Turing as an MCP server.
+ *
+ * <p>Boots the full backend on a real HTTP port with the MCP server enabled
+ * ({@code spring.ai.mcp.server.enabled=true}) and drives the {@code /mcp}
+ * Streamable HTTP endpoint with the <em>official MCP client SDK</em> (the same
+ * {@code io.modelcontextprotocol} client Turing uses on its consumer side). This
+ * exercises the real wire protocol end-to-end: {@code initialize} +
+ * {@code tools/list}.
+ *
+ * <p>Asserts the three T245 deliverables: (1) the transport is up and speaks the
+ * protocol; (2) the decorated Turing tool catalog is published — the
+ * {@code dsl_*} search tools the internal Semantic-Navigation agent uses show
+ * up; (3) decoration ran, so the published descriptions are the curated
+ * {@code prompts/tools/dsl/*.md} content, never the {@code "."} placeholder.
+ *
+ * <p>The test client connects over loopback, so the default
+ * {@code turing.mcp-server.loopback-only=true} gate lets it through; the 403
+ * rejection path is covered by {@link TurMcpLoopbackFilterTest}.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.1
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"spring.jmx.enabled=true", "spring.ai.mcp.server.enabled=true"})
+class TurMcpServerIT extends AbstractTuringSpringIT {
+
+    @Value("${local.server.port}")
+    private int port;
+
+    @Autowired
+    private ToolCallbackProvider turingMcpToolCallbackProvider;
+
+    /** See {@code TurSdkContractIT} — avoid Hikari MBean ObjectName collisions across cached contexts. */
+    @DynamicPropertySource
+    static void uniqueJmxObjectNames(DynamicPropertyRegistry registry) {
+        registry.add("spring.jmx.unique-names", () -> "true");
+    }
+
+    @Test
+    void toolCallbackProviderBean_publishesDecoratedDslCatalog() {
+        ToolCallback[] callbacks = turingMcpToolCallbackProvider.getToolCallbacks();
+        assertNotNull(callbacks);
+        Set<String> names = toolNames(List.of(callbacks));
+        assertTrue(names.contains("dsl_list_indices"),
+                () -> "expected dsl_list_indices in MCP catalog, got " + names);
+        assertTrue(names.contains("dsl_search"),
+                () -> "expected dsl_search in MCP catalog, got " + names);
+    }
+
+    @Test
+    void mcpEndpoint_initializesAndListsDecoratedTools() {
+        HttpClientStreamableHttpTransport transport =
+                HttpClientStreamableHttpTransport.builder("http://localhost:" + port)
+                        .endpoint("/mcp")
+                        .build();
+        McpSyncClient client = McpClient.sync(transport)
+                .clientInfo(McpSchema.Implementation.builder("turing-it", "1.0").build())
+                .requestTimeout(Duration.ofSeconds(30))
+                .build();
+        try {
+            McpSchema.InitializeResult init = client.initialize();
+            assertNotNull(init, "MCP initialize must return a result");
+            assertNotNull(init.serverInfo());
+
+            McpSchema.ListToolsResult tools = client.listTools();
+            assertNotNull(tools);
+            List<McpSchema.Tool> list = tools.tools();
+            assertFalse(list.isEmpty(), "MCP server must publish at least one tool");
+
+            McpSchema.Tool listIndices = list.stream()
+                    .filter(t -> "dsl_list_indices".equals(t.name()))
+                    .findFirst()
+                    .orElse(null);
+            assertNotNull(listIndices, () -> "dsl_list_indices not exposed over MCP; got "
+                    + list.stream().map(McpSchema.Tool::name).toList());
+
+            // Decoration ran: the curated prompts/tools/dsl/dsl_list_indices.md
+            // description replaced the "." @Tool placeholder.
+            String description = listIndices.description();
+            assertNotNull(description);
+            assertFalse(".".equals(description.trim()),
+                    "tool description must be the curated .md content, not the '.' placeholder");
+            assertTrue(description.length() > 1,
+                    () -> "decorated description unexpectedly short: '" + description + "'");
+        } finally {
+            client.closeGracefully();
+        }
+    }
+
+    private Set<String> toolNames(List<ToolCallback> callbacks) {
+        return callbacks.stream()
+                .map(c -> c.getToolDefinition().name())
+                .collect(java.util.stream.Collectors.toSet());
+    }
+}

@@ -203,8 +203,7 @@
 
 ## Block I — Turing as an MCP Server (T245–T256)
 
-- 📋 **T245** (deps: —) **MCP server transport (loopback first)** — add `spring-ai-starter-mcp-server-webmvc`, expose `/mcp` over Streamable HTTP, and register the existing decorated tool catalog via a `ToolCallbackProvider` built from `TurToolCallbackPipeline.dec… → §XIII.5
-- 📋 **T246** (deps: T245) **OAuth 2.1 resource-server auth + scoping** — Turing validates Keycloak-issued bearer tokens on `/mcp` (MCP authorization spec), maps token → tenant + role → allowed sites + allowed tool set. → §XIII.6
+- 📋 **T246** (deps: T245 ✅) **OAuth 2.1 resource-server auth + scoping** — Turing validates Keycloak-issued bearer tokens on `/mcp` (MCP authorization spec), maps token → tenant + role → allowed sites + allowed tool set. → §XIII.6
 - 📋 **T247** (deps: T246) **Read search surface as MCP tools** — `list_sites`, `get_site_fields`, `search_site`, `get_document`, `similar_documents`, `facet_search`, `autocomplete`. → §XIII.3
 - 📋 **T248** (deps: T247) **`rag_answer` — one-call cited RAG** — hybrid search + grounded answer + citations in a single MCP tool call, so a client gets enterprise-truth-grounded prose without orchestrating 3 calls. → §XIII.3
 - 📋 **T249** (deps: T246) **`invoke_agent` + `list_agents`** — run a configured AI Agent / chat-flow headlessly over MCP (returns final answer + captured slots), reusing `TurAgentChatExecutor`. → §XIII.3
@@ -253,6 +252,20 @@
 
 - 📋 **T292** (deps: T24) **RAG attribution metadata end-to-end** — every `search_knowledge_base` hit carries `(sourceId, title, url, chunkIndex, score)` through the SSE stream as a structured `sources[]` block — no vendor citation API required. → §XVII.1
 - 📋 **T293** (deps: T292) **Source-chip UI + "why did you say this?" trace** — chat renderer (react-sdk + admin) shows inline source chips with confidence and a one-click expansion to the retrieved chunks. Cross-refs F.6 T154 for Claude per-span underlining. → §XVII.2
+
+> **AddSearch-parity sub-block (T327–T332).** T292/T293 cover the
+> `search_knowledge_base` tool + MCP path. The **public semantic-navigation site
+> chat** (`TurSNGenAi` → `/api/sn/{site}/chat/conversation` → `ai-mode-chat.tsx`)
+> is a *separate* path that stuffs chunks straight into the system prompt and
+> loses provenance — these tasks bring the same grounding maturity there, to match
+> AddSearch's "AI Answers + AI Conversations over site content". → §XVII.3
+
+- 📋 **T327** (deps: T292) **Provenance in the public SN chat** — `TurSNGenAi.retrieveAndBuildSystemPrompt` preserves `(sourceId, title, url, chunkIndex, score)` per chunk and emits the `sources[]` SSE event (same contract as T292) on `/api/sn/{site}/chat/conversation`; today the chunks are joined into a raw string and provenance is lost. → §XVII.3
+- 📋 **T328** (deps: —) **Relevance gate + optional reranker for SN RAG** — replace the `similarityThreshold=0.0` used on facet-filtered queries with a real cutoff and an optional top-N→top-k rerank before stuffing, so weak matches stop polluting the context (the main hallucination driver). → §XVII.4
+- 📋 **T329** (deps: T328) **Deterministic "not in this site" refusal** — when post-gate retrieval is empty, short-circuit to the canonical refusal without an LLM call instead of relying on the model obeying the prompt instruction. → §XVII.5
+- 💭 **T330** (deps: T327) **Optional groundedness check for SN answers** — reuse the `LlmJudge` infra as a post-generation faithfulness audit (is the answer supported by the retrieved chunks?); on fail, regenerate with a stricter prompt or flag low confidence. Opt-in per agent (default off) to keep latency/cost predictable. → §XVII.6
+- 💭 **T331** (deps: T327) **Suggested follow-up questions in AI mode** — after each answer, generate 2–3 follow-up suggestions grounded in the retrieved context, rendered as clickable chips (parity with AddSearch "AI Conversations"). → §XVII.7
+- 📋 **T332** (deps: T327, T293) **Source chips on the public `ai-mode-chat.tsx`** — extend the T293 source-chip renderer (today admin + react-sdk) to the public SN AI-mode chat, with a confidence cue and one-click expansion to the cited chunks. → §XVII.8
 
 ## Non-goals (do NOT add as tasks)
 

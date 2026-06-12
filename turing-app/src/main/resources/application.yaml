@@ -11,6 +11,13 @@ turing:
   permissions: false
   tenancy:
     enabled: false
+  # T245 / §XIII — Turing as an MCP server. The endpoint itself is toggled by
+  # spring.ai.mcp.server.enabled (below); this block carries the Turing-specific
+  # governance on top of it. loopback-only is the T245 trust boundary: until the
+  # T246 OAuth 2.1 resource-server gate lands, /mcp answers loopback requests
+  # only. Leave it true for any remote deployment until auth is wired.
+  mcp-server:
+    loopback-only: true
   keycloak: false
   keycloak-admin-id:
   authentication:
@@ -208,6 +215,23 @@ spring:
   jmx.enabled: true
   profiles:
     active: production
+  # T245 / §XIII — Turing as an MCP server. OFF by default: when enabled=false
+  # the Spring AI MCP server auto-configuration does not activate, there is no
+  # /mcp endpoint, and the deployment is unchanged. Flip enabled=true to publish
+  # the decorated Turing tool catalog over Streamable HTTP at /mcp. Keep
+  # turing.mcp-server.loopback-only=true (above) until the T246 OAuth 2.1 gate
+  # is wired for any non-loopback exposure.
+  ai:
+    mcp:
+      server:
+        enabled: false
+        protocol: STREAMABLE
+        name: turing-es
+        version: 2026.3.1
+        instructions: >-
+          Viglet Turing ES — enterprise search intelligence. Use these tools to
+          discover indexed sites, inspect their fields, and run semantic/hybrid
+          searches over the customer's enterprise content, with citations.
   h2:
     console:
       enabled: false

@@ -22,5 +22,6 @@ public class TurConfigProperties {
 	private TurGenAiProperty genai = new TurGenAiProperty();
 	private TurChatProperty chat = new TurChatProperty();
 	private TurTenancyProperty tenancy = new TurTenancyProperty();
+	private TurMcpServerProperty mcpServer = new TurMcpServerProperty();
 
 }

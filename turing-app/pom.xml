@@ -528,6 +528,19 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mcp</artifactId>
         </dependency>
+        <!--
+            T245 — Turing as an MCP *server*. spring-ai-mcp (above) is the
+            *client* half (Turing calls out to external MCP servers via
+            TurMcpToolCallbackService). This starter is the server half: it
+            exposes the decorated tool catalog at /mcp over Streamable HTTP so
+            external AI clients (Claude Desktop/Code, Cursor) can drive Turing.
+            Version managed by spring-ai-bom. Off by default
+            (spring.ai.mcp.server.enabled=false) — see application.yaml.
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

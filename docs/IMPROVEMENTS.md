@@ -2312,3 +2312,77 @@ that opens the exact retrieved chunks with deep links (`/sn/{site}/document/{id}
 #chunk={index}`). When the agent runs on Claude with F.6 T154 enabled, the same
 panel upgrades from chunk-level to per-sentence span underlining — one UI, two
 fidelity levels.
+
+### XVII.3 AddSearch-parity for the public SN chat path (T327)
+
+XVII.1/XVII.2 instrument the **`search_knowledge_base` tool + MCP** path. The
+public semantic-navigation site chat is architecturally different and currently
+uninstrumented: `TurSNGenAi.retrieveAndBuildSystemPrompt` runs the hybrid
+retriever, then **concatenates the chunk texts into one raw string**
+(`join("\n\n")`) and suffixes it onto the system prompt under a "Context from the
+website:" header. Provenance — `(sourceId, title, url, chunkIndex, score)` that the
+retriever *did* return — is discarded at that join. T327 keeps the per-chunk
+metadata alongside the stuffed text and emits the same `sources[]` SSE event the
+T292 contract defines, so `/api/sn/{site}/chat/conversation` (consumed by
+`ai-mode-chat.tsx` via `useTuringChat`) carries provenance just like the tool
+path. This is the prerequisite for the rest of the sub-block. The bet vs.
+AddSearch: AddSearch's "AI Answers" shows source transparency as a selling point;
+Turing already retrieves the sources — it just drops them on this one path.
+
+### XVII.4 Relevance gate + optional reranker for SN RAG (T328)
+
+The dominant hallucination driver on the SN path is the retrieval cutoff, not the
+prompt. When facet filters are applied, `TurSNGenAi` issues the similarity search
+with `similarityThreshold=0.0` and `topK=50` — i.e. it stuffs **every** hit the
+filter admits regardless of semantic score, so off-topic-but-filter-matching
+chunks reach the model and invite confident-but-wrong answers. T328 (a) applies a
+real similarity floor on the filtered path (config-driven, not hard-coded 0.0),
+and (b) adds an optional rerank stage (cross-encoder or LLM-as-reranker) that
+takes top-N → top-k before stuffing. Output: fewer, higher-precision chunks in the
+prompt. No dependency on T327 — it is pure retrieval-side and can ship first; it
+also feeds T329 (an empty post-gate result becomes the deterministic-refusal
+trigger).
+
+### XVII.5 Deterministic "not in this site" refusal (T329)
+
+Today the refusal — *"that information is not available in the website's
+database."* — lives only in `DEFAULT_BEHAVIOR_PROMPT` and depends on the model
+obeying it; a weakly-grounded query can still produce a fabricated answer. Once
+T328 gives a meaningful "nothing passed the gate" signal, T329 short-circuits that
+case **before** the LLM call: return the canonical refusal (localized) directly,
+skipping generation entirely. Cheaper, faster, and impossible to hallucinate
+around. The threshold that defines "empty" is the T328 gate, so T329 depends on
+it.
+
+### XVII.6 Optional groundedness check for SN answers (T330)
+
+`LlmJudge` (the chat-flow guardrail) already does post-generation auditing, but
+only inside a running flow — free-form SN answers are unchecked. T330 reuses that
+infrastructure as a **faithfulness audit**: after the answer streams, a second
+(cheap) LLM call asks "is every claim supported by the retrieved chunks?"; on
+fail, either regenerate with a stricter prompt or annotate the answer as
+low-confidence (surfaced through the T332 chips). This is the highest-cost item in
+the sub-block (an extra LLM round-trip per turn), so it is **opt-in per agent,
+default off** — consistent with the project's "behavior changes ship as a
+choosable flag" rule. Kept as 💭 until XVII.3 lands, since the audit needs the
+preserved chunk metadata from T327.
+
+### XVII.7 Suggested follow-up questions in AI mode (T331)
+
+AddSearch's "AI Conversations" differentiator is largely UX: it nudges the user to
+keep exploring. T331 generates 2–3 follow-up questions grounded in the chunks that
+were just retrieved (one cheap completion, or piggy-backed on the answer call) and
+streams them as clickable chips under the answer in `ai-mode-chat.tsx`. Grounding
+the suggestions in the retrieved context — not the model's open-ended
+imagination — keeps them answerable by the same index, avoiding dead-end chips.
+Depends on T327 for the retrieved-chunk handle.
+
+### XVII.8 Source chips on the public `ai-mode-chat.tsx` (T332)
+
+T293 builds the source-chip renderer for the **admin + react-sdk** chat surfaces.
+T332 brings that component to the **public** SN AI-mode chat, fed by the
+`sources[]` event T327 now emits: inline chips with a confidence cue (top
+vector/BM25 score) and one-click expansion to the cited chunks with deep links.
+This is the visible payoff of the whole sub-block — the "source transparency" that
+AddSearch markets, on every LLM, with no vendor citation API. Depends on T327
+(data) and T293 (component).

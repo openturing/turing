@@ -141,6 +141,12 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher(LOGOUT_PATH),
                                                 mvc.matcher("/api/ocr/**"),
                                                 mvc.matcher("/api/genai/**"),
+                                                // T245 — MCP server (Streamable HTTP). Not a
+                                                // browser surface (no cookie jar); auth/loopback is
+                                                // enforced by TurMcpLoopbackFilter today and the
+                                                // T246 OAuth 2.1 resource-server gate next.
+                                                mvc.matcher("/mcp"),
+                                                mvc.matcher("/mcp/**"),
                                                 mvc.matcher("/api/v2/guest/**"),
                                                 mvc.matcher("/h2/**"),
                                                 mvc.matcher("/git/**"),
@@ -197,6 +203,9 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/ann/*/search"),
                                                 mvc.matcher("/ann/**"),
                                                 mvc.matcher("/pages/**"),
+                                                // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
+                                                mvc.matcher("/mcp"),
+                                                mvc.matcher("/mcp/**"),
                                                 mvc.matcher("/api/signup"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)).permitAll();
@@ -258,6 +267,9 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/ann/*/search"),
                                                                 mvc.matcher("/ann/**"),
                                                                 mvc.matcher("/pages/**"),
+                                                                // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
+                                                                mvc.matcher("/mcp"),
+                                                                mvc.matcher("/mcp/**"),
                                                                 mvc.matcher("/favicon.ico"),
                                                                 mvc.matcher("/*.png"),
                                                                 mvc.matcher("/manifest.json"),

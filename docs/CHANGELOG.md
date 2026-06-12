@@ -220,6 +220,10 @@
 - **T231** — **`chat.page.tsx` extraction** — T227 already extracted the per-agent tab content; T231 completed the structural goals. (§XII.2)
 - **T232** — **Admin smoke ITs (RTL)** — bootstrapped the **frontend's first test runner** (none existed in the monorepo): vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb, a standalone [vitest.config.ts](../frontend/apps/turing-app/vit… (§XII.2)
 
+## Block I — Turing as an MCP Server (§XIII)
+
+- **T245** — **MCP server transport (loopback first)** — added `spring-ai-starter-mcp-server-webmvc`; exposes the decorated Turing tool catalog at `/mcp` over Streamable HTTP via a `ToolCallbackProvider` built from `TurToolCallbackPipeline.decorate(...)` over the same `TurDslToolService` the internal Semantic-Navigation agent uses (one catalog, two consumers). Off by default (`spring.ai.mcp.server.enabled=false`); `TurMcpLoopbackFilter` enforces the loopback-first trust boundary (`turing.mcp-server.loopback-only=true`) until T246's OAuth 2.1 gate lands. IT (`TurMcpServerIT`) drives the real protocol end-to-end with the official MCP client; `TurMcpLoopbackFilterTest` covers the 403 path. (§XIII.5, §XIII.8)
+
 ## Block J — Multi-tenancy (§XIV)
 
 > Shipped 2026-06-11 (T257–T284). One JVM, many isolated tenants, behind
