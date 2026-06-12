@@ -43,4 +43,26 @@ public class TurMcpServerProperty {
      * authentication.
      */
     private boolean loopbackOnly = true;
+
+    /**
+     * T246 — when {@code true}, {@code /mcp} is protected by an OAuth 2.1
+     * resource-server gate: every request must carry a valid Keycloak-issued JWT
+     * bearer token (validated against the configured
+     * {@code spring.security.oauth2.resourceserver.jwt.*} decoder), and tool
+     * execution is scoped to the token's granted authorities. Default
+     * {@code false} keeps the T245 loopback-only posture for local development.
+     * A remote deployment is expected to set this {@code true} together with
+     * {@link #loopbackOnly}{@code =false}. Fails closed: if {@code true} but no
+     * {@code JwtDecoder} is configured, {@code /mcp} denies every request.
+     */
+    private boolean requireAuth = false;
+
+    /**
+     * T246 — the granted authority a token must hold to invoke a <em>write</em>
+     * MCP tool (the gated ingestion tools land in T253). Read tools never require
+     * it. Spring maps an OAuth2 {@code scope}/{@code scp} claim value {@code x}
+     * to the authority {@code SCOPE_x}, so the default matches a token granted
+     * the {@code mcp:write} scope.
+     */
+    private String writeScope = "SCOPE_mcp:write";
 }

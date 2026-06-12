@@ -203,8 +203,7 @@
 
 ## Block I — Turing as an MCP Server (T245–T256)
 
-- 📋 **T246** (deps: T245 ✅) **OAuth 2.1 resource-server auth + scoping** — Turing validates Keycloak-issued bearer tokens on `/mcp` (MCP authorization spec), maps token → tenant + role → allowed sites + allowed tool set. → §XIII.6
-- 📋 **T247** (deps: T246) **Read search surface as MCP tools** — `list_sites`, `get_site_fields`, `search_site`, `get_document`, `similar_documents`, `facet_search`, `autocomplete`. → §XIII.3
+- 📋 **T247** (deps: T246 ✅) **Read search surface as MCP tools** — `list_sites`, `get_site_fields`, `search_site`, `get_document`, `similar_documents`, `facet_search`, `autocomplete`. → §XIII.3
 - 📋 **T248** (deps: T247) **`rag_answer` — one-call cited RAG** — hybrid search + grounded answer + citations in a single MCP tool call, so a client gets enterprise-truth-grounded prose without orchestrating 3 calls. → §XIII.3
 - 📋 **T249** (deps: T246) **`invoke_agent` + `list_agents`** — run a configured AI Agent / chat-flow headlessly over MCP (returns final answer + captured slots), reusing `TurAgentChatExecutor`. → §XIII.3
 - 📋 **T250** (deps: T247) **MCP Resources** — expose indexed documents + site schemas as browsable MCP resources (`turing://site/{id}/doc/{docId}`), so clients can read/attach content directly, not only search it. → §XIII.3

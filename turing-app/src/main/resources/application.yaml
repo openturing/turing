@@ -18,6 +18,11 @@ turing:
   # only. Leave it true for any remote deployment until auth is wired.
   mcp-server:
     loopback-only: true
+    # T246 — when true, /mcp requires a valid Keycloak JWT bearer token
+    # (spring.security.oauth2.resourceserver.jwt.*) and scopes tool execution to
+    # the token's authorities. Default false keeps the T245 loopback-only dev
+    # posture. A remote deployment sets require-auth=true + loopback-only=false.
+    require-auth: false
   keycloak: false
   keycloak-admin-id:
   authentication:

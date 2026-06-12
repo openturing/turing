@@ -68,14 +68,18 @@ public class TurMcpServerConfig {
      */
     @Bean
     ToolCallbackProvider turingMcpToolCallbackProvider(TurDslToolService dslToolService,
-            TurToolCallbackPipeline toolCallbackPipeline) {
+            TurToolCallbackPipeline toolCallbackPipeline,
+            TurMcpToolScopePolicy toolScopePolicy) {
         ToolCallback[] raw = MethodToolCallbackProvider.builder()
                 .toolObjects(dslToolService)
                 .build()
                 .getToolCallbacks();
         ToolCallback[] decorated = toolCallbackPipeline.decorate(raw);
-        log.info("[MCP] Turing MCP server publishing {} tool(s) at /mcp", decorated.length);
-        return ToolCallbackProvider.from(decorated);
+        // T246 — outermost decorator: enforce per-tool scope at call time
+        // (defense in depth, independent of what the endpoint listed).
+        ToolCallback[] scoped = TurMcpScopeToolCallback.wrap(decorated, toolScopePolicy);
+        log.info("[MCP] Turing MCP server publishing {} tool(s) at /mcp", scoped.length);
+        return ToolCallbackProvider.from(scoped);
     }
 
     /**
