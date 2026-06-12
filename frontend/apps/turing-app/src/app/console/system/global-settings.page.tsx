@@ -21,7 +21,7 @@ import { StickyPageHeader } from "@/components/sticky-page-header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconAlertTriangle, IconBrain, IconBrandDocker, IconCheck, IconDatabase, IconDeviceFloppy, IconKey, IconLoader2, IconMail, IconMailForward, IconRefresh, IconSettings } from "@tabler/icons-react";
+import { IconAlertTriangle, IconArrowsSort, IconBrain, IconBrandDocker, IconCheck, IconDatabase, IconDeviceFloppy, IconKey, IconLoader2, IconMail, IconMailForward, IconRefresh, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
 import type { TurStoreInstance } from "@/models/store/store-instance.model";
@@ -66,6 +66,13 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     defaultEmbeddingStoreId: "",
     defaultAiAgentId: "",
     piiSlotTtlHours: 24,
+    ragSnRerankEnabled: false,
+    ragSnRerankTopN: 20,
+    ragSnRerankStrategy: "LLM",
+    ragSnRerankEndpoint: "",
+    ragSnRerankModel: "",
+    ragSnRerankApiKey: "",
+    ragSnRerankApiKeySet: false,
 };
 
 export default function GlobalSettingsPage() {
@@ -203,6 +210,9 @@ export default function GlobalSettingsPage() {
     const llmCacheEnabled = form.watch("llmCacheEnabled") ?? false;
     const ragEnabled = form.watch("ragEnabled") ?? false;
     const codeInterpreterMode = form.watch("codeInterpreterExecutionMode") ?? "NATIVE";
+    const rerankEnabled = form.watch("ragSnRerankEnabled") ?? false;
+    const rerankStrategy = form.watch("ragSnRerankStrategy") ?? "LLM";
+    const rerankApiKeySet = settings.ragSnRerankApiKeySet ?? false;
 
     return (
         <Form {...form}>
@@ -784,6 +794,184 @@ export default function GlobalSettingsPage() {
                                             </FormItemTwoColumns>
                                         )}
                                     />
+                                </>
+                            )}
+                        </SectionCard.Content>
+                    </SectionCard>
+
+                    {/* T337–T339 — SN RAG reranker. Opt-in (default off); the
+                        backend defaults to the legacy LLM strategy. CROSS_ENCODER
+                        and COHERE reveal their own connection fields. */}
+                    <SectionCard variant="emerald">
+                        <SectionCard.Header icon={IconArrowsSort} title={t("globalSettings.rerankTitle")} description={t("globalSettings.rerankDesc")} />
+                        <SectionCard.Content>
+                            <FormField
+                                control={form.control}
+                                name="ragSnRerankEnabled"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.rerankEnable")}</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                {t("globalSettings.rerankEnableDesc")}
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <GradientSwitch
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            {rerankEnabled && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="ragSnRerankStrategy"
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>{t("globalSettings.rerankStrategy")}</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        {t("globalSettings.rerankStrategyDesc")}
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <Select
+                                                            onValueChange={field.onChange}
+                                                            value={field.value ?? "LLM"}
+                                                            disabled={isLoading}
+                                                        >
+                                                            <SelectTrigger className="w-full max-w-xs">
+                                                                <SelectValue placeholder={t("globalSettings.choose")} />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="LLM">{t("globalSettings.rerankStrategyLlm")}</SelectItem>
+                                                                <SelectItem value="CROSS_ENCODER">{t("globalSettings.rerankStrategyCrossEncoder")}</SelectItem>
+                                                                <SelectItem value="COHERE">{t("globalSettings.rerankStrategyCohere")}</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl>
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="ragSnRerankTopN"
+                                        rules={{
+                                            min: { value: 1, message: t("globalSettings.rerankTopNOutOfRange") },
+                                            max: { value: 100, message: t("globalSettings.rerankTopNOutOfRange") },
+                                        }}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t("globalSettings.rerankTopN")}</FormLabel>
+                                                <FormDescription>
+                                                    {t("globalSettings.rerankTopNDesc")}
+                                                </FormDescription>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        min={1}
+                                                        max={100}
+                                                        step={1}
+                                                        className="max-w-xs"
+                                                        disabled={isLoading}
+                                                        {...field}
+                                                        value={field.value ?? 20}
+                                                        onChange={e => field.onChange(Number(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    {(rerankStrategy === "CROSS_ENCODER" || rerankStrategy === "COHERE") && (
+                                        <FormField
+                                            control={form.control}
+                                            name="ragSnRerankModel"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t("globalSettings.rerankModel")}</FormLabel>
+                                                    <FormDescription>
+                                                        {t("globalSettings.rerankModelDesc")}
+                                                    </FormDescription>
+                                                    <FormControl>
+                                                        <Input
+                                                            className="max-w-md font-mono text-sm"
+                                                            placeholder={rerankStrategy === "COHERE" ? "rerank-v3.5" : "BAAI/bge-reranker-v2-m3"}
+                                                            autoComplete="off"
+                                                            spellCheck={false}
+                                                            disabled={isLoading}
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                    {rerankStrategy === "CROSS_ENCODER" && (
+                                        <FormField
+                                            control={form.control}
+                                            name="ragSnRerankEndpoint"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t("globalSettings.rerankEndpoint")}</FormLabel>
+                                                    <FormDescription>
+                                                        {t("globalSettings.rerankEndpointDesc")}
+                                                    </FormDescription>
+                                                    <FormControl>
+                                                        <Input
+                                                            className="max-w-md font-mono text-sm"
+                                                            placeholder="http://localhost:8080/rerank"
+                                                            autoComplete="off"
+                                                            spellCheck={false}
+                                                            disabled={isLoading}
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                    {rerankStrategy === "COHERE" && (
+                                        <FormField
+                                            control={form.control}
+                                            name="ragSnRerankApiKey"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t("globalSettings.rerankApiKey")}</FormLabel>
+                                                    <FormDescription>
+                                                        {rerankApiKeySet
+                                                            ? t("globalSettings.rerankApiKeySetDesc")
+                                                            : t("globalSettings.rerankApiKeyDesc")}
+                                                    </FormDescription>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="password"
+                                                            className="max-w-md font-mono text-sm"
+                                                            placeholder={rerankApiKeySet ? "••••••••" : "co-..."}
+                                                            autoComplete="one-time-code"
+                                                            disabled={isLoading}
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                 </>
                             )}
                         </SectionCard.Content>

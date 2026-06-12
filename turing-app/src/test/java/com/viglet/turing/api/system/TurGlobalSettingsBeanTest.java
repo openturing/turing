@@ -33,7 +33,8 @@ class TurGlobalSettingsBeanTest {
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
                 false, null, null, null,
-                24);  // piiSlotTtlHours (T61)
+                24,  // piiSlotTtlHours (T61)
+                false, 20, null, null, null, null, false);  // rag SN rerank (T337–T339)
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
         assertThat(bean.getEmailProvider()).isEqualTo(TurEmailProviderType.BREVO);

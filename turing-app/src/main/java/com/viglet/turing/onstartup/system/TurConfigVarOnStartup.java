@@ -118,6 +118,19 @@ public class TurConfigVarOnStartup {
 	public static final String RAG_SN_RERANK_TOP_N = "GLOBAL_RAG_SN_RERANK_TOP_N";
 	public static final String RAG_SN_RERANK_TOP_N_DEFAULT_VALUE = "20";
 	/**
+	 * T337 — which reranker backend runs when {@link #RAG_SN_RERANK_ENABLED} is
+	 * on: {@code LLM} (legacy default) | {@code CROSS_ENCODER} | {@code COHERE}.
+	 * An unknown value falls back to {@code LLM}.
+	 */
+	public static final String RAG_SN_RERANK_STRATEGY = "GLOBAL_RAG_SN_RERANK_STRATEGY";
+	public static final String RAG_SN_RERANK_STRATEGY_DEFAULT_VALUE = "LLM";
+	/** T338 — self-hosted cross-encoder {@code /rerank} endpoint URL (CROSS_ENCODER). */
+	public static final String RAG_SN_RERANK_ENDPOINT = "GLOBAL_RAG_SN_RERANK_ENDPOINT";
+	/** T338 — rerank model name (cross-encoder / Cohere); blank uses the backend default. */
+	public static final String RAG_SN_RERANK_MODEL = "GLOBAL_RAG_SN_RERANK_MODEL";
+	/** T339 — Cohere API key, stored encrypted; required only for the COHERE strategy. */
+	public static final String RAG_SN_RERANK_API_KEY = "GLOBAL_RAG_SN_RERANK_API_KEY";
+	/**
 	 * T331 — opt-in generation of 2–3 grounded follow-up questions after each SN
 	 * AI-mode answer (rendered as clickable chips). Default off (one extra cheap
 	 * LLM call per turn).
@@ -180,6 +193,10 @@ public class TurConfigVarOnStartup {
 				RAG_SN_SIMILARITY_THRESHOLD_DEFAULT_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_TOP_N, GLOBAL_PATH, RAG_SN_RERANK_TOP_N_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_RERANK_STRATEGY, GLOBAL_PATH, RAG_SN_RERANK_STRATEGY_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_RERANK_ENDPOINT, GLOBAL_PATH, "");
+		ensureConfigVar(RAG_SN_RERANK_MODEL, GLOBAL_PATH, "");
+		ensureConfigVar(RAG_SN_RERANK_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_GROUNDEDNESS_CHECK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 	}

@@ -38,7 +38,7 @@ moved — verify against `git ls-files` before acting.
 - [XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform](#xiii-turing-as-an-mcp-server--let-claude-and-any-agent-drive-the-platform)
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
-- [XVII. Pluggable reranker — cross-encoder / managed (Block N)](#xvii-pluggable-reranker--cross-encoder--managed-block-n)
+- [XVIII. Pluggable reranker — follow-up (Block N)](#xviii-pluggable-reranker--follow-up-block-n)
 
 ---
 
@@ -2281,82 +2281,14 @@ Per-agent `monthlyBudgetUsd` / `perTurnSoftCapUsd`. On projected breach (rolling
 to a cheaper model tier for non-critical stages or surfaces a confirm gate — a
 generalization of T185 that works on the Spring AI path, not only the native one.
 
-## XVII. Pluggable reranker — cross-encoder / managed (Block N)
+## XVIII. Pluggable reranker — follow-up (Block N)
 
-The hybrid retriever (T24/T24b) fuses BM25 + vector hits via Reciprocal Rank
-Fusion (`TurRagRrf`, K=60), then an opt-in stage re-orders the survivors before
-stuffing. Today that stage is hard-wired to **LLM-as-reranker** (`TurRagReranker`,
-T328): one extra chat call per retrieval that asks the model to rank snippet
-numbers. It works and is fail-open, but it is the most expensive and least
-precise way to rerank — it pays chat-model latency + tokens on every RAG turn and
-inherits small-model fragility. The "rerank real" that Pillar 3 was missing is a
-**dedicated cross-encoder** (e.g. `BGE-reranker-v2-m3`) or a managed endpoint
-(Cohere Rerank): purpose-built relevance scorers that are cheaper, faster
-(sub-100ms self-hosted), and more accurate than borrowing a generative model.
+The pluggable reranker seam (strategy interface + factory + fail-open facade,
+the self-hosted cross-encoder, and managed Cohere) **shipped** as T337–T340 —
+see [CHANGELOG.md](CHANGELOG.md) → Block N and `git log`. Only the optional cache
+remains unshipped:
 
-The design makes the rerank stage a **selectable strategy**, mirroring the
-provider/plugin patterns already proven in the codebase (`TurGenAiLlmProvider…
-Factory`, `TurSearchEnginePlugin…Factory`): interface + implementations +
-factory + fail-open facade.
-
-**Binding constraint — opt-in, default = legacy.** A new Global Setting
-`GLOBAL_RAG_SN_RERANK_STRATEGY` defaults to `LLM`. Deployments with rerank already
-enabled keep the exact LLM behavior; deployments with rerank off stay off. The
-caller (`TurSNGenAi.retrieveDocuments`) and the existing `_ENABLED`/`_TOPN`
-settings are untouched, so no integration test needs revalidation. This is the
-project's standard way to ship a behavior change (per-entity/global flag, legacy
-default) rather than a global rewrite.
-
-### XVII.1 The seam — `TurRagRerankStrategy` + factory (T337)
-
-Under `genai/rag/rerank/`: a `TurRagRerankStrategy` interface (`getType()`,
-`rerank(TurRagRerankRequest)`), a `TurRagRerankStrategyType` enum (`LLM`,
-`CROSS_ENCODER`, `COHERE`), and a `TurRagRerankRequest` record carrying
-`(query, candidates, topK, chatModel?)`. The `chatModel` lives in the request —
-not the method signature — because only the `LLM` strategy needs it; the HTTP
-strategies ignore it. The existing parse-leniently logic moves verbatim into
-`TurLlmRerankStrategy`, so its behavior (and tests) are preserved.
-
-`TurRagReranker` is repurposed as the **fail-open facade**: it resolves the
-configured strategy via `TurRagRerankStrategyFactory`, delegates, and on *any*
-exception or empty result returns the retrieval-order top-k. Centralizing
-fail-open here means every strategy — present and future — inherits the "rerank
-can never make retrieval worse" guarantee for free. The factory falls back to
-`LLM` on an unknown enum value (same defensiveness as the `_TOPN` clamp).
-
-### XVII.2 Cross-encoder strategy — self-hosted (T338)
-
-`TurCrossEncoderRerankStrategy` calls a self-hosted `/rerank` endpoint over a
-shared `TurHttpRerankClient` (short timeout ~2s, no retry — the facade's
-fail-open is the safety net). The wire shape is the de-facto standard exposed by
-**Text Embeddings Inference / Infinity / Jina**: `POST {query, documents[]} →
-[{index, relevance_score}]`. Configured by `GLOBAL_RAG_SN_RERANK_ENDPOINT` +
-`GLOBAL_RAG_SN_RERANK_MODEL`. This is the recommended target when moving off
-`LLM`: local, $0, and fast enough to run on every turn.
-
-Deliberately **not** embedding an ONNX/DJL runtime in the JVM — that adds
-deployment weight and cold-start cost, and couples the reranker model lifecycle
-to the app. An HTTP boundary keeps the scorer independently scalable and lets the
-same code path serve both self-hosted and managed backends.
-
-### XVII.3 Cohere Rerank strategy — managed (T339)
-
-`TurCohereRerankStrategy` reuses `TurHttpRerankClient` against Cohere's
-`/v2/rerank` (`model=rerank-v3.5`). The API key is stored **encrypted** via
-`TurSecretCryptoService` (`GLOBAL_RAG_SN_RERANK_API_KEY`), decrypted at call time
-— the same secret-handling pattern as the LLM provider keys. For teams that don't
-want to operate a reranker, this is the zero-ops path.
-
-### XVII.4 Settings UI (T340)
-
-The Global Settings rerank section gains a strategy `Select`; when
-`CROSS_ENCODER`/`COHERE` is chosen, the endpoint/model/apiKey fields appear.
-`apiKey` is `readOnly` (write-only) — not `disabled` — so react-hook-form keeps it
-in the submit payload (a recurring project gotcha). Compound components are *not*
-used here (a flat settings form); they're reserved for the Pillar 1 RAG-pipeline
-builder.
-
-### XVII.5 Rerank-score cache — optional (T341)
+### XVIII.1 Rerank-score cache — optional (T341)
 
 A rerank score is deterministic per `(strategy, model, query, docHash)`, so a
 `@Cacheable("turRagRerankScore")` (paired with a `@CacheEvict` per the cache

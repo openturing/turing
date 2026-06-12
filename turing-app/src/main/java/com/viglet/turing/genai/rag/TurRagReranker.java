@@ -10,35 +10,39 @@
 package com.viglet.turing.genai.rag;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Component;
+
+import com.viglet.turing.genai.rag.rerank.TurRagRerankRequest;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategy;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyFactory;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
+import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * T328 / §XVII.4 — optional LLM-as-reranker for the SN RAG path.
+ * T328 / §XVII — optional reranker for the SN RAG path; the single fail-open
+ * boundary in front of the pluggable {@link TurRagRerankStrategy} backends
+ * (T337).
  *
  * <p>The hybrid retriever orders candidates by vector/BM25 score, which is a
  * coarse proxy for "answers the question". When the relevance gate alone is too
- * blunt, this stage re-orders the top-N candidates by asking a chat model which
- * chunks actually bear on the query, then keeps the top-k for stuffing — fewer,
- * higher-precision chunks in the prompt.
+ * blunt, this stage re-orders the top-N candidates and keeps the top-k for
+ * stuffing — fewer, higher-precision chunks in the prompt.
  *
- * <p><b>Provider-agnostic and fail-open.</b> Rather than risk the structured-
- * output fragility documented for small models, the model is asked for a plain
- * ranked list of chunk numbers; the response is parsed leniently (any integers,
- * in order). On <em>any</em> failure — empty/garbled response, exception, no
- * parseable indices — the original retrieval order's top-k is returned
- * unchanged, so enabling the reranker can never make retrieval worse than the
- * gate-only path.
+ * <p><b>Strategy-selectable (T337).</b> Which backend runs is resolved from
+ * Global Settings ({@code GLOBAL_RAG_SN_RERANK_STRATEGY}, default {@code LLM}):
+ * the legacy LLM-as-reranker, a self-hosted cross-encoder, or managed Cohere.
+ *
+ * <p><b>Fail-open, centrally.</b> On <em>any</em> failure — no chat model, a
+ * strategy exception, an empty/garbled response, fewer candidates than we'd keep
+ * anyway — the original retrieval order's top-k is returned unchanged, so
+ * enabling the reranker (with any strategy) can never make retrieval worse than
+ * the gate-only path. Every present and future strategy inherits this guarantee.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -47,17 +51,22 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurRagReranker {
 
-    /** Caps the chunk preview fed to the ranker so the prompt stays bounded. */
-    private static final int MAX_PREVIEW_CHARS = 600;
+    private final TurRagRerankStrategyFactory strategyFactory;
+    private final TurGlobalSettingsService globalSettingsService;
 
-    private static final Pattern INTEGER = Pattern.compile("\\d+");
+    public TurRagReranker(TurRagRerankStrategyFactory strategyFactory,
+            TurGlobalSettingsService globalSettingsService) {
+        this.strategyFactory = strategyFactory;
+        this.globalSettingsService = globalSettingsService;
+    }
 
     /**
      * Re-orders {@code candidates} by query relevance and returns the top
      * {@code topK}. Returns the input's first {@code topK} (retrieval order)
      * unchanged when reranking can't run or adds no signal.
      *
-     * @param chatModel  the model used to rank (typically the agent's chat model)
+     * @param chatModel  the model used by the LLM strategy; ignored by the HTTP
+     *                   strategies (may be {@code null} for those)
      * @param query      the user query the chunks should answer
      * @param candidates the retrieved candidate chunks, in retrieval order
      * @param topK       how many chunks to keep for stuffing
@@ -71,75 +80,25 @@ public class TurRagReranker {
                 ? new ArrayList<>(candidates.subList(0, topK))
                 : new ArrayList<>(candidates);
         // Nothing to re-order: fewer candidates than we'd keep anyway.
-        if (candidates.size() <= topK || chatModel == null
-                || query == null || query.isBlank()) {
+        if (candidates.size() <= topK || query == null || query.isBlank()) {
             return firstK;
         }
+        TurRagRerankStrategyType type = globalSettingsService.getRagSnRerankStrategy();
         try {
-            String answer = chatModel.call(new Prompt(buildPrompt(query, candidates)))
-                    .getResult().getOutput().getText();
-            List<Integer> order = parseRankedIndices(answer, candidates.size());
-            if (order.isEmpty()) {
-                log.debug("[RAG] reranker returned no parseable indices; keeping retrieval order");
+            TurRagRerankStrategy strategy = strategyFactory.resolve(type);
+            List<Document> reranked = strategy.rerank(
+                    new TurRagRerankRequest(query, candidates, topK, chatModel));
+            if (reranked == null || reranked.isEmpty()) {
                 return firstK;
             }
-            List<Document> reranked = new ArrayList<>(topK);
-            for (Integer idx : order) {
-                reranked.add(candidates.get(idx));
-                if (reranked.size() == topK) {
-                    break;
-                }
-            }
-            log.debug("[RAG] reranked {} candidate(s) → top {} (order={})",
-                    candidates.size(), reranked.size(), order);
-            return reranked;
+            // Defensive truncation: the facade owns the top-k contract.
+            return reranked.size() > topK
+                    ? new ArrayList<>(reranked.subList(0, topK))
+                    : reranked;
         } catch (RuntimeException e) {
-            log.warn("[RAG] reranker failed ({}); keeping retrieval order", e.getMessage());
+            log.warn("[RAG] reranker strategy {} failed ({}); keeping retrieval order",
+                    type, e.getMessage());
             return firstK;
         }
-    }
-
-    private static String buildPrompt(String query, List<Document> candidates) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("You are a search relevance ranker. Given a user question and a numbered list of ")
-                .append("document snippets, decide which snippets actually help answer the question.\n\n")
-                .append("Question: ").append(query).append("\n\nSnippets:\n");
-        for (int i = 0; i < candidates.size(); i++) {
-            sb.append('[').append(i + 1).append("] ").append(preview(candidates.get(i))).append('\n');
-        }
-        sb.append("\nReply with ONLY the snippet numbers most relevant to the question, ")
-                .append("most relevant first, separated by commas (e.g. \"3, 1, 5\"). ")
-                .append("Omit snippets that are off-topic. Do not explain.");
-        return sb.toString();
-    }
-
-    private static String preview(Document doc) {
-        String text = doc.getText() == null ? "" : doc.getText().strip().replaceAll("\\s+", " ");
-        return text.length() > MAX_PREVIEW_CHARS ? text.substring(0, MAX_PREVIEW_CHARS) + "…" : text;
-    }
-
-    /**
-     * Lenient parse: pulls every integer out of the model's reply, in order,
-     * keeps the ones that are valid 1-based snippet numbers, de-dupes, and
-     * converts to 0-based indices. Tolerates prose, fences, and stray text.
-     */
-    private static List<Integer> parseRankedIndices(String answer, int count) {
-        if (answer == null || answer.isBlank()) {
-            return List.of();
-        }
-        Set<Integer> seen = new LinkedHashSet<>();
-        Matcher m = INTEGER.matcher(answer);
-        while (m.find()) {
-            int oneBased;
-            try {
-                oneBased = Integer.parseInt(m.group());
-            } catch (NumberFormatException e) {
-                continue;
-            }
-            if (oneBased >= 1 && oneBased <= count) {
-                seen.add(oneBased - 1);
-            }
-        }
-        return new ArrayList<>(seen);
     }
 }

@@ -9,6 +9,13 @@ export type TurEmailProviderType = "BREVO";
  */
 export type TurCodeInterpreterExecutionMode = "NATIVE" | "DOCKER";
 
+/**
+ * T337 — SN RAG reranker backend. `LLM` borrows a chat model to rank snippet
+ * numbers (legacy default); `CROSS_ENCODER` calls a self-hosted `/rerank`
+ * endpoint; `COHERE` uses the managed Cohere Rerank API.
+ */
+export type TurRagRerankStrategy = "LLM" | "CROSS_ENCODER" | "COHERE";
+
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
   pythonExecutable?: string;
@@ -60,4 +67,21 @@ export interface TurGlobalSettings {
    * @since 2026.3.1
    */
   piiSlotTtlHours?: number;
+  /** T328 — whether the SN RAG reranker runs (default off). */
+  ragSnRerankEnabled?: boolean;
+  /** T328 — chunks kept after the reranker narrows the candidate pool. */
+  ragSnRerankTopN?: number;
+  /** T337 — reranker backend: `LLM` (default) | `CROSS_ENCODER` | `COHERE`. */
+  ragSnRerankStrategy?: TurRagRerankStrategy;
+  /** T338 — self-hosted cross-encoder `/rerank` endpoint URL. */
+  ragSnRerankEndpoint?: string;
+  /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
+  ragSnRerankModel?: string;
+  /**
+   * T339 — Cohere API key. Write-only: sent on update, never returned on read
+   * (always blank in GET). A blank value on save leaves the stored key intact.
+   */
+  ragSnRerankApiKey?: string;
+  /** T339 — read-only status: whether a Cohere API key is configured. */
+  ragSnRerankApiKeySet?: boolean;
 }

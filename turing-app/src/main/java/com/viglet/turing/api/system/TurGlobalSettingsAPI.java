@@ -58,6 +58,14 @@ public class TurGlobalSettingsAPI {
                 .defaultEmbeddingStoreId(turGlobalSettingsService.getDefaultEmbeddingStoreId())
                 .defaultAiAgentId(turGlobalSettingsService.getDefaultAiAgentId())
                 .piiSlotTtlHours(turGlobalSettingsService.getPiiSlotTtlHours())
+                .ragSnRerankEnabled(turGlobalSettingsService.isRagSnRerankEnabled())
+                .ragSnRerankTopN(turGlobalSettingsService.getRagSnRerankTopN())
+                .ragSnRerankStrategy(turGlobalSettingsService.getRagSnRerankStrategy())
+                .ragSnRerankEndpoint(turGlobalSettingsService.getRagSnRerankEndpoint())
+                .ragSnRerankModel(turGlobalSettingsService.getRagSnRerankModel())
+                // write-only secret: never echo the key, only its set/not-set status
+                .ragSnRerankApiKey("")
+                .ragSnRerankApiKeySet(turGlobalSettingsService.isRagSnRerankApiKeySet())
                 .build();
     }
 
@@ -105,7 +113,33 @@ public class TurGlobalSettingsAPI {
                         .updateDefaultAiAgentId(globalSettings.getDefaultAiAgentId()))
                 .piiSlotTtlHours(turGlobalSettingsService
                         .updatePiiSlotTtlHours(globalSettings.getPiiSlotTtlHours()))
+                .ragSnRerankEnabled(turGlobalSettingsService
+                        .updateRagSnRerankEnabled(globalSettings.isRagSnRerankEnabled()))
+                .ragSnRerankTopN(turGlobalSettingsService
+                        .updateRagSnRerankTopN(globalSettings.getRagSnRerankTopN()))
+                .ragSnRerankStrategy(turGlobalSettingsService
+                        .updateRagSnRerankStrategy(globalSettings.getRagSnRerankStrategy()))
+                .ragSnRerankEndpoint(turGlobalSettingsService
+                        .updateRagSnRerankEndpoint(globalSettings.getRagSnRerankEndpoint()))
+                .ragSnRerankModel(turGlobalSettingsService
+                        .updateRagSnRerankModel(globalSettings.getRagSnRerankModel()))
+                // Write-only secret — persisted only when a non-blank value
+                // arrives, blank leaves the stored key untouched, never echoed
+                .ragSnRerankApiKey("")
+                .ragSnRerankApiKeySet(updateRerankApiKeyIfPresent(globalSettings.getRagSnRerankApiKey()))
                 .build();
+    }
+
+    /**
+     * Persists the Cohere rerank API key only when the client sent a non-blank
+     * value (write-only field); a blank submit preserves the existing key.
+     * Returns the resulting configured status.
+     */
+    private boolean updateRerankApiKeyIfPresent(String apiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return turGlobalSettingsService.isRagSnRerankApiKeySet();
+        }
+        return turGlobalSettingsService.updateRagSnRerankApiKey(apiKey);
     }
 
     /**

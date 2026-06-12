@@ -4,16 +4,21 @@ import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
+import com.viglet.turing.system.security.TurSecretCryptoService;
 
 @Service
 public class TurGlobalSettingsService {
     private final TurConfigVarRepository turConfigVarRepository;
+    private final TurSecretCryptoService turSecretCryptoService;
 
-    public TurGlobalSettingsService(TurConfigVarRepository turConfigVarRepository) {
+    public TurGlobalSettingsService(TurConfigVarRepository turConfigVarRepository,
+            TurSecretCryptoService turSecretCryptoService) {
         this.turConfigVarRepository = turConfigVarRepository;
+        this.turSecretCryptoService = turSecretCryptoService;
     }
 
     public TurGlobalDecimalSeparator getDecimalSeparator() {
@@ -546,6 +551,112 @@ public class TurGlobalSettingsService {
         configVar.setValue(String.valueOf(value));
         turConfigVarRepository.save(configVar);
         return value;
+    }
+
+    /**
+     * T337 — which reranker backend runs. Unknown/blank values fall back to
+     * {@link TurRagRerankStrategyType#LLM} (legacy default), so a corrupt row
+     * can never break reranking.
+     */
+    public TurRagRerankStrategyType getRagSnRerankStrategy() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY)
+                .map(TurConfigVar::getValue)
+                .map(TurRagRerankStrategyType::fromValue)
+                .orElse(TurRagRerankStrategyType.LLM);
+    }
+
+    public TurRagRerankStrategyType updateRagSnRerankStrategy(TurRagRerankStrategyType strategy) {
+        TurRagRerankStrategyType value = strategy == null ? TurRagRerankStrategyType.LLM : strategy;
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value.name());
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    /** T338 — self-hosted cross-encoder {@code /rerank} endpoint URL. */
+    public String getRagSnRerankEndpoint() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateRagSnRerankEndpoint(String endpoint) {
+        String value = endpoint == null ? "" : endpoint.trim();
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
+    public String getRagSnRerankModel() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateRagSnRerankModel(String model) {
+        String value = model == null ? "" : model.trim();
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    /**
+     * T339 — the decrypted Cohere API key, or {@code ""} when unset. Stored
+     * encrypted at rest via {@link TurSecretCryptoService}; never echoed back to
+     * the client (the API exposes only a "configured" boolean).
+     */
+    public String getRagSnRerankApiKey() {
+        String stored = turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+        if (stored.isBlank()) {
+            return "";
+        }
+        String decrypted = turSecretCryptoService.decrypt(stored);
+        return decrypted == null ? "" : decrypted;
+    }
+
+    /** T339 — whether a Cohere API key is configured (for the write-only UI status). */
+    public boolean isRagSnRerankApiKeySet() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
+                .map(TurConfigVar::getValue)
+                .filter(v -> !v.isBlank())
+                .isPresent();
+    }
+
+    /**
+     * T339 — sets the Cohere API key (encrypted at rest). A {@code null}/blank
+     * value clears it. Returns the resulting "configured" status, never the key.
+     */
+    public boolean updateRagSnRerankApiKey(String apiKey) {
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        if (apiKey == null || apiKey.isBlank()) {
+            configVar.setValue("");
+            turConfigVarRepository.save(configVar);
+            return false;
+        }
+        configVar.setValue(turSecretCryptoService.encrypt(apiKey.trim()));
+        turConfigVarRepository.save(configVar);
+        return true;
     }
 
     /** T331 — whether grounded follow-up questions are generated for SN answers. */
