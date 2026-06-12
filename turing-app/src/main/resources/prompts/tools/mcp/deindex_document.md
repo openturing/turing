@@ -1,0 +1,1 @@
+Remove a single document from a site index by its id. WRITE tool — requires the mcp:write scope and operator opt-in (turing.mcp-server.write-enabled). Parameters: site (from list_sites), locale (defaults to the site default), and documentId. The deletion is queued asynchronously.

@@ -44,9 +44,10 @@ public class TurMcpToolScopePolicy {
 
     /**
      * Names of MCP tools that mutate state and therefore require the write
-     * scope. Empty until T253 ships {@code index_document} / {@code reindex_site}.
+     * scope (T253 ingestion tools).
      */
-    static final Set<String> DEFAULT_WRITE_TOOLS = Set.of();
+    static final Set<String> DEFAULT_WRITE_TOOLS = Set.of(
+            "index_document", "deindex_document", "reindex_site");
 
     private final TurConfigProperties configProperties;
     private final Set<String> writeTools;

@@ -73,10 +73,22 @@ public class TurMcpServerConfig {
             TurMcpRagToolService ragToolService,
             TurMcpAgentToolService agentToolService,
             TurMcpAnalyticsToolService analyticsToolService,
+            TurMcpWriteToolService writeToolService,
             TurToolCallbackPipeline toolCallbackPipeline,
-            TurMcpToolScopePolicy toolScopePolicy) {
+            TurMcpToolScopePolicy toolScopePolicy,
+            TurConfigProperties configProperties) {
+        // Read tools are always published; the T253 write/ingestion tools are
+        // added ONLY when the operator opts in (and still require the write
+        // scope per call via TurMcpToolScopePolicy).
+        java.util.List<Object> toolObjects = new java.util.ArrayList<>(
+                java.util.List.of(searchToolService, ragToolService, agentToolService, analyticsToolService));
+        if (configProperties.getMcpServer().isWriteEnabled()) {
+            toolObjects.add(writeToolService);
+            log.info("[MCP] Write/ingestion tools ENABLED (require the {} scope)",
+                    configProperties.getMcpServer().getWriteScope());
+        }
         ToolCallback[] raw = MethodToolCallbackProvider.builder()
-                .toolObjects(searchToolService, ragToolService, agentToolService, analyticsToolService)
+                .toolObjects(toolObjects.toArray())
                 .build()
                 .getToolCallbacks();
         ToolCallback[] decorated = toolCallbackPipeline.decorate(raw);

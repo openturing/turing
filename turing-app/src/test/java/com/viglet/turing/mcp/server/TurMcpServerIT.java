@@ -95,6 +95,12 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
                 () -> "expected top_failed_searches in MCP catalog, got " + names);
         assertTrue(names.contains("content_gaps"),
                 () -> "expected content_gaps in MCP catalog, got " + names);
+        // T253 — write tools are gated off by default (turing.mcp-server.write-enabled=false),
+        // so they must NOT appear on the read-only surface this IT boots.
+        assertFalse(names.contains("index_document"),
+                () -> "write tool index_document must be hidden when write-enabled=false, got " + names);
+        assertFalse(names.contains("reindex_site"),
+                () -> "write tool reindex_site must be hidden when write-enabled=false, got " + names);
     }
 
     @Test

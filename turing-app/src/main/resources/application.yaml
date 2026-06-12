@@ -23,6 +23,10 @@ turing:
     # the token's authorities. Default false keeps the T245 loopback-only dev
     # posture. A remote deployment sets require-auth=true + loopback-only=false.
     require-auth: false
+    # T253 — gated write/ingestion tools (index_document, deindex_document,
+    # reindex_site). Default false: they are not even registered. When true they
+    # appear but still require the mcp:write scope per call. Read-only by default.
+    write-enabled: false
   keycloak: false
   keycloak-admin-id:
   authentication:

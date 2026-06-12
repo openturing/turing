@@ -65,4 +65,15 @@ public class TurMcpServerProperty {
      * the {@code mcp:write} scope.
      */
     private String writeScope = "SCOPE_mcp:write";
+
+    /**
+     * T253 — master switch for the gated write/ingestion MCP tools
+     * ({@code index_document}, {@code deindex_document}, {@code reindex_site}).
+     * Default {@code false}: the write tools are not even registered in the MCP
+     * catalog, so a read-only deployment never exposes them. When {@code true}
+     * they appear but still require the {@link #writeScope} authority per call
+     * (enforced by {@code TurMcpToolScopePolicy}) — defense in depth: opt-in
+     * <em>and</em> scoped.
+     */
+    private boolean writeEnabled = false;
 }

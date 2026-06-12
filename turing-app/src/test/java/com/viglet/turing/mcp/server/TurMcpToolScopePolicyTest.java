@@ -79,4 +79,14 @@ class TurMcpToolScopePolicyTest {
         TurMcpToolScopePolicy policy = new TurMcpToolScopePolicy(props(true), Set.of(WRITE_TOOL));
         assertFalse(policy.isWriteTool(READ_TOOL));
     }
+
+    @Test
+    void defaultWriteToolSet_classifiesIngestionTools() {
+        // The production default set (T253) treats the ingestion tools as writes.
+        TurMcpToolScopePolicy policy = new TurMcpToolScopePolicy(props(true));
+        assertTrue(policy.isWriteTool("index_document"));
+        assertTrue(policy.isWriteTool("deindex_document"));
+        assertTrue(policy.isWriteTool("reindex_site"));
+        assertFalse(policy.isWriteTool("search_site"));
+    }
 }
