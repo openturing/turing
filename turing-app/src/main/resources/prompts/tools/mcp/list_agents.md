@@ -1,0 +1,1 @@
+List the configured AI Agents (guided chat-flows) available on this Turing server that you can run headlessly with invoke_agent. Returns each agent id, name, and description. An agent encapsulates a persona, an LLM, tools, and an optional multi-step flow (e.g. lead capture, triage, FAQ). Call this to discover which agent to invoke.

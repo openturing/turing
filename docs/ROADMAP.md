@@ -203,8 +203,7 @@
 
 ## Block I — Turing as an MCP Server (T245–T256)
 
-- 📋 **T249** (deps: T246 ✅) **`invoke_agent` + `list_agents`** — run a configured AI Agent / chat-flow headlessly over MCP (returns final answer + captured slots), reusing `TurAgentChatExecutor`. → §XIII.3
-- 📋 **T250** (deps: T247) **MCP Resources** — expose indexed documents + site schemas as browsable MCP resources (`turing://site/{id}/doc/{docId}`), so clients can read/attach content directly, not only search it. → §XIII.3
+- 📋 **T250** (deps: T247 ✅) **MCP Resources** — expose indexed documents + site schemas as browsable MCP resources (`turing://site/{id}/doc/{docId}`), so clients can read/attach content directly, not only search it. → §XIII.3
 - 📋 **T251** (deps: T245) **MCP Prompts** — publish personas + system-prompt fragments as reusable MCP prompts, so a client can adopt the customer's brand voice with one prompt pick. → §XIII.3
 - 📋 **T252** (deps: T247) **Analytics tools** — `top_failed_searches`, `search_metrics`, `content_gaps`. → §XIII.4
 - 💭 **T253** (deps: T246) **Gated write / ingestion tools** — `index_document`, `deindex_document`, `reindex_site`. → §XIII.3
