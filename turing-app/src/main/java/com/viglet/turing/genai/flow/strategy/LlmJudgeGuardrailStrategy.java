@@ -158,7 +158,7 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         // The retry block above only fires for messages ≥
         // {@link #RETRY_MIN_USER_MESSAGE_LENGTH} chars (designed for natural-
         // language flakes, not short alphanumeric replies). When the judge
-        // rejects a SHORT reply — coupon codes ("INSPER10"), short answers
+        // rejects a SHORT reply — coupon codes ("ACME10"), short answers
         // ("CFO"), yes/no flavors — the retry never runs, and the soft-fail
         // policy never gets a chance to force-capture from inside that block.
         //

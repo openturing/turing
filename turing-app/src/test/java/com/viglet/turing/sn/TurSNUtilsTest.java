@@ -542,7 +542,7 @@ class TurSNUtilsTest {
     @Test
     void requestToURIShouldNotDoubleEncodePctEncodedFqBrackets() {
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&p=1&_setlocale=pt&sort=relevance"
                         + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
                         + "&rows=9");
@@ -558,7 +558,7 @@ class TurSNUtilsTest {
     @Test
     void requestToURIShouldNotDoubleEncodeMultipleEncodedFqParams() {
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&p=1&_setlocale=pt&sort=relevance"
                         + "&fq%5B%5D=templateName%3Acursos"
                         + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
@@ -578,7 +578,7 @@ class TurSNUtilsTest {
     void requestToURIShouldHandleLiteralFqBrackets() {
         // baseline: the "URL 1" case from the bug report (literal `[]`)
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&fq[]=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
 
         URI uri = TurSNUtils.requestToURI(request);
@@ -593,7 +593,7 @@ class TurSNUtilsTest {
 
     /**
      * End-to-end reproduction of the {@code cleanUpLink} bug observed at
-     * insper-stage-publish: feeding an incoming request whose query string
+     * acme-stage-publish: feeding an incoming request whose query string
      * uses {@code fq%5B%5D=area-de-conhecimento%3A...}, calling
      * {@link TurSNUtils#removeFilterQueryByFieldName(URI, String)} on the
      * URI returned by {@link TurSNUtils#requestToURI} must actually strip
@@ -610,7 +610,7 @@ class TurSNUtilsTest {
     @Test
     void cleanUpLinkScenarioShouldStripEncodedFqFromRequestUri() {
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&p=1&_setlocale=pt&sort=relevance"
                         + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
                         + "&rows=9");
@@ -629,7 +629,7 @@ class TurSNUtilsTest {
     @Test
     void cleanUpFacetsScenarioShouldStripAllEncodedFqsFromRequestUri() {
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&p=1&_setlocale=pt&sort=relevance"
                         + "&fq%5B%5D=templateName%3Acursos"
                         + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
@@ -653,7 +653,7 @@ class TurSNUtilsTest {
         // user has 2 facets active; cleanUpLink for "area-de-conhecimento"
         // must keep templateName but remove area-de-conhecimento.
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&fq%5B%5D=templateName%3Acursos"
                         + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
 
@@ -668,7 +668,7 @@ class TurSNUtilsTest {
     @Test
     void filterQueryByFieldNameShouldFindEncodedFqFromRequestUri() {
         MockHttpServletRequest request = newGetRequest(
-                "/api/sn/insper-stage-publish/search",
+                "/api/sn/acme-stage-publish/search",
                 "q=*&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
 
         URI uri = TurSNUtils.requestToURI(request);

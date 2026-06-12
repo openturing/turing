@@ -137,7 +137,7 @@ PALETTES = {
     "tecnologia":  {"primary": HexColor("#5B21B6"), "accent": HexColor("#8B5CF6"), "soft": HexColor("#EDE9FE"), "label": "Tecnologia & Dados"},
 }
 P = PALETTES.get(AREA_KEY, PALETTES["financas"])
-INSPER_RED = HexColor("#C8102E")
+BRAND_RED = HexColor("#C8102E")
 
 # ─── Custom flowables ────────────────────────────────────────────────
 class CareerTimeline(Flowable):
@@ -209,7 +209,7 @@ def cover_decorations(canvas, doc):
     canvas.setFillColor(P["primary"])
     canvas.rect(0, PAGE_H - 4*cm, PAGE_W, 4*cm, stroke=0, fill=1)
     # accent strip
-    canvas.setFillColor(INSPER_RED)
+    canvas.setFillColor(BRAND_RED)
     canvas.rect(0, PAGE_H - 4.25*cm, PAGE_W, 0.25*cm, stroke=0, fill=1)
     # Brand line at footer
     canvas.setFillColor(P["primary"])
@@ -354,7 +354,7 @@ if PROGRAMS:
         if len(why) > 280: why = why[:277] + "..."
         header_text = "<b><font color='%s' size='12'>%s</font></b>" % (name_color.hexval(), prog.get("name", "-"))
         if tag:
-            header_text += "<br/><font color='%s' size='8'><b>%s</b></font>" % (INSPER_RED.hexval(), tag.upper())
+            header_text += "<br/><font color='%s' size='8'><b>%s</b></font>" % (BRAND_RED.hexval(), tag.upper())
         meta_text = "<b>Duração:</b> %s &nbsp;·&nbsp; <b>Formato:</b> %s &nbsp;·&nbsp; <b>A partir de:</b> %s" % (
             prog.get("duration", "-"), prog.get("format", "-"), prog.get("priceFrom", "-"))
         card = Table([

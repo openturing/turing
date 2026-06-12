@@ -77,7 +77,7 @@
       },
       {
         "name": "coupon_code",
-        "description": "Código de cupom institucional opcional digitado pelo comprador (INSPER10, EARLYBIRD25). A tool valida contra um registry hardcoded e aplica desconto multiplicativo on-top do volume tier. Valores ignorados: vazio, '—', 'nenhum', 'pular', 'skip', 'não', 'n/a' — todos viram no-op sem erro. Códigos não reconhecidos viram coupon_invalid=true e o portal mostra hint pro comprador retentar.",
+        "description": "Código de cupom institucional opcional digitado pelo comprador (ACME10, EARLYBIRD25). A tool valida contra um registry hardcoded e aplica desconto multiplicativo on-top do volume tier. Valores ignorados: vazio, '—', 'nenhum', 'pular', 'skip', 'não', 'n/a' — todos viram no-op sem erro. Códigos não reconhecidos viram coupon_invalid=true e o portal mostra hint pro comprador retentar.",
         "type": "STRING"
       },
       {
@@ -92,7 +92,7 @@
       },
       {
         "name": "coupon_label",
-        "description": "Label humano do cupom aplicado ('Cupom institucional INSPER10'). Vazio quando sem cupom. Usado pelo dashboard de analytics + Camila no closing.",
+        "description": "Label humano do cupom aplicado ('Cupom institucional ACME10'). Vazio quando sem cupom. Usado pelo dashboard de analytics + Camila no closing.",
         "type": "STRING"
       },
       {
@@ -360,7 +360,7 @@
           "data": {
             "label": "CUPOM? (sim/não)",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte de forma CURTA e NEUTRA se há cupom institucional: 'Antes de fechar a proposta — você tem algum cupom institucional?'. NÃO liste valores de cupom (INSPER10/EARLYBIRD25 ficam reservados para quem já recebeu). Este nó captura APENAS a INTENÇÃO (sim/não) — o código real é pedido no próximo turno. Se o comprador disser 'qual cupom?' ou 'tem desconto?', responda neutramente: 'É opcional — alguns parceiros e ex-alunos têm um código institucional. Se não tiver, pulamos.'. NUNCA prometa um desconto não-aplicado. UMA frase.",
+            "aiInstruction": "Pergunte de forma CURTA e NEUTRA se há cupom institucional: 'Antes de fechar a proposta — você tem algum cupom institucional?'. NÃO liste valores de cupom (ACME10/EARLYBIRD25 ficam reservados para quem já recebeu). Este nó captura APENAS a INTENÇÃO (sim/não) — o código real é pedido no próximo turno. Se o comprador disser 'qual cupom?' ou 'tem desconto?', responda neutramente: 'É opcional — alguns parceiros e ex-alunos têm um código institucional. Se não tiver, pulamos.'. NUNCA prometa um desconto não-aplicado. UMA frase.",
             "outputVariable": "coupon_intent",
             "inlineOptions": [
               "🎟 Tenho um cupom",
@@ -402,7 +402,7 @@
           "data": {
             "label": "DIGITE O CÓDIGO",
             "type": "aiQuestion",
-            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. SEM chips: o comprador precisa digitar o código alfanumérico (ex.: INSPER10, EARLYBIRD25). Capture EXATAMENTE como veio — a tool depois normaliza case e espaços. Se o comprador disser que não lembra ou desistir ('na verdade não tenho', 'pula', 'esquece'), capture COMO ESTÁ — a tool reconhece esses sentinelas e segue sem cupom. NUNCA confirme se o código existe (a tool valida) — apenas registre. UMA frase, sem promessas.",
+            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. SEM chips: o comprador precisa digitar o código alfanumérico (ex.: ACME10, EARLYBIRD25). Capture EXATAMENTE como veio — a tool depois normaliza case e espaços. Se o comprador disser que não lembra ou desistir ('na verdade não tenho', 'pula', 'esquece'), capture COMO ESTÁ — a tool reconhece esses sentinelas e segue sem cupom. NUNCA confirme se o código existe (a tool valida) — apenas registre. UMA frase, sem promessas.",
             "outputVariable": "coupon_code",
             "onJudgeReject": "advance_with_literal"
           }

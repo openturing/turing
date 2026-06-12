@@ -12,7 +12,10 @@ package com.viglet.turing.customers.education.aula;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,58 +23,144 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sun.net.httpserver.HttpServer;
 
 /**
- * Smoke test for the Insper DSpace REST API consumed by the
- * {@code aula_relampago} Custom Tool. Verifies that the shape of the
- * response is still compatible with the extraction logic
+ * Contract test for the DSpace REST API consumed by the
+ * {@code aula_relampago} Custom Tool. Verifies that the extraction logic
  * ({@code dc.title}, {@code dc.contributor.author}, {@code dc.date.issued},
- * {@code dc.description.abstract}, {@code uuid}, {@code handle}) AND that
- * the progressive fallback (exact phrase → first 2 tokens → bag-of-words
- * OR) actually yields references for the typical lesson terms.
+ * {@code dc.description.abstract}, {@code uuid}, {@code handle}) AND the
+ * progressive fallback (exact phrase → first 2 tokens → bag-of-words OR)
+ * behave as the tool expects against a DSpace-shaped response.
  *
- * <p>NOT part of the default CI run: requires network reachability to
- * {@code repositorio-api.insper.edu.br}. Tag {@code dspace-smoke} so it
- * can be invoked explicitly:
- *
- * <pre>{@code
- *   mvn -pl turing-app -Dgroups=dspace-smoke -Dtest=AulaRelampagoDspaceIT test
- * }</pre>
- *
- * <p>Tests intentionally degrade gracefully: when a term truly has zero
- * coverage in the acervo even after fallback (rare for general topics,
- * common for very niche terms), the test logs the gap and skips assertion
- * rather than failing — the goal is to detect ENGINE / API regressions,
- * not to enforce content coverage. A genuine regression looks like
- * "every term returns malformed metadata" or "the response shape
- * changed", which the structural assertions catch independently.
+ * <p><strong>Hermetic</strong>: this test no longer reaches out to any live
+ * acervo. A tiny in-process {@link HttpServer} serves canned
+ * {@code _embedded.searchResult} envelopes and mirrors the relevant DSpace
+ * search semantics — namely, a long multi-word exact phrase yields zero hits
+ * while a ≤2-token query (or an OR bag-of-words) yields hits. That is exactly
+ * what drives the tool's fallback chain, so the test can assert the chain
+ * recovers without depending on network reachability or external content
+ * coverage. If DSpace ever changes the response envelope, update the mock
+ * builder here and the tool's JsonPath together.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.x
  */
-@Tag("dspace-smoke")
 class AulaRelampagoDspaceIT {
 
-    private static final String DSPACE_API =
-            "https://repositorio-api.insper.edu.br/server/api/discover/search/objects";
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
+
+    /** Path the real DSpace exposes; the mock answers it too so URLs stay realistic. */
+    private static final String SEARCH_PATH = "/server/api/discover/search/objects";
+
+    private static HttpServer server;
+    /** Base URL of the in-process mock, set once the server is bound. */
+    private static String dspaceApi;
+
+    @BeforeAll
+    static void startMockDspace() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext(SEARCH_PATH, exchange -> {
+            String rawQuery = exchange.getRequestURI().getRawQuery();
+            String query = extractQueryParam(rawQuery);
+            byte[] body = buildResponse(query).getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+        server.start();
+        int port = server.getAddress().getPort();
+        dspaceApi = "http://localhost:" + port + SEARCH_PATH;
+    }
+
+    @AfterAll
+    static void stopMockDspace() {
+        if (server != null) {
+            server.stop(0);
+        }
+    }
+
+    // ─── Mock DSpace semantics ───────────────────────────────────────
+
+    private static String extractQueryParam(String rawQuery) {
+        if (rawQuery == null) {
+            return "";
+        }
+        for (String pair : rawQuery.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0 && "query".equals(pair.substring(0, eq))) {
+                return URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Reproduces just enough of DSpace's relevance behavior for the fallback
+     * chain: a long exact phrase (≥3 whitespace tokens, no quotes) returns
+     * zero hits; a short query (≤2 tokens) or a quoted OR bag returns hits.
+     */
+    private static String buildResponse(String query) {
+        int tokenCount = query.isBlank() ? 0 : query.trim().split("\\s+").length;
+        boolean quotedOr = query.contains("\"");
+        int hits = (quotedOr || tokenCount <= 2) ? 3 : 0;
+
+        ObjectNode root = MAPPER.createObjectNode();
+        ObjectNode searchResult = root.putObject("_embedded").putObject("searchResult");
+        ArrayNode objects = searchResult.putObject("_embedded").putArray("objects");
+        for (int i = 0; i < hits; i++) {
+            objects.add(buildHit(query, i));
+        }
+        ObjectNode page = searchResult.putObject("page");
+        page.put("number", 0);
+        page.put("size", 8);
+        page.put("totalElements", hits);
+        page.put("totalPages", hits == 0 ? 0 : 1);
+        return root.toString();
+    }
+
+    private static ObjectNode buildHit(String query, int i) {
+        ObjectNode hit = MAPPER.createObjectNode();
+        ObjectNode item = hit.putObject("_embedded").putObject("indexableObject");
+        item.put("uuid", "uuid-" + Math.abs(query.hashCode()) + "-" + i);
+        item.put("handle", "123456789/" + (1000 + i));
+        item.put("name", "Estudo sobre " + query + " #" + (i + 1));
+        ObjectNode metadata = item.putObject("metadata");
+        putMeta(metadata, "dc.title", "Estudo sobre " + query + " #" + (i + 1));
+        putMeta(metadata, "dc.contributor.author", "Autor " + (i + 1));
+        putMeta(metadata, "dc.date.issued", String.valueOf(2020 + i));
+        putMeta(metadata, "dc.description.abstract",
+                "Resumo acadêmico abordando " + query + " no contexto do acervo.");
+        return hit;
+    }
+
+    /** DSpace stores each metadata field as an array of {@code {value, language, ...}}. */
+    private static void putMeta(ObjectNode metadata, String key, String value) {
+        ObjectNode entry = MAPPER.createObjectNode();
+        entry.put("value", value);
+        entry.putNull("language");
+        entry.put("place", 0);
+        metadata.putArray(key).add(entry);
+    }
 
     // ─── Structural compatibility ────────────────────────────────────
 
@@ -136,19 +225,6 @@ class AulaRelampagoDspaceIT {
 
     // ─── Coverage smoke tests for the lesson chip terms ──────────────
 
-    /**
-     * The 4 starter chips in {@code ai-pick-term}'s {@code inlineOptions}.
-     * If ANY of these can't yield references after fallback, the corresponding
-     * aula will fall back to "explique sem fontes", which degrades the demo.
-     */
-    static Stream<String> starterChipTerms() {
-        return Stream.of(
-                "Real Options",
-                "Liderança Servidora",
-                "Lean Six Sigma",
-                "Machine Learning aplicado a saúde");
-    }
-
     @ParameterizedTest(name = "Starter chip ''{0}'' yields ≥1 reference (with fallback)")
     @ValueSource(strings = {
             "Real Options",
@@ -165,9 +241,7 @@ class AulaRelampagoDspaceIT {
                 term, r.totalHits(), r.path());
         assertThat(r.totalHits())
                 .as("Term '%s' returned 0 hits even after progressive fallback. "
-                        + "Either the acervo has no coverage on this topic (rare for the "
-                        + "4 starter terms — consider replacing the chip) OR the fallback "
-                        + "logic regressed.", term)
+                        + "The fallback logic regressed (exact → 2-token → OR bag).", term)
                 .isGreaterThan(0);
 
         // Sanity-check the data is useful for the UI: at least one hit should
@@ -188,17 +262,14 @@ class AulaRelampagoDspaceIT {
     @Test
     @DisplayName("Exact phrase '<term>' returns 0 hits → 2-token fallback should recover")
     void longPhrase_zeroHits_recoversWithTwoTokenFallback() throws Exception {
-        // Reproduces the production bug found in turing.log: 4 words long
+        // Reproduces the production bug found in turing.log: 4+ words long
         // term with low DSpace coverage. Asserts the fallback recovers.
         String term = "Machine Learning aplicado a saúde";
         FallbackResult phrase = searchOnce(term);
-        // We expect this to return 0 (the bug we shipped a fix for). If the
-        // acervo gets new content matching the phrase, this assertion may
-        // flip — and that's fine, just remove the assertion when it does.
-        if (phrase.totalHits() > 0) {
-            System.out.printf("PHRASE-NO-LONGER-ZERO: '%s' now has %d hits — "
-                    + "consider this assertion superseded.%n", term, phrase.totalHits());
-        }
+        assertThat(phrase.totalHits())
+                .as("Long exact phrase '%s' is expected to return 0 hits (the case the "
+                        + "fallback exists to handle)", term)
+                .isZero();
         FallbackResult viaFallback = searchWithFallback(term);
         assertThat(viaFallback.totalHits())
                 .as("Progressive fallback (2-token → OR) must recover at least 1 "
@@ -250,7 +321,7 @@ class AulaRelampagoDspaceIT {
     }
 
     private JsonNode search(String query) throws IOException, InterruptedException {
-        String url = DSPACE_API
+        String url = dspaceApi
                 + "?query=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
                 + "&page=0&size=8";
         HttpRequest req = HttpRequest.newBuilder()
@@ -286,15 +357,5 @@ class AulaRelampagoDspaceIT {
         return Optional.ofNullable(list.get(0).path("value").asText(""))
                 .map(String::trim)
                 .orElse("");
-    }
-
-    @SuppressWarnings("unused") // kept for debug printing during development
-    private static void printAllMetadataKeys(JsonNode item) {
-        JsonNode md = item.path("metadata");
-        if (md.isObject()) {
-            for (Iterator<Map.Entry<String, JsonNode>> it = md.fields(); it.hasNext(); ) {
-                System.out.println("  " + it.next().getKey());
-            }
-        }
     }
 }

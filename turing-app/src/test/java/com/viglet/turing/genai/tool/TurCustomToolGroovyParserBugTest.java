@@ -106,7 +106,7 @@ class TurCustomToolGroovyParserBugTest {
         // Hypothesis 1: bug is INSIDE the B2B heredoc body (lines 471-828).
         // If we empty it and the parse passes, hypothesis confirmed.
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String src = java.nio.file.Files.readString(file);
@@ -133,7 +133,7 @@ class TurCustomToolGroovyParserBugTest {
         // The B2C heredoc was untouched but maybe contains a char that
         // throws the lexer's quote-pairing logic.
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String src = java.nio.file.Files.readString(file);
@@ -161,7 +161,7 @@ class TurCustomToolGroovyParserBugTest {
         // re-parse, and see if the parse succeeds. The first N that "fixes"
         // the parse is the offender.
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String src = java.nio.file.Files.readString(file);
@@ -419,7 +419,7 @@ class TurCustomToolGroovyParserBugTest {
     @DisplayName("FIX in action: production file with \\U → \\\\U pre-processing parses")
     void productionFile_withFix_parses() throws Exception {
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String src = java.nio.file.Files.readString(file);
@@ -455,7 +455,7 @@ class TurCustomToolGroovyParserBugTest {
     @DisplayName("backend sanitizer: applied to production file makes it parse")
     void sanitizer_endToEndOnProductionFile() throws Exception {
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String raw = java.nio.file.Files.readString(file);
@@ -481,7 +481,7 @@ class TurCustomToolGroovyParserBugTest {
         // and location. If a future Groovy upgrade fixes \U inside heredocs,
         // this test flips green and tells us we can drop the sanitizer.
         java.nio.file.Path file = java.nio.file.Paths.get(
-                "D:", "Git", "insper", "turing-insper",
+                "D:", "Git", "customer-portal",
                 "ai-agent", "tools", "gerar-proposta-pdf.groovy");
         if (!java.nio.file.Files.exists(file)) return;
         String src = java.nio.file.Files.readString(file);
