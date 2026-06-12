@@ -22,6 +22,16 @@
     "removeFile": "Remover {{name}}",
     "copyToClipboard": "Copiar para a área de transferência",
     "you": "Você",
+    "sources": {
+      "heading": "Fontes",
+      "why": "Por que você disse isso?",
+      "open": "Abrir fonte",
+      "passage": "Trecho",
+      "keywordOnly": "correspondência por palavra-chave",
+      "confidenceHigh": "Alta confiança",
+      "confidenceMedium": "Confiança média",
+      "confidenceLow": "Baixa confiança"
+    },
     "selectModelToStart": "Selecione um modelo para começar...",
     "selectModelToChat": "Selecione um modelo de linguagem para começar a conversar.",
     "selectModelToExplore": "Selecione um modelo de linguagem para começar a explorar.",

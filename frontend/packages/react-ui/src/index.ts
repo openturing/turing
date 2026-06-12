@@ -70,6 +70,16 @@ export type {
   TuringChatMessageClassNames,
 } from "./TuringChatMessage";
 
+export { TuringSourceChips } from "./TuringSourceChips";
+export type {
+  TuringSourceChipsProps,
+  TuringSourceChipsClassNames,
+  TuringSourceChipsLabels,
+  TuringSourceChipsIcons,
+  TuringRagSource,
+  TuringSourceConfidence,
+} from "./TuringSourceChips";
+
 // Design-less search primitives migrated from `@viglet/turing-react-sdk` (T306).
 // Pure renderers (props + render-props, no hook/API coupling); their structural
 // data types are redeclared locally to keep this package zero-runtime-dep.

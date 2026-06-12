@@ -54,6 +54,11 @@
       "import": "./dist/TuringChatMessage.js",
       "default": "./dist/TuringChatMessage.js"
     },
+    "./TuringSourceChips": {
+      "types": "./dist/TuringSourceChips.d.ts",
+      "import": "./dist/TuringSourceChips.js",
+      "default": "./dist/TuringSourceChips.js"
+    },
     "./TuringSearchBar": {
       "types": "./dist/TuringSearchBar.d.ts",
       "import": "./dist/TuringSearchBar.js",
@@ -141,9 +146,9 @@
   },
   "sizeBudget": {
     "strict": true,
-    "total": 20800,
+    "total": 23000,
     "entries": {
-      "index.js": 1350,
+      "index.js": 1450,
       "tokens.js": 1100,
       "TuringHtmlSandbox.js": 3200,
       "TuringD2Diagram.js": 2400,
@@ -151,6 +156,7 @@
       "TuringRichContent.js": 2100,
       "TuringCopyButton.js": 1800,
       "TuringChatMessage.js": 1700,
+      "TuringSourceChips.js": 2300,
       "TuringCodeBlock.js": 1500,
       "TuringThinkingDots.js": 1200,
       "TuringSearchBar.js": 900,

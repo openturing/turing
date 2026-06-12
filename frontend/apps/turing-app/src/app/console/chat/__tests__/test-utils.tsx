@@ -7,7 +7,7 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model";
 
 /** One SSE `data:` event as emitted by the Turing chat backend. */
 export interface SseEvent {
-  type?: "token" | "options";
+  type?: "token" | "options" | "form" | "sources";
   content: string;
 }
 

@@ -22,6 +22,16 @@
     "removeFile": "Remove {{name}}",
     "copyToClipboard": "Copy to clipboard",
     "you": "You",
+    "sources": {
+      "heading": "Sources",
+      "why": "Why did you say this?",
+      "open": "Open source",
+      "passage": "Passage",
+      "keywordOnly": "keyword match",
+      "confidenceHigh": "High confidence",
+      "confidenceMedium": "Medium confidence",
+      "confidenceLow": "Low confidence"
+    },
     "selectModelToStart": "Select a model to start...",
     "selectModelToChat": "Select a language model to start chatting.",
     "selectModelToExplore": "Select a language model to start exploring.",

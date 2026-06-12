@@ -1,5 +1,6 @@
 import type {
   TurChatConversationMessage,
+  TurChatSource,
   ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 
@@ -26,6 +27,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.2.7
    */
   suggestedOptions?: string[]
+  /**
+   * RAG provenance behind the assistant answer (T292/T293). When present, the
+   * message list renders source chips below the bubble with a one-click
+   * "why did you say this?" expansion to the cited passages.
+   *
+   * @since 2026.3.1
+   */
+  sources?: TurChatSource[]
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -42,6 +51,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     content: m.content,
     timestamp: Date.now(),
     options: m.suggestedOptions,
+    sources: m.sources,
   }))
 }
 
@@ -52,6 +62,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     role: m.role,
     content: m.content,
     suggestedOptions: m.options,
+    sources: m.sources,
   }))
 }
 

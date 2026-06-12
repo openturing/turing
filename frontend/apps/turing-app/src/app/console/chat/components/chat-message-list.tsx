@@ -1,8 +1,8 @@
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
-import { TuringChatMessage, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent } from "@viglet/turing-react-sdk"
+import { IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconUser } from "@tabler/icons-react"
+import { TuringChatMessage, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips } from "@viglet/turing-react-sdk"
 import { useTranslation } from "react-i18next"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -65,6 +65,51 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
   // D2Block skin. viglet.com renders the same segments with its own skins.
   return (
     <TuringRichContent content={content} markdown={MarkdownBlock} html={SandboxPlayer} d2={D2Block} />
+  )
+}
+
+/**
+ * Admin skin over the shared headless {@code TuringSourceChips} (T293). Renders
+ * the RAG provenance behind an answer as confidence-graded chips with a
+ * one-click "why did you say this?" expansion to the cited passages. The
+ * `data-confidence` attribute drives the dot color.
+ */
+function SourceChips({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  if (!message.sources || message.sources.length === 0) return null
+  return (
+    <TuringSourceChips
+      sources={message.sources}
+      labels={{
+        heading: t("chat.sources.heading"),
+        why: t("chat.sources.why"),
+        open: t("chat.sources.open"),
+        chunk: t("chat.sources.passage"),
+        keywordOnly: t("chat.sources.keywordOnly"),
+        confidenceHigh: t("chat.sources.confidenceHigh"),
+        confidenceMedium: t("chat.sources.confidenceMedium"),
+        confidenceLow: t("chat.sources.confidenceLow"),
+      }}
+      icons={{
+        source: <IconFileText className="size-3.5 shrink-0" />,
+        expand: <IconChevronDown className="size-3 shrink-0 opacity-60" />,
+      }}
+      classNames={{
+        container: "not-prose mt-3 border-t border-border/60 pt-2",
+        heading: "text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 mb-1.5",
+        list: "flex flex-wrap gap-1.5",
+        chip: "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-muted hover:border-border/80 max-w-full [&>span:nth-child(2)]:truncate [&>span:nth-child(2)]:max-w-[180px]",
+        chipExpanded: "bg-muted border-blue-500/50",
+        chipKeyword: "border-amber-500/40",
+        confidence:
+          "size-2 rounded-full shrink-0 data-[confidence=high]:bg-emerald-500 data-[confidence=medium]:bg-amber-500 data-[confidence=low]:bg-muted-foreground/40",
+        panel: "mt-1.5 w-full space-y-1 rounded-lg border border-border/60 bg-muted/20 p-2.5",
+        panelCaption: "text-[11px] font-medium text-muted-foreground mb-1",
+        chunk: "flex items-center justify-between gap-3 text-xs text-muted-foreground py-0.5",
+        chunkMeta: "font-mono text-[11px]",
+        link: "text-primary hover:underline shrink-0",
+      }}
+    />
   )
 }
 
@@ -145,6 +190,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
                   }}
                 />
                 <AssistantContent content={message.content} />
+                <SourceChips message={message} />
               </div>
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>
