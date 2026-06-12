@@ -87,18 +87,11 @@
 
 ## F.1 — Foundation (the seam itself)
 
-- 📋 **T130** (deps: —) **`TurNativeProviderClient` seam** — interface exposing per-`TurLLMInstance` access to the official OpenAI (`com.openai:openai-java`) and Anthropic (`com.anthropic:anthropic-java`) SDK clients. → §X.2
-- 📋 **T131** (deps: T130) **`TurNativeChatExecutor` variant** — sibling to `TurAgentChatExecutor` (post-T33 decomposition). → §X.2
-- 📋 **T132** (deps: T131) **Per-LLM-instance feature flags table** — `tur_llm_instance_capability` (instanceId, capabilityKey, enabled, configJson). → §X.2
+- ⏳ **T131** (deps: T130 ✅) **`TurNativeChatExecutor` variant** — sibling executor shipped & wired into the agent chat path (opt-in, plain turns only); **remaining**: fuse the post-T33 collaborators (RAG / persona / chat-flow assembly) onto the native path — today it uses the agent base prompt + raw history. → §X.2
 
 ## F.2 — OpenAI Responses API + built-in tools
 
-- 📋 **T133** (deps: T131) **OpenAI `web_search` built-in tool** — wires the `web_search_preview` tool into the Responses path. → §X.3.a
-- 📋 **T134** (deps: T131) **OpenAI `file_search` built-in tool** — provisions OpenAI-hosted vector stores per agent/tenant. → §X.3.b
-- 📋 **T135** (deps: T131, T80) **OpenAI `code_interpreter` built-in tool** — alternative path to T80's in-process Code Interpreter for installs that prefer OpenAI's managed Container sandbox. → §X.3.c
-- 💭 **T136** (deps: T131) **OpenAI `computer_use` built-in tool** — agentic browser. → §X.3.d
-- 📋 **T137** (deps: T131) **OpenAI `image_generation` as inline tool** — `gpt-image-1`/`gpt-image-1.5` invoked inside the Responses turn. → §X.3.e
-- 💭 **T138** (deps: T131) **OpenAI `mcp` tool (remote MCP connector)** — Responses API gains a first-class `mcp` tool that points at a remote MCP server URL (Streamable HTTP / SSE). → §X.3.f
+- 💭 **T136** (deps: T131) **OpenAI `computer_use` built-in tool** — agentic browser. Capability key advertised in the matrix but not wired (needs the screenshot/action loop). → §X.3.d
 
 ## F.3 — Anthropic server-side tools
 
@@ -215,7 +208,18 @@
 > scheduling, reactive) scoped; self-service signup, switch, platform-admin
 > console, quotas, teardown, and the cross-tenant isolation IT gate. See
 > [CHANGELOG.md](CHANGELOG.md) → Block J and
-> [MULTI_TENANCY.md](MULTI_TENANCY.md). No active backlog remains here.
+> [MULTI_TENANCY.md](MULTI_TENANCY.md). **T333** (auto-provision personal
+> tenant on first login, §XIV.8) shipped 2026-06-12 to wire Viglet Cloud.
+
+### Block J follow-ups — Cloud SaaS hardening (T334–T336)
+
+> Surfaced wiring Block J into Viglet Cloud (one tenant per signed-up user on
+> shared turing/solr/postgres infra). These are the gaps that remain for a
+> *seamless* per-user SaaS; design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIV.8.
+
+- 📋 **T334** (deps: T259) **End-user tenant propagation on server-to-server calls** — internal callers (e.g. Dumont → `http://turing:2700`) carry no end-user tenant, so they resolve to `DEFAULT`. Forward the user's bearer token (or set `X-Turing-Tenant` from the caller's resolved tenant) so cross-product calls stay tenant-scoped. → §XIV.8.1
+- 📋 **T335** (deps: T268) **Per-tenant search-engine core auto-creation on standalone Solr** — T268 prefixes core names (`t<shortId>_<core>`) but a standalone Solr (`turing.solr.cloud=false`, the Cloud topology) does not pre-create them. Ensure the SN-site create/index path provisions the prefixed core on demand (or documents the configset/precreate requirement) so a new tenant's first index doesn't 404. → §XIV.8.2
+- 💭 **T336** (deps: T281) **De-provision on Keycloak user deletion** — close the lifecycle loop: when a Cloud user is deleted/disabled in Keycloak, suspend (then teardown) their personal tenant via the T281 service, instead of leaving an orphaned tenant + footprint. Likely a Keycloak event-listener SPI or a reconciliation sweep. → §XIV.8.3
 
 ## Block K — Agent CI (flow/prompt eval gate) ✅ shipped 2026-06-05
 
@@ -236,27 +240,10 @@
 
 ## Block M — Verifiable answers (provider-agnostic provenance)
 
-> Makes the RAG provenance you already retrieve *visible* to the end user — the
-> trust unlock for Education/Finance vs a source-less ChatGPT. Works for any LLM
-> over existing T24 hybrid-RAG hits; Anthropic per-span Citations (F.6 T152–T154)
-> enrich it when the agent runs on Claude.
-
-- 📋 **T292** (deps: T24) **RAG attribution metadata end-to-end** — every `search_knowledge_base` hit carries `(sourceId, title, url, chunkIndex, score)` through the SSE stream as a structured `sources[]` block — no vendor citation API required. → §XVII.1
-- 📋 **T293** (deps: T292) **Source-chip UI + "why did you say this?" trace** — chat renderer (react-sdk + admin) shows inline source chips with confidence and a one-click expansion to the retrieved chunks. Cross-refs F.6 T154 for Claude per-span underlining. → §XVII.2
-
-> **AddSearch-parity sub-block (T327–T332).** T292/T293 cover the
-> `search_knowledge_base` tool + MCP path. The **public semantic-navigation site
-> chat** (`TurSNGenAi` → `/api/sn/{site}/chat/conversation` → `ai-mode-chat.tsx`)
-> is a *separate* path that stuffs chunks straight into the system prompt and
-> loses provenance — these tasks bring the same grounding maturity there, to match
-> AddSearch's "AI Answers + AI Conversations over site content". → §XVII.3
-
-- 📋 **T327** (deps: T292) **Provenance in the public SN chat** — `TurSNGenAi.retrieveAndBuildSystemPrompt` preserves `(sourceId, title, url, chunkIndex, score)` per chunk and emits the `sources[]` SSE event (same contract as T292) on `/api/sn/{site}/chat/conversation`; today the chunks are joined into a raw string and provenance is lost. → §XVII.3
-- 📋 **T328** (deps: —) **Relevance gate + optional reranker for SN RAG** — replace the `similarityThreshold=0.0` used on facet-filtered queries with a real cutoff and an optional top-N→top-k rerank before stuffing, so weak matches stop polluting the context (the main hallucination driver). → §XVII.4
-- 📋 **T329** (deps: T328) **Deterministic "not in this site" refusal** — when post-gate retrieval is empty, short-circuit to the canonical refusal without an LLM call instead of relying on the model obeying the prompt instruction. → §XVII.5
-- 💭 **T330** (deps: T327) **Optional groundedness check for SN answers** — reuse the `LlmJudge` infra as a post-generation faithfulness audit (is the answer supported by the retrieved chunks?); on fail, regenerate with a stricter prompt or flag low confidence. Opt-in per agent (default off) to keep latency/cost predictable. → §XVII.6
-- 💭 **T331** (deps: T327) **Suggested follow-up questions in AI mode** — after each answer, generate 2–3 follow-up suggestions grounded in the retrieved context, rendered as clickable chips (parity with AddSearch "AI Conversations"). → §XVII.7
-- 📋 **T332** (deps: T327, T293) **Source chips on the public `ai-mode-chat.tsx`** — extend the T293 source-chip renderer (today admin + react-sdk) to the public SN AI-mode chat, with a confidence cue and one-click expansion to the cited chunks. → §XVII.8
+> **Shipped 2026-06-12** (T292, T293, T327–T332). See
+> [CHANGELOG.md](CHANGELOG.md) → Block M. No active backlog remains here. T330
+> (groundedness audit) and T331 (follow-up suggestions) shipped as opt-in Global
+> Settings (default off), not per-agent flags.
 
 ## Non-goals (do NOT add as tasks)
 

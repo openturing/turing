@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(22)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(27)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -112,6 +112,29 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PII_SLOT_TTL_HOURS".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "24".equals(configVar.getValue())));
+        // T328 — SN RAG relevance gate + reranker defaults.
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_SIMILARITY_THRESHOLD".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "0.0".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_ENABLED".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_TOP_N".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "20".equals(configVar.getValue())));
+        // T331 — grounded follow-up suggestions (default off).
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_FOLLOWUPS_ENABLED".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
+        // T330 — groundedness audit (default off).
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_GROUNDEDNESS_CHECK_ENABLED".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
     }
 
     @Test

@@ -267,6 +267,7 @@
 - **T282** — **MCP server multi-tenant scoping** — design-resolved: the future `/mcp` endpoint inherits tenant binding from `TurTenantResolutionFilter` (no separate code until Block I ships). (§XIV.7.3)
 - **T283** — **`docs/MULTI_TENANCY.md`** — operator + developer guide: model, leak-surface checklist, new-entity recipe, teardown runbook. (§XIV.7.4)
 - **T284** — **Hybrid escalation seam** — `TurTenant.isolationMode` (SHARED|SCHEMA|DB, default SHARED) reserves the path to schema/DB isolation; only SHARED implemented. (§XIV.7.5)
+- **T333** — **Auto-provision personal tenant on first login** — opt-in `turing.tenancy.auto-provision` (default off): an authenticated principal that resolves to no explicit tenant gets a personal tenant + OWNER membership minted on first request (race-safe, slug derived from the username), and resolves to it via that membership thereafter. The "one environment per user" SaaS posture used by Viglet Cloud; legacy invite-based deployments leave it off. (§XIV.8)
 
 ## Block K — Agent CI (flow/prompt eval gate, §XV)
 
@@ -274,3 +275,24 @@
 - **T286** — **Eval runner + judge scoring** — `TurAgentEvalRunnerService` replays each case through the real `TurAgentChatExecutor` + `TurChatFlowEngineService`, captures slots/cursor/outcome, scores via deterministic diff + the bilingual LLM judge, persists a `TurAgentEvalReport` (green run → new baseline; baseline-break → `regressed`). (§XV.2)
 - **T287** — **Pre-publish gate in the flow editor** — `TurAgentEvalGateService` (status GREEN/RED/REGRESSED/NEVER_RUN/NOT_CONFIGURED) surfaced in the editor Lint sidebar via `ChatFlowEvalGatePanel` (run button + findings); a blocking set hard-blocks the chat-flow `PUT` (422) when red/regressed. (§XV.3)
 - **T288** — **Agent-eval CI** — `POST /api/ai-agent/{id}/eval/run` + `-Pagent-eval` Maven profile (mirrors `-Pllm-it`; runs `*AgentEvalIT.java`, env-gated by `OPENAI_API_KEY`). (§XV.4)
+
+## Block F — Native LLM SDK exploitation (§X)
+
+- **T130** — **`TurNativeProviderClient` seam** — interface + `TurNativeProviderClientImpl` exposing per-instance native OpenAI (`com.openai:openai-java`) / Anthropic (`com.anthropic:anthropic-java`) SDK clients; decryption + base-URL resolution reuse the existing provider/`TurSecretCryptoService` plumbing (no parallel security path). (§X.2)
+- **T132** — **Per-LLM-instance capability matrix** — `llm_instance_capability` table (Liquibase `v2026.3.1.34.yaml`) + `TurLLMInstanceCapability` entity + `TurNativeCapability` enum + `TurNativeCapabilityService` (`turNativeCapability` cache) + `TurLLMInstanceCapabilityAPI` (`/api/llm/{instanceId}/capability`); empty matrix = unchanged Spring AI path. Frontend matrix UI (T186 heatmap) still pending. (§X.2)
+- **T133** — **OpenAI `web_search` built-in tool** — wired into the Responses path via `TurOpenAiResponsesService` (capability `openai-web-search`). (§X.3.a)
+- **T134** — **OpenAI `file_search` built-in tool** — Responses `file_search` over hosted vector stores (`vectorStoreIds` from capability config; `openai-file-search`). (§X.3.b)
+- **T135** — **OpenAI `code_interpreter` built-in tool** — Responses managed auto-container path (`openai-code-interpreter`), alongside T80's in-process sandbox. (§X.3.c)
+- **T137** — **OpenAI `image_generation` inline tool** — Responses `image_generation` (`openai-image-generation`). (§X.3.e)
+- **T138** — **OpenAI remote `mcp` tool** — Responses `mcp` connector to a remote Streamable-HTTP/SSE server (`serverLabel`/`serverUrl` from config, `requireApproval=never`; `openai-mcp`). (§X.3.f)
+
+## Block M — Verifiable answers (provider-agnostic provenance, §XVII)
+
+- **T292** — **RAG attribution metadata end-to-end** — `search_knowledge_base` chunks' `(sourceId, title, url, chunkIndex, score)` flow through a per-turn `TurRagSourceCollector` (published in the tool context) and out as a structured `sources` SSE event from `TurChatStreamingDispatcher`; both SDKs parse it (`TurChatSource`) onto the assistant message. Provider-agnostic — Turing's own retrieval metadata, no vendor citation API. (§XVII.1)
+- **T293** — **Source-chip UI + "why did you say this?" trace** — headless `TuringSourceChips` in `@viglet/turing-react-ui` (grouped chips, confidence cue from top score, one-click expansion to the cited passages); skinned into the admin chat list. (§XVII.2)
+- **T327** — **Provenance in the public SN chat** — `TurSNGenAi` preserves per-chunk metadata through retrieval and emits the same `sources` SSE event on `/api/sn/{site}/chat/conversation`; the SN chat-memory buffer is now token-only so side-channel events don't pollute recorded answers. (§XVII.3)
+- **T328** — **Relevance gate + optional reranker for SN RAG** — config-driven similarity floor on the filtered path (replaces the hard-coded `0.0`, default `0.0` = legacy) + opt-in fail-open LLM reranker (`TurRagReranker`) narrowing the candidate pool to a higher-precision top-k. Global Settings: `RAG_SN_SIMILARITY_THRESHOLD`, `RAG_SN_RERANK_ENABLED`, `RAG_SN_RERANK_TOP_N`. (§XVII.4)
+- **T329** — **Deterministic "not in this site" refusal** — when post-gate retrieval is empty, the SN streaming path short-circuits to the canonical localized refusal (en/pt/es/ca) without an LLM call. (§XVII.5)
+- **T330** — **Optional groundedness check for SN answers** — opt-in (`RAG_SN_GROUNDEDNESS_CHECK_ENABLED`, default off) post-generation faithfulness audit; on "unsupported" appends a localized low-confidence caveat to the answer. (§XVII.6)
+- **T331** — **Grounded follow-up questions in AI mode** — opt-in (`RAG_SN_FOLLOWUPS_ENABLED`, default off) 2–3 suggestions generated from the retrieved chunks, emitted via the existing `options` chip contract and rendered as clickable chips in `ai-mode-chat.tsx`. (§XVII.7)
+- **T332** — **Source chips on the public `ai-mode-chat.tsx`** — the T293 `TuringSourceChips` renderer wired into the public SN AI-mode chat, fed by the T327 `sources` event. (§XVII.8)
