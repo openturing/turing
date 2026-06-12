@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(27)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(31)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -135,6 +135,23 @@ class TurConfigVarOnStartupTest {
                 "GLOBAL_RAG_SN_GROUNDEDNESS_CHECK_ENABLED".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "false".equals(configVar.getValue())));
+        // T337 — pluggable reranker strategy (default LLM) + connection vars.
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_STRATEGY".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "LLM".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_ENDPOINT".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_MODEL".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_RAG_SN_RERANK_API_KEY".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
     }
 
     @Test
