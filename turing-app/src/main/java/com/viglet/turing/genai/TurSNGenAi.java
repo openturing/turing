@@ -126,19 +126,25 @@ public class TurSNGenAi {
     private final TurRagContextBuilder turRagContextBuilder;
     private final TurRagFacetExtractor facetExtractor;
     private final TurAgentChatExecutor agentChatExecutor;
+    private final com.viglet.turing.system.TurGlobalSettingsService globalSettingsService;
+    private final com.viglet.turing.genai.rag.TurRagReranker ragReranker;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurRagContextBuilder turRagContextBuilder,
             TurRagFacetExtractor facetExtractor,
-            TurAgentChatExecutor agentChatExecutor) {
+            TurAgentChatExecutor agentChatExecutor,
+            com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
+            com.viglet.turing.genai.rag.TurRagReranker ragReranker) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turRagContextBuilder = turRagContextBuilder;
         this.facetExtractor = facetExtractor;
         this.agentChatExecutor = agentChatExecutor;
+        this.globalSettingsService = globalSettingsService;
+        this.ragReranker = ragReranker;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -256,6 +262,30 @@ public class TurSNGenAi {
     private String retrieveAndBuildSystemPrompt(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
+        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
+        String information = relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+        return buildSystemPrompt(context.getSystemPrompt(), information);
+    }
+
+    /**
+     * Shared SN RAG retrieval: auto-extracts filters when none are given, picks
+     * {@code topK}/threshold based on whether filtering narrows the universe,
+     * runs the similarity search, then (T328) applies the config-driven
+     * relevance gate on the filtered path and an optional LLM reranker before
+     * returning the chunks. Used by both the streaming tool-calling flow and
+     * the legacy single-shot flow so the gate/rerank behavior is identical.
+     *
+     * <p>Returns the retrieved {@link Document}s with their metadata intact —
+     * the provenance the {@code sources[]} SSE event (T327) needs — instead of
+     * collapsing them to text at the call site.
+     *
+     * @since 2026.3.1 (T328)
+     */
+    private List<Document> retrieveDocuments(TurGenAiContext context,
+            String latestUserQuery,
+            java.util.Map<String, List<String>> filters) {
         java.util.Map<String, List<String>> effectiveFilters = filters;
         boolean autoExtracted = false;
         if (effectiveFilters == null || effectiveFilters.isEmpty()) {
@@ -279,7 +309,13 @@ public class TurSNGenAi {
         }
         boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
         int topK = hasFilters ? 50 : 10;
-        double similarityThreshold = hasFilters ? 0.0 : 0.4;
+        // T328 — the filtered path historically used a hard-coded 0.0 floor,
+        // stuffing every filter-matching hit regardless of semantic score (the
+        // dominant hallucination driver). Now config-driven (default 0.0 keeps
+        // legacy behavior). The unfiltered path keeps its own 0.4 floor.
+        double similarityThreshold = hasFilters
+                ? globalSettingsService.getRagSnSimilarityThreshold()
+                : 0.4;
         org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
                 TurRagFilters.buildFilterExpression(effectiveFilters);
         SearchRequest.Builder reqBuilder = SearchRequest.builder()
@@ -296,10 +332,19 @@ public class TurSNGenAi {
         List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
         List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
         log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
-        String information = relevantDocuments.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n\n"));
-        return buildSystemPrompt(context.getSystemPrompt(), information);
+
+        // T328 — optional LLM reranker: narrow the candidate pool to the
+        // highest-precision top-k before stuffing. Opt-in (default off);
+        // fail-open (returns retrieval order on any error).
+        if (globalSettingsService.isRagSnRerankEnabled() && relevantDocuments.size() > 1) {
+            int keep = Math.min(globalSettingsService.getRagSnRerankTopN(), relevantDocuments.size());
+            List<Document> reranked = ragReranker.rerank(
+                    context.getChatModel(), latestUserQuery, relevantDocuments, keep);
+            log.debug("RAG chat reranked {} → {} document(s)",
+                    relevantDocuments.size(), reranked.size());
+            relevantDocuments = reranked;
+        }
+        return relevantDocuments;
     }
 
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history,
@@ -323,55 +368,11 @@ public class TurSNGenAi {
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
-        // Auto-extract filters from the user's natural-language query when the
-        // caller didn't pass any explicitly. Lets questions like "list the
-        // executive education courses" be answered against the full set of
-        // matching chunks (via filtered retrieval) instead of only the top-K
-        // most semantically similar chunks.
-        java.util.Map<String, List<String>> effectiveFilters = filters;
-        boolean autoExtracted = false;
-        if (effectiveFilters == null || effectiveFilters.isEmpty()) {
-            try {
-                java.util.Map<String, List<String>> available = facetExtractor
-                        .getAvailableFacets(context.getRagInfrastructure());
-                if (!available.isEmpty()) {
-                    java.util.Map<String, List<String>> extracted = facetExtractor
-                            .extractFilters(context.getChatModel(), latestUserQuery, available);
-                    if (!extracted.isEmpty()) {
-                        effectiveFilters = extracted;
-                        autoExtracted = true;
-                        log.debug("RAG chat auto-extracted filters from query '{}': {}",
-                                latestUserQuery, extracted);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("RAG chat auto-extraction failed, falling back to plain similarity: {}",
-                        e.getMessage());
-            }
-        }
-
-        // Boost topK when filters narrow the universe — listing/enumeration
-        // questions need broader recall than a generic "find similar" query.
-        boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
-        int topK = hasFilters ? 50 : 10;
-        double similarityThreshold = hasFilters ? 0.0 : 0.4;
-        org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
-                TurRagFilters.buildFilterExpression(effectiveFilters);
-        SearchRequest.Builder reqBuilder = SearchRequest.builder()
-                .query(latestUserQuery)
-                .topK(topK)
-                .similarityThreshold(similarityThreshold);
-        if (filterExpr != null) {
-            reqBuilder.filterExpression(filterExpr);
-        }
-        SearchRequest embeddingSearchRequest = reqBuilder.build();
+        // Shared retrieval (T328): auto-extracts filters, applies the
+        // config-driven relevance gate on the filtered path, and runs the
+        // optional reranker. Returns chunks with metadata intact.
+        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.debug("RAG chat similaritySearch: store='{}', topK={}, threshold={}, filters={}{}, query='{}'",
-                vectorStoreType, topK, similarityThreshold, effectiveFilters,
-                autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
-        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
-        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
         if (relevantDocuments.isEmpty()) {
             log.warn("RAG chat retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
                     vectorStoreType);

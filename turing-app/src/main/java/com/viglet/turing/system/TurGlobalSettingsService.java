@@ -467,6 +467,87 @@ public class TurGlobalSettingsService {
         return enabled;
     }
 
+    /**
+     * T328 — relevance floor applied on the SN RAG filtered retrieval path.
+     * Defaults to {@code 0.0} (legacy: every filter-matching hit is stuffed);
+     * clamped to {@code [0.0, 1.0]}. Invalid values fall back to the default.
+     */
+    public double getRagSnSimilarityThreshold() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD)
+                .map(TurConfigVar::getValue)
+                .map(v -> {
+                    try {
+                        double parsed = Double.parseDouble(v.trim());
+                        return Math.max(0.0, Math.min(1.0, parsed));
+                    } catch (NumberFormatException e) {
+                        return 0.0;
+                    }
+                })
+                .orElse(0.0);
+    }
+
+    public double updateRagSnSimilarityThreshold(double threshold) {
+        double value = Math.max(0.0, Math.min(1.0, threshold));
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(value));
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    /** T328 — whether the opt-in LLM-as-reranker runs on SN RAG candidates. */
+    public boolean isRagSnRerankEnabled() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateRagSnRerankEnabled(boolean enabled) {
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(enabled));
+        turConfigVarRepository.save(configVar);
+        return enabled;
+    }
+
+    /**
+     * T328 — max chunks kept after the reranker narrows the candidate pool (the
+     * stuffed top-k). Clamped to {@code [1, 100]}; invalid values fall back to
+     * the default of 20.
+     */
+    public int getRagSnRerankTopN() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N)
+                .map(TurConfigVar::getValue)
+                .map(v -> {
+                    try {
+                        int parsed = Integer.parseInt(v.trim());
+                        return Math.max(1, Math.min(100, parsed));
+                    } catch (NumberFormatException e) {
+                        return 20;
+                    }
+                })
+                .orElse(20);
+    }
+
+    public int updateRagSnRerankTopN(int topN) {
+        int value = Math.max(1, Math.min(100, topN));
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(value));
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
     public String getDefaultEmbeddingModelId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
                 .map(TurConfigVar::getValue)

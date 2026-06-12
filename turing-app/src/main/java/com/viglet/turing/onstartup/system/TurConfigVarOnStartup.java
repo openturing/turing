@@ -99,6 +99,24 @@ public class TurConfigVarOnStartup {
 	/** T61 — PII slot retention TTL in hours; 0/negative disables cleanup. */
 	public static final String PII_SLOT_TTL_HOURS = "GLOBAL_PII_SLOT_TTL_HOURS";
 	public static final String PII_SLOT_TTL_HOURS_DEFAULT_VALUE = "24";
+	/**
+	 * T328 — relevance floor (cosine similarity) applied on the SN RAG
+	 * <em>filtered</em> retrieval path, replacing the hard-coded {@code 0.0}.
+	 * Default {@code 0.0} preserves legacy behavior (stuff every filter-matching
+	 * hit); raise it to drop off-topic-but-filter-matching chunks before they
+	 * reach the model. The unfiltered path keeps its own {@code 0.4} floor.
+	 */
+	public static final String RAG_SN_SIMILARITY_THRESHOLD = "GLOBAL_RAG_SN_SIMILARITY_THRESHOLD";
+	public static final String RAG_SN_SIMILARITY_THRESHOLD_DEFAULT_VALUE = "0.0";
+	/** T328 — opt-in LLM-as-reranker over SN RAG candidates (default off). */
+	public static final String RAG_SN_RERANK_ENABLED = "GLOBAL_RAG_SN_RERANK_ENABLED";
+	/**
+	 * T328 — max chunks kept after the reranker narrows the retrieved candidate
+	 * pool (the stuffed top-k). Only consulted when {@link #RAG_SN_RERANK_ENABLED}
+	 * is on; the candidate pool itself stays the path's normal retrieval topK.
+	 */
+	public static final String RAG_SN_RERANK_TOP_N = "GLOBAL_RAG_SN_RERANK_TOP_N";
+	public static final String RAG_SN_RERANK_TOP_N_DEFAULT_VALUE = "20";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -144,6 +162,10 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(DEFAULT_EMBEDDING_STORE_ID, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_AI_AGENT_ID, GLOBAL_PATH, "");
 		ensureConfigVar(PII_SLOT_TTL_HOURS, GLOBAL_PATH, PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_SIMILARITY_THRESHOLD, GLOBAL_PATH,
+				RAG_SN_SIMILARITY_THRESHOLD_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_RERANK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(RAG_SN_RERANK_TOP_N, GLOBAL_PATH, RAG_SN_RERANK_TOP_N_DEFAULT_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {
