@@ -301,7 +301,7 @@ public class TurSNSiteGenAiAPI {
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(
 					context, agent, llmInstance, request.messages(), request.filters(),
-					request.conversationId(), request.flowId(), request.forcedVariant());
+					request.conversationId(), request.flowId(), request.forcedVariant(), locale);
 			// Capture the turn for chat memory: accumulate the streamed assistant
 			// chunks and enqueue once the stream finishes. The service is a no-op
 			// when the agent has chatMemoryEnabled=false or the logging engine is

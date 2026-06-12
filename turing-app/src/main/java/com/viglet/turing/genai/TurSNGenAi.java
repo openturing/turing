@@ -206,7 +206,7 @@ public class TurSNGenAi {
             String conversationId,
             String flowId) {
         return assistantConversationStreaming(context, agent, llmInstance, history, filters,
-                conversationId, flowId, null);
+                conversationId, flowId, null, Locale.ENGLISH);
     }
 
     /**
@@ -225,7 +225,8 @@ public class TurSNGenAi {
             java.util.Map<String, List<String>> filters,
             String conversationId,
             String flowId,
-            String forcedVariant) {
+            String forcedVariant,
+            Locale locale) {
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(
@@ -250,6 +251,20 @@ public class TurSNGenAi {
         // retriever returned; now it preserves it and emits the same
         // `sources[]` SSE event the agent tool path emits (T292).
         List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
+
+        // T329 — deterministic "not in this site" refusal. When the relevance
+        // gate (T328) leaves nothing to ground the answer, short-circuit to the
+        // canonical localized refusal WITHOUT an LLM call: cheaper, faster, and
+        // impossible to hallucinate around (vs. relying on the model obeying the
+        // refusal instruction in DEFAULT_BEHAVIOR_PROMPT). No `sources[]` event —
+        // there is no provenance to report.
+        if (relevantDocuments.isEmpty()) {
+            log.debug("RAG chat streaming: 0 documents passed the relevance gate — "
+                    + "returning deterministic refusal (locale={})", locale);
+            return reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse("assistant", localizedRefusal(locale)));
+        }
+
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
@@ -455,6 +470,29 @@ public class TurSNGenAi {
             behavior = behavior + "\n\n---\nContext from the website:\n" + information + "\n---";
         }
         return behavior;
+    }
+
+    /**
+     * T329 — canonical "not in this site" refusal, keyed by language. The
+     * English entry matches the refusal sentence baked into
+     * {@link #DEFAULT_BEHAVIOR_PROMPT} so the deterministic short-circuit reads
+     * identically to what the model would have produced. Unknown languages fall
+     * back to English. Self-contained (no backend i18n bundle exists) and scoped
+     * to the configset locales (en/pt/es/ca).
+     */
+    private static final java.util.Map<String, String> REFUSAL_BY_LANGUAGE = java.util.Map.of(
+            "en", "I'm sorry, but that information is not available in the website's database.",
+            "pt", "Desculpe, mas essa informação não está disponível na base de dados do site.",
+            "es", "Lo siento, pero esa información no está disponible en la base de datos del sitio web.",
+            "ca", "Ho sento, però aquesta informació no està disponible a la base de dades del lloc web.");
+
+    private static String localizedRefusal(Locale locale) {
+        String language = locale == null ? "en" : locale.getLanguage();
+        if (language == null || language.isBlank()) {
+            language = "en";
+        }
+        return REFUSAL_BY_LANGUAGE.getOrDefault(
+                language.toLowerCase(Locale.ROOT), REFUSAL_BY_LANGUAGE.get("en"));
     }
 
     public record ConversationMessage(String role, String content) {

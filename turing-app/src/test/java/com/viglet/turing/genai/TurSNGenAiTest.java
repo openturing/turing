@@ -607,4 +607,29 @@ class TurSNGenAiTest {
         TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(null);
         assertTrue(fields.isEmpty());
     }
+
+    @Test
+    void streamingShouldReturnDeterministicLocalizedRefusalWhenNoDocumentsPassGate() {
+        TurGenAiContext context = mock(TurGenAiContext.class);
+        when(context.isEnabled()).thenReturn(true);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(context.getVectorStore()).thenReturn(vectorStore);
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+
+        var agent = mock(com.viglet.turing.persistence.model.agent.TurAIAgent.class);
+        var llm = mock(com.viglet.turing.persistence.model.llm.TurLLMInstance.class);
+        List<TurSNGenAi.ConversationMessage> history =
+                List.of(new TurSNGenAi.ConversationMessage("user", "pergunta sem contexto"));
+
+        List<TurAgentChatExecutor.ChatResponse> events = turSNGenAi.assistantConversationStreaming(
+                context, agent, llm, history, null, "conv-1", null, null, Locale.forLanguageTag("pt-BR"))
+                .collectList().block();
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        assertEquals("Desculpe, mas essa informação não está disponível na base de dados do site.",
+                events.get(0).content());
+        // The LLM/executor must never run when the gate yields nothing.
+        verifyNoInteractions(agentChatExecutor);
+    }
 }
