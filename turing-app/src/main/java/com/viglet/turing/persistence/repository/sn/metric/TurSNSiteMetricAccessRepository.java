@@ -53,6 +53,13 @@ public interface TurSNSiteMetricAccessRepository extends JpaRepository<TurSNSite
 	List<TurSNSiteMetricAccessTerm> topTermsBetweenDates(TurSNSite turSNSite, Instant startDate, Instant endDate,
 			Pageable pageable);
 
+	// T252 — terms that ALWAYS returned zero results (MAX numFound across all
+	// their accesses is 0): the literal "users searched this and we had nothing".
+	// Ordered by how often the failed term was searched.
+	@Query(value = "select distinct new com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm(sanatizedTerm, COUNT(sanatizedTerm), AVG(CAST(numFound as double))) from "
+			+ "TurSNSiteMetricAccess where turSNSite = ?1 GROUP BY sanatizedTerm HAVING MAX(numFound) = 0 ORDER BY COUNT(sanatizedTerm) DESC")
+	List<TurSNSiteMetricAccessTerm> topZeroResultTerms(TurSNSite turSNSite, Pageable pageable);
+
 	@Query(value = "select COUNT(sanatizedTerm) from "
 			+ "TurSNSiteMetricAccess where turSNSite = ?1")
 	int countTerms(TurSNSite turSNSite);

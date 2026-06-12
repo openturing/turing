@@ -72,10 +72,11 @@ public class TurMcpServerConfig {
     ToolCallbackProvider turingMcpToolCallbackProvider(TurMcpSearchToolService searchToolService,
             TurMcpRagToolService ragToolService,
             TurMcpAgentToolService agentToolService,
+            TurMcpAnalyticsToolService analyticsToolService,
             TurToolCallbackPipeline toolCallbackPipeline,
             TurMcpToolScopePolicy toolScopePolicy) {
         ToolCallback[] raw = MethodToolCallbackProvider.builder()
-                .toolObjects(searchToolService, ragToolService, agentToolService)
+                .toolObjects(searchToolService, ragToolService, agentToolService, analyticsToolService)
                 .build()
                 .getToolCallbacks();
         ToolCallback[] decorated = toolCallbackPipeline.decorate(raw);

@@ -1,0 +1,1 @@
+List the searches on one site that always returned zero results — the literal "users searched this and we had nothing" failures, ordered by how often each failed term was searched. Parameters: site (from list_sites) and rows (1-50, default 10). Use it to find missing content, broken synonyms, or terms the index does not cover. Requires search-metrics logging to be enabled.

@@ -89,6 +89,12 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
                 () -> "expected list_agents in MCP catalog, got " + names);
         assertTrue(names.contains("invoke_agent"),
                 () -> "expected invoke_agent in MCP catalog, got " + names);
+        assertTrue(names.contains("search_metrics"),
+                () -> "expected search_metrics in MCP catalog, got " + names);
+        assertTrue(names.contains("top_failed_searches"),
+                () -> "expected top_failed_searches in MCP catalog, got " + names);
+        assertTrue(names.contains("content_gaps"),
+                () -> "expected content_gaps in MCP catalog, got " + names);
     }
 
     @Test

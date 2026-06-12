@@ -203,8 +203,7 @@
 
 ## Block I — Turing as an MCP Server (T245–T256)
 
-- 📋 **T252** (deps: T247 ✅) **Analytics tools** — `top_failed_searches`, `search_metrics`, `content_gaps`. → §XIII.4
-- 💭 **T253** (deps: T246) **Gated write / ingestion tools** — `index_document`, `deindex_document`, `reindex_site`. → §XIII.3
+- 💭 **T253** (deps: T246 ✅) **Gated write / ingestion tools** — `index_document`, `deindex_document`, `reindex_site`. → §XIII.3
 - 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
 - 💭 **T255** (deps: T245) **One-click client config (DX)** — admin generates ready-to-paste `mcp.json` snippets for Claude Desktop / Claude Code / Cursor (endpoint + auth). → §XIII.7
 - 💭 **T256** (deps: T254) **Federation directory + bold bets** — cross-ref §X.5 T192: opt-in publish a redacted public MCP server to `directory.turing.io`; every publisher makes every subscriber's agents more useful. → §XIII.7
