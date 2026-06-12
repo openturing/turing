@@ -47,7 +47,8 @@ import tools.jackson.databind.node.ObjectNode;
  * </ul>
  * The list is assumed pre-sorted by the server; we preserve its order, only
  * de-duping and bounds-checking. Short timeout, no retry — the
- * {@link TurRagReranker} facade's fail-open is the safety net.
+ * {@link com.viglet.turing.genai.rag.TurRagReranker} facade's fail-open is the
+ * safety net.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1

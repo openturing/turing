@@ -17,7 +17,8 @@ import org.springframework.ai.document.Document;
  * T337 / §XVII.1 — a selectable reranking backend for the SN RAG path.
  *
  * <p>Each implementation re-orders the request's candidates by query relevance
- * and returns the most relevant first. The {@link TurRagReranker} facade is the
+ * and returns the most relevant first. The
+ * {@link com.viglet.turing.genai.rag.TurRagReranker} facade is the
  * single fail-open boundary: a strategy is free to throw or return an empty list
  * to signal "no usable signal" and the facade falls back to retrieval order.
  * Strategies therefore do <em>not</em> need their own fallback bookkeeping.

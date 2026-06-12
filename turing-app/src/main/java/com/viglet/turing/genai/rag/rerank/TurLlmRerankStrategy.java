@@ -34,8 +34,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>This is the verbatim move of the original {@code TurRagReranker} ranking
  * logic into a strategy; behavior is unchanged. Returns an empty list when the
- * chat model is absent so the {@link TurRagReranker} facade keeps retrieval
- * order.
+ * chat model is absent so the {@link com.viglet.turing.genai.rag.TurRagReranker}
+ * facade keeps retrieval order.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
