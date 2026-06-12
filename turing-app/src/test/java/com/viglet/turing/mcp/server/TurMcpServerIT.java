@@ -93,14 +93,7 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
 
     @Test
     void mcpEndpoint_initializesAndListsDecoratedTools() {
-        HttpClientStreamableHttpTransport transport =
-                HttpClientStreamableHttpTransport.builder("http://localhost:" + port)
-                        .endpoint("/mcp")
-                        .build();
-        McpSyncClient client = McpClient.sync(transport)
-                .clientInfo(McpSchema.Implementation.builder("turing-it", "1.0").build())
-                .requestTimeout(Duration.ofSeconds(30))
-                .build();
+        McpSyncClient client = newClient();
         try {
             McpSchema.InitializeResult init = client.initialize();
             assertNotNull(init, "MCP initialize must return a result");
@@ -129,6 +122,50 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
         } finally {
             client.closeGracefully();
         }
+    }
+
+    @Test
+    void mcpEndpoint_publishesResourcesAndTemplates() {
+        McpSyncClient client = newClient();
+        try {
+            client.initialize();
+
+            // Concrete resource: the site catalog.
+            McpSchema.ListResourcesResult resources = client.listResources();
+            assertNotNull(resources);
+            assertTrue(resources.resources().stream().anyMatch(r -> "turing://sites".equals(r.uri())),
+                    () -> "expected turing://sites resource, got "
+                            + resources.resources().stream().map(McpSchema.Resource::uri).toList());
+
+            // Reading it returns non-empty content.
+            McpSchema.ReadResourceResult read =
+                    client.readResource(new McpSchema.ReadResourceRequest("turing://sites"));
+            assertNotNull(read);
+            assertFalse(read.contents().isEmpty(), "turing://sites must return content");
+
+            // Templates: schema + document.
+            McpSchema.ListResourceTemplatesResult templates = client.listResourceTemplates();
+            assertNotNull(templates);
+            List<String> uriTemplates = templates.resourceTemplates().stream()
+                    .map(McpSchema.ResourceTemplate::uriTemplate).toList();
+            assertTrue(uriTemplates.contains("turing://site/{site}/schema"),
+                    () -> "expected schema template, got " + uriTemplates);
+            assertTrue(uriTemplates.contains("turing://site/{site}/doc/{docId}"),
+                    () -> "expected document template, got " + uriTemplates);
+        } finally {
+            client.closeGracefully();
+        }
+    }
+
+    private McpSyncClient newClient() {
+        HttpClientStreamableHttpTransport transport =
+                HttpClientStreamableHttpTransport.builder("http://localhost:" + port)
+                        .endpoint("/mcp")
+                        .build();
+        return McpClient.sync(transport)
+                .clientInfo(McpSchema.Implementation.builder("turing-it", "1.0").build())
+                .requestTimeout(Duration.ofSeconds(30))
+                .build();
     }
 
     private Set<String> toolNames(List<ToolCallback> callbacks) {
