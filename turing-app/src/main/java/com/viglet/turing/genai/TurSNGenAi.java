@@ -277,9 +277,93 @@ public class TurSNGenAi {
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer =
                 agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
                         conversationId, flowId, null, forcedVariant);
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> grounded =
+                appendGroundednessCaveat(answer, context, latestUserQuery, relevantDocuments, locale);
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> withSources =
-                prependSourcesEvent(answer, relevantDocuments);
+                prependSourcesEvent(grounded, relevantDocuments);
         return appendFollowupsEvent(withSources, context, latestUserQuery, relevantDocuments);
+    }
+
+    /**
+     * T330 — optional post-generation groundedness (faithfulness) audit. When
+     * enabled (Global Settings, default off), buffers the streamed answer and —
+     * after it completes — asks a cheap LLM whether every claim is supported by
+     * the retrieved chunks. On "unsupported", appends a localized low-confidence
+     * caveat as a trailing token (no SDK change: it lands in the same bubble).
+     * Fail-open: any error or a "grounded" verdict appends nothing.
+     */
+    private reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> appendGroundednessCaveat(
+            reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer,
+            TurGenAiContext context, String query, List<Document> documents, Locale locale) {
+        if (documents.isEmpty() || !globalSettingsService.isRagSnGroundednessCheckEnabled()) {
+            return answer;
+        }
+        StringBuilder answerBuffer = new StringBuilder();
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> buffered = answer
+                .doOnNext(chunk -> {
+                    String type = chunk.type();
+                    if (chunk.content() != null && (type == null || "token".equals(type))) {
+                        answerBuffer.append(chunk.content());
+                    }
+                });
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> caveat =
+                reactor.core.publisher.Flux.defer(() ->
+                        reactor.core.publisher.Mono.fromCallable(() -> {
+                            String answerText = answerBuffer.toString();
+                            if (answerText.isBlank() || isAnswerGrounded(context, query, documents, answerText)) {
+                                return null; // empty → no caveat
+                            }
+                            return new TurAgentChatExecutor.ChatResponse(
+                                    "assistant", "\n\n" + groundednessCaveat(locale), "token");
+                        })
+                        .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                        .flux());
+        return reactor.core.publisher.Flux.concat(buffered, caveat);
+    }
+
+    /**
+     * T330 — single cheap LLM faithfulness check. Returns {@code true} (grounded)
+     * on any error so the audit never blocks or falsely flags an answer when the
+     * judge call fails (fail-open). The judge replies with a leading GROUNDED /
+     * UNSUPPORTED token, parsed leniently.
+     */
+    private boolean isAnswerGrounded(TurGenAiContext context, String query,
+            List<Document> documents, String answerText) {
+        try {
+            StringBuilder snippets = new StringBuilder();
+            int n = Math.min(documents.size(), 6);
+            for (int i = 0; i < n; i++) {
+                String text = documents.get(i).getText();
+                if (text == null) {
+                    continue;
+                }
+                text = text.strip().replaceAll("\\s+", " ");
+                snippets.append("- ").append(text.length() > 500
+                        ? text.substring(0, 500) + "…" : text).append('\n');
+            }
+            String prompt = """
+                    You are a strict faithfulness judge. Decide whether the ANSWER is fully \
+                    supported by the CONTEXT snippets (no claims beyond what the context states).
+                    Reply with exactly one word on the first line: GROUNDED or UNSUPPORTED.
+
+                    QUESTION: %s
+
+                    ANSWER: %s
+
+                    CONTEXT:
+                    %s""".formatted(query, answerText, snippets);
+            String raw = context.getChatModel()
+                    .call(new Prompt(prompt))
+                    .getResult().getOutput().getText();
+            if (raw == null) {
+                return true;
+            }
+            // Lenient: only an explicit UNSUPPORTED verdict flags the answer.
+            return !raw.toUpperCase(Locale.ROOT).contains("UNSUPPORTED");
+        } catch (RuntimeException e) {
+            log.warn("RAG chat groundedness check failed: {}", e.getMessage());
+            return true;
+        }
     }
 
     /**
@@ -573,12 +657,30 @@ public class TurSNGenAi {
             "ca", "Ho sento, però aquesta informació no està disponible a la base de dades del lloc web.");
 
     private static String localizedRefusal(Locale locale) {
+        return localized(REFUSAL_BY_LANGUAGE, locale);
+    }
+
+    /**
+     * T330 — localized low-confidence caveat appended when the groundedness
+     * audit flags an answer as not fully supported by the retrieved content.
+     * Scoped to the configset locales (en/pt/es/ca), English fallback.
+     */
+    private static final java.util.Map<String, String> GROUNDEDNESS_CAVEAT_BY_LANGUAGE = java.util.Map.of(
+            "en", "_Note: this answer may not be fully supported by the site's content — please verify._",
+            "pt", "_Observação: esta resposta pode não estar totalmente apoiada no conteúdo do site — verifique._",
+            "es", "_Nota: es posible que esta respuesta no esté totalmente respaldada por el contenido del sitio — verifíquela._",
+            "ca", "_Nota: és possible que aquesta resposta no estigui del tot recolzada pel contingut del lloc — verifiqueu-la._");
+
+    private static String groundednessCaveat(Locale locale) {
+        return localized(GROUNDEDNESS_CAVEAT_BY_LANGUAGE, locale);
+    }
+
+    private static String localized(java.util.Map<String, String> byLanguage, Locale locale) {
         String language = locale == null ? "en" : locale.getLanguage();
         if (language == null || language.isBlank()) {
             language = "en";
         }
-        return REFUSAL_BY_LANGUAGE.getOrDefault(
-                language.toLowerCase(Locale.ROOT), REFUSAL_BY_LANGUAGE.get("en"));
+        return byLanguage.getOrDefault(language.toLowerCase(Locale.ROOT), byLanguage.get("en"));
     }
 
     public record ConversationMessage(String role, String content) {

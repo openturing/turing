@@ -123,6 +123,14 @@ public class TurConfigVarOnStartup {
 	 * LLM call per turn).
 	 */
 	public static final String RAG_SN_FOLLOWUPS_ENABLED = "GLOBAL_RAG_SN_FOLLOWUPS_ENABLED";
+	/**
+	 * T330 — opt-in post-generation groundedness (faithfulness) audit for SN
+	 * answers: a cheap LLM call checks the answer is supported by the retrieved
+	 * chunks and, on fail, appends a localized low-confidence caveat. Default off
+	 * (one extra LLM round-trip per turn).
+	 */
+	public static final String RAG_SN_GROUNDEDNESS_CHECK_ENABLED =
+			"GLOBAL_RAG_SN_GROUNDEDNESS_CHECK_ENABLED";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -173,6 +181,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(RAG_SN_RERANK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_TOP_N, GLOBAL_PATH, RAG_SN_RERANK_TOP_N_DEFAULT_VALUE);
 		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(RAG_SN_GROUNDEDNESS_CHECK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

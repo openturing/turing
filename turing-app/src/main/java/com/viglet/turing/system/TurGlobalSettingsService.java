@@ -567,6 +567,25 @@ public class TurGlobalSettingsService {
         return enabled;
     }
 
+    /** T330 — whether the post-generation groundedness audit runs on SN answers. */
+    public boolean isRagSnGroundednessCheckEnabled() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateRagSnGroundednessCheckEnabled(boolean enabled) {
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(enabled));
+        turConfigVarRepository.save(configVar);
+        return enabled;
+    }
+
     public String getDefaultEmbeddingModelId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
                 .map(TurConfigVar::getValue)
