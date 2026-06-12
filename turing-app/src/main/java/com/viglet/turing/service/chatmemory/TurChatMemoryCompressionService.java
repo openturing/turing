@@ -48,10 +48,10 @@ import lombok.extern.slf4j.Slf4j;
  * T115 / §IX.3.e — workspace-backed chat-memory compression.
  *
  * <p>For a long conversation, the turns OLDER than the
- * {@link TurAIAgent#getChatMemoryRecentN() recent-N} window accumulate and
+ * {@link TurAIAgent#chatMemoryRecentN recent-N} window accumulate and
  * inflate the prompt. When the agent has opted in
- * ({@link TurAIAgent#isChatMemoryCompressionEnabled()}) and that older pool is
- * estimated to exceed {@link TurAIAgent#getChatMemoryCompressionThresholdTokens()},
+ * ({@link TurAIAgent#chatMemoryCompressionEnabled}) and that older pool is
+ * estimated to exceed {@link TurAIAgent#chatMemoryCompressionThresholdTokens},
  * this service summarizes the older pool in a single dedicated LLM call, stores
  * the summary in the conversation workspace (T111) at
  * {@code memory/summary-1-{to}.md}, and returns a compact summary block to be
@@ -66,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h2>Cost control</h2>
  * The summary LLM call fires at most once per
- * {@link TurAIAgent#getChatMemoryCompressionInterval()} per conversation. An
+ * {@link TurAIAgent#chatMemoryCompressionInterval} per conversation. An
  * in-memory per-conversation cache holds the last summary; within the interval
  * the cached text is reused (no LLM call, no re-read). The cache is a pure cost
  * optimization — losing it on restart just triggers one extra summary.

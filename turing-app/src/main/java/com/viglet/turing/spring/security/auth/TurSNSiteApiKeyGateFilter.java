@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  * Navigation surface. The public SN endpoints (search / autocomplete / query /
  * click / chat / spell-check) are declared {@code permitAll} in
  * {@code TurSecurityConfigProduction}; this filter re-checks the resolved site:
- * when its {@link TurSNSite#getApiAuthMode()} is {@link
+ * when its {@link TurSNSite#apiAuthMode} is {@link
  * TurSNSiteApiAuthMode#API_KEY} the request must carry a valid Turing-registered
  * API key (a Dev Token, reused) in the {@code Key} header or {@code apiKey}
  * query parameter — otherwise it is rejected with HTTP 401.
