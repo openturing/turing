@@ -116,6 +116,71 @@ class TurTenantServiceTest {
     }
 
     @Test
+    void resolveOrCreatePersonalTenantReturnsExistingOwnedTenant() {
+        TurTenant home = new TurTenant();
+        home.setId("t-home");
+        TurTenantMembership owner = new TurTenantMembership();
+        owner.setTenant(home);
+        owner.setRole(TurTenantRole.OWNER);
+        owner.setStatus(TurTenantMembershipStatus.ACTIVE);
+        when(membershipRepository.findByUsername("alice")).thenReturn(List.of(owner));
+
+        TurTenant resolved = service().resolveOrCreatePersonalTenant("alice");
+
+        assertThat(resolved).isSameAs(home);
+        verify(tenantRepository, never()).save(any());
+        verify(membershipRepository, never()).save(any());
+    }
+
+    @Test
+    void resolveOrCreatePersonalTenantProvisionsWhenNone() {
+        when(membershipRepository.findByUsername("alice")).thenReturn(List.of());
+        when(tenantRepository.findBySlug("alice")).thenReturn(Optional.empty());
+        when(tenantRepository.save(any(TurTenant.class))).thenAnswer(inv -> {
+            TurTenant t = inv.getArgument(0);
+            t.setId("t-alice");
+            return t;
+        });
+
+        TurTenant created = service().resolveOrCreatePersonalTenant("alice");
+
+        assertThat(created.getSlug()).isEqualTo("alice");
+        verify(membershipRepository).save(org.mockito.ArgumentMatchers.argThat(m ->
+                m.getUsername().equals("alice")
+                        && m.getRole() == TurTenantRole.OWNER
+                        && m.getStatus() == TurTenantMembershipStatus.ACTIVE));
+    }
+
+    @Test
+    void resolveOrCreatePersonalTenantSuffixesWhenSlugTakenByAnotherUser() {
+        when(membershipRepository.findByUsername("bob")).thenReturn(List.of());
+        TurTenant otherBob = new TurTenant();
+        otherBob.setId("t-other");
+        otherBob.setSlug("bob");
+        when(tenantRepository.findBySlug("bob")).thenReturn(Optional.of(otherBob));
+        when(membershipRepository.findByTenant_IdAndUsername("t-other", "bob"))
+                .thenReturn(Optional.empty()); // not bob's
+        when(tenantRepository.findBySlug("bob-2")).thenReturn(Optional.empty());
+        when(tenantRepository.save(any(TurTenant.class))).thenAnswer(inv -> {
+            TurTenant t = inv.getArgument(0);
+            t.setId("t-bob-2");
+            return t;
+        });
+
+        TurTenant created = service().resolveOrCreatePersonalTenant("bob");
+
+        assertThat(created.getSlug()).isEqualTo("bob-2");
+    }
+
+    @Test
+    void basePersonalSlugSanitizesEmailsReservedAndShortNames() {
+        assertThat(service().basePersonalSlug("Alice@Example.com")).isEqualTo("alice-example-com");
+        assertThat(service().basePersonalSlug("admin")).isEqualTo("u-admin"); // reserved
+        assertThat(service().basePersonalSlug("x")).isEqualTo("user-x");      // too short
+        assertThat(service().basePersonalSlug("a".repeat(80)).length()).isLessThanOrEqualTo(56);
+    }
+
+    @Test
     void tenantsOfReturnsOnlyActiveMemberships() {
         TurTenant a = new TurTenant();
         a.setId("a");

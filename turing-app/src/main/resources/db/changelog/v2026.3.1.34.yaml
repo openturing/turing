@@ -1,0 +1,55 @@
+databaseChangeLog:
+  # T132 / §X.2 — per-LLM-instance native capability matrix. One row per
+  # (instance × capability) opt-in (e.g. openai-web-search). The
+  # TurNativeProviderClient seam reads this on each native chat turn; an empty
+  # matrix means the instance keeps falling through to the Spring AI path, so
+  # existing installs see no behavioural change. Idempotent via
+  # `not tableExists` + onFail:MARK_RAN. Columns are camelCase per the project's
+  # literal naming convention; `configJson` is a portable `longtext`.
+  - changeSet:
+      id: v2026.3.1.34-create-llm-instance-capability-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: llm_instance_capability
+      changes:
+        - createTable:
+            tableName: llm_instance_capability
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: instanceId
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: capabilityKey
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: configJson
+                  type: longtext
+        - addUniqueConstraint:
+            tableName: llm_instance_capability
+            columnNames: instanceId, capabilityKey
+            constraintName: uq_llm_instance_capability
+        - addForeignKeyConstraint:
+            baseTableName: llm_instance_capability
+            baseColumnNames: instanceId
+            referencedTableName: llm_instance
+            referencedColumnNames: id
+            constraintName: fk_llm_instance_capability_instance

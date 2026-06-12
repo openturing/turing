@@ -31,4 +31,17 @@ public class TurTenancyProperty {
 
     /** Master switch for multi-tenancy. Default {@code false} = legacy single-tenant. */
     private boolean enabled = false;
+
+    /**
+     * T333 / §XIV.8 — when {@code true} (and {@link #enabled}), an authenticated
+     * principal that resolves to no explicit tenant gets a <em>personal</em>
+     * tenant (with an OWNER membership) auto-created on first request, and every
+     * later request resolves to it via that membership. This is the
+     * "one environment per user" SaaS posture used by Viglet Cloud.
+     *
+     * <p>Default {@code false} preserves the invite-based, many-users-per-tenant
+     * model: a brand-new principal with no membership stays on {@code DEFAULT}
+     * until explicitly added to a tenant.
+     */
+    private boolean autoProvision = false;
 }

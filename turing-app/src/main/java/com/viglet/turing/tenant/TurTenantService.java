@@ -11,6 +11,7 @@ package com.viglet.turing.tenant;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -103,6 +104,76 @@ public class TurTenantService {
         membershipRepository.save(ownerMembership);
 
         return saved;
+    }
+
+    /**
+     * T333 / §XIV.8 — resolve (or, on first call, auto-provision) the
+     * <em>personal</em> tenant of {@code username}: the tenant they OWN, created
+     * on demand so each user lands in their own isolated environment. Idempotent
+     * and race-safe — a concurrent first request reuses the tenant the winner
+     * created rather than minting a second one.
+     *
+     * @return the user's personal tenant, or {@code null} when {@code username}
+     *         is blank (the caller then falls back to {@code DEFAULT}).
+     */
+    @Transactional
+    public TurTenant resolveOrCreatePersonalTenant(String username) {
+        if (!StringUtils.hasText(username)) {
+            return null;
+        }
+        // Fast path: the user already owns a personal tenant.
+        Optional<TurTenant> owned = membershipRepository.findByUsername(username).stream()
+                .filter(m -> m.getStatus() == TurTenantMembershipStatus.ACTIVE
+                        && m.getRole() == TurTenantRole.OWNER)
+                .map(TurTenantMembership::getTenant)
+                .findFirst();
+        if (owned.isPresent()) {
+            return owned.get();
+        }
+        // Provisioning path: find a slug we can own, then create the tenant.
+        String base = basePersonalSlug(username);
+        String candidate = base;
+        int suffix = 1;
+        while (true) {
+            Optional<TurTenant> existing = tenantRepository.findBySlug(candidate);
+            if (existing.isEmpty()) {
+                break; // free slug — provision it below
+            }
+            // Slug taken: reuse if it's already ours (handles a provisioning race),
+            // otherwise try the next suffix.
+            boolean mine = membershipRepository
+                    .findByTenant_IdAndUsername(existing.get().getId(), username)
+                    .filter(m -> m.getRole() == TurTenantRole.OWNER)
+                    .isPresent();
+            if (mine) {
+                return existing.get();
+            }
+            suffix++;
+            candidate = base + "-" + suffix;
+        }
+        return signup(candidate, username, username);
+    }
+
+    /**
+     * Derive a valid, non-reserved slug base from an arbitrary username (which
+     * may be an email or an OIDC {@code sub} UUID). Uniqueness is handled by the
+     * caller; this only guarantees the slug passes {@link #SLUG_PATTERN} and is
+     * not reserved.
+     */
+    String basePersonalSlug(String username) {
+        String base = username.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-") // any run of non-alphanumerics → one hyphen
+                .replaceAll("^-+|-+$", "");    // trim leading/trailing hyphens
+        if (base.length() < 2) {
+            base = "user-" + (base.isEmpty() ? "x" : base);
+        }
+        if (base.length() > 56) { // leave headroom for a "-<n>" uniqueness suffix
+            base = base.substring(0, 56).replaceAll("-+$", "");
+        }
+        if (RESERVED_SLUGS.contains(base)) {
+            base = "u-" + base;
+        }
+        return base;
     }
 
     /** Every tenant {@code username} is an active member of (T265 "my tenants"). */

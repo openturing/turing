@@ -53,10 +53,17 @@ class TurTenantResolutionFilterTest {
     private TurTenantContext tenantContext;
 
     private TurTenantResolutionFilter filter(boolean tenancyEnabled) {
+        return filter(tenancyEnabled, false);
+    }
+
+    private TurTenantResolutionFilter filter(boolean tenancyEnabled, boolean autoProvision) {
         TurConfigProperties props = new TurConfigProperties();
         props.getTenancy().setEnabled(tenancyEnabled);
+        props.getTenancy().setAutoProvision(autoProvision);
         tenantContext = new TurTenantContext(props);
-        return new TurTenantResolutionFilter(tenantContext, tenantRepository, membershipRepository, props);
+        TurTenantService tenantService = new TurTenantService(tenantRepository, membershipRepository);
+        return new TurTenantResolutionFilter(tenantContext, tenantRepository, membershipRepository,
+                tenantService, props);
     }
 
     @AfterEach
@@ -162,6 +169,69 @@ class TurTenantResolutionFilterTest {
 
         assertThat(res.getStatus()).isEqualTo(200);
         verify(membershipRepository, never()).findByTenant_IdAndUsername(any(), any());
+    }
+
+    @Test
+    void autoProvisionsPersonalTenantForAuthenticatedUserWithNoExplicitTenant() throws Exception {
+        TurTenantResolutionFilter f = filter(true, true);
+        // No personal tenant yet → provisioning path runs.
+        when(membershipRepository.findByUsername("alice")).thenReturn(java.util.List.of());
+        when(tenantRepository.findBySlug("alice")).thenReturn(Optional.empty());
+        when(tenantRepository.save(any())).thenAnswer(inv -> {
+            TurTenant t = inv.getArgument(0);
+            t.setId("t-alice");
+            return t;
+        });
+        // Post-provision membership check in doFilterInternal sees the new OWNER membership.
+        TurTenant personal = new TurTenant();
+        personal.setId("t-alice");
+        when(tenantRepository.findById("t-alice")).thenReturn(Optional.of(personal));
+        TurTenantMembership owner = new TurTenantMembership();
+        owner.setStatus(TurTenantMembershipStatus.ACTIVE);
+        when(membershipRepository.findByTenant_IdAndUsername("t-alice", "alice"))
+                .thenReturn(Optional.of(owner));
+
+        MockHttpServletRequest req = new MockHttpServletRequest(); // nothing explicit resolves
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        TenantCapturingChain chain = new TenantCapturingChain(tenantContext);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(user("alice"));
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(200);
+        assertThat(chain.tenantSeenDuringChain).isEqualTo("t-alice");
+        // a tenant + an owner membership were persisted
+        verify(tenantRepository).save(any());
+        verify(membershipRepository).save(any());
+    }
+
+    @Test
+    void autoProvisionSkippedForPlatformAdmin() throws Exception {
+        TurTenantResolutionFilter f = filter(true, true);
+        MockHttpServletRequest req = new MockHttpServletRequest(); // nothing explicit resolves
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        Authentication admin = new UsernamePasswordAuthenticationToken("ops", "n/a",
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                        TurPlatformAdminService.ROLE_PLATFORM_ADMIN)));
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(admin);
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(200);
+        // platform admin stays on DEFAULT — no personal tenant minted
+        verify(membershipRepository, never()).findByUsername(any());
+        verify(tenantRepository, never()).save(any());
     }
 
     @Test

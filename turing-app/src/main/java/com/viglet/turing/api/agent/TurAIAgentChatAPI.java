@@ -21,6 +21,7 @@ import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.nativeapi.TurNativeChatExecutor;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
 import com.viglet.turing.genai.workspace.TurWorkspaceEvent;
@@ -63,6 +64,7 @@ public class TurAIAgentChatAPI {
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurAgentChatExecutor agentChatExecutor;
+    private final TurNativeChatExecutor nativeChatExecutor;
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurCodeInterpreterUrlSigner urlSigner;
@@ -77,6 +79,7 @@ public class TurAIAgentChatAPI {
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurAgentChatExecutor agentChatExecutor,
+            TurNativeChatExecutor nativeChatExecutor,
             TurChatFlowRepository turChatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
             TurCodeInterpreterUrlSigner urlSigner,
@@ -90,6 +93,7 @@ public class TurAIAgentChatAPI {
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.agentChatExecutor = agentChatExecutor;
+        this.nativeChatExecutor = nativeChatExecutor;
         this.turChatFlowRepository = turChatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
         this.urlSigner = urlSigner;
@@ -210,6 +214,25 @@ public class TurAIAgentChatAPI {
         List<TurAgentChatExecutor.ChatMessageItem> mapped = request.messages().stream()
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
                 .toList();
+
+        // F.1/F.2 / §X.2 — native provider seam. When the chosen LLM instance
+        // has opted into a native capability (e.g. OpenAI Responses
+        // web_search / file_search / code_interpreter), the turn is handled by
+        // the vendor SDK path. Restricted to plain turns (no file attachments,
+        // no chat flow) so the rich Spring AI assembly is never silently
+        // bypassed; every instance without an enabled capability returns empty
+        // here and falls through to the unchanged Spring AI executor below.
+        boolean plainTurn = (files == null || files.isEmpty())
+                && (request.flowId() == null || request.flowId().isBlank());
+        if (plainTurn) {
+            var nativeStream = nativeChatExecutor.tryExecute(agent, turLLMInstance, mapped, null,
+                    request.conversationId());
+            if (nativeStream.isPresent()) {
+                return nativeStream.get()
+                        .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
+            }
+        }
+
         return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
                         request.conversationId(), request.flowId(), files, request.forcedVariant(),
                         request.selectedSkillId())

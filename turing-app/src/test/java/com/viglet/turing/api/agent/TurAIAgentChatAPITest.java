@@ -68,6 +68,8 @@ class TurAIAgentChatAPITest {
     @Mock
     private com.viglet.turing.genai.TurAgentChatExecutor agentChatExecutor;
     @Mock
+    private com.viglet.turing.genai.nativeapi.TurNativeChatExecutor nativeChatExecutor;
+    @Mock
     private TurChatFlowRepository turChatFlowRepository;
     @Mock
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
@@ -88,6 +90,7 @@ class TurAIAgentChatAPITest {
                 turAIAgentRepository, turAIAgentRepositoryPort,
                 turLLMInstanceRepository, turLLMInstanceRepositoryPort,
                 llmProviderFactory, turSecretCryptoService, agentChatExecutor,
+                nativeChatExecutor,
                 turChatFlowRepository, chatFlowEngineService, urlSigner,
                 agentWorkspace, workspaceEventBus, slotSseRegistry);
     }

@@ -89,16 +89,21 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
     private final TurTenantContext tenantContext;
     private final TurTenantRepository tenantRepository;
     private final TurTenantMembershipRepository membershipRepository;
+    private final TurTenantService tenantService;
     private final boolean tenancyEnabled;
+    private final boolean autoProvisionEnabled;
 
     public TurTenantResolutionFilter(TurTenantContext tenantContext,
             TurTenantRepository tenantRepository,
             TurTenantMembershipRepository membershipRepository,
+            TurTenantService tenantService,
             TurConfigProperties configProperties) {
         this.tenantContext = tenantContext;
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
+        this.tenantService = tenantService;
         this.tenancyEnabled = configProperties.getTenancy().isEnabled();
+        this.autoProvisionEnabled = configProperties.getTenancy().isAutoProvision();
     }
 
     @Override
@@ -149,10 +154,23 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
                 tenantFromSession(request),
                 subdomain(request.getServerName()),
                 request.getHeader(TENANT_HEADER));
-        if (!StringUtils.hasText(raw)) {
-            return TurTenant.DEFAULT_TENANT_ID;
+        if (StringUtils.hasText(raw)) {
+            return canonicalize(raw).orElse(TurTenant.DEFAULT_TENANT_ID);
         }
-        return canonicalize(raw).orElse(TurTenant.DEFAULT_TENANT_ID);
+        // T333 / §XIV.8 — no explicit tenant. With auto-provision on, an
+        // authenticated (non-platform-admin) principal lands in their own
+        // personal tenant, created on first request. This is the
+        // "one environment per user" posture; without it the principal stays on
+        // DEFAULT (legacy invite-based model).
+        if (autoProvisionEnabled
+                && isAuthenticated(authentication)
+                && !isPlatformAdmin(authentication)) {
+            TurTenant personal = tenantService.resolveOrCreatePersonalTenant(authentication.getName());
+            if (personal != null) {
+                return personal.getId();
+            }
+        }
+        return TurTenant.DEFAULT_TENANT_ID;
     }
 
     private String tenantFromClaim(Authentication authentication) {
