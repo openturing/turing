@@ -117,6 +117,12 @@ public class TurConfigVarOnStartup {
 	 */
 	public static final String RAG_SN_RERANK_TOP_N = "GLOBAL_RAG_SN_RERANK_TOP_N";
 	public static final String RAG_SN_RERANK_TOP_N_DEFAULT_VALUE = "20";
+	/**
+	 * T331 — opt-in generation of 2–3 grounded follow-up questions after each SN
+	 * AI-mode answer (rendered as clickable chips). Default off (one extra cheap
+	 * LLM call per turn).
+	 */
+	public static final String RAG_SN_FOLLOWUPS_ENABLED = "GLOBAL_RAG_SN_FOLLOWUPS_ENABLED";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -166,6 +172,7 @@ public class TurConfigVarOnStartup {
 				RAG_SN_SIMILARITY_THRESHOLD_DEFAULT_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_TOP_N, GLOBAL_PATH, RAG_SN_RERANK_TOP_N_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

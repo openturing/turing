@@ -548,6 +548,25 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    /** T331 — whether grounded follow-up questions are generated for SN answers. */
+    public boolean isRagSnFollowupsEnabled() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateRagSnFollowupsEnabled(boolean enabled) {
+        TurConfigVar configVar = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(enabled));
+        turConfigVarRepository.save(configVar);
+        return enabled;
+    }
+
     public String getDefaultEmbeddingModelId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
                 .map(TurConfigVar::getValue)

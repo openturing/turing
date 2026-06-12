@@ -204,6 +204,22 @@ export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function
                       </TuringMarkdown>
                     ) : null}
                     <AiModeSourceChips message={message} />
+                    {message.options && message.options.length > 0 ? (
+                      <div className="not-prose mt-3 flex flex-wrap gap-1.5">
+                        {message.options.map((q) => (
+                          <button
+                            key={q}
+                            type="button"
+                            onClick={() => askAi(q)}
+                            disabled={isStreaming}
+                            className="inline-flex items-center gap-1 rounded-full border border-blue-500/40 bg-blue-500/5 px-3 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-500/15 hover:border-blue-500/70 disabled:opacity-50 disabled:cursor-not-allowed dark:text-blue-300 dark:bg-blue-500/10 dark:border-blue-400/40 dark:hover:bg-blue-500/20"
+                          >
+                            <IconSparkles className="size-3 shrink-0" />
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">

@@ -277,7 +277,93 @@ public class TurSNGenAi {
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer =
                 agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
                         conversationId, flowId, null, forcedVariant);
-        return prependSourcesEvent(answer, relevantDocuments);
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> withSources =
+                prependSourcesEvent(answer, relevantDocuments);
+        return appendFollowupsEvent(withSources, context, latestUserQuery, relevantDocuments);
+    }
+
+    /**
+     * T331 — appends grounded follow-up question suggestions as an {@code
+     * "options"} chip event after the answer stream (reusing the existing chip
+     * contract, so no SDK change). Opt-in via Global Settings (default off);
+     * generated from the retrieved chunks + the question with one cheap LLM call
+     * that runs <em>after</em> the answer streams (concat ordering). Fail-open:
+     * any error or empty result simply emits no event.
+     */
+    private reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> appendFollowupsEvent(
+            reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> stream,
+            TurGenAiContext context, String query, List<Document> documents) {
+        if (documents.isEmpty() || !globalSettingsService.isRagSnFollowupsEnabled()) {
+            return stream;
+        }
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> followups =
+                reactor.core.publisher.Mono.fromCallable(() -> {
+                    List<String> questions = generateFollowups(context, query, documents);
+                    if (questions.isEmpty()) {
+                        return null; // Mono treats null as empty → no event emitted
+                    }
+                    return new TurAgentChatExecutor.ChatResponse(
+                            "assistant", SOURCES_MAPPER.writeValueAsString(questions), "options");
+                })
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .flux();
+        return reactor.core.publisher.Flux.concat(stream, followups);
+    }
+
+    /**
+     * T331 — generates 2–3 short follow-up questions grounded in the retrieved
+     * chunks. Grounding the suggestions in the same content (not the model's
+     * open-ended imagination) keeps them answerable by the same index, avoiding
+     * dead-end chips. Returns an empty list on any failure (fail-open).
+     */
+    private List<String> generateFollowups(TurGenAiContext context, String query,
+            List<Document> documents) {
+        try {
+            StringBuilder snippets = new StringBuilder();
+            int n = Math.min(documents.size(), 4);
+            for (int i = 0; i < n; i++) {
+                String text = documents.get(i).getText();
+                if (text == null) {
+                    continue;
+                }
+                text = text.strip().replaceAll("\\s+", " ");
+                snippets.append("- ").append(text.length() > 400
+                        ? text.substring(0, 400) + "…" : text).append('\n');
+            }
+            String prompt = """
+                    Based ONLY on the context snippets below and the user's question, \
+                    suggest 2-3 short follow-up questions the user might naturally ask next \
+                    that can be answered from the SAME content. \
+                    Keep each under 12 words. Return ONE question per line, no numbering, no preamble.
+
+                    Question: %s
+
+                    Context snippets:
+                    %s""".formatted(query, snippets);
+            String raw = context.getChatModel()
+                    .call(new Prompt(prompt))
+                    .getResult().getOutput().getText();
+            if (raw == null || raw.isBlank()) {
+                return List.of();
+            }
+            List<String> out = new ArrayList<>(3);
+            for (String line : raw.split("\\r?\\n")) {
+                String q = line.strip()
+                        // strip leading bullets / numbering ("1.", "-", "*", "•")
+                        .replaceFirst("^\\s*(?:[-*•]|\\d+[.)])\\s*", "")
+                        .strip();
+                if (!q.isBlank()) {
+                    out.add(q);
+                }
+                if (out.size() == 3) {
+                    break;
+                }
+            }
+            return out;
+        } catch (RuntimeException e) {
+            log.warn("RAG chat follow-up generation failed: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     /**
