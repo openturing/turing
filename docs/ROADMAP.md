@@ -245,6 +245,20 @@
 > (groundedness audit) and T331 (follow-up suggestions) shipped as opt-in Global
 > Settings (default off), not per-agent flags.
 
+## Block N — Pluggable reranker (cross-encoder / managed)
+
+> Completes Pillar 3 (hybrid retrieval). The RRF fusion (T24b) + LLM-as-reranker
+> (T328) already ship; this makes the rerank *stage* a selectable strategy so a
+> dedicated cross-encoder (cheaper/faster/more precise than a chat call) or a
+> managed Cohere endpoint can replace the LLM ranker. Opt-in, **default = `LLM`**
+> → existing rerank-on deployments are byte-for-byte unchanged, zero IT revalidation.
+
+- 📋 **T337** (deps: —) **Reranker strategy seam** — extract `TurRagRerankStrategy` interface + `TurRagRerankStrategyType` enum (`LLM` \| `CROSS_ENCODER` \| `COHERE`) + `TurRagRerankRequest` record; move the current LLM logic into `TurLlmRerankStrategy`; `TurRagReranker` becomes a fail-open facade delegating via `TurRagRerankStrategyFactory` (default `LLM`). Caller (`TurSNGenAi`) unchanged. → §XVII.1
+- 📋 **T338** (deps: T337) **Cross-encoder strategy (self-hosted)** — `TurCrossEncoderRerankStrategy` + shared `TurHttpRerankClient` against a TEI/Infinity/Jina-compatible `/rerank` endpoint; new Global Settings `GLOBAL_RAG_SN_RERANK_ENDPOINT` / `_MODEL`. Local, $0, sub-100ms. → §XVII.2
+- 📋 **T339** (deps: T338) **Cohere Rerank strategy (managed)** — `TurCohereRerankStrategy`; API key stored encrypted via `TurSecretCryptoService` (`GLOBAL_RAG_SN_RERANK_API_KEY`, write-only). → §XVII.3
+- 📋 **T340** (deps: T337, T338, T339) **Settings UI** — strategy `Select` + conditional endpoint/model/apiKey fields on the Global Settings rerank section; `apiKey` `readOnly` write-only. → §XVII.4
+- 💭 **T341** (deps: T338) **Rerank-score cache** — optional `@Cacheable("turRagRerankScore")` keyed by `(strategy, model, query, docHash)` with paired `@CacheEvict`. Precision is the win, not latency — ship only if measured. → §XVII.5
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
