@@ -160,6 +160,7 @@ export type {
   TurChatConversationMessage,
   TurChatConversationResponse,
   TurChatStreamEvent,
+  TurChatSource,
   TurChatForm,
   TurChatFormField,
   TurChatFormSubmitResponse,

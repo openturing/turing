@@ -582,6 +582,15 @@ public class TurAgentChatExecutor {
                     com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_INVOKE_DEPTH,
                     agentInvokeDepth);
         }
+        // T292 — publish a per-turn RAG provenance sink. The
+        // search_knowledge_base tool appends the retrieved chunks' source
+        // metadata to it; the streaming dispatcher drains it after the
+        // tool-execution loop to emit the structured `sources[]` SSE event.
+        // Always present so the tool has a stable target; empty when no RAG
+        // tool fires this turn (drained to nothing → no event emitted).
+        toolContextMap.put(
+                com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES,
+                new com.viglet.turing.genai.rag.TurRagSourceCollector());
         // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
         // internal tool execution is now the default once callbacks are present.
         var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()

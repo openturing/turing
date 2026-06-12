@@ -3,6 +3,8 @@ package com.viglet.turing.genai.tool;
 import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.provider.store.lucene.TurLuceneVectorStore;
 import com.viglet.turing.genai.rag.TurRagRrf;
+import com.viglet.turing.genai.rag.TurRagSource;
+import com.viglet.turing.genai.rag.TurRagSourceCollector;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
 import com.viglet.turing.persistence.model.rag.TurRagBm25Core;
 import com.viglet.turing.persistence.model.rag.TurRagBm25Source;
@@ -203,6 +205,11 @@ public class TurRagSearchToolService {
 
             java.util.LinkedHashMap<String, String> fileLinks = new java.util.LinkedHashMap<>();
 
+            // T292 — capture per-chunk provenance into the per-turn collector
+            // (when the chat executor published one). Drained by the streaming
+            // dispatcher into the `sources[]` SSE event after the tool loop.
+            TurRagSourceCollector sourceCollector = resolveSourceCollector(toolContext);
+
             for (int i = 0; i < results.size(); i++) {
                 Document doc = results.get(i);
                 String objectName = doc.getMetadata().getOrDefault(OBJECT_NAME_FIELD, "").toString();
@@ -212,6 +219,10 @@ public class TurRagSearchToolService {
                         + URLEncoder.encode(objectName, StandardCharsets.UTF_8);
 
                 fileLinks.putIfAbsent(objectName, downloadUrl);
+
+                if (sourceCollector != null) {
+                    sourceCollector.add(TurRagSource.fromDocument(doc));
+                }
 
                 sb.append("--- Document ").append(i + 1).append(" ---\n");
                 sb.append("File: ").append(objectName).append("\n");
@@ -370,6 +381,25 @@ public class TurRagSearchToolService {
             return Locale.ROOT;
         }
         return Locale.forLanguageTag(tag);
+    }
+
+    /**
+     * T292 — resolves the per-turn {@link TurRagSourceCollector} the chat
+     * executor publishes under
+     * {@link TurCustomToolCallbackService#TOOL_CONTEXT_RAG_SOURCES}. Returns
+     * {@code null} when no collector is present (legacy callers, unit tests,
+     * or non-agent invocations) so provenance capture is purely additive.
+     */
+    private static TurRagSourceCollector resolveSourceCollector(ToolContext toolContext) {
+        if (toolContext == null) {
+            return null;
+        }
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) {
+            return null;
+        }
+        Object raw = ctx.get(TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
+        return raw instanceof TurRagSourceCollector collector ? collector : null;
     }
 
     /**

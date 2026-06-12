@@ -197,12 +197,35 @@ export interface TurChatConversationMessage {
  * - `type === "options"` carries a JSON-encoded `string[]` of chip labels;
  * - `type === "form"` (T107) carries a JSON-encoded {@link TurChatForm} schema
  *   so the SDK can render a native multi-field form;
+ * - `type === "sources"` (T292) carries a JSON-encoded {@link TurChatSource}[]
+ *   array of the RAG provenance behind the answer;
  * - otherwise `content` is assistant text to append.
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options" | "form";
+  type?: "token" | "options" | "form" | "sources";
+}
+
+/**
+ * T292 — provider-agnostic provenance for one retrieved RAG chunk, carried by
+ * the `"sources"` SSE event. Mirrors the backend `TurRagSource` record. Powers
+ * the source-chip UI (T293 / T332): chips group by `sourceId`/`url` and expand
+ * to the cited chunks, with `score` driving a confidence cue.
+ */
+export interface TurChatSource {
+  /** Stable identifier of the source document. */
+  sourceId: string;
+  /** Human-friendly chip label (document title, file name, or id). */
+  title: string;
+  /** Deep link to the source when available. */
+  url?: string | null;
+  /** Zero-based chunk index within the source document, when recorded. */
+  chunkIndex?: number | null;
+  /** Retrieval score (cosine similarity / BM25-RRF); drives the confidence cue. */
+  score?: number | null;
+  /** `true` when this chunk reached the answer via the keyword (BM25) fallback only. */
+  keywordOnly?: boolean;
 }
 
 /**
@@ -252,6 +275,8 @@ export interface TurChatConversationResponse {
   options?: string[];
   /** Native multi-field form to render for the next turn (T107), if any. */
   form?: TurChatForm;
+  /** RAG provenance behind the answer (T292), if any. */
+  sources?: TurChatSource[];
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

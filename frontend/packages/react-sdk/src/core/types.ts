@@ -32,6 +32,7 @@ export type {
   TurChatResponse,
   TurChatConversationMessage,
   TurChatStreamEvent,
+  TurChatSource,
   TurChatConversationResponse,
   TurChatForm,
   TurChatFormField,

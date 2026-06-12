@@ -18,6 +18,7 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatSource,
 } from "../types";
 
 /**
@@ -58,6 +59,11 @@ export interface ChatMessage extends TurChatConversationMessage {
    * collected values. Cleared once the form is submitted.
    */
   form?: TurChatForm;
+  /**
+   * RAG provenance behind this assistant answer (T292). Rendered as source
+   * chips below the bubble; each entry maps to a retrieved chunk.
+   */
+  sources?: TurChatSource[];
 }
 
 export interface ChatControllerAgent {
@@ -456,12 +462,14 @@ export function createChatController(
 
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
       const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
+      const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
           options: finalOptions,
           form: finalForm,
+          sources: finalSources,
         })),
         "success",
       );

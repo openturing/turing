@@ -18,6 +18,7 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatSource,
 } from "../core/types";
 
 export type ChatStatus = "idle" | "loading" | "success" | "error";
@@ -66,6 +67,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.1
    */
   form?: TurChatForm;
+  /**
+   * RAG provenance behind this assistant answer (T292), emitted by the chat
+   * pipeline as a `"sources"` SSE event. The host renders source chips below
+   * the bubble; each entry maps to a retrieved chunk.
+   *
+   * @since 2026.3.1
+   */
+  sources?: TurChatSource[];
 }
 
 /**
@@ -584,11 +593,13 @@ export function useTuringChat(
 
         const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
         const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
+        const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         setMessages((prev) => patchMessage(prev, assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
           options: finalOptions,
           form: finalForm,
+          sources: finalSources,
         })));
         setActiveForm(finalForm ?? null);
         setStatus("success");

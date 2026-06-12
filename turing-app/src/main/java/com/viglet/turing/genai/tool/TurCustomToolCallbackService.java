@@ -139,6 +139,20 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_AGENT_INVOKE_DEPTH = "turing.agentInvokeDepth";
 
+    /**
+     * T292 — key under which the chat executor publishes a
+     * {@link com.viglet.turing.genai.rag.TurRagSourceCollector} so the
+     * {@code search_knowledge_base} tool can record the provenance
+     * ({@code sourceId} / {@code title} / {@code url} / {@code chunkIndex} /
+     * {@code score}) of every retrieved chunk. The streaming dispatcher drains
+     * the collector after the tool-execution loop and emits it as the
+     * structured {@code sources[]} SSE event. Absent → the tool simply skips
+     * provenance capture (legacy callers / unit tests).
+     *
+     * @since 2026.3.1
+     */
+    public static final String TOOL_CONTEXT_RAG_SOURCES = "turing.ragSources";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;

@@ -29,6 +29,8 @@ import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.persona.TurPersonaToneValidator;
 import com.viglet.turing.genai.persona.TurPersonaValidationResult;
+import com.viglet.turing.genai.rag.TurRagSource;
+import com.viglet.turing.genai.rag.TurRagSourceCollector;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -370,6 +372,10 @@ public class TurChatStreamingDispatcher {
                 suggestedOptions = ChatFlowOps.suggestedOptions(graph, current);
                 formJson = buildFormJson(current);
             }
+            // T292 — drain the per-turn RAG provenance the search_knowledge_base
+            // tool recorded during the tool-execution loop, to emit it as a
+            // structured `sources[]` SSE event below the answer.
+            List<TurRagSource> sources = drainRagSources(initialOptions);
             long tTotal = System.currentTimeMillis() - tStart;
             // Post = total - setup - llm_call. Captures the time AFTER the LLM
             // returns: tone validation, telemetry, suggested options. Calling
@@ -383,7 +389,7 @@ public class TurChatStreamingDispatcher {
             log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={} regen_ms={})",
                     tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
                     tAdvanceMs, tRegenMs);
-            return new AssistantTurn(text, suggestedOptions, formJson);
+            return new AssistantTurn(text, suggestedOptions, formJson, sources);
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
@@ -435,7 +441,32 @@ public class TurChatStreamingDispatcher {
      * {@link #emitTurn(AssistantTurn)} fans it out into one to three
      * {@link ChatResponse} events.
      */
-    private record AssistantTurn(String text, List<String> options, String formJson) {
+    private record AssistantTurn(String text, List<String> options, String formJson,
+            List<TurRagSource> sources) {
+    }
+
+    /**
+     * T292 — drains the per-turn {@link TurRagSourceCollector} the chat
+     * executor published into the CALL-branch {@link ChatOptions} tool context.
+     * Returns an empty list when no collector is present (e.g. STREAM-only
+     * agents, or options without a tool context). The same options instance is
+     * carried unchanged across the {@code TurToolExecutionLoop} rounds, so the
+     * collector here is the one the {@code search_knowledge_base} tool wrote to.
+     */
+    private static List<TurRagSource> drainRagSources(ChatOptions options) {
+        if (!(options instanceof org.springframework.ai.model.tool.ToolCallingChatOptions toolOptions)) {
+            return List.of();
+        }
+        var ctx = toolOptions.getToolContext();
+        if (ctx == null) {
+            return List.of();
+        }
+        Object raw = ctx.get(
+                com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
+        if (raw instanceof TurRagSourceCollector collector) {
+            return collector.snapshot();
+        }
+        return List.of();
     }
 
     /**
@@ -451,6 +482,19 @@ public class TurChatStreamingDispatcher {
         Flux<ChatResponse> events = turn.text() == null || turn.text().isEmpty()
                 ? Flux.empty()
                 : Flux.just(new ChatResponse("assistant", turn.text()));
+        // T292 — provenance chips render directly under the answer bubble, so
+        // emit the `sources` event right after the text token and before the
+        // chip/form events.
+        if (turn.sources() != null && !turn.sources().isEmpty()) {
+            try {
+                String sourcesJson = OBJECT_MAPPER.writeValueAsString(turn.sources());
+                events = events.concatWith(
+                        Flux.just(new ChatResponse("assistant", sourcesJson, "sources")));
+            } catch (JacksonException e) {
+                log.warn("[AgentExec] could not serialize {} RAG source(s): {}",
+                        turn.sources().size(), e.getMessage());
+            }
+        }
         if (turn.options() != null && !turn.options().isEmpty()) {
             try {
                 String optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());

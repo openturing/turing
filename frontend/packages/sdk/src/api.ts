@@ -5,6 +5,7 @@ import type {
   TurChatForm,
   TurChatFormSubmitResponse,
   TurChatResponse,
+  TurChatSource,
   TurChatStreamEvent,
   TurIntent,
   TurLlmContextInfo,
@@ -182,6 +183,8 @@ export interface PostChatConversationOptions {
   readonly onOptions?: (options: string[]) => void;
   /** Fired when the engine emits a native multi-field form schema (T107). */
   readonly onForm?: (form: TurChatForm) => void;
+  /** Fired when the engine emits RAG provenance for the answer (T292). */
+  readonly onSources?: (sources: TurChatSource[]) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -194,18 +197,59 @@ export interface PostChatConversationOptions {
   readonly forcedVariant?: string;
 }
 
+/** Parses an `"options"` SSE event payload into chip labels, or `null`. */
+function parseOptionsEvent(content: string): string[] | null {
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed)) {
+      const labels = parsed.filter((s): s is string => typeof s === "string");
+      if (labels.length > 0) return labels;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"form"` SSE event payload (T107) into a form schema, or `null`. */
+function parseFormEvent(content: string): TurChatForm | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatForm;
+    if (parsed && Array.isArray(parsed.fields) && parsed.fields.length > 0) {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"sources"` SSE event payload (T292) into RAG provenance, or `null`. */
+function parseSourcesEvent(content: string): TurChatSource[] | null {
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed as TurChatSource[];
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 /**
  * Drains a Spring `Flux<ChatResponse>` SSE stream and returns the
- * concatenated assistant text, any chip labels (`type === "options"`), and any
- * native multi-field form schema (`type === "form"`, T107) emitted by the
- * chat-flow engine.
+ * concatenated assistant text, any chip labels (`type === "options"`), any
+ * native multi-field form schema (`type === "form"`, T107), and any RAG
+ * provenance (`type === "sources"`, T292) emitted by the chat pipeline.
  */
 async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
   onOptions?: (options: string[]) => void,
   onForm?: (form: TurChatForm) => void,
-): Promise<{ text: string; options: string[]; form?: TurChatForm }> {
+  onSources?: (sources: TurChatSource[]) => void,
+): Promise<{ text: string; options: string[]; form?: TurChatForm; sources?: TurChatSource[] }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
   }
@@ -215,6 +259,7 @@ async function consumeAssistantStream(
   let aggregated = "";
   let optionLabels: string[] = [];
   let form: TurChatForm | undefined;
+  let sources: TurChatSource[] | undefined;
 
   function consumeLine(line: string) {
     if (!line.startsWith("data:")) return;
@@ -228,29 +273,26 @@ async function consumeAssistantStream(
       return;
     }
     if (parsed.type === "options") {
-      try {
-        const parsedOptions = JSON.parse(parsed.content) as unknown;
-        if (Array.isArray(parsedOptions)) {
-          const labels = parsedOptions.filter((s): s is string => typeof s === "string");
-          if (labels.length > 0) {
-            optionLabels = labels;
-            onOptions?.(labels);
-          }
-        }
-      } catch {
-        // ignore
+      const labels = parseOptionsEvent(parsed.content);
+      if (labels) {
+        optionLabels = labels;
+        onOptions?.(labels);
       }
       return;
     }
     if (parsed.type === "form") {
-      try {
-        const parsedForm = JSON.parse(parsed.content) as TurChatForm;
-        if (parsedForm && Array.isArray(parsedForm.fields) && parsedForm.fields.length > 0) {
-          form = parsedForm;
-          onForm?.(parsedForm);
-        }
-      } catch {
-        // ignore
+      const parsedForm = parseFormEvent(parsed.content);
+      if (parsedForm) {
+        form = parsedForm;
+        onForm?.(parsedForm);
+      }
+      return;
+    }
+    if (parsed.type === "sources") {
+      const parsedSources = parseSourcesEvent(parsed.content);
+      if (parsedSources) {
+        sources = parsedSources;
+        onSources?.(parsedSources);
       }
       return;
     }
@@ -274,7 +316,7 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return { text: aggregated, options: optionLabels, form };
+  return { text: aggregated, options: optionLabels, form, sources };
 }
 
 /**
@@ -309,13 +351,14 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form } = await consumeAssistantStream(
+  const { text, options: chipOptions, form, sources } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
     options?.onForm,
+    options?.onSources,
   );
-  return { role: "assistant", content: text, options: chipOptions, form };
+  return { role: "assistant", content: text, options: chipOptions, form, sources };
 }
 
 export interface PostAgentChatOptions {
@@ -323,6 +366,8 @@ export interface PostAgentChatOptions {
   readonly onOptions?: (options: string[]) => void;
   /** Fired when the engine emits a native multi-field form schema (T107). */
   readonly onForm?: (form: TurChatForm) => void;
+  /** Fired when the engine emits RAG provenance for the answer (T292). */
+  readonly onSources?: (sources: TurChatSource[]) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -393,13 +438,14 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form } = await consumeAssistantStream(
+  const { text, options: chipOptions, form, sources } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
     options?.onForm,
+    options?.onSources,
   );
-  return { role: "assistant", content: text, options: chipOptions, form };
+  return { role: "assistant", content: text, options: chipOptions, form, sources };
 }
 
 /**
