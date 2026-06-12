@@ -1,0 +1,1 @@
+Type-ahead / autocomplete suggestions for a partial search term on one site. Pass site, locale, and the prefix the user has typed so far; returns matching titles and spell/term suggestions. Use it to power a search box or to suggest the correct spelling before running a full search_site.

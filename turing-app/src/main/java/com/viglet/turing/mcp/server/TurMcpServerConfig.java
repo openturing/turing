@@ -17,7 +17,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.properties.TurConfigProperties;
 
@@ -32,19 +31,22 @@ import lombok.extern.slf4j.Slf4j;
  * when the MCP server is off (the default) none of these beans exist and the
  * deployment is byte-for-byte unchanged.
  *
- * <p><b>One catalog, two consumers (§XIII.5)</b>: the {@link ToolCallbackProvider}
- * exposed here is built from the <em>same</em> {@link TurDslToolService} the
- * internal Semantic-Navigation agent uses, run through the <em>same</em>
- * {@link TurToolCallbackPipeline#decorate(ToolCallback...)} path — so the curated
- * {@code prompts/tools/**.md} descriptions, naming, and logging all come along
- * and a new tool shows up on both surfaces. Registering raw {@code @Tool}
- * callbacks (with their {@code "."} placeholder descriptions) is forbidden by a
- * project invariant; always decorate first.
+ * <p><b>Reuse, don't fork (§XIII.5)</b>: the {@link ToolCallbackProvider}
+ * exposed here is built from {@link TurMcpSearchToolService} — the dedicated,
+ * MCP-spec-named read surface ({@code list_sites}, {@code get_site_fields},
+ * {@code search_site}, {@code get_document}, {@code similar_documents},
+ * {@code facet_search}, {@code autocomplete}) — which itself delegates to the
+ * <em>same</em> {@code TurDslToolService} the internal Semantic-Navigation agent
+ * uses, so there is no second search implementation. The callbacks run through
+ * the <em>same</em> {@link TurToolCallbackPipeline#decorate(ToolCallback...)}
+ * path, so the curated {@code prompts/tools/mcp/*.md} descriptions and logging
+ * come along. Registering raw {@code @Tool} callbacks (with their {@code "."}
+ * placeholder descriptions) is forbidden by a project invariant; always
+ * decorate first.
  *
- * <p>T247 will extend the catalog with the dedicated, MCP-spec-named read tools
- * ({@code list_sites}, {@code get_site_fields}, {@code search_site}, …) by adding
- * a tool source to {@link #turingMcpToolCallbackProvider}; T246 replaces the
- * {@link TurMcpLoopbackFilter} loopback gate with OAuth 2.1 bearer-token auth.
+ * <p>The T246 OAuth 2.1 resource-server gate ({@link TurMcpSecurityConfig}) and
+ * the per-call scope guard ({@link TurMcpScopeToolCallback}) protect this
+ * surface; {@link TurMcpLoopbackFilter} is the loopback-first fallback.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -67,11 +69,11 @@ public class TurMcpServerConfig {
      * bean and converts its callbacks into MCP tool specifications.
      */
     @Bean
-    ToolCallbackProvider turingMcpToolCallbackProvider(TurDslToolService dslToolService,
+    ToolCallbackProvider turingMcpToolCallbackProvider(TurMcpSearchToolService searchToolService,
             TurToolCallbackPipeline toolCallbackPipeline,
             TurMcpToolScopePolicy toolScopePolicy) {
         ToolCallback[] raw = MethodToolCallbackProvider.builder()
-                .toolObjects(dslToolService)
+                .toolObjects(searchToolService)
                 .build()
                 .getToolCallbacks();
         ToolCallback[] decorated = toolCallbackPipeline.decorate(raw);

@@ -1,0 +1,1 @@
+Fetch a single indexed document by its id and return all of its source fields. Use this after search_site or facet_search surfaces a document id and you need the full record (not just the snippet) to reason over or quote. Parameters: site (from list_sites), locale (defaults to the site default), and documentId.

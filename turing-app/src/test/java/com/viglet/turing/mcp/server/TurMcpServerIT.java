@@ -73,14 +73,16 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
     }
 
     @Test
-    void toolCallbackProviderBean_publishesDecoratedDslCatalog() {
+    void toolCallbackProviderBean_publishesDecoratedSearchCatalog() {
         ToolCallback[] callbacks = turingMcpToolCallbackProvider.getToolCallbacks();
         assertNotNull(callbacks);
         Set<String> names = toolNames(List.of(callbacks));
-        assertTrue(names.contains("dsl_list_indices"),
-                () -> "expected dsl_list_indices in MCP catalog, got " + names);
-        assertTrue(names.contains("dsl_search"),
-                () -> "expected dsl_search in MCP catalog, got " + names);
+        assertTrue(names.contains("list_sites"),
+                () -> "expected list_sites in MCP catalog, got " + names);
+        assertTrue(names.contains("search_site"),
+                () -> "expected search_site in MCP catalog, got " + names);
+        assertTrue(names.contains("facet_search"),
+                () -> "expected facet_search in MCP catalog, got " + names);
     }
 
     @Test
@@ -103,16 +105,16 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
             List<McpSchema.Tool> list = tools.tools();
             assertFalse(list.isEmpty(), "MCP server must publish at least one tool");
 
-            McpSchema.Tool listIndices = list.stream()
-                    .filter(t -> "dsl_list_indices".equals(t.name()))
+            McpSchema.Tool listSites = list.stream()
+                    .filter(t -> "list_sites".equals(t.name()))
                     .findFirst()
                     .orElse(null);
-            assertNotNull(listIndices, () -> "dsl_list_indices not exposed over MCP; got "
+            assertNotNull(listSites, () -> "list_sites not exposed over MCP; got "
                     + list.stream().map(McpSchema.Tool::name).toList());
 
-            // Decoration ran: the curated prompts/tools/dsl/dsl_list_indices.md
+            // Decoration ran: the curated prompts/tools/mcp/list_sites.md
             // description replaced the "." @Tool placeholder.
-            String description = listIndices.description();
+            String description = listSites.description();
             assertNotNull(description);
             assertFalse(".".equals(description.trim()),
                     "tool description must be the curated .md content, not the '.' placeholder");

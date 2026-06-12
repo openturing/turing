@@ -1,0 +1,1 @@
+Return the field schema for one site: every searchable/returnable field, its data type, whether it is a facet (usable as a facetField in facet_search), and whether it is multi-valued. Use this to learn the exact field names before building a facet_search drill-down or interpreting search_site results. Takes the site name (from list_sites).
