@@ -70,6 +70,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class TurSNGenAi {
+    /** T327 — serializes the {@code sources[]} SSE event payload. */
+    private static final tools.jackson.databind.ObjectMapper SOURCES_MAPPER =
+            new tools.jackson.databind.ObjectMapper();
     public static final String SOURCE_ID = "source_id";
     public static final String SITES = "sites";
     public static final String LOCALE = "locale";
@@ -241,32 +244,54 @@ public class TurSNGenAi {
             return reactor.core.publisher.Flux.empty();
         }
 
-        String augmentedSystemPrompt = retrieveAndBuildSystemPrompt(context, latestUserQuery, filters);
+        // T327 — retrieve once, keep the chunks' provenance, then build the
+        // stuffed system prompt from the same documents. Previously the public
+        // SN path collapsed the chunks to text and discarded the metadata the
+        // retriever returned; now it preserves it and emits the same
+        // `sources[]` SSE event the agent tool path emits (T292).
+        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
+        String information = relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+        String augmentedSystemPrompt = buildSystemPrompt(context.getSystemPrompt(), information);
 
         var mapped = history.stream()
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(
                         m.role(), m.content() == null ? "" : m.content()))
                 .toList();
-        return agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
-                conversationId, flowId, null, forcedVariant);
+        reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer =
+                agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
+                        conversationId, flowId, null, forcedVariant);
+        return prependSourcesEvent(answer, relevantDocuments);
     }
 
     /**
-     * Performs the RAG retrieval (auto-extracts filters when none given,
-     * picks topK/threshold based on whether filtering narrows the universe),
-     * then composes the final system prompt by appending the retrieved
-     * chunks to the agent's behavior prompt. Shared between the legacy
-     * single-shot {@link #assistantConversation} flow and the new streaming
-     * tool-calling flow.
+     * T327 — emits a {@code "sources"} SSE event (same contract as T292) carrying
+     * the per-chunk provenance, ahead of the assistant's answer stream. The
+     * order is irrelevant to the client: both SDKs collect the {@code sources[]}
+     * regardless of arrival position and attach it to the assistant message on
+     * stream completion. Returns the answer stream unchanged when there is no
+     * provenance to report or it can't be serialized.
      */
-    private String retrieveAndBuildSystemPrompt(TurGenAiContext context,
-            String latestUserQuery,
-            java.util.Map<String, List<String>> filters) {
-        List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
-        String information = relevantDocuments.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n\n"));
-        return buildSystemPrompt(context.getSystemPrompt(), information);
+    private reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> prependSourcesEvent(
+            reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer,
+            List<Document> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return answer;
+        }
+        List<com.viglet.turing.genai.rag.TurRagSource> sources = documents.stream()
+                .map(com.viglet.turing.genai.rag.TurRagSource::fromDocument)
+                .toList();
+        try {
+            String json = SOURCES_MAPPER.writeValueAsString(sources);
+            return reactor.core.publisher.Flux.concat(
+                    reactor.core.publisher.Flux.just(
+                            new TurAgentChatExecutor.ChatResponse("assistant", json, "sources")),
+                    answer);
+        } catch (tools.jackson.core.JacksonException e) {
+            log.warn("RAG chat could not serialize {} source(s): {}", sources.size(), e.getMessage());
+            return answer;
+        }
     }
 
     /**

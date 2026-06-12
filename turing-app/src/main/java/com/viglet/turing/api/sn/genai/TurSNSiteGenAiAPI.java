@@ -314,7 +314,11 @@ public class TurSNSiteGenAiAPI {
 			StringBuilder assistantBuffer = new StringBuilder();
 			return stream
 					.doOnNext(chunk -> {
-						if (chunk != null && chunk.content() != null) {
+						// Only accumulate assistant text into chat memory — skip the
+						// structured side-channel events (T292/T327 "sources",
+						// "options", "form") so their JSON never pollutes the
+						// recorded answer.
+						if (chunk != null && chunk.content() != null && isAssistantText(chunk)) {
 							assistantBuffer.append(chunk.content());
 						}
 					})
@@ -329,6 +333,17 @@ public class TurSNSiteGenAiAPI {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, "Couldn't find site name."));
 		});
+	}
+
+	/**
+	 * A streamed chunk is assistant text (to record in chat memory) when its
+	 * {@code type} is the default {@code "token"} or unset; structured
+	 * side-channel events ({@code "sources"} / {@code "options"} / {@code "form"})
+	 * are not.
+	 */
+	private static boolean isAssistantText(TurAgentChatExecutor.ChatResponse chunk) {
+		String type = chunk.type();
+		return type == null || "token".equals(type);
 	}
 
 	/**
