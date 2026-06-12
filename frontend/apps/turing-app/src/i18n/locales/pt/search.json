@@ -18,6 +18,16 @@
     "aiModeYou": "Você",
     "aiModeAssistant": "Assistente IA",
     "aiModeNewChat": "Nova conversa",
+    "aiModeSources": {
+      "heading": "Fontes",
+      "why": "Por que você disse isso?",
+      "open": "Abrir fonte",
+      "passage": "Trecho",
+      "keywordOnly": "correspondência por palavra-chave",
+      "confidenceHigh": "Alta confiança",
+      "confidenceMedium": "Confiança média",
+      "confidenceLow": "Baixa confiança"
+    },
     "noResults": "Nenhum resultado para \u201c{{query}}\u201d",
     "didYouMean": "Você quis dizer",
     "tryDifferent": "Tente palavras-chave diferentes ou navegue por todo o conteúdo.",

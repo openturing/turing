@@ -1,8 +1,10 @@
 import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar";
-import { TuringMarkdown, useTuringChat } from "@viglet/turing-react-sdk";
+import { TuringMarkdown, TuringSourceChips, useTuringChat } from "@viglet/turing-react-sdk";
 import {
   IconArrowUp,
+  IconChevronDown,
   IconCpu2,
+  IconFileText,
   IconLoader2,
   IconPlus,
   IconSparkles,
@@ -25,6 +27,52 @@ interface AiModeChatProps {
 export interface AiModeChatHandle {
   /** Imperatively submit a question to the chat (e.g. from the top search bar). */
   ask: (query: string) => void;
+}
+
+/**
+ * Public-chat skin over the shared headless {@code TuringSourceChips} (T332).
+ * Renders the RAG provenance behind a grounded AI-mode answer as
+ * confidence-graded chips with a one-click "why did you say this?" trace,
+ * fed by the {@code sources[]} SSE event the SN chat now emits (T327).
+ */
+function AiModeSourceChips({ message }: Readonly<{ message: { sources?: unknown[] } }>) {
+  const { t } = useTranslation();
+  const sources = message.sources;
+  if (!sources || sources.length === 0) return null;
+  return (
+    <TuringSourceChips
+      sources={sources as Parameters<typeof TuringSourceChips>[0]["sources"]}
+      labels={{
+        heading: t("search.aiModeSources.heading"),
+        why: t("search.aiModeSources.why"),
+        open: t("search.aiModeSources.open"),
+        chunk: t("search.aiModeSources.passage"),
+        keywordOnly: t("search.aiModeSources.keywordOnly"),
+        confidenceHigh: t("search.aiModeSources.confidenceHigh"),
+        confidenceMedium: t("search.aiModeSources.confidenceMedium"),
+        confidenceLow: t("search.aiModeSources.confidenceLow"),
+      }}
+      icons={{
+        source: <IconFileText className="size-3.5 shrink-0" />,
+        expand: <IconChevronDown className="size-3 shrink-0 opacity-60" />,
+      }}
+      classNames={{
+        container: "not-prose mt-3 border-t border-border/60 pt-2",
+        heading: "text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 mb-1.5",
+        list: "flex flex-wrap gap-1.5",
+        chip: "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-muted hover:border-border/80 max-w-full [&>span:nth-child(2)]:truncate [&>span:nth-child(2)]:max-w-[180px]",
+        chipExpanded: "bg-muted border-blue-500/50",
+        chipKeyword: "border-amber-500/40",
+        confidence:
+          "size-2 rounded-full shrink-0 data-[confidence=high]:bg-emerald-500 data-[confidence=medium]:bg-amber-500 data-[confidence=low]:bg-muted-foreground/40",
+        panel: "mt-1.5 w-full space-y-1 rounded-lg border border-border/60 bg-muted/20 p-2.5",
+        panelCaption: "text-[11px] font-medium text-muted-foreground mb-1",
+        chunk: "flex items-center justify-between gap-3 text-xs text-muted-foreground py-0.5",
+        chunkMeta: "font-mono text-[11px]",
+        link: "text-blue-600 dark:text-blue-400 hover:underline shrink-0",
+      }}
+    />
+  );
 }
 
 export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function AiModeChat(
@@ -155,6 +203,7 @@ export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function
                         {message.content}
                       </TuringMarkdown>
                     ) : null}
+                    <AiModeSourceChips message={message} />
                   </div>
                 ) : (
                   <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">

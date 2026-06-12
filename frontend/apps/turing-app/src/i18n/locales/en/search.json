@@ -18,6 +18,16 @@
     "aiModeYou": "You",
     "aiModeAssistant": "AI Assistant",
     "aiModeNewChat": "New chat",
+    "aiModeSources": {
+      "heading": "Sources",
+      "why": "Why did you say this?",
+      "open": "Open source",
+      "passage": "Passage",
+      "keywordOnly": "keyword match",
+      "confidenceHigh": "High confidence",
+      "confidenceMedium": "Medium confidence",
+      "confidenceLow": "Low confidence"
+    },
     "noResults": "No results for \u201c{{query}}\u201d",
     "didYouMean": "Did you mean",
     "tryDifferent": "Try different keywords or browse all content.",
