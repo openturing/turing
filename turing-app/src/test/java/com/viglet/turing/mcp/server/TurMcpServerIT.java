@@ -83,6 +83,8 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
                 () -> "expected search_site in MCP catalog, got " + names);
         assertTrue(names.contains("facet_search"),
                 () -> "expected facet_search in MCP catalog, got " + names);
+        assertTrue(names.contains("rag_answer"),
+                () -> "expected rag_answer in MCP catalog, got " + names);
     }
 
     @Test
