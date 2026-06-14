@@ -61,6 +61,18 @@ chmod +x "$STAGE/bin/"*.sh 2>/dev/null || true
 cp "$SCRIPT_DIR/config/viglet-turing.properties" "$STAGE/server/"
 cp "$SCRIPT_DIR/config/README.txt" "$STAGE/"
 
+# Example exports
+echo "==> Packaging example exports..."
+chmod +x "$SCRIPT_DIR/package-examples.sh" 2>/dev/null || true
+"$SCRIPT_DIR/package-examples.sh"
+EXAMPLES_OUT="${PROJECT_ROOT}/target/examples"
+mkdir -p "$STAGE/examples"
+for name in mythical-creatures space-missions vinyl-records; do
+  if [ -f "$EXAMPLES_OUT/${name}.zip" ]; then
+    cp "$EXAMPLES_OUT/${name}.zip" "$STAGE/examples/"
+  fi
+done
+
 # =====================================================================
 #  1. Zip
 # =====================================================================
