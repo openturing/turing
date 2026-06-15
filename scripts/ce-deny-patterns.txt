@@ -1,0 +1,50 @@
+# ce-deny-patterns.txt — forbidden-content patterns for the open-core publish
+# secret-scan gate (Block P / T358, §XIX.4). Consumed by scripts/publish-ce.sh.
+#
+# These catch what the entropy scanners (gitleaks/trufflehog) do NOT know about:
+# internal hostnames and CUSTOMER NAMES, plus a few high-signal secret markers.
+# Any match in the assembled public tree FAILS the publish, closed.
+#
+# ── Format ───────────────────────────────────────────────────────────────────
+#   - one POSIX extended-regex (grep -E) per line
+#   - blank lines and lines whose first non-space char is '#' are comments
+#   - matches are REDACTED in the script's output, so it is safe to run in CI
+#
+# ── Curation rules (read before adding) ──────────────────────────────────────
+#   - This file is itself on the denylist (ce-exclude.txt) — it never ships, so
+#     it is the right place for internal names. Do NOT commit real customer PII
+#     to the PUBLIC tree; keep that here (private) instead.
+#   - Every active pattern below was verified to produce ZERO matches against the
+#     current source tree. Before activating a new one, run:
+#       git grep -nIE '<your-regex>' -- .
+#     and confirm it does not hit legitimate code/tests/config (e.g. private-IP
+#     literals already appear in unit-test fixtures — see the commented block).
+
+# ── High-signal secret markers (backstop for when no entropy scanner is present)
+# Anchored so the Bitnami helm-chart documentation comment ("## -----BEGIN RSA
+# PRIVATE KEY-----") in containers/solr/helm/values.yaml is NOT matched.
+^[[:space:]]*-----BEGIN [A-Z ]+PRIVATE KEY-----
+AKIA[0-9A-Z]{16}
+ghp_[0-9A-Za-z]{36}
+github_pat_[0-9A-Za-z_]{22,}
+xox[baprs]-[0-9A-Za-z-]{10,}
+AIza[0-9A-Za-z_-]{35}
+
+# ── Internal hostnames ────────────────────────────────────────────────────────
+# Generic internal TLDs that should never appear in public, customer-facing code.
+[a-z0-9][a-z0-9.-]*\.(intranet|corp|lan)\b
+
+# Examples to curate locally — left COMMENTED because they currently match
+# legitimate content in this repo and would block every publish:
+#   - private-IP endpoint URLs: present in unit-test fixtures (TurSEInstanceTest,
+#     TurFileUtilsTest). Activate only if those tests are excluded/relocated.
+# https?://(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)[0-9]
+#   - the company contact domain appears legitimately in SUPPORT.md, so do NOT
+#     blanket-forbid it; forbid only specific INTERNAL staging hosts:
+# (staging|stg|qa|uat|jenkins|jira|confluence)\.vilt-group\.com
+
+# ── Customer names (CURATE LOCALLY — never commit real names to the public tree)
+# One regex per customer/tenant whose name must not leak into the CE snapshot.
+# Keep entries word-bounded to avoid over-matching, e.g.:
+# \bAcme[ -]?Corp\b
+# (add real customer/tenant names here on the private repo only)

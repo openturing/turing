@@ -74,9 +74,11 @@ backup/
 *.log
 
 # ── Internal publish tooling (the boundary file + the script that applies it) ──
-# The public snapshot must not carry the mechanism that generated it.
+# The public snapshot must not carry the mechanism that generated it. The
+# secret-scan pattern file holds internal hostnames / customer names by design.
 ce-exclude.txt
 scripts/publish-ce.sh
+scripts/ce-deny-patterns.txt
 
 # ── Internal README; the public repo ships a separate curated README ──────────
 # The publish script renames README.ce.adoc → README.adoc in the public tree

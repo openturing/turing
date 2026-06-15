@@ -125,28 +125,96 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# 3. Secret-scan gate (T358 plugs its scanner in here; fail-closed)
+# 3. Secret-scan gate — fails CLOSED (T358, §XIX.4)
+#
+# Two layers run over the *assembled* tree (after the denylist already removed
+# the known-private paths):
+#   a) a built-in, always-on pattern scan for things the entropy scanners do
+#      NOT know about — internal hostnames + customer names — plus a few
+#      high-signal secret markers (PEM blocks, cloud keys). Patterns live in an
+#      external, itself-denylisted file so the maintainer can curate names
+#      without editing this script.
+#   b) gitleaks / trufflehog for entropy + known credential formats. A real run
+#      of one of these is REQUIRED before --push (override: --allow-no-scan).
+# Any hit in either layer aborts the publish. Matches are REDACTED in output so
+# a secret never re-leaks through a CI log.
 # --------------------------------------------------------------------------
+PATTERN_FILE="${CE_DENY_PATTERNS:-$PROJECT_ROOT/scripts/ce-deny-patterns.txt}"
+
+redact() {
+  # Keep the file:line locator and a short head/tail of the match; mask the rest
+  # so the scanner output itself can't leak the secret into a CI log.
+  awk -F: '{
+    loc = $1 ":" $2;
+    val = substr($0, index($0, $3));
+    if (length(val) > 12) val = substr(val,1,4) "…REDACTED…" substr(val,length(val)-3);
+    print "    " loc "  " val;
+  }'
+}
+
+scan_builtin_patterns() {
+  local tree="$1"
+  if [[ ! -f "$PATTERN_FILE" ]]; then
+    warn "pattern file $PATTERN_FILE not found — skipping built-in host/customer-name scan"
+    return 0
+  fi
+  # Build grep -e args from the file, dropping blank lines and '#' comments
+  # (grep -f would treat comment lines as literal patterns).
+  local -a pats=()
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"                       # tolerate CRLF
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "${line#"${line%%[![:space:]]*}"}" == \#* ]] && continue
+    pats+=(-e "$line")
+  done < "$PATTERN_FILE"
+
+  if [[ ${#pats[@]} -eq 0 ]]; then
+    warn "pattern file $PATTERN_FILE has no active patterns — built-in scan is a no-op"
+    return 0
+  fi
+
+  log "Built-in pattern scan (${#pats[@]} pattern(s) from ${PATTERN_FILE##*/})"
+  local hits
+  hits="$(grep -rInE -I "${pats[@]}" "$tree" 2>/dev/null \
+          | sed "s#^$tree/##" || true)"
+  if [[ -n "$hits" ]]; then
+    warn "built-in scan matched forbidden patterns (internal host / customer name / secret marker):"
+    printf '%s\n' "$hits" | redact >&2
+    die "secret scan FAILED — assembled tree matched ce-deny-patterns.txt; aborting (§XIX.4)"
+  fi
+}
+
 run_secret_scan() {
   local tree="$1"
+
+  # (a) always-on built-in scan
+  scan_builtin_patterns "$tree"
+
+  # (b) entropy / known-format scanners
+  local scanned_external=false
   if command -v gitleaks >/dev/null 2>&1; then
     log "Secret scan (gitleaks) over assembled tree"
     gitleaks detect --no-git --source "$tree" --redact \
-      || die "secret scan FAILED — assembled tree contains a secret; aborting (§XIX.4)"
-    return 0
+      || die "secret scan FAILED — gitleaks found a secret; aborting (§XIX.4)"
+    scanned_external=true
   fi
   if command -v trufflehog >/dev/null 2>&1; then
     log "Secret scan (trufflehog) over assembled tree"
-    trufflehog filesystem "$tree" --fail --no-update \
-      || die "secret scan FAILED — assembled tree contains a secret; aborting (§XIX.4)"
-    return 0
+    trufflehog filesystem "$tree" --fail --no-update --no-verification \
+      || die "secret scan FAILED — trufflehog found a secret; aborting (§XIX.4)"
+    scanned_external=true
   fi
-  # No scanner available. The denylist is the policy; the scanner is the
-  # backstop (§XIX.4). Refuse to PUSH unscanned unless explicitly overridden.
-  if $DO_PUSH && ! $ALLOW_NO_SCAN; then
-    die "no secret scanner (gitleaks/trufflehog) found — refusing to --push unscanned. Install one, or pass --allow-no-scan."
+
+  # The denylist is the policy; the entropy scanner is the backstop (§XIX.4).
+  # A real gitleaks/trufflehog run is mandatory before pushing to a public,
+  # indexed, un-deletable mirror — refuse otherwise unless explicitly overridden.
+  if ! $scanned_external; then
+    if $DO_PUSH && ! $ALLOW_NO_SCAN; then
+      die "no entropy scanner (gitleaks/trufflehog) installed — refusing to --push. Install one, or pass --allow-no-scan to publish on the built-in pattern scan alone."
+    fi
+    warn "no entropy scanner installed — relying on the built-in pattern scan only (backstop disabled)"
   fi
-  warn "no secret scanner found — skipping scan (backstop disabled)"
 }
 run_secret_scan "$SRC_TREE"
 
