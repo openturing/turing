@@ -292,12 +292,11 @@
 > Publish the runtime as a public community edition while keeping strategy docs,
 > commit history, and the (future) paid add-on private. **Phase 1 is pure
 > mechanics — no CE/EE module surgery** (§XI.3). Boundary + license → STRATEGY
-> §XI; publish mechanics → IMPROVEMENTS §XIX. No rush; sequence: boundary (T356)
-> → publish script (T357) → secret-scan (T358) → snapshot/history (T359) → CI
+> §XI; publish mechanics → IMPROVEMENTS §XIX. No rush; sequence: boundary (T356 ✅,
+> `ce-exclude.txt`) → publish script (T357) → secret-scan (T358) → snapshot/history (T359) → CI
 > (T360) → contribution+CLA (T361) → license decision (T362).
 
-- 📋 **T356** (deps: —) **`ce-exclude.txt` boundary manifest** — checked-in denylist that is the single source of the public/private rule (docs/STRATEGY|IMPROVEMENTS|ROADMAP.md, docs/products/**, internal workflows, secrets). Default-deny docs design content, default-allow code. → §XIX.2
-- 📋 **T357** (deps: T356) **One-way publish script** — local script assembles a clean tree at the release tag, applies the denylist, commits one squashed snapshot, pushes to `turing-ce`. → §XIX.3
+- 📋 **T357** (deps: T356 ✅) **One-way publish script** — local script assembles a clean tree at the release tag, applies the denylist, commits one squashed snapshot, pushes to `turing-ce`. → §XIX.3
 - 📋 **T358** (deps: T357) **Secret-scan fail-closed gate** — run gitleaks/trufflehog over the assembled public tree before push; abort on any secret / internal-host / customer-name hit. → §XIX.4
 - 📋 **T359** (deps: T357) **Squash-snapshot history model + public README** — public repo = one commit per release (no full-history mirror; commit titles leak the roadmap) + curated `README.ce.adoc`. → §XIX.3
 - 📋 **T360** (deps: T358, T359) **CI publish on release tag** — wire the publish into GitHub Actions beside publish-docker.yml (`workflow_dispatch` → on-tag); `CE_PUSH_TOKEN` scoped to the public repo. → §XIX.6

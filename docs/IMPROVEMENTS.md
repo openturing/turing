@@ -2312,16 +2312,22 @@ one-way (private → public); community PRs are *backported* into private `main`
 
 ### XIX.2 The denylist — the single rule
 
-A checked-in `ce-exclude.txt` (private repo) is the authoritative boundary,
-reviewed on every release:
+The checked-in [`ce-exclude.txt`](../ce-exclude.txt) at the private repo root is
+the authoritative boundary (T356 ✅), reviewed on every release. It is the single
+source of the public/private rule; the publish script (T357) applies it and the
+secret-scan gate (T358) is only the backstop. Highlights:
 
 - `docs/STRATEGY.md`, `docs/IMPROVEMENTS.md`, `docs/ROADMAP.md`,
   `docs/products/**` — the thinking docs (§XI.1 test #1).
-- Internal-only workflows, any secret/credential/`.env`, scratch dirs.
+- Internal AI/contributor instructions (`agents.md`, `CLAUDE.md`,
+  `.claude-instructions`, copilot-instructions), internal publish workflows +
+  the GitHub Pages site, any secret/credential/`.env.local`/keystore, scratch
+  dirs.
 
-Default-**deny** for `docs/**` design content, default-**allow** for code. The
-public README is a *separate curated file* (`README.ce.adoc`), not the internal
-`README.adoc`.
+It is gitignore-style: default-**deny** all of `docs/**` design content with
+explicit re-includes for the user-facing docs (CHANGELOG, RAG_HYBRID_CONFIG,
+MULTI_TENANCY, chat-flow samples), default-**allow** for code. The public README
+is a *separate curated file* (`README.ce.adoc`), not the internal `README.adoc`.
 
 ### XIX.3 Squash-snapshot, not history mirror
 

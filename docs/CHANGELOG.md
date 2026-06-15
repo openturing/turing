@@ -305,3 +305,9 @@
 - **T338** — **Cross-encoder strategy (self-hosted)** — `TurCrossEncoderRerankStrategy` + shared `TurHttpRerankClient` (JDK HttpClient + Jackson 3, 2s timeout, no retry; tolerates TEI bare-array and Cohere `{results:[]}` shapes) against a TEI/Infinity/Jina-compatible `/rerank`. `GLOBAL_RAG_SN_RERANK_ENDPOINT` / `_MODEL`.
 - **T339** — **Cohere Rerank strategy (managed)** — `TurCohereRerankStrategy` (fixed `/v2/rerank`, default `rerank-v3.5`); API key encrypted via `TurSecretCryptoService` (`GLOBAL_RAG_SN_RERANK_API_KEY`), write-only in the bean/API.
 - **T340** — **Global Settings UI** — rerank section in the admin Global Settings page: enable switch, strategy `Select`, top-K, and conditional endpoint/model/apiKey fields; api-key `password`/write-only with a configured-status hint. Bean fields exposed via `/api/system/global-settings`; en/pt i18n.
+
+## Block P — Open-core source split (`turing` → `turing-ce`)
+
+> Publish the runtime as a public community edition while keeping strategy docs, history, and the (future) paid add-on private. Boundary + license → [STRATEGY.md](STRATEGY.md) §XI; publish mechanics → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIX.
+
+- **T356** — **`ce-exclude.txt` boundary manifest** — checked-in gitignore-style denylist at the repo root that is the single source of the public/private rule: default-deny `docs/**` design content (re-includes only CHANGELOG / RAG_HYBRID_CONFIG / MULTI_TENANCY / chat-flow samples), explicit strategy/roadmap/improvements + `docs/products/**` deny, internal AI/contributor instructions (`agents.md`, `CLAUDE.md`, `.claude-instructions`, copilot-instructions), internal publish workflows + GitHub Pages site, secrets/`.env.local`/keystores, scratch dirs, and the internal `README.adoc`/`COMMERCIAL-LICENSE.md`. Consumed by the T357 publish script; T358 secret-scan is the backstop. (§XIX.2)

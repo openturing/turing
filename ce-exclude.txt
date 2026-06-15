@@ -1,0 +1,80 @@
+# ce-exclude.txt — public/private boundary manifest for the open-core source split
+# (private `turing` → public `turing-ce`). Block P / T356.
+#
+# THIS FILE IS THE SINGLE SOURCE OF THE PUBLIC/PRIVATE RULE.
+# Design rationale: docs/IMPROVEMENTS.md §XIX.2. License/business rationale:
+# docs/STRATEGY.md §XI. Reviewed on EVERY release before the snapshot is pushed.
+#
+# ── Semantics ────────────────────────────────────────────────────────────────
+# Patterns are gitignore-style, matched against repo-root-relative paths:
+#   - one pattern per line; blank lines and lines starting with `#` are ignored
+#   - `**` matches across directories; trailing `/` matches a directory
+#   - a leading `!` RE-INCLUDES a path that an earlier pattern excluded
+# Paths matched here are STRIPPED from the assembled public tree by the publish
+# script (T357) before the squash-snapshot commit. The secret-scan gate (T358)
+# is the backstop, NOT the policy — a missed path must never reach the public,
+# indexed, un-deletable mirror.
+#
+# Doctrine: default-DENY for docs/** design content; default-ALLOW for code.
+
+# ── Thinking docs — the §XI.1 test #1 boundary ───────────────────────────────
+# Default-deny ALL of docs/**, then re-include only the user-facing docs below.
+# A new internal doc added later is therefore private by default until allowed.
+docs/**
+!docs/CHANGELOG.md
+!docs/RAG_HYBRID_CONFIG.md
+!docs/MULTI_TENANCY.md
+!docs/chat-flow/
+!docs/chat-flow/**
+
+# Explicit (redundant with docs/** but documents intent and survives any future
+# loosening of the allowlist above): strategy/roadmap/improvements + paid-product
+# design notes never go public.
+docs/STRATEGY.md
+docs/IMPROVEMENTS.md
+docs/ROADMAP.md
+docs/products/**
+
+# ── Internal AI-agent & contributor instructions ─────────────────────────────
+# These embed the roadmap, paid-feature plans, and doc-maintenance rules.
+agents.md
+CLAUDE.md
+.claude-instructions
+.claude/
+.github/copilot-instructions.md
+
+# ── Internal-only workflows & site automation ────────────────────────────────
+# The private repo owns all publish/release automation (incl. the future CE
+# publish, T360) and the GitHub Pages site that serves the private domain.
+# The public repo gets its own curated CI under the contribution flow (T361).
+.github/workflows/publish.yml
+.github/workflows/publish-docker.yml
+.github/workflows/publish-github-pages.yml
+.github/workflows/publish-js-sdk.yml
+.github/workflows/publish-react-ui.yml
+.github/pages/
+
+# ── Secrets / credentials / .env (policy: never publish) ──────────────────────
+# The scanner (T358) backstops this; the rule lives here.
+turing-app/src/main/resources/client_secrets.json
+**/.env.local
+**/.env.*.local
+**/*.pem
+**/*.key
+**/*.p12
+**/*.keystore
+**/*secret*.json
+**/*credentials*.json
+
+# ── Scratch / local volumes / build leftovers not caught by .gitignore ────────
+tmp/
+volumes/
+store/
+backup/
+*.log
+
+# ── Internal README; the public repo ships a separate curated README ──────────
+# The publish script renames README.ce.adoc → README.adoc in the public tree
+# (T359). The internal README.adoc is excluded so it cannot overwrite it.
+README.adoc
+COMMERCIAL-LICENSE.md
