@@ -2365,10 +2365,17 @@ never reach a public, indexed, un-deletable mirror.
 
 ### XIX.5 Contribution inflow + CLA
 
-External PRs land on `turing-ce`; a maintainer cherry-picks/backports them into
-private `main`, and the next snapshot re-publishes them. A DCO sign-off (or
-lightweight CLA) on the public repo preserves the single-owner relicensing
-option (§XI.4). Document the backport flow in `CONTRIBUTING` on `turing-ce`.
+Implemented (T361 ✅): [`CONTRIBUTING.md`](../CONTRIBUTING.md) + the verbatim
+[`DCO`](../DCO) 1.1 text + a [`PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)
+checklist all live in the private repo root and are **not** denylisted, so they
+flow into the `turing-ce` snapshot. CONTRIBUTING documents the snapshot/backport
+flow from the contributor's POV (open PRs on `turing-ce`; a maintainer integrates
+accepted changes and they ship in a following release) and requires a **DCO
+sign-off** (`git commit -s`) on every commit instead of a separate CLA. The DCO
+keeps contributions under Apache 2.0 and, with the single copyright owner,
+preserves the relicensing option (§XI.4) — the *rationale* stays private; the
+public doc only states the sign-off requirement. Enforcement can be added later
+via the DCO GitHub App on `turing-ce` (UI-installed, no in-repo workflow).
 
 ### XIX.6 CI wiring
 
