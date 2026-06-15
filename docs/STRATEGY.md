@@ -353,3 +353,82 @@ Cheap, founder-runnable signals (no analytics build required):
 Note the **lag**: model training cutoffs mean own-domain content can take months
 to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
 (the models that browse) reflect it sooner — another reason to front-load #1.
+
+---
+
+## XI. Open-core source split — `turing` (private) → `turing-ce` (public)
+
+> Added 2026-06-15. The boundary + license posture for separating the public
+> community edition from confidential strategy. Implements the open-core model
+> §VIII/§IX assume but never specced mechanically. Tasks in
+> [ROADMAP.md](ROADMAP.md) Block P; publish mechanics design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIX.
+
+### XI.1 The boundary principle — hide *thinking* and *revenue*, not *cleverness*
+
+The instinct to hide "clever" code (the LLM judge, the chat-flow engine, the
+skill sandbox) protects almost nothing: those are strong *implementations of
+known patterns*, reproducible by any competent engineer in days — or by asking
+an LLM. Hiding them only costs adoption, and adoption is the actual bottleneck
+(§IX.4). Decide what stays private by two tests, **never** by "is it hard to
+copy":
+
+1. **Does it expose our thinking?** — `STRATEGY.md`, `IMPROVEMENTS.md`,
+   `ROADMAP.md`, `docs/products/**`. ~2.300 lines of design rationale is a
+   competitor's playbook and is *not* reproducible. This is the real moat —
+   far more than any one feature's source.
+2. **Does a paying customer pay for it?** — the productized commercial add-on
+   (Agent Eval engine, §IX.3) and managed hosting (Turing Sandbox / Cloud,
+   §VIII.1–2). Held back by *business model*, not by secrecy.
+
+Everything else — the entire runtime, the LLM-judge primitive, the SDKs, the
+connectors — is **public** in `turing-ce`. The judge primitive being public is
+*desired*: it is the community-edition funnel that the paid Agent Eval engine
+sells against.
+
+### XI.2 What stays private
+
+- The three thinking docs + `docs/products/**` (and this file).
+- **Commit history** — T-numbers and commit titles ("feat: T257 multi-tenancy
+  enterprise…") leak the roadmap as loudly as ROADMAP.md. The public repo is a
+  **squashed snapshot per release**, never a full-history mirror.
+- The one monetized add-on engine, *when built* (§IX.3) — deferred behind the
+  binding "paying customer asks twice" non-goal; **not** a Phase-1 carve-out.
+
+### XI.3 Phasing — don't fragment the code prematurely
+
+With near-zero users (§IX), splitting the platform into CE/EE Maven modules now
+is premature surgery. Two phases:
+
+- **Phase 1 (now):** publish *everything* except docs + history. Pure mechanics
+  — a one-way denylist publish (Block P). Maximizes the funnel and feeds Block O
+  (the public GitHub repo GEO needs — T346/T354 should target `turing-ce`).
+- **Phase 2 (gated, not scheduled):** carve the Agent Eval engine into the
+  private repo as the open-core wedge — only after a paying customer asks twice.
+  The platform stays public; only the slim new engine is held back.
+
+### XI.4 License posture — keep Apache 2.0; relicense is a *held option*, not a move
+
+**Do not change the license now.** Reasoning:
+
+- Relicensing is a one-way **trust event** — it spooks contributors and cannot
+  be walked back in perception. You spend that cost once; spend it on a real
+  threat.
+- The threat a restrictive license defends against — a hyperscaler hosting
+  Turing against your own Cloud — **does not exist at near-zero users**.
+  Permissive Apache 2.0 on the CE maximizes the funnel, which §IX.4 names as
+  *the* bottleneck.
+- Protection today already comes from **dual licensing**
+  ([COMMERCIAL-LICENSE.md](../COMMERCIAL-LICENSE.md)) **+ what you don't
+  publish** (§XI.2), not from license terms.
+
+**But preserve the *option*.** Single-owner copyright means Viglet can
+relicense unilaterally later. To keep that right as external contributions
+arrive on the public repo, adopt a **DCO sign-off (or lightweight CLA) before
+accepting the first external PR** (T361) — otherwise contributed code dilutes
+the right to relicense. The conditional future move, **if** Turing Cloud
+(§VIII.2) becomes real revenue **and** a competitor hosts the CE against you:
+evaluate the **FSL (Functional Source License)** — converts to Apache 2.0 after
+2 years, blocks only competing/hosted use — applied **only** to the affected
+parts, in preference to BSL/SSPL. Decision deferred to T362; not actioned until
+both conditions hold.

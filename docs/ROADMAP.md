@@ -287,6 +287,25 @@
 - 📋 **T354** (deps: —) **Seed independent mentions** — answer relevant SO/Reddit/AEM-forum threads; republish A/B posts to Dev.to/Medium (canonical → docs); list on AlternativeTo + `awesome-*` lists + G2. No code dep; pairs with T346. → §X.1
 - 💭 **T355** (deps: T354) **Monthly model-prompt audit** — prompt ChatGPT/Claude/Gemini with the target queries, log whether Turing appears and where; the actual KPI for this block. → §X.4
 
+## Block P — Open-core source split (`turing` → `turing-ce`)
+
+> Publish the runtime as a public community edition while keeping strategy docs,
+> commit history, and the (future) paid add-on private. **Phase 1 is pure
+> mechanics — no CE/EE module surgery** (§XI.3). Boundary + license → STRATEGY
+> §XI; publish mechanics → IMPROVEMENTS §XIX. No rush; sequence: boundary (T356)
+> → publish script (T357) → secret-scan (T358) → snapshot/history (T359) → CI
+> (T360) → contribution+CLA (T361) → license decision (T362).
+
+- 📋 **T356** (deps: —) **`ce-exclude.txt` boundary manifest** — checked-in denylist that is the single source of the public/private rule (docs/STRATEGY|IMPROVEMENTS|ROADMAP.md, docs/products/**, internal workflows, secrets). Default-deny docs design content, default-allow code. → §XIX.2
+- 📋 **T357** (deps: T356) **One-way publish script** — local script assembles a clean tree at the release tag, applies the denylist, commits one squashed snapshot, pushes to `turing-ce`. → §XIX.3
+- 📋 **T358** (deps: T357) **Secret-scan fail-closed gate** — run gitleaks/trufflehog over the assembled public tree before push; abort on any secret / internal-host / customer-name hit. → §XIX.4
+- 📋 **T359** (deps: T357) **Squash-snapshot history model + public README** — public repo = one commit per release (no full-history mirror; commit titles leak the roadmap) + curated `README.ce.adoc`. → §XIX.3
+- 📋 **T360** (deps: T358, T359) **CI publish on release tag** — wire the publish into GitHub Actions beside publish-docker.yml (`workflow_dispatch` → on-tag); `CE_PUSH_TOKEN` scoped to the public repo. → §XIX.6
+- 📋 **T361** (deps: T360) **Contribution inflow + DCO/CLA** — `turing-ce` gets `CONTRIBUTING` + DCO sign-off (preserves single-owner relicensing option); maintainer backports public PRs into private `main`. → §XIX.5 / §XI.4
+- 💭 **T362** (deps: T360) **License posture decision** — keep Apache 2.0 on CE now; revisit FSL (over BSL/SSPL) only if Turing Cloud is real revenue AND a competitor hosts the CE. Strategy decision, not code. → §XI.4
+- 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
+- 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

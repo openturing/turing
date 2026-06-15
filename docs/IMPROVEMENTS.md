@@ -2297,3 +2297,59 @@ of this block is *precision*, not latency, and the facade already absorbs cost
 spikes by failing open. Ship only if profiling shows repeated identical rerank
 calls in production.
 
+## XIX. Open-core publish mechanics (Block P)
+
+> Added 2026-06-15. The *how* for the §XI source split (private `turing` →
+> public `turing-ce`). Engineering design only; business/license rationale lives
+> in [STRATEGY.md](STRATEGY.md) §XI.
+
+### XIX.1 Source of truth + direction
+
+Private `turing` is the **only** place development happens. `turing-ce` is a
+generated artifact — never accept commits there as truth. The flow is strictly
+one-way (private → public); community PRs are *backported* into private `main`
+(§XIX.5), never merged as the public repo's own history.
+
+### XIX.2 The denylist — the single rule
+
+A checked-in `ce-exclude.txt` (private repo) is the authoritative boundary,
+reviewed on every release:
+
+- `docs/STRATEGY.md`, `docs/IMPROVEMENTS.md`, `docs/ROADMAP.md`,
+  `docs/products/**` — the thinking docs (§XI.1 test #1).
+- Internal-only workflows, any secret/credential/`.env`, scratch dirs.
+
+Default-**deny** for `docs/**` design content, default-**allow** for code. The
+public README is a *separate curated file* (`README.ce.adoc`), not the internal
+`README.adoc`.
+
+### XIX.3 Squash-snapshot, not history mirror
+
+The publish builds a clean tree at the release tag, applies the denylist, and
+commits it as a **single squashed commit** ("Release vX.Y.Z") onto turing-ce's
+default branch — discarding private history (§XI.2). One tag → one public
+commit, leak-proof by construction. `git filter-repo --invert-paths` is the
+fallback if a full filtered history is ever wanted, but the snapshot model is
+simpler and cannot leak a commit title.
+
+### XIX.4 Secret-scan gate (safety net)
+
+Before any push, run gitleaks/trufflehog over the *assembled* public tree; the
+publish **fails closed** on any secret, internal hostname, or customer name. The
+denylist is the policy; the scanner is the backstop — a missed path must never
+reach a public, indexed, un-deletable mirror.
+
+### XIX.5 Contribution inflow + CLA
+
+External PRs land on `turing-ce`; a maintainer cherry-picks/backports them into
+private `main`, and the next snapshot re-publishes them. A DCO sign-off (or
+lightweight CLA) on the public repo preserves the single-owner relicensing
+option (§XI.4). Document the backport flow in `CONTRIBUTING` on `turing-ce`.
+
+### XIX.6 CI wiring
+
+[`publish-docker.yml`](../.github/workflows/publish-docker.yml) already names
+`openviglet/turing-ce` for the *image*; the source publish is the same idea for
+the *tree*. Trigger on release tag (`workflow_dispatch` first, then on-tag),
+using a `CE_PUSH_TOKEN` scoped to the public repo only.
+
