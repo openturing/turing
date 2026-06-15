@@ -1,0 +1,94 @@
+# Publishes the Viglet Turing ES Community Edition SOURCE TREE to the public
+# openviglet/turing-ce repo. This is the source-tree counterpart to
+# publish-docker.yml (which publishes the IMAGE). It runs scripts/publish-ce.sh,
+# which applies the ce-exclude.txt boundary (T356), the fail-closed secret scan
+# (T358), and lands ONE squashed "Release vX.Y.Z" commit on turing-ce (T357/T359).
+#
+# Block P / T360, §XIX.6. This workflow is itself internal — the denylist
+# (ce-exclude.txt) excludes it, so it never ships into the public snapshot.
+#
+# ── One-time setup ────────────────────────────────────────────────────────────
+#   1. A cross-repo write credential is REQUIRED: the built-in GITHUB_TOKEN is
+#      scoped to THIS (private `turing`) repo and cannot push to turing-ce —
+#      even within the same `openviglet` org. Create a fine-grained PAT (or
+#      deploy token) with `contents: write` scoped to ONLY openviglet/turing-ce
+#      and store it as the `CE_PUSH_TOKEN` secret. (Alternatively use an SSH
+#      deploy key on turing-ce + the default SSH CE_REMOTE — no token in a URL.)
+#   2. Validate with a manual dry run: Actions → "Publish CE Source" → Run
+#      workflow, leaving "push" = false. Inspect the log (denied paths removed,
+#      secret scan clean).
+#   3. Once green, enable the on-tag trigger below (§XIX.6 staged rollout).
+
+name: Publish CE Source
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag or commit to publish (blank = latest v* tag)"
+        required: false
+        default: ""
+      push:
+        description: "Actually push to turing-ce (false = dry run)"
+        type: boolean
+        required: false
+        default: false
+  # Staged rollout (§XIX.6): uncomment once a manual dry run is green so that
+  # tagging a release auto-publishes the CE snapshot.
+  # push:
+  #   tags:
+  #     - "v*"
+
+concurrency:
+  group: publish-ce
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # only reads THIS repo; the push uses CE_PUSH_TOKEN
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install gitleaks (secret-scan backstop, T358)
+        run: |
+          set -euo pipefail
+          VER=8.18.4
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VER}/gitleaks_${VER}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Resolve ref and push mode
+        id: cfg
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            REF="${{ github.ref_name }}"   # the tag that triggered the run
+            PUSH="--push"
+          else
+            REF="${{ inputs.ref }}"
+            if [ -z "$REF" ]; then REF="$(git describe --tags --abbrev=0 2>/dev/null || echo HEAD)"; fi
+            if [ "${{ inputs.push }}" = "true" ]; then PUSH="--push"; else PUSH=""; fi
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "push=$PUSH" >> "$GITHUB_OUTPUT"
+          echo "Publishing ref=$REF mode=${PUSH:-dry-run}"
+
+      - name: Configure push credentials (token injected by git, never logged)
+        if: steps.cfg.outputs.push == '--push'
+        run: |
+          git config --global \
+            url."https://x-access-token:${{ secrets.CE_PUSH_TOKEN }}@github.com/".insteadOf \
+            "https://github.com/"
+
+      - name: Publish to turing-ce
+        env:
+          CE_REMOTE: https://github.com/openviglet/turing-ce.git
+          GIT_AUTHOR_NAME: Viglet Release
+          GIT_AUTHOR_EMAIL: opensource@viglet.org
+        run: bash scripts/publish-ce.sh --ref "${{ steps.cfg.outputs.ref }}" ${{ steps.cfg.outputs.push }}

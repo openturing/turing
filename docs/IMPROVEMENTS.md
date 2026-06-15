@@ -2372,8 +2372,18 @@ option (§XI.4). Document the backport flow in `CONTRIBUTING` on `turing-ce`.
 
 ### XIX.6 CI wiring
 
-[`publish-docker.yml`](../.github/workflows/publish-docker.yml) already names
-`openviglet/turing-ce` for the *image*; the source publish is the same idea for
-the *tree*. Trigger on release tag (`workflow_dispatch` first, then on-tag),
-using a `CE_PUSH_TOKEN` scoped to the public repo only.
+Implemented in [`publish-ce.yml`](../.github/workflows/publish-ce.yml) (T360 ✅),
+beside [`publish-docker.yml`](../.github/workflows/publish-docker.yml) (which
+already names `openviglet/turing-ce` for the *image*). The source publish is the
+same idea for the *tree*: it installs gitleaks (making the T358 scan real),
+resolves the release ref, and runs `scripts/publish-ce.sh --push`.
+
+`workflow_dispatch` (with a `push` boolean defaulting to a dry run) is active;
+the on-tag trigger is shipped commented for the staged rollout — enable it once
+a manual dry run is green. Push uses a **`CE_PUSH_TOKEN`** scoped to the public
+repo only: a cross-repo write credential is **required** because the default
+`GITHUB_TOKEN` is scoped to the private `turing` repo and cannot push to
+`turing-ce` — even within the same org. The token is injected via git's
+`insteadOf` rewrite so it never reaches a log; an SSH deploy key on `turing-ce`
+is the equivalent alternative (use the default SSH `CE_REMOTE`).
 

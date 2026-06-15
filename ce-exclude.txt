@@ -48,6 +48,7 @@ CLAUDE.md
 # publish, T360) and the GitHub Pages site that serves the private domain.
 # The public repo gets its own curated CI under the contribution flow (T361).
 .github/workflows/publish.yml
+.github/workflows/publish-ce.yml
 .github/workflows/publish-docker.yml
 .github/workflows/publish-github-pages.yml
 .github/workflows/publish-js-sdk.yml
