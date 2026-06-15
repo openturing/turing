@@ -2339,9 +2339,9 @@ denylist extracted from that same ref, and **appends a single squashed commit**
 `git filter-repo --invert-paths` is the fallback if a full filtered history is
 ever wanted, but the snapshot model is simpler and cannot leak a commit title.
 
-Remaining T359 work is authoring the curated `README.ce.adoc`; the script
-already promotes it to `README.adoc` in the public tree (the internal
-`README.adoc` is excluded by the denylist).
+The curated public README ([`README.ce.adoc`](../README.ce.adoc), T359 ✅) is
+promoted by the script to `README.adoc` in the public tree; the internal
+`README.adoc` is excluded by the denylist.
 
 ### XIX.4 Secret-scan gate (safety net)
 

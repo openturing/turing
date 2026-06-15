@@ -1,0 +1,181 @@
+= Viglet Turing ES — Community Edition
+Viglet Team <opensource@viglet.org>
+:organization: Viglet Turing
+:viglet-version: 2026.3
+:icons: font
+:git-project: openviglet/turing-ce
+
+[.lead]
+**Open-source enterprise search for Adobe AEM, WordPress, databases, and files** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling. A self-hosted alternative to Algolia, Coveo, and Lucidworks that keeps your content on your own infrastructure.
+
+image:https://img.shields.io/github/license/{git-project}.svg?style=for-the-badge&logo=Apache["License"]
+image:https://img.shields.io/badge/Docker-openviglet%2Fturing-blue?style=for-the-badge&logo=Docker[link="https://hub.docker.com/r/openviglet/turing"]
+image:https://img.shields.io/badge/Docs-docs.viglet.org-brightgreen?style=for-the-badge&logo=ReadTheDocs[link="https://docs.viglet.org/turing/"]
+image:https://img.shields.io/badge/Download-Releases-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
+
+[NOTE]
+====
+This repository is the public distribution of **Viglet Turing ES Community Edition**, published as a clean snapshot at each release — so its history is one commit per release. Issues and pull requests are welcome here; the maintainers integrate accepted contributions and they ship in the next release.
+====
+
+== What is Viglet Turing ES?
+
+https://viglet.org/turing/[Viglet Turing ES] is an open-source platform that combines enterprise search with generative AI. Index content from **Adobe Experience Manager (AEM)**, **WordPress**, databases, file systems, and web crawls; deliver faceted, semantic search experiences; and enable conversational AI (RAG) grounded in your own data — all self-hosted under Apache 2.0.
+
+> Looking for an open-source **alternative to Algolia, Coveo, or Lucidworks** for AEM or WordPress search? See the guide: https://docs.viglet.org/blog/enterprise-search-for-adobe-aem[Add enterprise search to Adobe AEM].
+
+* **Semantic Navigation** — faceted search, spotlights, targeting rules, autocomplete, multi-language
+* **Generative AI (RAG)** — LLM responses grounded in your indexed content
+* **AI Agents** — assistants with independent LLMs, native tools, and MCP server support
+* **Multi-Engine** — pluggable backend: Apache Solr, Elasticsearch, or embedded Lucene
+* **Connectors** — Adobe AEM, web crawler, databases, filesystem, WordPress via https://github.com/openviglet/dumont[Viglet Dumont DEP]
+* **SDKs** — Java (Maven Central) and JavaScript/TypeScript (npm)
+
+== Quick Start
+
+=== Docker (Fastest)
+
+[source,bash]
+----
+docker pull openviglet/turing:latest
+docker run -p 2700:2700 openviglet/turing:latest
+----
+
+Open http://localhost:2700/console — set admin password via `TURING_ADMIN_PASSWORD` env var on first run.
+
+=== Docker Compose
+
+[source,bash]
+----
+git clone https://github.com/openviglet/turing-ce.git
+cd turing-ce
+docker-compose up -d
+----
+
+=== Build from Source
+
+Requires **Java 21+** and **Maven 3.6+**.
+
+[source,bash]
+----
+git clone https://github.com/openviglet/turing-ce.git
+cd turing-ce
+./mvnw clean install
+java -jar turing-app/target/viglet-turing.jar
+----
+
+== Code Examples
+
+=== Java SDK
+
+[source,java]
+----
+HttpTurSNServer server = new HttpTurSNServer("http://localhost:2700/api/sn/MySite");
+
+TurSNQuery query = new TurSNQuery();
+query.setQuery("artificial intelligence");
+query.setRows(10);
+
+QueryTurSNResponse response = server.query(query);
+response.getResults().getDocument().forEach(doc ->
+    System.out.println(doc.getFields().get("title"))
+);
+----
+
+=== JavaScript / TypeScript SDK
+
+[source,typescript]
+----
+import { TurSNSiteSearchService } from '@viglet/turing-react-sdk';
+
+const search = new TurSNSiteSearchService('http://localhost:2700');
+const results = await search.search('sample-site', {
+  q: 'machine learning', rows: 10, localeRequest: 'en_US'
+});
+
+results.results?.document?.forEach(doc =>
+  console.log(doc.fields?.title)
+);
+----
+
+=== REST API
+
+[source,bash]
+----
+# Search
+curl "http://localhost:2700/api/sn/sample-site/search?q=enterprise+search&rows=10&_setlocale=en_US"
+
+# Autocomplete
+curl "http://localhost:2700/api/sn/sample-site/ac?q=enterp&_setlocale=en_US"
+
+# RAG Chat (SSE stream)
+curl "http://localhost:2700/api/sn/sample-site/chat?q=What+is+enterprise+search"
+----
+
+=== GraphQL
+
+[source,graphql]
+----
+query {
+  siteSearch(
+    siteName: "sample-site"
+    searchParams: { q: "technology", rows: 10, p: 1 }
+    locale: "en_US"
+  ) {
+    queryContext { count, responseTime }
+    results {
+      document {
+        fields { title, text, url }
+      }
+    }
+  }
+}
+----
+
+Interactive GraphiQL IDE at http://localhost:2700/graphiql.
+
+== Project Structure
+
+[source]
+----
+turing-ce/
+├── turing-app/           # Spring Boot 4 backend (Java 21)
+├── frontend/             # pnpm + Turborepo monorepo
+│   ├── apps/turing-app/  #   React 19 + TypeScript admin console (Vite, shadcn/ui)
+│   ├── apps/marketplace/ #   example apps
+│   └── packages/         #   SDKs: react-sdk, sdk (vanilla JS), react-ui, shared-types
+├── turing-commons/       # Shared library
+├── turing-spring/        # Shared Spring library
+├── turing-java-sdk/      # Java SDK
+├── turing-utils/         # Utilities
+├── k8s/                  # Kubernetes manifests
+└── docker-compose.yaml   # Docker Compose stack
+----
+
+== Documentation
+
+For architecture details, configuration, connectors, API reference, deployment guides, and more:
+
+**https://docs.viglet.org/turing/[docs.viglet.org/turing]**
+
+[cols="1,2"]
+|===
+| https://docs.viglet.org/turing/[Full Documentation] | Architecture, configuration, connectors, admin guide
+| https://viglet.org/turing/download/[Downloads] | Release packages
+| https://hub.docker.com/r/openviglet/turing[Docker Hub] | Container images
+|===
+
+== Contributing
+
+1. **Report Issues** — https://github.com/{git-project}/issues[GitHub Issues]
+2. **Discussions** — https://github.com/{git-project}/discussions[GitHub Discussions]
+3. **Code** — fork, branch, open a pull request here; accepted changes are integrated by the maintainers and ship in a following release.
+
+== License
+
+Apache License 2.0 — see link:LICENSE[LICENSE].
+
+---
+
+[.text-center]
+Built by the https://viglet.org[Viglet] Team
