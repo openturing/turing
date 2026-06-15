@@ -217,7 +217,10 @@ run_secret_scan() {
   local scanned_external=false
   if command -v gitleaks >/dev/null 2>&1; then
     log "Secret scan (gitleaks) over assembled tree"
-    gitleaks detect --no-git --source "$tree" --redact \
+    local gl=(detect --no-git --source "$tree" --redact)
+    # Allowlist known false positives (Liquibase/Hibernate object names, etc.)
+    [[ -f "$PROJECT_ROOT/scripts/gitleaks.toml" ]] && gl+=(--config "$PROJECT_ROOT/scripts/gitleaks.toml")
+    gitleaks "${gl[@]}" \
       || die "secret scan FAILED — gitleaks found a secret; aborting (§XIX.4)"
     scanned_external=true
   fi

@@ -2358,6 +2358,10 @@ hit:
    public tree.
 2. **gitleaks / trufflehog** for entropy + known credential formats; a real run
    of one of these is mandatory before `--push` (override: `--allow-no-scan`).
+   gitleaks runs with [`scripts/gitleaks.toml`](../scripts/gitleaks.toml) (built-in
+   ruleset + a tight allowlist for known false positives — H2/Liquibase
+   auto-generated `CONSTRAINT_*` PK names and Hibernate `FK*` names that the
+   `generic-api-key` rule would otherwise flag across `db/changelog/**`).
 
 Matches are redacted in the output so a secret can't re-leak through a CI log.
 The denylist is the policy; the scanner is the backstop — a missed path must

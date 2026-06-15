@@ -80,6 +80,7 @@ backup/
 ce-exclude.txt
 scripts/publish-ce.sh
 scripts/ce-deny-patterns.txt
+scripts/gitleaks.toml
 
 # ── Internal README; the public repo ships a separate curated README ──────────
 # The publish script renames README.ce.adoc → README.adoc in the public tree

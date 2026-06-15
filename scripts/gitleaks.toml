@@ -1,0 +1,25 @@
+# gitleaks config for the open-core publish secret-scan (Block P / T358, §XIX.4).
+# Passed to gitleaks by scripts/publish-ce.sh via --config when present.
+#
+# Starts from gitleaks' built-in ruleset and only ADDS an allowlist for known
+# false positives — high-entropy strings that the generic-api-key rule flags but
+# are NOT secrets. Keep this list tight: each entry must be a structural pattern
+# that cannot plausibly match a real credential.
+
+title = "Turing CE publish scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives in the Turing source tree"
+
+# Allowlist by the matched secret value (default regexTarget). These are
+# database-object identifiers, not credentials:
+#   - H2 / Liquibase auto-generated PRIMARY KEY names: CONSTRAINT_84924, CONSTRAINT_D9E…
+#   - Hibernate auto-generated FOREIGN KEY names:      FK6p80ubeofka7up7hvxa8xct2d
+# They live throughout turing-app/src/main/resources/db/changelog/**.
+regexes = [
+  '''^CONSTRAINT_[A-Z0-9]+$''',
+  '''^FK[a-z0-9]{20,}$''',
+]

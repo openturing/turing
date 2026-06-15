@@ -8,7 +8,7 @@ Usage example:
     --locale pt_BR \
     --json-file ./doc.json \
     --specs-file ./field_specs.json \
-    --header "Key: a7f3d2e1b4c9f08e5d6a3b2c1e4f7a9d"
+    --header "Key: <your-api-key>"
 
 Field specs file (--specs-file) is optional. When provided it must be a JSON
 array of TurSNAttributeSpec objects with at least a "name" and a "type" field.
