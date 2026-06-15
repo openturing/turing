@@ -2380,10 +2380,11 @@ resolves the release ref, and runs `scripts/publish-ce.sh --push`.
 
 `workflow_dispatch` (with a `push` boolean defaulting to a dry run) is active;
 the on-tag trigger is shipped commented for the staged rollout — enable it once
-a manual dry run is green. Push uses a **`CE_PUSH_TOKEN`** scoped to the public
-repo only: a cross-repo write credential is **required** because the default
-`GITHUB_TOKEN` is scoped to the private `turing` repo and cannot push to
-`turing-ce` — even within the same org. The token is injected via git's
-`insteadOf` rewrite so it never reaches a log; an SSH deploy key on `turing-ce`
-is the equivalent alternative (use the default SSH `CE_REMOTE`).
+a manual dry run is green. Push reuses the existing **`GH_PKG_TOKEN`** secret: a
+cross-repo write credential is **required** because the default `GITHUB_TOKEN`
+is scoped to the private `turing` repo and cannot push to `turing-ce` — even
+within the same org. `GH_PKG_TOKEN` already pushes git content to `turing-ce`
+(the github-pages branch and releases), so it has the needed `contents: write`
+scope. The token is injected via git's `insteadOf` rewrite so it never reaches a
+log; an SSH deploy key on `turing-ce` is the equivalent alternative.
 

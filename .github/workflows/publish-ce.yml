@@ -8,12 +8,13 @@
 # (ce-exclude.txt) excludes it, so it never ships into the public snapshot.
 #
 # ── One-time setup ────────────────────────────────────────────────────────────
-#   1. A cross-repo write credential is REQUIRED: the built-in GITHUB_TOKEN is
-#      scoped to THIS (private `turing`) repo and cannot push to turing-ce —
-#      even within the same `openviglet` org. Create a fine-grained PAT (or
-#      deploy token) with `contents: write` scoped to ONLY openviglet/turing-ce
-#      and store it as the `CE_PUSH_TOKEN` secret. (Alternatively use an SSH
-#      deploy key on turing-ce + the default SSH CE_REMOTE — no token in a URL.)
+#   1. Push auth: this reuses the existing `GH_PKG_TOKEN` secret — a cross-repo
+#      write credential is REQUIRED because the built-in GITHUB_TOKEN is scoped
+#      to THIS (private `turing`) repo and cannot push to turing-ce, even within
+#      the same `openviglet` org. GH_PKG_TOKEN already pushes git content to
+#      openviglet/turing-ce (the github-pages branch in publish-github-pages.yml
+#      and releases in publish.yml), so it has the `contents: write` scope this
+#      job needs. No new secret to create.
 #   2. Validate with a manual dry run: Actions → "Publish CE Source" → Run
 #      workflow, leaving "push" = false. Inspect the log (denied paths removed,
 #      secret scan clean).
@@ -83,7 +84,7 @@ jobs:
         if: steps.cfg.outputs.push == '--push'
         run: |
           git config --global \
-            url."https://x-access-token:${{ secrets.CE_PUSH_TOKEN }}@github.com/".insteadOf \
+            url."https://x-access-token:${{ secrets.GH_PKG_TOKEN }}@github.com/".insteadOf \
             "https://github.com/"
 
       - name: Publish to turing-ce
