@@ -18,7 +18,14 @@
 #   2. Validate with a manual dry run: Actions → "Publish CE Source" → Run
 #      workflow, leaving "push" = false. Inspect the log (denied paths removed,
 #      secret scan clean).
-#   3. Once green, enable the on-tag trigger below (§XIX.6 staged rollout).
+#   3. Flip "push" = true to publish. The snapshot lands on a turing-ce branch
+#      whose name MIRRORS the branch you ran from (run on `2026.3` -> pushes to
+#      a `2026.3` branch on turing-ce, created if absent).
+#
+# NOTE: release tags/Releases are created on turing-ce by publish.yml
+# (gh release create --repo openviglet/turing-ce), NOT on this private repo — so
+# there is no on-tag trigger here; this workflow is the manual/dry-run entry
+# point and the building block publish.yml calls at release time.
 
 name: Publish CE Source
 
@@ -26,7 +33,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Tag or commit to publish (blank = latest v* tag)"
+        description: "Tag or commit to publish (blank = the branch/tag this run was dispatched from)"
         required: false
         default: ""
       push:
@@ -34,11 +41,6 @@ on:
         type: boolean
         required: false
         default: false
-  # Staged rollout (§XIX.6): uncomment once a manual dry run is green so that
-  # tagging a release auto-publishes the CE snapshot.
-  # push:
-  #   tags:
-  #     - "v*"
 
 concurrency:
   group: publish-ce
@@ -48,7 +50,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # only reads THIS repo; the push uses CE_PUSH_TOKEN
+      contents: read # only reads THIS repo; the push uses GH_PKG_TOKEN
     steps:
       - name: Checkout (full history + tags)
         uses: actions/checkout@v6
@@ -64,21 +66,27 @@ jobs:
             | sudo tar -xz -C /usr/local/bin gitleaks
           gitleaks version
 
-      - name: Resolve ref and push mode
+      - name: Resolve ref, target branch and push mode
         id: cfg
+        env:
+          # Bind user-controlled expressions to env vars (never interpolate them
+          # straight into the script body — avoids run-block injection).
+          IN_REF: ${{ inputs.ref }}
+          DISPATCH_REF: ${{ github.ref_name }}
+          IN_PUSH: ${{ inputs.push }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "push" ]; then
-            REF="${{ github.ref_name }}"   # the tag that triggered the run
-            PUSH="--push"
-          else
-            REF="${{ inputs.ref }}"
-            if [ -z "$REF" ]; then REF="$(git describe --tags --abbrev=0 2>/dev/null || echo HEAD)"; fi
-            if [ "${{ inputs.push }}" = "true" ]; then PUSH="--push"; else PUSH=""; fi
-          fi
+          # Content to publish: explicit input, else the ref this run was
+          # dispatched from (NOT some arbitrary latest tag).
+          REF="$IN_REF"
+          if [ -z "$REF" ]; then REF="$DISPATCH_REF"; fi
+          # Target branch on turing-ce MIRRORS the branch this run executes on.
+          BRANCH="$DISPATCH_REF"
+          if [ "$IN_PUSH" = "true" ]; then PUSH="--push"; else PUSH=""; fi
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "push=$PUSH" >> "$GITHUB_OUTPUT"
-          echo "Publishing ref=$REF mode=${PUSH:-dry-run}"
+          echo "Publishing ref=$REF -> turing-ce branch '$BRANCH' mode=${PUSH:-dry-run}"
 
       - name: Configure push credentials (token injected by git, never logged)
         if: steps.cfg.outputs.push == '--push'
@@ -92,4 +100,7 @@ jobs:
           CE_REMOTE: https://github.com/openviglet/turing-ce.git
           GIT_AUTHOR_NAME: Viglet Release
           GIT_AUTHOR_EMAIL: opensource@viglet.org
-        run: bash scripts/publish-ce.sh --ref "${{ steps.cfg.outputs.ref }}" ${{ steps.cfg.outputs.push }}
+          PUB_REF: ${{ steps.cfg.outputs.ref }}
+          PUB_BRANCH: ${{ steps.cfg.outputs.branch }}
+          PUB_PUSH: ${{ steps.cfg.outputs.push }}
+        run: bash scripts/publish-ce.sh --ref "$PUB_REF" --branch "$PUB_BRANCH" $PUB_PUSH

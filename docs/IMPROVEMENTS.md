@@ -2385,13 +2385,25 @@ already names `openviglet/turing-ce` for the *image*). The source publish is the
 same idea for the *tree*: it installs gitleaks (making the T358 scan real),
 resolves the release ref, and runs `scripts/publish-ce.sh --push`.
 
-`workflow_dispatch` (with a `push` boolean defaulting to a dry run) is active;
-the on-tag trigger is shipped commented for the staged rollout — enable it once
-a manual dry run is green. Push reuses the existing **`GH_PKG_TOKEN`** secret: a
-cross-repo write credential is **required** because the default `GITHUB_TOKEN`
-is scoped to the private `turing` repo and cannot push to `turing-ce` — even
-within the same org. `GH_PKG_TOKEN` already pushes git content to `turing-ce`
-(the github-pages branch and releases), so it has the needed `contents: write`
-scope. The token is injected via git's `insteadOf` rewrite so it never reaches a
-log; an SSH deploy key on `turing-ce` is the equivalent alternative.
+Trigger is **`workflow_dispatch`** only (with a `push` boolean defaulting to a
+dry run). There is deliberately **no on-tag trigger on the private repo**:
+release tags/Releases are created on `turing-ce` itself by
+[`publish.yml`](../.github/workflows/publish.yml)
+(`gh release create --repo openviglet/turing-ce`), not on `turing` — so a private
+on-tag hook would never fire. The source publish is therefore the manual/dry-run
+entry point and the building block the release pipeline calls; at release time it
+must run **before** `gh release create` so the public tag points at the snapshot.
+
+The snapshot lands on a `turing-ce` branch whose name **mirrors the branch the
+run was dispatched from** (`github.ref_name`): a run on `2026.3` publishes to a
+`2026.3` branch on `turing-ce`, **created as an orphan** if it does not exist so
+it never inherits another branch's history.
+
+Push reuses the existing **`GH_PKG_TOKEN`** secret: a cross-repo write credential
+is **required** because the default `GITHUB_TOKEN` is scoped to the private
+`turing` repo and cannot push to `turing-ce` — even within the same org.
+`GH_PKG_TOKEN` already pushes git content to `turing-ce` (the github-pages branch
+and releases), so it has the needed `contents: write` scope. The token is
+injected via git's `insteadOf` rewrite so it never reaches a log; an SSH deploy
+key on `turing-ce` is the equivalent alternative.
 

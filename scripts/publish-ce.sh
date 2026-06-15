@@ -11,12 +11,16 @@
 # commit — no private history is mirrored, so a commit title can never leak.
 #
 # Usage:
-#   scripts/publish-ce.sh [--ref <tag|sha>] [--remote <url>] [--push]
-#                         [--allow-no-scan] [--keep-temp]
+#   scripts/publish-ce.sh [--ref <tag|sha>] [--branch <name>] [--remote <url>]
+#                         [--push] [--allow-no-scan] [--keep-temp]
 #
 #   --ref <tag|sha>   Release point to publish. Default: HEAD.
 #                     If it is a `v*` tag the version label is derived from it;
 #                     otherwise the label comes from <version> in pom.xml.
+#   --branch <name>   turing-ce branch to publish to. Default ($CE_BRANCH env, or
+#                     derived): MIRRORS the source branch name — a run on `2026.3`
+#                     publishes to a `2026.3` branch on turing-ce, creating it if
+#                     it does not exist yet. (Tags/SHAs with no branch → `main`.)
 #   --remote <url>    turing-ce git remote. Default: $CE_REMOTE env, else
 #                     git@github.com:openviglet/turing-ce.git
 #   --push            Actually push to the public repo. WITHOUT this flag the
@@ -28,7 +32,8 @@
 #
 # Env:
 #   CE_REMOTE         Default remote (overridden by --remote).
-#   CE_PUSH_TOKEN     Used by CI (T360); not consumed here — auth is via the
+#   CE_BRANCH         Force the target branch (overridden by --branch).
+#   GH_PKG_TOKEN      Used by CI (T360); not consumed here — auth is via the
 #                     remote URL / ambient git credentials.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -41,11 +46,12 @@ REMOTE="${CE_REMOTE:-git@github.com:openviglet/turing-ce.git}"
 DO_PUSH=false
 ALLOW_NO_SCAN=false
 KEEP_TEMP=false
-CE_BRANCH="${CE_BRANCH:-main}"
+TARGET_BRANCH="${CE_BRANCH:-}"   # turing-ce branch to publish to (empty = derive)
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --ref)           REF="$2"; shift 2 ;;
+    --branch)        TARGET_BRANCH="$2"; shift 2 ;;
     --remote)        REMOTE="$2"; shift 2 ;;
     --push)          DO_PUSH=true; shift ;;
     --allow-no-scan) ALLOW_NO_SCAN=true; shift ;;
@@ -79,7 +85,22 @@ else
 fi
 [[ -n "${VERSION:-}" ]] || die "could not resolve version label for ref $REF"
 COMMIT_MSG="Release v${VERSION}"
-log "Publishing ref $REF ($REF_SHA) as \"$COMMIT_MSG\""
+
+# Target branch on turing-ce: mirror the source BRANCH name (e.g. a run on
+# `2026.3` publishes to a `2026.3` branch on turing-ce). Explicit --branch /
+# CE_BRANCH wins; otherwise derive from the ref.
+if [[ -z "$TARGET_BRANCH" ]]; then
+  if [[ "$REF" == "HEAD" ]]; then
+    TARGET_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)"
+  elif git rev-parse --verify --quiet "refs/heads/$REF" >/dev/null; then
+    TARGET_BRANCH="$REF"
+  else
+    TARGET_BRANCH="main"   # ref is a tag/sha with no obvious branch
+  fi
+fi
+[[ "$TARGET_BRANCH" == "HEAD" ]] && TARGET_BRANCH="main"   # detached HEAD guard
+
+log "Publishing ref $REF ($REF_SHA) as \"$COMMIT_MSG\" -> turing-ce branch '$TARGET_BRANCH'"
 
 # --------------------------------------------------------------------------
 # 1. Extract the tree at the ref + the versioned denylist from the same ref
@@ -93,7 +114,7 @@ log "Extracting tree at $REF -> $SRC_TREE"
 git archive --format=tar "$REF" | tar -x -C "$SRC_TREE"
 
 git cat-file -e "$REF:ce-exclude.txt" 2>/dev/null \
-  || die "ce-exclude.txt (T356 boundary manifest) missing at ref $REF — refusing to publish without the rule"
+  || die "ce-exclude.txt (T356 boundary manifest) missing at ref $REF — refusing to publish without the rule. (This ref predates Block P; publish a ref/tag that contains ce-exclude.txt, e.g. the current release branch.)"
 git show "$REF:ce-exclude.txt" > "$EXCLUDE_FILE"
 
 # --------------------------------------------------------------------------
@@ -223,25 +244,33 @@ run_secret_scan "$SRC_TREE"
 # 4. Land ONE squashed commit on turing-ce and (optionally) push
 # --------------------------------------------------------------------------
 PUB_TREE="$(mktemp -d)"
-log "Preparing public repo working copy at $PUB_TREE"
+log "Preparing public repo working copy at $PUB_TREE (branch: $TARGET_BRANCH)"
 
 if git ls-remote --exit-code "$REMOTE" >/dev/null 2>&1; then
-  # Existing public repo: shallow-clone so we APPEND one commit per release
-  # (public history = one commit per release, §XIX.3 / T359).
-  git clone --depth 1 --branch "$CE_BRANCH" "$REMOTE" "$PUB_TREE" 2>/dev/null \
-    || git clone --depth 1 "$REMOTE" "$PUB_TREE"
-  # Replace the entire tracked tree with the freshly assembled snapshot.
-  find "$PUB_TREE" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+  if git ls-remote --exit-code --heads "$REMOTE" "$TARGET_BRANCH" >/dev/null 2>&1; then
+    # Target branch already exists → APPEND one commit (one commit per release,
+    # §XIX.3 / T359).
+    git clone --depth 1 --branch "$TARGET_BRANCH" "$REMOTE" "$PUB_TREE"
+    find "$PUB_TREE" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+  else
+    # Repo exists but this branch does not → create it fresh as an ORPHAN, so it
+    # does not inherit another branch's history (keeps the snapshot leak-proof
+    # and the one-commit-per-release model on the new branch).
+    log "Branch '$TARGET_BRANCH' not found on turing-ce — creating it"
+    git clone --depth 1 "$REMOTE" "$PUB_TREE"
+    git -C "$PUB_TREE" checkout -q --orphan "$TARGET_BRANCH"
+    git -C "$PUB_TREE" rm -rfq --cached . >/dev/null 2>&1 || true
+    find "$PUB_TREE" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+  fi
 else
   warn "remote $REMOTE has no refs yet — initialising a fresh public repo"
-  git -C "$PUB_TREE" init -q -b "$CE_BRANCH"
+  git -C "$PUB_TREE" init -q -b "$TARGET_BRANCH"
   git -C "$PUB_TREE" remote add origin "$REMOTE"
 fi
 
 cp -a "$SRC_TREE/." "$PUB_TREE/"
 
 cd "$PUB_TREE"
-git checkout -q -B "$CE_BRANCH"
 git add -A
 if git diff --cached --quiet; then
   log "No changes versus current public tree — nothing to publish."
@@ -255,8 +284,8 @@ FILE_COUNT="$(git ls-files | wc -l | tr -d ' ')"
 log "Snapshot committed: \"$COMMIT_MSG\" ($FILE_COUNT files)"
 
 if $DO_PUSH; then
-  log "Pushing to $REMOTE ($CE_BRANCH)"
-  git push origin "HEAD:$CE_BRANCH"
+  log "Pushing to $REMOTE ($TARGET_BRANCH)"
+  git push origin "HEAD:$TARGET_BRANCH"
   log "Done. Public repo updated."
 else
   warn "DRY RUN — not pushing. Re-run with --push to publish."
