@@ -6,7 +6,7 @@ Viglet Team <opensource@viglet.org>
 :git-project: openviglet/turing
 
 [.lead]
-**Enterprise Search Intelligence Platform** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling.
+**Open-source enterprise search for Adobe AEM, WordPress, databases, and files** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling. A self-hosted alternative to Algolia, Coveo, and Lucidworks that keeps your content on your own infrastructure.
 
 image:https://img.shields.io/badge/Download-Release%202026.1.18-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
 image:https://img.shields.io/github/license/{git-project}.svg?style=for-the-badge&logo=Apache["License"]
@@ -17,7 +17,9 @@ image:https://img.shields.io/badge/Javadoc-Release%20{viglet-version}-brightgree
 
 == What is Viglet Turing ES?
 
-https://viglet.org/turing/[Viglet Turing ES] is an open-source platform that combines enterprise search with generative AI. Index content from any source, deliver faceted search experiences, and enable conversational AI grounded in real data.
+https://viglet.org/turing/[Viglet Turing ES] is an open-source platform that combines enterprise search with generative AI. Index content from **Adobe Experience Manager (AEM)**, **WordPress**, databases, file systems, and web crawls; deliver faceted, semantic search experiences; and enable conversational AI (RAG) grounded in your own data — all self-hosted under Apache 2.0.
+
+> Looking for an open-source **alternative to Algolia, Coveo, or Lucidworks** for AEM or WordPress search? See the guide: https://docs.viglet.org/blog/enterprise-search-for-adobe-aem[Add enterprise search to Adobe AEM].
 
 * **Semantic Navigation** — faceted search, spotlights, targeting rules, autocomplete, multi-language
 * **Generative AI (RAG)** — LLM responses grounded in your indexed content

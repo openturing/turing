@@ -253,6 +253,40 @@
 
 - 💭 **T341** (deps: T338) **Rerank-score cache** — optional `@Cacheable("turRagRerankScore")` keyed by `(strategy, model, query, docHash)` with paired `@CacheEvict`. Precision is the win, not latency — ship only if measured. → §XVIII.1
 
+## Block O — GEO / LLM discoverability & content distribution
+
+> Make LLM assistants (ChatGPT/Claude/Gemini/Copilot) suggest Turing for
+> "search for Adobe AEM / WordPress". Execution of [STRATEGY.md](STRATEGY.md)
+> §IX.4; full memo + channel split + post calendar in §X. **Not engineering** —
+> these are content/marketing/SEO tasks; some live in sibling repos
+> (`openviglet.github.io`, `vigletdocs.github.io`). Sequence: foundation
+> (T342) → off-domain signal (T346, T354 — strongest lever) → flagship content
+> (T347, T350) → the rest. `→` pointers are STRATEGY §X.
+
+**Foundation (technical, low cost):**
+- 🛠 **T342** (deps: —) **Enable Docusaurus blog on docs.viglet.org** — turn on `@docusaurus/plugin-content-blog` (RSS, tags, authors); adds the publishing surface every content task needs. *Drafted in working tree (`vigletdocs.github.io`) — pending build + deploy.* → §X.2
+- 🛠 **T343** (deps: T342) **Cross-link skeleton** — viglet.org footer → docs blog, posts link siblings + docs guides; README → blog. *Republish `canonical` is a per-post step at publish time (T354).* → §X.2
+- 🛠 **T344** (deps: T342) **Enrich `llms.txt` + add to docs** — docs `llms-txt.ts` plugin now also enumerates blog guides/comparisons. viglet.org `vite-plugin-llmtxt.ts` enrichment still pending. → §X.2
+- 🛠 **T345** (deps: T342) **schema.org structured data** — `SoftwareApplication` JSON-LD added site-wide on docs; blog posts emit `BlogPosting` automatically. `FAQPage` on viglet.org still pending. → §X.1
+- 🛠 **T346** (deps: —) **GitHub README + topics keyword pass** — README.adoc now leads with "enterprise search for Adobe AEM / WordPress" + Algolia/Coveo-alternative framing. *Repo topics still need `gh repo edit --add-topic` (manual).* → §X.1
+
+**Content — integration how-tos (cluster A):**
+- 🛠 **T347** (deps: T342) **Post: "Integrating Viglet Turing ES with Adobe AEM"** *(flagship)* — drafted as the canonical docs blog post (grounded in the real Dumont AEM connector); the Medium copy should be re-pointed with `canonical` to it (T354). → §X.3
+- 💭 **T348** (deps: T347) **Post: "Semantic & vector search in AEM with Turing ES"** — RAG/embedding angle on the same audience. → §X.3
+- 💭 **T349** (deps: T342) **Post: "Adding enterprise search to WordPress with Turing ES"** — the other named CMS; second-largest connector audience. → §X.3
+
+**Content — comparison / "versus" (cluster B, rides competitor volume):**
+- 🛠 **T350** (deps: T342) **Post: "Open-source alternatives to Algolia for Adobe AEM"** — drafted; comparison table (Algolia/Coveo/Lucidworks/Solr/Turing) + decision axes; links the flagship. → §X.3
+- 💭 **T351** (deps: T350) **Post: "Turing ES vs. Coveo / vs. Lucidworks Fusion"** — head-to-head positioning for enterprise portals. → §X.3
+- 💭 **T352** (deps: T350) **Post: "When to choose Solr, Elasticsearch, or Turing ES"** — captures the "which search engine" decision query. → §X.3
+
+**Content — concept / moat (cluster C):**
+- 💭 **T353** (deps: T342) **Post: "RAG over enterprise content with Turing + MCP"** — ties the §VIII.4 MCP pillar + Block M provenance into the discovery funnel. → §X.3
+
+**Off-domain footprint (the strongest lever — X.1 #1):**
+- 📋 **T354** (deps: —) **Seed independent mentions** — answer relevant SO/Reddit/AEM-forum threads; republish A/B posts to Dev.to/Medium (canonical → docs); list on AlternativeTo + `awesome-*` lists + G2. No code dep; pairs with T346. → §X.1
+- 💭 **T355** (deps: T354) **Monthly model-prompt audit** — prompt ChatGPT/Claude/Gemini with the target queries, log whether Turing appears and where; the actual KPI for this block. → §X.4
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

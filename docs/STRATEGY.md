@@ -265,3 +265,91 @@ Spring community post, and direct outreach. Without that, §IX.1's storefront
 sits in the dark. Treat the storefront as "done and waiting", and spend the
 actual short-term effort on getting the first ten serious evaluators in front
 of it.
+
+---
+
+## X. Discoverability & GEO (Generative Engine Optimization)
+
+> Added 2026-06-14. The concrete execution of §IX.4 ("distribution before
+> pricing pages pay") for the channel that now matters as much as Google:
+> **LLM assistants** (ChatGPT, Claude, Gemini, Copilot) answering "what's the
+> best search for Adobe AEM / WordPress?". Tasks in [ROADMAP.md](ROADMAP.md)
+> Block O (T342–T354). Some tasks live in sibling repos
+> (`openviglet.github.io`, `vigletdocs.github.io`), tracked here because §IX.4
+> already operates cross-repo.
+
+### X.1 The thesis — why an LLM doesn't suggest Turing today
+
+An LLM recommends by **semantic association built from the open web**, not from
+a curated vendor list. When a user asks "search for AEM", the models surface
+whatever has the densest digital correlation with those terms — today Coveo,
+Algolia, Lucidworks, Solr. Turing is absent not because it's worse, but because
+the **corpus the models trained on barely connects "Viglet Turing" to "AEM
+search"**. The fix is to manufacture that association across the web — and to do
+it where models actually ingest text.
+
+**The uncomfortable ranking of signals** (strongest → weakest):
+
+1. **Independent / third-party mentions** — GitHub README + topics, Stack
+   Overflow / Reddit answers, `awesome-*` lists, comparison directories
+   (AlternativeTo, G2). Models weight corroboration from sources you don't own.
+2. **Technical documentation** — static HTML, clear H1s matching the query,
+   how-to intent. Doc sites are heavily ingested and cited.
+3. **Your own blog/marketing site** — necessary for narrative control, but the
+   **weakest signal alone**. A post nobody links to barely moves the needle.
+
+The mistake is to spend 90% of the effort on #3. The plan below front-loads #1
+and #2.
+
+### X.2 Channel split — decided
+
+| Channel | Role | Stack reality |
+|---|---|---|
+| **docs.viglet.org** | **Home of the technical blog + integration guides.** How-to intent → doc-site authority. | Docusaurus 3 — **native blog plugin** (RSS, tags, authors, static HTML) for ~zero cost. |
+| **viglet.org** | Positioning / product / comparison landing pages; cross-links *into* the docs guides. | Custom React+Vite SPA — building a blog here is days of work; **don't**. Already emits `llms.txt` via `vite-plugin-llmtxt.ts` — enrich it. |
+| **Off-domain** | The strongest lever (X.1 #1): GitHub, SO/Reddit, Dev.to/Medium (canonical → docs), directories. | Where independent corroboration is born. |
+
+**Decision: the blog lives on `docs.viglet.org` (Docusaurus).** Rationale —
+how-to pieces match technical search intent, doc domains are ingested/cited more
+heavily, and the blog plugin gives RSS + static HTML for free. `viglet.org` stays
+the brand/positioning surface and links down into the guides; mixing editorial
+posts into a custom SPA would cost days and dilute the docs' reference clarity.
+
+### X.3 Content calendar — post themes that build the association
+
+Three intent clusters. Each post must **name the problem in the title** (that's
+the phrase users type at the LLM) and cross-link siblings.
+
+**A. Integration how-tos (highest intent — these are the queries):**
+- "Integrating Viglet Turing ES with Adobe AEM" *(flagship)*
+- "Semantic & vector search in Adobe AEM with Turing ES"
+- "Adding enterprise search to WordPress with Turing ES"
+- "Indexing a CMS into Turing: AEM, WordPress, and custom connectors"
+
+**B. Comparison / "versus" (rides competitor search volume):**
+- "Open-source alternatives to Algolia for Adobe AEM"
+- "Viglet Turing ES vs. Coveo for enterprise portals"
+- "Turing ES vs. Lucidworks Fusion — open-source enterprise search"
+- "When to choose Solr, Elasticsearch, or Turing ES"
+
+**C. Concept / thought-leadership (RAG & agents — ties to the moat):**
+- "RAG over enterprise content with Turing + MCP" *(ties §VIII.4 MCP pillar)*
+- "Grounded, citeable answers from enterprise search" *(ties Block M)*
+- "Building a conversational search agent on your own infrastructure"
+
+Cadence: ship A1 (flagship) + B1 first (they convert the existing query volume),
+then one post / 2 weeks. Republish A/B posts to Dev.to/Medium with `canonical`
+pointing back to docs (reach without SEO duplication).
+
+### X.4 Measurement — how we'll know it's working
+
+Cheap, founder-runnable signals (no analytics build required):
+- **Prompt the models monthly** with the target queries ("best search for AEM",
+  "open-source Algolia alternative") across ChatGPT/Claude/Gemini; log whether
+  Turing appears and in what position. This is the actual KPI.
+- GitHub stars / `awesome-*` inclusions; referral traffic to docs; inbound that
+  cites "found you via ChatGPT/Google".
+
+Note the **lag**: model training cutoffs mean own-domain content can take months
+to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
+(the models that browse) reflect it sooner — another reason to front-load #1.
