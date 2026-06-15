@@ -9,7 +9,7 @@ Viglet Team <opensource@viglet.org>
 **Open-source enterprise search for Adobe AEM, WordPress, databases, and files** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling. A self-hosted alternative to Algolia, Coveo, and Lucidworks that keeps your content on your own infrastructure.
 
 image:https://img.shields.io/badge/license-Apache%202.0-blue?style=for-the-badge&logo=Apache[link="LICENSE"]
-image:https://img.shields.io/badge/ghcr.io-openviglet%2Fturing--ce-blue?style=for-the-badge&logo=Docker[link="https://github.com/{git-project}/pkgs/container/turing-ce"]
+image:https://img.shields.io/badge/ghcr.io-openviglet%2Fturing--ce-blue?style=for-the-badge&logo=Docker[link="https://github.com/{git-project}"]
 image:https://img.shields.io/badge/Docs-docs.viglet.org-brightgreen?style=for-the-badge&logo=ReadTheDocs[link="https://docs.viglet.org/turing/"]
 image:https://img.shields.io/badge/Download-Releases-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
 
@@ -162,7 +162,7 @@ For architecture details, configuration, connectors, API reference, deployment g
 |===
 | https://docs.viglet.org/turing/[Full Documentation] | Architecture, configuration, connectors, admin guide
 | https://viglet.org/turing/download/[Downloads] | Release packages
-| https://github.com/{git-project}/pkgs/container/turing-ce[GitHub Packages (GHCR)] | Container images
+| https://github.com/{git-project}[GitHub Repository] | Source + GHCR container image (`ghcr.io/openviglet/turing-ce`)
 |===
 
 == Contributing
