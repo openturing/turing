@@ -11,7 +11,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: openviglet/turing-ce
+  # Package name = last path segment → ghcr.io/openviglet/turing
+  IMAGE_NAME: openviglet/turing
 
 jobs:
   docker:
@@ -41,6 +42,11 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ steps.version.outputs.version }}
             type=sha
+          # Link the package to the public openviglet/turing-ce repo instead of
+          # the (private) repo that runs the workflow.
+          labels: |
+            org.opencontainers.image.source=https://github.com/openviglet/turing-ce
+            org.opencontainers.image.url=https://github.com/openviglet/turing-ce
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v6
