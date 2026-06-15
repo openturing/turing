@@ -2345,10 +2345,23 @@ already promotes it to `README.adoc` in the public tree (the internal
 
 ### XIX.4 Secret-scan gate (safety net)
 
-Before any push, run gitleaks/trufflehog over the *assembled* public tree; the
-publish **fails closed** on any secret, internal hostname, or customer name. The
-denylist is the policy; the scanner is the backstop — a missed path must never
-reach a public, indexed, un-deletable mirror.
+Implemented in [`scripts/publish-ce.sh`](../scripts/publish-ce.sh) `run_secret_scan`
+(T358 ✅). Two layers run over the *assembled* tree (after the denylist has
+already removed the known-private paths) and the publish **fails closed** on any
+hit:
+
+1. **Built-in pattern scan** (always on, no external dep) — internal hostnames,
+   customer names, and high-signal secret markers from the itself-denylisted
+   [`scripts/ce-deny-patterns.txt`](../scripts/ce-deny-patterns.txt). This is the
+   layer the entropy scanners can't provide; the pattern file is where the
+   maintainer curates real customer/host names *without* committing PII to the
+   public tree.
+2. **gitleaks / trufflehog** for entropy + known credential formats; a real run
+   of one of these is mandatory before `--push` (override: `--allow-no-scan`).
+
+Matches are redacted in the output so a secret can't re-leak through a CI log.
+The denylist is the policy; the scanner is the backstop — a missed path must
+never reach a public, indexed, un-deletable mirror.
 
 ### XIX.5 Contribution inflow + CLA
 

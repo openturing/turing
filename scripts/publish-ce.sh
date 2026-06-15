@@ -161,20 +161,21 @@ scan_builtin_patterns() {
   # Build grep -e args from the file, dropping blank lines and '#' comments
   # (grep -f would treat comment lines as literal patterns).
   local -a pats=()
-  local line
+  local line npat=0
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line%$'\r'}"                       # tolerate CRLF
     [[ -z "${line//[[:space:]]/}" ]] && continue
     [[ "${line#"${line%%[![:space:]]*}"}" == \#* ]] && continue
     pats+=(-e "$line")
+    npat=$((npat + 1))
   done < "$PATTERN_FILE"
 
-  if [[ ${#pats[@]} -eq 0 ]]; then
+  if [[ $npat -eq 0 ]]; then
     warn "pattern file $PATTERN_FILE has no active patterns — built-in scan is a no-op"
     return 0
   fi
 
-  log "Built-in pattern scan (${#pats[@]} pattern(s) from ${PATTERN_FILE##*/})"
+  log "Built-in pattern scan ($npat pattern(s) from ${PATTERN_FILE##*/})"
   local hits
   hits="$(grep -rInE -I "${pats[@]}" "$tree" 2>/dev/null \
           | sed "s#^$tree/##" || true)"
