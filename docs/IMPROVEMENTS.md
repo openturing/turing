@@ -2331,12 +2331,17 @@ is a *separate curated file* (`README.ce.adoc`), not the internal `README.adoc`.
 
 ### XIX.3 Squash-snapshot, not history mirror
 
-The publish builds a clean tree at the release tag, applies the denylist, and
-commits it as a **single squashed commit** ("Release vX.Y.Z") onto turing-ce's
-default branch — discarding private history (§XI.2). One tag → one public
-commit, leak-proof by construction. `git filter-repo --invert-paths` is the
-fallback if a full filtered history is ever wanted, but the snapshot model is
-simpler and cannot leak a commit title.
+Implemented in [`scripts/publish-ce.sh`](../scripts/publish-ce.sh) (T357 ✅).
+The publish builds a clean tree at the release ref (`git archive`), applies the
+denylist extracted from that same ref, and **appends a single squashed commit**
+("Release vX.Y.Z") onto turing-ce's default branch — discarding private history
+(§XI.2). Each release == exactly one public commit, leak-proof by construction.
+`git filter-repo --invert-paths` is the fallback if a full filtered history is
+ever wanted, but the snapshot model is simpler and cannot leak a commit title.
+
+Remaining T359 work is authoring the curated `README.ce.adoc`; the script
+already promotes it to `README.adoc` in the public tree (the internal
+`README.adoc` is excluded by the denylist).
 
 ### XIX.4 Secret-scan gate (safety net)
 
