@@ -1,9 +1,8 @@
 package com.viglet.turing.spring;
 
 import java.awt.Desktop;
-import java.io.IOException;
+import java.awt.GraphicsEnvironment;
 import java.net.URI;
-import java.net.URISyntaxException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
@@ -25,16 +24,22 @@ public class TurBrowserLauncher {
         if (!openBrowser || isCalledFromTestFramework()) {
             return;
         }
-        System.setProperty("java.awt.headless", "false");
-        if (Desktop.isDesktopSupported()) {
-            Desktop desktop = Desktop.getDesktop();
-            try {
-                desktop.browse(new URI(turingUrl));
-            } catch (IOException | URISyntaxException e) {
-                log.error(e.getMessage(), e);
+        // Skip in headless environments (e.g. Docker, CI, servers without a display).
+        // Touching AWT/Desktop there throws UnsatisfiedLinkError when libX11 is absent,
+        // so guard with the headless flag and swallow any native/runtime failure rather
+        // than letting it abort application startup.
+        if (GraphicsEnvironment.isHeadless()) {
+            log.info("Headless environment detected, skipping automatic browser launch.");
+            return;
+        }
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(turingUrl));
+            } else {
+                log.info("Desktop is not supported, cannot open browser automatically.");
             }
-        } else {
-            log.error("Desktop is not supported, cannot open browser automatically.");
+        } catch (Throwable e) {
+            log.warn("Could not open browser automatically: {}", e.getMessage());
         }
     }
 

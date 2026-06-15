@@ -50,6 +50,8 @@ RUN mkdir -p /app/store && chown -R java:java /app
 USER java
 VOLUME ["/app/store"]
 EXPOSE 2700
-ENV JAVA_OPTS="-Xmx512m -Xms512m"
+# Headless image (no X11): never try to open a desktop browser on startup.
+ENV TURING_OPEN_BROWSER=false
+ENV JAVA_OPTS="-Xmx512m -Xms512m -Djava.awt.headless=true"
 ENV DEBUG_OPTS=""
 ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} ${DEBUG_OPTS} -Djava.security.egd=file:/dev/./urandom -Dlogging.config=classpath:logback-spring-console.xml -jar /app/app.jar"]
