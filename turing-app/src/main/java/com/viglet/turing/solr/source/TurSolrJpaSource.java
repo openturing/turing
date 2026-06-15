@@ -50,6 +50,11 @@ public class TurSolrJpaSource implements TurSolrInstanceSource {
     }
 
     @Override
+    public List<TurSEInstance> findVisibleToTenant(String tenantId) {
+        return repository.findVisibleToTenant(tenantId);
+    }
+
+    @Override
     public Optional<TurSEInstance> findById(String id) {
         return repository.findById(id);
     }

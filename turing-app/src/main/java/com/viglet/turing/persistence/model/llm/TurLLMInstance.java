@@ -26,6 +26,7 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.tenant.TurTenantOwnedInfra;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,7 +47,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "llm_instance")
-public class TurLLMInstance implements Serializable {
+public class TurLLMInstance implements Serializable, TurTenantOwnedInfra {
 	@Serial
 	private static final long serialVersionUID = 1L;
 

@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.tenant.TurTenantOwnedInfra;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,7 +19,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "mcp_server")
-public class TurMcpServer implements Serializable {
+public class TurMcpServer implements Serializable, TurTenantOwnedInfra {
     @Serial
     private static final long serialVersionUID = 1L;
 

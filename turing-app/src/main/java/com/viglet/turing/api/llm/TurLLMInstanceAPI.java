@@ -42,6 +42,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import com.viglet.turing.system.security.TurSecretCryptoService;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,24 +56,31 @@ public class TurLLMInstanceAPI {
     private final TurLLMInstanceMapper turLLMInstanceMapper;
     private final TurSecretCryptoService turSecretCryptoService;
     private final ApplicationEventPublisher eventPublisher;
+    private final TurInfraTenantScope tenantScope;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurLLMInstanceAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceMapper turLLMInstanceMapper,
             TurSecretCryptoService turSecretCryptoService,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            TurInfraTenantScope tenantScope) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceMapper = turLLMInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
         this.eventPublisher = eventPublisher;
+        this.tenantScope = tenantScope;
     }
 
     @Secured({"ROLE_ADMIN", "LLM_VIEW"})
     @Operation(summary = "Large Language Model List")
     @GetMapping
     public List<TurLLMInstanceDto> turLLMInstanceList() {
-        return turLLMInstanceMapper
-                .toDtoList(this.turLLMInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+        java.util.Comparator<TurLLMInstance> byTitle =
+                java.util.Comparator.comparing(TurLLMInstance::getTitle, String.CASE_INSENSITIVE_ORDER);
+        return turLLMInstanceMapper.toDtoList(tenantScope.visibleList(
+                () -> this.turLLMInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()),
+                tenantId -> this.turLLMInstanceRepository.findVisibleToTenant(tenantId)
+                        .stream().sorted(byTitle).toList()));
     }
 
     @Secured({"ROLE_ADMIN", "LLM_CREATE"})
@@ -149,6 +157,7 @@ public class TurLLMInstanceAPI {
         if (StringUtils.hasText(apiKey)) {
             turLLMInstance.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey));
         }
+        tenantScope.stampOnCreate(turLLMInstance);
         this.turLLMInstanceRepository.save(turLLMInstance);
         eventPublisher.publishEvent(LlmInstanceUpdatedEvent.created(
                 turLLMInstance.getId(),

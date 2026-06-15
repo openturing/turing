@@ -1,6 +1,7 @@
 package com.viglet.turing.api.store;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +36,7 @@ import com.viglet.turing.persistence.mapper.store.TurStoreInstanceMapper;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 @ExtendWith(MockitoExtension.class)
 class TurStoreInstanceAPITest {
@@ -50,6 +52,9 @@ class TurStoreInstanceAPITest {
         @Spy
         private TurStoreInstanceMapper turStoreInstanceMapper = Mappers.getMapper(TurStoreInstanceMapper.class);
 
+        @Mock
+        private TurInfraTenantScope tenantScope;
+
         @InjectMocks
         private TurStoreInstanceAPI api;
 
@@ -57,6 +62,10 @@ class TurStoreInstanceAPITest {
 
         @BeforeEach
         void setUp() {
+                // Tenancy-off passthrough: list calls the unscoped supplier, create is a no-op.
+                lenient().when(tenantScope.visibleList(any(), any()))
+                                .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
+                lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
                 mockMvc = MockMvcBuilders.standaloneSetup(api).build();
         }
 

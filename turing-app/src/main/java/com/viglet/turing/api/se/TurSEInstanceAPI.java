@@ -47,6 +47,7 @@ import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.solr.bean.TurSECoreSiteUsage;
 import com.viglet.turing.solr.source.TurSolrInstanceSource;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,18 +62,21 @@ public class TurSEInstanceAPI {
         private final TurSolr turSolr;
         private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
         private final TurSearchEnginePluginFactory pluginFactory;
+        private final TurInfraTenantScope tenantScope;
 
         public TurSEInstanceAPI(TurSolrInstanceSource seInstanceSource,
                         TurSEInstanceMapper turSEInstanceMapper,
                         TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
                         TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort,
-                        TurSearchEnginePluginFactory pluginFactory) {
+                        TurSearchEnginePluginFactory pluginFactory,
+                        TurInfraTenantScope tenantScope) {
                 this.seInstanceSource = seInstanceSource;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
                 this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
                 this.pluginFactory = pluginFactory;
+                this.tenantScope = tenantScope;
         }
 
         private ResponseEntity<TurSEInstanceDto> readOnlyResponse() {
@@ -84,7 +88,10 @@ public class TurSEInstanceAPI {
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public List<TurSEInstanceDto> turSEInstanceList() {
                 return turSEInstanceMapper.toDtoList(
-                                this.seInstanceSource.findAll().stream()
+                                tenantScope.visibleList(
+                                                this.seInstanceSource::findAll,
+                                                this.seInstanceSource::findVisibleToTenant)
+                                                .stream()
                                                 .sorted(java.util.Comparator.comparing(
                                                                 TurSEInstance::getTitle,
                                                                 String.CASE_INSENSITIVE_ORDER))
@@ -145,6 +152,7 @@ public class TurSEInstanceAPI {
                         return readOnlyResponse();
                 }
                 TurSEInstance turSEInstance = turSEInstanceMapper.toEntity(turSEInstanceDto);
+                tenantScope.stampOnCreate(turSEInstance);
                 this.seInstanceSource.save(turSEInstance);
                 return ResponseEntity.ok(turSEInstanceMapper.toDto(turSEInstance));
         }

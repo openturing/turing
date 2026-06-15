@@ -19,6 +19,7 @@ import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,22 +32,29 @@ public class TurMcpServerAPI {
     private final TurMcpServerMapper turMcpServerMapper;
     private final TurAIAgentRepository turAIAgentRepository;
     private final TurPersonaRepository turPersonaRepository;
+    private final TurInfraTenantScope tenantScope;
 
     public TurMcpServerAPI(TurMcpServerRepository turMcpServerRepository,
             TurMcpServerMapper turMcpServerMapper,
             TurAIAgentRepository turAIAgentRepository,
-            TurPersonaRepository turPersonaRepository) {
+            TurPersonaRepository turPersonaRepository,
+            TurInfraTenantScope tenantScope) {
         this.turMcpServerRepository = turMcpServerRepository;
         this.turMcpServerMapper = turMcpServerMapper;
         this.turAIAgentRepository = turAIAgentRepository;
         this.turPersonaRepository = turPersonaRepository;
+        this.tenantScope = tenantScope;
     }
 
     @Operation(summary = "MCP Server List")
     @GetMapping
     public List<TurMcpServerDto> turMcpServerList() {
-        return turMcpServerMapper
-                .toDtoList(this.turMcpServerRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+        java.util.Comparator<TurMcpServer> byTitle =
+                java.util.Comparator.comparing(TurMcpServer::getTitle, String.CASE_INSENSITIVE_ORDER);
+        return turMcpServerMapper.toDtoList(tenantScope.visibleList(
+                () -> this.turMcpServerRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()),
+                tenantId -> this.turMcpServerRepository.findVisibleToTenant(tenantId)
+                        .stream().sorted(byTitle).toList()));
     }
 
     @Operation(summary = "MCP Server structure")
@@ -103,6 +111,7 @@ public class TurMcpServerAPI {
     @PostMapping
     public TurMcpServerDto turMcpServerAdd(@RequestBody TurMcpServerDto turMcpServerDto) {
         TurMcpServer turMcpServer = turMcpServerMapper.toEntity(turMcpServerDto);
+        tenantScope.stampOnCreate(turMcpServer);
         this.turMcpServerRepository.save(turMcpServer);
         return turMcpServerMapper.toDto(turMcpServer);
     }

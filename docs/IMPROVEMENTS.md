@@ -2245,6 +2245,25 @@ not about correctness of the single-service flow:
   Keycloak event-listener SPI or a periodic reconciliation against the IdP both
   fit; the teardown machinery already exists.
 
+- **XIV.8.4 — scope BYO-infra access-by-id, not just listings (T365).** The six
+  BYO-infra entities (`TurSEInstance`, `TurLLMInstance`, `TurEmbeddingModel`,
+  `TurStoreInstance`, `TurIntegrationInstance`, `TurMcpServer`) carry `tenantId`
+  as a **plain column, not `@TenantId`**, so the platform-provided GLOBAL pool
+  (`tenantId IS NULL`) stays visible to every tenant. That choice means Hibernate
+  applies **no** automatic filter — every read/write path must scope by hand.
+  The 2026-06-15 fix closed the *listing* + *create* paths (stamp the owner on
+  create, list via `findVisibleToTenant` through `TurInfraTenantScope`), which
+  removes the visible leak: a tenant no longer sees another tenant's instances.
+  But the **by-id** paths (`findById` and the `GET/PUT/DELETE /{id}` endpoints on
+  each of the six controllers) still issue an unscoped primary-key lookup. A
+  caller who obtains another tenant's instance id out-of-band can therefore read
+  or mutate it. The hardening: route by-id loads through an ownership check
+  (`tenantId == current OR tenantId IS NULL OR platform-admin`) — either a
+  `findByIdVisibleToTenant(id, tenant)` repository query or a guard in
+  `TurInfraTenantScope`, returning 404 when the id is not visible to the caller.
+  Entities that use real `@TenantId` (e.g. `TurSNSite`, `TurAIAgent`) are already
+  isolated by Hibernate on by-id loads and are out of scope.
+
 ---
 
 ## XVI. Cost & token governance (Block L)

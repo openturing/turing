@@ -1,6 +1,7 @@
 package com.viglet.turing.api.llm;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,6 +38,7 @@ import com.viglet.turing.persistence.mapper.llm.TurLLMInstanceMapper;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 @ExtendWith(MockitoExtension.class)
 class TurLLMInstanceAPITest {
@@ -55,6 +57,9 @@ class TurLLMInstanceAPITest {
         @Spy
         private TurLLMInstanceMapper turLLMInstanceMapper = Mappers.getMapper(TurLLMInstanceMapper.class);
 
+        @Mock
+        private TurInfraTenantScope tenantScope;
+
         @InjectMocks
         private TurLLMInstanceAPI turLLMInstanceAPI;
 
@@ -62,6 +67,10 @@ class TurLLMInstanceAPITest {
 
         @BeforeEach
         void setUp() {
+                // Tenancy-off passthrough: list calls the unscoped supplier, create is a no-op.
+                lenient().when(tenantScope.visibleList(any(), any()))
+                                .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
+                lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
                 mockMvc = MockMvcBuilders.standaloneSetup(turLLMInstanceAPI).build();
         }
 

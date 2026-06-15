@@ -19,6 +19,7 @@ import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.mapper.embedding.TurEmbeddingModelMapper;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,19 +36,27 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurEmbeddingModelAPI {
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurEmbeddingModelMapper turEmbeddingModelMapper;
+    private final TurInfraTenantScope tenantScope;
 
     public TurEmbeddingModelAPI(TurEmbeddingModelRepository turEmbeddingModelRepository,
-            TurEmbeddingModelMapper turEmbeddingModelMapper) {
+            TurEmbeddingModelMapper turEmbeddingModelMapper,
+            TurInfraTenantScope tenantScope) {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turEmbeddingModelMapper = turEmbeddingModelMapper;
+        this.tenantScope = tenantScope;
     }
 
     @Operation(summary = "Embedding Model List")
     @GetMapping
     @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public List<TurEmbeddingModelDto> turEmbeddingModelList() {
-        return turEmbeddingModelMapper
-                .toDtoList(this.turEmbeddingModelRepository.findAll(Sort.by(Sort.Order.asc("modelName").ignoreCase())));
+        java.util.Comparator<TurEmbeddingModel> byModelName = java.util.Comparator.comparing(
+                TurEmbeddingModel::getModelName,
+                java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        return turEmbeddingModelMapper.toDtoList(tenantScope.visibleList(
+                () -> this.turEmbeddingModelRepository.findAll(Sort.by(Sort.Order.asc("modelName").ignoreCase())),
+                tenantId -> this.turEmbeddingModelRepository.findVisibleToTenant(tenantId)
+                        .stream().sorted(byModelName).toList()));
     }
 
     @Operation(summary = "Embedding Model structure")
@@ -91,6 +100,7 @@ public class TurEmbeddingModelAPI {
     @Secured({"ROLE_ADMIN", "EMBEDDING_CREATE"})
     public TurEmbeddingModelDto turEmbeddingModelAdd(@RequestBody TurEmbeddingModelDto turEmbeddingModelDto) {
         TurEmbeddingModel turEmbeddingModel = turEmbeddingModelMapper.toEntity(turEmbeddingModelDto);
+        tenantScope.stampOnCreate(turEmbeddingModel);
         this.turEmbeddingModelRepository.save(turEmbeddingModel);
         return turEmbeddingModelMapper.toDto(turEmbeddingModel);
     }

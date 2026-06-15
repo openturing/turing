@@ -74,6 +74,12 @@ public class TurSolrPropertySource implements TurSolrInstanceSource {
     }
 
     @Override
+    public List<TurSEInstance> findVisibleToTenant(String tenantId) {
+        // External single-catalog mode: no tenant dimension.
+        return List.of(cached);
+    }
+
+    @Override
     public Optional<TurSEInstance> findById(String id) {
         if (PROPERTY_INSTANCE_ID.equals(id)) {
             return Optional.of(cached);

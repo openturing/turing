@@ -68,6 +68,7 @@ import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
+import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 
@@ -87,6 +88,7 @@ public class TurStoreInstanceAPI {
     private final TurEmbeddingModelRepository embeddingModelRepository;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
+    private final TurInfraTenantScope tenantScope;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurStoreInstanceAPI(TurStoreInstanceRepository turStoreInstanceRepository,
@@ -95,7 +97,8 @@ public class TurStoreInstanceAPI {
             TurGenAiStoreProviderFactory storeProviderFactory,
             TurEmbeddingModelRepository embeddingModelRepository,
             TurGlobalSettingsService globalSettingsService,
-            TurRagContextBuilder ragContextBuilder) {
+            TurRagContextBuilder ragContextBuilder,
+            TurInfraTenantScope tenantScope) {
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turStoreInstanceMapper = turStoreInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -103,14 +106,19 @@ public class TurStoreInstanceAPI {
         this.embeddingModelRepository = embeddingModelRepository;
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
+        this.tenantScope = tenantScope;
     }
 
     @Operation(summary = "Embedding Store List")
     @GetMapping
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public List<TurStoreInstanceDto> turStoreInstanceList() {
-        return turStoreInstanceMapper
-                .toDtoList(this.turStoreInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+        java.util.Comparator<TurStoreInstance> byTitle =
+                java.util.Comparator.comparing(TurStoreInstance::getTitle, String.CASE_INSENSITIVE_ORDER);
+        return turStoreInstanceMapper.toDtoList(tenantScope.visibleList(
+                () -> this.turStoreInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()),
+                tenantId -> this.turStoreInstanceRepository.findVisibleToTenant(tenantId)
+                        .stream().sorted(byTitle).toList()));
     }
 
     @Operation(summary = "Embedding Store structure")
@@ -455,6 +463,7 @@ public class TurStoreInstanceAPI {
         if (StringUtils.hasText(credential)) {
             turStoreInstance.setCredentialEncrypted(turSecretCryptoService.encrypt(credential));
         }
+        tenantScope.stampOnCreate(turStoreInstance);
         this.turStoreInstanceRepository.save(turStoreInstance);
         return turStoreInstanceMapper.toDto(turStoreInstance);
 

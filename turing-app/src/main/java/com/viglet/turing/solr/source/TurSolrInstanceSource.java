@@ -54,6 +54,14 @@ public interface TurSolrInstanceSource {
 
     List<TurSEInstance> findAll();
 
+    /**
+     * §XIV.5.1 — the SE instances visible to {@code tenantId}: its own plus the
+     * platform-provided GLOBAL pool ({@code tenantId IS NULL}). The
+     * property-backed (read-only) source has no tenant dimension and returns the
+     * same single synthetic instance as {@link #findAll()}.
+     */
+    List<TurSEInstance> findVisibleToTenant(String tenantId);
+
     Optional<TurSEInstance> findById(String id);
 
     /**
