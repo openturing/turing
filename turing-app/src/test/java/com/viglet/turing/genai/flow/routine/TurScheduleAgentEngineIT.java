@@ -106,16 +106,18 @@ class TurScheduleAgentEngineIT extends AbstractTuringSpringIT {
                 engine.parseGraph(flow).orElseThrow()).orElseThrow();
         trace("after init: nodeId=%s vars=%s", leaf.getCurrentNodeId(), leaf.getVariablesJson());
 
-        // The engine should park on the scheduleAgent node and write the
-        // pending markers — but the auto-resume listener may already
-        // race in by the time we read here, so we accept either parked
-        // OR already-advanced as the "fire succeeded" predicate.
+        // The routine writes the output slot through the bus, which then
+        // asynchronously drives the auto-resume listener to advance the
+        // cursor off the scheduleAgent node. The slot lands BEFORE the
+        // cursor moves (writeSlot persists the var, then publishes; the
+        // advance happens later on the reactor subscription thread), so we
+        // must await the terminal condition — cursor advanced — not just
+        // the slot, otherwise we race the auto-resume and read "scheduleNode".
         await().atMost(Duration.ofSeconds(15))
                 .pollInterval(Duration.ofMillis(150))
                 .until(() -> {
                     TurChatFlowState fresh = stateRepository.findById(leaf.getId()).orElseThrow();
-                    String now = readVar(fresh, "now");
-                    return now != null && !now.isBlank();
+                    return "endNode".equals(fresh.getCurrentNodeId());
                 });
 
         TurChatFlowState finalState = stateRepository.findById(leaf.getId()).orElseThrow();
@@ -141,11 +143,14 @@ class TurScheduleAgentEngineIT extends AbstractTuringSpringIT {
         TurChatFlowState leaf = engine.loadOrInitState(conv, flow,
                 engine.parseGraph(flow).orElseThrow()).orElseThrow();
 
+        // Await the terminal condition (cursor advanced), not just the slot
+        // — the slot lands before the auto-resume advance (same race as the
+        // native test above).
         await().atMost(Duration.ofSeconds(15))
                 .pollInterval(Duration.ofMillis(150))
                 .until(() -> {
                     TurChatFlowState fresh = stateRepository.findById(leaf.getId()).orElseThrow();
-                    return readVar(fresh, "greeting") != null;
+                    return "endNode".equals(fresh.getCurrentNodeId());
                 });
 
         TurChatFlowState finalState = stateRepository.findById(leaf.getId()).orElseThrow();
