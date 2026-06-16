@@ -307,6 +307,13 @@
 - **T339** — **Cohere Rerank strategy (managed)** — `TurCohereRerankStrategy` (fixed `/v2/rerank`, default `rerank-v3.5`); API key encrypted via `TurSecretCryptoService` (`GLOBAL_RAG_SN_RERANK_API_KEY`), write-only in the bean/API.
 - **T340** — **Global Settings UI** — rerank section in the admin Global Settings page: enable switch, strategy `Select`, top-K, and conditional endpoint/model/apiKey fields; api-key `password`/write-only with a configured-status hint. Bean fields exposed via `/api/system/global-settings`; en/pt i18n.
 
+## Block O — GEO / LLM discoverability & content distribution
+
+> Make LLM assistants suggest Turing for "search for Adobe AEM / WordPress". Execution of [STRATEGY.md](STRATEGY.md) §X; content/marketing/SEO tasks, mostly in sibling repos (`vigletdocs.github.io`, `openviglet.github.io`).
+
+- **T342** — **Docusaurus blog on docs.viglet.org** — `plugin-content-blog` enabled in the classic preset (RSS + Atom feeds, reading time, `authors.yml`/`tags.yml`, navbar + footer Blog link); blog posts emit `BlogPosting` JSON-LD. Live at `https://docs.viglet.org/blog`. (`vigletdocs.github.io`) (§X.2)
+- **T343** — **Cross-link skeleton** — viglet.org footer → docs blog (`Footer.tsx`), blog posts link siblings (Dumont AEM connector, flagship post) + docs guides (Turing RAG / Semantic Navigation), and `README.adoc`/`README.ce.adoc` lead-in links the AEM guide. `canonical` republish deferred to T354. (§X.2)
+
 ## Block P — Open-core source split (`turing` → `turing-ce`)
 
 > Publish the runtime as a public community edition while keeping strategy docs, history, and the (future) paid add-on private. Boundary + license → [STRATEGY.md](STRATEGY.md) §XI; publish mechanics → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIX.
