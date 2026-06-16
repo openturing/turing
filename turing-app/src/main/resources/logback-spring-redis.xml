@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="REDIS_GENERAL_SYNC" class="com.viglet.turing.commons.logging.TurRedisAppender">
+    <appender name="REDIS_GENERAL_SYNC" class="com.viglet.core.logging.VigletRedisAppender">
         <enabled>true</enabled>
         <connectionString>redis://localhost:6379/0</connectionString>
         <key>turingLog:server</key>
         <maxEntries>10000</maxEntries>
     </appender>
 
-    <appender name="REDIS_STATUS_SYNC" class="com.viglet.turing.commons.logging.TurRedisIndexingAppender">
+    <appender name="REDIS_STATUS_SYNC" class="com.viglet.core.logging.VigletRedisIndexingAppender">
         <enabled>true</enabled>
         <connectionString>redis://localhost:6379/0</connectionString>
         <key>turingLog:indexing</key>

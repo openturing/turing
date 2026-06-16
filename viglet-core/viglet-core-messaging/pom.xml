@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.viglet.core</groupId>
+        <artifactId>viglet-core</artifactId>
+        <version>2026.3.4</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>viglet-core-messaging</artifactId>
+    <packaging>jar</packaging>
+    <name>Viglet Core :: Messaging</name>
+    <description>Embedded Artemis broker tuning shared across Viglet products</description>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <!--
+      T377 / Block Q — the embedded-Artemis flow-control tuning re-implemented
+      byte-for-byte in two products (TurArtemisConfig + DumArtemisConfig): pin an
+      explicit globalMaxSize / maxDiskUsage and switch the address-full policy to
+      PAGE so producers spill to disk instead of hanging on credit acquisition.
+      Only the customizer moves here; each product still registers it as a bean
+      and supplies its own indexing-queue address name(s).
+
+      Artemis itself stays a `provided` dependency: the module compiles against
+      the customizer SPI + broker config API, but the consuming app brings the
+      broker (via spring-boot-starter-artemis), so a product that does not use
+      embedded Artemis pulls nothing extra.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-artemis</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-server</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

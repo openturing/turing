@@ -342,6 +342,16 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.viglet.core</groupId>
+                <artifactId>viglet-core-messaging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.core</groupId>
+                <artifactId>viglet-core-logging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.viglet.turing</groupId>
                 <artifactId>turing-java-sdk</artifactId>
                 <version>${project.version}</version>

@@ -1,4 +1,19 @@
-package com.viglet.turing.commons.logging;
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.viglet.core.logging;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -21,9 +36,17 @@ import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.datatype.joda.JodaModule;
 
+/**
+ * Captures each logging event as a {@link VigletLoggingEntry} and inserts the
+ * JSON payload into the configured MongoDB collection. The DB I/O is offloaded
+ * to an internal executor so the logging thread stays non-blocking.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.4
+ */
 @Slf4j
 @Setter
-public class TurMongoDBAppender extends TurMongoDBAppenderBase {
+public class VigletMongoDBAppender extends VigletMongoDBAppenderBase {
 
     public static final int MAX_LENGTH_PACKAGE_NAME = 40;
     private static final Abbreviator ABBREVIATOR = new TargetLengthBasedClassNameAbbreviator(1);
@@ -53,7 +76,7 @@ public class TurMongoDBAppender extends TurMongoDBAppenderBase {
         }
 
         // 1. Capture the log data immediately while still on the calling thread
-        TurLoggingGeneral logEntry = TurLoggingGeneral.builder()
+        VigletLoggingEntry logEntry = VigletLoggingEntry.builder()
                 .level(event.getLevel().toString())
                 .logger(abbreviatePackage(event.getLoggerName()))
                 .message(event.getFormattedMessage())
@@ -68,7 +91,7 @@ public class TurMongoDBAppender extends TurMongoDBAppenderBase {
                 String json = MAPPER.writeValueAsString(logEntry);
                 collection.insertOne(Document.parse(json));
             } catch (Exception e) {
-                log.info("Failed to log to MongoDB: " + e.getMessage());
+                log.info("Failed to log to MongoDB: {}", e.getMessage());
             }
         });
     }

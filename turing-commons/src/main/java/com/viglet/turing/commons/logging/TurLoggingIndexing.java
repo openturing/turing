@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import com.viglet.core.logging.VigletIsoDateSerializer;
 import com.viglet.turing.commons.indexing.TurIndexingStatus;
 import com.viglet.turing.commons.indexing.TurLoggingStatus;
 
@@ -30,7 +31,7 @@ public class TurLoggingIndexing implements Serializable {
     private String checksum;
     private TurLoggingStatus resultStatus;
     private String details;
-    @JsonSerialize(using = IsoDateSerializer.class)
+    @JsonSerialize(using = VigletIsoDateSerializer.class)
     private Date date;
 
 }

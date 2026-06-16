@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="MONGO_GENERAL_SYNC" class="com.viglet.turing.commons.logging.TurMongoDBAppender">
+    <appender name="MONGO_GENERAL_SYNC" class="com.viglet.core.logging.VigletMongoDBAppender">
         <enabled>true</enabled>
         <connectionString>mongodb://localhost:27017</connectionString>
         <databaseName>turingLog</databaseName>
         <collectionName>server</collectionName>
     </appender>
 
-    <appender name="MONGO_STATUS_SYNC" class="com.viglet.turing.commons.logging.TurMongoDBIndexingAppender">
+    <appender name="MONGO_STATUS_SYNC" class="com.viglet.core.logging.VigletMongoDBIndexingAppender">
         <enabled>true</enabled>
         <connectionString>mongodb://localhost:27017</connectionString>
         <databaseName>turingLog</databaseName>

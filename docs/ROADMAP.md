@@ -305,7 +305,6 @@
 > ≥2 where noted) and was missing from the original scope. The poms already pin
 > identical versions for the shared libs, so the *rule of three* is satisfied. → STRATEGY §XII.2
 
-- 💭 **T377** (deps: T367) **`viglet-core` messaging + persistent-logging module** — embedded Artemis tuning (`TurArtemisConfig`/`DumArtemisConfig`) + MongoDB/Redis logback appenders. ≥2 products (Turing + Dumont); gated on confirming Shio needs it before extraction. → STRATEGY §XII.2
 - 💭 **T378** (deps: T367) **`viglet-core` outbound-webhook + HMAC signing** — async dispatch with HMAC-SHA256 signing + retry/backoff: `TurChatWebhookDispatcher` (T62) + `ShWebhookDispatcher`/`ShWebhookSigner`. ≥2 products (Turing + Shio). → STRATEGY §XII.2
 - 💭 **T379** (deps: T367) **`viglet-core` HTTP/RestClient builder** — pooled httpclient5 + tracing interceptor + API-key header injection: `TurHttpClientConfiguration` + `DumRestClientConfig`. ≥2 products (Turing + Dumont); httpclient5 is a dep in all three. → STRATEGY §XII.2
 

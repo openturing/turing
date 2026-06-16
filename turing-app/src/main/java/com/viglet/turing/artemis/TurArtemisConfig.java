@@ -20,44 +20,22 @@
  */
 package com.viglet.turing.artemis;
 
+import com.viglet.core.messaging.VigletArtemisConfigurationCustomizer;
 import com.viglet.turing.sn.TurSNConstants;
-import org.apache.activemq.artemis.core.config.Configuration;
-import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
-import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
-import org.springframework.boot.artemis.autoconfigure.ArtemisConfigurationCustomizer;
 import org.springframework.stereotype.Component;
 
 /**
  * Explicit Artemis broker tuning to avoid producer flow-control hangs.
  *
- * Defaults in Artemis 2.x base globalMaxSize on the JVM's free heap at
- * startup, which combined with persistent journals can cause producers
- * to hang on credit acquisition between indexing runs even when the
- * queue is empty (the broker still accounts for memory not yet
- * reclaimed by GC, or for a near-full disk threshold).
- *
- * Pinning explicit limits and using PAGE policy keeps producers
- * non-blocking: when the address is full, messages spill to disk
- * instead of blocking the producer.
+ * <p>Delegates to {@link VigletArtemisConfigurationCustomizer} (viglet-core),
+ * pinning the same explicit limits and PAGE policy on the indexing queue and the
+ * catch-all address so producers spill to disk instead of blocking on credit
+ * acquisition between indexing runs.</p>
  */
 @Component
-public class TurArtemisConfig implements ArtemisConfigurationCustomizer {
+public class TurArtemisConfig extends VigletArtemisConfigurationCustomizer {
 
-    private static final long ONE_GB = 1024L * 1024L * 1024L;
-    private static final long FIVE_HUNDRED_MB = 512L * 1024L * 1024L;
-    private static final int TEN_MB = 10 * 1024 * 1024;
-
-    @Override
-    public void customize(Configuration configuration) {
-        configuration.setGlobalMaxSize(ONE_GB);
-        configuration.setMaxDiskUsage(95);
-
-        AddressSettings settings = new AddressSettings()
-                .setMaxSizeBytes(FIVE_HUNDRED_MB)
-                .setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE)
-                .setPageSizeBytes(TEN_MB);
-
-        configuration.getAddressSettings().put(TurSNConstants.INDEXING_QUEUE, settings);
-        configuration.getAddressSettings().put("#", settings);
+    public TurArtemisConfig() {
+        super(TurSNConstants.INDEXING_QUEUE);
     }
 }

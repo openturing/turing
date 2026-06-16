@@ -53,6 +53,10 @@
             <artifactId>viglet-core-commons</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-logging</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
         </dependency>

@@ -56,5 +56,7 @@
         <module>viglet-core-security</module>
         <module>viglet-core-tenancy</module>
         <module>viglet-core-settings</module>
+        <module>viglet-core-messaging</module>
+        <module>viglet-core-logging</module>
     </modules>
 </project>
