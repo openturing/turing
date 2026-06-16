@@ -31,6 +31,8 @@ import { SectionCard } from "../ui/section-card"
 import { StickyPageHeader } from "../sticky-page-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { IconDeviceFloppy, IconSettings, IconPlug, IconX } from "@tabler/icons-react"
+import { useInfraReadOnly } from "@/hooks/use-infra-read-only"
+import { GlobalBadge, GlobalReadOnlyNotice } from "../infra-global-notice"
 import { GradientButton } from "../ui/gradient-button"
 
 interface Props {
@@ -48,6 +50,7 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       ? { ...value, endpoint: value.endpoint || DEFAULT_ENDPOINT }
       : value,
   });
+  const { isGlobal, readOnly } = useInfraReadOnly(value?.tenantId);
   const navigate = useNavigate()
   const createMutation = useCreateIntegrationInstance();
   const updateMutation = useUpdateIntegrationInstance();
@@ -83,16 +86,20 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             description={t("integration.detail.description")}
           />
           <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
+            {isGlobal && <GlobalBadge />}
+            {!readOnly && (
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+            )}
             <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)}>
               <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
+              {readOnly ? t("forms.formActions.back", { defaultValue: "Back" }) : t("forms.formActions.cancel")}
             </GradientButton>
           </StickyPageHeader.Actions>
         </StickyPageHeader>
+        {readOnly && <GlobalReadOnlyNotice />}
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.integration.generalDesc")} />

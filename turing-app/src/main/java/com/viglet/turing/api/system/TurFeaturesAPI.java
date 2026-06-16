@@ -5,6 +5,8 @@ import com.viglet.turing.service.git.TurGitServerService;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.solr.source.TurSolrInstanceSource;
 import com.viglet.turing.system.TurGlobalSettingsService;
+import com.viglet.turing.tenant.TurPlatformAdminService;
+import com.viglet.turing.tenant.TurTenantContext;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,23 +29,30 @@ public class TurFeaturesAPI {
     private final TurGitServerService gitServerService;
     private final TurConfigProperties configProperties;
     private final TurSolrInstanceSource solrInstanceSource;
+    private final TurTenantContext tenantContext;
+    private final TurPlatformAdminService platformAdminService;
     private final String loggingEngine;
 
     public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService,
                           TurGitServerService gitServerService, TurConfigProperties configProperties,
                           TurSolrInstanceSource solrInstanceSource,
+                          TurTenantContext tenantContext,
+                          TurPlatformAdminService platformAdminService,
                           @Value("${turing.logging.engine:none}") String loggingEngine) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.gitServerService = gitServerService;
         this.configProperties = configProperties;
         this.solrInstanceSource = solrInstanceSource;
+        this.tenantContext = tenantContext;
+        this.platformAdminService = platformAdminService;
         this.loggingEngine = loggingEngine;
     }
 
     public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled,
                                    boolean marketplaceEnabled, boolean seInstanceReadOnly,
                                    boolean skillsEnabled,
+                                   boolean tenancyEnabled, boolean platformAdmin,
                                    String loggingEngine) {}
 
     @GetMapping
@@ -60,6 +69,11 @@ public class TurFeaturesAPI {
                 marketplaceEnabled,
                 solrInstanceSource != null && solrInstanceSource.isReadOnly(),
                 skillsEnabled,
+                // T372 — the frontend's useInfraReadOnly hook freezes GLOBAL
+                // BYO-infra rows when tenancy is on and the caller is not a
+                // platform admin (mirrors the backend assertWritable rule).
+                tenantContext.isTenancyEnabled(),
+                platformAdminService.isPlatformAdmin(),
                 loggingEngine);
     }
 }

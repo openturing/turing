@@ -89,6 +89,7 @@ public class TurIntegrationInstanceAPI {
 			@RequestBody TurIntegrationInstanceDto turIntegrationInstanceDto) {
 		TurIntegrationInstance source = turIntegrationInstanceMapper.toEntity(turIntegrationInstanceDto);
 		return turIntegrationInstanceRepository.findById(id).map(existing -> {
+			tenantScope.assertWritable(existing);
 			turIntegrationInstanceMapper.updateEntity(source, existing);
 			turIntegrationInstanceRepository.save(existing);
 			return turIntegrationInstanceMapper.toDto(existing);
@@ -100,6 +101,7 @@ public class TurIntegrationInstanceAPI {
 	@Operation(summary = "Delete a Integration")
 	@DeleteMapping("/{id}")
 	public boolean turIntegrationInstanceDelete(@PathVariable String id) {
+		this.turIntegrationInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
 		this.turIntegrationInstanceRepository.delete(id);
 		return true;
 	}

@@ -35,6 +35,8 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { IconDeviceFloppy, IconLock, IconPlug, IconSettings, IconX } from "@tabler/icons-react"
+import { useInfraReadOnly } from "@/hooks/use-infra-read-only"
+import { GlobalBadge } from "../infra-global-notice"
 import { GradientButton } from "../ui/gradient-button"
 import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
@@ -61,7 +63,11 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const { control } = form;
   const [vendors, setVendors] = useState<TurSEVendor[]>([]);
-  const [readOnly, setReadOnly] = useState<boolean>(false);
+  const [propertyReadOnly, setPropertyReadOnly] = useState<boolean>(false);
+  const { isGlobal, readOnly: globalReadOnly } = useInfraReadOnly(value?.tenantId);
+  // Effective read-only is the OR of the property-backed Solr case (existing)
+  // and the T372 GLOBAL pool case.
+  const readOnly = propertyReadOnly || globalReadOnly;
   const navigate = useNavigate()
   const selectedVendorId = useWatch({ control, name: "turSEVendor.id" });
   const createMutation = useCreateSeInstance();
@@ -74,8 +80,8 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   useEffect(() => {
     turSEVendorService.query().then(setVendors);
     turFeaturesService.getFeatures()
-      .then((f) => setReadOnly(f.seInstanceReadOnly))
-      .catch(() => setReadOnly(false));
+      .then((f) => setPropertyReadOnly(f.seInstanceReadOnly))
+      .catch(() => setPropertyReadOnly(false));
   }, [])
 
   useEffect(() => {
@@ -119,6 +125,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             description={t("se.detail.description")}
           />
           <StickyPageHeader.Actions>
+            {isGlobal && <GlobalBadge />}
             {!readOnly && (
               <GradientButton type="submit" size="sm">
                 <IconDeviceFloppy className="size-4" />
@@ -135,10 +142,15 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
           <div className="flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600/40 dark:bg-amber-950/30 dark:text-amber-200">
             <IconLock className="size-4 shrink-0" />
             <span>
-              {t("se.readOnlyNotice", {
-                defaultValue:
-                  "Solr is configured via turing.solr.endpoint. The search engine catalog is read-only.",
-              })}
+              {globalReadOnly
+                ? t("forms.common.globalReadOnly", {
+                    defaultValue:
+                      "This is a shared platform-provided resource and is read-only.",
+                  })
+                : t("se.readOnlyNotice", {
+                    defaultValue:
+                      "Solr is configured via turing.solr.endpoint. The search engine catalog is read-only.",
+                  })}
             </span>
           </div>
         )}

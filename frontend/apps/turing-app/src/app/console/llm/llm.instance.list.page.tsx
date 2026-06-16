@@ -1,3 +1,4 @@
+import { useFeatures } from "@/api/queries/features.queries";
 import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
@@ -11,11 +12,19 @@ export default function LLMInstanceListPage() {
   const { t } = useTranslation();
   const { data: llmInstances, isError } = useLlmInstances();
   const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
+  const { data: features } = useFeatures();
+  const tenancyEnabled = features?.tenancyEnabled === true;
+  // T372 — label shared GLOBAL pool rows (tenantId == null) when tenancy is on.
+  const globalLabel = t("forms.common.global", { defaultValue: "Global" });
   const gridItemList = useGridAdapter(llmInstances, {
     name: "title",
     description: "description",
     url: (item) => `${ROUTES.LLM_INSTANCE}/${item.id}`,
     icon: "icon",
+    badge: (item) => {
+      if (tenancyEnabled && item.tenantId == null) return globalLabel;
+      return null;
+    },
   });
   return (
     <LoadProvider checkIsNotUndefined={llmInstances} error={error} tryAgainUrl={`${ROUTES.LLM_INSTANCE}`}>

@@ -126,6 +126,7 @@ public class TurSEInstanceAPI {
                 }
                 TurSEInstance source = turSEInstanceMapper.toEntity(turSEInstanceDto);
                 return ResponseEntity.ok(seInstanceSource.findById(id).map(existing -> {
+                        tenantScope.assertWritable(existing);
                         turSEInstanceMapper.updateEntity(source, existing);
                         seInstanceSource.save(existing);
                         return turSEInstanceMapper.toDto(existing);
@@ -140,6 +141,7 @@ public class TurSEInstanceAPI {
                 if (seInstanceSource.isReadOnly()) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(false);
                 }
+                this.seInstanceSource.findById(id).ifPresent(tenantScope::assertWritable);
                 this.seInstanceSource.delete(id);
                 return ResponseEntity.ok(true);
         }

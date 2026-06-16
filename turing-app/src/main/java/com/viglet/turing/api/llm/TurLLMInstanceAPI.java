@@ -107,6 +107,7 @@ public class TurLLMInstanceAPI {
         TurLLMInstance turLLMInstance = objectMapper.convertValue(payload, TurLLMInstance.class);
         String apiKey = payload.get("apiKey") instanceof String apiKeyValue ? apiKeyValue : null;
         return turLLMInstanceRepository.findById(id).map(turLLMInstanceEdit -> {
+            tenantScope.assertWritable(turLLMInstanceEdit);
             turLLMInstanceEdit.setTitle(turLLMInstance.getTitle());
             turLLMInstanceEdit.setDescription(turLLMInstance.getDescription());
             turLLMInstanceEdit.setIcon(turLLMInstance.getIcon());
@@ -144,6 +145,7 @@ public class TurLLMInstanceAPI {
     @Operation(summary = "Delete a Large Language Model")
     @DeleteMapping("/{id}")
     public boolean turLLMInstanceDelete(@PathVariable String id) {
+        this.turLLMInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
         this.turLLMInstanceRepository.delete(id);
         return true;
     }

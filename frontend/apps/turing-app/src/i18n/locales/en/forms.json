@@ -2,6 +2,8 @@
   "forms": {
     "common": {
       "saveChanges": "Save Changes",
+      "global": "Global",
+      "globalReadOnly": "This is a shared platform-provided resource and is read-only.",
       "formSubmitFailed": "Failed to submit the form. Please try again.",
       "title": "Title",
       "description": "Description",

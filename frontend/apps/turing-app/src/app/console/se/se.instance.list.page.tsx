@@ -14,12 +14,19 @@ export default function SEInstanceListPage() {
   const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
   const { data: features } = useFeatures();
   const readOnly = features?.seInstanceReadOnly ?? false;
+  const tenancyEnabled = features?.tenancyEnabled === true;
+  // T372 — label shared GLOBAL pool rows (tenantId == null) when tenancy is on.
+  const globalLabel = t("forms.common.global", { defaultValue: "Global" });
 
   const gridItemList = useGridAdapter(seInstances, {
     name: "title",
     description: "description",
     url: (item) => `${ROUTES.SE_INSTANCE}/${item.id}`,
     icon: "icon",
+    badge: (item) => {
+      if (tenancyEnabled && item.tenantId == null) return globalLabel;
+      return null;
+    },
   });
 
   return (

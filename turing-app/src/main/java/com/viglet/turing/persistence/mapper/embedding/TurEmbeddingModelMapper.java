@@ -23,9 +23,13 @@ public interface TurEmbeddingModelMapper {
 
     List<TurEmbeddingModelDto> toDtoList(List<TurEmbeddingModel> entities);
 
+    // T372 — never reassign ownership through an edit; tenantId is owned by
+    // the create/import path (TurInfraTenantScope), not the request body.
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     void updateEntity(TurEmbeddingModel source, @MappingTarget TurEmbeddingModel target);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     void updateEntityFromDto(TurEmbeddingModelDto source, @MappingTarget TurEmbeddingModel target);
 }

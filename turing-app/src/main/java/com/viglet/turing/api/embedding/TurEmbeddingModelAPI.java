@@ -80,6 +80,7 @@ public class TurEmbeddingModelAPI {
     public TurEmbeddingModelDto turEmbeddingModelUpdate(@PathVariable String id,
             @RequestBody TurEmbeddingModelDto turEmbeddingModelDto) {
         return turEmbeddingModelRepository.findById(id).map(existing -> {
+            tenantScope.assertWritable(existing);
             turEmbeddingModelMapper.updateEntityFromDto(turEmbeddingModelDto, existing);
             turEmbeddingModelRepository.save(existing);
             return turEmbeddingModelMapper.toDto(existing);
@@ -91,6 +92,7 @@ public class TurEmbeddingModelAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "EMBEDDING_DELETE"})
     public boolean turEmbeddingModelDelete(@PathVariable String id) {
+        this.turEmbeddingModelRepository.findById(id).ifPresent(tenantScope::assertWritable);
         this.turEmbeddingModelRepository.delete(id);
         return true;
     }

@@ -184,6 +184,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         const url: string = row.getValue("url");
                         const isExternal = row.original.external;
                         const icon: string | undefined = row.original.icon ?? undefined;
+                        const badge: string | undefined = row.original.badge ?? undefined;
                         const itemActions = row.original.actions;
                         const gradient = getGradient(name);
                         const initials = getInitials(name);
@@ -205,9 +206,16 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                             {icon ? <Icon icon={icon} className="size-5" /> : initials}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                {name}
-                                            </h3>
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <h3 className="font-medium text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {name}
+                                                </h3>
+                                                {badge && (
+                                                    <span className="shrink-0 inline-flex items-center rounded-full border border-amber-300/60 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900 dark:border-amber-600/40 dark:bg-amber-950/30 dark:text-amber-200">
+                                                        {badge}
+                                                    </span>
+                                                )}
+                                            </div>
                                             {description ? (
                                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                                                     {description}

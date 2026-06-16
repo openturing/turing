@@ -1,7 +1,7 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { SectionCard } from "../ui/section-card"
-import { IconAdjustments, IconAlertTriangle, IconBrain, IconSettings, IconSparkles, IconToggleLeft, IconTrash } from "@tabler/icons-react"
+import { IconAdjustments, IconAlertTriangle, IconBrain, IconSettings, IconSparkles, IconToggleLeft, IconTrash, IconX } from "@tabler/icons-react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
@@ -36,9 +36,12 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { useInfraReadOnly } from "@/hooks/use-infra-read-only"
+import { GlobalBadge, GlobalReadOnlyNotice } from "../infra-global-notice"
 import { DialogDelete } from "../dialog.delete"
 import { Button } from "../ui/button"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 import { IconPicker } from "../ui/icon-picker"
@@ -110,6 +113,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [maxTokensInput, setMaxTokensInput] = useState<string>("")
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const selectedVendorId = form.watch("turLLMVendor.id");
+  const { isGlobal, readOnly } = useInfraReadOnly(value?.tenantId);
   const navigate = useNavigate()
 
   const createMutation = useCreateLlmInstance()
@@ -268,15 +272,29 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         >
           <StickySaveBar
             title={watchedTitle || (isNew ? t("llm.newLanguageModel") : t("llm.title"))}
-            badges={vendorLabel && <StickySaveBar.Badge>{vendorLabel}</StickySaveBar.Badge>}
+            badges={
+              <>
+                {vendorLabel && <StickySaveBar.Badge>{vendorLabel}</StickySaveBar.Badge>}
+                {isGlobal && <GlobalBadge />}
+              </>
+            }
             onCancel={() => navigate(urlBase)}
+            actions={
+              readOnly ? (
+                <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                  <IconX className="size-4" />
+                  {t("forms.formActions.back", { defaultValue: "Back" })}
+                </GradientButton>
+              ) : undefined
+            }
           />
+          {readOnly && <GlobalReadOnlyNotice />}
 
           <Card className="mx-auto border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
             <CardHeader className="hidden md:grid">
               <CardTitle className="text-2xl">{isNew ? t("llm.newLanguageModel") : t("llm.title")}</CardTitle>
               <CardAction>
-                {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                {!isNew && !readOnly && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
               </CardAction>
               <CardDescription>
                 {t("forms.llm.settings")}
@@ -757,7 +775,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                 {/* Danger zone — labelled, always-visible counterpart to the
                     desktop-only CardHeader trash icon. Shares the same
                     `open`/`setOpen` state so only one DialogDelete renders. */}
-                {!isNew && (
+                {!isNew && !readOnly && (
                   <SectionCard variant="rose">
                     <SectionCard.Header
                       icon={IconAlertTriangle}

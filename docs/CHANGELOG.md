@@ -268,6 +268,7 @@
 - **T283** — **`docs/MULTI_TENANCY.md`** — operator + developer guide: model, leak-surface checklist, new-entity recipe, teardown runbook. (§XIV.7.4)
 - **T284** — **Hybrid escalation seam** — `TurTenant.isolationMode` (SHARED|SCHEMA|DB, default SHARED) reserves the path to schema/DB isolation; only SHARED implemented. (§XIV.7.5)
 - **T333** — **Auto-provision personal tenant on first login** — opt-in `turing.tenancy.auto-provision` (default off): an authenticated principal that resolves to no explicit tenant gets a personal tenant + OWNER membership minted on first request (race-safe, slug derived from the username), and resolves to it via that membership thereafter. The "one environment per user" SaaS posture used by Viglet Cloud; legacy invite-based deployments leave it off. (§XIV.8)
+- **T372** — **Platform-global BYO-infra is read-only in the CRUD** — with tenancy on, a GLOBAL (`tenantId IS NULL`) SE/LLM/Embedding/Store/Integration/MCP instance is writable only by a platform admin: one rule per layer — `TurInfraTenantScope.isPlatformGlobalReadOnly`/`assertWritable` (403, called at the top of each of the 6 controllers' update+delete on the persisted entity) + update-mappers `@Mapping(target="tenantId", ignore=true)` so an edit can't reassign ownership; `/features` exposes `tenancyEnabled`+`platformAdmin`, a `useInfraReadOnly(tenantId)` hook freezes Save/Delete and shows a "Global" badge in the 6 admin forms+lists. Tenancy-off installs unaffected. (§XIV.8)
 
 ## Block K — Agent CI (flow/prompt eval gate, §XV)
 

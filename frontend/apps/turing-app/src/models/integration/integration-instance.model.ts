@@ -8,4 +8,6 @@ export type TurIntegrationInstance = {
   enabled: number;
   icon?: string | null;
   apiToken?: TurTokenInstance | null;
+  /** T372 — null for the shared GLOBAL BYO-infra pool (read-only when tenancy is on). */
+  tenantId?: string | null;
 };

@@ -27,6 +27,8 @@ import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import type { TurStoreVendor } from "@/models/store/store-vendor.model.ts"
 import { TurStoreVendorService } from "@/services/store/store-vendor.service"
 import { IconAdjustments, IconBuildingStore, IconDeviceFloppy, IconPlug, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { useInfraReadOnly } from "@/hooks/use-infra-read-only"
+import { GlobalBadge, GlobalReadOnlyNotice } from "../infra-global-notice"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -223,6 +225,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const [vendors, setVendors] = useState<TurStoreVendor[]>([]);
   const selectedVendorId = form.watch("turStoreVendor.id");
+  const { isGlobal, readOnly } = useInfraReadOnly(value?.tenantId);
   const navigate = useNavigate()
   const createMutation = useCreateStoreInstance();
   const updateMutation = useUpdateStoreInstance();
@@ -329,16 +332,20 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             description={t("store.detail.description")}
           />
           <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
+            {isGlobal && <GlobalBadge />}
+            {!readOnly && (
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+            )}
             <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
               <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
+              {readOnly ? t("forms.formActions.back", { defaultValue: "Back" }) : t("forms.formActions.cancel")}
             </GradientButton>
           </StickyPageHeader.Actions>
         </StickyPageHeader>
+        {readOnly && <GlobalReadOnlyNotice />}
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.store.generalDesc")} />

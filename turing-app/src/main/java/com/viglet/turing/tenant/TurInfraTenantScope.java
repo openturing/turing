@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * §XIV.5.1 — the single place that applies tenant scoping to the
@@ -84,6 +86,39 @@ public class TurInfraTenantScope {
             return entity; // startup/seed import — keep GLOBAL
         }
         return stampOnCreate(entity);
+    }
+
+    /**
+     * §XIV.8.6 / T372 — whether {@code entity} is a platform-provided GLOBAL
+     * instance that the current caller may read but not mutate. True only when
+     * tenancy is on, the instance has no owner ({@code tenantId == null} — the
+     * shared GLOBAL pool), and the caller is <em>not</em> a platform admin.
+     *
+     * <p>A GLOBAL instance is meant to be a platform-provided default: every
+     * tenant uses it, no tenant owns it, and only a platform admin may change
+     * it. When tenancy is off, GLOBAL is just the ordinary single-tenant pool
+     * and stays editable, so this is always {@code false}.
+     */
+    public boolean isPlatformGlobalReadOnly(TurTenantOwnedInfra entity) {
+        return entity != null
+                && tenantContext.isTenancyEnabled()
+                && entity.getTenantId() == null
+                && !platformAdminService.isPlatformAdmin();
+    }
+
+    /**
+     * Guard a mutation (update/delete) on a BYO-infra instance: throws
+     * {@code 403 FORBIDDEN} when {@code entity} is a
+     * {@link #isPlatformGlobalReadOnly(TurTenantOwnedInfra) read-only GLOBAL}
+     * instance. Controllers call this at the top of their update/delete paths
+     * on the <em>persisted</em> entity (never on the request body), so a tenant
+     * cannot edit or delete the shared platform pool.
+     */
+    public void assertWritable(TurTenantOwnedInfra entity) {
+        if (isPlatformGlobalReadOnly(entity)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Global infrastructure is read-only for tenants");
+        }
     }
 
     /**

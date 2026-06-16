@@ -11,6 +11,10 @@ export interface FeaturesResponse {
   /** T317 — skill folders feature (gated on storage being configured). */
   skillsEnabled: boolean
   loggingEngine: LoggingEngine
+  /** T372 — multi-tenancy is switched on for this deployment. */
+  tenancyEnabled: boolean
+  /** T372 — current caller holds ROLE_PLATFORM_ADMIN. */
+  platformAdmin: boolean
 }
 
 export class TurFeaturesService {

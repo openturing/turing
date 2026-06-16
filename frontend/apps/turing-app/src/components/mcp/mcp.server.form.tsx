@@ -26,7 +26,7 @@ import {
   useUpdateMcpServer,
 } from "@/api/queries/mcp-server.queries"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
-import { IconAlertTriangle, IconBraces, IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft, IconTrash } from "@tabler/icons-react"
+import { IconAlertTriangle, IconBraces, IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft, IconTrash, IconX } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -34,8 +34,11 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { useInfraReadOnly } from "@/hooks/use-infra-read-only"
+import { GlobalBadge, GlobalReadOnlyNotice } from "../infra-global-notice"
 import { DialogDelete } from "../dialog.delete"
 import { Button } from "../ui/button"
+import { GradientButton } from "../ui/gradient-button"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
@@ -58,6 +61,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const [open, setOpen] = useState(false);
   const selectedConnectionType = form.watch("connectionType");
+  const { isGlobal, readOnly } = useInfraReadOnly(value?.tenantId);
   const navigate = useNavigate()
 
   const createMutation = useCreateMcpServer();
@@ -131,7 +135,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
         <CardHeader className="hidden md:grid">
           <CardTitle className="text-2xl">{isNew ? t("mcp.newMcpServer") : t("mcp.title")}</CardTitle>
           <CardAction>
-            {!isNew && <DialogDelete feature="MCP server" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            {!isNew && !readOnly && <DialogDelete feature="MCP server" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
           <CardDescription>
             {t("forms.mcp.settings")}
@@ -142,8 +146,18 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-2 md:py-8">
               <StickySaveBar
                 title={form.watch("title") || (isNew ? t("mcp.newMcpServer") : t("mcp.title"))}
+                badges={isGlobal ? <GlobalBadge /> : undefined}
                 onCancel={() => navigate(urlBase)}
+                actions={
+                  readOnly ? (
+                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                      <IconX className="size-4" />
+                      {t("forms.formActions.back", { defaultValue: "Back" })}
+                    </GradientButton>
+                  ) : undefined
+                }
               />
+              {readOnly && <GlobalReadOnlyNotice />}
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.mcp.generalDesc")} />
@@ -467,7 +481,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
               {/* Danger zone — duplicate of the desktop-only CardHeader
                   trash icon as an always-visible labelled button.
                   Shares the same `open` state so only one dialog renders. */}
-              {!isNew && (
+              {!isNew && !readOnly && (
                 <SectionCard variant="rose">
                   <SectionCard.Header
                     icon={IconAlertTriangle}

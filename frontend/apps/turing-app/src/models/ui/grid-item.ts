@@ -23,4 +23,6 @@ export type TurGridItem = {
   external?: boolean;
   icon?: string | null;
   actions?: TurGridItemAction[];
+  /** T372 — optional inline badge label shown on the card (e.g. "Global"). */
+  badge?: string | null;
 };

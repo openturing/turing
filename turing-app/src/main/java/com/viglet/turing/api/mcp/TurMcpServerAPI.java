@@ -76,6 +76,7 @@ public class TurMcpServerAPI {
             @RequestBody TurMcpServerDto turMcpServerDto) {
         TurMcpServer source = turMcpServerMapper.toEntity(turMcpServerDto);
         return turMcpServerRepository.findById(id).map(existing -> {
+            tenantScope.assertWritable(existing);
             turMcpServerMapper.updateEntity(source, existing);
             turMcpServerRepository.save(existing);
             return turMcpServerMapper.toDto(existing);
@@ -86,6 +87,8 @@ public class TurMcpServerAPI {
     @Operation(summary = "Delete a MCP Server")
     @DeleteMapping("/{id}")
     public boolean turMcpServerDelete(@PathVariable String id) {
+        // T372 — a tenant may not delete a GLOBAL (platform-provided) server.
+        this.turMcpServerRepository.findById(id).ifPresent(tenantScope::assertWritable);
         // Detach every reference to this MCP server before deleting so the
         // FK constraints don't reject the delete:
         //   • ai_agent_mcp_server (M2M join table — remove from agent's catalog)

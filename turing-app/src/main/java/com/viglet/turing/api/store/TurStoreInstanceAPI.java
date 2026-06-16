@@ -147,6 +147,7 @@ public class TurStoreInstanceAPI {
         TurStoreInstance turStoreInstance = objectMapper.convertValue(payload, TurStoreInstance.class);
         String credential = payload.get("credential") instanceof String credentialValue ? credentialValue : null;
         return turStoreInstanceRepository.findById(id).map(turStoreInstanceEdit -> {
+            tenantScope.assertWritable(turStoreInstanceEdit);
             turStoreInstanceEdit.setTitle(turStoreInstance.getTitle());
             turStoreInstanceEdit.setDescription(turStoreInstance.getDescription());
             turStoreInstanceEdit.setIcon(turStoreInstance.getIcon());
@@ -170,6 +171,7 @@ public class TurStoreInstanceAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public boolean turStoreInstanceDelete(@PathVariable String id) {
+        this.turStoreInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
         this.turStoreInstanceRepository.delete(id);
         return true;
     }

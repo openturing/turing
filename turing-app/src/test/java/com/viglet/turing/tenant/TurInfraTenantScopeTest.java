@@ -10,6 +10,8 @@
 package com.viglet.turing.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +22,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Unit tests for {@link TurInfraTenantScope} — the layer that was missing when
@@ -124,5 +128,45 @@ class TurInfraTenantScopeTest {
                 tenantId -> List.of("should-not-be-used"));
 
         assertThat(result).isEqualTo(unscoped);
+    }
+
+    // --- T372: GLOBAL pool is read-only for non-platform-admins ---
+
+    @Test
+    void globalInstanceIsReadOnlyForRegularTenant() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+
+        assertThat(scope.isPlatformGlobalReadOnly(new Owned(null))).isTrue();
+        assertThatThrownBy(() -> scope.assertWritable(new Owned(null)))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void ownedInstanceIsWritableForItsTenant() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        lenient().when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+
+        assertThat(scope.isPlatformGlobalReadOnly(new Owned("tenantA"))).isFalse();
+        assertThatCode(() -> scope.assertWritable(new Owned("tenantA"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void platformAdminMayMutateGlobalInstance() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(true);
+
+        assertThat(scope.isPlatformGlobalReadOnly(new Owned(null))).isFalse();
+        assertThatCode(() -> scope.assertWritable(new Owned(null))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void globalInstanceIsWritableWhenTenancyDisabled() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(false);
+
+        assertThat(scope.isPlatformGlobalReadOnly(new Owned(null))).isFalse();
+        assertThatCode(() -> scope.assertWritable(new Owned(null))).doesNotThrowAnyException();
     }
 }

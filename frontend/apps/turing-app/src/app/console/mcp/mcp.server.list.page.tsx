@@ -1,3 +1,4 @@
+import { useFeatures } from "@/api/queries/features.queries";
 import { useMcpServers } from "@/api/queries/mcp-server.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
@@ -11,11 +12,19 @@ export default function McpServerListPage() {
   const { t } = useTranslation();
   const { data: mcpServers, isError } = useMcpServers();
   const error = isError ? t("common.connectionError", { resource: "MCP servers" }) : null;
+  const { data: features } = useFeatures();
+  const tenancyEnabled = features?.tenancyEnabled === true;
+  // T372 — label shared GLOBAL pool rows (tenantId == null) when tenancy is on.
+  const globalLabel = t("forms.common.global", { defaultValue: "Global" });
   const gridItemList = useGridAdapter(mcpServers, {
     name: "title",
     description: "description",
     url: (item) => `${ROUTES.MCP_INSTANCE}/${item.id}`,
     icon: "icon",
+    badge: (item) => {
+      if (tenancyEnabled && item.tenantId == null) return globalLabel;
+      return null;
+    },
   });
   return (
     <LoadProvider checkIsNotUndefined={mcpServers} error={error} tryAgainUrl={`${ROUTES.MCP_INSTANCE}`}>

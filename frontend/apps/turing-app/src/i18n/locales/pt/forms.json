@@ -2,6 +2,8 @@
   "forms": {
     "common": {
       "saveChanges": "Salvar Alterações",
+      "global": "Global",
+      "globalReadOnly": "Este é um recurso compartilhado fornecido pela plataforma e é somente leitura.",
       "formSubmitFailed": "Falha ao enviar o formulário. Tente novamente.",
       "title": "Título",
       "description": "Descrição",

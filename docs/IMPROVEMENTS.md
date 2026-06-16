@@ -2286,34 +2286,6 @@ not about correctness of the single-service flow:
   role. Until then the cross-tenant console and the shared GLOBAL infra pool are
   dormant features.
 
-- **XIV.8.6 — platform-global BYO-infra is read-only in the CRUD (T372).** With
-  tenancy on, the shared GLOBAL pool (`tenantId IS NULL`) is meant to be
-  *platform-provided defaults* — every tenant uses them but no tenant owns them.
-  Today nothing stops a tenant from issuing `PUT`/`DELETE /{id}` against a GLOBAL
-  instance (the by-id mutation is unscoped — see XIV.8.4/T365), and the admin UI
-  renders the same edit/delete affordances it does for owned instances. The rule
-  we want is one line: a GLOBAL instance is writable **only** by a platform admin.
-  Encode it once per layer rather than scattering `tenantId == null` checks across
-  6 controllers × 2 layers. **Backend:** `TurInfraTenantScope` (already the single
-  home of BYO-infra scoping) gains `isPlatformGlobalReadOnly(entity)` =
-  `tenancyEnabled && entity.tenantId == null && !isPlatformAdmin()` and an
-  `assertWritable(entity)` that throws `403`; each of the 6 controllers calls
-  `assertWritable(existing)` at the top of its update + delete (loading the
-  *persisted* entity, not trusting the request body), and the update-mappers add
-  `@Mapping(target = "tenantId", ignore = true)` so a client can't reassign
-  ownership through an edit. **Frontend:** `/features` exposes `tenancyEnabled` +
-  `platformAdmin`; a `useInfraReadOnly(tenantId)` hook (the DTOs already serialize
-  `tenantId`, since they extend the entity and it is not `@JsonIgnore`) returns
-  `{ isGlobal, readOnly }`, and the 6 forms hide Save/Delete + show a "Global"
-  badge when read-only — same amber-lock treatment the SE catalog already uses for
-  its property-backed read-only mode (the two conditions OR together). The "New"
-  button stays visible everywhere: a tenant can still create its own (owned)
-  instances; only the GLOBAL rows are frozen. Pairs with T366 — until a Cloud
-  principal can actually hold `ROLE_PLATFORM_ADMIN`, GLOBAL rows are read-only for
-  *everyone* and are managed only by re-importing the seed (T373), which is a
-  defensible posture (declarative, Docker-shipped defaults) but should be a
-  conscious choice, not an accident.
-
 - **XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373).** The
   product ask: a fresh Viglet Cloud deployment should come with a default LLM,
   default search engine, etc. already configured for *all* users, loadable purely

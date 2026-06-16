@@ -9,4 +9,6 @@ export interface TurSEInstance {
   language: string;
   enabled: number;
   icon?: string | null;
+  /** T372 — null for the shared GLOBAL BYO-infra pool (read-only when tenancy is on). */
+  tenantId?: string | null;
 }

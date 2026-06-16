@@ -20,6 +20,9 @@ public interface TurSEInstanceMapper {
 
     Set<TurSEInstanceDto> toDtoSet(Set<TurSEInstance> entities);
 
+    // T372 — never reassign ownership through an edit; tenantId is owned by
+    // the create/import path (TurInfraTenantScope), not the request body.
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     void updateEntity(TurSEInstance source, @MappingTarget TurSEInstance target);
 }
