@@ -49,6 +49,20 @@ public class TurSNJobItem implements Serializable {
 	private TurSNJobAction turSNJobAction;
 	private List<String> siteNames;
 	private List<TurSNJobAttributeSpec> specs = new ArrayList<>();
+	/**
+	 * The document's indexable fields.
+	 *
+	 * <p><b>Conservative-grounding contract (T381).</b> This map carries
+	 * <em>only the fields a source actually supplies</em>: an <em>absent</em>
+	 * field is a missing key, never a key mapped to {@code null}, {@code ""},
+	 * or an empty collection. The indexing path enforces the same rule on the
+	 * way out — a {@code null}, blank string, or empty collection value is
+	 * treated as absent and is <b>not</b> materialized as an empty value in
+	 * Solr/ES. This keeps facet counts and {@code exists}-style filters correct
+	 * (absent ≠ empty) and is the indexing-side half of Dumont's grounding rule
+	 * (D03). Producers should omit a field rather than send an empty value to
+	 * convey "no value".
+	 */
 	@SuppressWarnings("java:S1948")
 	private Map<String, Object> attributes = new HashMap<>();
 	private String checksum;

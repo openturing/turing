@@ -372,18 +372,47 @@ public class TurSNProcessQueue {
         Optional.ofNullable(turSNJobItem.getAttributes())
                 .ifPresent(attributes -> attributes.forEach((key, value1) -> {
                     log.debug("SE Consolidate Value: {}", value1);
-                    Optional.ofNullable(value1).ifPresent(value -> {
-                        log.debug("SE Consolidate Class: {}", value.getClass().getName());
-                        consolidateResults.put(key, value);
-                    });
+                    if (isGroundedValue(value1)) {
+                        log.debug("SE Consolidate Class: {}", value1.getClass().getName());
+                        consolidateResults.put(key, value1);
+                    } else {
+                        log.debug("[T381] conservative grounding: dropping absent/empty attribute '{}'",
+                                key);
+                    }
                 }));
         return consolidateResults;
+    }
+
+    /**
+     * T381 / §XX.1 — conservative-grounding contract. An attribute that is
+     * <em>absent</em> from {@link TurSNJobItem#getAttributes()} must never be
+     * materialized as an empty indexed value, or facet counts and
+     * {@code exists}-negation filters in Solr/ES break (absent ≠ empty). A
+     * {@code null}, blank string, or empty collection value carries no
+     * information and is treated as <em>absent</em> here — it is not indexed as
+     * the empty value {@code ""}. This is the indexing-side half of Dumont's
+     * grounding rule (D03).
+     *
+     * @return {@code true} when {@code value} should be indexed; {@code false}
+     *         when it is grounding-absent and must be dropped at this boundary.
+     */
+    static boolean isGroundedValue(Object value) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof CharSequence charSequence) {
+            return StringUtils.hasText(charSequence.toString());
+        }
+        if (value instanceof java.util.Collection<?> collection) {
+            return !collection.isEmpty();
+        }
+        return true;
     }
 
     public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {
         Map<String, Object> attributesWithUniqueTerms = new HashMap<>();
         Optional.ofNullable(attributes).ifPresent(attr -> attr.entrySet().stream()
-                .filter(attribute -> attribute.getValue() != null).forEach(attribute -> {
+                .filter(attribute -> isGroundedValue(attribute.getValue())).forEach(attribute -> {
                     log.debug("removeDuplicateTerms: attribute Value: {}", attribute.getValue());
                     log.debug("removeDuplicateTerms: attribute Class: {}",
                             attribute.getValue().getClass().getName());

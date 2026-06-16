@@ -2446,15 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.1 Conservative-grounding indexing contract (T381)
-
-`TurSNJobItem.attributes` is a `Map<String, Object>`; today an absent field is simply
-a missing key, but we have no guarantee the SE layer (Solr/ES field provisioning,
-the import path) doesn't materialize an empty value, and no test pins the behavior.
-T381 makes "absent key ⇒ no indexed value ⇒ not counted in any facet, matched by an
-`exists`-negation filter" an explicit, tested contract, and documents it as the
-indexing-side half of Dumont's grounding rule. Cheap, foundational, blocks T382/T385.
-
 ### XX.2 Field-manifest site provisioning (T382)
 
 Onboarding a structured source today means creating the SN site, then declaring each

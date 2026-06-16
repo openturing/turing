@@ -289,6 +289,86 @@ class TurSNProcessQueueTest {
     }
 
     @Test
+    void testRemoveDuplicateTerms_ConservativeGroundingDropsEmptyAndBlankValues() {
+        // T381 / §XX.1 — the indexing boundary must NOT materialize an absent
+        // field as an empty value: null, "", whitespace-only, and empty
+        // collections are dropped so facets and exists-filters stay correct.
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("present", "value");
+        attrs.put("nullField", null);
+        attrs.put("emptyString", "");
+        attrs.put("blankString", "   ");
+        attrs.put("emptyList", new ArrayList<>());
+
+        Map<String, Object> result = processQueue.removeDuplicateTerms(attrs);
+
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("present"));
+        assertTrue(!result.containsKey("nullField"));
+        assertTrue(!result.containsKey("emptyString"));
+        assertTrue(!result.containsKey("blankString"));
+        assertTrue(!result.containsKey("emptyList"));
+    }
+
+    @Test
+    void testIsGroundedValue_AbsentVsPresentContract() {
+        // T381 — pin the absent-vs-present predicate directly.
+        assertTrue(!TurSNProcessQueue.isGroundedValue(null));
+        assertTrue(!TurSNProcessQueue.isGroundedValue(""));
+        assertTrue(!TurSNProcessQueue.isGroundedValue("   "));
+        assertTrue(!TurSNProcessQueue.isGroundedValue(new ArrayList<>()));
+        assertTrue(TurSNProcessQueue.isGroundedValue("x"));
+        assertTrue(TurSNProcessQueue.isGroundedValue(0));
+        assertTrue(TurSNProcessQueue.isGroundedValue(Boolean.FALSE));
+        assertTrue(TurSNProcessQueue.isGroundedValue(List.of("a")));
+    }
+
+    @Test
+    void testReceiveIndexingQueue_CreateDropsEmptyAttributesBeforeIndexing() {
+        // T381 — end-to-end: a CREATE job carrying a present id plus an
+        // empty-string field indexes only the grounded field; the empty one is
+        // never handed to the search-engine plugin as "".
+        TurSNJobItems jobItems = new TurSNJobItems();
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(new ArrayList<>());
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, "1");
+        attrs.put("absentInSource", "");
+        item.setAttributes(attrs);
+        jobItems.add(item);
+
+        TurSEInstance seInstance = new TurSEInstance();
+        seInstance.setId("se1");
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+        site.setTurSEInstance(seInstance);
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        // mergeDocuments echoes back whatever the consolidation step produced,
+        // so the captured map is exactly what conservative grounding kept.
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<Map<String, Object>> captor =
+                org.mockito.ArgumentCaptor.forClass(Map.class);
+        verify(plugin).indexDocument(eq(site), eq(Locale.US), captor.capture());
+        Map<String, Object> indexed = captor.getValue();
+        assertTrue(indexed.containsKey(TurSNFieldName.ID));
+        assertTrue(!indexed.containsKey("absentInSource"));
+    }
+
+    @Test
     void testReceiveIndexingQueue_CreateCreatesMissingFieldAndSearchEngineField() {
         TurSNJobItems jobItems = new TurSNJobItems();
         TurSNJobItem item = new TurSNJobItem();

@@ -322,12 +322,7 @@
 > polluted and "field present?" logic breaks. This is a public-data catalog, so
 > **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
 
-- 📋 **T381** (deps: —) **Conservative-grounding indexing contract** — guarantee that an
-      indexed document with an *absent* attribute is not materialized as an empty value
-      in Solr/ES (so facets and `exists`-style filters are correct). Document the
-      null-vs-absent contract for `TurSNJobItem.attributes` and cover it with a test.
-      Pairs with Dumont **D03**. → §XX.1
-- 📋 **T382** (deps: T381) **Field-manifest site provisioning** — one idempotent call
+- 📋 **T382** (deps: T381 ✅) **Field-manifest site provisioning** — one idempotent call
       that creates/updates an SN site **and** its field schema from a single manifest
       (per field: `TurSEFieldType`, multi-valued, facet, mandatory, locale/analyzer),
       so "index a new content type" is a declarative op, not hand-clicking the console.
