@@ -303,6 +303,12 @@
 - **T331** — **Grounded follow-up questions in AI mode** — opt-in (`RAG_SN_FOLLOWUPS_ENABLED`, default off) 2–3 suggestions generated from the retrieved chunks, emitted via the existing `options` chip contract and rendered as clickable chips in `ai-mode-chat.tsx`. (§XVII.7)
 - **T332** — **Source chips on the public `ai-mode-chat.tsx`** — the T293 `TuringSourceChips` renderer wired into the public SN AI-mode chat, fed by the T327 `sources` event. (§XVII.8)
 
+## Block Q — `viglet-core` shared backend platform (cross-product)
+
+> Incubate the cross-product backend foundation as a Turing submodule, promote to a public shared lib (Shio + Dumont) when stable. Bet + phasing → [STRATEGY.md](STRATEGY.md) §XII.
+
+- **T367** — **Phase 1 — `viglet-core` Turing submodule skeleton** — new multi-module Maven parent `viglet-core/` (groupId `com.viglet.core`, packaging `pom`, inherits the Turing parent only for version/plugin management while incubating) with its first leaf module `viglet-core-lang` (jar, **zero runtime dependencies**). Both day-1 hard rules in place so the Phase-2 promotion stays a "move + publish": neutral identity (package `com.viglet.core.*`, no `Tur*`) and a one-way dependency arrow (`viglet-core` never imports `turing-*`). Wiring proven by migrating one leaf concern — `TurUtils.getUrlTemplate` → `com.viglet.core.lang.UrlTemplate.of` (+ its 11-test suite) — with `turing-app` as the first consumer (declares `com.viglet.core:viglet-core-lang`, call sites updated, old `TurUtils`/test removed). Added to the root reactor's default profile + `dependencyManagement`. (§XII.3/§XII.4)
+
 ## Block N — Pluggable reranker (cross-encoder / managed)
 
 > Makes the SN RAG rerank stage (T328) a selectable strategy. Opt-in, **default `LLM`** → existing rerank-on deployments unchanged. Design follow-up (optional cache, T341) in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XVIII.

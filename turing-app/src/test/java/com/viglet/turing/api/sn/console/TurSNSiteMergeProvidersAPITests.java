@@ -32,7 +32,7 @@ import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
-import com.viglet.turing.utils.TurUtils;
+import com.viglet.core.lang.UrlTemplate;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -118,7 +118,7 @@ class TurSNSiteMergeProvidersAPITests {
                 .ifPresent(mergeProviders -> {
                     try {
                         mockMvc.perform(get(
-                                TurUtils.getUrlTemplate(SERVICE_URL, mergeProviders.getId())))
+                                UrlTemplate.of(SERVICE_URL, mergeProviders.getId())))
                                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -136,7 +136,7 @@ class TurSNSiteMergeProvidersAPITests {
                         String spotlightRequestBody = TurCommonsUtils.asJsonString(mergeProviders);
 
                         RequestBuilder requestBuilder = MockMvcRequestBuilders
-                                .put(TurUtils.getUrlTemplate(SERVICE_URL,
+                                .put(UrlTemplate.of(SERVICE_URL,
                                         mergeProviders.getId()))
                                 .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                                 .content(spotlightRequestBody)
@@ -155,7 +155,7 @@ class TurSNSiteMergeProvidersAPITests {
                 .ifPresent(mergeProviders -> {
                     try {
                         RequestBuilder requestBuilder = MockMvcRequestBuilders
-                                .delete(TurUtils.getUrlTemplate(SERVICE_URL,
+                                .delete(UrlTemplate.of(SERVICE_URL,
                                         mergeProviders.getId()))
                                 .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                                 .contentType(MediaType.APPLICATION_JSON);

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      viglet-core — shared backend platform across Viglet products.
+
+      Phase 1 (Block Q / STRATEGY §XII): incubated as a Turing submodule with
+      Turing as its first consumer. Two hard rules, enforced from day 1 so the
+      Phase-2 promotion to a standalone published library (consumed by Shio and
+      Dumont) is a "move + publish", not a decoupling project:
+
+        1. Neutral identity — groupId com.viglet.core, package com.viglet.core.*,
+           no Tur* names.
+        2. One-way dependency arrow — viglet-core NEVER imports turing-*. If core
+           needs something from a product, that thing is not core.
+
+      It inherits the Turing parent only for version alignment and plugin/
+      dependency management while incubating; the groupId stays neutral.
+    -->
+    <parent>
+        <groupId>com.viglet.turing</groupId>
+        <artifactId>turing</artifactId>
+        <version>2026.3.4</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <groupId>com.viglet.core</groupId>
+    <artifactId>viglet-core</artifactId>
+    <packaging>pom</packaging>
+    <name>Viglet Core</name>
+    <description>Shared backend platform across Viglet products (Turing, Shio, Dumont)</description>
+    <url>https://github.com/openviglet/turing</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+    </properties>
+
+    <modules>
+        <module>viglet-core-lang</module>
+    </modules>
+</project>

@@ -30,7 +30,7 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocume
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
-import com.viglet.turing.utils.TurUtils;
+import com.viglet.core.lang.UrlTemplate;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -120,7 +120,7 @@ class TurSNSiteSpotlightAPITests {
     void stage02SpotlightGet() {
         turSNSiteSpotlightRepository.findAll().stream().findFirst().ifPresent(spotlight -> {
             try {
-                mockMvc.perform(get(TurUtils.getUrlTemplate(SERVICE_URL, spotlight.getId())))
+                mockMvc.perform(get(UrlTemplate.of(SERVICE_URL, spotlight.getId())))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON));
             } catch (Exception e) {
@@ -138,7 +138,7 @@ class TurSNSiteSpotlightAPITests {
                 String spotlightRequestBody = TurCommonsUtils.asJsonString(spotlight);
 
                 RequestBuilder requestBuilder = MockMvcRequestBuilders
-                        .put(TurUtils.getUrlTemplate(SERVICE_URL, spotlight.getId()))
+                        .put(UrlTemplate.of(SERVICE_URL, spotlight.getId()))
                         .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                         .content(spotlightRequestBody).contentType(MediaType.APPLICATION_JSON);
 
@@ -155,7 +155,7 @@ class TurSNSiteSpotlightAPITests {
         turSNSiteSpotlightRepository.findAll().stream().findFirst().ifPresent(spotlight -> {
             try {
                 RequestBuilder requestBuilder = MockMvcRequestBuilders
-                        .delete(TurUtils.getUrlTemplate(SERVICE_URL, spotlight.getId()))
+                        .delete(UrlTemplate.of(SERVICE_URL, spotlight.getId()))
                         .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON);
 

@@ -158,6 +158,7 @@
                 <gpg.skip>true</gpg.skip>
             </properties>
             <modules>
+                <module>viglet-core</module>
                 <module>turing-utils</module>
                 <module>turing-commons</module>
                 <module>turing-spring</module>
@@ -300,6 +301,11 @@
                 <scope>import</scope>
             </dependency>
             <!-- Internal modules -->
+            <dependency>
+                <groupId>com.viglet.core</groupId>
+                <artifactId>viglet-core-lang</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.viglet.turing</groupId>
                 <artifactId>turing-java-sdk</artifactId>
