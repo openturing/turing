@@ -169,4 +169,47 @@ class TurInfraTenantScopeTest {
         assertThat(scope.isPlatformGlobalReadOnly(new Owned(null))).isFalse();
         assertThatCode(() -> scope.assertWritable(new Owned(null))).doesNotThrowAnyException();
     }
+
+    // --- T365: by-id visibility (own + GLOBAL + platform-admin) ---
+
+    @Test
+    void ownInstanceIsVisibleToItsTenant() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+        when(tenantContext.resolveCurrentTenant()).thenReturn("tenantA");
+
+        assertThat(scope.isVisibleToTenant(new Owned("tenantA"))).isTrue();
+    }
+
+    @Test
+    void globalInstanceIsVisibleToEveryTenant() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+
+        assertThat(scope.isVisibleToTenant(new Owned(null))).isTrue();
+    }
+
+    @Test
+    void otherTenantsInstanceIsNotVisible() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+        when(tenantContext.resolveCurrentTenant()).thenReturn("tenantA");
+
+        assertThat(scope.isVisibleToTenant(new Owned("tenantB"))).isFalse();
+    }
+
+    @Test
+    void platformAdminSeesEveryTenantsInstance() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(platformAdminService.isPlatformAdmin()).thenReturn(true);
+
+        assertThat(scope.isVisibleToTenant(new Owned("tenantB"))).isTrue();
+    }
+
+    @Test
+    void everythingIsVisibleWhenTenancyDisabled() {
+        when(tenantContext.isTenancyEnabled()).thenReturn(false);
+
+        assertThat(scope.isVisibleToTenant(new Owned("tenantB"))).isTrue();
+    }
 }

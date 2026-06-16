@@ -63,6 +63,7 @@ class TurIntegrationInstanceAPITest {
         lenient().when(tenantScope.visibleList(any(), any()))
                 .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
         lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
         mockMvc = MockMvcBuilders.standaloneSetup(turIntegrationInstanceAPI).build();
     }
 
@@ -169,6 +170,11 @@ class TurIntegrationInstanceAPITest {
 
     @Test
     void testTurIntegrationInstanceDelete() throws Exception {
+        // T365 — delete only runs for a visible instance, so the by-id load must resolve.
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setId("1");
+        when(turIntegrationInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+
         mockMvc.perform(delete("/api/integration/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));

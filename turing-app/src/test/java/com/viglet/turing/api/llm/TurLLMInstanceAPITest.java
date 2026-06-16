@@ -71,6 +71,7 @@ class TurLLMInstanceAPITest {
                 lenient().when(tenantScope.visibleList(any(), any()))
                                 .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
                 lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
+                lenient().when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
                 mockMvc = MockMvcBuilders.standaloneSetup(turLLMInstanceAPI).build();
         }
 
@@ -199,6 +200,11 @@ class TurLLMInstanceAPITest {
 
         @Test
         void testTurLLMInstanceDelete() throws Exception {
+                // T365 — delete only runs for a visible instance, so the by-id load must resolve.
+                TurLLMInstance instance = new TurLLMInstance();
+                instance.setId("1");
+                when(turLLMInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+
                 mockMvc.perform(delete("/api/llm/1"))
                                 .andExpect(status().isOk())
                                 .andExpect(content().string("true"));

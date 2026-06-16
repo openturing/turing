@@ -43,7 +43,9 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         Set<GrantedAuthority> authorities = new HashSet<>(oAuth2User.getAuthorities());
-        turAuthorityResolver.resolve(username, authorities);
+        // T366 — map the Keycloak `platform-admin` realm role → ROLE_PLATFORM_ADMIN
+        Set<String> realmRoles = TurAuthorityResolver.extractRealmRoles(oAuth2User.getAttributes());
+        turAuthorityResolver.resolve(username, realmRoles, authorities);
 
         return new DefaultOAuth2User(authorities, oAuth2User.getAttributes(),
                 userRequest.getClientRegistration().getProviderDetails()

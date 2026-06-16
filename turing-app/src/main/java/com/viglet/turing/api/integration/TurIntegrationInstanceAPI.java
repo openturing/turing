@@ -80,7 +80,7 @@ public class TurIntegrationInstanceAPI {
 	@GetMapping("/{id}")
 	public TurIntegrationInstanceDto turIntegrationInstanceGet(@PathVariable String id) {
 		return turIntegrationInstanceMapper
-				.toDto(this.turIntegrationInstanceRepository.findById(id).orElse(new TurIntegrationInstance()));
+				.toDto(this.turIntegrationInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurIntegrationInstance()));
 	}
 
 	@Operation(summary = "Update a Integration")
@@ -88,7 +88,7 @@ public class TurIntegrationInstanceAPI {
 	public TurIntegrationInstanceDto turIntegrationInstanceUpdate(@PathVariable String id,
 			@RequestBody TurIntegrationInstanceDto turIntegrationInstanceDto) {
 		TurIntegrationInstance source = turIntegrationInstanceMapper.toEntity(turIntegrationInstanceDto);
-		return turIntegrationInstanceRepository.findById(id).map(existing -> {
+		return turIntegrationInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(existing -> {
 			tenantScope.assertWritable(existing);
 			turIntegrationInstanceMapper.updateEntity(source, existing);
 			turIntegrationInstanceRepository.save(existing);
@@ -101,8 +101,13 @@ public class TurIntegrationInstanceAPI {
 	@Operation(summary = "Delete a Integration")
 	@DeleteMapping("/{id}")
 	public boolean turIntegrationInstanceDelete(@PathVariable String id) {
-		this.turIntegrationInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
-		this.turIntegrationInstanceRepository.delete(id);
+		// T365 — scope the by-id delete: a non-visible id (another tenant's
+		// instance) is treated as not-found, never deleted.
+		this.turIntegrationInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+				.ifPresent(existing -> {
+					tenantScope.assertWritable(existing);
+					this.turIntegrationInstanceRepository.delete(id);
+				});
 		return true;
 	}
 

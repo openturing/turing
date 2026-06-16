@@ -48,6 +48,10 @@ class TurTenantInfraVisibilityIT extends AbstractTuringSpringIT {
     @Autowired
     private TurMcpServerRepository mcpServerRepository;
     @Autowired
+    private TurInfraTenantScope tenantScope;
+    @Autowired
+    private TurTenantContext tenantContext;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private TransactionTemplate tx;
@@ -67,6 +71,31 @@ class TurTenantInfraVisibilityIT extends AbstractTuringSpringIT {
                 .stream().map(TurMcpServer::getId).toList();
 
         assertThat(visibleToA).contains(globalId, aId).doesNotContain(bId);
+    }
+
+    /**
+     * T365 — the by-id ownership check used on every {@code findById} controller
+     * path: tenantA may load its own + the GLOBAL instance, but a load of
+     * tenantB's instance is not visible (the controller treats it as not-found).
+     */
+    @Test
+    void byIdLoadIsVisibleOnlyForOwnAndGlobal() {
+        String globalId = createServer(null, "global-" + UUID.randomUUID());
+        String aId = createServer("tenantA", "a-" + UUID.randomUUID());
+        String bId = createServer("tenantB", "b-" + UUID.randomUUID());
+
+        tenantContext.runAs("tenantA", () -> inTx(() -> {
+            assertThat(visibleById(aId)).isTrue();
+            assertThat(visibleById(globalId)).isTrue();
+            assertThat(visibleById(bId)).isFalse();
+            return null;
+        }));
+    }
+
+    private boolean visibleById(String id) {
+        return mcpServerRepository.findById(id)
+                .filter(tenantScope::isVisibleToTenant)
+                .isPresent();
     }
 
     private String createServer(String tenantId, String title) {

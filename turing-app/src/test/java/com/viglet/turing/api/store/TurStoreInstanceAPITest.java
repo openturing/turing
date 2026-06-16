@@ -66,6 +66,7 @@ class TurStoreInstanceAPITest {
                 lenient().when(tenantScope.visibleList(any(), any()))
                                 .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
                 lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
+                lenient().when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
                 mockMvc = MockMvcBuilders.standaloneSetup(api).build();
         }
 
@@ -156,13 +157,16 @@ class TurStoreInstanceAPITest {
 
         @Test
         void testTurStoreInstanceDelete() throws Exception {
+                // T365 — delete only runs for a visible instance, so the by-id load must resolve.
+                TurStoreInstance instance = new TurStoreInstance();
+                instance.setId("store1");
+                when(turStoreInstanceRepository.findById("store1")).thenReturn(Optional.of(instance));
+
                 mockMvc.perform(delete("/api/store/store1"))
                                 .andExpect(status().isOk())
                                 .andExpect(content().string("true"));
 
-                verify(turStoreInstanceRepository, times(1)).delete("store1"); // Uses old delete(ID) in Spring Data?
-                // Note: Check repository interface; if it uses deleteById, this might fail
-                // compilation or execution.
+                verify(turStoreInstanceRepository, times(1)).delete("store1");
         }
 
         @Test

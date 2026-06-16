@@ -41,7 +41,9 @@ public class TurOidcUserService extends OidcUserService {
         }
 
         Set<GrantedAuthority> authorities = new HashSet<>(oidcUser.getAuthorities());
-        turAuthorityResolver.resolve(username, authorities);
+        // T366 — map the Keycloak `platform-admin` realm role → ROLE_PLATFORM_ADMIN
+        Set<String> realmRoles = TurAuthorityResolver.extractRealmRoles(oidcUser.getClaims());
+        turAuthorityResolver.resolve(username, realmRoles, authorities);
 
         return new DefaultOidcUser(authorities, oidcUser.getIdToken(), oidcUser.getUserInfo());
     }

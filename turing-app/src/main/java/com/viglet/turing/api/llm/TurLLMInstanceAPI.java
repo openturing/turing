@@ -97,7 +97,7 @@ public class TurLLMInstanceAPI {
     @Operation(summary = "Show a Large Language Model")
     @GetMapping("/{id}")
     public TurLLMInstanceDto turLLMInstanceGet(@PathVariable String id) {
-        return turLLMInstanceMapper.toDto(this.turLLMInstanceRepository.findById(id).orElse(new TurLLMInstance()));
+        return turLLMInstanceMapper.toDto(this.turLLMInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurLLMInstance()));
     }
 
     @Secured({"ROLE_ADMIN", "LLM_EDIT"})
@@ -106,7 +106,7 @@ public class TurLLMInstanceAPI {
     public TurLLMInstanceDto turLLMInstanceUpdate(@PathVariable String id, @RequestBody Map<String, Object> payload) {
         TurLLMInstance turLLMInstance = objectMapper.convertValue(payload, TurLLMInstance.class);
         String apiKey = payload.get("apiKey") instanceof String apiKeyValue ? apiKeyValue : null;
-        return turLLMInstanceRepository.findById(id).map(turLLMInstanceEdit -> {
+        return turLLMInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(turLLMInstanceEdit -> {
             tenantScope.assertWritable(turLLMInstanceEdit);
             turLLMInstanceEdit.setTitle(turLLMInstance.getTitle());
             turLLMInstanceEdit.setDescription(turLLMInstance.getDescription());
@@ -145,8 +145,13 @@ public class TurLLMInstanceAPI {
     @Operation(summary = "Delete a Large Language Model")
     @DeleteMapping("/{id}")
     public boolean turLLMInstanceDelete(@PathVariable String id) {
-        this.turLLMInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
-        this.turLLMInstanceRepository.delete(id);
+        // T365 — scope the by-id delete: a non-visible id (another tenant's
+        // instance) is treated as not-found, never deleted.
+        this.turLLMInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+                .ifPresent(existing -> {
+                    tenantScope.assertWritable(existing);
+                    this.turLLMInstanceRepository.delete(id);
+                });
         return true;
     }
 

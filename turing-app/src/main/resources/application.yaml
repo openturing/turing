@@ -31,6 +31,14 @@ turing:
       delete-after-days: ${TURING_TENANCY_DEPROVISION_DELETE_AFTER_DAYS:30}
       keycloak-client-id: ${TURING_TENANCY_DEPROVISION_KC_CLIENT_ID:}
       keycloak-client-secret: ${TURING_TENANCY_DEPROVISION_KC_CLIENT_SECRET:}
+    # T366 / §XIV.8.5 — grant ROLE_PLATFORM_ADMIN (cross-tenant console + GLOBAL
+    # infra pool) from a Keycloak realm role. A principal whose token carries this
+    # realm role in `realm_access.roles` becomes a platform admin. Blank disables
+    # realm-role mapping. `admin-implies-platform-admin` is the product decision of
+    # whether the bootstrap admin (`turing.keycloak-admin-id`) gets it implicitly;
+    # default false = platform-admin must always be an explicit, assigned realm role.
+    platform-admin-role: ${TURING_TENANCY_PLATFORM_ADMIN_ROLE:platform-admin}
+    admin-implies-platform-admin: ${TURING_TENANCY_ADMIN_IMPLIES_PLATFORM_ADMIN:false}
   # T245 / §XIII — Turing as an MCP server. The endpoint itself is toggled by
   # spring.ai.mcp.server.enabled (below); this block carries the Turing-specific
   # governance on top of it. loopback-only is the T245 trust boundary: until the

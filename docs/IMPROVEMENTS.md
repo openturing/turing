@@ -2204,7 +2204,7 @@ this only unlocks once the trust boundary is real.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336 shipped; T365, T366, T373 open)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336, T365, T366 shipped; T373 open)
 
 Block J gives *isolation*; the Viglet Cloud product needs *one environment per
 signed-up user* on the shared turing/solr/postgres infra. The model: every Cloud
@@ -2224,47 +2224,6 @@ invite-based, many-users-per-tenant posture.
 
 The remaining follow-ups are about making the *multi-product* Cloud seamless,
 not about correctness of the single-service flow:
-
-- **XIV.8.4 — scope BYO-infra access-by-id, not just listings (T365).** The six
-  BYO-infra entities (`TurSEInstance`, `TurLLMInstance`, `TurEmbeddingModel`,
-  `TurStoreInstance`, `TurIntegrationInstance`, `TurMcpServer`) carry `tenantId`
-  as a **plain column, not `@TenantId`**, so the platform-provided GLOBAL pool
-  (`tenantId IS NULL`) stays visible to every tenant. That choice means Hibernate
-  applies **no** automatic filter — every read/write path must scope by hand.
-  The 2026-06-15 fix closed the *listing* + *create* paths (stamp the owner on
-  create, list via `findVisibleToTenant` through `TurInfraTenantScope`), which
-  removes the visible leak: a tenant no longer sees another tenant's instances.
-  But the **by-id** paths (`findById` and the `GET/PUT/DELETE /{id}` endpoints on
-  each of the six controllers) still issue an unscoped primary-key lookup. A
-  caller who obtains another tenant's instance id out-of-band can therefore read
-  or mutate it. The hardening: route by-id loads through an ownership check
-  (`tenantId == current OR tenantId IS NULL OR platform-admin`) — either a
-  `findByIdVisibleToTenant(id, tenant)` repository query or a guard in
-  `TurInfraTenantScope`, returning 404 when the id is not visible to the caller.
-  Entities that use real `@TenantId` (e.g. `TurSNSite`, `TurAIAgent`) are already
-  isolated by Hibernate on by-id loads and are out of scope.
-
-- **XIV.8.5 — grant `ROLE_PLATFORM_ADMIN` from a Keycloak role/claim (T366).**
-  The platform-admin authority is *consumed* in three places —
-  `TurPlatformAdminService` (T266 `runForTenant`/`runAsSystem`, `@Secured` on the
-  T279 `TurPlatformTenantAdminAPI`) and the GLOBAL-pool branch of
-  `TurInfraTenantScope.stampOnCreate` (a platform admin's BYO-infra is left
-  `tenantId == null` = shared pool) — but it is **never granted**:
-  `TurAuthorityResolver`/`TurOidcUserService` map DB roles, privileges and
-  per-tenant `TENANT_*` authorities, and the Cloud realm (`viglet`) has only
-  `viglet-admin`/`viglet-user`, so no principal ever holds `ROLE_PLATFORM_ADMIN`.
-  Surfaced 2026-06-15 testing Cloud multi-tenancy: the configured admin
-  (`vigadmin`, `turing.keycloak.admin-id`) is auto-provisioned a *personal*
-  tenant like any user (it is not a platform admin), the T279 console answers 403,
-  and there is no UI path to create a GLOBAL instance — the only GLOBAL rows that
-  exist are legacy data written while tenancy was off (`stampOnCreate` is a no-op
-  then, so `tenantId` stays `null`). The fix: map a dedicated Keycloak realm role
-  (e.g. `platform-admin`) to the `ROLE_PLATFORM_ADMIN` authority in the
-  authority-resolution path, and decide as a product question whether
-  `turing.keycloak.admin-id` (the bootstrap admin) should imply it automatically
-  or whether platform-admin must always be an explicit, separately-assigned realm
-  role. Until then the cross-tenant console and the shared GLOBAL infra pool are
-  dormant features.
 
 - **XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373).** The
   product ask: a fresh Viglet Cloud deployment should come with a default LLM,

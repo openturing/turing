@@ -11,11 +11,16 @@ import com.viglet.turing.persistence.model.tenant.TurTenantMembership;
 import com.viglet.turing.persistence.model.tenant.TurTenantMembershipStatus;
 import com.viglet.turing.persistence.repository.tenant.TurTenantMembershipRepository;
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.properties.TurTenancyProperty;
+import com.viglet.turing.tenant.TurPlatformAdminService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +58,19 @@ public class TurAuthorityResolver {
     }
 
     public void resolve(String username, Set<GrantedAuthority> authorities) {
+        resolve(username, Set.of(), authorities);
+    }
+
+    /**
+     * T366 / §XIV.8.5 — same as {@link #resolve(String, Set)} but also maps a
+     * Keycloak <em>realm</em> role to {@code ROLE_PLATFORM_ADMIN}. The
+     * {@code realmRoles} come from the principal's {@code realm_access.roles}
+     * claim (extract with {@link #extractRealmRoles(Map)} on the OIDC/OAuth2
+     * paths). When the realm role isn't available (e.g. local session login),
+     * pass an empty set — the bootstrap admin can still be granted via
+     * {@code turing.tenancy.admin-implies-platform-admin}.
+     */
+    public void resolve(String username, Set<String> realmRoles, Set<GrantedAuthority> authorities) {
         if (!turConfigProperties.isPermissions()) {
             grantAllAuthorities(authorities);
         } else if (username != null) {
@@ -60,6 +78,55 @@ public class TurAuthorityResolver {
         }
         tenantAuthorities(username)
                 .forEach(a -> authorities.add(new SimpleGrantedAuthority(a)));
+        if (isPlatformAdmin(username, realmRoles)) {
+            authorities.add(new SimpleGrantedAuthority(TurPlatformAdminService.ROLE_PLATFORM_ADMIN));
+        }
+    }
+
+    /**
+     * T366 / §XIV.8.5 — decides whether a principal holds the platform-admin
+     * authority: either its Keycloak realm roles include the configured
+     * {@code turing.tenancy.platform-admin-role}, or it is the bootstrap admin
+     * ({@code turing.keycloak-admin-id}) and
+     * {@code turing.tenancy.admin-implies-platform-admin} is on.
+     */
+    private boolean isPlatformAdmin(String username, Set<String> realmRoles) {
+        TurTenancyProperty tenancy = turConfigProperties.getTenancy();
+        if (tenancy == null) {
+            return false;
+        }
+        String roleName = tenancy.getPlatformAdminRole();
+        if (StringUtils.hasText(roleName) && realmRoles != null && realmRoles.contains(roleName)) {
+            return true;
+        }
+        return tenancy.isAdminImpliesPlatformAdmin()
+                && username != null
+                && username.equals(turConfigProperties.getKeycloakAdminId());
+    }
+
+    /**
+     * T366 / §XIV.8.5 — extract the Keycloak realm roles from a claims/attributes
+     * map: the {@code realm_access.roles} array Keycloak puts in the token but
+     * which Spring Security does not map to authorities by default. Returns an
+     * empty set when the claim is absent or malformed. Shared by the OIDC
+     * ({@code OidcUser.getClaims()}) and OAuth2 ({@code OAuth2User.getAttributes()})
+     * paths.
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<String> extractRealmRoles(Map<String, Object> claims) {
+        Set<String> roles = new HashSet<>();
+        if (claims == null) {
+            return roles;
+        }
+        if (claims.get("realm_access") instanceof Map<?, ?> realmAccess
+                && ((Map<String, Object>) realmAccess).get("roles") instanceof Collection<?> roleList) {
+            for (Object role : roleList) {
+                if (role != null) {
+                    roles.add(role.toString());
+                }
+            }
+        }
+        return roles;
     }
 
     /**

@@ -230,4 +230,88 @@ class TurAuthorityResolverTest {
                 .extracting(GrantedAuthority::getAuthority)
                 .containsExactly("ROLE_ADMIN");
     }
+
+    // ---- T366 / §XIV.8.5 — ROLE_PLATFORM_ADMIN from a Keycloak realm role ----
+
+    @Test
+    void shouldGrantPlatformAdminWhenRealmRoleMatches() {
+        when(turConfigProperties.isPermissions()).thenReturn(false);
+        when(turPrivilegeRepository.findAll()).thenReturn(Collections.emptyList());
+        com.viglet.turing.properties.TurTenancyProperty tenancy =
+                new com.viglet.turing.properties.TurTenancyProperty(); // default role = platform-admin
+        when(turConfigProperties.getTenancy()).thenReturn(tenancy);
+
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        resolver.resolve("ops", Set.of("platform-admin", "viglet-user"), authorities);
+
+        assertThat(authorities)
+                .extracting(GrantedAuthority::getAuthority)
+                .contains("ROLE_PLATFORM_ADMIN");
+    }
+
+    @Test
+    void shouldNotGrantPlatformAdminWhenRealmRoleAbsent() {
+        when(turConfigProperties.isPermissions()).thenReturn(false);
+        when(turPrivilegeRepository.findAll()).thenReturn(Collections.emptyList());
+        when(turConfigProperties.getTenancy())
+                .thenReturn(new com.viglet.turing.properties.TurTenancyProperty());
+
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        resolver.resolve("user", Set.of("viglet-user"), authorities);
+
+        assertThat(authorities)
+                .extracting(GrantedAuthority::getAuthority)
+                .doesNotContain("ROLE_PLATFORM_ADMIN");
+    }
+
+    @Test
+    void shouldGrantPlatformAdminToBootstrapAdminWhenAdminImpliesIsOn() {
+        when(turConfigProperties.isPermissions()).thenReturn(false);
+        when(turPrivilegeRepository.findAll()).thenReturn(Collections.emptyList());
+        com.viglet.turing.properties.TurTenancyProperty tenancy =
+                new com.viglet.turing.properties.TurTenancyProperty();
+        tenancy.setAdminImpliesPlatformAdmin(true);
+        when(turConfigProperties.getTenancy()).thenReturn(tenancy);
+        when(turConfigProperties.getKeycloakAdminId()).thenReturn("vigadmin");
+
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        resolver.resolve("vigadmin", Set.of(), authorities);
+
+        assertThat(authorities)
+                .extracting(GrantedAuthority::getAuthority)
+                .contains("ROLE_PLATFORM_ADMIN");
+    }
+
+    @Test
+    void shouldNotGrantPlatformAdminToBootstrapAdminWhenAdminImpliesIsOff() {
+        when(turConfigProperties.isPermissions()).thenReturn(false);
+        when(turPrivilegeRepository.findAll()).thenReturn(Collections.emptyList());
+        // default tenancy: adminImpliesPlatformAdmin = false
+        when(turConfigProperties.getTenancy())
+                .thenReturn(new com.viglet.turing.properties.TurTenancyProperty());
+
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        resolver.resolve("vigadmin", Set.of(), authorities);
+
+        assertThat(authorities)
+                .extracting(GrantedAuthority::getAuthority)
+                .doesNotContain("ROLE_PLATFORM_ADMIN");
+    }
+
+    @Test
+    void extractRealmRolesParsesKeycloakClaim() {
+        Set<String> roles = TurAuthorityResolver.extractRealmRoles(
+                java.util.Map.of("realm_access",
+                        java.util.Map.of("roles", List.of("platform-admin", "viglet-user"))));
+
+        assertThat(roles).containsExactlyInAnyOrder("platform-admin", "viglet-user");
+    }
+
+    @Test
+    void extractRealmRolesReturnsEmptyForNullOrMalformedClaims() {
+        assertThat(TurAuthorityResolver.extractRealmRoles(null)).isEmpty();
+        assertThat(TurAuthorityResolver.extractRealmRoles(Collections.emptyMap())).isEmpty();
+        assertThat(TurAuthorityResolver.extractRealmRoles(
+                java.util.Map.of("realm_access", "not-a-map"))).isEmpty();
+    }
 }

@@ -90,6 +90,7 @@ class TurSEInstanceAPITest {
         lenient().when(tenantScope.visibleList(any(), any()))
                 .thenAnswer(inv -> ((java.util.function.Supplier<?>) inv.getArgument(0)).get());
         lenient().when(tenantScope.stampOnCreate(any())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(tenantScope.isVisibleToTenant(any())).thenReturn(true);
         mockMvc = MockMvcBuilders.standaloneSetup(turSEInstanceAPI).build();
     }
 
@@ -195,6 +196,11 @@ class TurSEInstanceAPITest {
 
     @Test
     void testTurSEInstanceDelete() throws Exception {
+        // T365 — delete only runs for a visible instance, so the by-id load must resolve.
+        TurSEInstance instance = new TurSEInstance();
+        instance.setId("1");
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
+
         mockMvc.perform(delete("/api/se/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));

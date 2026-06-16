@@ -71,7 +71,7 @@ public class TurEmbeddingModelAPI {
     @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public TurEmbeddingModelDto turEmbeddingModelGet(@PathVariable String id) {
         return turEmbeddingModelMapper
-                .toDto(this.turEmbeddingModelRepository.findById(id).orElse(new TurEmbeddingModel()));
+                .toDto(this.turEmbeddingModelRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurEmbeddingModel()));
     }
 
     @Operation(summary = "Update an Embedding Model")
@@ -79,7 +79,7 @@ public class TurEmbeddingModelAPI {
     @Secured({"ROLE_ADMIN", "EMBEDDING_EDIT"})
     public TurEmbeddingModelDto turEmbeddingModelUpdate(@PathVariable String id,
             @RequestBody TurEmbeddingModelDto turEmbeddingModelDto) {
-        return turEmbeddingModelRepository.findById(id).map(existing -> {
+        return turEmbeddingModelRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(existing -> {
             tenantScope.assertWritable(existing);
             turEmbeddingModelMapper.updateEntityFromDto(turEmbeddingModelDto, existing);
             turEmbeddingModelRepository.save(existing);
@@ -92,8 +92,13 @@ public class TurEmbeddingModelAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "EMBEDDING_DELETE"})
     public boolean turEmbeddingModelDelete(@PathVariable String id) {
-        this.turEmbeddingModelRepository.findById(id).ifPresent(tenantScope::assertWritable);
-        this.turEmbeddingModelRepository.delete(id);
+        // T365 — scope the by-id delete: a non-visible id (another tenant's
+        // instance) is treated as not-found, never deleted.
+        this.turEmbeddingModelRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+                .ifPresent(existing -> {
+                    tenantScope.assertWritable(existing);
+                    this.turEmbeddingModelRepository.delete(id);
+                });
         return true;
     }
 

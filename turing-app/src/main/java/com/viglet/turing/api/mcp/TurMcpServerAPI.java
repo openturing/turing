@@ -67,7 +67,7 @@ public class TurMcpServerAPI {
     @GetMapping("/{id}")
     public TurMcpServerDto turMcpServerGet(@PathVariable String id) {
         return turMcpServerMapper
-                .toDto(this.turMcpServerRepository.findById(id).orElse(new TurMcpServer()));
+                .toDto(this.turMcpServerRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurMcpServer()));
     }
 
     @Operation(summary = "Update a MCP Server")
@@ -75,7 +75,7 @@ public class TurMcpServerAPI {
     public TurMcpServerDto turMcpServerUpdate(@PathVariable String id,
             @RequestBody TurMcpServerDto turMcpServerDto) {
         TurMcpServer source = turMcpServerMapper.toEntity(turMcpServerDto);
-        return turMcpServerRepository.findById(id).map(existing -> {
+        return turMcpServerRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(existing -> {
             tenantScope.assertWritable(existing);
             turMcpServerMapper.updateEntity(source, existing);
             turMcpServerRepository.save(existing);
@@ -87,8 +87,16 @@ public class TurMcpServerAPI {
     @Operation(summary = "Delete a MCP Server")
     @DeleteMapping("/{id}")
     public boolean turMcpServerDelete(@PathVariable String id) {
+        // T365 — scope the by-id delete: a non-visible id (another tenant's
+        // server) is treated as not-found, so neither the reference cleanup
+        // nor the delete runs.
+        var server = this.turMcpServerRepository.findById(id)
+                .filter(tenantScope::isVisibleToTenant);
+        if (server.isEmpty()) {
+            return true;
+        }
         // T372 — a tenant may not delete a GLOBAL (platform-provided) server.
-        this.turMcpServerRepository.findById(id).ifPresent(tenantScope::assertWritable);
+        tenantScope.assertWritable(server.get());
         // Detach every reference to this MCP server before deleting so the
         // FK constraints don't reject the delete:
         //   • ai_agent_mcp_server (M2M join table — remove from agent's catalog)

@@ -136,7 +136,7 @@ public class TurStoreInstanceAPI {
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public TurStoreInstanceDto turStoreInstanceGet(@PathVariable String id) {
         return turStoreInstanceMapper
-                .toDto(this.turStoreInstanceRepository.findById(id).orElse(new TurStoreInstance()));
+                .toDto(this.turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(new TurStoreInstance()));
     }
 
     @Operation(summary = "Update a Embedding Store")
@@ -146,7 +146,7 @@ public class TurStoreInstanceAPI {
             @RequestBody Map<String, Object> payload) {
         TurStoreInstance turStoreInstance = objectMapper.convertValue(payload, TurStoreInstance.class);
         String credential = payload.get("credential") instanceof String credentialValue ? credentialValue : null;
-        return turStoreInstanceRepository.findById(id).map(turStoreInstanceEdit -> {
+        return turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(turStoreInstanceEdit -> {
             tenantScope.assertWritable(turStoreInstanceEdit);
             turStoreInstanceEdit.setTitle(turStoreInstance.getTitle());
             turStoreInstanceEdit.setDescription(turStoreInstance.getDescription());
@@ -171,8 +171,13 @@ public class TurStoreInstanceAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public boolean turStoreInstanceDelete(@PathVariable String id) {
-        this.turStoreInstanceRepository.findById(id).ifPresent(tenantScope::assertWritable);
-        this.turStoreInstanceRepository.delete(id);
+        // T365 — scope the by-id delete: a non-visible id (another tenant's
+        // instance) is treated as not-found, never deleted.
+        this.turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant)
+                .ifPresent(existing -> {
+                    tenantScope.assertWritable(existing);
+                    this.turStoreInstanceRepository.delete(id);
+                });
         return true;
     }
 
@@ -180,7 +185,7 @@ public class TurStoreInstanceAPI {
     @GetMapping("/{id}/collections")
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public List<TurStoreCollectionInfo> turStoreInstanceCollections(@PathVariable String id) {
-        return turStoreInstanceRepository.findById(id).map(instance -> {
+        return turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             return provider.listCollections(instance, credential);
@@ -201,7 +206,7 @@ public class TurStoreInstanceAPI {
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public Map<String, Long> turStoreInstanceCollectionDocumentCount(@PathVariable String id,
             @PathVariable String collectionName) {
-        return turStoreInstanceRepository.findById(id).map(instance -> {
+        return turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             long count = provider.countDocuments(instance, credential, collectionName);
@@ -213,7 +218,7 @@ public class TurStoreInstanceAPI {
     @PostMapping("/{id}/collections/{collectionName}")
     @Secured({"ROLE_ADMIN", "STORE_CREATE"})
     public ResponseEntity<Void> createCollection(@PathVariable String id, @PathVariable String collectionName) {
-        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+        turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             provider.createCollection(instance, credential, collectionName);
@@ -225,7 +230,7 @@ public class TurStoreInstanceAPI {
     @DeleteMapping("/{id}/collections/{collectionName}/clear")
     @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public ResponseEntity<Void> clearCollection(@PathVariable String id, @PathVariable String collectionName) {
-        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+        turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             provider.clearCollection(instance, credential, collectionName);
@@ -237,7 +242,7 @@ public class TurStoreInstanceAPI {
     @DeleteMapping("/{id}/collections/{collectionName}")
     @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public ResponseEntity<Void> deleteCollection(@PathVariable String id, @PathVariable String collectionName) {
-        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+        turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             provider.deleteCollection(instance, credential, collectionName);
@@ -267,7 +272,7 @@ public class TurStoreInstanceAPI {
             @PathVariable String collectionName,
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "embeddingModelId", required = false) String embeddingModelId) {
-        TurStoreInstance instance = turStoreInstanceRepository.findById(id).orElse(null);
+        TurStoreInstance instance = turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).orElse(null);
         if (instance == null || file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -306,7 +311,8 @@ public class TurStoreInstanceAPI {
         if (!StringUtils.hasText(resolvedId)) {
             return null;
         }
-        TurEmbeddingModel embModel = embeddingModelRepository.findById(resolvedId).orElse(null);
+        TurEmbeddingModel embModel = embeddingModelRepository.findById(resolvedId)
+                .filter(tenantScope::isVisibleToTenant).orElse(null);
         if (embModel == null) {
             return null;
         }
@@ -413,7 +419,7 @@ public class TurStoreInstanceAPI {
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public ResponseEntity<StreamingResponseBody> exportCollection(@PathVariable String id,
             @PathVariable String collectionName) {
-        return turStoreInstanceRepository.findById(id).map(instance -> {
+        return turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             String safeName = collectionName.replaceAll("[^A-Za-z0-9._-]", "_");
@@ -448,7 +454,7 @@ public class TurStoreInstanceAPI {
     @GetMapping("/{id}/system-info")
     @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public ResponseEntity<java.util.Map<String, String>> turStoreInstanceSystemInfo(@PathVariable String id) {
-        return turStoreInstanceRepository.findById(id).map(instance -> {
+        return turStoreInstanceRepository.findById(id).filter(tenantScope::isVisibleToTenant).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
             String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
             java.util.Map<String, String> info = provider.getSystemInfo(instance, credential);

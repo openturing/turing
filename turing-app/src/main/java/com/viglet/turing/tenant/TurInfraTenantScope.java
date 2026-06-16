@@ -122,6 +122,30 @@ public class TurInfraTenantScope {
     }
 
     /**
+     * §XIV.8.4 / T365 — whether {@code entity} is visible to the current caller
+     * on a <em>by-id</em> load: its own instance, the platform-provided GLOBAL
+     * pool ({@code tenantId IS NULL}), or any instance when the caller is a
+     * platform admin. Always {@code true} when tenancy is off (single-tenant
+     * installs are unscoped) or {@code entity} is {@code null}.
+     *
+     * <p>The plain-column {@code tenantId} (deliberately not {@code @TenantId})
+     * means Hibernate applies no automatic filter on a primary-key lookup, so
+     * every {@code findById} path must scope by hand. Use this with
+     * {@code Optional.filter(scope::isVisibleToTenant)} on each such path so a
+     * caller holding another tenant's id falls into the same not-found/404
+     * branch as a non-existent id — closing the by-id leak the listing+create
+     * scoping (T275) left open.
+     */
+    public boolean isVisibleToTenant(TurTenantOwnedInfra entity) {
+        if (entity == null || !tenantContext.isTenancyEnabled()
+                || platformAdminService.isPlatformAdmin()) {
+            return true;
+        }
+        String owner = entity.getTenantId();
+        return owner == null || owner.equals(tenantContext.resolveCurrentTenant());
+    }
+
+    /**
      * Return the instances visible to the current tenant. When tenancy is on,
      * delegates to {@code visibleToTenant} (the repository's
      * {@code tenantId = :current OR IS NULL} query); when off, returns the full

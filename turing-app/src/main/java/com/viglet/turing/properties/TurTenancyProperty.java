@@ -71,4 +71,35 @@ public class TurTenancyProperty {
      * tenant once its owner(s) vanish from Keycloak. Default off.
      */
     private TurTenantDeprovisionProperty deprovision = new TurTenantDeprovisionProperty();
+
+    /**
+     * T366 / §XIV.8.5 — the Keycloak <em>realm</em> role that, when present on a
+     * principal's token, grants the {@code ROLE_PLATFORM_ADMIN} authority. This
+     * is the authority consumed by {@code TurPlatformAdminService}
+     * ({@code runForTenant}/{@code runAsSystem}), the {@code @Secured} T279
+     * cross-tenant console, and the GLOBAL-pool branch of
+     * {@code TurInfraTenantScope.stampOnCreate} — but which was never granted
+     * anywhere before this task.
+     *
+     * <p>Maps in {@code TurAuthorityResolver} on both the OIDC and OAuth2 paths:
+     * a principal whose {@code realm_access.roles} claim contains this value
+     * becomes a platform admin. Default {@code platform-admin}. Leave it blank to
+     * disable realm-role mapping entirely (then the only way to grant the
+     * authority is {@link #adminImpliesPlatformAdmin}).
+     */
+    private String platformAdminRole = "platform-admin";
+
+    /**
+     * T366 / §XIV.8.5 — product decision: whether the bootstrap admin configured
+     * via {@code turing.keycloak-admin-id} should <em>implicitly</em> hold
+     * {@code ROLE_PLATFORM_ADMIN} without being assigned the
+     * {@link #platformAdminRole} realm role.
+     *
+     * <p>Default {@code false} = the safer, explicit posture: platform-admin is
+     * always a separately-assigned realm role, so the bootstrap admin is a
+     * platform admin only if it actually carries {@link #platformAdminRole}. Set
+     * {@code true} for a turnkey single-operator Cloud where the configured admin
+     * should manage every tenant out of the box.
+     */
+    private boolean adminImpliesPlatformAdmin = false;
 }
