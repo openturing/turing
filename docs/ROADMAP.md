@@ -304,8 +304,9 @@
 > SB-4.0.6 codebases surfaced concrete duplication that the original scope
 > missed; the lifts it produced (T375–T379) have all shipped — see CHANGELOG. → STRATEGY §XII.2
 
-**Multi-tenancy parity (cross-product) — make tenancy 100% identical across Turing / Shio / Dumont, on one shared `viglet-core-tenancy` implementation. Staged; viglet-core / Shio / Dumont may each be adjusted. → IMPROVEMENTS §XIV.9**
-- 📋 **T399** (deps: T396 ✅, T397 ✅, T398 ✅) **Cross-product tenancy conformance test** — a shared behaviour contract (same inputs → same isolation / visibility / scoping outcomes) proving 100% parity across the three products. → §XIV.9
+> **Multi-tenancy parity (T394–T399) — shipped.** Tenancy is now 100% identical
+> across Turing / Shio / Dumont on the one shared `viglet-core-tenancy`
+> implementation, locked by the cross-product conformance test (see CHANGELOG).
 
 ## Block R — Structured-source indexing & the cursarei reference (with Dumont)
 
