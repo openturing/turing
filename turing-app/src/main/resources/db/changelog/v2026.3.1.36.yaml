@@ -1,0 +1,39 @@
+databaseChangeLog:
+  # T378 / Block Q — opt-in outbound-webhook HMAC signing. Adds two columns to
+  # `tur_chat_webhook`: `signingSecret` (encrypted HMAC-SHA256 key, write-only,
+  # blank = unsigned legacy behaviour) and `signatureHeader` (header name the
+  # signature value is sent under, defaults to X-Turing-Signature at runtime).
+  # camelCase per the project's literal JPA naming convention; idempotent via
+  # columnExists + onFail:MARK_RAN.
+  - changeSet:
+      id: v2026.3.1.36-add-chat-webhook-signingSecret
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: signingSecret
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: signingSecret
+                  type: varchar(2048)
+  - changeSet:
+      id: v2026.3.1.36-add-chat-webhook-signatureHeader
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_chat_webhook
+                columnName: signatureHeader
+      changes:
+        - addColumn:
+            tableName: tur_chat_webhook
+            columns:
+              - column:
+                  name: signatureHeader
+                  type: varchar(128)

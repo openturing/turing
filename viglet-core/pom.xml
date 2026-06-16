@@ -58,5 +58,6 @@
         <module>viglet-core-settings</module>
         <module>viglet-core-messaging</module>
         <module>viglet-core-logging</module>
+        <module>viglet-core-webhook</module>
     </modules>
 </project>

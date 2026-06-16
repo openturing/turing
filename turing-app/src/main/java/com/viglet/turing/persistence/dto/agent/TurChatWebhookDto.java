@@ -22,6 +22,10 @@ import com.viglet.turing.persistence.model.agent.TurChatWebhook;
  * leaking the secret. A blank {@code authHeader} on update means "leave the
  * stored credential untouched"; only an explicit value rotates it.
  *
+ * <p>The optional HMAC {@code signingSecret} (T378) follows the exact same
+ * write-only convention — reads emit {@code signingSecret=null} +
+ * {@link #hasSigningSecret}, and a blank value on update keeps the stored key.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -38,6 +42,9 @@ public record TurChatWebhookDto(
         String payloadTemplate,
         String authHeader,
         boolean hasAuthHeader,
+        String signingSecret,
+        boolean hasSigningSecret,
+        String signatureHeader,
         Boolean enabled) {
 
     public static TurChatWebhookDto from(TurChatWebhook webhook) {
@@ -45,6 +52,7 @@ public record TurChatWebhookDto(
             return null;
         }
         boolean hasAuth = webhook.getAuthHeader() != null && !webhook.getAuthHeader().isBlank();
+        boolean hasSigning = webhook.getSigningSecret() != null && !webhook.getSigningSecret().isBlank();
         return new TurChatWebhookDto(
                 webhook.getId(),
                 webhook.getName(),
@@ -55,9 +63,12 @@ public record TurChatWebhookDto(
                 webhook.getSlotTrigger(),
                 webhook.getIncludeSlots(),
                 webhook.getPayloadTemplate(),
-                // Never echo the secret — only signal its presence.
+                // Never echo a secret — only signal its presence.
                 null,
                 hasAuth,
+                null,
+                hasSigning,
+                webhook.getSignatureHeader(),
                 webhook.isEnabled());
     }
 }

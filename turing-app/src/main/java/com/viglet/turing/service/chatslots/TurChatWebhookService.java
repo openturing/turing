@@ -9,18 +9,22 @@
  */
 package com.viglet.turing.service.chatslots;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
-import org.springframework.http.HttpMethod;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
+import com.viglet.core.webhook.VigletWebhookDeliveryResult;
+import com.viglet.core.webhook.VigletWebhookDispatcher;
+import com.viglet.core.webhook.VigletWebhookRequest;
+import com.viglet.core.webhook.VigletWebhookRetryPolicy;
 import com.viglet.turing.persistence.model.agent.TurChatWebhook;
 import com.viglet.turing.persistence.repository.agent.TurChatWebhookRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -74,18 +78,30 @@ public class TurChatWebhookService {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
+    /**
+     * T378 — bounded retry/back-off applied to every dispatch by the shared
+     * {@link VigletWebhookDispatcher} (3 attempts, 10s per-attempt read timeout,
+     * 2s linear back-off). A flaky CRM is retried rather than dropped on the
+     * first blip; the handoff path still surfaces the final failure.
+     */
+    private static final VigletWebhookRetryPolicy RETRY_POLICY =
+            new VigletWebhookRetryPolicy(3, TIMEOUT, Duration.ofSeconds(2));
+
+    /** Default signature header name when a webhook is HMAC-signed but names none. */
+    private static final String DEFAULT_SIGNATURE_HEADER = "X-Turing-Signature";
+
+    private static final Set<String> BODY_BEARING_METHODS = Set.of("POST", "PUT", "PATCH");
+
     private final TurChatWebhookRepository repository;
     private final TurSecretCryptoService cryptoService;
-    private final RestClient restClient;
+    private final VigletWebhookDispatcher webhookDispatcher;
 
     public TurChatWebhookService(TurChatWebhookRepository repository,
-            TurSecretCryptoService cryptoService) {
+            TurSecretCryptoService cryptoService,
+            VigletWebhookDispatcher webhookDispatcher) {
         this.repository = repository;
         this.cryptoService = cryptoService;
-        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
-        rf.setConnectTimeout(TIMEOUT);
-        rf.setReadTimeout(TIMEOUT);
-        this.restClient = RestClient.builder().requestFactory(rf).build();
+        this.webhookDispatcher = webhookDispatcher;
     }
 
     /** Outcome of a single dispatch — {@code url} is a {@code webhook://name} marker on success. */
@@ -128,14 +144,25 @@ public class TurChatWebhookService {
      */
     public TurChatWebhook save(TurChatWebhook webhook, String plaintextAuthHeader,
             boolean keepExistingSecret, String existingCipher) {
-        if (plaintextAuthHeader != null && !plaintextAuthHeader.isBlank()) {
-            webhook.setAuthHeader(cryptoService.encrypt(plaintextAuthHeader.trim()));
-        } else if (keepExistingSecret) {
-            webhook.setAuthHeader(existingCipher);
-        } else {
-            webhook.setAuthHeader(null);
-        }
+        webhook.setAuthHeader(resolveSecretCipher(plaintextAuthHeader, keepExistingSecret, existingCipher));
         return repository.save(webhook);
+    }
+
+    /**
+     * Resolves the ciphertext to persist for a write-only secret: encrypt fresh
+     * plaintext, keep the previously-stored cipher when the field is blank and
+     * {@code keepExisting} is requested (admin edited the form without re-typing
+     * it), or clear it otherwise. Shared by the {@code authHeader} and the T378
+     * HMAC {@code signingSecret}.
+     */
+    public String resolveSecretCipher(String plaintext, boolean keepExisting, String existingCipher) {
+        if (plaintext != null && !plaintext.isBlank()) {
+            return cryptoService.encrypt(plaintext.trim());
+        }
+        if (keepExisting) {
+            return existingCipher;
+        }
+        return null;
     }
 
     // ---- dispatch -----------------------------------------------------------
@@ -333,20 +360,25 @@ public class TurChatWebhookService {
         return sb.toString();
     }
 
-    private void post(TurChatWebhook webhook, Object body) {
-        HttpMethod method = resolveMethod(webhook.getHttpMethod());
-        var spec = restClient.method(method)
-                .uri(webhook.getTargetUrl())
-                .header("Content-Type", "application/json");
+    /**
+     * Signs (when a secret is configured) and delivers the webhook through the
+     * shared {@link VigletWebhookDispatcher} with {@link #RETRY_POLICY}. Throws
+     * on a non-delivered outcome so callers' existing try/catch reports the
+     * failure (handoff) or swallows it (slot-write), exactly as before.
+     */
+    private void post(TurChatWebhook webhook, Object body) throws IOException {
+        String method = resolveMethod(webhook.getHttpMethod());
+        boolean bodyBearing = BODY_BEARING_METHODS.contains(method);
+
         // Custom headers first so we can detect an admin-supplied Authorization
         // and let it win over the encrypted authHeader fallback.
-        Map<String, String> headers = parseHeaders(webhook.getHeadersJson());
+        Map<String, String> headers = new LinkedHashMap<>();
         boolean customAuth = false;
-        for (Map.Entry<String, String> h : headers.entrySet()) {
+        for (Map.Entry<String, String> h : parseHeaders(webhook.getHeadersJson()).entrySet()) {
             if (h.getKey() == null || h.getKey().isBlank()) {
                 continue;
             }
-            spec = spec.header(h.getKey(), h.getValue() == null ? "" : h.getValue());
+            headers.put(h.getKey(), h.getValue() == null ? "" : h.getValue());
             if ("Authorization".equalsIgnoreCase(h.getKey())) {
                 customAuth = true;
             }
@@ -354,28 +386,56 @@ public class TurChatWebhookService {
         if (!customAuth) {
             String auth = decryptAuth(webhook.getAuthHeader());
             if (auth != null && !auth.isBlank()) {
-                spec = spec.header("Authorization", auth);
+                headers.put("Authorization", auth);
             }
         }
-        // Body-bearing methods send the rendered payload (Map → Jackson;
-        // rendered template String → raw bytes). GET/DELETE carry no body. We
-        // don't care about the response body — just that the call returns.
-        if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
-            spec.body(body).retrieve().toBodilessEntity();
-        } else {
-            spec.retrieve().toBodilessEntity();
+
+        // Body-bearing methods send the rendered payload (Map → Jackson; rendered
+        // template String → raw bytes). GET/DELETE carry no body — and so are not
+        // HMAC-signed (we only sign bytes actually put on the wire).
+        byte[] bodyBytes = bodyBearing ? toBytes(body) : null;
+        VigletWebhookRequest request = VigletWebhookRequest.builder()
+                .method(method)
+                .url(webhook.getTargetUrl())
+                .contentType("application/json")
+                .headers(headers)
+                .body(bodyBytes)
+                .signingSecret(decryptSigningSecret(webhook.getSigningSecret()))
+                .signatureHeaderName(resolveSignatureHeader(webhook.getSignatureHeader()))
+                .build();
+
+        VigletWebhookDeliveryResult result = webhookDispatcher.deliver(request, RETRY_POLICY);
+        if (!result.delivered()) {
+            throw new IOException(result.error());
         }
     }
 
-    private static HttpMethod resolveMethod(String method) {
+    /** Serialises the dispatch body: a rendered template String verbatim, else the envelope Map via Jackson. */
+    private static byte[] toBytes(Object body) {
+        if (body == null) {
+            return new byte[0];
+        }
+        if (body instanceof String s) {
+            return s.getBytes(StandardCharsets.UTF_8);
+        }
+        return OBJECT_MAPPER.writeValueAsBytes(body);
+    }
+
+    /** Normalises the stored method to an upper-case name, defaulting blank/unknown to POST. */
+    private static String resolveMethod(String method) {
         if (method == null || method.isBlank()) {
-            return HttpMethod.POST;
+            return "POST";
         }
-        try {
-            return HttpMethod.valueOf(method.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            return HttpMethod.POST;
-        }
+        String upper = method.trim().toUpperCase(Locale.ROOT);
+        return switch (upper) {
+            case "POST", "PUT", "PATCH", "GET", "DELETE" -> upper;
+            default -> "POST";
+        };
+    }
+
+    /** The header name a signature is sent under; falls back to {@link #DEFAULT_SIGNATURE_HEADER}. */
+    private static String resolveSignatureHeader(String configured) {
+        return configured != null && !configured.isBlank() ? configured.trim() : DEFAULT_SIGNATURE_HEADER;
     }
 
     /** Parses the headersJson object into a map; blank/invalid → empty (logged). */
@@ -402,6 +462,22 @@ public class TurChatWebhookService {
             // Key rotation / corrupt ciphertext — never break a dispatch over
             // it; send the call unauthenticated and let the receiver reject.
             log.warn("[Webhook] could not decrypt auth header (sending unauthenticated): {}",
+                    e.getMessage());
+            return null;
+        }
+    }
+
+    /** Decrypts the HMAC signing key; a blank/undecryptable secret → unsigned dispatch. */
+    private String decryptSigningSecret(String cipher) {
+        if (cipher == null || cipher.isBlank()) {
+            return null;
+        }
+        try {
+            return cryptoService.decrypt(cipher);
+        } catch (Exception e) {
+            // Key rotation / corrupt ciphertext — never break a dispatch over it;
+            // send unsigned and let the receiver reject if it requires a signature.
+            log.warn("[Webhook] could not decrypt signing secret (sending unsigned): {}",
                     e.getMessage());
             return null;
         }

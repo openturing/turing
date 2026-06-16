@@ -92,7 +92,8 @@ public class TurChatWebhookAPI {
         TurChatWebhook entity = new TurChatWebhook();
         applyDtoToEntity(dto, entity);
         entity.setId(null);
-        // On create there is no prior cipher to keep.
+        // On create there is no prior cipher to keep, for either secret.
+        entity.setSigningSecret(webhookService.resolveSecretCipher(dto.signingSecret(), false, null));
         TurChatWebhook saved = webhookService.save(entity, dto.authHeader(), false, null);
         return TurChatWebhookDto.from(saved);
     }
@@ -112,10 +113,13 @@ public class TurChatWebhookAPI {
                                 "Webhook name already exists");
                     });
         }
-        String existingCipher = existing.getAuthHeader();
+        String existingAuthCipher = existing.getAuthHeader();
+        String existingSigningCipher = existing.getSigningSecret();
         applyDtoToEntity(dto, existing);
-        // Blank authHeader on update = keep the stored secret untouched.
-        TurChatWebhook saved = webhookService.save(existing, dto.authHeader(), true, existingCipher);
+        // Blank secret on update = keep the stored credential untouched (both secrets).
+        existing.setSigningSecret(
+                webhookService.resolveSecretCipher(dto.signingSecret(), true, existingSigningCipher));
+        TurChatWebhook saved = webhookService.save(existing, dto.authHeader(), true, existingAuthCipher);
         return TurChatWebhookDto.from(saved);
     }
 
@@ -143,6 +147,10 @@ public class TurChatWebhookAPI {
         entity.setSlotTrigger(TurChatWebhookService.normalizeTrigger(dto.slotTrigger()));
         entity.setIncludeSlots(dto.includeSlots());
         entity.setPayloadTemplate(dto.payloadTemplate());
+        // Signature header name only (the signing secret is handled separately,
+        // write-only, by the caller via TurChatWebhookService.resolveSecretCipher).
+        String sigHeader = dto.signatureHeader();
+        entity.setSignatureHeader(sigHeader != null && !sigHeader.isBlank() ? sigHeader.trim() : null);
         entity.setEnabled(Optional.ofNullable(dto.enabled()).orElse(Boolean.TRUE));
     }
 

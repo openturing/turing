@@ -76,8 +76,9 @@ export const WebhookForm: React.FC<Props> = ({ value, isNew }) => {
   async function onSubmit(data: TurChatWebhook) {
     const payload: TurChatWebhook = {
       ...data,
-      // Blank auth header on edit keeps the stored secret untouched server-side.
+      // Blank secret on edit keeps the stored credential untouched server-side.
       authHeader: data.authHeader?.trim() ? data.authHeader.trim() : undefined,
+      signingSecret: data.signingSecret?.trim() ? data.signingSecret.trim() : undefined,
     };
     try {
       const saved = isNew
@@ -361,6 +362,44 @@ export const WebhookForm: React.FC<Props> = ({ value, isNew }) => {
                       value={field.value ?? ""}
                       placeholder="Bearer xyz…"
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="signingSecret"
+              render={({ field }) => (
+                <FormItem className="mt-4">
+                  <FormLabel>{t("webhook.signingSecret")}</FormLabel>
+                  <FormDescription>
+                    {value.hasSigningSecret && !isNew
+                      ? t("webhook.signingSecretConfigured")
+                      : t("webhook.signingSecretDesc")}
+                  </FormDescription>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      autoComplete="new-password"
+                      value={field.value ?? ""}
+                      placeholder="whsec_…"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="signatureHeader"
+              render={({ field }) => (
+                <FormItem className="mt-4">
+                  <FormLabel>{t("webhook.signatureHeader")}</FormLabel>
+                  <FormDescription>{t("webhook.signatureHeaderDesc")}</FormDescription>
+                  <FormControl>
+                    <Input {...field} value={field.value ?? ""} placeholder="X-Turing-Signature" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

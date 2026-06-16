@@ -38,5 +38,15 @@ export interface TurChatWebhook {
   authHeader?: string;
   /** Read-only: whether a credential is stored. Never carries the value. */
   hasAuthHeader?: boolean;
+  /**
+   * Write-only HMAC-SHA256 signing key (T378). When set, each dispatch adds a
+   * `<signatureHeader>: sha256=<hex>` header over the body. Leave blank on edit
+   * to keep the stored key untouched.
+   */
+  signingSecret?: string;
+  /** Read-only: whether a signing key is stored. Never carries the value. */
+  hasSigningSecret?: boolean;
+  /** Header name the HMAC signature is sent under. Blank = X-Turing-Signature. */
+  signatureHeader?: string;
   enabled?: boolean;
 }
