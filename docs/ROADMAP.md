@@ -298,7 +298,7 @@
 > initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
 > Shio/Dumont is gated, not scheduled.
 
-- 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
+- ⏳ **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — standalone repo [`openviglet/viglet-core`](https://github.com/openviglet/viglet-core) (self-contained parent, BOM, published to GitHub Packages) is **live**, and Turing consumes it as an external dependency (see CHANGELOG). **Remaining**: adopt in Shio + Dumont — still gated on governance/ownership + semver/CI across the other consumers; not scheduled. → STRATEGY §XII.3/§XII.4
 
 > A cross-product dependency-and-utility audit (2026-06-16) of the three
 > SB-4.0.6 codebases surfaced concrete duplication that the original scope

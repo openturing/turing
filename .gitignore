@@ -99,15 +99,3 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /frontend/packages/sdk/.turbo
 /frontend/packages/react-ui/dist
 /frontend/packages/react-ui/.turbo
-/viglet-core/viglet-core-lang/target
-/viglet-core/viglet-core-crypto/target
-/viglet-core/viglet-core-storage/target
-/viglet-core/viglet-core-security/target
-/viglet-core/viglet-core-tenancy/target
-/viglet-core/viglet-core-content/target
-/viglet-core/viglet-core-commons/target
-/viglet-core/viglet-core-settings/target
-/viglet-core/viglet-core-messaging/target
-/viglet-core/viglet-core-logging/target
-/viglet-core/viglet-core-webhook/target
-/viglet-core/viglet-core-http/target

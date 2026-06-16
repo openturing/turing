@@ -36,6 +36,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>4.1.0</spring-boot.version>
+        <!-- viglet-core is now an external project (github.com/openviglet/viglet-core),
+             published to GitHub Packages and versioned independently from Turing. -->
+        <viglet-core.version>2026.3.4</viglet-core.version>
         <sonar.organization>viglet</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -55,6 +58,23 @@
         <tika.version>3.3.1</tika.version>
         <jgit.version>7.7.0.202606012155-r</jgit.version>
     </properties>
+    <repositories>
+        <!-- viglet-core is published here. GitHub Packages requires auth even to
+             download: add a matching <server id="github-viglet-core"> with a PAT
+             (read:packages) to ~/.m2/settings.xml. Local builds resolve the same
+             version from ~/.m2 (mvn install) without hitting this repo. -->
+        <repository>
+            <id>github-viglet-core</id>
+            <name>GitHub openviglet viglet-core</name>
+            <url>https://maven.pkg.github.com/openviglet/viglet-core</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <build>
         <plugins>
             <plugin>
@@ -158,7 +178,6 @@
                 <gpg.skip>true</gpg.skip>
             </properties>
             <modules>
-                <module>viglet-core</module>
                 <module>turing-utils</module>
                 <module>turing-commons</module>
                 <module>turing-spring</module>
@@ -300,66 +319,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Internal modules -->
+            <!-- viglet-core — external project (github.com/openviglet/viglet-core),
+                 published to GitHub Packages. The BOM pins every module version. -->
             <dependency>
                 <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-lang</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-commons</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-content</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-crypto</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-storage</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-security</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-tenancy</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-settings</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-messaging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-logging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-webhook</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.viglet.core</groupId>
-                <artifactId>viglet-core-http</artifactId>
-                <version>${project.version}</version>
+                <artifactId>viglet-core-bom</artifactId>
+                <version>${viglet-core.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.viglet.turing</groupId>
