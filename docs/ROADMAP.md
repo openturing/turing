@@ -268,7 +268,6 @@
 - 💭 **T349** (deps: T342) **Post: "Adding enterprise search to WordPress with Turing ES"** — the other named CMS; second-largest connector audience. → §X.3
 
 **Content — comparison / "versus" (cluster B, rides competitor volume):**
-- 🛠 **T350** (deps: T342) **Post: "Open-source alternatives to Algolia for Adobe AEM"** — drafted; comparison table (Algolia/Coveo/Lucidworks/Solr/Turing) + decision axes; links the flagship. → §X.3
 - 💭 **T351** (deps: T350) **Post: "Turing ES vs. Coveo / vs. Lucidworks Fusion"** — head-to-head positioning for enterprise portals. → §X.3
 - 💭 **T352** (deps: T350) **Post: "When to choose Solr, Elasticsearch, or Turing ES"** — captures the "which search engine" decision query. → §X.3
 
