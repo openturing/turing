@@ -1,0 +1,30 @@
+# Last task number — `T373`
+
+> **Single source of truth for the next free task number.** The next new task is
+> `T374`; after assigning it, bump the number above and the log line below.
+
+## Why this file exists
+
+T-numbers are **non-contiguous across blocks** — a block's header range (e.g.
+"Block J follow-ups (T334–T373)") is *not* a reliable guide to what's free,
+because a later block can consume numbers inside an earlier block's band. Real
+example that caused a collision (2026-06-16): Block N (reranker) had already
+shipped as **T337–T341**, sitting inside the Block J band, so "the next Block J
+number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
+`CHANGELOG.md`, `IMPROVEMENTS.md`) is error-prone; this counter is authoritative.
+
+## Rule
+
+1. **Before creating a task**, read the number above and use `T<n+1>`.
+2. **After creating it**, increment the number above and append a log line below.
+3. Never infer the next number from a block header range or a `git log` scan.
+
+## Log (most recent first)
+
+- **T373** — Ship Cloud default config as a GLOBAL seed ZIP (Block J follow-ups) — 2026-06-16
+- **T372** — Platform-global BYO-infra is read-only in the CRUD (Block J follow-ups) — 2026-06-16
+- **T371** — `viglet-core` Phase 2: promote to a public shared library (Block Q) — 2026-06-16
+- **T370** — `viglet-core` tenancy module (Block Q) — 2026-06-16
+- **T369** — `viglet-core` security module (Block Q) — 2026-06-16
+- **T368** — `viglet-core` crypto + storage modules (Block Q) — 2026-06-16
+- **T367** — `viglet-core` Turing submodule skeleton (Block Q) — 2026-06-16

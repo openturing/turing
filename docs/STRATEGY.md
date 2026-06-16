@@ -432,3 +432,82 @@ evaluate the **FSL (Functional Source License)** — converts to Apache 2.0 afte
 2 years, blocks only competing/hosted use — applied **only** to the affected
 parts, in preference to BSL/SSPL. Decision deferred to T362; not actioned until
 both conditions hold.
+
+---
+
+## XII. `viglet-core` — a shared backend platform across Turing, Shio, Dumont
+
+> Added 2026-06-16. The bet to stop re-solving the same backend problems three
+> times. Engineering tasks in [ROADMAP.md](ROADMAP.md) Block Q; the tenancy
+> module's extraction detail in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIV.8.8.
+
+### XII.1 The bet — unify the common backend, not just tenancy
+
+Turing, Shio and Dumont are structurally parallel Spring Boot products: each
+ships its own `*-spring` core, its own `commons`/`model`, its own Keycloak/OIDC
+security package, its own storage/crypto/cache wiring. The same problems are
+solved — and re-debugged — three times. **`viglet-core` is a shared backend
+platform library** that holds the cross-product foundation so a fix or a new
+capability lands once and all three inherit it.
+
+This is not a speculative pattern for the org: the **frontend already does
+exactly this** via `viglet-design-system` (all three repos carry `copy-ds.cmd`
+and consume the shared DS). `viglet-core` is its **backend analog** — the org
+already runs a shared library and knows the discipline it demands.
+
+The window is favorable for a reason that did not exist a year ago: **all three
+products are on Spring Boot 4.0.6 today**, so the usual blocker for a shared
+binary — Boot/Jackson major-version skew — is absent.
+
+### XII.2 Scope — what is "core", what stays per-product
+
+In scope (framework-level, reusable, stable patterns):
+
+- **Security/identity** — Keycloak/OIDC, JWT resolution, authority mapping,
+  CSRF, the 401 entry-point. Likely the largest duplication win.
+- **Tenancy** — the kernel (`TenantContext`, the plain-column scope helper, the
+  Hibernate `@TenantId` resolver, platform-admin, the resolution filter).
+- **Persistence base** — UUID generator, auditing columns, base entity, the
+  agnostic-Liquibase-type lint.
+- **Secret crypto**, **storage** (MinIO/filesystem/no-op), **cache** (Hazelcast,
+  ShedLock), **web** conventions (error handling, OpenAPI, common filters,
+  Jackson config).
+
+Out of scope (stays in each product): domain entities, the tenant-registry
+tables, product-specific business logic. **Packaging is multi-module + a BOM,
+never one fat kitchen-sink jar** — apps depend only on the concern they need.
+
+### XII.3 Phasing — incubate in Turing, promote when stable
+
+Two phases, deliberately sequenced to defer the cross-product coupling cost
+until the design is proven (the same "don't fragment prematurely" logic as
+§XI.3):
+
+- **Phase 1 — incubate as a Turing Maven submodule.** `viglet-core` starts life
+  *inside* the Turing repo, with Turing as its first and only consumer. The
+  shared concerns are refactored into it module by module. No separate repo, no
+  semver-across-three, no governance overhead yet — just a clean internal module
+  that has to satisfy one real consumer. This is where the abstraction earns its
+  shape against actual usage instead of a whiteboard.
+- **Phase 2 — promote to a public shared library (gated, not scheduled).** Once
+  stable, the module is lifted into a standalone published artifact (+ BOM) and
+  adopted by Shio and Dumont. Promotion is "move the module to a repo and
+  publish" **only if** Phase 1 kept the boundary clean.
+
+### XII.4 The one discipline that makes promotion cheap — treat it as external from day 1
+
+The incubation approach pays off **only** if Phase 1 is written as though the
+module were already external:
+
+- **Package `com.viglet.core.*`, neutral names** (not `com.viglet.turing.*`, not
+  `Tur*`). Renaming a sprawling API after the fact is the expensive part.
+- **Dependency arrow points one way: `viglet-core` never imports `turing-*`.**
+  If core needs something from Turing, that thing is not core. A single back-edge
+  turns Phase-2 promotion into a decoupling project.
+
+Risks are organizational, not technical: **governance/ownership** (who maintains
+core; without a clear owner it becomes a bottleneck), **release coupling** (a
+breaking change ripples to three consumers — semver + CI across all three, owned
+in Phase 2), and **premature abstraction** (the *rule of three* — extract only
+what is genuinely duplicated and stable in ≥2 products; where they truly diverge,
+duplication is cheaper than the wrong abstraction).

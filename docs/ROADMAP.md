@@ -211,7 +211,7 @@
 > [MULTI_TENANCY.md](MULTI_TENANCY.md). **T333** (auto-provision personal
 > tenant on first login, §XIV.8) shipped 2026-06-12 to wire Viglet Cloud.
 
-### Block J follow-ups — Cloud SaaS hardening (T334–T366)
+### Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J into Viglet Cloud (one tenant per signed-up user on
 > shared turing/solr/postgres infra). These are the gaps that remain for a
@@ -222,7 +222,8 @@
 - 💭 **T336** (deps: T281) **De-provision on Keycloak user deletion** — close the lifecycle loop: when a Cloud user is deleted/disabled in Keycloak, suspend (then teardown) their personal tenant via the T281 service, instead of leaving an orphaned tenant + footprint. Likely a Keycloak event-listener SPI or a reconciliation sweep. → §XIV.8.3
 - 📋 **T365** (deps: T275) **Scope BYO-infra access-by-id, not just listings** — the 6 BYO-infra entities (SE/LLM/Embedding/Store/Integration/MCP) use a plain `tenantId` column (not `@TenantId`), so the 2026-06-15 fix scoped only *list*+*create*; `findById` and the `GET/PUT/DELETE /{id}` endpoints still do an unscoped PK lookup, so a caller with another tenant's id can read/mutate it. Route by-id loads through an ownership check (own OR GLOBAL-null OR platform-admin → else 404). → §XIV.8.4
 - 💭 **T366** (deps: T266) **Grant `ROLE_PLATFORM_ADMIN` from a Keycloak role/claim** — the platform-admin role is *consumed* (T266 `TurPlatformAdminService`, T279 cross-tenant console, and the GLOBAL-pool branch of `TurInfraTenantScope.stampOnCreate`) but **never granted** anywhere, and the Cloud realm has no such role. Result in the Cloud setup: the configured admin (`vigadmin`) is just a normal tenant user, the T279 platform-admin console is unreachable (403), and there is no UI path to provision a GLOBAL (shared-pool) BYO-infra instance. Map a dedicated Keycloak realm role (e.g. `platform-admin`) → `ROLE_PLATFORM_ADMIN` in `TurAuthorityResolver`/`TurOidcUserService`, and decide whether `turing.keycloak.admin-id` should imply it. → §XIV.8.5
-
+- 📋 **T372** (deps: T275; pairs with T366) **Platform-global BYO-infra is read-only in the CRUD** — when `tenancy.enabled` and an instance is in the shared GLOBAL pool (`tenantId IS NULL`) and the caller is not a platform admin, the 6 BYO-infra entities (SE/LLM/Embedding/Store/Integration/MCP) reject `PUT`/`DELETE` (403) and the admin UI hides edit/delete + shows a "Global" badge. One rule per layer: `TurInfraTenantScope.assertWritable(entity)` (backend, called in each controller's update/delete; update-mappers also stop copying `tenantId`) + a `useInfraReadOnly(tenantId)` hook reading two new `/features` flags `tenancyEnabled`+`platformAdmin` (frontend). Tenancy-off installs are unaffected (globals stay editable). ~27 files but shallow; split as PR-1 backend / PR-2 frontend. → §XIV.8.6
+- 📋 **T373** (deps: —) **Ship Cloud default config as a GLOBAL seed ZIP** — `TurExportImportOnStartup` already auto-imports `export/*.zip` once on first boot (guarded by the `EXPORT_AUTO_IMPORT` marker); guarantee the export emits/keeps `tenantId = null` for the 6 BYO-infra types so one seeded default LLM/SE/etc. is visible to every auto-provisioned tenant, and bake the seed ZIP into the Docker image. Closes the "default config for all users with zero post-deploy setup" ask for Viglet Cloud. Caveat: the same `TurSecretCryptoService` key must be set in every container or encrypted API keys won't decrypt. → §XIV.8.7
 ## Block K — Agent CI (flow/prompt eval gate) ✅ shipped 2026-06-05
 
 > Shipped: T285–T288 (golden-set model + CRUD, eval runner + judge scoring,
@@ -301,6 +302,22 @@
 - 💭 **T362** (deps: T360 ✅) **License posture decision** — keep Apache 2.0 on CE now; revisit FSL (over BSL/SSPL) only if Turing Cloud is real revenue AND a competitor hosts the CE. Strategy decision, not code. → §XI.4
 - 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
 - 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
+
+## Block Q — `viglet-core` shared backend platform (cross-product)
+
+> The bet to stop solving the same backend problems three times across Turing,
+> Shio and Dumont (all on Spring Boot 4.0.6). **Incubate as a Turing submodule,
+> promote to a public shared lib when stable** — the same "don't fragment
+> prematurely" logic as Block P. The bet + scope + phasing → STRATEGY §XII;
+> tenancy-module extraction detail → IMPROVEMENTS §XIV.8.8. Cross-product
+> initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
+> Shio/Dumont is gated, not scheduled.
+
+- 💭 **T367** (deps: —) **Phase 1 — `viglet-core` Turing submodule skeleton** — create the multi-module `viglet-core` parent inside the Turing repo with Turing as first consumer. Hard rules from day 1 (else promotion is a decoupling project): package `com.viglet.core.*` + neutral names (no `Tur*`), and a one-way dependency arrow — `viglet-core` **never** imports `turing-*`. Migrate one leaf concern to prove the wiring. → STRATEGY §XII.3/§XII.4
+- 💭 **T368** (deps: T367) **`viglet-core` crypto + storage modules** — lift the secret-crypto (`TurSecretCryptoService`) and storage abstraction (MinIO/filesystem/no-op `TurStorageService`) into core as Spring Boot starters (autoconfig + `@ConditionalOnMissingBean`). Lowest-risk leaf concerns; validate the starter pattern here. → STRATEGY §XII.2
+- 💭 **T369** (deps: T367) **`viglet-core` security module** — Keycloak/OIDC integration, JWT/authority resolution, CSRF, the 401 entry-point. The largest duplication win across the three; gated on a security-model alignment audit (same realm/claim/membership model). → STRATEGY §XII.2
+- 💭 **T370** (deps: T367, T372, T365, T366) **`viglet-core` tenancy module** — move the proven tenancy kernel (`TenantContext`, the plain-column scope helper, the Hibernate `@TenantId` resolver + resolution filter, platform-admin) into core. Sequence *after* Turing's tenancy stabilizes (T372/T365/T366) — extract a stable kernel, not a moving target. → STRATEGY §XII / IMPROVEMENTS §XIV.8.8
+- 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
 
 ## Non-goals (do NOT add as tasks)
 

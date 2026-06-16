@@ -2286,6 +2286,74 @@ not about correctness of the single-service flow:
   role. Until then the cross-tenant console and the shared GLOBAL infra pool are
   dormant features.
 
+- **XIV.8.6 — platform-global BYO-infra is read-only in the CRUD (T372).** With
+  tenancy on, the shared GLOBAL pool (`tenantId IS NULL`) is meant to be
+  *platform-provided defaults* — every tenant uses them but no tenant owns them.
+  Today nothing stops a tenant from issuing `PUT`/`DELETE /{id}` against a GLOBAL
+  instance (the by-id mutation is unscoped — see XIV.8.4/T365), and the admin UI
+  renders the same edit/delete affordances it does for owned instances. The rule
+  we want is one line: a GLOBAL instance is writable **only** by a platform admin.
+  Encode it once per layer rather than scattering `tenantId == null` checks across
+  6 controllers × 2 layers. **Backend:** `TurInfraTenantScope` (already the single
+  home of BYO-infra scoping) gains `isPlatformGlobalReadOnly(entity)` =
+  `tenancyEnabled && entity.tenantId == null && !isPlatformAdmin()` and an
+  `assertWritable(entity)` that throws `403`; each of the 6 controllers calls
+  `assertWritable(existing)` at the top of its update + delete (loading the
+  *persisted* entity, not trusting the request body), and the update-mappers add
+  `@Mapping(target = "tenantId", ignore = true)` so a client can't reassign
+  ownership through an edit. **Frontend:** `/features` exposes `tenancyEnabled` +
+  `platformAdmin`; a `useInfraReadOnly(tenantId)` hook (the DTOs already serialize
+  `tenantId`, since they extend the entity and it is not `@JsonIgnore`) returns
+  `{ isGlobal, readOnly }`, and the 6 forms hide Save/Delete + show a "Global"
+  badge when read-only — same amber-lock treatment the SE catalog already uses for
+  its property-backed read-only mode (the two conditions OR together). The "New"
+  button stays visible everywhere: a tenant can still create its own (owned)
+  instances; only the GLOBAL rows are frozen. Pairs with T366 — until a Cloud
+  principal can actually hold `ROLE_PLATFORM_ADMIN`, GLOBAL rows are read-only for
+  *everyone* and are managed only by re-importing the seed (T373), which is a
+  defensible posture (declarative, Docker-shipped defaults) but should be a
+  conscious choice, not an accident.
+
+- **XIV.8.7 — ship Cloud default config as a GLOBAL seed ZIP (T373).** The
+  product ask: a fresh Viglet Cloud deployment should come with a default LLM,
+  default search engine, etc. already configured for *all* users, loadable purely
+  from the Docker image with no post-deploy clicking. `application.properties` is
+  the wrong tool — each instance has ~20 fields plus a `providerOptionsJson` blob
+  and an encrypted API key. The right tool already exists: `TurExportImportOnStartup`
+  scans `export/*.zip` on first boot and imports LLM/SE/Embedding/MCP/etc. through
+  `TurImportExchange` (guarded once by the `EXPORT_AUTO_IMPORT` config marker). The
+  only new guarantee needed is that the seeded BYO-infra lands in the GLOBAL pool:
+  `TurInfraTenantScope.stampOnImport` already keeps `tenantId = null` when no tenant
+  is bound to the thread (the startup import case), and the import code preserves
+  whatever `tenantId` the bundle carries — so the work is to ensure the *export*
+  side emits `tenantId = null` for instances intended as platform defaults, then
+  bake the ZIP into the image (`COPY seed/defaults.zip /app/export/`). Two
+  operational caveats: (a) every container must share the same
+  `TurSecretCryptoService` key or the exported (encrypted) API keys won't decrypt;
+  (b) the `EXPORT_AUTO_IMPORT` marker makes this one-shot per database — changing
+  the defaults later means clearing the marker or a versioned re-seed, which is not
+  yet modeled.
+
+- **XIV.8.8 — the tenancy module of `viglet-core` (T370).** The broader
+  cross-product `viglet-core` bet — why, scope across all concerns, the
+  incubate-in-Turing→promote phasing, and the governance/risk posture — lives in
+  STRATEGY §XII; this note is only the *tenancy-specific* extraction detail.
+  The kernel that moves is framework-level and persistence-agnostic:
+  `TurTenantContext` (thread-bound current tenant + system mode + `runAs`),
+  `TurTenantOwnedInfra` + `TurInfraTenantScope` (the plain-column scoping helper,
+  incl. the T372 `assertWritable`/`isPlatformGlobalReadOnly` rule), the Hibernate
+  `@TenantId` `CurrentTenantIdentifierResolver`, `TurPlatformAdminService` +
+  `ROLE_PLATFORM_ADMIN`, and the request→tenant resolution filter. Entities and
+  the tenant-registry tables stay in each product. Two tenancy-specific gates make
+  this a *sequenced* task: (1) **stabilize first** — extract only after
+  T372/T365/T366 land, so the kernel is proven rather than abstracted from a moving
+  target; (2) **security-model alignment** — the resolution filter is shareable
+  only if all three resolve tenant the same way (same Keycloak realm, same JWT
+  claim / membership model). If Shio/Dumont differ, the context + scope helper
+  still transfer cleanly while the filter stays per-app. Parts of the
+  `AbstractTuringSpringIT` tenancy harness migrate with the module as its test
+  suite.
+
 ---
 
 ## XVI. Cost & token governance (Block L)
