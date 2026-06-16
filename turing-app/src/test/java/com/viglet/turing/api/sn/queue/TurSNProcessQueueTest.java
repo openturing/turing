@@ -33,17 +33,13 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,11 +56,7 @@ class TurSNProcessQueueTest {
     @Mock
     private TurSNSpotlightProcess turSNSpotlightProcess;
     @Mock
-    private TurSNSiteFieldRepository turSNSiteFieldRepository;
-    @Mock
-    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    @Mock
-    private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
+    private TurSNFieldProvisioner turSNFieldProvisioner;
     @Mock
     private TurSEInstanceRepository turSEInstanceRepository;
 
@@ -369,7 +361,11 @@ class TurSNProcessQueueTest {
     }
 
     @Test
-    void testReceiveIndexingQueue_CreateCreatesMissingFieldAndSearchEngineField() {
+    void testReceiveIndexingQueue_CreateDelegatesMissingFieldsToProvisioner() {
+        // T382 — the queue no longer creates fields inline; it delegates every
+        // declared attribute spec to the shared TurSNFieldProvisioner (the same
+        // idempotent path the manifest provisioning uses). Deep field-creation
+        // behavior is asserted in TurSNFieldProvisionerTest.
         TurSNJobItems jobItems = new TurSNJobItems();
         TurSNJobItem item = new TurSNJobItem();
         item.setTurSNJobAction(TurSNJobAction.CREATE);
@@ -394,40 +390,18 @@ class TurSNProcessQueueTest {
         site.setName("site1");
         site.setTurSEInstance(siteSeInstance);
 
-        TurSEInstance seInstance = new TurSEInstance();
-        seInstance.setId("se1");
-
-        TurSNSiteLocale locale = new TurSNSiteLocale();
-        locale.setCore("core_en");
-        locale.setTurSNSite(site);
-
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
 
         when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
         when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
                 .thenReturn(new HashMap<>(item.getAttributes()));
-        when(turSNSiteFieldExtRepository.existsByTurSNSiteAndName(site, "customField")).thenReturn(false);
-        when(turSNSiteLocaleRepository.findByTurSNSite(site)).thenReturn(List.of(locale));
-        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
-        when(turSNSiteFieldRepository.save(any(TurSNSiteField.class))).thenAnswer(invocation -> {
-            TurSNSiteField field = invocation.getArgument(0);
-            field.setId("f1");
-            return field;
-        });
-        when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
         when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
-        when(plugin.fieldExists(seInstance, "core_en", "customField")).thenReturn(false);
         when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
 
         processQueue.processIndexingQueue(jobItems);
 
-        verify(turSNSiteFieldRepository).save(any(TurSNSiteField.class));
-        verify(turSNSiteFieldExtRepository).save(any(TurSNSiteFieldExt.class));
-        verify(turSNSiteFieldExtFacetRepository).saveAll(any());
-        verify(plugin).addOrUpdateField(seInstance, "core_en",
-                "customField", TurSEFieldType.STRING, true, false, true);
+        verify(turSNFieldProvisioner).ensureField(site, spec);
         verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
 

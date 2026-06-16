@@ -28,9 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,20 +44,14 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.logging.TurLoggingUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNConstants;
-import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +60,6 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 @Slf4j
 public class TurSNProcessQueue {
-    public static final String DEFAULT = "default";
     public static final String INDEXED = "Indexed";
     public static final String DEINDEXED = "Deindexed";
     private final TurSearchEnginePluginFactory pluginFactory;
@@ -76,9 +67,7 @@ public class TurSNProcessQueue {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     private final TurSNSpotlightProcess turSNSpotlightProcess;
-    private final TurSNSiteFieldRepository turSNSiteFieldRepository;
-    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
+    private final TurSNFieldProvisioner turSNFieldProvisioner;
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
     private final TurSNProcessQueue self;
@@ -88,9 +77,7 @@ public class TurSNProcessQueue {
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
             TurSNSpotlightProcess turSNSpotlightProcess,
-            TurSNSiteFieldRepository turSNSiteFieldRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-            TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
+            TurSNFieldProvisioner turSNFieldProvisioner,
             TurSEInstanceRepository turSEInstanceRepository,
             com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
@@ -99,9 +86,7 @@ public class TurSNProcessQueue {
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
         this.turSNSpotlightProcess = turSNSpotlightProcess;
-        this.turSNSiteFieldRepository = turSNSiteFieldRepository;
-        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
-        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
+        this.turSNFieldProvisioner = turSNFieldProvisioner;
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turJmsTenantPropagation = turJmsTenantPropagation;
         this.self = self;
@@ -300,71 +285,10 @@ public class TurSNProcessQueue {
     private void createMissingFields(TurSNSite turSNSite,
             List<TurSNJobAttributeSpec> turSNAttributeSpecs) {
         if (turSNAttributeSpecs == null) return;
-        turSNAttributeSpecs.forEach(spec -> {
-            if (!turSNSiteFieldExtRepository.existsByTurSNSiteAndName(turSNSite, spec.getName())) {
-                final TurSNSiteField turSNSiteField = saveSiteField(turSNSite, spec);
-                saveFaceLocales(spec, saveSiteFieldExt(turSNSite, spec, turSNSiteField));
-                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).stream()
-                        .filter(turSNSiteLocale -> !existsFieldInSearchEngine(turSNSite,
-                                turSNSiteLocale.getCore(), spec.getName()))
-                        .forEach(turSNSiteLocale -> createFieldInSearchEngine(turSNSite,
-                                turSNSiteLocale.getCore(), turSNSiteField));
-            }
-        });
-    }
-
-    private void saveFaceLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {
-        if (spec.getFacetName() == null) return;
-        Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
-        spec.getFacetName().forEach((key, value) -> {
-            if (!key.equals(DEFAULT)) {
-                TurSNSiteFieldExtFacet turSNSiteFieldExtFacet = new TurSNSiteFieldExtFacet();
-                turSNSiteFieldExtFacet.setLocale(LocaleUtils.toLocale(key));
-                turSNSiteFieldExtFacet.setLabel(value);
-                turSNSiteFieldExtFacet.setTurSNSiteFieldExt(turSNSiteFieldExt);
-                facetLocales.add(turSNSiteFieldExtFacet);
-            }
-        });
-        turSNSiteFieldExtFacetRepository.saveAll(facetLocales);
-    }
-
-    @NotNull
-    private TurSNSiteFieldExt saveSiteFieldExt(TurSNSite turSNSite, TurSNJobAttributeSpec spec,
-            TurSNSiteField turSNSiteField) {
-        Map<String, String> facetName = spec.getFacetName();
-        TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder().enabled(1)
-                .name(turSNSiteField.getName()).description(turSNSiteField.getDescription())
-                .facet(spec.isFacet() ? 1 : 0)
-                .facetName(facetName != null ? facetName.get(DEFAULT) : null).hl(0)
-                .multiValued(turSNSiteField.getMultiValued()).mlt(0)
-                .externalId(turSNSiteField.getId()).snType(TurSNFieldType.SE)
-                .type(turSNSiteField.getType()).turSNSite(turSNSite).build();
-        turSNSiteFieldExtRepository.save(turSNSiteFieldExt);
-        return turSNSiteFieldExt;
-    }
-
-    @NotNull
-    private TurSNSiteField saveSiteField(TurSNSite turSNSite, TurSNJobAttributeSpec spec) {
-        TurSNSiteField turSNSiteField = TurSNSiteField.builder().name(spec.getName())
-                .description(spec.getDescription()).type(spec.getType())
-                .multiValued(spec.isMultiValued() ? 1 : 0).turSNSite(turSNSite).build();
-        turSNSiteFieldRepository.save(turSNSiteField);
-        return turSNSiteField;
-    }
-
-    private void createFieldInSearchEngine(TurSNSite turSNSite, String coreName,
-            TurSNSiteField turSNSiteField) {
-        turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                .ifPresent(seInstance -> pluginFactory.getPluginForSite(turSNSite)
-                        .addOrUpdateField(seInstance, coreName, turSNSiteField.getName(),
-                                turSNSiteField.getType(), true, turSNSiteField.getMultiValued() == 1, true));
-    }
-
-    private boolean existsFieldInSearchEngine(TurSNSite turSNSite, String coreName, String name) {
-        if (turSNSite.getTurSEInstance() == null) return false;
-        return turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                .map(seInstance -> pluginFactory.getPluginForSite(turSNSite).fieldExists(seInstance, coreName, name))
-                .orElse(false);
+        // T382 — field creation now lives in the shared TurSNFieldProvisioner so
+        // the indexing-time auto-create path and declarative manifest provisioning
+        // converge on one idempotent implementation.
+        turSNAttributeSpecs.forEach(spec -> turSNFieldProvisioner.ensureField(turSNSite, spec));
     }
 
     private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem) {

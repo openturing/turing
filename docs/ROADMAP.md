@@ -322,13 +322,6 @@
 > polluted and "field present?" logic breaks. This is a public-data catalog, so
 > **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
 
-- 📋 **T382** (deps: T381 ✅) **Field-manifest site provisioning** — one idempotent call
-      that creates/updates an SN site **and** its field schema from a single manifest
-      (per field: `TurSEFieldType`, multi-valued, facet, mandatory, locale/analyzer),
-      so "index a new content type" is a declarative op, not hand-clicking the console.
-      Builds on `TurSNJobAttributeSpec`. Makes onboarding a structured source (cursarei,
-      and any Dumont structured connector) a one-shot. **Foundation for schema-as-code
-      (T386) + LLM-assisted derivation (T387).** → §XX.2
 - 💭 **T383** (deps: —) **RRF hybrid ranking for public SN search** — the RAG
       knowledge-base tool already fuses BM25 + vector via `TurRagRrf` (T24); bring the
       same **single-query hybrid (RRF) ranking** to the public **Semantic Navigation
@@ -341,7 +334,7 @@
       "similar courses" from the index instead of a pre-baked neighbors file (replaces
       cursarei's `courseNeighbors.json`). Also the basis for cross-source dedup (**T390**).
       → §XX.4
-- 💭 **T385** (deps: T382) **NL→facet query parsing eval pack for faceted catalogs** —
+- 💭 **T385** (deps: T382 ✅) **NL→facet query parsing eval pack for faceted catalogs** —
       harden and regression-test the LLM tool path that turns prose ("online graduate
       programs under 20k") into facet filters + ranges over a declared field schema,
       with a catalog eval fixture. Lets cursarei retire its hand-written `nlFilters`
@@ -354,12 +347,12 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T386** (deps: T382) **Manifest as versioned schema-as-code (diff + additive migration)** —
+- 💭 **T386** (deps: T382 ✅) **Manifest as versioned schema-as-code (diff + additive migration)** —
       promote the T382 manifest to a file checked into the source repo and make provisioning
       compute a *diff* against the live site: additive changes converge silently, type/analyzer
       changes require an explicit migration step. "Liquibase for the SN field schema" — the team
       already owns that mental model. → §XX.6
-- 💭 **T387** (deps: T382) **LLM-assisted manifest derivation from sample documents** — given a
+- 💭 **T387** (deps: T382 ✅) **LLM-assisted manifest derivation from sample documents** — given a
       sample of a source's documents, propose a draft manifest (per-field `TurSEFieldType`,
       facet/multi-valued/mandatory, locale) for human review, so onboarding a new structured
       source starts from a generated schema instead of hand-declaring every field. → §XX.7
@@ -375,7 +368,7 @@
       retrieval to cluster the same real-world entity arriving from many sources (a course listed
       by 5 portals collapses to one result, not five). The concrete multi-source-aggregator
       data-quality win; content-based only. → §XX.10
-- 💭 **T391** (deps: T382, T387, T385) **Structured-source onboarding wizard** — the capstone flow
+- 💭 **T391** (deps: T382 ✅, T387, T385) **Structured-source onboarding wizard** — the capstone flow
       that chains the block: sample data → derived manifest (T387) → provision (T382) → run the
       NL→facet eval pack (T385) → live. Turns "index a new catalog" into a minutes-long guided op
       and productizes the whole block. → §XX.11
@@ -383,7 +376,7 @@
       path (T385) with hybrid SN search (T383) and the existing RAG/agent stack into a "talk to the
       catalog" assistant that answers from the index with citations and objective ranking. The
       GenAI value layer on top of the structured-search foundation. → §XX.12
-- 💭 **T393** (deps: T381, T382) **Lift the manifest + grounding contract into `viglet-core`** —
+- 💭 **T393** (deps: T381 ✅, T382 ✅) **Lift the manifest + grounding contract into `viglet-core`** —
       once T381/T382/T386 prove out in Turing, the conservative-grounding contract and the
       field-manifest provisioning are product-neutral; candidate for `viglet-core` (Block Q) so
       Shio and Dumont index structured sources the same way. Gated on Phase-2 promotion

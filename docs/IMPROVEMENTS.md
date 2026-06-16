@@ -2446,19 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.2 Field-manifest site provisioning (T382)
-
-Onboarding a structured source today means creating the SN site, then declaring each
-`TurSNSiteField` (type, multi-valued, facet) — console-clicking that doesn't scale to
-"index a new content type" as a routine op. `TurSNJobAttributeSpec` already carries
-per-field type/facet/mandatory/multi-valued + localized facet labels at index time;
-T382 lifts that into a **single idempotent provisioning call** that takes a manifest
-(site + ordered field specs + locale/analyzer, e.g. pt-BR) and converges the site to
-it. Re-running with the same manifest is a no-op; adding a field is additive. This is
-what makes a Dumont structured connector (or cursarei) able to stand up its schema as
-code rather than by hand — the "easier to index new content types" goal, on the
-Turing side.
-
 ### XX.3 RRF hybrid ranking for public SN search (T383)
 
 Turing already does the hard part once: `TurRagRrf` (T24/T24b, see
