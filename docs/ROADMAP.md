@@ -264,7 +264,6 @@
 > (T347, T350) → the rest. `→` pointers are STRATEGY §X.
 
 **Content — integration how-tos (cluster A):**
-- 🛠 **T347** (deps: T342) **Post: "Integrating Viglet Turing ES with Adobe AEM"** *(flagship)* — drafted as the canonical docs blog post (grounded in the real Dumont AEM connector); the Medium copy should be re-pointed with `canonical` to it (T354). → §X.3
 - 💭 **T348** (deps: T347) **Post: "Semantic & vector search in AEM with Turing ES"** — RAG/embedding angle on the same audience. → §X.3
 - 💭 **T349** (deps: T342) **Post: "Adding enterprise search to WordPress with Turing ES"** — the other named CMS; second-largest connector audience. → §X.3
 
