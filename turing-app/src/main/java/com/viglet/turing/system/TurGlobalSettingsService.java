@@ -1,65 +1,53 @@
 package com.viglet.turing.system;
 
-import java.util.Locale;
-
 import org.springframework.stereotype.Service;
 
+import com.viglet.core.settings.VigletConfigVarService;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
+import com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
-import com.viglet.turing.persistence.model.system.TurConfigVar;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
+/**
+ * Typed accessors for Turing's global settings, backed by the {@code viglet-core}
+ * {@link VigletConfigVarService} (T376 / Block Q). The generic parse/trim/clamp/
+ * enum-resolution boilerplate now lives in core; this service maps Turing's
+ * named settings to their config-var ids and owns the Turing-specific concerns
+ * (secret encryption, custom enum parsers, URL-signing-secret minting).
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.1.14
+ */
 @Service
 public class TurGlobalSettingsService {
-    private final TurConfigVarRepository turConfigVarRepository;
+
+    private final VigletConfigVarService configVars;
     private final TurSecretCryptoService turSecretCryptoService;
 
     public TurGlobalSettingsService(TurConfigVarRepository turConfigVarRepository,
             TurSecretCryptoService turSecretCryptoService) {
-        this.turConfigVarRepository = turConfigVarRepository;
+        this.configVars = new VigletConfigVarService(new TurConfigVarStore(turConfigVarRepository),
+                TurConfigVarOnStartup.GLOBAL_PATH);
         this.turSecretCryptoService = turSecretCryptoService;
     }
 
     public TurGlobalDecimalSeparator getDecimalSeparator() {
-        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.DECIMAL_SEPARATOR_DEFAULT_VALUE);
-
-        try {
-            return TurGlobalDecimalSeparator
-                    .valueOf(value.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return TurGlobalDecimalSeparator
-                    .valueOf(TurConfigVarOnStartup.DECIMAL_SEPARATOR_DEFAULT_VALUE);
-        }
+        return configVars.getEnum(TurGlobalDecimalSeparator.class, TurConfigVarOnStartup.DECIMAL_SEPARATOR,
+                TurGlobalDecimalSeparator.valueOf(TurConfigVarOnStartup.DECIMAL_SEPARATOR_DEFAULT_VALUE));
     }
 
     public TurGlobalDecimalSeparator updateDecimalSeparator(TurGlobalDecimalSeparator decimalSeparator) {
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.DECIMAL_SEPARATOR);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(decimalSeparator.name());
-        turConfigVarRepository.save(configVar);
-        return decimalSeparator;
+        return configVars.setEnum(TurConfigVarOnStartup.DECIMAL_SEPARATOR, decimalSeparator,
+                TurGlobalDecimalSeparator.valueOf(TurConfigVarOnStartup.DECIMAL_SEPARATOR_DEFAULT_VALUE));
     }
 
     public String getPythonExecutable() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.PYTHON_EXECUTABLE, "");
     }
 
     public String updatePythonExecutable(String pythonExecutable) {
-        String value = pythonExecutable == null ? "" : pythonExecutable.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.PYTHON_EXECUTABLE);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.PYTHON_EXECUTABLE, pythonExecutable);
     }
 
     /**
@@ -82,20 +70,11 @@ public class TurGlobalSettingsService {
      * @since 2026.2.7
      */
     public String getPythonRequirements() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_REQUIREMENTS)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.PYTHON_REQUIREMENTS, "");
     }
 
     public String updatePythonRequirements(String requirements) {
-        String value = requirements == null ? "" : requirements.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_REQUIREMENTS)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.PYTHON_REQUIREMENTS);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.PYTHON_REQUIREMENTS, requirements);
     }
 
     /**
@@ -118,9 +97,7 @@ public class TurGlobalSettingsService {
      * @since 2026.2.7
      */
     public String getCodeInterpreterUrlSigningSecret() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET, "");
     }
 
     /**
@@ -149,16 +126,7 @@ public class TurGlobalSettingsService {
      */
     public String regenerateCodeInterpreterUrlSigningSecret() {
         String fresh = TurConfigVarOnStartup.generateUrlSigningSecret();
-        TurConfigVar row = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET)
-                .orElseGet(() -> {
-                    TurConfigVar v = new TurConfigVar();
-                    v.setId(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET);
-                    v.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-                    return v;
-                });
-        row.setValue(fresh);
-        turConfigVarRepository.save(row);
+        configVars.setRaw(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET, fresh);
         return fresh.length() >= 8 ? fresh.substring(0, 8) : fresh;
     }
 
@@ -171,14 +139,8 @@ public class TurGlobalSettingsService {
      * @since 2026.3.1
      */
     public int getPiiSlotTtlHours() {
-        String raw = turConfigVarRepository.findById(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
-        try {
-            return Integer.parseInt(raw.trim());
-        } catch (NumberFormatException e) {
-            return Integer.parseInt(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS_DEFAULT_VALUE);
-        }
+        return configVars.getInt(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS,
+                Integer.parseInt(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS_DEFAULT_VALUE));
     }
 
     /**
@@ -190,42 +152,28 @@ public class TurGlobalSettingsService {
      * @since 2026.3.1
      */
     public int updatePiiSlotTtlHours(int ttlHours) {
-        int clamped = Math.max(0, Math.min(ttlHours, 8760));
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(Integer.toString(clamped));
-        turConfigVarRepository.save(configVar);
-        return clamped;
+        return configVars.setIntClamped(TurConfigVarOnStartup.PII_SLOT_TTL_HOURS, ttlHours, 0, 8760);
     }
 
     /**
      * T80 — current Code Interpreter execution mode. {@code NATIVE}
      * (default) runs Python as a host subprocess; {@code DOCKER} runs each
      * execution inside a throwaway hardened container. Falls back to
-     * {@link com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode#DEFAULT}
+     * {@link TurCodeInterpreterExecutionMode#DEFAULT}
      * when the row is missing or holds an unparseable value.
      *
      * @since 2026.3.1
      */
-    public com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode getCodeInterpreterExecutionMode() {
-        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE);
-        return com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.fromString(value);
+    public TurCodeInterpreterExecutionMode getCodeInterpreterExecutionMode() {
+        return TurCodeInterpreterExecutionMode.fromString(
+                configVars.getString(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE,
+                        TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE_DEFAULT_VALUE));
     }
 
-    public com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode updateCodeInterpreterExecutionMode(
-            com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode mode) {
-        com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode safe =
-                mode == null ? com.viglet.turing.genai.tool.TurCodeInterpreterExecutionMode.DEFAULT : mode;
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(safe.name());
-        turConfigVarRepository.save(configVar);
+    public TurCodeInterpreterExecutionMode updateCodeInterpreterExecutionMode(
+            TurCodeInterpreterExecutionMode mode) {
+        TurCodeInterpreterExecutionMode safe = mode == null ? TurCodeInterpreterExecutionMode.DEFAULT : mode;
+        configVars.setRaw(TurConfigVarOnStartup.CODE_INTERPRETER_EXECUTION_MODE, safe.name());
         return safe;
     }
 
@@ -238,24 +186,15 @@ public class TurGlobalSettingsService {
      * @since 2026.3.1
      */
     public String getCodeInterpreterDockerImage() {
-        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE);
-        return (value == null || value.isBlank())
-                ? TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE
-                : value.trim();
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE,
+                TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE);
     }
 
     public String updateCodeInterpreterDockerImage(String image) {
         String value = (image == null || image.isBlank())
                 ? TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE_DEFAULT_VALUE
                 : image.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
+        configVars.setRaw(TurConfigVarOnStartup.CODE_INTERPRETER_DOCKER_IMAGE, value);
         return value;
     }
 
@@ -270,206 +209,98 @@ public class TurGlobalSettingsService {
      * @since 2026.3.1
      */
     public String getCodeInterpreterSkillImage() {
-        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
-        return (value == null || value.isBlank())
-                ? TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE
-                : value.trim();
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE,
+                TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
     }
 
     public String updateCodeInterpreterSkillImage(String image) {
         String value = (image == null || image.isBlank())
                 ? TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE
                 : image.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
+        configVars.setRaw(TurConfigVarOnStartup.CODE_INTERPRETER_SKILL_IMAGE, value);
         return value;
     }
 
     public String getDefaultLlmId() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.DEFAULT_LLM, "");
     }
 
     public String updateDefaultLlmId(String defaultLlmId) {
-        String value = defaultLlmId == null ? "" : defaultLlmId.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.DEFAULT_LLM);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.DEFAULT_LLM, defaultLlmId);
     }
 
     public TurEmailProviderType getEmailProvider() {
-        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER)
-                .map(TurConfigVar::getValue)
-                .orElse(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE);
-        try {
-            return TurEmailProviderType.valueOf(value.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE);
-        }
+        return configVars.getEnum(TurEmailProviderType.class, TurConfigVarOnStartup.EMAIL_PROVIDER,
+                TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));
     }
 
     public TurEmailProviderType updateEmailProvider(TurEmailProviderType emailProvider) {
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.EMAIL_PROVIDER);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(emailProvider.name());
-        turConfigVarRepository.save(configVar);
-        return emailProvider;
+        return configVars.setEnum(TurConfigVarOnStartup.EMAIL_PROVIDER, emailProvider,
+                TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));
     }
 
     public String getEmailApiKey() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.EMAIL_API_KEY, "");
     }
 
     public String updateEmailApiKey(String emailApiKey) {
-        String value = emailApiKey == null ? "" : emailApiKey.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.EMAIL_API_KEY);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.EMAIL_API_KEY, emailApiKey);
     }
 
     public String getSenderEmail() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_EMAIL)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.SENDER_EMAIL, "");
     }
 
     public String updateSenderEmail(String senderEmail) {
-        String value = senderEmail == null ? "" : senderEmail.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_EMAIL)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.SENDER_EMAIL);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.SENDER_EMAIL, senderEmail);
     }
 
     public String getSenderName() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_NAME)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.SENDER_NAME, "");
     }
 
     public String updateSenderName(String senderName) {
-        String value = senderName == null ? "" : senderName.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_NAME)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.SENDER_NAME);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.SENDER_NAME, senderName);
     }
 
     public boolean isLlmCacheEnabled() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.LLM_CACHE_ENABLED, false);
     }
 
     public boolean updateLlmCacheEnabled(boolean enabled) {
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_ENABLED);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(enabled));
-        turConfigVarRepository.save(configVar);
-        return enabled;
+        return configVars.setBoolean(TurConfigVarOnStartup.LLM_CACHE_ENABLED, enabled);
     }
 
     public long getLlmCacheTtlMs() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS)
-                .map(TurConfigVar::getValue)
-                .map(v -> {
-                    try {
-                        return Long.parseLong(v.trim());
-                    } catch (NumberFormatException e) {
-                        return 3_600_000L;
-                    }
-                })
-                .orElse(3_600_000L);
+        return configVars.getLong(TurConfigVarOnStartup.LLM_CACHE_TTL_MS, 3_600_000L);
     }
 
     public long updateLlmCacheTtlMs(long ttlMs) {
-        long value = Math.max(0, ttlMs);
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_TTL_MS);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(value));
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setLong(TurConfigVarOnStartup.LLM_CACHE_TTL_MS, Math.max(0, ttlMs));
     }
 
     public boolean isLlmCacheRegenerate() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_REGENERATE)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.LLM_CACHE_REGENERATE, false);
     }
 
     public boolean updateLlmCacheRegenerate(boolean regenerate) {
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_REGENERATE)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_REGENERATE);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(regenerate));
-        turConfigVarRepository.save(configVar);
-        return regenerate;
+        return configVars.setBoolean(TurConfigVarOnStartup.LLM_CACHE_REGENERATE, regenerate);
     }
 
     public String getRecipientEmail() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.RECIPIENT_EMAIL, "");
     }
 
     public String updateRecipientEmail(String recipientEmail) {
-        String value = recipientEmail == null ? "" : recipientEmail.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RECIPIENT_EMAIL);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.RECIPIENT_EMAIL, recipientEmail);
     }
 
     public boolean isRagEnabled() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_ENABLED)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.RAG_ENABLED, false);
     }
 
     public boolean updateRagEnabled(boolean enabled) {
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_ENABLED)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_ENABLED);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(enabled));
-        turConfigVarRepository.save(configVar);
-        return enabled;
+        return configVars.setBoolean(TurConfigVarOnStartup.RAG_ENABLED, enabled);
     }
 
     /**
@@ -478,48 +309,22 @@ public class TurGlobalSettingsService {
      * clamped to {@code [0.0, 1.0]}. Invalid values fall back to the default.
      */
     public double getRagSnSimilarityThreshold() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD)
-                .map(TurConfigVar::getValue)
-                .map(v -> {
-                    try {
-                        double parsed = Double.parseDouble(v.trim());
-                        return Math.max(0.0, Math.min(1.0, parsed));
-                    } catch (NumberFormatException e) {
-                        return 0.0;
-                    }
-                })
-                .orElse(0.0);
+        return configVars.getDoubleClamped(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD, 0.0, 0.0, 1.0);
     }
 
     public double updateRagSnSimilarityThreshold(double threshold) {
         double value = Math.max(0.0, Math.min(1.0, threshold));
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(value));
-        turConfigVarRepository.save(configVar);
+        configVars.setDouble(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD, value);
         return value;
     }
 
     /** T328 — whether the opt-in LLM-as-reranker runs on SN RAG candidates. */
     public boolean isRagSnRerankEnabled() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED, false);
     }
 
     public boolean updateRagSnRerankEnabled(boolean enabled) {
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(enabled));
-        turConfigVarRepository.save(configVar);
-        return enabled;
+        return configVars.setBoolean(TurConfigVarOnStartup.RAG_SN_RERANK_ENABLED, enabled);
     }
 
     /**
@@ -528,29 +333,11 @@ public class TurGlobalSettingsService {
      * the default of 20.
      */
     public int getRagSnRerankTopN() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N)
-                .map(TurConfigVar::getValue)
-                .map(v -> {
-                    try {
-                        int parsed = Integer.parseInt(v.trim());
-                        return Math.max(1, Math.min(100, parsed));
-                    } catch (NumberFormatException e) {
-                        return 20;
-                    }
-                })
-                .orElse(20);
+        return configVars.getIntClamped(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N, 20, 1, 100);
     }
 
     public int updateRagSnRerankTopN(int topN) {
-        int value = Math.max(1, Math.min(100, topN));
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(value));
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setIntClamped(TurConfigVarOnStartup.RAG_SN_RERANK_TOP_N, topN, 1, 100);
     }
 
     /**
@@ -559,60 +346,33 @@ public class TurGlobalSettingsService {
      * can never break reranking.
      */
     public TurRagRerankStrategyType getRagSnRerankStrategy() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY)
-                .map(TurConfigVar::getValue)
+        return configVars.find(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY)
                 .map(TurRagRerankStrategyType::fromValue)
                 .orElse(TurRagRerankStrategyType.LLM);
     }
 
     public TurRagRerankStrategyType updateRagSnRerankStrategy(TurRagRerankStrategyType strategy) {
         TurRagRerankStrategyType value = strategy == null ? TurRagRerankStrategyType.LLM : strategy;
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value.name());
-        turConfigVarRepository.save(configVar);
+        configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY, value.name());
         return value;
     }
 
     /** T338 — self-hosted cross-encoder {@code /rerank} endpoint URL. */
     public String getRagSnRerankEndpoint() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT, "");
     }
 
     public String updateRagSnRerankEndpoint(String endpoint) {
-        String value = endpoint == null ? "" : endpoint.trim();
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT, endpoint);
     }
 
     /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
     public String getRagSnRerankModel() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, "");
     }
 
     public String updateRagSnRerankModel(String model) {
-        String value = model == null ? "" : model.trim();
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, model);
     }
 
     /**
@@ -621,9 +381,7 @@ public class TurGlobalSettingsService {
      * the client (the API exposes only a "configured" boolean).
      */
     public String getRagSnRerankApiKey() {
-        String stored = turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        String stored = configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY, "");
         if (stored.isBlank()) {
             return "";
         }
@@ -633,8 +391,7 @@ public class TurGlobalSettingsService {
 
     /** T339 — whether a Cohere API key is configured (for the write-only UI status). */
     public boolean isRagSnRerankApiKeySet() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
-                .map(TurConfigVar::getValue)
+        return configVars.find(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
                 .filter(v -> !v.isBlank())
                 .isPresent();
     }
@@ -644,107 +401,54 @@ public class TurGlobalSettingsService {
      * value clears it. Returns the resulting "configured" status, never the key.
      */
     public boolean updateRagSnRerankApiKey(String apiKey) {
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
         if (apiKey == null || apiKey.isBlank()) {
-            configVar.setValue("");
-            turConfigVarRepository.save(configVar);
+            configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY, "");
             return false;
         }
-        configVar.setValue(turSecretCryptoService.encrypt(apiKey.trim()));
-        turConfigVarRepository.save(configVar);
+        configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY,
+                turSecretCryptoService.encrypt(apiKey.trim()));
         return true;
     }
 
     /** T331 — whether grounded follow-up questions are generated for SN answers. */
     public boolean isRagSnFollowupsEnabled() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED, false);
     }
 
     public boolean updateRagSnFollowupsEnabled(boolean enabled) {
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(enabled));
-        turConfigVarRepository.save(configVar);
-        return enabled;
+        return configVars.setBoolean(TurConfigVarOnStartup.RAG_SN_FOLLOWUPS_ENABLED, enabled);
     }
 
     /** T330 — whether the post-generation groundedness audit runs on SN answers. */
     public boolean isRagSnGroundednessCheckEnabled() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED)
-                .map(TurConfigVar::getValue)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        return configVars.getBoolean(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED, false);
     }
 
     public boolean updateRagSnGroundednessCheckEnabled(boolean enabled) {
-        TurConfigVar configVar = turConfigVarRepository
-                .findById(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(String.valueOf(enabled));
-        turConfigVarRepository.save(configVar);
-        return enabled;
+        return configVars.setBoolean(TurConfigVarOnStartup.RAG_SN_GROUNDEDNESS_CHECK_ENABLED, enabled);
     }
 
     public String getDefaultEmbeddingModelId() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID, "");
     }
 
     public String updateDefaultEmbeddingModelId(String id) {
-        String value = id == null ? "" : id.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID, id);
     }
 
     public String getDefaultEmbeddingStoreId() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID, "");
     }
 
     public String updateDefaultEmbeddingStoreId(String id) {
-        String value = id == null ? "" : id.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID, id);
     }
 
     public String getDefaultAiAgentId() {
-        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID)
-                .map(TurConfigVar::getValue)
-                .orElse("");
+        return configVars.getString(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID, "");
     }
 
     public String updateDefaultAiAgentId(String id) {
-        String value = id == null ? "" : id.trim();
-        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID)
-                .orElseGet(TurConfigVar::new);
-        configVar.setId(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID);
-        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
-        configVar.setValue(value);
-        turConfigVarRepository.save(configVar);
-        return value;
+        return configVars.setString(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID, id);
     }
 }

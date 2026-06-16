@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.viglet.core</groupId>
+        <artifactId>viglet-core</artifactId>
+        <version>2026.3.4</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>viglet-core-settings</artifactId>
+    <packaging>jar</packaging>
+    <name>Viglet Core :: Settings</name>
+    <description>Persistence-agnostic runtime config-var / global-settings key-value store as a Spring Boot starter</description>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <!--
+      T376 / Block Q — the runtime config-var / global-settings store, re-built
+      three times (TurGlobalSettingsService, ShConfigVarUtils,
+      DumConnectorConfigVarService). Only the persistence-agnostic half moves
+      here: the VigletConfigVarStore port (the SPI a product implements over its
+      own JPA repository + entity, which stay per-product) and the
+      VigletConfigVarService that owns the typed get/set boilerplate every product
+      re-implemented by hand — null-coalesce + trim on write, parse-or-default +
+      clamp + case-insensitive enum resolution on read. No JPA on the classpath:
+      the product brings the table, core brings the typed accessors.
+
+      The auto-configuration activates only when a product publishes a
+      VigletConfigVarStore bean, so this module is inert until adopted.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

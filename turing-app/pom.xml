@@ -185,6 +185,10 @@
             <artifactId>viglet-core-tenancy</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-settings</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <exclusions>
