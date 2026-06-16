@@ -64,4 +64,11 @@ public class TurTenancyProperty {
      * assert any tenant.
      */
     private String internalToken;
+
+    /**
+     * T336 / §XIV.8.3 — lifecycle close on identity deletion. The periodic
+     * reconciliation sweep that suspends (and, opt-in, tears down) a personal
+     * tenant once its owner(s) vanish from Keycloak. Default off.
+     */
+    private TurTenantDeprovisionProperty deprovision = new TurTenantDeprovisionProperty();
 }

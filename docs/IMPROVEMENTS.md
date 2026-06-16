@@ -2204,7 +2204,7 @@ this only unlocks once the trust boundary is real.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335 shipped; T336–T366)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335, T336 shipped; T365, T366, T373 open)
 
 Block J gives *isolation*; the Viglet Cloud product needs *one environment per
 signed-up user* on the shared turing/solr/postgres infra. The model: every Cloud
@@ -2224,12 +2224,6 @@ invite-based, many-users-per-tenant posture.
 
 The remaining follow-ups are about making the *multi-product* Cloud seamless,
 not about correctness of the single-service flow:
-
-- **XIV.8.3 — lifecycle close on identity deletion (T336).** When a Cloud user is
-  deleted/disabled in Keycloak, their personal tenant should be suspended and then
-  torn down via the T281 `TurTenantTeardownService`, rather than orphaned. A
-  Keycloak event-listener SPI or a periodic reconciliation against the IdP both
-  fit; the teardown machinery already exists.
 
 - **XIV.8.4 — scope BYO-infra access-by-id, not just listings (T365).** The six
   BYO-infra entities (`TurSEInstance`, `TurLLMInstance`, `TurEmbeddingModel`,

@@ -18,6 +18,19 @@ turing:
     # default) to disable; only share over a trusted internal network. Prefer
     # forwarding the end user's bearer token, which needs no token here.
     internal-token: ${TURING_TENANCY_INTERNAL_TOKEN:}
+    # T336 / §XIV.8.3 — lifecycle close on identity deletion. A daily sweep
+    # suspends (and, in SUSPEND_THEN_DELETE mode, later tears down via the T281
+    # service) any personal tenant whose every member has been deleted/disabled
+    # in Keycloak. Dormant unless enabled AND service-account creds are set; it
+    # never acts when the IdP can't be queried (fail-safe). The creds need a
+    # `realm-management` role that can read users (e.g. `view-users`).
+    deprovision:
+      enabled: ${TURING_TENANCY_DEPROVISION_ENABLED:false}
+      cron: ${TURING_TENANCY_DEPROVISION_CRON:0 25 3 * * *}
+      mode: ${TURING_TENANCY_DEPROVISION_MODE:SUSPEND_ONLY}
+      delete-after-days: ${TURING_TENANCY_DEPROVISION_DELETE_AFTER_DAYS:30}
+      keycloak-client-id: ${TURING_TENANCY_DEPROVISION_KC_CLIENT_ID:}
+      keycloak-client-secret: ${TURING_TENANCY_DEPROVISION_KC_CLIENT_SECRET:}
   # T245 / §XIII — Turing as an MCP server. The endpoint itself is toggled by
   # spring.ai.mcp.server.enabled (below); this block carries the Turing-specific
   # governance on top of it. loopback-only is the T245 trust boundary: until the

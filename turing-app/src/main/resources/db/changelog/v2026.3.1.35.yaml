@@ -1,0 +1,23 @@
+databaseChangeLog:
+  # T336 / §XIV.8.3 — lifecycle close on identity deletion. Adds `suspendedAt`
+  # to the `tenant` registry so the deprovision reconciliation sweep can anchor
+  # its grace window (suspend now, hard-delete only after N days still orphaned).
+  # Nullable — null while the tenant is ACTIVE, stamped on the ACTIVE → SUSPENDED
+  # edge. Idempotent via `columnExists` + onFail:MARK_RAN; camelCase per the
+  # project's literal naming convention.
+  - changeSet:
+      id: v2026.3.1.35-add-tenant-suspendedAt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tenant
+                columnName: suspendedAt
+      changes:
+        - addColumn:
+            tableName: tenant
+            columns:
+              - column:
+                  name: suspendedAt
+                  type: TIMESTAMP

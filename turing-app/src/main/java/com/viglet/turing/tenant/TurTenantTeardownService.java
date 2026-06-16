@@ -11,6 +11,7 @@ package com.viglet.turing.tenant;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 
@@ -81,6 +82,11 @@ public class TurTenantTeardownService {
     public TurTenant suspend(String tenantId) {
         platformAdminService.runAsSystem("suspend tenant " + tenantId, () -> null);
         TurTenant tenant = requireTenant(tenantId);
+        if (tenant.getStatus() != TurTenantStatus.SUSPENDED) {
+            // Stamp the suspension instant only on the ACTIVE → SUSPENDED edge so
+            // the T336 grace window isn't pushed back by a repeated suspend call.
+            tenant.setSuspendedAt(Instant.now());
+        }
         tenant.setStatus(TurTenantStatus.SUSPENDED);
         return tenantRepository.save(tenant);
     }

@@ -109,6 +109,15 @@ public class TurTenant implements Serializable {
     @Column(name = "createdAt", nullable = false)
     private Instant createdAt;
 
+    /**
+     * T336 / §XIV.8.3 — when the tenant was last moved into
+     * {@link TurTenantStatus#SUSPENDED}. Anchors the grace window before the
+     * deprovision sweep hard-deletes an orphaned personal tenant; {@code null}
+     * while {@link TurTenantStatus#ACTIVE}.
+     */
+    @Column(name = "suspendedAt")
+    private Instant suspendedAt;
+
     @PrePersist
     void onCreate() {
         if (this.createdAt == null) {
