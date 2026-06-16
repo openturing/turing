@@ -265,8 +265,8 @@
 > (T347, T350) → the rest. `→` pointers are STRATEGY §X.
 
 **Foundation (technical, low cost):**
-- 🛠 **T344** (deps: T342) **Enrich `llms.txt` + add to docs** — docs `llms-txt.ts` plugin now also enumerates blog guides/comparisons. viglet.org `vite-plugin-llmtxt.ts` enrichment still pending. → §X.2
-- 🛠 **T345** (deps: T342) **schema.org structured data** — `SoftwareApplication` JSON-LD added site-wide on docs; blog posts emit `BlogPosting` automatically. `FAQPage` on viglet.org still pending. → §X.1
+- 🛠 **T344** (deps: T342) **Enrich `llms.txt` + add to docs** — docs `llms-txt.ts` plugin enumerates blog guides/comparisons (live). viglet.org `vite-plugin-llmtxt.ts` now lists the docs blog guides too — *committed in `openviglet.github.io`, pending push/deploy.* → §X.2
+- 🛠 **T345** (deps: T342) **schema.org structured data** — `SoftwareApplication` JSON-LD site-wide on docs + `BlogPosting` on posts (live). `FAQPage` JSON-LD added to viglet.org `index.html` (5 Q&As, in all prerendered pages) — *committed in `openviglet.github.io`, pending push/deploy.* → §X.1
 - 🛠 **T346** (deps: —) **GitHub README + topics keyword pass** — README.adoc now leads with "enterprise search for Adobe AEM / WordPress" + Algolia/Coveo-alternative framing. *Repo topics still need `gh repo edit --add-topic` (manual).* → §X.1
 
 **Content — integration how-tos (cluster A):**
