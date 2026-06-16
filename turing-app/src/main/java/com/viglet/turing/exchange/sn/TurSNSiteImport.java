@@ -94,6 +94,7 @@ public class TurSNSiteImport {
 	private final TurEmbeddingModelRepository turEmbeddingModelRepository;
 	private final com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository;
 	private final TurSearchEnginePluginFactory turSearchEnginePluginFactory;
+	private final com.viglet.turing.tenant.TurInfraTenantScope infraTenantScope;
 	private final CacheManager cacheManager;
 
 	public TurSNSiteImport(TurSNSiteRepository turSNSiteRepository,
@@ -115,6 +116,7 @@ public class TurSNSiteImport {
 			TurEmbeddingModelRepository turEmbeddingModelRepository,
 			com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository,
 			TurSearchEnginePluginFactory turSearchEnginePluginFactory,
+			com.viglet.turing.tenant.TurInfraTenantScope infraTenantScope,
 			CacheManager cacheManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSEInstanceRepository = turSEInstanceRepository;
@@ -135,6 +137,7 @@ public class TurSNSiteImport {
 		this.turEmbeddingModelRepository = turEmbeddingModelRepository;
 		this.turAIAgentRepository = turAIAgentRepository;
 		this.turSearchEnginePluginFactory = turSearchEnginePluginFactory;
+		this.infraTenantScope = infraTenantScope;
 		this.cacheManager = cacheManager;
 	}
 
@@ -244,6 +247,11 @@ public class TurSNSiteImport {
 				turLLMInstanceRepository.findById(exportedModel.getTurLLMInstance().getId())
 						.ifPresent(exportedModel::setTurLLMInstance);
 			}
+			// Claim the imported instance for the current tenant; any tenant id
+			// carried over from the export envelope is discarded first so a
+			// re-exported tenant-owned model can't leak across tenants.
+			exportedModel.setTenantId(null);
+			infraTenantScope.stampOnImport(exportedModel);
 			turEmbeddingModelRepository.save(exportedModel);
 			log.info("Imported Embedding Model: {} ({})", exportedModel.getModelName(), exportedModel.getId());
 		}
@@ -368,6 +376,7 @@ public class TurSNSiteImport {
 					seInstance.setTurSEVendor(vendor);
 					seInstance.setEndpointUrl("http://localhost:8983/solr");
 					seInstance.setEnabled(1);
+					infraTenantScope.stampOnImport(seInstance);
 					TurSEInstance saved = turSEInstanceRepository.save(seInstance);
 					log.info("Created default SE Instance '{}' ({}) with vendor '{}'.",
 							saved.getTitle(), saved.getId(), vendor.getTitle());
@@ -444,6 +453,7 @@ public class TurSNSiteImport {
 		llmToCreate.setTimeout(exportedLlmInstance.getTimeout());
 		llmToCreate.setMaxRetries(exportedLlmInstance.getMaxRetries());
 
+		infraTenantScope.stampOnImport(llmToCreate);
 		TurLLMInstance created = turLLMInstanceRepository.save(llmToCreate);
 		log.info("Created missing LLM Instance '{}' ({}) during GenAI import.",
 				created.getTitle(), created.getId());
@@ -486,6 +496,7 @@ public class TurSNSiteImport {
 		storeToCreate.setUrl(exportedStoreInstance.getUrl());
 		storeToCreate.setTurStoreVendor(vendor);
 
+		infraTenantScope.stampOnImport(storeToCreate);
 		TurStoreInstance created = turStoreInstanceRepository.save(storeToCreate);
 		log.info("Created missing Store Instance '{}' ({}) during GenAI import.",
 				created.getTitle(), created.getId());
@@ -594,6 +605,7 @@ public class TurSNSiteImport {
 					seToCreate.setEnabled(exportedSeInstance.getEnabled());
 					seToCreate.setEndpointUrl(exportedSeInstance.getEndpointUrl());
 					seToCreate.setTurSEVendor(vendor);
+					infraTenantScope.stampOnImport(seToCreate);
 					TurSEInstance created = turSEInstanceRepository.save(seToCreate);
 					log.info("Created missing SE Instance '{}' ({}) from root exchange references.",
 							created.getTitle(), created.getId());

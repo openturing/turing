@@ -50,7 +50,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@viglet/turing-react-sdk": "workspace:*",
     "@viglet/turing-react-ui": "workspace:*",
-    "@viglet/viglet-design-system": "^2026.2.55",
+    "@viglet/viglet-design-system": "^2026.2.57",
     "@xyflow/react": "^12.11.0",
     "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",

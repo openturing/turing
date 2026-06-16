@@ -68,6 +68,25 @@ public class TurInfraTenantScope {
     }
 
     /**
+     * Claim an instance created during an <em>import</em> for the current tenant.
+     * Identical to {@link #stampOnCreate} except it additionally requires a
+     * tenant to be actually bound to the thread (a real authenticated request):
+     * a startup/seed import (e.g. {@code TurExportImportOnStartup}) runs with no
+     * bound tenant and must leave the instance GLOBAL ({@code tenantId = null}),
+     * visible to every tenant — exactly the platform-provided pool. Without this
+     * guard the {@code DEFAULT} fallback from {@link TurTenantContext#resolveCurrentTenant()}
+     * would stamp seeded infra as DEFAULT-owned and hide it from other tenants.
+     *
+     * @return the same {@code entity}, for fluent use before {@code save(...)}.
+     */
+    public <T extends TurTenantOwnedInfra> T stampOnImport(T entity) {
+        if (tenantContext.getCurrentTenant() == null) {
+            return entity; // startup/seed import — keep GLOBAL
+        }
+        return stampOnCreate(entity);
+    }
+
+    /**
      * Return the instances visible to the current tenant. When tenancy is on,
      * delegates to {@code visibleToTenant} (the repository's
      * {@code tenantId = :current OR IS NULL} query); when off, returns the full

@@ -211,7 +211,7 @@
 > [MULTI_TENANCY.md](MULTI_TENANCY.md). **T333** (auto-provision personal
 > tenant on first login, §XIV.8) shipped 2026-06-12 to wire Viglet Cloud.
 
-### Block J follow-ups — Cloud SaaS hardening (T334–T336)
+### Block J follow-ups — Cloud SaaS hardening (T334–T366)
 
 > Surfaced wiring Block J into Viglet Cloud (one tenant per signed-up user on
 > shared turing/solr/postgres infra). These are the gaps that remain for a
@@ -221,6 +221,7 @@
 - 📋 **T335** (deps: T268) **Per-tenant search-engine core auto-creation on standalone Solr** — T268 prefixes core names (`t<shortId>_<core>`) but a standalone Solr (`turing.solr.cloud=false`, the Cloud topology) does not pre-create them. Ensure the SN-site create/index path provisions the prefixed core on demand (or documents the configset/precreate requirement) so a new tenant's first index doesn't 404. → §XIV.8.2
 - 💭 **T336** (deps: T281) **De-provision on Keycloak user deletion** — close the lifecycle loop: when a Cloud user is deleted/disabled in Keycloak, suspend (then teardown) their personal tenant via the T281 service, instead of leaving an orphaned tenant + footprint. Likely a Keycloak event-listener SPI or a reconciliation sweep. → §XIV.8.3
 - 📋 **T365** (deps: T275) **Scope BYO-infra access-by-id, not just listings** — the 6 BYO-infra entities (SE/LLM/Embedding/Store/Integration/MCP) use a plain `tenantId` column (not `@TenantId`), so the 2026-06-15 fix scoped only *list*+*create*; `findById` and the `GET/PUT/DELETE /{id}` endpoints still do an unscoped PK lookup, so a caller with another tenant's id can read/mutate it. Route by-id loads through an ownership check (own OR GLOBAL-null OR platform-admin → else 404). → §XIV.8.4
+- 💭 **T366** (deps: T266) **Grant `ROLE_PLATFORM_ADMIN` from a Keycloak role/claim** — the platform-admin role is *consumed* (T266 `TurPlatformAdminService`, T279 cross-tenant console, and the GLOBAL-pool branch of `TurInfraTenantScope.stampOnCreate`) but **never granted** anywhere, and the Cloud realm has no such role. Result in the Cloud setup: the configured admin (`vigadmin`) is just a normal tenant user, the T279 platform-admin console is unreachable (403), and there is no UI path to provision a GLOBAL (shared-pool) BYO-infra instance. Map a dedicated Keycloak realm role (e.g. `platform-admin`) → `ROLE_PLATFORM_ADMIN` in `TurAuthorityResolver`/`TurOidcUserService`, and decide whether `turing.keycloak.admin-id` should imply it. → §XIV.8.5
 
 ## Block K — Agent CI (flow/prompt eval gate) ✅ shipped 2026-06-05
 

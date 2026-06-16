@@ -98,6 +98,8 @@ class TurSNSiteImportTest {
         private CacheManager cacheManager;
         @Mock
         private Cache cache;
+        @Mock
+        private com.viglet.turing.tenant.TurInfraTenantScope infraTenantScope;
 
         @InjectMocks
         private TurSNSiteImport turSNSiteImport;
@@ -106,6 +108,7 @@ class TurSNSiteImportTest {
         void setUp() {
                 when(cacheManager.getCacheNames()).thenReturn(Collections.emptySet());
                 lenient().when(turSNSiteRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
+                lenient().when(infraTenantScope.stampOnImport(any())).thenAnswer(inv -> inv.getArgument(0));
         }
 
         @Test

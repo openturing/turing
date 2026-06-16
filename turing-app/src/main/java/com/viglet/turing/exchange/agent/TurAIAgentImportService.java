@@ -92,6 +92,7 @@ public class TurAIAgentImportService {
     private final TurStoreInstanceRepository storeRepository;
     private final TurEmbeddingModelRepository embeddingRepository;
     private final TurCustomToolRepository customToolRepository;
+    private final com.viglet.turing.tenant.TurInfraTenantScope infraTenantScope;
 
     public TurAIAgentImportService(TurAIAgentRepository agentRepository,
                                    TurChatFlowRepository chatFlowRepository,
@@ -103,7 +104,8 @@ public class TurAIAgentImportService {
                                    TurMcpServerRepository mcpServerRepository,
                                    TurStoreInstanceRepository storeRepository,
                                    TurEmbeddingModelRepository embeddingRepository,
-                                   TurCustomToolRepository customToolRepository) {
+                                   TurCustomToolRepository customToolRepository,
+                                   com.viglet.turing.tenant.TurInfraTenantScope infraTenantScope) {
         this.agentRepository = agentRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.slotRepository = slotRepository;
@@ -115,6 +117,7 @@ public class TurAIAgentImportService {
         this.storeRepository = storeRepository;
         this.embeddingRepository = embeddingRepository;
         this.customToolRepository = customToolRepository;
+        this.infraTenantScope = infraTenantScope;
     }
 
     public record AgentConflict(String id, String name) {}
@@ -236,9 +239,9 @@ public class TurAIAgentImportService {
         // post-import. For an existing instance matched by ID or title, the
         // existing apiKey on the persisted row is preserved (we only copy
         // non-secret fields below).
-        TurLLMInstance target = llmRepository.findById(llm.getId())
-                .or(() -> llmRepository.findByTitleIgnoreCase(llm.getTitle()))
-                .orElseGet(TurLLMInstance::new);
+        java.util.Optional<TurLLMInstance> existing = llmRepository.findById(llm.getId())
+                .or(() -> llmRepository.findByTitleIgnoreCase(llm.getTitle()));
+        TurLLMInstance target = existing.orElseGet(TurLLMInstance::new);
         target.setTitle(llm.getTitle());
         target.setDescription(llm.getDescription());
         target.setIcon(llm.getIcon());
@@ -260,13 +263,18 @@ public class TurAIAgentImportService {
         target.setContextWindow(llm.getContextWindow());
         target.setProviderOptionsJson(llm.getProviderOptionsJson());
         target.setToolsEnabled(llm.isToolsEnabled());
+        // Only a freshly created instance is claimed for the current tenant; an
+        // existing row keeps its owner (GLOBAL or another tenant) untouched.
+        if (existing.isEmpty()) {
+            infraTenantScope.stampOnImport(target);
+        }
         return llmRepository.save(target);
     }
 
     private TurMcpServer upsertMcpServer(TurMcpServer mcp) {
-        TurMcpServer target = mcpServerRepository.findById(mcp.getId())
-                .or(() -> mcpServerRepository.findByTitleIgnoreCase(mcp.getTitle()))
-                .orElseGet(TurMcpServer::new);
+        java.util.Optional<TurMcpServer> existing = mcpServerRepository.findById(mcp.getId())
+                .or(() -> mcpServerRepository.findByTitleIgnoreCase(mcp.getTitle()));
+        TurMcpServer target = existing.orElseGet(TurMcpServer::new);
         target.setTitle(mcp.getTitle());
         target.setDescription(mcp.getDescription());
         target.setIcon(mcp.getIcon());
@@ -276,13 +284,16 @@ public class TurAIAgentImportService {
         target.setType(mcp.getType());
         target.setConnectionType(mcp.getConnectionType());
         target.setEnabled(mcp.getEnabled());
+        if (existing.isEmpty()) {
+            infraTenantScope.stampOnImport(target);
+        }
         return mcpServerRepository.save(target);
     }
 
     private TurStoreInstance upsertStore(TurStoreInstance s) {
-        TurStoreInstance target = storeRepository.findById(s.getId())
-                .or(() -> storeRepository.findByTitleIgnoreCase(s.getTitle()))
-                .orElseGet(TurStoreInstance::new);
+        java.util.Optional<TurStoreInstance> existing = storeRepository.findById(s.getId())
+                .or(() -> storeRepository.findByTitleIgnoreCase(s.getTitle()));
+        TurStoreInstance target = existing.orElseGet(TurStoreInstance::new);
         target.setTitle(s.getTitle());
         target.setDescription(s.getDescription());
         target.setIcon(s.getIcon());
@@ -293,13 +304,16 @@ public class TurAIAgentImportService {
         target.setTurStoreVendor(s.getTurStoreVendor());
         // credentialEncrypted intentionally not copied — secret stays on
         // the existing row if updating, blank on new rows.
+        if (existing.isEmpty()) {
+            infraTenantScope.stampOnImport(target);
+        }
         return storeRepository.save(target);
     }
 
     private TurEmbeddingModel upsertEmbedding(TurEmbeddingModel em, ResolvedRefs refs) {
-        TurEmbeddingModel target = embeddingRepository.findById(em.getId())
-                .or(() -> embeddingRepository.findByModelNameIgnoreCase(em.getModelName()))
-                .orElseGet(TurEmbeddingModel::new);
+        java.util.Optional<TurEmbeddingModel> existing = embeddingRepository.findById(em.getId())
+                .or(() -> embeddingRepository.findByModelNameIgnoreCase(em.getModelName()));
+        TurEmbeddingModel target = existing.orElseGet(TurEmbeddingModel::new);
         target.setModelName(em.getModelName());
         target.setDescription(em.getDescription());
         target.setIcon(em.getIcon());
@@ -314,6 +328,9 @@ public class TurAIAgentImportService {
         if (em.getTurLLMInstance() != null && em.getTurLLMInstance().getId() != null) {
             TurLLMInstance resolved = refs.llms.get(em.getTurLLMInstance().getId());
             target.setTurLLMInstance(resolved != null ? resolved : em.getTurLLMInstance());
+        }
+        if (existing.isEmpty()) {
+            infraTenantScope.stampOnImport(target);
         }
         return embeddingRepository.save(target);
     }
