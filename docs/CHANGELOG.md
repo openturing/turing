@@ -314,6 +314,8 @@
 
 - **T342** — **Docusaurus blog on docs.viglet.org** — `plugin-content-blog` enabled in the classic preset (RSS + Atom feeds, reading time, `authors.yml`/`tags.yml`, navbar + footer Blog link); blog posts emit `BlogPosting` JSON-LD. Live at `https://docs.viglet.org/blog`. (`vigletdocs.github.io`) (§X.2)
 - **T343** — **Cross-link skeleton** — viglet.org footer → docs blog (`Footer.tsx`), blog posts link siblings (Dumont AEM connector, flagship post) + docs guides (Turing RAG / Semantic Navigation), and `README.adoc`/`README.ce.adoc` lead-in links the AEM guide. `canonical` republish deferred to T354. (§X.2)
+- **T344** — **Enrich `llms.txt`** — docs `llms-txt.ts` plugin enumerates blog guides/comparisons; viglet.org `vite-plugin-llmtxt.ts` adds a "Guides & Comparisons" section pointing at the docs blog. Both live (`docs.viglet.org/llms.txt`, `www.viglet.org/llms.txt`). (§X.2)
+- **T345** — **schema.org structured data** — `SoftwareApplication` JSON-LD site-wide on docs + `BlogPosting` on each blog post; `FAQPage` JSON-LD (5 high-intent Q&As on AEM/WordPress search, Algolia/Coveo alternative, RAG, data residency) on the viglet.org home, scoped to the home route via the SPA prerender. All live. (§X.1)
 
 ## Block P — Open-core source split (`turing` → `turing-ce`)
 
