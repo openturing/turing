@@ -543,3 +543,66 @@ breaking change ripples to three consumers — semver + CI across all three, own
 in Phase 2), and **premature abstraction** (the *rule of three* — extract only
 what is genuinely duplicated and stable in ≥2 products; where they truly diverge,
 duplication is cheaper than the wrong abstraction).
+
+---
+
+## XIII. Turing as a structured-search engine — the open-core catalog play
+
+> Added 2026-06-16. The positioning behind Block R's amplification (engineering in
+> [ROADMAP.md](ROADMAP.md) Block R / T381–T393; design in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XX). The cursarei migration surfaced a capability
+> that is bigger than one customer: Turing can be **the self-hosted, declarative search
+> engine for public and enterprise catalogs**. This is the **Turing Search** SKU (§VIII.1)
+> growing a sharper edge, not a new product.
+
+### XIII.1 The thesis — a category Turing already half-owns
+
+A catalog/aggregator (courses, products, jobs, properties, papers, public registries)
+needs five things: index a typed schema, faceted search, hybrid lexical+semantic ranking,
+"similar items", and increasingly a grounded chat over the catalog. Today buyers assemble
+that from **Algolia/Constructor.io (faceted SaaS search) + a vector DB + a separate LLM
+layer** — three vendors, per-record pricing, and answers they cannot audit. Turing already
+ships every piece (`TurSN` facets, `TurRagRrf` fusion, vector neighbors, the RAG/agent
+stack). Block R's amplification is what makes them land as *one declarative engine* a team
+can stand up against its own data. The cursarei reference (~4,000 courses, 120+ sources)
+is the proof that the assembled stack collapses onto Turing.
+
+### XIII.2 The two differentiators competitors structurally can't match
+
+1. **Objective ranking as a product stance.** Algolia, Constructor, Coveo all *sell*
+   commercial boosting ("promote this SKU") as a feature. For a public-data catalog —
+   education, government, research, civic registries — that is exactly the wrong property:
+   buyers and end-users need to trust the order. Turing's Block-R invariant (no
+   partner boost, ever) plus the T389 **ranking explainability** ("why this result ranked
+   here") is a stance a boost-monetized SaaS cannot credibly take. This is a *trust* moat,
+   not a feature checkbox.
+2. **Conservative grounding + self-host + citeable chat.** Absent-≠-empty (T381) and
+   per-field coverage (T388) make data quality legible; the grounded copilot (T392)
+   answers from the index with citations, self-hosted, no data leaving the customer.
+   That is the same end-to-end-auditable pitch that wins Education/Finance in §VIII.3,
+   pointed at catalog search instead of agents.
+
+### XIII.3 Who buys it
+
+- **Public-data / civic / edu / gov aggregators** — where commercial boosting disqualifies
+  the SaaS incumbents and self-host satisfies sovereignty/LGPD constraints. cursarei is the
+  anchor case here.
+- **Enterprise product/knowledge catalogs** already self-hosting Solr/ES — Turing is the
+  declarative layer (schema-as-code T386 + hybrid ranking T389) that retires their bespoke
+  search glue. Overlaps the §X GEO "open-source Algolia/Coveo alternative" narrative.
+- **Dumont connector customers** — every structured connector now has a one-shot Turing
+  target (manifest provisioning T382/T391), making "collect → index → search → chat" a
+  single Viglet-stack story rather than four integrations.
+
+### XIII.4 Why now, why cheap
+
+Each Block-R task rides an existing seam (RRF, the Block-N reranker, the RAG stack, the
+default LLM, `TurSNJobAttributeSpec`), so the marginal build cost is low relative to the
+positioning gain — the bet is **packaging and sequencing**, not net-new platform. It also
+compounds the other bets: it sharpens the §VIII.1 *Turing Search* SKU, feeds the §X GEO
+"alternative to Algolia/Coveo" content with a real reference workload, and (via T393)
+exports the grounding/manifest discipline into `viglet-core` (§XII) so Shio and Dumont
+inherit it. **Sequencing caution:** this is a *positioning* sharpening of an existing SKU,
+not a reason to out-prioritize the convicted §VIII.7 anchors (MCP pillar, verifiable
+answers, cost governance) — pull Block R forward when a named catalog customer (cursarei,
+or a second aggregator) asks, consistent with the §IX "asks twice" discipline.

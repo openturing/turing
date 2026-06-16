@@ -1,7 +1,13 @@
-# Last task number — `T379`
+# Last task number — `T393`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T380`; after assigning it, bump the number above and the log line below.
+> `T394`; after assigning it, bump the number above and the log line below.
+>
+> **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
+> created as `T381–T385` without bumping this counter (the exact hazard this file
+> guards against), so the counter was reconciled to the real max when Block R's
+> amplification (`T386–T393`) landed. Don't reuse `T380` unless you deliberately
+> want to fill the gap.
 
 ## Why this file exists
 
@@ -21,6 +27,15 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T393** — Lift manifest + grounding contract into `viglet-core` (Block R) — 2026-06-16
+- **T392** — Grounded conversational catalog copilot (Block R) — 2026-06-16
+- **T391** — Structured-source onboarding wizard (Block R) — 2026-06-16
+- **T390** — Multi-source duplicate clustering (Block R) — 2026-06-16
+- **T389** — Pluggable ranking pipeline + ranking explainability (Block R) — 2026-06-16
+- **T388** — Per-field coverage / completeness observability (Block R) — 2026-06-16
+- **T387** — LLM-assisted manifest derivation from sample documents (Block R) — 2026-06-16
+- **T386** — Manifest as versioned schema-as-code (Block R) — 2026-06-16
+- _(T380 left as a free gap — see note above; T381–T385 are Block R, created earlier without a log entry)_
 - **T379** — `viglet-core` HTTP/RestClient builder (Block Q) — 2026-06-16
 - **T378** — `viglet-core` outbound-webhook + HMAC signing (Block Q) — 2026-06-16
 - **T377** — `viglet-core` messaging + persistent-logging module (Block Q) — 2026-06-16

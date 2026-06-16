@@ -317,7 +317,7 @@
 > structured catalog — ~4,000 Brazilian university courses, 120+ sources — into a
 > Turing SN site, and wants Turing to be the single engine behind faceted search,
 > "similar courses" and a grounded RAG copilot. These tasks are the **indexing/search
-> side** of that; the collection side is Dumont. Design rationale → §XIX.
+> side** of that; the collection side is Dumont. Design rationale → §XX.
 >
 > The recurring constraint is **conservative grounding**: a source field that is
 > absent must stay absent in the index — never coerced to `""` — or facets get
@@ -328,28 +328,73 @@
       indexed document with an *absent* attribute is not materialized as an empty value
       in Solr/ES (so facets and `exists`-style filters are correct). Document the
       null-vs-absent contract for `TurSNJobItem.attributes` and cover it with a test.
-      Pairs with Dumont **D03**. → §XIX.1
+      Pairs with Dumont **D03**. → §XX.1
 - 📋 **T382** (deps: T381) **Field-manifest site provisioning** — one idempotent call
       that creates/updates an SN site **and** its field schema from a single manifest
       (per field: `TurSEFieldType`, multi-valued, facet, mandatory, locale/analyzer),
       so "index a new content type" is a declarative op, not hand-clicking the console.
       Builds on `TurSNJobAttributeSpec`. Makes onboarding a structured source (cursarei,
-      and any Dumont structured connector) a one-shot. → §XIX.2
+      and any Dumont structured connector) a one-shot. **Foundation for schema-as-code
+      (T386) + LLM-assisted derivation (T387).** → §XX.2
 - 💭 **T383** (deps: —) **RRF hybrid ranking for public SN search** — the RAG
       knowledge-base tool already fuses BM25 + vector via `TurRagRrf` (T24); bring the
       same **single-query hybrid (RRF) ranking** to the public **Semantic Navigation
       search** results (faceted catalog search), so a catalog query gets lexical +
       semantic fusion without a separate ANN call. Lets cursarei retire its Fuse.js +
-      Orama split (cursarei `V02/V03`). → §XIX.3
+      Orama split (cursarei `V02/V03`). Generalized into a pluggable ranking pipeline +
+      explainability by **T389**. → §XX.3
 - 💭 **T384** (deps: —) **Public "similar documents" endpoint** — expose more-like-this /
       vector-neighbor retrieval as a first-class SN endpoint so a catalog can render
       "similar courses" from the index instead of a pre-baked neighbors file (replaces
-      cursarei's `courseNeighbors.json`). → §XIX.4
+      cursarei's `courseNeighbors.json`). Also the basis for cross-source dedup (**T390**).
+      → §XX.4
 - 💭 **T385** (deps: T382) **NL→facet query parsing eval pack for faceted catalogs** —
       harden and regression-test the LLM tool path that turns prose ("online graduate
       programs under 20k") into facet filters + ranges over a declared field schema,
       with a catalog eval fixture. Lets cursarei retire its hand-written `nlFilters`
-      (cursarei `V03`). → §XIX.5
+      (cursarei `V03`). Eval queries can be auto-generated from the T382 manifest; feeds
+      the catalog copilot (**T392**). → §XX.5
+
+> **Amplification (2026-06-16).** T381–T385 are the cursarei migration's indexing half.
+> Read together they are the foundation of a reusable capability — **Turing as a
+> declarative, self-hosted structured-search engine** for public/enterprise catalogs
+> (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
+> both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
+
+- 💭 **T386** (deps: T382) **Manifest as versioned schema-as-code (diff + additive migration)** —
+      promote the T382 manifest to a file checked into the source repo and make provisioning
+      compute a *diff* against the live site: additive changes converge silently, type/analyzer
+      changes require an explicit migration step. "Liquibase for the SN field schema" — the team
+      already owns that mental model. → §XX.6
+- 💭 **T387** (deps: T382) **LLM-assisted manifest derivation from sample documents** — given a
+      sample of a source's documents, propose a draft manifest (per-field `TurSEFieldType`,
+      facet/multi-valued/mandatory, locale) for human review, so onboarding a new structured
+      source starts from a generated schema instead of hand-declaring every field. → §XX.7
+- 💭 **T388** (deps: T381) **Per-field coverage / completeness observability** — turn the
+      absent-vs-empty contract into a data-quality signal: report % populated per field across a
+      site's documents (which fields a source under-fills), surfaced in admin + via API. Makes
+      grounding *visible* and pinpoints which Dumont crawler under-delivers. → §XX.8
+- 💭 **T389** (deps: T383) **Pluggable ranking pipeline + ranking explainability** — generalize
+      T383 from "RRF on/off" into a configurable `retrieve → fuse → rerank` pipeline that reuses
+      the Block N `TurRagReranker` strategy seam (LLM | CROSS_ENCODER | COHERE), plus a "why this
+      result ranked here" breakdown. Objective signals only — no partner boost. → §XX.9
+- 💭 **T390** (deps: T384) **Multi-source duplicate clustering** — use the T384 vector-neighbor
+      retrieval to cluster the same real-world entity arriving from many sources (a course listed
+      by 5 portals collapses to one result, not five). The concrete multi-source-aggregator
+      data-quality win; content-based only. → §XX.10
+- 💭 **T391** (deps: T382, T387, T385) **Structured-source onboarding wizard** — the capstone flow
+      that chains the block: sample data → derived manifest (T387) → provision (T382) → run the
+      NL→facet eval pack (T385) → live. Turns "index a new catalog" into a minutes-long guided op
+      and productizes the whole block. → §XX.11
+- 💭 **T392** (deps: T383, T385) **Grounded conversational catalog copilot** — compose the NL→facet
+      path (T385) with hybrid SN search (T383) and the existing RAG/agent stack into a "talk to the
+      catalog" assistant that answers from the index with citations and objective ranking. The
+      GenAI value layer on top of the structured-search foundation. → §XX.12
+- 💭 **T393** (deps: T381, T382) **Lift the manifest + grounding contract into `viglet-core`** —
+      once T381/T382/T386 prove out in Turing, the conservative-grounding contract and the
+      field-manifest provisioning are product-neutral; candidate for `viglet-core` (Block Q) so
+      Shio and Dumont index structured sources the same way. Gated on Phase-2 promotion
+      ([STRATEGY.md](STRATEGY.md) §XII.3). → §XX.13
 
 ## Non-goals (do NOT add as tasks)
 

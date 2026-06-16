@@ -39,7 +39,7 @@ moved — verify against `git ls-files` before acting.
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
 - [XVIII. Pluggable reranker — follow-up (Block N)](#xviii-pluggable-reranker--follow-up-block-n)
-- [XIX. Structured-source indexing — the cursarei / Dumont reference (Block R)](#xix-structured-source-indexing--the-cursarei--dumont-reference-block-r)
+- [XX. Structured-source indexing — the cursarei / Dumont reference (Block R)](#xx-structured-source-indexing--the-cursarei--dumont-reference-block-r)
 
 ---
 
@@ -2414,7 +2414,7 @@ key on `turing-ce` is the equivalent alternative.
 
 ---
 
-## XIX. Structured-source indexing — the cursarei / Dumont reference (Block R)
+## XX. Structured-source indexing — the cursarei / Dumont reference (Block R)
 
 > **Origin.** The [cursarei](https://cursarei.com.br) project independently built a
 > Next.js course aggregator with its own crawler, lexical+semantic search, NL filters
@@ -2433,8 +2433,20 @@ key on `turing-ce` is the equivalent alternative.
 >    filters. This is a correctness contract shared with Dumont **D03**.
 > 2. **Objective ranking.** Public-data aggregator → no "preferred/partner" boost,
 >    ever. Hybrid/semantic ranking must order by relevance and neutral signals only.
+>
+> **Amplification (2026-06-16).** T381–T385 were scoped narrowly as the cursarei
+> migration's indexing half. Read together they are the foundation of a reusable
+> platform capability: **Turing as a declarative, self-hosted structured-search engine**
+> for public and enterprise catalogs — the open-core Algolia/Coveo posture in
+> [STRATEGY.md](STRATEGY.md) §XIII. T386–T393 (XX.6–13) are that productization, each
+> built on an existing Turing seam so the marginal build cost is low: schema-as-code
+> (T386), LLM-assisted onboarding (T387/T391), data-quality observability (T388), a
+> pluggable ranking pipeline reusing the Block N reranker (T389), cross-source dedup
+> (T390), a grounded catalog copilot over the GenAI stack (T392), and an eventual
+> `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
+> reference customer, not the ceiling.
 
-### XIX.1 Conservative-grounding indexing contract (T381)
+### XX.1 Conservative-grounding indexing contract (T381)
 
 `TurSNJobItem.attributes` is a `Map<String, Object>`; today an absent field is simply
 a missing key, but we have no guarantee the SE layer (Solr/ES field provisioning,
@@ -2443,7 +2455,7 @@ T381 makes "absent key ⇒ no indexed value ⇒ not counted in any facet, matche
 `exists`-negation filter" an explicit, tested contract, and documents it as the
 indexing-side half of Dumont's grounding rule. Cheap, foundational, blocks T382/T385.
 
-### XIX.2 Field-manifest site provisioning (T382)
+### XX.2 Field-manifest site provisioning (T382)
 
 Onboarding a structured source today means creating the SN site, then declaring each
 `TurSNSiteField` (type, multi-valued, facet) — console-clicking that doesn't scale to
@@ -2456,7 +2468,7 @@ what makes a Dumont structured connector (or cursarei) able to stand up its sche
 code rather than by hand — the "easier to index new content types" goal, on the
 Turing side.
 
-### XIX.3 RRF hybrid ranking for public SN search (T383)
+### XX.3 RRF hybrid ranking for public SN search (T383)
 
 Turing already does the hard part once: `TurRagRrf` (T24/T24b, see
 [RAG_HYBRID_CONFIG.md](RAG_HYBRID_CONFIG.md)) fuses BM25 + vector via Reciprocal Rank
@@ -2469,7 +2481,7 @@ reference workload: cursarei collapses its Fuse.js (lexical) + Orama/embeddings
 (semantic) split into one engine (`V02/V03`). Idea-stage: needs design on how fusion
 interacts with facet counts and custom sort/ranking expressions already on the site.
 
-### XIX.4 Public "similar documents" endpoint (T384)
+### XX.4 Public "similar documents" endpoint (T384)
 
 `TurSESimilarResult` exists in commons and Solr/ES both support more-like-this /
 vector-neighbor retrieval, but there's no first-class public SN endpoint for
@@ -2478,7 +2490,7 @@ courses" live from the index instead of shipping a pre-computed neighbors file
 (cursarei's `courseNeighbors.json`). Grounding/ranking invariants apply — similarity
 is content-based, never commercial.
 
-### XIX.5 NL→facet query parsing eval pack for faceted catalogs (T385)
+### XX.5 NL→facet query parsing eval pack for faceted catalogs (T385)
 
 The LLM tool path (`search_site` + `get_site_fields`, see §VII) already parses prose
 into facet filters and ranges. For a faceted catalog this is the replacement for
@@ -2486,13 +2498,103 @@ cursarei's hand-written `nlFilters.ts` ("pós em dados, online, até 20 mil" →
 T385 hardens it with a **catalog eval fixture** (a declared field schema + a set of
 NL queries with expected filter/range/sort outputs) so NL-parsing regressions surface
 in CI, the same way the agent CI gate (Block K) guards flows. Depends on T382 (a
-declared field manifest is what the parser maps onto).
+declared field manifest is what the parser maps onto). The eval queries can be
+**auto-generated from the T382 manifest** (declared fields ⇒ candidate filter/range
+queries), and the hardened parser is what the catalog copilot (T392) drives.
+
+### XX.6 Manifest as versioned schema-as-code (T386)
+
+T382 delivers an idempotent *provisioning call*; T386 makes the manifest a **versioned
+artifact checked into the source's repo** and provisioning a **diff-and-converge** op:
+additive field changes apply silently, while a type/analyzer change on an existing field
+is a breaking migration that must be declared, not inferred. This is the Liquibase model
+the team already trusts (changesets, never edit-in-place) applied to the SN field schema
+— it makes a catalog's schema reviewable in PRs and reproducible across environments,
+and it is the precondition for treating "the schema" as code a connector ships.
+
+### XX.7 LLM-assisted manifest derivation (T387)
+
+The cost of onboarding is writing the manifest. T387 removes most of it: feed a sample of
+a source's documents to the default LLM and get a **proposed manifest** back — inferred
+`TurSEFieldType`, whether a field reads as a facet, multi-valued, mandatory, and the
+locale/analyzer. Output is a *draft for human review*, never auto-applied (the grounding
+and ranking invariants make silent schema guesses unacceptable). Reuses the configured
+default LLM; no new provider wiring. Turns onboarding from "declare 50 fields by hand" to
+"review and correct a generated schema."
+
+### XX.8 Per-field coverage / completeness observability (T388)
+
+T381 guarantees absent ≠ empty; T388 turns that correctness property into a **product
+signal**. For a site, report the percentage of documents that populate each field
+(`mensalidade` present in 73% of 4,000 docs; absent in 27%), in admin and via API. For a
+120-source aggregator this is directly actionable: it shows exactly which source/field
+combination a Dumont crawler under-delivers, and gives a buyer a legible data-quality
+read on the catalog. Cheap because it rides the contract T381 already pins — it is a count
+over the index, not new indexing behavior.
+
+### XX.9 Pluggable ranking pipeline + explainability (T389)
+
+T383 brings RRF fusion to public SN search. T389 generalizes it from a boolean
+("hybrid on/off") into a **configurable `retrieve → fuse → rerank` pipeline** that reuses
+the existing **Block N `TurRagReranker` strategy seam** (LLM | CROSS_ENCODER | COHERE,
+fail-open) rather than inventing a parallel ranking path — the RAG and SN ranking stacks
+converge on one abstraction. It also exposes a **"why this result ranked here"** breakdown
+(lexical score, semantic score, fused rank, reranker delta). Explainability is not a
+nicety here: for a public-data catalog the objective-ranking invariant is a *claim*, and a
+visible score breakdown is how that claim is audited. No commercial signal ever enters the
+pipeline.
+
+### XX.10 Multi-source duplicate clustering (T390)
+
+The same real-world entity arrives from many of the 120 sources — the identical course
+listed by five portals. Without dedup the catalog shows it five times and facet counts
+inflate. T390 uses the **T384 vector-neighbor retrieval** with a high-similarity threshold
+to cluster near-identical documents into one canonical result (keeping provenance for all
+members). It is the aggregator-specific data-quality win that a generic search engine does
+not give you, and it is content-based only — clustering never prefers one source
+commercially. Depends on T384 because it is the same neighbor machinery, tuned for
+identity rather than similarity.
+
+### XX.11 Structured-source onboarding wizard (T391)
+
+The capstone that makes the block feel like one product instead of five capabilities. A
+guided flow: **point at sample data → review the derived manifest (T387) → provision the
+site (T382) → run the NL→facet eval pack (T385) → go live.** Each step is a task above;
+T391 is the seam that chains them into a minutes-long operation a non-engineer can run.
+This is the Turing-side analog of the Cloud signup wizard (STRATEGY §VIII.2) but for
+*indexing a catalog* rather than *creating an agent*, and it is what turns "Turing can
+index structured sources" into "Turing onboards a catalog in an afternoon."
+
+### XX.12 Grounded conversational catalog copilot (T392)
+
+The value layer that ties structured search to the GenAI moat. Compose the **NL→facet
+path (T385)** (prose → filters/ranges over the declared schema) with **hybrid SN search
+(T383)** and the existing RAG/agent stack into a "talk to the catalog" assistant:
+"mestrado em dados, online, até 20 mil, perto de SP" returns ranked, faceted, **cited**
+results and can follow up conversationally. It answers strictly from the index (grounded)
+and orders by objective signals only. This is what differentiates Turing from a bare
+search box — and from a source-less ChatGPT answer — for a catalog buyer.
+
+### XX.13 Lift manifest + grounding into `viglet-core` (T393)
+
+Once T381/T382/T386 are stable in Turing, the **conservative-grounding contract** and the
+**field-manifest provisioning** are product-neutral framework concerns — nothing in them
+is search-specific to Turing. T393 is the candidate to lift them into `viglet-core`
+(Block Q) so Shio (CMS post-types) and Dumont (structured connectors) declare and ground
+their schemas the same way. It is explicitly **gated on Phase-2 promotion** (STRATEGY
+§XII.3 — promote only when the boundary is proven inside one consumer); listed here so the
+extraction target is recorded, not so it is scheduled now.
 
 ### Sequencing
 
 T381 first (contract + test, unblocks the rest), then T382 (provisioning) since both
-Dumont **D10** and cursarei **V05.0/V01** need a schema to target. T383/T384/T385 are
-the user-visible search wins and can follow independently as cursarei `V02–V04` ask
-for them. None of these block the Dumont collection work — a sidecar (D10) can index
-into a hand-provisioned site before T382 lands.
+Dumont **D10** and cursarei **V05.0/V01** need a schema to target. **T386–T388** harden
+the foundation cheaply on top of T381/T382 (schema-as-code, derivation, observability) and
+are the highest leverage-to-cost of the amplification. T383/T384/T385 are the
+user-visible search wins and can follow independently as cursarei `V02–V04` ask for them;
+**T389/T390** layer onto T383/T384 once those land. **T391** (wizard) and **T392**
+(copilot) are capstones — schedule them only after their dependencies are real, since they
+are integration seams, not new primitives. **T393** is deferred behind `viglet-core`
+Phase 2 and is not scheduled. None of these block the Dumont collection work — a sidecar
+(D10) can index into a hand-provisioned site before T382 lands.
 
