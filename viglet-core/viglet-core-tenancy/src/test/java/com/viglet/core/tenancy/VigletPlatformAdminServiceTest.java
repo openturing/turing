@@ -7,7 +7,7 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.viglet.turing.tenant;
+package com.viglet.core.tenancy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,24 +18,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.viglet.turing.properties.TurConfigProperties;
-
 /**
- * Unit tests for {@link TurPlatformAdminService} (T266).
+ * Unit tests for {@link VigletPlatformAdminService} — the audited cross-tenant
+ * privilege gate.
  *
  * @author Alexandre Oliveira
- * @since 2026.3.1
+ * @since 2026.3.4
  */
-class TurPlatformAdminServiceTest {
+class VigletPlatformAdminServiceTest {
 
-    private final TurTenantContext tenantContext = newContext();
-    private final TurPlatformAdminService service = new TurPlatformAdminService(tenantContext);
-
-    private TurTenantContext newContext() {
-        TurConfigProperties props = new TurConfigProperties();
-        props.getTenancy().setEnabled(true);
-        return new TurTenantContext(props);
-    }
+    private final VigletTenantContext tenantContext = new VigletTenantContext(true, "DEFAULT");
+    private final VigletPlatformAdminService service = new VigletPlatformAdminService(tenantContext);
 
     private void authenticateAs(String name, String... authorities) {
         var granted = java.util.Arrays.stream(authorities)
@@ -52,7 +45,7 @@ class TurPlatformAdminServiceTest {
 
     @Test
     void runForTenantImpersonatesWhenPlatformAdmin() {
-        authenticateAs("ops", TurPlatformAdminService.ROLE_PLATFORM_ADMIN);
+        authenticateAs("ops", VigletPlatformAdminService.ROLE_PLATFORM_ADMIN);
 
         String boundDuring = service.runForTenant("t-9", "support ticket #42",
                 tenantContext::getCurrentTenant);
@@ -63,7 +56,7 @@ class TurPlatformAdminServiceTest {
 
     @Test
     void runAsSystemSetsSystemModeWhenPlatformAdmin() {
-        authenticateAs("ops", TurPlatformAdminService.ROLE_PLATFORM_ADMIN);
+        authenticateAs("ops", VigletPlatformAdminService.ROLE_PLATFORM_ADMIN);
 
         boolean systemDuring = service.runAsSystem("registry sweep", tenantContext::isSystemMode);
 
@@ -91,7 +84,7 @@ class TurPlatformAdminServiceTest {
     @Test
     void isPlatformAdminReflectsAuthorities() {
         assertThat(service.isPlatformAdmin()).isFalse();
-        authenticateAs("ops", TurPlatformAdminService.ROLE_PLATFORM_ADMIN);
+        authenticateAs("ops", VigletPlatformAdminService.ROLE_PLATFORM_ADMIN);
         assertThat(service.isPlatformAdmin()).isTrue();
     }
 }

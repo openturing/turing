@@ -293,12 +293,11 @@
 > The bet to stop solving the same backend problems three times across Turing,
 > Shio and Dumont (all on Spring Boot 4.0.6). **Incubate as a Turing submodule,
 > promote to a public shared lib when stable** — the same "don't fragment
-> prematurely" logic as Block P. The bet + scope + phasing → STRATEGY §XII;
-> tenancy-module extraction detail → IMPROVEMENTS §XIV.8.8. Cross-product
+> prematurely" logic as Block P. The bet + scope + phasing → STRATEGY §XII.
+> Cross-product
 > initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
 > Shio/Dumont is gated, not scheduled.
 
-- 💭 **T370** (deps: T367, T372, T365, T366) **`viglet-core` tenancy module** — move the proven tenancy kernel (`TenantContext`, the plain-column scope helper, the Hibernate `@TenantId` resolver + resolution filter, platform-admin) into core. Sequence *after* Turing's tenancy stabilizes (T372/T365/T366) — extract a stable kernel, not a moving target. → STRATEGY §XII / IMPROVEMENTS §XIV.8.8
 - 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
 
 > Surfaced by a cross-product dependency-and-utility audit (2026-06-16) of the

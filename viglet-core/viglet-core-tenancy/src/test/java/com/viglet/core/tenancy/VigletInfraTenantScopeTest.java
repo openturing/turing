@@ -7,7 +7,7 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.viglet.turing.tenant;
+package com.viglet.core.tenancy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -26,27 +26,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Unit tests for {@link TurInfraTenantScope} — the layer that was missing when
- * BYO-infra controllers leaked instances across tenants: they listed via the
- * unscoped {@code findAll()} and never stamped {@code tenantId} on create, so
- * every instance landed in the {@code null} GLOBAL pool visible to everyone.
- * These assertions pin both halves of the fix (stamp-on-create + scoped list).
+ * Unit tests for {@link VigletInfraTenantScope} — the layer that scopes BYO-infra
+ * instances by tenant: stamp-on-create, scoped list, read-only GLOBAL pool
+ * (T372) and by-id visibility (T365).
  *
  * @author Alexandre Oliveira
- * @since 2026.3.1
+ * @since 2026.3.4
  */
 @ExtendWith(MockitoExtension.class)
-class TurInfraTenantScopeTest {
+class VigletInfraTenantScopeTest {
 
     @Mock
-    private TurTenantContext tenantContext;
+    private VigletTenantContext tenantContext;
     @Mock
-    private TurPlatformAdminService platformAdminService;
+    private VigletPlatformAdminService platformAdminService;
     @InjectMocks
-    private TurInfraTenantScope scope;
+    private VigletInfraTenantScope scope;
 
-    /** Minimal stand-in for any of the six BYO-infra entities. */
-    static class Owned implements TurTenantOwnedInfra {
+    /** Minimal stand-in for any tenant-owned infra entity. */
+    static class Owned implements VigletTenantOwnedInfra {
         private String tenantId;
 
         Owned(String tenantId) {
@@ -102,6 +100,27 @@ class TurInfraTenantScopeTest {
         Owned entity = scope.stampOnCreate(new Owned(null));
 
         assertThat(entity.getTenantId()).isNull();
+    }
+
+    @Test
+    void stampOnImportKeepsGlobalWhenNoTenantBound() {
+        when(tenantContext.getCurrentTenant()).thenReturn(null);
+
+        Owned entity = scope.stampOnImport(new Owned(null));
+
+        assertThat(entity.getTenantId()).isNull();
+    }
+
+    @Test
+    void stampOnImportClaimsWhenTenantBound() {
+        when(tenantContext.getCurrentTenant()).thenReturn("tenantA");
+        when(tenantContext.isTenancyEnabled()).thenReturn(true);
+        when(tenantContext.resolveCurrentTenant()).thenReturn("tenantA");
+        when(platformAdminService.isPlatformAdmin()).thenReturn(false);
+
+        Owned entity = scope.stampOnImport(new Owned(null));
+
+        assertThat(entity.getTenantId()).isEqualTo("tenantA");
     }
 
     @Test

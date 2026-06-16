@@ -24,7 +24,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
-import com.viglet.turing.tenant.TurTenantOwnedInfra;
+import com.viglet.core.tenancy.VigletTenantOwnedInfra;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,7 +43,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "se_instance")
-public class TurSEInstance implements Serializable, TurTenantOwnedInfra {
+public class TurSEInstance implements Serializable, VigletTenantOwnedInfra {
 	@Serial
 	private static final long serialVersionUID = 1L;
 

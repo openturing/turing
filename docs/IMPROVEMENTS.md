@@ -2245,26 +2245,6 @@ not about correctness of the single-service flow:
   the defaults later means clearing the marker or a versioned re-seed, which is not
   yet modeled.
 
-- **XIV.8.8 — the tenancy module of `viglet-core` (T370).** The broader
-  cross-product `viglet-core` bet — why, scope across all concerns, the
-  incubate-in-Turing→promote phasing, and the governance/risk posture — lives in
-  STRATEGY §XII; this note is only the *tenancy-specific* extraction detail.
-  The kernel that moves is framework-level and persistence-agnostic:
-  `TurTenantContext` (thread-bound current tenant + system mode + `runAs`),
-  `TurTenantOwnedInfra` + `TurInfraTenantScope` (the plain-column scoping helper,
-  incl. the T372 `assertWritable`/`isPlatformGlobalReadOnly` rule), the Hibernate
-  `@TenantId` `CurrentTenantIdentifierResolver`, `TurPlatformAdminService` +
-  `ROLE_PLATFORM_ADMIN`, and the request→tenant resolution filter. Entities and
-  the tenant-registry tables stay in each product. Two tenancy-specific gates make
-  this a *sequenced* task: (1) **stabilize first** — extract only after
-  T372/T365/T366 land, so the kernel is proven rather than abstracted from a moving
-  target; (2) **security-model alignment** — the resolution filter is shareable
-  only if all three resolve tenant the same way (same Keycloak realm, same JWT
-  claim / membership model). If Shio/Dumont differ, the context + scope helper
-  still transfer cleanly while the filter stays per-app. Parts of the
-  `AbstractTuringSpringIT` tenancy harness migrate with the module as its test
-  suite.
-
 ---
 
 ## XVI. Cost & token governance (Block L)

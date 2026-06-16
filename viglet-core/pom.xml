@@ -52,5 +52,6 @@
         <module>viglet-core-crypto</module>
         <module>viglet-core-storage</module>
         <module>viglet-core-security</module>
+        <module>viglet-core-tenancy</module>
     </modules>
 </project>
