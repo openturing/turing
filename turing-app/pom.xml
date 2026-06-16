@@ -166,6 +166,10 @@
         </dependency>
         <dependency>
             <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-content</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.viglet.core</groupId>
             <artifactId>viglet-core-crypto</artifactId>
         </dependency>
         <dependency>

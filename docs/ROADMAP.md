@@ -305,7 +305,6 @@
 > ≥2 where noted) and was missing from the original scope. The poms already pin
 > identical versions for the shared libs, so the *rule of three* is satisfied. → STRATEGY §XII.2
 
-- 💭 **T374** (deps: T367) **`viglet-core` content-extraction module** — lift the duplicated Apache Tika setup (`tika-core` + pdf/text/ocr/microsoft parsers, all 3.3.1) + jsoup HTML→text + image I/O into a starter; re-implemented today as `TurFileUtils`, Shio's Tika usage, and `DumCommonsUtils`. Present in all three. → STRATEGY §XII.2
 - 💭 **T375** (deps: T367) **`viglet-core` commons module** — the near-identical `Tur*`/`Sh*`/`Dum*` commons: file/IO/ZIP utils (commons-io/commons-compress/zip4j), JSON-validity check, base `Exception`/`RuntimeException`, `FileAttributes`/`FileSize` DTOs, pagination/sort helpers. Likely folds into `viglet-core-lang`/a new `viglet-core-commons`. Present in all three. → STRATEGY §XII.2
 - 💭 **T376** (deps: T367) **`viglet-core` config-var / global-settings service** — a runtime key-value settings store, re-built three times as `TurGlobalSettingsService`, `ShConfigVarUtils`, `DumConnectorConfigVarService`. Present in all three. → STRATEGY §XII.2
 - 💭 **T377** (deps: T367) **`viglet-core` messaging + persistent-logging module** — embedded Artemis tuning (`TurArtemisConfig`/`DumArtemisConfig`) + MongoDB/Redis logback appenders. ≥2 products (Turing + Dumont); gated on confirming Shio needs it before extraction. → STRATEGY §XII.2

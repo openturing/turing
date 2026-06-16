@@ -17,11 +17,9 @@
 
 package com.viglet.turing.genai;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Entities;
-import org.jsoup.safety.Safelist;
 import org.springframework.ai.document.Document.Builder;
+
+import com.viglet.core.content.VigletHtmlText;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,11 +54,8 @@ public final class TurRagUtils {
     public static final int DEFAULT_CHUNK_SIZE = 1024;
     public static final int MAX_TEXT_LENGTH = 100_000;
 
-    private static final Pattern HTML_TAG_HINT = Pattern.compile("<\\s*[a-zA-Z!/][^>]*>");
     private static final Pattern PARAGRAPH_SPLIT = Pattern.compile("\\n{2,}");
     private static final Pattern SENTENCE_SPLIT = Pattern.compile("(?<=[.!?…])\\s+(?=[A-ZÀ-Ý0-9\"'(\\[])");
-    private static final Pattern WHITESPACE = Pattern.compile("[ \\t\\x0B\\f]+");
-    private static final Pattern MULTI_NEWLINE = Pattern.compile("\\n{3,}");
 
     private TurRagUtils() {
     }
@@ -75,27 +70,7 @@ public final class TurRagUtils {
      * plain-text fields incur no overhead.
      */
     public static String stripHtml(String text) {
-        if (text == null || text.isBlank()) {
-            return text == null ? "" : text;
-        }
-        if (!HTML_TAG_HINT.matcher(text).find()) {
-            return text;
-        }
-        Document doc = Jsoup.parseBodyFragment(text);
-        doc.outputSettings()
-                .prettyPrint(false)
-                .escapeMode(Entities.EscapeMode.xhtml);
-        // Replace block-level elements with newlines and <br> with single newline
-        // so paragraph splitting works downstream.
-        doc.select("br").after("\\n");
-        doc.select("p, div, li, h1, h2, h3, h4, h5, h6, blockquote, tr, table, article, section, header, footer, hr")
-                .after("\\n\\n");
-        String cleaned = Jsoup.clean(doc.body().html(), "", Safelist.none(),
-                new Document.OutputSettings().prettyPrint(false));
-        // Jsoup.clean re-escapes; decode \\n placeholders back to real newlines and entities to chars.
-        cleaned = cleaned.replace("\\n", "\n");
-        cleaned = org.jsoup.parser.Parser.unescapeEntities(cleaned, false);
-        return normalizeWhitespace(cleaned);
+        return VigletHtmlText.stripHtml(text);
     }
 
     /**
@@ -103,13 +78,7 @@ public final class TurRagUtils {
      * to two, while preserving paragraph breaks (\n\n).
      */
     public static String normalizeWhitespace(String text) {
-        if (text == null) {
-            return "";
-        }
-        String s = text.replace("\r\n", "\n").replace('\r', '\n');
-        s = WHITESPACE.matcher(s).replaceAll(" ");
-        s = MULTI_NEWLINE.matcher(s).replaceAll("\n\n");
-        return s.trim();
+        return VigletHtmlText.normalizeWhitespace(text);
     }
 
     /**

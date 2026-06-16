@@ -17,7 +17,6 @@
 package com.viglet.turing.utils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -39,21 +38,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.DublinCore;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
+import com.viglet.core.content.VigletContentExtractor;
+import com.viglet.core.content.VigletExtractedContent;
 import com.viglet.turing.api.ocr.TurTikaFileAttributes;
 import com.viglet.turing.commons.file.TurFileAttributes;
 import com.viglet.turing.commons.file.TurFileSize;
@@ -85,76 +75,31 @@ public class TurFileUtils {
     }
 
     public static TurTikaFileAttributes readFile(File file) {
-        if (file == null || !file.exists()) {
-            log.info("File not exists: {}", file != null ? file.getAbsolutePath() : "null");
-            return null;
-        }
-        return parseFile(file);
+        return toTikaAttributes(VigletContentExtractor.extract(file));
     }
 
     public static TurTikaFileAttributes parseFile(File file) {
-        try (InputStream inputStream = new FileInputStream(file)) {
-            return getTurTikaFileAttributes(file, inputStream);
-        } catch (IOException e) {
-            log.error("Error parsing file: {}", e.getMessage(), e);
-            return null;
-        }
+        return toTikaAttributes(VigletContentExtractor.extract(file));
     }
 
     public static TurTikaFileAttributes parseFile(MultipartFile multipartFile) {
         try (InputStream inputStream = multipartFile.getInputStream()) {
-            return getTurTikaFileAttributes(null, inputStream);
+            return toTikaAttributes(VigletContentExtractor.extract(inputStream));
         } catch (IOException e) {
             log.error("Error parsing multipart file: {}", e.getMessage(), e);
             return null;
         }
     }
 
-    private static TurTikaFileAttributes getTurTikaFileAttributes(File file, InputStream inputStream) {
-        StringBuilder contentFile = new StringBuilder();
-        AutoDetectParser parser = new AutoDetectParser();
-        BodyContentHandler handler = new BodyContentHandler(-1);
-        Metadata metadata = new Metadata();
-
-        EmbeddedDocumentExtractor embeddedDocumentExtractor = createEmbeddedDocumentExtractor(contentFile);
-        ParseContext parseContext = createParseContext(parser);
-        parseContext.set(EmbeddedDocumentExtractor.class, embeddedDocumentExtractor);
-
-        try {
-            parser.parse(inputStream, handler, metadata, parseContext);
-        } catch (IOException | SAXException | TikaException e) {
-            log.error("Error during Tika parsing: {}", e.getMessage(), e);
-        }
-
-        contentFile.append(handler);
-        return new TurTikaFileAttributes(file, contentFile.toString(), metadata);
-    }
-
-    private static EmbeddedDocumentExtractor createEmbeddedDocumentExtractor(StringBuilder contentFile) {
-        return new EmbeddedDocumentExtractor() {
-            @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
-                return true;
-            }
-
-            @Override
-            public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata,
-                    boolean outputHtml) throws IOException {
-                parseDocument(stream).ifPresent(contentFile::append);
-            }
-        };
-    }
-
-    private static ParseContext createParseContext(AutoDetectParser parser) {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        PDFParserConfig pdfConfig = new PDFParserConfig();
-        pdfConfig.setExtractInlineImages(true);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(TesseractOCRConfig.class, config);
-        parseContext.set(PDFParserConfig.class, pdfConfig);
-        parseContext.set(Parser.class, parser);
-        return parseContext;
+    /**
+     * Adapts the neutral {@link VigletExtractedContent} from
+     * {@link VigletContentExtractor} (Block Q / T374) into Turing's
+     * {@link TurTikaFileAttributes}. Returns {@code null} when extraction failed
+     * or the source file was missing.
+     */
+    private static TurTikaFileAttributes toTikaAttributes(VigletExtractedContent content) {
+        return content == null ? null
+                : new TurTikaFileAttributes(content.file(), content.content(), content.metadata());
     }
 
     public static TurFileAttributes documentToText(MultipartFile multipartFile) {
@@ -454,24 +399,7 @@ public class TurFileUtils {
     }
 
     public static Optional<String> parseDocument(InputStream stream) throws IOException {
-        AutoDetectParser parser = new AutoDetectParser();
-        BodyContentHandler handler = new BodyContentHandler(-1);
-        Metadata metadata = new Metadata();
-        ParseContext parseContext = createParseContext(parser);
-
-        File tempFile = createTempFile();
-        try {
-            Files.copy(stream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            try (FileInputStream fileInputStream = new FileInputStream(tempFile)) {
-                parser.parse(fileInputStream, handler, metadata, parseContext);
-                return Optional.of(handler.toString());
-            }
-        } catch (IOException | SAXException | TikaException e) {
-            log.error("Error parsing document: {}", e.getMessage(), e);
-            return Optional.empty();
-        } finally {
-            tempFile.deleteOnExit();
-        }
+        return VigletContentExtractor.parseDocument(stream);
     }
 
     private static File createTempFile() throws IOException {
