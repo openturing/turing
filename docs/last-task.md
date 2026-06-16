@@ -1,7 +1,7 @@
-# Last task number — `T373`
+# Last task number — `T379`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T374`; after assigning it, bump the number above and the log line below.
+> `T380`; after assigning it, bump the number above and the log line below.
 
 ## Why this file exists
 
@@ -21,6 +21,12 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T379** — `viglet-core` HTTP/RestClient builder (Block Q) — 2026-06-16
+- **T378** — `viglet-core` outbound-webhook + HMAC signing (Block Q) — 2026-06-16
+- **T377** — `viglet-core` messaging + persistent-logging module (Block Q) — 2026-06-16
+- **T376** — `viglet-core` config-var / global-settings service (Block Q) — 2026-06-16
+- **T375** — `viglet-core` commons module (Block Q) — 2026-06-16
+- **T374** — `viglet-core` content-extraction module (Block Q) — 2026-06-16
 - **T373** — Ship Cloud default config as a GLOBAL seed ZIP (Block J follow-ups) — 2026-06-16
 - **T372** — Platform-global BYO-infra is read-only in the CRUD (Block J follow-ups) — 2026-06-16
 - **T371** — `viglet-core` Phase 2: promote to a public shared library (Block Q) — 2026-06-16

@@ -471,11 +471,43 @@ In scope (framework-level, reusable, stable patterns):
   agnostic-Liquibase-type lint.
 - **Secret crypto**, **storage** (MinIO/filesystem/no-op), **cache** (Hazelcast,
   ShedLock), **web** conventions (error handling, OpenAPI, common filters,
-  Jackson config).
+  Jackson config), **API-key / token auth filter** (service-to-service + the
+  delivery API) — present in all three (`TurAuthTokenHeaderFilter`,
+  `ShApiTokenFilter`, `DumApiKeyFilter`).
+
+A dependency-and-utility audit across the three Spring Boot 4.0.6 codebases
+(2026-06-16) surfaced concrete duplication that the original scope list above
+missed — each present in **all three** products unless noted, so the *rule of
+three* is already satisfied:
+
+- **Content/document extraction** — Apache Tika (`tika-core` + the pdf / text /
+  ocr / microsoft parser modules, all pinned to 3.3.1) + jsoup HTML→text + image
+  I/O. Re-implemented as `TurFileUtils`, Shio's Tika usage, and `DumCommonsUtils`.
+- **Commons file/IO/ZIP + JSON-validity + base exceptions + file-metadata DTOs +
+  pagination/sort helpers** — `TurCommonsUtils`/`ShUtils`/`DumCommonsUtils` and
+  `Tur*`/`Dum*` `Exception`, `FileAttributes`, `FileSize`, `PersistenceUtils` are
+  near-identical ports (commons-io / commons-compress / zip4j).
+- **Runtime config-var / global-settings** — a key-value settings store:
+  `TurGlobalSettingsService`, `ShConfigVarUtils`, `DumConnectorConfigVarService`.
+- **Messaging + persistent logging** (Turing + Dumont) — embedded Artemis tuning
+  (`TurArtemisConfig`/`DumArtemisConfig`) and MongoDB/Redis logback appenders.
+- **Outbound webhooks + HMAC-SHA256 signing + retry** (Turing + Shio) —
+  `TurChatWebhookDispatcher` and `ShWebhookDispatcher`/`ShWebhookSigner`.
+- **Shared HTTP/RestClient builder** (Turing + Dumont) — pooled httpclient5 +
+  tracing interceptor + API-key header (`TurHttpClientConfiguration`/`DumRestClientConfig`).
+- **Observability** — Micrometer/Prometheus/OTel meter naming + registration.
+
+The audit also found the three poms pin **identical versions** for the shared
+libraries (Tika 3.3.1, jsoup 1.22.2, Guava 33.6.0-jre, commons-lang3 3.20.0,
+commons-io 2.22.0, commons-compress 1.28.0, zip4j 2.11.6, org.json 20260522,
+jackson-datatype-hibernate7, jetbrains-annotations 26.1.0) — they are *already
+hand-synced* across all three, which both confirms the duplication and is
+precisely what the Phase-2 BOM (§XII.3) should pin.
 
 Out of scope (stays in each product): domain entities, the tenant-registry
-tables, product-specific business logic. **Packaging is multi-module + a BOM,
-never one fat kitchen-sink jar** — apps depend only on the concern they need.
+tables, product-specific business logic (search/Solr in Turing, CMS post-types
+in Shio, crawler/PF4J connectors in Dumont). **Packaging is multi-module + a
+BOM, never one fat kitchen-sink jar** — apps depend only on the concern they need.
 
 ### XII.3 Phasing — incubate in Turing, promote when stable
 
