@@ -39,6 +39,7 @@ moved — verify against `git ls-files` before acting.
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
 - [XVIII. Pluggable reranker — follow-up (Block N)](#xviii-pluggable-reranker--follow-up-block-n)
+- [XIX. Structured-source indexing — the cursarei / Dumont reference (Block R)](#xix-structured-source-indexing--the-cursarei--dumont-reference-block-r)
 
 ---
 
@@ -2410,4 +2411,88 @@ is **required** because the default `GITHUB_TOKEN` is scoped to the private
 and releases), so it has the needed `contents: write` scope. The token is
 injected via git's `insteadOf` rewrite so it never reaches a log; an SSH deploy
 key on `turing-ce` is the equivalent alternative.
+
+---
+
+## XIX. Structured-source indexing — the cursarei / Dumont reference (Block R)
+
+> **Origin.** The [cursarei](https://cursarei.com.br) project independently built a
+> Next.js course aggregator with its own crawler, lexical+semantic search, NL filters
+> and a grounded LLM copilot — i.e. it reimplemented, by hand, the four things the
+> Viglet stack already does as products (collect ↔ Dumont; search/semantic/NL ↔
+> Turing SN; RAG ↔ Turing GenAI; editorial content ↔ Shio). Its `V##` track migrates
+> those backends onto Viglet. This section is the **Turing side**: what the platform
+> needs so a structured, public-data catalog (~4,000 courses, 120+ sources) is a
+> first-class SN citizen for faceted search, similar-items and grounded chat. The
+> collection side lives in Dumont (`dumont/docs`, tracks A–C); the two move together.
+>
+> **Two invariants run through every task here** and are the reason they're grouped:
+> 1. **Conservative grounding.** The catalog is built from official public sources;
+>    a field the source doesn't declare must be *absent* in the index, not `""`.
+>    Anything that coerces absent→empty silently corrupts faceting and `exists`
+>    filters. This is a correctness contract shared with Dumont **D03**.
+> 2. **Objective ranking.** Public-data aggregator → no "preferred/partner" boost,
+>    ever. Hybrid/semantic ranking must order by relevance and neutral signals only.
+
+### XIX.1 Conservative-grounding indexing contract (T381)
+
+`TurSNJobItem.attributes` is a `Map<String, Object>`; today an absent field is simply
+a missing key, but we have no guarantee the SE layer (Solr/ES field provisioning,
+the import path) doesn't materialize an empty value, and no test pins the behavior.
+T381 makes "absent key ⇒ no indexed value ⇒ not counted in any facet, matched by an
+`exists`-negation filter" an explicit, tested contract, and documents it as the
+indexing-side half of Dumont's grounding rule. Cheap, foundational, blocks T382/T385.
+
+### XIX.2 Field-manifest site provisioning (T382)
+
+Onboarding a structured source today means creating the SN site, then declaring each
+`TurSNSiteField` (type, multi-valued, facet) — console-clicking that doesn't scale to
+"index a new content type" as a routine op. `TurSNJobAttributeSpec` already carries
+per-field type/facet/mandatory/multi-valued + localized facet labels at index time;
+T382 lifts that into a **single idempotent provisioning call** that takes a manifest
+(site + ordered field specs + locale/analyzer, e.g. pt-BR) and converges the site to
+it. Re-running with the same manifest is a no-op; adding a field is additive. This is
+what makes a Dumont structured connector (or cursarei) able to stand up its schema as
+code rather than by hand — the "easier to index new content types" goal, on the
+Turing side.
+
+### XIX.3 RRF hybrid ranking for public SN search (T383)
+
+Turing already does the hard part once: `TurRagRrf` (T24/T24b, see
+[RAG_HYBRID_CONFIG.md](RAG_HYBRID_CONFIG.md)) fuses BM25 + vector via Reciprocal Rank
+Fusion (`k=60`) for the RAG `search_knowledge_base` tool over chunked documents. The
+**public Semantic Navigation search** path (the faceted results a site like cursarei
+renders) does not yet expose that fusion as a single query — lexical and ANN are
+separate surfaces. T383 brings RRF hybrid ranking to public SN search results so one
+query returns lexically- and semantically-fused, faceted results. The payoff for the
+reference workload: cursarei collapses its Fuse.js (lexical) + Orama/embeddings
+(semantic) split into one engine (`V02/V03`). Idea-stage: needs design on how fusion
+interacts with facet counts and custom sort/ranking expressions already on the site.
+
+### XIX.4 Public "similar documents" endpoint (T384)
+
+`TurSESimilarResult` exists in commons and Solr/ES both support more-like-this /
+vector-neighbor retrieval, but there's no first-class public SN endpoint for
+"documents similar to this id". T384 exposes it so a catalog renders "similar
+courses" live from the index instead of shipping a pre-computed neighbors file
+(cursarei's `courseNeighbors.json`). Grounding/ranking invariants apply — similarity
+is content-based, never commercial.
+
+### XIX.5 NL→facet query parsing eval pack for faceted catalogs (T385)
+
+The LLM tool path (`search_site` + `get_site_fields`, see §VII) already parses prose
+into facet filters and ranges. For a faceted catalog this is the replacement for
+cursarei's hand-written `nlFilters.ts` ("pós em dados, online, até 20 mil" → filters).
+T385 hardens it with a **catalog eval fixture** (a declared field schema + a set of
+NL queries with expected filter/range/sort outputs) so NL-parsing regressions surface
+in CI, the same way the agent CI gate (Block K) guards flows. Depends on T382 (a
+declared field manifest is what the parser maps onto).
+
+### Sequencing
+
+T381 first (contract + test, unblocks the rest), then T382 (provisioning) since both
+Dumont **D10** and cursarei **V05.0/V01** need a schema to target. T383/T384/T385 are
+the user-visible search wins and can follow independently as cursarei `V02–V04` ask
+for them. None of these block the Dumont collection work — a sidecar (D10) can index
+into a hand-provisioned site before T382 lands.
 

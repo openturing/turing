@@ -18,10 +18,9 @@
 
 package com.viglet.turing.commons.file;
 
-import lombok.*;
+import com.viglet.core.commons.file.VigletFileSize;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import lombok.*;
 
 /**
  * @author Alexandre Oliveira
@@ -39,14 +38,14 @@ public class TurFileSize {
     public TurFileSize() {
         this(0f);
     }
+    // Delegates the byte->KB->MB conversion to the neutral VigletFileSize
+    // (Block Q / T375) so the rounding logic lives in viglet-core-commons,
+    // while this DTO keeps its Tur* name, builder and all-args constructor.
     public TurFileSize(float bytes) {
-        this.bytes = twoDecimalFloat(bytes);
-        this.kiloBytes = twoDecimalFloat(this.bytes / 1024);
-        this.megaBytes = twoDecimalFloat(this.kiloBytes / 1024);
-    }
-
-    private float twoDecimalFloat(float value) {
-        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).floatValue();
+        VigletFileSize size = new VigletFileSize(bytes);
+        this.bytes = size.getBytes();
+        this.kiloBytes = size.getKiloBytes();
+        this.megaBytes = size.getMegaBytes();
     }
 
 }

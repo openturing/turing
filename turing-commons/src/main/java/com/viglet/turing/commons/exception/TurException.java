@@ -20,7 +20,15 @@
  */
 package com.viglet.turing.commons.exception;
 
-public class TurException extends Exception {
+import com.viglet.core.commons.exception.VigletException;
+
+/**
+ * Turing's checked exception. Thin {@code Tur*} subclass of the neutral
+ * {@link VigletException} (Block Q / T375) so the base lives in {@code
+ * viglet-core-commons} while every {@code throws}/{@code catch TurException}
+ * site is unchanged.
+ */
+public class TurException extends VigletException {
 	public TurException(String string) {
 		super(string);
 	}

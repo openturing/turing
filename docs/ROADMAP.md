@@ -305,11 +305,51 @@
 > ≥2 where noted) and was missing from the original scope. The poms already pin
 > identical versions for the shared libs, so the *rule of three* is satisfied. → STRATEGY §XII.2
 
-- 💭 **T375** (deps: T367) **`viglet-core` commons module** — the near-identical `Tur*`/`Sh*`/`Dum*` commons: file/IO/ZIP utils (commons-io/commons-compress/zip4j), JSON-validity check, base `Exception`/`RuntimeException`, `FileAttributes`/`FileSize` DTOs, pagination/sort helpers. Likely folds into `viglet-core-lang`/a new `viglet-core-commons`. Present in all three. → STRATEGY §XII.2
 - 💭 **T376** (deps: T367) **`viglet-core` config-var / global-settings service** — a runtime key-value settings store, re-built three times as `TurGlobalSettingsService`, `ShConfigVarUtils`, `DumConnectorConfigVarService`. Present in all three. → STRATEGY §XII.2
 - 💭 **T377** (deps: T367) **`viglet-core` messaging + persistent-logging module** — embedded Artemis tuning (`TurArtemisConfig`/`DumArtemisConfig`) + MongoDB/Redis logback appenders. ≥2 products (Turing + Dumont); gated on confirming Shio needs it before extraction. → STRATEGY §XII.2
 - 💭 **T378** (deps: T367) **`viglet-core` outbound-webhook + HMAC signing** — async dispatch with HMAC-SHA256 signing + retry/backoff: `TurChatWebhookDispatcher` (T62) + `ShWebhookDispatcher`/`ShWebhookSigner`. ≥2 products (Turing + Shio). → STRATEGY §XII.2
 - 💭 **T379** (deps: T367) **`viglet-core` HTTP/RestClient builder** — pooled httpclient5 + tracing interceptor + API-key header injection: `TurHttpClientConfiguration` + `DumRestClientConfig`. ≥2 products (Turing + Dumont); httpclient5 is a dep in all three. → STRATEGY §XII.2
+
+## Block R — Structured-source indexing & the cursarei reference (with Dumont)
+
+> Surfaced by the **cursarei → Viglet** migration (cursarei `docs/roadmap/ROADMAP.md`
+> track `V##`; Dumont `dumont/docs/ROADMAP.md` tracks A–C). cursarei indexes a
+> structured catalog — ~4,000 Brazilian university courses, 120+ sources — into a
+> Turing SN site, and wants Turing to be the single engine behind faceted search,
+> "similar courses" and a grounded RAG copilot. These tasks are the **indexing/search
+> side** of that; the collection side is Dumont. Design rationale → §XIX.
+>
+> The recurring constraint is **conservative grounding**: a source field that is
+> absent must stay absent in the index — never coerced to `""` — or facets get
+> polluted and "field present?" logic breaks. This is a public-data catalog, so
+> **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
+
+- 📋 **T381** (deps: —) **Conservative-grounding indexing contract** — guarantee that an
+      indexed document with an *absent* attribute is not materialized as an empty value
+      in Solr/ES (so facets and `exists`-style filters are correct). Document the
+      null-vs-absent contract for `TurSNJobItem.attributes` and cover it with a test.
+      Pairs with Dumont **D03**. → §XIX.1
+- 📋 **T382** (deps: T381) **Field-manifest site provisioning** — one idempotent call
+      that creates/updates an SN site **and** its field schema from a single manifest
+      (per field: `TurSEFieldType`, multi-valued, facet, mandatory, locale/analyzer),
+      so "index a new content type" is a declarative op, not hand-clicking the console.
+      Builds on `TurSNJobAttributeSpec`. Makes onboarding a structured source (cursarei,
+      and any Dumont structured connector) a one-shot. → §XIX.2
+- 💭 **T383** (deps: —) **RRF hybrid ranking for public SN search** — the RAG
+      knowledge-base tool already fuses BM25 + vector via `TurRagRrf` (T24); bring the
+      same **single-query hybrid (RRF) ranking** to the public **Semantic Navigation
+      search** results (faceted catalog search), so a catalog query gets lexical +
+      semantic fusion without a separate ANN call. Lets cursarei retire its Fuse.js +
+      Orama split (cursarei `V02/V03`). → §XIX.3
+- 💭 **T384** (deps: —) **Public "similar documents" endpoint** — expose more-like-this /
+      vector-neighbor retrieval as a first-class SN endpoint so a catalog can render
+      "similar courses" from the index instead of a pre-baked neighbors file (replaces
+      cursarei's `courseNeighbors.json`). → §XIX.4
+- 💭 **T385** (deps: T382) **NL→facet query parsing eval pack for faceted catalogs** —
+      harden and regression-test the LLM tool path that turns prose ("online graduate
+      programs under 20k") into facet filters + ranges over a declared field schema,
+      with a catalog eval fixture. Lets cursarei retire its hand-written `nlFilters`
+      (cursarei `V03`). → §XIX.5
 
 ## Non-goals (do NOT add as tasks)
 

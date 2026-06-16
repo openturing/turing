@@ -20,7 +20,15 @@
  */
 package com.viglet.turing.commons.exception;
 
-public class TurRuntimeException extends RuntimeException {
+import com.viglet.core.commons.exception.VigletRuntimeException;
+
+/**
+ * Turing's unchecked exception. Thin {@code Tur*} subclass of the neutral
+ * {@link VigletRuntimeException} (Block Q / T375) so the base lives in {@code
+ * viglet-core-commons} while every {@code throw}/{@code catch} site is
+ * unchanged.
+ */
+public class TurRuntimeException extends VigletRuntimeException {
 	public TurRuntimeException(String string) {
 		super(string);
 	}

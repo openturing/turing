@@ -15,17 +15,12 @@
 
 package com.viglet.turing.commons.utils;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,24 +31,17 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
-import org.apache.commons.compress.archivers.ArchiveOutputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
+import com.viglet.core.commons.io.VigletStoreDirectory;
+import com.viglet.core.commons.io.VigletZipUtils;
+import com.viglet.core.commons.json.VigletJson;
 import com.viglet.turing.commons.exception.TurException;
 
 import lombok.extern.slf4j.Slf4j;
-import net.lingala.zip4j.ZipFile;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * @author Alexandre Oliveira
@@ -61,8 +49,6 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @Slf4j
 public class TurCommonsUtils {
-    private static final String USER_DIR = "user.dir";
-    private static final File userDir = new File(System.getProperty(USER_DIR));
     public static final String COLON = ":";
 
     private TurCommonsUtils() {
@@ -192,118 +178,52 @@ public class TurCommonsUtils {
     }
 
     /**
-     * Add all files from the source directory to the destination zip file
+     * Add all files from the source directory to the destination zip file.
+     *
+     * <p>Delegates to {@link VigletZipUtils#addFilesToZip(File, File)}
+     * (Block Q / T375).
      *
      * @param source      the directory with files to add
      * @param destination the zip file that should contain the files
      */
     public static void addFilesToZip(File source, File destination) {
-
-        try (OutputStream archiveStream = Files.newOutputStream(destination.toPath());
-                ArchiveOutputStream<ZipArchiveEntry> archive = new ArchiveStreamFactory()
-                        .createArchiveOutputStream(ArchiveStreamFactory.ZIP, archiveStream)) {
-
-            FileUtils.listFiles(source, null, true)
-                    .forEach(file -> addFileToZip(source, archive, file));
-
-            archive.finish();
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    private static void addFileToZip(File source, ArchiveOutputStream<ZipArchiveEntry> archive,
-            File file) {
-        String entryName;
-        try {
-            entryName = getEntryName(source, file);
-            ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
-            archive.putArchiveEntry(entry);
-
-            try (BufferedInputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
-                input.transferTo(archive);
-                archive.closeArchiveEntry();
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Remove the leading part of each entry that contains the source directory name
-     *
-     * @param source the directory where the file entry is found
-     * @param file   the file that is about to be added
-     * @return the name of an archive entry
-     */
-    private static String getEntryName(File source, File file) {
-        Path sourcePath = source.toPath().toAbsolutePath().normalize();
-        Path filePath = file.toPath().toAbsolutePath().normalize();
-        return sourcePath.relativize(filePath).toString();
+        VigletZipUtils.addFilesToZip(source, destination);
     }
 
     public static File getStoreDir() {
-        File store = new File(userDir.getAbsolutePath().concat(File.separator + "store"));
-        try {
-            Files.createDirectories(store.toPath());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return store;
+        return VigletStoreDirectory.getStoreDir();
     }
 
     public static File addSubDirToStoreDir(String directoryName) {
-        File storeDir = getStoreDir();
-        File newDir = new File(storeDir.getAbsolutePath().concat(File.separator + directoryName));
-        try {
-            Files.createDirectories(newDir.toPath());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return newDir;
+        return VigletStoreDirectory.addSubDirToStoreDir(directoryName);
     }
 
     /**
-     * Unzip it
+     * Unzip it.
+     *
+     * <p>Delegates to {@link VigletZipUtils#unZipIt(File, File)}
+     * (Block Q / T375).
      *
      * @param file         input zip file
      * @param outputFolder output Folder
      */
     public static void unZipIt(File file, File outputFolder) {
-        try (ZipFile zipFile = new ZipFile(file)) {
-            zipFile.extractAll(outputFolder.getAbsolutePath());
-        } catch (IllegalStateException | IOException e) {
-            log.error(e.getMessage(), e);
-        }
+        VigletZipUtils.unZipIt(file, outputFolder);
     }
 
     public static boolean isValidJson(String test) {
-        try {
-            new JSONObject(test);
-        } catch (JSONException ex) {
-            try {
-                new JSONArray(test);
-            } catch (JSONException ex1) {
-                return false;
-            }
-        }
-        return true;
+        return VigletJson.isValidJson(test);
     }
 
     public static String asJsonString(final Object obj) throws TurException {
         try {
-            // No Jackson 3, usamos o Builder para configurar e criar o mapper
-            JsonMapper mapper = JsonMapper.builder()
-                    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-                    .build();
-
-            return mapper.writeValueAsString(obj);
+            return VigletJson.asJsonString(obj);
         } catch (Exception e) {
             throw new TurException(e);
         }
     }
 
     public static File getTempDirectory() {
-        return addSubDirToStoreDir("tmp");
+        return VigletStoreDirectory.getTempDirectory();
     }
 }
