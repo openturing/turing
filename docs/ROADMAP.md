@@ -263,9 +263,6 @@
 > (T342) → off-domain signal (T346, T354 — strongest lever) → flagship content
 > (T347, T350) → the rest. `→` pointers are STRATEGY §X.
 
-**Foundation (technical, low cost):**
-- 🛠 **T346** (deps: —) **GitHub README + topics keyword pass** — README.adoc now leads with "enterprise search for Adobe AEM / WordPress" + Algolia/Coveo-alternative framing. *Repo topics still need `gh repo edit --add-topic` (manual).* → §X.1
-
 **Content — integration how-tos (cluster A):**
 - 🛠 **T347** (deps: T342) **Post: "Integrating Viglet Turing ES with Adobe AEM"** *(flagship)* — drafted as the canonical docs blog post (grounded in the real Dumont AEM connector); the Medium copy should be re-pointed with `canonical` to it (T354). → §X.3
 - 💭 **T348** (deps: T347) **Post: "Semantic & vector search in AEM with Turing ES"** — RAG/embedding angle on the same audience. → §X.3
