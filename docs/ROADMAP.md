@@ -298,10 +298,21 @@
 > initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
 > Shio/Dumont is gated, not scheduled.
 
-- 💭 **T368** (deps: T367) **`viglet-core` crypto + storage modules** — lift the secret-crypto (`TurSecretCryptoService`) and storage abstraction (MinIO/filesystem/no-op `TurStorageService`) into core as Spring Boot starters (autoconfig + `@ConditionalOnMissingBean`). Lowest-risk leaf concerns; validate the starter pattern here. → STRATEGY §XII.2
 - 💭 **T369** (deps: T367) **`viglet-core` security module** — Keycloak/OIDC integration, JWT/authority resolution, CSRF, the 401 entry-point. The largest duplication win across the three; gated on a security-model alignment audit (same realm/claim/membership model). → STRATEGY §XII.2
 - 💭 **T370** (deps: T367, T372, T365, T366) **`viglet-core` tenancy module** — move the proven tenancy kernel (`TenantContext`, the plain-column scope helper, the Hibernate `@TenantId` resolver + resolution filter, platform-admin) into core. Sequence *after* Turing's tenancy stabilizes (T372/T365/T366) — extract a stable kernel, not a moving target. → STRATEGY §XII / IMPROVEMENTS §XIV.8.8
 - 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
+
+> Surfaced by a cross-product dependency-and-utility audit (2026-06-16) of the
+> three SB-4.0.6 codebases — each concern below is duplicated in all three (or
+> ≥2 where noted) and was missing from the original scope. The poms already pin
+> identical versions for the shared libs, so the *rule of three* is satisfied. → STRATEGY §XII.2
+
+- 💭 **T374** (deps: T367) **`viglet-core` content-extraction module** — lift the duplicated Apache Tika setup (`tika-core` + pdf/text/ocr/microsoft parsers, all 3.3.1) + jsoup HTML→text + image I/O into a starter; re-implemented today as `TurFileUtils`, Shio's Tika usage, and `DumCommonsUtils`. Present in all three. → STRATEGY §XII.2
+- 💭 **T375** (deps: T367) **`viglet-core` commons module** — the near-identical `Tur*`/`Sh*`/`Dum*` commons: file/IO/ZIP utils (commons-io/commons-compress/zip4j), JSON-validity check, base `Exception`/`RuntimeException`, `FileAttributes`/`FileSize` DTOs, pagination/sort helpers. Likely folds into `viglet-core-lang`/a new `viglet-core-commons`. Present in all three. → STRATEGY §XII.2
+- 💭 **T376** (deps: T367) **`viglet-core` config-var / global-settings service** — a runtime key-value settings store, re-built three times as `TurGlobalSettingsService`, `ShConfigVarUtils`, `DumConnectorConfigVarService`. Present in all three. → STRATEGY §XII.2
+- 💭 **T377** (deps: T367) **`viglet-core` messaging + persistent-logging module** — embedded Artemis tuning (`TurArtemisConfig`/`DumArtemisConfig`) + MongoDB/Redis logback appenders. ≥2 products (Turing + Dumont); gated on confirming Shio needs it before extraction. → STRATEGY §XII.2
+- 💭 **T378** (deps: T367) **`viglet-core` outbound-webhook + HMAC signing** — async dispatch with HMAC-SHA256 signing + retry/backoff: `TurChatWebhookDispatcher` (T62) + `ShWebhookDispatcher`/`ShWebhookSigner`. ≥2 products (Turing + Shio). → STRATEGY §XII.2
+- 💭 **T379** (deps: T367) **`viglet-core` HTTP/RestClient builder** — pooled httpclient5 + tracing interceptor + API-key header injection: `TurHttpClientConfiguration` + `DumRestClientConfig`. ≥2 products (Turing + Dumont); httpclient5 is a dep in all three. → STRATEGY §XII.2
 
 ## Non-goals (do NOT add as tasks)
 

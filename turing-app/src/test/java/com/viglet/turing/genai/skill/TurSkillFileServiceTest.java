@@ -32,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.viglet.turing.api.skill.TurSkillFileNode;
 import com.viglet.turing.persistence.model.skill.TurSkill;
@@ -67,10 +66,13 @@ class TurSkillFileServiceTest {
         TurConfigProperties configProperties = new TurConfigProperties();
         TurStorageProperty storageProperty = new TurStorageProperty();
         storageProperty.setSkillsPath("skills");
+        TurStorageProperty.TurFilesystemProperty fs = new TurStorageProperty.TurFilesystemProperty();
+        fs.setPath(tempDir.toAbsolutePath().normalize().toString());
+        storageProperty.setFilesystem(fs);
         configProperties.setStorage(storageProperty);
 
         TurFilesystemStorageService storage = new TurFilesystemStorageService(configProperties);
-        ReflectionTestUtils.setField(storage, "basePath", tempDir.toAbsolutePath().normalize());
+        storage.init();
 
         store = new LinkedHashMap<>();
         TurSkillRepository repository = inMemoryRepository(store);

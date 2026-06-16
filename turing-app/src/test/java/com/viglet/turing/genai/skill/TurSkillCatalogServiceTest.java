@@ -27,7 +27,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.viglet.turing.persistence.model.skill.TurSkill;
 import com.viglet.turing.persistence.repository.skill.TurSkillRepository;
@@ -44,7 +43,7 @@ import com.viglet.turing.service.storage.TurStorageService;
  * disappeared, and stays inert when storage is disabled.
  *
  * <p>Backed by the real {@link TurFilesystemStorageService} over a {@code @TempDir}
- * (its {@code basePath} is injected directly to bypass the {@code @PostConstruct})
+ * (its filesystem path is set via config and {@code init()} is called directly)
  * and an in-memory {@link TurSkillRepository} stub.
  *
  * @author Alexandre Oliveira
@@ -64,10 +63,13 @@ class TurSkillCatalogServiceTest {
         TurConfigProperties configProperties = new TurConfigProperties();
         TurStorageProperty storageProperty = new TurStorageProperty();
         storageProperty.setSkillsPath("skills");
+        TurStorageProperty.TurFilesystemProperty fs = new TurStorageProperty.TurFilesystemProperty();
+        fs.setPath(tempDir.toAbsolutePath().normalize().toString());
+        storageProperty.setFilesystem(fs);
         configProperties.setStorage(storageProperty);
 
         storage = new TurFilesystemStorageService(configProperties);
-        ReflectionTestUtils.setField(storage, "basePath", tempDir.toAbsolutePath().normalize());
+        storage.init();
 
         store = new LinkedHashMap<>();
         TurSkillRepository repository = inMemoryRepository(store);

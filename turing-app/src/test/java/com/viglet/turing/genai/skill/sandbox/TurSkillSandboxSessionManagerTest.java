@@ -29,7 +29,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.genai.skill.TurSkillCatalogService;
@@ -70,10 +69,13 @@ class TurSkillSandboxSessionManagerTest {
         TurConfigProperties configProperties = new TurConfigProperties();
         TurStorageProperty storageProperty = new TurStorageProperty();
         storageProperty.setSkillsPath("skills");
+        TurStorageProperty.TurFilesystemProperty fs = new TurStorageProperty.TurFilesystemProperty();
+        fs.setPath(storageDir.toAbsolutePath().normalize().toString());
+        storageProperty.setFilesystem(fs);
         configProperties.setStorage(storageProperty);
 
         TurFilesystemStorageService storage = new TurFilesystemStorageService(configProperties);
-        ReflectionTestUtils.setField(storage, "basePath", storageDir.toAbsolutePath().normalize());
+        storage.init();
 
         store = new LinkedHashMap<>();
         TurSkillRepository repository = inMemoryRepository(store);

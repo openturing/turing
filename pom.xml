@@ -307,6 +307,16 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.viglet.core</groupId>
+                <artifactId>viglet-core-crypto</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.viglet.core</groupId>
+                <artifactId>viglet-core-storage</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.viglet.turing</groupId>
                 <artifactId>turing-java-sdk</artifactId>
                 <version>${project.version}</version>
