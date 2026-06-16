@@ -22,7 +22,6 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.security.core.Authentication;
@@ -30,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.genai.TurChatToolOptions;
 import com.viglet.turing.genai.TurToolExecutionLoop;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurDslToolService;
@@ -296,7 +296,12 @@ public class TurSkillRunnerService {
             if (StringUtils.hasText(conversationId)) {
                 toolContext.put(TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID, conversationId);
             }
-            var optionsBuilder = DefaultToolCallingChatOptions.builder().toolCallbacks(tools);
+            // Seed from the provider's own concrete options — Spring AI 2.0.0
+            // hard-casts prompt.getOptions() to the provider type, so a generic
+            // DefaultToolCallingChatOptions throws ClassCastException. See
+            // TurChatToolOptions.
+            var optionsBuilder = TurChatToolOptions.builderFrom(chatModel)
+                    .toolCallbacks(tools);
             if (!toolContext.isEmpty()) {
                 optionsBuilder.toolContext(toolContext);
             }

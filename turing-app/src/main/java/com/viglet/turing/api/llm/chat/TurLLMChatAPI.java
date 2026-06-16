@@ -14,7 +14,6 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.http.MediaType;
@@ -31,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurChatAttachmentService;
+import com.viglet.turing.genai.TurChatToolOptions;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
@@ -248,7 +248,12 @@ public class TurLLMChatAPI {
 
             // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
             // internal tool execution is now the default once callbacks are present.
-            var chatOptions = DefaultToolCallingChatOptions.builder()
+            //
+            // Seed from the provider's own concrete options — Spring AI 2.0.0
+            // hard-casts prompt.getOptions() to the provider type, so a generic
+            // DefaultToolCallingChatOptions throws ClassCastException. See
+            // TurChatToolOptions.
+            var chatOptions = TurChatToolOptions.builderFrom(chatModel)
                     .toolCallbacks(toolCallbacks)
                     .build();
 

@@ -298,11 +298,19 @@
 > initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
 > Shio/Dumont is gated, not scheduled.
 
-- ⏳ **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — standalone repo [`openviglet/viglet-core`](https://github.com/openviglet/viglet-core) (self-contained parent, BOM, published to GitHub Packages) is **live**, and Turing consumes it as an external dependency (see CHANGELOG). **Remaining**: adopt in Shio + Dumont — still gated on governance/ownership + semver/CI across the other consumers; not scheduled. → STRATEGY §XII.3/§XII.4
+- ⏳ **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — standalone repo [`openviglet/viglet-core`](https://github.com/openviglet/viglet-core) (self-contained parent, BOM, published to GitHub Packages) is **live**, and Turing consumes it as an external dependency (see CHANGELOG). **Shio adoption started**: `viglet-core-webhook` adopted (signer + dispatcher delegate) and `ShTenantContext` now runs on the shared `VigletTenantContext` kernel. **Remaining**: finish Shio + Dumont adoption (tenancy parity tracked separately as T394–T399). → STRATEGY §XII.3/§XII.4
 
 > A cross-product dependency-and-utility audit (2026-06-16) of the three
 > SB-4.0.6 codebases surfaced concrete duplication that the original scope
 > missed; the lifts it produced (T375–T379) have all shipped — see CHANGELOG. → STRATEGY §XII.2
+
+**Multi-tenancy parity (cross-product) — make tenancy 100% identical across Turing / Shio / Dumont, on one shared `viglet-core-tenancy` implementation. Staged; viglet-core / Shio / Dumont may each be adjusted. → IMPROVEMENTS §XIV.9**
+- 📋 **T394** (deps: —) **Audit + design the canonical shared tenancy surface** — map Turing (Block J + the `viglet-core-tenancy` kernel), Shio (`ShTenant*` family: context/filter/resolver/membership/quota/provisioning/teardown + `@TenantId` entities) and Dumont; decide what is product-agnostic (lifts to `viglet-core-tenancy`) vs product-specific (stays), plus the per-product adapter contract — the design that makes all three behave identically. → §XIV.9
+- 📋 **T395** (deps: T394) **Expand `viglet-core-tenancy` to the full shared feature set** — beyond today's kernel (context / scope / platform-admin / `@TenantId` resolver): tenant-resolution-filter base, provisioning + teardown SPI, quota / plan-limits abstraction, membership-model abstraction, suspended-access gating — everything the audit finds common. → §XIV.9
+- 📋 **T396** (deps: T395) **Turing: align to the expanded kernel** — close any gap between Turing's Block J tenancy and the shared surface so Turing consumes it identically (no behavioural drift). → §XIV.9
+- ⏳ **T397** (deps: T395) **Shio: adopt the full shared tenancy** — `ShTenantContext`→`VigletTenantContext` done; add resolver wiring, tenant-owned-infra marker + scope, platform-admin, provisioning/teardown/quota via the shared surface; map Shio's `@TenantId` entities. → §XIV.9
+- 📋 **T398** (deps: T395) **Dumont: audit + adopt the shared tenancy** — Dumont likely has little/no tenancy today; add the kernel + shared features to reach parity. → §XIV.9
+- 📋 **T399** (deps: T396, T397, T398) **Cross-product tenancy conformance test** — a shared behaviour contract (same inputs → same isolation / visibility / scoping outcomes) proving 100% parity across the three products. → §XIV.9
 
 ## Block R — Structured-source indexing & the cursarei reference (with Dumont)
 

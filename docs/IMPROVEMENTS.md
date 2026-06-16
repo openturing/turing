@@ -2246,6 +2246,41 @@ not about correctness of the single-service flow:
   the defaults later means clearing the marker or a versioned re-seed, which is not
   yet modeled.
 
+### XIV.9 Cross-product tenancy parity — one implementation for Turing/Shio/Dumont (the what/why)
+
+**Goal:** multi-tenancy is **100% identical across Turing, Shio and Dumont**, running
+on a single shared implementation in `viglet-core-tenancy` rather than three
+hand-synced ports. Today the three diverge: Turing has the rich Block J model
+(`@TenantId` row isolation + the lifted `viglet-core-tenancy` kernel: context,
+infra-owned marker, infra scope, platform-admin, resolver wiring); Shio has its own
+`ShTenant*` family (context, filter, resolver, membership, quota, provisioning,
+teardown, suspended-access gating); Dumont has little or none. "Identical features"
+means identical **capabilities and behaviour** — tenant context + `runAs`/system-mode,
+row-level `@TenantId` isolation, tenant-owned-infra marker + scoping (assert-writable,
+GLOBAL read-only, visibility), platform-admin, resolution filter, provisioning /
+teardown / quota — applied to each product's own entities (the *mechanism* is shared;
+which rows are tenant-owned is per-product).
+
+**Why a shared implementation, not three ports:** tenancy is the highest-risk
+duplication — a subtle divergence (e.g. a resolver that defaults differently, or a
+scope check that one product forgets) is a cross-tenant data-leak class of bug. One
+audited implementation with a cross-product conformance test (T399) is the only way
+to *prove* parity rather than assert it.
+
+**Approach (staged, T394–T399):** audit the three and design the canonical shared
+surface + per-product adapter contract (T394) → expand `viglet-core-tenancy` to the
+full shared feature set beyond today's kernel (T395) → align Turing (T396), Shio
+(T397) and Dumont (T398) onto it → lock it with a shared behaviour-conformance test
+(T399). Foundation already in place: Shio's `ShTenantContext` now delegates to the
+shared `VigletTenantContext` (same kernel as Turing), with the full Shio suite green.
+`viglet-core` / Shio / Dumont may each be adjusted freely to converge.
+
+**Not in scope:** unifying the **config-var / global-settings** store across products
+under `viglet-core-settings`. Shio's `ShConfigVar` is addressed by a `(path, name)`
+composite key and its `ShConfigVarUtils` is unused (real callers hit the repository
+directly), whereas `viglet-core-settings` is `id`-keyed — a genuine model mismatch, so
+forcing the adoption would be hollow/invasive for no benefit. Left per-product.
+
 ---
 
 ## XVI. Cost & token governance (Block L)

@@ -19,13 +19,13 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.genai.TurChatToolOptions;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -154,7 +154,12 @@ public class TurAiAuthoringService {
         // Authoring responses bundle a conversational reply with the FULL
         // updated state — easily 4-6k tokens for non-trivial flows. Ceil
         // generously so the JSON closing braces never get truncated.
-        var optionsBuilder = DefaultToolCallingChatOptions.builder()
+        //
+        // Seed from the provider's own concrete options — Spring AI 2.0.0
+        // hard-casts prompt.getOptions() to the provider type, so a generic
+        // DefaultToolCallingChatOptions throws ClassCastException. See
+        // TurChatToolOptions.
+        var optionsBuilder = TurChatToolOptions.builderFrom(chatModel)
                 .maxTokens(MAX_OUTPUT_TOKENS);
         if (tools != null && tools.length > 0) {
             // Spring AI 2.0.0-RC1 removed internalToolExecutionEnabled; internal

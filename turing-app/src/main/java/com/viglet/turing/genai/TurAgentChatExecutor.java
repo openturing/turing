@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.ChatOptions;
-import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
+import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -435,7 +435,8 @@ public class TurAgentChatExecutor {
 
         // Build chat options + per-turn tool context map (drives Custom
         // Tool Groovy scripts: conversationId, agentId, agentPythonReqs).
-        ChatOptions chatOptions = buildChatOptions(agent, conversationId, callbacks, agentInvokeDepth);
+        ChatOptions chatOptions = buildChatOptions(chatModel, agent, conversationId, callbacks,
+                agentInvokeDepth);
 
         // Strip the toolset from the INITIAL LLM call when the active
         // node's declarative {@code toolsEnabled=false} forbids them
@@ -445,11 +446,11 @@ public class TurAgentChatExecutor {
         boolean activeNodeForbidsTools = TurChatToolResolver.forbidsToolCalls(activeNode);
         // Spring AI 2.0.0-RC1 removed internalToolExecutionEnabled; the empty
         // toolCallbacks list alone already guarantees the tool-free initial call
-        // (no callbacks means nothing for the model to invoke).
+        // (no callbacks means nothing for the model to invoke). The options must
+        // still be the provider's concrete type (see buildChatOptions) — Spring
+        // AI 2.0.0 (final) hard-casts prompt.getOptions() to OpenAiChatOptions.
         ChatOptions initialOptions = activeNodeForbidsTools
-                ? DefaultToolCallingChatOptions.builder()
-                        .toolCallbacks(List.<ToolCallback>of())
-                        .build()
+                ? providerToolOptions(chatModel, new ToolCallback[0], java.util.Map.of())
                 : chatOptions;
         if (activeNodeForbidsTools) {
             log.info("[AgentExec] Initial call on node '{}' running tool-free (aiInstruction forbids tools)",
@@ -537,8 +538,8 @@ public class TurAgentChatExecutor {
      * map (conversationId / agentId / agentPythonRequirements) consumed by
      * Custom Tool Groovy scripts.
      */
-    private static ChatOptions buildChatOptions(TurAIAgent agent, String conversationId,
-            ToolCallback[] callbacks, int agentInvokeDepth) {
+    private static ChatOptions buildChatOptions(ChatModel chatModel, TurAIAgent agent,
+            String conversationId, ToolCallback[] callbacks, int agentInvokeDepth) {
         // Map.of() doesn't accept nulls — build with a LinkedHashMap so
         // we can skip entries cleanly when their source value is absent.
         var toolContextMap = new java.util.LinkedHashMap<String, Object>();
@@ -593,12 +594,25 @@ public class TurAgentChatExecutor {
                 new com.viglet.turing.genai.rag.TurRagSourceCollector());
         // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
         // internal tool execution is now the default once callbacks are present.
-        var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
-                .toolCallbacks(callbacks);
-        if (!toolContextMap.isEmpty()) {
-            chatOptionsBuilder.toolContext(toolContextMap);
+        return providerToolOptions(chatModel, callbacks, toolContextMap);
+    }
+
+    /**
+     * Builds the per-turn {@link ChatOptions} by seeding from the provider's
+     * own concrete options (see {@link TurChatToolOptions}) and attaching the
+     * tool callbacks + tool context. Must NOT hand the model a generic
+     * {@code DefaultToolCallingChatOptions} — Spring AI 2.0.0 hard-casts the
+     * prompt options to the provider type and would throw {@code ClassCastException}.
+     */
+    private static ChatOptions providerToolOptions(ChatModel chatModel,
+            ToolCallback[] callbacks, java.util.Map<String, Object> toolContext) {
+        List<ToolCallback> callbackList = callbacks == null ? List.of() : List.of(callbacks);
+        ToolCallingChatOptions.Builder<?> builder = TurChatToolOptions.builderFrom(chatModel)
+                .toolCallbacks(callbackList);
+        if (toolContext != null && !toolContext.isEmpty()) {
+            builder.toolContext(toolContext);
         }
-        return chatOptionsBuilder.build();
+        return builder.build();
     }
 
     /**

@@ -1,7 +1,7 @@
-# Last task number — `T393`
+# Last task number — `T399`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T394`; after assigning it, bump the number above and the log line below.
+> `T400`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,12 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T399** — Cross-product tenancy conformance test (Block Q / parity) — 2026-06-16
+- **T398** — Dumont: audit + adopt the shared tenancy (Block Q / parity) — 2026-06-16
+- **T397** — Shio: adopt the full shared tenancy (Block Q / parity) — 2026-06-16
+- **T396** — Turing: align to the expanded tenancy kernel (Block Q / parity) — 2026-06-16
+- **T395** — Expand `viglet-core-tenancy` to the full shared feature set (Block Q / parity) — 2026-06-16
+- **T394** — Audit + design the canonical shared tenancy surface (Block Q / parity) — 2026-06-16
 - **T393** — Lift manifest + grounding contract into `viglet-core` (Block R) — 2026-06-16
 - **T392** — Grounded conversational catalog copilot (Block R) — 2026-06-16
 - **T391** — Structured-source onboarding wizard (Block R) — 2026-06-16
