@@ -21,20 +21,18 @@
 
 package com.viglet.turing.spring.security;
 
-import java.util.Map;
-
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
-public class TurCsrfController {
+import com.viglet.core.security.VigletCsrfController;
 
-    @GetMapping("/api/csrf")
-    public Map<String, String> csrf(CsrfToken csrfToken) {
-        return Map.of(
-                "token", csrfToken.getToken(),
-                "headerName", csrfToken.getHeaderName(),
-                "parameterName", csrfToken.getParameterName());
-    }
+/**
+ * Turing's CSRF-token endpoint. The handler now lives in
+ * {@code viglet-core-security} ({@link VigletCsrfController}, Block Q / T369),
+ * mapped at {@code /api/csrf} by default. Declaring it as Turing's own
+ * {@code @RestController} bean satisfies the core auto-configuration's
+ * {@code @ConditionalOnMissingBean(VigletCsrfController.class)}, so the path is
+ * registered exactly once.
+ */
+@RestController
+public class TurCsrfController extends VigletCsrfController {
 }

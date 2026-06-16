@@ -49,6 +49,7 @@ import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
+import com.viglet.core.security.VigletCsrfCookieFilter;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
@@ -156,7 +157,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/signup"),
                                                 mvc.matcher("/login/oauth2/**"),
                                                 mvc.matcher("/oauth2/**")))
-                                .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
+                                .addFilterAfter(new VigletCsrfCookieFilter(), BasicAuthenticationFilter.class);
                 boolean oauth2Available = clientRegistrationRepository.getIfAvailable() != null;
                 if (turConfigProperties.isKeycloak()) {
                         String keycloakUrlFormat = String.format(

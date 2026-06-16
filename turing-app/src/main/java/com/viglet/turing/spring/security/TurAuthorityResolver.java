@@ -1,5 +1,6 @@
 package com.viglet.turing.spring.security;
 
+import com.viglet.core.security.VigletKeycloakClaims;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.model.auth.TurUser;
@@ -18,7 +19,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -111,22 +111,13 @@ public class TurAuthorityResolver {
      * empty set when the claim is absent or malformed. Shared by the OIDC
      * ({@code OidcUser.getClaims()}) and OAuth2 ({@code OAuth2User.getAttributes()})
      * paths.
+     *
+     * <p>T369 / Block Q — the parsing itself now lives in {@code viglet-core-security}
+     * ({@link VigletKeycloakClaims}); this method stays as Turing's stable entry
+     * point for the OIDC/OAuth2 callers.
      */
-    @SuppressWarnings("unchecked")
     public static Set<String> extractRealmRoles(Map<String, Object> claims) {
-        Set<String> roles = new HashSet<>();
-        if (claims == null) {
-            return roles;
-        }
-        if (claims.get("realm_access") instanceof Map<?, ?> realmAccess
-                && ((Map<String, Object>) realmAccess).get("roles") instanceof Collection<?> roleList) {
-            for (Object role : roleList) {
-                if (role != null) {
-                    roles.add(role.toString());
-                }
-            }
-        }
-        return roles;
+        return VigletKeycloakClaims.extractRealmRoles(claims);
     }
 
     /**

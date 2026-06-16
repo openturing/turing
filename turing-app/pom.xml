@@ -173,6 +173,10 @@
             <artifactId>viglet-core-storage</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <exclusions>

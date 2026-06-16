@@ -298,7 +298,6 @@
 > initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
 > Shio/Dumont is gated, not scheduled.
 
-- 💭 **T369** (deps: T367) **`viglet-core` security module** — Keycloak/OIDC integration, JWT/authority resolution, CSRF, the 401 entry-point. The largest duplication win across the three; gated on a security-model alignment audit (same realm/claim/membership model). → STRATEGY §XII.2
 - 💭 **T370** (deps: T367, T372, T365, T366) **`viglet-core` tenancy module** — move the proven tenancy kernel (`TenantContext`, the plain-column scope helper, the Hibernate `@TenantId` resolver + resolution filter, platform-admin) into core. Sequence *after* Turing's tenancy stabilizes (T372/T365/T366) — extract a stable kernel, not a moving target. → STRATEGY §XII / IMPROVEMENTS §XIV.8.8
 - 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
 

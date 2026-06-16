@@ -20,30 +20,26 @@
  */
 package com.viglet.turing.spring.security;
 
-import java.io.IOException;
+import java.util.List;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.viglet.core.security.VigletAuthenticationEntryPoint;
 
+/**
+ * Turing's JSON {@code 401} entry-point: the {@code viglet-core} primitive
+ * ({@link VigletAuthenticationEntryPoint}) configured with Turing's only
+ * Basic-realm rule — the {@code /git/} surface, where native Git-over-HTTP
+ * clients need a {@code WWW-Authenticate} challenge to prompt for credentials.
+ *
+ * <p>The 401 logic itself now lives in {@code viglet-core-security} (Block Q /
+ * T369). As a {@code @Component} it satisfies the core auto-configuration's
+ * {@code @ConditionalOnMissingBean}, so the generic core bean never activates here.
+ */
 @Component
-public class TurAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class TurAuthenticationEntryPoint extends VigletAuthenticationEntryPoint {
 
-	@Override
-	public void commence(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException authException) throws IOException {
-		// Git clients require WWW-Authenticate header to prompt for credentials
-		String uri = request.getRequestURI();
-		if (uri != null && uri.startsWith("/git/")) {
-			response.setHeader("WWW-Authenticate", "Basic realm=\"Turing Git\"");
-		}
-		response.setStatus(HttpStatus.UNAUTHORIZED.value());
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.getWriter().write("{\"error\":\"Unauthorized\"}");
+	public TurAuthenticationEntryPoint() {
+		super(List.of(new BasicRealmRule("/git/", "Turing Git")));
 	}
 }

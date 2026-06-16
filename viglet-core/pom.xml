@@ -51,5 +51,6 @@
         <module>viglet-core-lang</module>
         <module>viglet-core-crypto</module>
         <module>viglet-core-storage</module>
+        <module>viglet-core-security</module>
     </modules>
 </project>
