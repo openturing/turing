@@ -44,4 +44,24 @@ public class TurTenancyProperty {
      * until explicitly added to a tenant.
      */
     private boolean autoProvision = false;
+
+    /**
+     * T334 / §XIV.8.1 — shared secret that marks a request as a <em>trusted
+     * internal caller</em> (server-to-server). When this is set and a request
+     * carries the matching {@code X-Turing-Internal-Token} header, the
+     * {@code X-Turing-Tenant} header it stamps is honoured <strong>without</strong>
+     * the per-user active-membership check — so an internal product (e.g. Dumont
+     * calling {@code http://turing:2700} on behalf of an end user) can scope the
+     * call to that user's tenant even though the cross-service principal holds no
+     * membership in it. A suspended tenant is still blocked.
+     *
+     * <p>This is the alternative to forwarding the end user's bearer token (the
+     * preferred path, which works unchanged via the JWT {@code tenant} claim).
+     *
+     * <p>Default empty/{@code null} = feature off: no header ever bypasses the
+     * membership check, exactly as before. The token <strong>must</strong> only
+     * be shared over a trusted internal network — any client that knows it can
+     * assert any tenant.
+     */
+    private String internalToken;
 }

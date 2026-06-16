@@ -11,6 +11,13 @@ turing:
   permissions: false
   tenancy:
     enabled: false
+    # T334 / §XIV.8.1 — shared secret for trusted server-to-server callers. When
+    # set, a request carrying a matching `X-Turing-Internal-Token` header may
+    # stamp `X-Turing-Tenant` to scope the call to an end user's tenant without
+    # that user's membership (a suspended tenant still blocks). Leave empty (the
+    # default) to disable; only share over a trusted internal network. Prefer
+    # forwarding the end user's bearer token, which needs no token here.
+    internal-token: ${TURING_TENANCY_INTERNAL_TOKEN:}
   # T245 / §XIII — Turing as an MCP server. The endpoint itself is toggled by
   # spring.ai.mcp.server.enabled (below); this block carries the Turing-specific
   # governance on top of it. loopback-only is the T245 trust boundary: until the

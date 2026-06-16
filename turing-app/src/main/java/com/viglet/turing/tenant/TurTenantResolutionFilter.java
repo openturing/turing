@@ -10,6 +10,8 @@
 package com.viglet.turing.tenant;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.Set;
 
@@ -56,6 +58,16 @@ import lombok.extern.slf4j.Slf4j;
  * non-DEFAULT tenant requires an {@link TurTenantMembershipStatus#ACTIVE active}
  * {@link TurTenantMembership} or the request is rejected with HTTP 403.
  *
+ * <p>T334 / §XIV.8.1 — for server-to-server calls (e.g. Dumont →
+ * {@code http://turing:2700} on behalf of an end user), the cross-service
+ * principal holds no membership in the user's tenant. Such a caller may instead
+ * present {@link #INTERNAL_TOKEN_HEADER} matching
+ * {@code turing.tenancy.internal-token}; the {@link #TENANT_HEADER} it stamps is
+ * then honoured without the membership check (a suspended tenant still blocks).
+ * The preferred alternative — forwarding the user's bearer token so the JWT
+ * {@code tenant} claim + membership path applies — works unchanged and needs no
+ * token. The feature is off until the token is configured.
+ *
  * <p>The whole filter is a no-op when {@code turing.tenancy.enabled=false}, so a
  * single-tenant install never pays a DB lookup and behaves exactly as before.
  * The bound tenant is always {@link TurTenantContext#clear() cleared} in a
@@ -71,6 +83,13 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
 
     /** Header carrying an explicit tenant id/slug (lowest precedence). */
     public static final String TENANT_HEADER = "X-Turing-Tenant";
+
+    /**
+     * T334 / §XIV.8.1 — shared-secret header a trusted internal caller sends
+     * alongside {@link #TENANT_HEADER} to vouch for the stamped tenant without an
+     * end-user membership. Matched against {@code turing.tenancy.internal-token}.
+     */
+    public static final String INTERNAL_TOKEN_HEADER = "X-Turing-Internal-Token";
 
     /** HTTP session attribute the T265 switch API writes the active tenant id into. */
     public static final String TENANT_SESSION_ATTR = "TURING_TENANT";
@@ -92,6 +111,7 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
     private final TurTenantService tenantService;
     private final boolean tenancyEnabled;
     private final boolean autoProvisionEnabled;
+    private final String internalToken;
 
     public TurTenantResolutionFilter(TurTenantContext tenantContext,
             TurTenantRepository tenantRepository,
@@ -104,6 +124,7 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
         this.tenantService = tenantService;
         this.tenancyEnabled = configProperties.getTenancy().isEnabled();
         this.autoProvisionEnabled = configProperties.getTenancy().isAutoProvision();
+        this.internalToken = configProperties.getTenancy().getInternalToken();
     }
 
     @Override
@@ -117,18 +138,23 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String tenantId = resolveTenantId(request, authentication);
+            // T334 / §XIV.8.1 — a server-to-server caller that presents the shared
+            // internal token vouches for the tenant it stamps, so its per-user
+            // membership is not checked (the cross-service principal has none).
+            boolean trustedInternal = isTrustedInternalCaller(request);
 
             if (isAuthenticated(authentication)
                     && !TurTenant.DEFAULT_TENANT_ID.equals(tenantId)
                     && !isPlatformAdmin(authentication)) {
-                // T281 / §XIV.7.2 — a suspended tenant blocks its members' access.
+                // T281 / §XIV.7.2 — a suspended tenant blocks all access, even an
+                // internal call on behalf of one of its members.
                 if (isSuspended(tenantId)) {
                     log.warn("Tenant '{}' is suspended — blocking access for '{}'",
                             tenantId, authentication.getName());
                     reject(response);
                     return;
                 }
-                if (!hasActiveMembership(tenantId, authentication.getName())) {
+                if (!trustedInternal && !hasActiveMembership(tenantId, authentication.getName())) {
                     log.warn("Principal '{}' has no active membership in tenant '{}'",
                             authentication.getName(), tenantId);
                     reject(response);
@@ -235,6 +261,25 @@ public class TurTenantResolutionFilter extends OncePerRequestFilter {
         return tenantRepository.findById(tenantId)
                 .map(t -> t.getStatus() == com.viglet.turing.persistence.model.tenant.TurTenantStatus.SUSPENDED)
                 .orElse(false);
+    }
+
+    /**
+     * T334 / §XIV.8.1 — true when the feature is configured
+     * ({@code turing.tenancy.internal-token}) and the request presents a matching
+     * {@link #INTERNAL_TOKEN_HEADER}. The comparison is constant-time to avoid
+     * leaking the token through response timing.
+     */
+    private boolean isTrustedInternalCaller(HttpServletRequest request) {
+        if (!StringUtils.hasText(internalToken)) {
+            return false;
+        }
+        String provided = request.getHeader(INTERNAL_TOKEN_HEADER);
+        if (!StringUtils.hasText(provided)) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                internalToken.getBytes(StandardCharsets.UTF_8),
+                provided.getBytes(StandardCharsets.UTF_8));
     }
 
     private boolean isPlatformAdmin(Authentication authentication) {

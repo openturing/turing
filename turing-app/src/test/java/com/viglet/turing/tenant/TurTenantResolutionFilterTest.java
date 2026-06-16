@@ -57,9 +57,15 @@ class TurTenantResolutionFilterTest {
     }
 
     private TurTenantResolutionFilter filter(boolean tenancyEnabled, boolean autoProvision) {
+        return filter(tenancyEnabled, autoProvision, null);
+    }
+
+    private TurTenantResolutionFilter filter(boolean tenancyEnabled, boolean autoProvision,
+            String internalToken) {
         TurConfigProperties props = new TurConfigProperties();
         props.getTenancy().setEnabled(tenancyEnabled);
         props.getTenancy().setAutoProvision(autoProvision);
+        props.getTenancy().setInternalToken(internalToken);
         tenantContext = new TurTenantContext(props);
         TurTenantService tenantService = new TurTenantService(tenantRepository, membershipRepository);
         return new TurTenantResolutionFilter(tenantContext, tenantRepository, membershipRepository,
@@ -232,6 +238,128 @@ class TurTenantResolutionFilterTest {
         // platform admin stays on DEFAULT — no personal tenant minted
         verify(membershipRepository, never()).findByUsername(any());
         verify(tenantRepository, never()).save(any());
+    }
+
+    @Test
+    void trustedInternalCallerBypassesMembershipCheck() throws Exception {
+        // T334 — Dumont-style server-to-server call: service principal has NO
+        // membership in t-acme, but presents the matching internal token.
+        TurTenantResolutionFilter f = filter(true, false, "s3cr3t");
+        TurTenant acme = new TurTenant();
+        acme.setId("t-acme");
+        acme.setSlug("acme");
+        when(tenantRepository.findById("acme")).thenReturn(Optional.empty());
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(acme));
+        when(tenantRepository.findById("t-acme")).thenReturn(Optional.of(acme)); // suspension check
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader(TurTenantResolutionFilter.TENANT_HEADER, "acme");
+        req.addHeader(TurTenantResolutionFilter.INTERNAL_TOKEN_HEADER, "s3cr3t");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        TenantCapturingChain chain = new TenantCapturingChain(tenantContext);
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(user("svc-dumont"));
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(200);
+        assertThat(chain.tenantSeenDuringChain).isEqualTo("t-acme");
+        // membership was never consulted for the trusted caller
+        verify(membershipRepository, never()).findByTenant_IdAndUsername(any(), any());
+    }
+
+    @Test
+    void wrongInternalTokenStillRequiresMembership() throws Exception {
+        // A mismatched token must NOT bypass: falls back to the membership check,
+        // which rejects (service principal has no membership).
+        TurTenantResolutionFilter f = filter(true, false, "s3cr3t");
+        TurTenant acme = new TurTenant();
+        acme.setId("t-acme");
+        acme.setSlug("acme");
+        when(tenantRepository.findById("acme")).thenReturn(Optional.empty());
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(acme));
+        when(membershipRepository.findByTenant_IdAndUsername("t-acme", "svc-dumont"))
+                .thenReturn(Optional.empty());
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader(TurTenantResolutionFilter.TENANT_HEADER, "acme");
+        req.addHeader(TurTenantResolutionFilter.INTERNAL_TOKEN_HEADER, "wrong");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(user("svc-dumont"));
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(403);
+        assertThat(chain.getRequest()).isNull();
+    }
+
+    @Test
+    void internalTokenIgnoredWhenFeatureDisabled() throws Exception {
+        // Token header present but no token configured → no bypass; membership rejects.
+        TurTenantResolutionFilter f = filter(true, false, null);
+        TurTenant acme = new TurTenant();
+        acme.setId("t-acme");
+        acme.setSlug("acme");
+        when(tenantRepository.findById("acme")).thenReturn(Optional.empty());
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(acme));
+        when(membershipRepository.findByTenant_IdAndUsername("t-acme", "svc-dumont"))
+                .thenReturn(Optional.empty());
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader(TurTenantResolutionFilter.TENANT_HEADER, "acme");
+        req.addHeader(TurTenantResolutionFilter.INTERNAL_TOKEN_HEADER, "anything");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(user("svc-dumont"));
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    void trustedInternalCallerStillBlockedBySuspendedTenant() throws Exception {
+        // Suspension is enforced even for a trusted internal caller.
+        TurTenantResolutionFilter f = filter(true, false, "s3cr3t");
+        TurTenant acme = new TurTenant();
+        acme.setId("t-acme");
+        acme.setSlug("acme");
+        acme.setStatus(com.viglet.turing.persistence.model.tenant.TurTenantStatus.SUSPENDED);
+        when(tenantRepository.findById("acme")).thenReturn(Optional.empty());
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(acme));
+        when(tenantRepository.findById("t-acme")).thenReturn(Optional.of(acme));
+
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        req.addHeader(TurTenantResolutionFilter.TENANT_HEADER, "acme");
+        req.addHeader(TurTenantResolutionFilter.INTERNAL_TOKEN_HEADER, "s3cr3t");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .setAuthentication(user("svc-dumont"));
+        try {
+            f.doFilter(req, res, chain);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        assertThat(res.getStatus()).isEqualTo(403);
+        assertThat(chain.getRequest()).isNull();
     }
 
     @Test

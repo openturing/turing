@@ -73,6 +73,15 @@ The breach surface is every path that bypasses the ORM. Each is closed:
 - **Resolution priority** (`TurTenantResolutionFilter`): JWT `tenant` claim →
   session attribute → subdomain → `X-Turing-Tenant` header. A suspended tenant
   or a missing active membership is rejected with 403 (platform admins bypass).
+- **Server-to-server propagation (T334)**: an internal product (e.g. Dumont
+  calling `http://turing:2700` on behalf of an end user) carries no end-user
+  membership. Set `turing.tenancy.internal-token` and have the caller send that
+  value in `X-Turing-Internal-Token` alongside `X-Turing-Tenant`; the filter
+  then honours the stamped tenant **without** the membership check (suspension
+  still blocks; comparison is constant-time). Empty token = feature off. Prefer
+  forwarding the end user's bearer token — the JWT-claim + membership path above
+  then applies unchanged and no internal token is needed. Share the token only
+  over a trusted internal network.
 
 ## Quotas (plan-based)
 

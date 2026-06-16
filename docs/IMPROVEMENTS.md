@@ -2204,7 +2204,7 @@ this only unlocks once the trust boundary is real.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333 shipped; T334–T366)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334 shipped; T335–T366)
 
 Block J gives *isolation*; the Viglet Cloud product needs *one environment per
 signed-up user* on the shared turing/solr/postgres infra. The model: every Cloud
@@ -2225,13 +2225,6 @@ invite-based, many-users-per-tenant posture.
 The remaining follow-ups are about making the *multi-product* Cloud seamless,
 not about correctness of the single-service flow:
 
-- **XIV.8.1 — server-to-server tenant propagation (T334).** Dumont calls Turing
-  on the internal network (`http://turing:2700`) on behalf of a user, but that
-  call carries no end-user identity, so it resolves to `DEFAULT`. Either forward
-  the user's bearer token (preferred — the JWT-claim/membership path then works
-  unchanged) or have the caller stamp `X-Turing-Tenant` from its own resolved
-  tenant. Until then, cross-product features silently read/write the shared
-  `DEFAULT` tenant.
 - **XIV.8.2 — per-tenant Solr core auto-creation (T335).** `TurTenantCoreNaming`
   (T268) yields prefixed core names (`t<shortId>_<core>`), but the Cloud Solr runs
   standalone (`solr-precreate turing`, `turing.solr.cloud=false`) and only the
