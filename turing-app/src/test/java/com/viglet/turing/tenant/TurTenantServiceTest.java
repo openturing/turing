@@ -11,13 +11,11 @@ package com.viglet.turing.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,15 +23,22 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.core.tenancy.VigletTenantMembershipService;
+import com.viglet.core.tenancy.VigletTenantRef;
+import com.viglet.core.tenancy.VigletTenantSlugValidator;
+import com.viglet.core.tenancy.VigletTenantStatus;
 import com.viglet.turing.persistence.model.tenant.TurTenant;
-import com.viglet.turing.persistence.model.tenant.TurTenantMembership;
-import com.viglet.turing.persistence.model.tenant.TurTenantMembershipStatus;
-import com.viglet.turing.persistence.model.tenant.TurTenantRole;
-import com.viglet.turing.persistence.repository.tenant.TurTenantMembershipRepository;
+import com.viglet.turing.persistence.model.tenant.TurTenantStatus;
 import com.viglet.turing.persistence.repository.tenant.TurTenantRepository;
 
 /**
- * Unit tests for {@link TurTenantService} (T264 signup, T265 listing).
+ * Unit tests for {@link TurTenantService} — the Turing-facing adapter over the
+ * shared {@link VigletTenantMembershipService}. The deep lifecycle behaviour
+ * (idempotent signup, personal-tenant provisioning, slug rules) is owned and
+ * tested in {@code viglet-core-tenancy}; here we assert the adapter delegates and
+ * maps the neutral {@link VigletTenantRef} back to the {@link TurTenant} entity
+ * (T396 / §XIV.9), plus that Turing's reserved-name set still rejects
+ * {@code turing}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -42,67 +47,96 @@ import com.viglet.turing.persistence.repository.tenant.TurTenantRepository;
 class TurTenantServiceTest {
 
     @Mock
-    private TurTenantRepository tenantRepository;
+    private VigletTenantMembershipService membershipService;
     @Mock
-    private TurTenantMembershipRepository membershipRepository;
+    private TurTenantRepository tenantRepository;
+
+    /** Real slug validator carrying Turing's extra reserved label ({@code turing}). */
+    private final VigletTenantSlugValidator slugValidator = new VigletTenantSlugValidator(Set.of("turing"));
 
     private TurTenantService service() {
-        return new TurTenantService(tenantRepository, membershipRepository);
+        return new TurTenantService(membershipService, slugValidator, tenantRepository);
+    }
+
+    private static TurTenant tenant(String id, String slug) {
+        TurTenant t = new TurTenant();
+        t.setId(id);
+        t.setSlug(slug);
+        return t;
+    }
+
+    private static VigletTenantRef ref(String id, String slug) {
+        return new VigletTenantRef(id, slug, slug, VigletTenantStatus.ACTIVE, "FREE");
     }
 
     @Test
-    void signupCreatesTenantAndOwnerMembership() {
-        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.empty());
-        when(tenantRepository.save(any(TurTenant.class))).thenAnswer(inv -> {
-            TurTenant t = inv.getArgument(0);
-            t.setId("t-1");
-            return t;
-        });
+    void signupDelegatesAndMapsRefToEntity() {
+        when(membershipService.signup("Acme", "Acme Inc.", "alice")).thenReturn(ref("t-1", "acme"));
+        TurTenant entity = tenant("t-1", "acme");
+        when(tenantRepository.findById("t-1")).thenReturn(Optional.of(entity));
 
         TurTenant created = service().signup("Acme", "Acme Inc.", "alice");
 
-        assertThat(created.getSlug()).isEqualTo("acme");
-        assertThat(created.getName()).isEqualTo("Acme Inc.");
-        verify(membershipRepository).save(org.mockito.ArgumentMatchers.argThat(m ->
-                m.getUsername().equals("alice")
-                        && m.getRole() == TurTenantRole.OWNER
-                        && m.getStatus() == TurTenantMembershipStatus.ACTIVE));
+        assertThat(created).isSameAs(entity);
     }
 
     @Test
-    void signupIsIdempotentForTheSameOwner() {
-        TurTenant existing = new TurTenant();
-        existing.setId("t-1");
-        existing.setSlug("acme");
-        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(existing));
-        TurTenantMembership ownerM = new TurTenantMembership();
-        ownerM.setRole(TurTenantRole.OWNER);
-        when(membershipRepository.findByTenant_IdAndUsername("t-1", "alice"))
-                .thenReturn(Optional.of(ownerM));
+    void resolveOrCreatePersonalTenantMapsRef() {
+        when(membershipService.resolveOrCreatePersonalTenant("alice")).thenReturn(ref("t-home", "alice"));
+        TurTenant entity = tenant("t-home", "alice");
+        when(tenantRepository.findById("t-home")).thenReturn(Optional.of(entity));
 
-        TurTenant result = service().signup("acme", "Acme", "alice");
-
-        assertThat(result).isSameAs(existing);
-        verify(tenantRepository, never()).save(any());
+        assertThat(service().resolveOrCreatePersonalTenant("alice")).isSameAs(entity);
     }
 
     @Test
-    void signupRejectsSlugTakenByAnotherOwner() {
-        TurTenant existing = new TurTenant();
-        existing.setId("t-1");
-        existing.setSlug("acme");
-        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(existing));
-        when(membershipRepository.findByTenant_IdAndUsername("t-1", "mallory"))
-                .thenReturn(Optional.empty());
+    void resolveOrCreatePersonalTenantReturnsNullForBlankUser() {
+        when(membershipService.resolveOrCreatePersonalTenant("")).thenReturn(null);
 
-        assertThatThrownBy(() -> service().signup("acme", "Acme", "mallory"))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("already taken");
+        assertThat(service().resolveOrCreatePersonalTenant("")).isNull();
     }
 
     @Test
-    void rejectsReservedAndMalformedSlugs() {
+    void tenantsOfMapsActiveRefsToEntities() {
+        when(membershipService.tenantsOf("alice")).thenReturn(List.of(ref("a", "a"), ref("b", "b")));
+        when(tenantRepository.findById("a")).thenReturn(Optional.of(tenant("a", "a")));
+        when(tenantRepository.findById("b")).thenReturn(Optional.of(tenant("b", "b")));
+
+        assertThat(service().tenantsOf("alice")).extracting(TurTenant::getId).containsExactly("a", "b");
+    }
+
+    @Test
+    void isActiveMemberDelegates() {
+        when(membershipService.isActiveMember("t-1", "alice")).thenReturn(true);
+
+        assertThat(service().isActiveMember("t-1", "alice")).isTrue();
+    }
+
+    @Test
+    void setStatusMapsTuringStatusToSharedAndBack() {
+        when(membershipService.setStatus("t-1", VigletTenantStatus.SUSPENDED))
+                .thenReturn(new VigletTenantRef("t-1", "acme", "Acme", VigletTenantStatus.SUSPENDED, "FREE"));
+        TurTenant entity = tenant("t-1", "acme");
+        entity.setStatus(TurTenantStatus.SUSPENDED);
+        when(tenantRepository.findById("t-1")).thenReturn(Optional.of(entity));
+
+        TurTenant result = service().setStatus("t-1", TurTenantStatus.SUSPENDED);
+
+        assertThat(result.getStatus()).isEqualTo(TurTenantStatus.SUSPENDED);
+    }
+
+    @Test
+    void findAllReadsRegistryDirectly() {
+        when(tenantRepository.findAll()).thenReturn(List.of(tenant("a", "a")));
+
+        assertThat(service().findAll()).extracting(TurTenant::getId).containsExactly("a");
+    }
+
+    @Test
+    void normalizeSlugRejectsReservedAndMalformed() {
         assertThatThrownBy(() -> service().normalizeSlug("admin"))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("reserved");
+        assertThatThrownBy(() -> service().normalizeSlug("turing"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("reserved");
         assertThatThrownBy(() -> service().normalizeSlug("A"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Invalid slug");
@@ -116,84 +150,10 @@ class TurTenantServiceTest {
     }
 
     @Test
-    void resolveOrCreatePersonalTenantReturnsExistingOwnedTenant() {
-        TurTenant home = new TurTenant();
-        home.setId("t-home");
-        TurTenantMembership owner = new TurTenantMembership();
-        owner.setTenant(home);
-        owner.setRole(TurTenantRole.OWNER);
-        owner.setStatus(TurTenantMembershipStatus.ACTIVE);
-        when(membershipRepository.findByUsername("alice")).thenReturn(List.of(owner));
-
-        TurTenant resolved = service().resolveOrCreatePersonalTenant("alice");
-
-        assertThat(resolved).isSameAs(home);
-        verify(tenantRepository, never()).save(any());
-        verify(membershipRepository, never()).save(any());
-    }
-
-    @Test
-    void resolveOrCreatePersonalTenantProvisionsWhenNone() {
-        when(membershipRepository.findByUsername("alice")).thenReturn(List.of());
-        when(tenantRepository.findBySlug("alice")).thenReturn(Optional.empty());
-        when(tenantRepository.save(any(TurTenant.class))).thenAnswer(inv -> {
-            TurTenant t = inv.getArgument(0);
-            t.setId("t-alice");
-            return t;
-        });
-
-        TurTenant created = service().resolveOrCreatePersonalTenant("alice");
-
-        assertThat(created.getSlug()).isEqualTo("alice");
-        verify(membershipRepository).save(org.mockito.ArgumentMatchers.argThat(m ->
-                m.getUsername().equals("alice")
-                        && m.getRole() == TurTenantRole.OWNER
-                        && m.getStatus() == TurTenantMembershipStatus.ACTIVE));
-    }
-
-    @Test
-    void resolveOrCreatePersonalTenantSuffixesWhenSlugTakenByAnotherUser() {
-        when(membershipRepository.findByUsername("bob")).thenReturn(List.of());
-        TurTenant otherBob = new TurTenant();
-        otherBob.setId("t-other");
-        otherBob.setSlug("bob");
-        when(tenantRepository.findBySlug("bob")).thenReturn(Optional.of(otherBob));
-        when(membershipRepository.findByTenant_IdAndUsername("t-other", "bob"))
-                .thenReturn(Optional.empty()); // not bob's
-        when(tenantRepository.findBySlug("bob-2")).thenReturn(Optional.empty());
-        when(tenantRepository.save(any(TurTenant.class))).thenAnswer(inv -> {
-            TurTenant t = inv.getArgument(0);
-            t.setId("t-bob-2");
-            return t;
-        });
-
-        TurTenant created = service().resolveOrCreatePersonalTenant("bob");
-
-        assertThat(created.getSlug()).isEqualTo("bob-2");
-    }
-
-    @Test
     void basePersonalSlugSanitizesEmailsReservedAndShortNames() {
         assertThat(service().basePersonalSlug("Alice@Example.com")).isEqualTo("alice-example-com");
         assertThat(service().basePersonalSlug("admin")).isEqualTo("u-admin"); // reserved
         assertThat(service().basePersonalSlug("x")).isEqualTo("user-x");      // too short
         assertThat(service().basePersonalSlug("a".repeat(80)).length()).isLessThanOrEqualTo(56);
-    }
-
-    @Test
-    void tenantsOfReturnsOnlyActiveMemberships() {
-        TurTenant a = new TurTenant();
-        a.setId("a");
-        TurTenant b = new TurTenant();
-        b.setId("b");
-        TurTenantMembership active = new TurTenantMembership();
-        active.setTenant(a);
-        active.setStatus(TurTenantMembershipStatus.ACTIVE);
-        TurTenantMembership suspended = new TurTenantMembership();
-        suspended.setTenant(b);
-        suspended.setStatus(TurTenantMembershipStatus.SUSPENDED);
-        when(membershipRepository.findByUsername("alice")).thenReturn(List.of(active, suspended));
-
-        assertThat(service().tenantsOf("alice")).extracting(TurTenant::getId).containsExactly("a");
     }
 }

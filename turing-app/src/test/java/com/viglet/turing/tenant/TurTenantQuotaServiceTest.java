@@ -10,8 +10,8 @@
 package com.viglet.turing.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -24,15 +24,22 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.viglet.turing.persistence.model.tenant.TurTenant;
+import com.viglet.core.tenancy.VigletPlanLimits;
+import com.viglet.core.tenancy.VigletQuotaService;
+import com.viglet.core.tenancy.VigletTenantRef;
+import com.viglet.core.tenancy.VigletTenantStatus;
+import com.viglet.core.tenancy.VigletTenantStore;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.tenant.TurTenantRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 
 /**
- * Unit tests for {@link TurTenantQuotaService} (T277).
+ * Unit tests for {@link TurTenantQuotaService} — the Turing per-resource entry
+ * points delegating to the shared {@link VigletQuotaService}, fed by Turing's
+ * {@link TurVigletResourceCounter} (T277, re-homed in T396 / §XIV.9). The
+ * compare-and-throw is the shared service's; here we assert the Turing FREE plan
+ * limits (3 agents / 2 sites) and the 402 / no-op outcomes still hold.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -41,7 +48,7 @@ import com.viglet.turing.properties.TurConfigProperties;
 class TurTenantQuotaServiceTest {
 
     @Mock
-    private TurTenantRepository tenantRepository;
+    private VigletTenantStore store;
     @Mock
     private TurAIAgentRepository agentRepository;
     @Mock
@@ -55,8 +62,10 @@ class TurTenantQuotaServiceTest {
         TurConfigProperties props = new TurConfigProperties();
         props.getTenancy().setEnabled(tenancyEnabled);
         context = new TurTenantContext(props);
-        return new TurTenantQuotaService(context, tenantRepository, agentRepository,
+        TurVigletResourceCounter counter = new TurVigletResourceCounter(agentRepository,
                 snSiteRepository, tokenUsageRepository);
+        VigletQuotaService quota = new VigletQuotaService(context, store, counter);
+        return new TurTenantQuotaService(quota);
     }
 
     @AfterEach
@@ -67,17 +76,15 @@ class TurTenantQuotaServiceTest {
     }
 
     private void bindFreeTenant() {
-        TurTenant tenant = new TurTenant();
-        tenant.setId("t-1");
-        tenant.setPlan("FREE");
-        lenient().when(tenantRepository.findById("t-1")).thenReturn(Optional.of(tenant));
+        VigletTenantRef ref = new VigletTenantRef("t-1", "acme", "Acme", VigletTenantStatus.ACTIVE, "FREE");
+        lenient().when(store.findById("t-1")).thenReturn(Optional.of(ref));
         context.setCurrentTenant("t-1");
     }
 
     @Test
     void unlimitedWhenTenancyOff() {
         TurTenantQuotaService service = service(false);
-        assertThat(service.currentLimits()).isEqualTo(TurTenantPlanLimits.UNLIMITED);
+        assertThat(service.currentLimits()).isEqualTo(VigletPlanLimits.UNLIMITED);
         assertThatCode(service::checkCanCreateAgent).doesNotThrowAnyException();
     }
 
@@ -114,14 +121,12 @@ class TurTenantQuotaServiceTest {
 
     @Test
     void paidPlanIsUnlimited() {
-        TurTenant tenant = new TurTenant();
-        tenant.setId("t-2");
-        tenant.setPlan("PRO");
         TurTenantQuotaService service = service(true);
-        when(tenantRepository.findById("t-2")).thenReturn(Optional.of(tenant));
+        VigletTenantRef ref = new VigletTenantRef("t-2", "pro", "Pro", VigletTenantStatus.ACTIVE, "PRO");
+        when(store.findById("t-2")).thenReturn(Optional.of(ref));
         context.setCurrentTenant("t-2");
 
-        assertThat(service.currentLimits()).isEqualTo(TurTenantPlanLimits.UNLIMITED);
+        assertThat(service.currentLimits()).isEqualTo(VigletPlanLimits.UNLIMITED);
         assertThatCode(service::checkCanCreateAgent).doesNotThrowAnyException();
     }
 }
