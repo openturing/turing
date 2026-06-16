@@ -350,4 +350,95 @@ class TurSNProcessQueueTest {
                 "customField", TurSEFieldType.STRING, true, false, true);
         verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
+
+    @Test
+    void testReceiveIndexingQueue_CreateProvisionsMissingCoreOnDemand() {
+        // T335 / §XIV.8.2 — a new tenant's first index whose prefixed core was
+        // never provisioned (standalone Solr topology) self-heals: the queue
+        // creates the core on demand before indexing the document.
+        TurSNJobItems jobItems = new TurSNJobItems();
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(new ArrayList<>());
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, "1");
+        item.setAttributes(attrs);
+        jobItems.add(item);
+
+        TurSEInstance seInstance = new TurSEInstance();
+        seInstance.setId("se1");
+        seInstance.setTitle("Solr");
+
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+        site.setTurSEInstance(seInstance);
+
+        TurSNSiteLocale locale = new TurSNSiteLocale();
+        locale.setCore("t1234abcd_site1_en");
+        locale.setTurSNSite(site);
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(site, Locale.US)).thenReturn(locale);
+        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
+        when(pluginFactory.getPluginForInstance(seInstance)).thenReturn(plugin);
+        when(plugin.indexExists(seInstance, "t1234abcd_site1_en")).thenReturn(false);
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US))).thenReturn(attrs);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        verify(plugin).createIndex(eq(seInstance), eq(locale), eq("t1234abcd_site1_en"), anyMap());
+        verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
+    }
+
+    @Test
+    void testReceiveIndexingQueue_CreateSkipsProvisioningWhenCoreExists() {
+        // T335 — when the core is already present the queue does NOT re-create
+        // it (one indexExists check, no createIndex round-trip).
+        TurSNJobItems jobItems = new TurSNJobItems();
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(new ArrayList<>());
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, "1");
+        item.setAttributes(attrs);
+        jobItems.add(item);
+
+        TurSEInstance seInstance = new TurSEInstance();
+        seInstance.setId("se1");
+        seInstance.setTitle("Solr");
+
+        TurSNSite site = new TurSNSite();
+        site.setName("site1");
+        site.setTurSEInstance(seInstance);
+
+        TurSNSiteLocale locale = new TurSNSiteLocale();
+        locale.setCore("core_en");
+        locale.setTurSNSite(site);
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(site, Locale.US)).thenReturn(locale);
+        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
+        when(pluginFactory.getPluginForInstance(seInstance)).thenReturn(plugin);
+        when(plugin.indexExists(seInstance, "core_en")).thenReturn(true);
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US))).thenReturn(attrs);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.processIndexingQueue(jobItems);
+
+        verify(plugin, never()).createIndex(any(), any(), any(), anyMap());
+        verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
+    }
 }

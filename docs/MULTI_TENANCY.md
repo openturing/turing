@@ -44,6 +44,21 @@ The breach surface is every path that bypasses the ORM. Each is closed:
 > globally-unique UUIDs, so they cannot collide across tenants; the SN core uses
 > the human-chosen site *name* and therefore IS prefixed.
 
+> **On-demand SN core provisioning (T335).** The prefixed SN core is created at
+> site/locale creation (`TurSNTemplate.createSolrCore`). On a **standalone Solr**
+> (`turing.solr.cloud=false` — the Cloud topology, started with
+> `solr-precreate turing`) a tenant whose core was never provisioned (engine
+> offline at creation time, restored without the core, etc.) would otherwise
+> `404` on its first index. `TurSNProcessQueue` now self-heals: before the first
+> CREATE for a `(site, locale)` in a batch it verifies the core exists and
+> creates it on demand from the locale's configset (deduped per batch — one
+> `indexExists` check per distinct core, not per document). **Operator
+> requirement:** the standalone Solr must expose the `en`/`es`/`pt`/`ca`
+> configsets (the project Solr image copies them to
+> `/var/solr/data/configsets`); a bare `solr-precreate turing` image only ships
+> `_default`, so mount/add the configsets or core creation will fail with a
+> missing-configset error.
+
 ## How to make a NEW entity tenant-safe
 
 1. **Tenant-owned content** (an agent's/site's data): add

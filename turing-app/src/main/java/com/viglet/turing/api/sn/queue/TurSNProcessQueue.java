@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
@@ -42,8 +44,10 @@ import com.viglet.turing.commons.indexing.TurIndexingStatus;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.logging.TurLoggingUtils;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
@@ -119,27 +123,38 @@ public class TurSNProcessQueue {
     @Transactional
     public void processIndexingQueue(TurSNJobItems turSNJobItems) {
         receiveQueueLog(turSNJobItems);
+        // T335 / §XIV.8.2 — track the cores already verified in this batch so a
+        // bulk index pays at most one on-demand provisioning check per distinct
+        // core, not one per document.
+        Set<String> ensuredCores = new HashSet<>();
         Optional.of(turSNJobItems).ifPresentOrElse(jobItems -> jobItems.forEach(
-                turSNJobItem -> turSNJobItem.getSiteNames().forEach(siteName -> {
-                    log.debug("receiveIndexingQueue: looking up site='{}' action={} locale={}",
-                            siteName, turSNJobItem.getTurSNJobAction(), turSNJobItem.getLocale());
-                    var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteName);
-                    if (siteOpt.isEmpty()) {
-                        log.warn("receiveIndexingQueue: site '{}' not found in DB — skipping", siteName);
-                        return;
-                    }
-                    var turSNSite = siteOpt.get();
-                    log.debug("receiveIndexingQueue: found site='{}' seInstance={}",
-                            turSNSite.getName(),
-                            turSNSite.getTurSEInstance() != null ? turSNSite.getTurSEInstance().getId() : "null");
-                    if (processJob(turSNSite, turSNJobItem)) {
-                        processQueueInfo(turSNSite, turSNJobItem);
-                    } else {
-                        noProcessedWarning(turSNSite, turSNJobItem);
-                    }
-                    TurLoggingUtils.setSuccessStatus(turSNJobItem, TurIndexingStatus.FINISHED);
-                })),
+                turSNJobItem -> turSNJobItem.getSiteNames().forEach(
+                        siteName -> processJobItemForSite(siteName, turSNJobItem, ensuredCores))),
                 () -> log.debug("turSNJob empty or siteId empty"));
+    }
+
+    private void processJobItemForSite(String siteName, TurSNJobItem turSNJobItem,
+            Set<String> ensuredCores) {
+        log.debug("receiveIndexingQueue: looking up site='{}' action={} locale={}",
+                siteName, turSNJobItem.getTurSNJobAction(), turSNJobItem.getLocale());
+        var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteName);
+        if (siteOpt.isEmpty()) {
+            log.warn("receiveIndexingQueue: site '{}' not found in DB — skipping", siteName);
+            return;
+        }
+        var turSNSite = siteOpt.get();
+        log.debug("receiveIndexingQueue: found site='{}' seInstance={}",
+                turSNSite.getName(),
+                turSNSite.getTurSEInstance() != null ? turSNSite.getTurSEInstance().getId() : "null");
+        if (turSNJobItem.getTurSNJobAction() == TurSNJobAction.CREATE) {
+            ensureCoreExists(turSNSite, turSNJobItem.getLocale(), ensuredCores);
+        }
+        if (processJob(turSNSite, turSNJobItem)) {
+            processQueueInfo(turSNSite, turSNJobItem);
+        } else {
+            noProcessedWarning(turSNSite, turSNJobItem);
+        }
+        TurLoggingUtils.setSuccessStatus(turSNJobItem, TurIndexingStatus.FINISHED);
     }
 
     private static void receiveQueueLog(TurSNJobItems turSNJobItems) {
@@ -232,6 +247,54 @@ public class TurSNProcessQueue {
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
         return pluginFactory.getPluginForSite(turSNSite).indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+    }
+
+    /**
+     * T335 / §XIV.8.2 — self-heal a missing search-engine core/index before the
+     * first document of a (site, locale) is indexed in this batch.
+     *
+     * <p>The per-tenant prefixed core ({@code t<shortId>_<core>}) is normally
+     * created at SN-site/locale creation ({@code TurSNTemplate.createSolrCore}).
+     * On a standalone Solr ({@code turing.solr.cloud=false} — the Cloud
+     * topology) a site whose core was never provisioned (created while the
+     * tenant's engine was offline, restored without the core, or configset
+     * missing at creation time) would otherwise 404 on its first index. We
+     * verify the core exists and create it on demand from the locale's configset
+     * if it does not — reusing the same {@code indexExists}/{@code createIndex}
+     * plugin pair the import path uses.
+     *
+     * <p>Deduped via {@code ensuredCores} so a bulk index pays at most one
+     * {@code indexExists} round-trip per distinct core. Failures are logged and
+     * swallowed: indexing then proceeds and fails with its own diagnostics
+     * rather than masking the original error.
+     */
+    private void ensureCoreExists(TurSNSite turSNSite, Locale locale, Set<String> ensuredCores) {
+        TurSEInstance seInstance = turSNSite.getTurSEInstance();
+        if (seInstance == null) {
+            return;
+        }
+        TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository
+                .findByTurSNSiteAndLanguage(turSNSite, locale);
+        if (turSNSiteLocale == null || !StringUtils.hasText(turSNSiteLocale.getCore())) {
+            return;
+        }
+        final String core = turSNSiteLocale.getCore();
+        if (!ensuredCores.add(core)) {
+            return;
+        }
+        turSEInstanceRepository.findById(seInstance.getId()).ifPresent(instance -> {
+            try {
+                TurSearchEnginePlugin plugin = pluginFactory.getPluginForInstance(instance);
+                if (!plugin.indexExists(instance, core)) {
+                    log.info("[T335] Core '{}' missing on SE Instance '{}' — provisioning on demand",
+                            core, instance.getTitle());
+                    plugin.createIndex(instance, turSNSiteLocale, core, Map.of());
+                }
+            } catch (Exception e) {
+                log.error("[T335] Failed to provision core '{}' on demand on SE Instance '{}': {}",
+                        core, instance.getTitle(), e.getMessage(), e);
+            }
+        });
     }
 
     private void createMissingFields(TurSNSite turSNSite,

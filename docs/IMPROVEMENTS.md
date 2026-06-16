@@ -2204,7 +2204,7 @@ this only unlocks once the trust boundary is real.
 > history; the operator + developer guide is [MULTI_TENANCY.md](MULTI_TENANCY.md)
 > and the shipped task index is [CHANGELOG.md](CHANGELOG.md) → Block J.
 
-### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334 shipped; T335–T366)
+### XIV.8 Cloud SaaS integration — one tenant per user (T333, T334, T335 shipped; T336–T366)
 
 Block J gives *isolation*; the Viglet Cloud product needs *one environment per
 signed-up user* on the shared turing/solr/postgres infra. The model: every Cloud
@@ -2225,13 +2225,6 @@ invite-based, many-users-per-tenant posture.
 The remaining follow-ups are about making the *multi-product* Cloud seamless,
 not about correctness of the single-service flow:
 
-- **XIV.8.2 — per-tenant Solr core auto-creation (T335).** `TurTenantCoreNaming`
-  (T268) yields prefixed core names (`t<shortId>_<core>`), but the Cloud Solr runs
-  standalone (`solr-precreate turing`, `turing.solr.cloud=false`) and only the
-  bare `turing` core exists. A new tenant's first SN-site index targets a core
-  that isn't there. Resolve by provisioning the prefixed core on demand from the
-  SN-site create/index path (using the existing configset), or document a
-  precreate/configset requirement for operators.
 - **XIV.8.3 — lifecycle close on identity deletion (T336).** When a Cloud user is
   deleted/disabled in Keycloak, their personal tenant should be suspended and then
   torn down via the T281 `TurTenantTeardownService`, rather than orphaned. A
