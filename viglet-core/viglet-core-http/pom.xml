@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.viglet.core</groupId>
+        <artifactId>viglet-core</artifactId>
+        <version>2026.3.4</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>viglet-core-http</artifactId>
+    <packaging>jar</packaging>
+    <name>Viglet Core :: HTTP</name>
+    <description>Outbound HTTP client builders (pooled httpclient5 + JDK HttpClient + RestClient with tracing &amp; API-key header) shared across Viglet products</description>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <!--
+      T379 / Block Q — the outbound-HTTP-client wiring re-implemented in two
+      products: Turing's TurHttpClientConfiguration (a shared JDK HttpClient with
+      a bounded executor + a pooled httpclient5 CloseableHttpClient) and Dumont's
+      DumRestClientConfig (a Spring RestClient on a pooled httpclient5 factory,
+      with an API-key default header and a trace request/response interceptor).
+
+      This module lifts the genuinely product-agnostic building blocks:
+        - VigletHttpClients         — pooled httpclient5 client + shared JDK client
+        - VigletRestClientTracingInterceptor — trace request/response logging
+        - VigletRestClientBuilder   — RestClient on the pooled factory + API-key
+                                       header + optional tracing
+      Each product still owns its bean registration, base URL and the (decrypted)
+      API key — those bind to product config, not to HTTP plumbing.
+
+      spring-web is `provided`: the RestClient helpers compile against it, but a
+      product that only wants the raw pooled clients (Turing today) brings Spring
+      itself, so nothing extra is pulled.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

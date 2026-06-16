@@ -300,12 +300,9 @@
 
 - 💭 **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — lift the stabilized modules into a standalone published artifact (+ BOM) and adopt in Shio + Dumont. "Move the module to a repo and publish" *only if* Phase 1 kept the dependency boundary clean. Gated on governance/ownership + semver/CI across 3 consumers; not scheduled. → STRATEGY §XII.3/§XII.4
 
-> Surfaced by a cross-product dependency-and-utility audit (2026-06-16) of the
-> three SB-4.0.6 codebases — each concern below is duplicated in all three (or
-> ≥2 where noted) and was missing from the original scope. The poms already pin
-> identical versions for the shared libs, so the *rule of three* is satisfied. → STRATEGY §XII.2
-
-- 💭 **T379** (deps: T367) **`viglet-core` HTTP/RestClient builder** — pooled httpclient5 + tracing interceptor + API-key header injection: `TurHttpClientConfiguration` + `DumRestClientConfig`. ≥2 products (Turing + Dumont); httpclient5 is a dep in all three. → STRATEGY §XII.2
+> A cross-product dependency-and-utility audit (2026-06-16) of the three
+> SB-4.0.6 codebases surfaced concrete duplication that the original scope
+> missed; the lifts it produced (T375–T379) have all shipped — see CHANGELOG. → STRATEGY §XII.2
 
 ## Block R — Structured-source indexing & the cursarei reference (with Dumont)
 

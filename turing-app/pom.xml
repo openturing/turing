@@ -197,6 +197,10 @@
             <artifactId>viglet-core-webhook</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-http</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <exclusions>

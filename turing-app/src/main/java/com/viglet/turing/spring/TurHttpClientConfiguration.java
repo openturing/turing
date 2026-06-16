@@ -1,48 +1,39 @@
 package com.viglet.turing.spring;
 
-import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.concurrent.Executors;
 
-import org.apache.hc.client5.http.config.ConnectionConfig;
-import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.viglet.core.http.VigletHttpClientSettings;
+import com.viglet.core.http.VigletHttpClients;
+
+/**
+ * T379 / Block Q — registers the shared outbound HTTP clients built by
+ * viglet-core ({@link VigletHttpClients}): a JDK {@link java.net.http.HttpClient}
+ * backed by a bounded executor and a pooled httpclient5
+ * {@link CloseableHttpClient}. The pool/timeout values stay here as Turing's
+ * config; the wiring lives in the shared module.
+ */
 @Configuration
 public class TurHttpClientConfiguration {
+
+    /** Bounded executor for the shared JDK client — stops unbounded thread creation. */
+    private static final int SHARED_CLIENT_THREADS = 20;
+    private static final Duration SHARED_CLIENT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+
+    /** Pool sizing + timeouts for the httpclient5 proxy client. */
+    private static final VigletHttpClientSettings PROXY_CLIENT_SETTINGS =
+            new VigletHttpClientSettings(100, 20, Duration.ofSeconds(5), Duration.ofSeconds(30));
+
     @Bean
-    public HttpClient sharedJavaHttpClient() {
-        // O segredo está aqui: o Executor fixo impede a criação infinita de threads
-        return HttpClient.newBuilder()
-                .executor(Executors.newFixedThreadPool(20))
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+    public java.net.http.HttpClient sharedJavaHttpClient() {
+        return VigletHttpClients.sharedJdkClient(SHARED_CLIENT_THREADS, SHARED_CLIENT_CONNECT_TIMEOUT);
     }
 
-    @Bean
+    @Bean(destroyMethod = "close")
     public CloseableHttpClient proxyHttpClient() {
-        ConnectionConfig connectionConfig = ConnectionConfig.custom()
-                .setConnectTimeout(Timeout.ofSeconds(5))
-                .build();
-
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-        connectionManager.setMaxTotal(100);
-        connectionManager.setDefaultMaxPerRoute(20);
-
-        connectionManager.setDefaultConnectionConfig(connectionConfig);
-
-        RequestConfig requestConfig = RequestConfig.custom()
-                .setResponseTimeout(Timeout.ofSeconds(30))
-                .build();
-
-        return HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(requestConfig)
-                .build();
+        return VigletHttpClients.pooledClient(PROXY_CLIENT_SETTINGS);
     }
 }
