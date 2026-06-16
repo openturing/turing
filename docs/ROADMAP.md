@@ -305,9 +305,8 @@
 > missed; the lifts it produced (T375–T379) have all shipped — see CHANGELOG. → STRATEGY §XII.2
 
 **Multi-tenancy parity (cross-product) — make tenancy 100% identical across Turing / Shio / Dumont, on one shared `viglet-core-tenancy` implementation. Staged; viglet-core / Shio / Dumont may each be adjusted. → IMPROVEMENTS §XIV.9**
-- ⏳ **T397** (deps: T395 ✅) **Shio: adopt the full shared tenancy** — `ShTenantContext`→`VigletTenantContext` done; add resolver wiring, tenant-owned-infra marker + scope, platform-admin, provisioning/teardown/quota via the shared surface; map Shio's `@TenantId` entities. → §XIV.9
 - 📋 **T398** (deps: T395 ✅) **Dumont: audit + adopt the shared tenancy** — Dumont likely has little/no tenancy today; add the kernel + shared features to reach parity. → §XIV.9
-- 📋 **T399** (deps: T396 ✅, T397, T398) **Cross-product tenancy conformance test** — a shared behaviour contract (same inputs → same isolation / visibility / scoping outcomes) proving 100% parity across the three products. → §XIV.9
+- 📋 **T399** (deps: T396 ✅, T397 ✅, T398) **Cross-product tenancy conformance test** — a shared behaviour contract (same inputs → same isolation / visibility / scoping outcomes) proving 100% parity across the three products. → §XIV.9
 
 ## Block R — Structured-source indexing & the cursarei reference (with Dumont)
 
