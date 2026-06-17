@@ -74,7 +74,22 @@ public class TurSNSiteManifestService {
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final TurSNTemplate turSNTemplate;
     private final TurSNFieldProvisioner turSNFieldProvisioner;
+    private final TurSNManifestPlanner turSNManifestPlanner;
     private final ApplicationEventPublisher eventPublisher;
+
+    /**
+     * Computes — without mutating anything — the diff a manifest would apply
+     * against the live site (T386 / §XX.6). The dry-run that makes a schema
+     * change reviewable in a PR before it is provisioned.
+     */
+    @Transactional(readOnly = true)
+    public TurSNManifestDiff plan(TurSNSiteManifest manifest) {
+        if (manifest == null || !StringUtils.hasText(manifest.name())) {
+            throw new IllegalArgumentException("Manifest 'name' is required");
+        }
+        validateFields(manifest.fields());
+        return turSNManifestPlanner.diff(manifest);
+    }
 
     @Transactional
     public TurSNManifestResult provision(TurSNSiteManifest manifest) {
@@ -102,10 +117,30 @@ public class TurSNSiteManifestService {
 
         ensureLocales(site, locales, localesCreated);
 
+        // Schema-as-code diff (T386): reject undeclared breaking changes before
+        // touching anything, so a type/cardinality rewrite is never silent.
+        TurSNManifestDiff diff = turSNManifestPlanner.diff(manifest, site);
+        if (!diff.undeclaredBreakingChanges().isEmpty()) {
+            throw new TurSNManifestMigrationRequiredException(diff.undeclaredBreakingChanges());
+        }
+
+        // Declared breaking changes: drop + recreate the field (destructive, but
+        // explicitly authorized by a migration entry).
+        List<String> fieldsMigrated = new ArrayList<>();
+        for (TurSNManifestFieldChange change : diff.breakingChanges()) {
+            TurSNJobAttributeSpec spec = fieldSpec(manifest, change.field());
+            if (spec != null && turSNFieldProvisioner.recreateField(site, spec)) {
+                fieldsMigrated.add(change.field());
+            }
+        }
+
         List<String> fieldsCreated = new ArrayList<>();
         List<String> fieldsSkipped = new ArrayList<>();
         if (manifest.fields() != null) {
             for (TurSNJobAttributeSpec spec : manifest.fields()) {
+                if (fieldsMigrated.contains(spec.getName())) {
+                    continue; // already converged by the migration above
+                }
                 if (turSNFieldProvisioner.ensureField(site, spec)) {
                     fieldsCreated.add(spec.getName());
                 } else {
@@ -118,11 +153,22 @@ public class TurSNSiteManifestService {
                 ? SnSiteIndexInvalidatedEvent.created(site.getId(), site.getName())
                 : SnSiteIndexInvalidatedEvent.updated(site.getId(), site.getName()));
 
-        log.info("[T382] Provisioned site '{}' (created={}): {} field(s) added, {} skipped, {} locale(s) added",
-                site.getName(), siteCreated, fieldsCreated.size(), fieldsSkipped.size(), localesCreated.size());
+        log.info("[T386] Provisioned site '{}' (created={}, schemaVersion={}): {} field(s) added, "
+                        + "{} migrated, {} skipped, {} locale(s) added",
+                site.getName(), siteCreated, manifest.schemaVersion(), fieldsCreated.size(),
+                fieldsMigrated.size(), fieldsSkipped.size(), localesCreated.size());
 
         return new TurSNManifestResult(site.getId(), site.getName(), siteCreated,
-                fieldsCreated, fieldsSkipped, localesCreated);
+                fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated, manifest.schemaVersion());
+    }
+
+    private static TurSNJobAttributeSpec fieldSpec(TurSNSiteManifest manifest, String name) {
+        if (manifest.fields() == null) {
+            return null;
+        }
+        return manifest.fields().stream()
+                .filter(spec -> spec != null && name.equals(spec.getName()))
+                .findFirst().orElse(null);
     }
 
     private TurSNSite createSite(TurSNSiteManifest manifest, List<Locale> locales,

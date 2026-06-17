@@ -22,14 +22,17 @@
 package com.viglet.turing.sn.field;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -95,6 +98,44 @@ public class TurSNFieldProvisioner {
                 .forEach(turSNSiteLocale -> createFieldInSearchEngine(turSNSite,
                         turSNSiteLocale.getCore(), turSNSiteField));
         return true;
+    }
+
+    /**
+     * Applies a declared breaking migration (T386 / §XX.6): drops the live
+     * field — its {@code TurSNSiteFieldExt}/{@code TurSNSiteField} rows and its
+     * search-engine schema definition in every locale core — then recreates it
+     * from {@code spec}. Destructive: values indexed under the old type are gone
+     * and the source must reindex. Only ever called when the manifest declares a
+     * {@link com.viglet.turing.sn.manifest.TurSNFieldMigration} for the field.
+     *
+     * @return {@code true} once the field has been recreated.
+     */
+    public boolean recreateField(TurSNSite turSNSite, TurSNJobAttributeSpec spec) {
+        List<TurSNSiteFieldExt> liveExts = turSNSiteFieldExtRepository
+                .findByTurSNSite(Sort.unsorted(), turSNSite).stream()
+                .filter(ext -> ext.getName().equals(spec.getName()))
+                .toList();
+        TurSEFieldType liveType = liveExts.stream().findFirst()
+                .map(TurSNSiteFieldExt::getType).orElse(spec.getType());
+
+        dropFieldInSearchEngine(turSNSite, spec.getName(), liveType);
+        liveExts.forEach(turSNSiteFieldExtRepository::delete);
+        turSNSiteFieldRepository.findByTurSNSite(turSNSite).stream()
+                .filter(field -> field.getName().equals(spec.getName()))
+                .forEach(turSNSiteFieldRepository::delete);
+        return ensureField(turSNSite, spec);
+    }
+
+    private void dropFieldInSearchEngine(TurSNSite turSNSite, String name, TurSEFieldType liveType) {
+        if (turSNSite.getTurSEInstance() == null) {
+            return;
+        }
+        turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId()).ifPresent(seInstance ->
+                turSNSiteLocaleRepository.findByTurSNSite(turSNSite).stream()
+                        .filter(locale -> pluginFactory.getPluginForSite(turSNSite)
+                                .fieldExists(seInstance, locale.getCore(), name))
+                        .forEach(locale -> pluginFactory.getPluginForSite(turSNSite)
+                                .deleteField(seInstance, locale.getCore(), name, liveType)));
     }
 
     private void saveFacetLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {

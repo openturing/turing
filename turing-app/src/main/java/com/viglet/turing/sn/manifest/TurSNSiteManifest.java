@@ -34,17 +34,33 @@ import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
  * already carried at index time — so "index a new content type" is declared
  * once, the same way whether it arrives with a job item or as a manifest.</p>
  *
+ * <p>T386 / §XX.6 promotes the manifest to a <b>versioned artifact</b> checked
+ * into the source's repo: {@code schemaVersion} tags the shape, and provisioning
+ * becomes diff-and-converge — additive changes apply silently while a breaking
+ * change (a {@code type}/{@code multiValued} change on an existing field) must be
+ * declared via a {@link TurSNFieldMigration} in {@code migrations}, never
+ * inferred.</p>
+ *
  * @param name        the SN site name (required; matched case-insensitively to
  *                    decide create vs. converge).
  * @param description optional human description, applied on create.
  * @param seInstanceId id of the search-engine instance to bind on create. May
  *                     be {@code null} when the site already exists (the bound
  *                     instance is preserved).
+ * @param schemaVersion optional version tag for the manifest artifact (e.g.
+ *                     {@code "1"} or {@code "2026.06.01"}); echoed back in the
+ *                     result/diff so a schema change is traceable. Purely
+ *                     informational — the live diff, not the tag, decides what
+ *                     converges.
  * @param locales     locale codes to provision (e.g. {@code "pt_BR"}, {@code "en_US"}).
  *                    Each maps to a search-engine core / analyzer configset. The
  *                    first one seeds the site on create; the rest are added
  *                    idempotently. {@code null}/empty defaults to {@code en_US}.
  * @param fields      ordered field specifications to ensure exist on the site.
+ * @param migrations  explicit acknowledgements of breaking field changes. A
+ *                     breaking change with no matching migration causes
+ *                     provisioning to be rejected (nothing is mutated). {@code null}
+ *                     means "no breaking changes are authorized".
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -53,6 +69,17 @@ public record TurSNSiteManifest(
         String name,
         String description,
         String seInstanceId,
+        String schemaVersion,
         List<String> locales,
-        List<TurSNJobAttributeSpec> fields) {
+        List<TurSNJobAttributeSpec> fields,
+        List<TurSNFieldMigration> migrations) {
+
+    /**
+     * Backward-compatible constructor (pre-T386 callers): no version, no
+     * migrations. Equivalent to a manifest that authorizes only additive changes.
+     */
+    public TurSNSiteManifest(String name, String description, String seInstanceId,
+            List<String> locales, List<TurSNJobAttributeSpec> fields) {
+        this(name, description, seInstanceId, null, locales, fields, null);
+    }
 }

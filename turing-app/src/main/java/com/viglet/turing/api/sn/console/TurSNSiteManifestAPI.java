@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.sn.manifest.TurSNManifestDiff;
+import com.viglet.turing.sn.manifest.TurSNManifestMigrationRequiredException;
 import com.viglet.turing.sn.manifest.TurSNManifestResult;
 import com.viglet.turing.sn.manifest.TurSNSiteManifest;
 import com.viglet.turing.sn.manifest.TurSNSiteManifestService;
@@ -48,6 +50,12 @@ import lombok.extern.slf4j.Slf4j;
  * the SN site and its field schema to it in one idempotent call — re-posting the
  * same manifest is a no-op. This is how a structured connector (Dumont, cursarei)
  * stands up its schema as code instead of hand-clicking the console.</p>
+ *
+ * <p>Schema-as-code (T386 / §XX.6): {@code POST /api/sn/manifest/plan} returns the
+ * diff a manifest would apply (the dry-run), and provisioning rejects an
+ * undeclared breaking change (a {@code type}/{@code multiValued} rewrite of an
+ * existing field) with HTTP 409 — additive changes converge silently, breaking
+ * changes must be declared via a migration.</p>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -69,6 +77,22 @@ public class TurSNSiteManifestAPI {
         try {
             TurSNManifestResult result = manifestService.provision(manifest);
             return ResponseEntity.ok(result);
+        } catch (TurSNManifestMigrationRequiredException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage(), "breakingChanges", e.getChanges()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Compute the diff a manifest would apply against the live site (dry-run, no mutation)")
+    @PostMapping("/plan")
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
+    public ResponseEntity<Object> plan(@RequestBody TurSNSiteManifest manifest) {
+        try {
+            TurSNManifestDiff diff = manifestService.plan(manifest);
+            return ResponseEntity.ok(diff);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));

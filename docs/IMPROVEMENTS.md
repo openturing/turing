@@ -2446,16 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.6 Manifest as versioned schema-as-code (T386)
-
-T382 delivers an idempotent *provisioning call*; T386 makes the manifest a **versioned
-artifact checked into the source's repo** and provisioning a **diff-and-converge** op:
-additive field changes apply silently, while a type/analyzer change on an existing field
-is a breaking migration that must be declared, not inferred. This is the Liquibase model
-the team already trusts (changesets, never edit-in-place) applied to the SN field schema
-— it makes a catalog's schema reviewable in PRs and reproducible across environments,
-and it is the precondition for treating "the schema" as code a connector ships.
-
 ### XX.7 LLM-assisted manifest derivation (T387)
 
 The cost of onboarding is writing the manifest. T387 removes most of it: feed a sample of

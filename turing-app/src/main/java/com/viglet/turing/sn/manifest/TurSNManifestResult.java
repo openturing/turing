@@ -33,8 +33,11 @@ import java.util.List;
  * @param siteName       the converged site name.
  * @param siteCreated    {@code true} when the site did not exist and was created.
  * @param fieldsCreated  field names newly added by this call.
- * @param fieldsSkipped  field names that already existed (idempotent no-op).
+ * @param fieldsSkipped  field names that already existed unchanged (idempotent no-op).
+ * @param fieldsMigrated field names recreated to apply a declared breaking change
+ *                       (T386); empty unless a {@link TurSNFieldMigration} fired.
  * @param localesCreated locale codes newly provisioned by this call.
+ * @param schemaVersion  the manifest's declared schema version, echoed back (T386).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -45,5 +48,7 @@ public record TurSNManifestResult(
         boolean siteCreated,
         List<String> fieldsCreated,
         List<String> fieldsSkipped,
-        List<String> localesCreated) {
+        List<String> fieldsMigrated,
+        List<String> localesCreated,
+        String schemaVersion) {
 }

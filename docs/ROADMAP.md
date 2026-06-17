@@ -288,26 +288,6 @@
 - 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
 - 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
 
-## Block Q — `viglet-core` shared backend platform (cross-product)
-
-> The bet to stop solving the same backend problems three times across Turing,
-> Shio and Dumont (all on Spring Boot 4.0.6). **Incubate as a Turing submodule,
-> promote to a public shared lib when stable** — the same "don't fragment
-> prematurely" logic as Block P. The bet + scope + phasing → STRATEGY §XII.
-> Cross-product
-> initiative — Phase-1 tasks are genuine Turing module work; Phase-2 adoption in
-> Shio/Dumont is gated, not scheduled.
-
-- ⏳ **T371** (deps: T368, T369, T370) **Phase 2 — promote to a public shared library** — standalone repo [`openviglet/viglet-core`](https://github.com/openviglet/viglet-core) (self-contained parent, BOM, published to GitHub Packages) is **live**, and Turing consumes it as an external dependency (see CHANGELOG). **Shio adoption started**: `viglet-core-webhook` adopted (signer + dispatcher delegate) and `ShTenantContext` now runs on the shared `VigletTenantContext` kernel. **Remaining**: finish Shio + Dumont adoption (tenancy parity tracked separately as T394–T399). → STRATEGY §XII.3/§XII.4
-
-> A cross-product dependency-and-utility audit (2026-06-16) of the three
-> SB-4.0.6 codebases surfaced concrete duplication that the original scope
-> missed; the lifts it produced (T375–T379) have all shipped — see CHANGELOG. → STRATEGY §XII.2
-
-> **Multi-tenancy parity (T394–T399) — shipped.** Tenancy is now 100% identical
-> across Turing / Shio / Dumont on the one shared `viglet-core-tenancy`
-> implementation, locked by the cross-product conformance test (see CHANGELOG).
-
 ## Block R — Structured-source indexing & the cursarei reference (with Dumont)
 
 > Surfaced by the **cursarei → Viglet** migration (cursarei `docs/roadmap/ROADMAP.md`
@@ -328,11 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T386** (deps: T382 ✅) **Manifest as versioned schema-as-code (diff + additive migration)** —
-      promote the T382 manifest to a file checked into the source repo and make provisioning
-      compute a *diff* against the live site: additive changes converge silently, type/analyzer
-      changes require an explicit migration step. "Liquibase for the SN field schema" — the team
-      already owns that mental model. → §XX.6
 - 💭 **T387** (deps: T382 ✅) **LLM-assisted manifest derivation from sample documents** — given a
       sample of a source's documents, propose a draft manifest (per-field `TurSEFieldType`,
       facet/multi-valued/mandatory, locale) for human review, so onboarding a new structured
