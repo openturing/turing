@@ -215,6 +215,9 @@ class TurSNSiteAPITest {
                 TurSEInstance payloadSe = new TurSEInstance();
                 payloadSe.setId("se-1");
                 payloadGenAi.setRagSeInstance(payloadSe);
+                // T383 — public-search ranking mode round-trips alongside the RAG flags.
+                payloadGenAi.setSnRankingMode(
+                                com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.HYBRID_RRF);
                 payload.setTurSNSiteGenAi(payloadGenAi);
 
                 when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(existing));
@@ -228,6 +231,8 @@ class TurSNSiteAPITest {
                 assertThat(existingGenAi.getRagBm25Source())
                                 .isEqualTo(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
                 assertThat(existingGenAi.getRagSeInstance()).isSameAs(seInstance);
+                assertThat(existingGenAi.getSnRankingMode())
+                                .isEqualTo(com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.HYBRID_RRF);
                 verify(genAiRepository).save(existingGenAi);
         }
 

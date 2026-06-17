@@ -38,7 +38,7 @@ import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -116,6 +116,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             // binding renders the radio in the safe "no SE selected" state.
             ragBm25Source: snSite.turSNSiteGenAi?.ragBm25Source ?? "EMBEDDED",
             ragSeInstance: snSite.turSNSiteGenAi?.ragSeInstance ?? null,
+            // T383 — public SN search ranking mode; LEGACY keeps the historical
+            // lexical-only ranking so a pre-T383 binding renders the legacy state.
+            snRankingMode: snSite.turSNSiteGenAi?.snRankingMode ?? "LEGACY",
         });
     }, [snSite]);
 
@@ -767,6 +770,62 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </div>
                                     </>
                                 )}
+                            </SectionCard.Content>
+                        </SectionCard>
+
+                        {/* T383 / §XX.3 — ranking mode for the PUBLIC SN search
+                            (faceted catalog results). Independent of the RAG
+                            card above: this reorders the public results, not
+                            the chat knowledge-base retrieval. HYBRID_RRF needs a
+                            default embedding model + store in Global Settings;
+                            documents are embedded into a per-site collection as
+                            they are indexed, and fused with BM25 via RRF when the
+                            sort is relevance. */}
+                        <SectionCard variant="blue">
+                            <SectionCard.Header
+                                icon={IconArrowsSort}
+                                title={t("forms.snGenai.snRankingTitle")}
+                                description={t("forms.snGenai.snRankingDesc")}
+                            />
+                            <SectionCard.Content>
+                                <FormField
+                                    control={form.control}
+                                    name="snRankingMode"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.snRankingMode")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.snRankingModeDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <div className="flex gap-2">
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={
+                                                            (field.value ?? "LEGACY") === "LEGACY"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        onClick={() => field.onChange("LEGACY")}
+                                                    >
+                                                        {t("forms.snGenai.snRankingLegacy")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "HYBRID_RRF" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("HYBRID_RRF")}
+                                                    >
+                                                        {t("forms.snGenai.snRankingHybrid")}
+                                                    </GradientButton>
+                                                </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
                             </SectionCard.Content>
                         </SectionCard>
 

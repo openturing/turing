@@ -63,6 +63,8 @@ class TurSNProcessQueueTest {
     @Mock
     private com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
     @Mock
+    private com.viglet.turing.sn.ranking.TurSNHybridRankingService turSNHybridRankingService;
+    @Mock
     private TurSNProcessQueue self;
     @InjectMocks
     private TurSNProcessQueue processQueue;

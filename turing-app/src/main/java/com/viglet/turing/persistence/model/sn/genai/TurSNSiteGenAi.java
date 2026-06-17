@@ -153,4 +153,23 @@ public class TurSNSiteGenAi implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rag_se_instance_id")
     private TurSEInstance ragSeInstance;
+
+    /**
+     * T383 / §XX.3 — ranking mode for the <strong>public</strong> SN search
+     * (the faceted catalog results), distinct from the RAG flags above which
+     * only affect the chat {@code search_knowledge_base} tool.
+     *
+     * <p>{@link TurSNRankingMode#LEGACY} (default) keeps the historical
+     * lexical-only ranking — existing sites need no revalidation.
+     * {@link TurSNRankingMode#HYBRID_RRF} fuses the lexical (BM25) ranking with
+     * a vector ranking of the same documents via Reciprocal Rank Fusion
+     * ({@code k=60}), reusing {@link com.viglet.turing.genai.rag.TurRagRrf} and
+     * the embedded vector store the RAG path already builds. Effective only when
+     * the request sort is relevance; facet counts and pagination stay BM25-derived.
+     *
+     * @since 2026.3.1
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "snRankingMode", nullable = false, length = 16)
+    private TurSNRankingMode snRankingMode = TurSNRankingMode.LEGACY;
 }

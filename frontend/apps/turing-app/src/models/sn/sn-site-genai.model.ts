@@ -8,6 +8,15 @@ import type { TurSEInstance } from "../se/se-instance.model.ts";
  */
 export type TurRagBm25Source = "EMBEDDED" | "SE_INSTANCE";
 
+/**
+ * T383 / §XX.3 — ranking mode for the PUBLIC SN search (faceted catalog
+ * results), distinct from the RAG flags which only affect the chat
+ * knowledge-base tool. `LEGACY` (default) is lexical-only; `HYBRID_RRF`
+ * fuses BM25 + a vector ranking of the same documents via Reciprocal Rank
+ * Fusion (k=60) when the sort is relevance.
+ */
+export type TurSNRankingMode = "LEGACY" | "HYBRID_RRF";
+
 export interface TurSNSiteGenAi {
   id: string;
   /**
@@ -51,6 +60,12 @@ export interface TurSNSiteGenAi {
    * @since 2026.2.7
    */
   ragSeInstance?: TurSEInstance | null;
+  /**
+   * T383 / §XX.3 — ranking mode for the public SN search. `LEGACY` (default)
+   * keeps lexical-only ranking; `HYBRID_RRF` opts into BM25 + vector RRF
+   * fusion. Independent of the `rag*` flags above. @since 2026.3.1
+   */
+  snRankingMode?: TurSNRankingMode;
 }
 
 /**

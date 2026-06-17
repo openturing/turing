@@ -52,6 +52,7 @@ import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
+import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,7 @@ public class TurSNProcessQueue {
     private final TurSNFieldProvisioner turSNFieldProvisioner;
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
+    private final TurSNHybridRankingService turSNHybridRankingService;
     private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
@@ -80,6 +82,7 @@ public class TurSNProcessQueue {
             TurSNFieldProvisioner turSNFieldProvisioner,
             TurSEInstanceRepository turSEInstanceRepository,
             com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
+            TurSNHybridRankingService turSNHybridRankingService,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
@@ -89,6 +92,7 @@ public class TurSNProcessQueue {
         this.turSNFieldProvisioner = turSNFieldProvisioner;
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turJmsTenantPropagation = turJmsTenantPropagation;
+        this.turSNHybridRankingService = turSNHybridRankingService;
         this.self = self;
     }
 
@@ -219,10 +223,19 @@ public class TurSNProcessQueue {
         log.debug("DeIndex");
         TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
         if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
-            return plugin.deIndex(turSNSite, turSNJobItem.getLocale(), turSNJobItem.getId());
+            boolean deIndexed = plugin.deIndex(turSNSite, turSNJobItem.getLocale(), turSNJobItem.getId());
+            if (deIndexed) {
+                // T383 — mirror the removal into the per-site hybrid vector collection.
+                turSNHybridRankingService.deIndex(turSNSite, turSNJobItem.getId());
+            }
+            return deIndexed;
         } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
-            return plugin.deIndexByType(turSNSite, turSNJobItem.getLocale(),
-                    (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
+            String type = (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE);
+            boolean deIndexed = plugin.deIndexByType(turSNSite, turSNJobItem.getLocale(), type);
+            if (deIndexed) {
+                turSNHybridRankingService.deIndexByType(turSNSite, type);
+            }
+            return deIndexed;
         }
         return false;
     }
@@ -231,7 +244,13 @@ public class TurSNProcessQueue {
         Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
-        return pluginFactory.getPluginForSite(turSNSite).indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+        boolean indexed = pluginFactory.getPluginForSite(turSNSite)
+                .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+        if (indexed) {
+            // T383 — side-write the document embedding for HYBRID_RRF sites (no-op otherwise).
+            turSNHybridRankingService.indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
+        }
+        return indexed;
     }
 
     /**

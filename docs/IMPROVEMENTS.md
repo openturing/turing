@@ -2446,19 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.3 RRF hybrid ranking for public SN search (T383)
-
-Turing already does the hard part once: `TurRagRrf` (T24/T24b, see
-[RAG_HYBRID_CONFIG.md](RAG_HYBRID_CONFIG.md)) fuses BM25 + vector via Reciprocal Rank
-Fusion (`k=60`) for the RAG `search_knowledge_base` tool over chunked documents. The
-**public Semantic Navigation search** path (the faceted results a site like cursarei
-renders) does not yet expose that fusion as a single query — lexical and ANN are
-separate surfaces. T383 brings RRF hybrid ranking to public SN search results so one
-query returns lexically- and semantically-fused, faceted results. The payoff for the
-reference workload: cursarei collapses its Fuse.js (lexical) + Orama/embeddings
-(semantic) split into one engine (`V02/V03`). Idea-stage: needs design on how fusion
-interacts with facet counts and custom sort/ranking expressions already on the site.
-
 ### XX.4 Public "similar documents" endpoint (T384)
 
 `TurSESimilarResult` exists in commons and Solr/ES both support more-like-this /

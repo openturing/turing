@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # T383 / §XX.3 — snRankingMode on sn_site_genai.
+  #
+  # Selects the ranking strategy for the PUBLIC SN search (faceted catalog
+  # results), independent of the RAG hybrid-retrieval flags that drive the
+  # chat search_knowledge_base tool:
+  #   LEGACY     — lexical-only (BM25 / configured sort). Default; preserves
+  #                pre-T383 behaviour exactly so existing sites need no
+  #                revalidation.
+  #   HYBRID_RRF — fuses BM25 + vector rankings of the same documents via
+  #                Reciprocal Rank Fusion (k=60) when the sort is relevance.
+  #
+  # camelCase per the project's literal JPA naming convention; idempotent via
+  # columnExists + onFail:MARK_RAN.
+  - changeSet:
+      id: v2026.3.1.37-add-sn-site-genai-snRankingMode
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: snRankingMode
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: snRankingMode
+                  type: varchar(16)
+                  defaultValue: LEGACY
+                  constraints:
+                    nullable: false
+                  remarks: "T383/§XX.3 ranking mode for public SN search: LEGACY (default, lexical-only) or HYBRID_RRF (BM25 + vector fused via RRF)."

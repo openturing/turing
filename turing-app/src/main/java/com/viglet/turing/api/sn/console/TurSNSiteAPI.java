@@ -202,6 +202,12 @@ public class TurSNSiteAPI {
                                         ? turSEInstanceRepository.findById(se.getId()).orElse(null)
                                         : null)
                                 .orElse(null));
+                // T383 / §XX.3 — public SN search ranking mode (LEGACY default,
+                // HYBRID_RRF opts into BM25 + vector RRF fusion). Distinct from
+                // the RAG flags above.
+                turSNSiteGenAi.setSnRankingMode(
+                        Optional.ofNullable(genAi.getSnRankingMode())
+                                .orElse(com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.LEGACY));
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });

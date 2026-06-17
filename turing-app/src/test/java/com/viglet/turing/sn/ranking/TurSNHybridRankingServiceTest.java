@@ -1,0 +1,261 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ */
+package com.viglet.turing.sn.ranking;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.genai.TurRagContextBuilder;
+import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
+import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.system.TurGlobalSettingsService;
+
+/**
+ * T383 / §XX.3 — unit coverage for the public-SN hybrid ranking service:
+ * the opt-in gating, RRF reordering of a result page, and the fail-open
+ * degradation back to lexical order.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.1
+ */
+@ExtendWith(MockitoExtension.class)
+class TurSNHybridRankingServiceTest {
+
+    @Mock
+    private TurRagContextBuilder ragContextBuilder;
+    @Mock
+    private TurGlobalSettingsService globalSettingsService;
+    @Mock
+    private VectorStore vectorStore;
+
+    private TurSNHybridRankingService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new TurSNHybridRankingService(ragContextBuilder, globalSettingsService);
+        lenient().when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        lenient().when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+    }
+
+    private TurSNSite siteWithMode(TurSNRankingMode mode) {
+        TurSNSite site = new TurSNSite();
+        site.setId("site-1");
+        site.setName("catalog");
+        if (mode != null) {
+            TurSNSiteGenAi genAi = new TurSNSiteGenAi();
+            genAi.setSnRankingMode(mode);
+            site.setTurSNSiteGenAi(genAi);
+        }
+        return site;
+    }
+
+    private RagInfrastructure infra() {
+        return new RagInfrastructure(vectorStore, null, null, null, null, "sn_site-1");
+    }
+
+    private TurSEResult result(String id) {
+        return TurSEResult.builder().fields(Map.of(TurSNFieldName.ID, id)).build();
+    }
+
+    // ---- isEnabled gating -------------------------------------------------
+
+    @Test
+    void legacyModeIsNotEnabled() {
+        assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.LEGACY))).isFalse();
+    }
+
+    @Test
+    void noGenAiBindingIsNotEnabled() {
+        assertThat(service.isEnabled(siteWithMode(null))).isFalse();
+    }
+
+    @Test
+    void hybridModeWithDefaultsConfiguredIsEnabled() {
+        assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF))).isTrue();
+    }
+
+    @Test
+    void hybridModeWithoutDefaultEmbeddingModelIsNotEnabled() {
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("");
+        assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF))).isFalse();
+    }
+
+    // ---- fuse reordering --------------------------------------------------
+
+    @Test
+    void fuseMovesVectorWinnerToTheFront() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // BM25 order: A, B. Vector pass returns only B → RRF lifts B above A.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("B").text("").build()));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).hasSize(2);
+        assertThat(fused.get(0).getFields().get(TurSNFieldName.ID)).isEqualTo("B");
+        assertThat(fused.get(1).getFields().get(TurSNFieldName.ID)).isEqualTo("A");
+    }
+
+    @Test
+    void fusePreservesTheFullResultSet() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("C").text("").build(),
+                        Document.builder().id("A").text("").build()));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"), result("C"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).extracting(r -> r.getFields().get(TurSNFieldName.ID))
+                .containsExactlyInAnyOrder("A", "B", "C");
+    }
+
+    @Test
+    void fuseIsNoOpWhenVectorPassReturnsNothingOnThePage() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("Z").text("").build()));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+    }
+
+    // ---- fail-open --------------------------------------------------------
+
+    @Test
+    void fuseOnLegacySiteReturnsPageUntouchedAndNeverBuildsInfra() {
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.LEGACY),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void fuseDegradesToLexicalWhenInfraCannotBeBuilt() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.empty());
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+    }
+
+    @Test
+    void fuseDegradesToLexicalWhenVectorSearchThrows() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenThrow(new RuntimeException("store down"));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+    }
+
+    @Test
+    void fuseSkipsSingleResultPage() {
+        List<TurSEResult> page = List.of(result("A"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(fused).isSameAs(page);
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    // ---- indexing side-write ---------------------------------------------
+
+    @Test
+    void indexDocumentUpsertsVectorForHybridSite() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+
+        service.indexDocument(siteWithMode(TurSNRankingMode.HYBRID_RRF), Locale.ENGLISH,
+                Map.of(TurSNFieldName.ID, "doc-1", TurSNFieldName.TITLE, "Hello",
+                        TurSNFieldName.TEXT, "World"));
+
+        verify(vectorStore).delete(List.of("doc-1"));
+        verify(vectorStore).add(any());
+    }
+
+    @Test
+    void indexDocumentIsNoOpForLegacySite() {
+        service.indexDocument(siteWithMode(TurSNRankingMode.LEGACY), Locale.ENGLISH,
+                Map.of(TurSNFieldName.ID, "doc-1", TurSNFieldName.TEXT, "World"));
+
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+        verify(vectorStore, never()).add(any());
+    }
+
+    // ---- content extraction ----------------------------------------------
+
+    @Test
+    void buildContentPrefersTitleAbstractText() {
+        String content = TurSNHybridRankingService.buildContent(Map.of(
+                TurSNFieldName.ID, "x",
+                TurSNFieldName.TITLE, "Course",
+                TurSNFieldName.ABSTRACT, "Short",
+                TurSNFieldName.TEXT, "Body"));
+        assertThat(content).isEqualTo("Course\nShort\nBody");
+    }
+
+    @Test
+    void buildContentFallsBackToOtherFieldsWhenNoMainText() {
+        String content = TurSNHybridRankingService.buildContent(Map.of(
+                TurSNFieldName.ID, "x",
+                TurSNFieldName.URL, "http://ignored",
+                TurSNFieldName.AUTHOR, "Ada"));
+        assertThat(content).isEqualTo("Ada");
+    }
+
+    @Test
+    void buildContentJoinsListValues() {
+        String content = TurSNHybridRankingService.buildContent(Map.of(
+                TurSNFieldName.TITLE, List.of("A", "B")));
+        assertThat(content).isEqualTo("A B");
+    }
+}

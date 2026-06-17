@@ -322,13 +322,6 @@
 > polluted and "field present?" logic breaks. This is a public-data catalog, so
 > **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
 
-- 💭 **T383** (deps: —) **RRF hybrid ranking for public SN search** — the RAG
-      knowledge-base tool already fuses BM25 + vector via `TurRagRrf` (T24); bring the
-      same **single-query hybrid (RRF) ranking** to the public **Semantic Navigation
-      search** results (faceted catalog search), so a catalog query gets lexical +
-      semantic fusion without a separate ANN call. Lets cursarei retire its Fuse.js +
-      Orama split (cursarei `V02/V03`). Generalized into a pluggable ranking pipeline +
-      explainability by **T389**. → §XX.3
 - 💭 **T384** (deps: —) **Public "similar documents" endpoint** — expose more-like-this /
       vector-neighbor retrieval as a first-class SN endpoint so a catalog can render
       "similar courses" from the index instead of a pre-baked neighbors file (replaces
