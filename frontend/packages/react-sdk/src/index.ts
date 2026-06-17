@@ -15,6 +15,7 @@ export {
   postChatConversation,
   postAgentChat,
   postLlmChat,
+  postSemanticChat,
   deleteSiteConversationState,
   deleteAgentFlowState,
   fetchAutoComplete,
@@ -37,6 +38,7 @@ export type {
   PostChatConversationOptions,
   PostAgentChatOptions,
   PostLlmChatOptions,
+  PostSemanticChatOptions,
   ChatEnabledResponse,
   ChatDisabledReason,
   ClickTrackParams,
@@ -94,6 +96,11 @@ export type {
   UseTuringLlmChatOptions,
   LlmSendOverrides,
 } from "./hooks/use-turing-llm-chat";
+export { useTuringSemanticChat } from "./hooks/use-turing-semantic-chat";
+export type {
+  UseTuringSemanticChatReturn,
+  UseTuringSemanticChatOptions,
+} from "./hooks/use-turing-semantic-chat";
 export { useTuringIntents } from "./hooks/use-turing-intents";
 export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
 export { useTuringSlots } from "./hooks/use-turing-slots";

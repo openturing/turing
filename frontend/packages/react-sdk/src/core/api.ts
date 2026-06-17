@@ -41,6 +41,7 @@ export type {
   PostChatConversationOptions,
   PostAgentChatOptions,
   PostLlmChatOptions,
+  PostSemanticChatOptions,
   TurChatSessionSlots,
   TurWorkspaceArtifact,
   TurWorkspaceArtifacts,
@@ -60,6 +61,7 @@ import type {
   PostChatConversationOptions,
   PostAgentChatOptions,
   PostLlmChatOptions,
+  PostSemanticChatOptions,
   TurChatSessionSlots,
   TurChatSlotWriteResponse,
   TurChatSlotExtractResponse,
@@ -471,6 +473,49 @@ export async function postLlmChat(
     headers,
     credentials: "include",
     body,
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const { text } = await consumeAssistantStream(response, options?.onToken);
+  return { role: "assistant", content: text, options: [] };
+}
+
+/**
+ * T404 — streams a turn against an explicit {@code TurLLMInstance} running the
+ * Semantic Navigation tool set (list_sites / get_site_fields / search_site /
+ * catalog_search + any MCP tools) — "talk to the index" without configuring a
+ * full AI Agent. Server endpoint: {@code POST /v2/llm/{id}/semantic-chat}.
+ *
+ * <p>JSON-only (no multipart): the model reaches content through tool calls,
+ * not file uploads. The SSE envelope matches {@link postLlmChat}, so {@link
+ * consumeAssistantStream} parses it unchanged.
+ *
+ * @since 2026.3.1
+ */
+export async function postSemanticChat(
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostSemanticChatOptions,
+): Promise<TurChatConversationResponse> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/llm/${llmInstanceId}/semantic-chat`;
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    "Content-Type": "application/json",
+  };
+  const xsrf = await ensureXsrfToken();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ messages }),
     signal: options?.signal,
   });
 

@@ -308,10 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T392** (deps: T383, T385 ✅) **Grounded conversational catalog copilot** — compose the NL→facet
-      path (T385) with hybrid SN search (T383) and the existing RAG/agent stack into a "talk to the
-      catalog" assistant that answers from the index with citations and objective ranking. The
-      GenAI value layer on top of the structured-search foundation. → §XX.12
 - 📋 **T407** (deps: T385 ✅, T382 ✅) **End-to-end NL→facet eval integration test** — the T385
       unit tests cover the scorer with a fake parser; this is the missing IT that exercises the
       whole path against a **real** LLM and a **live index**: boot the full context
@@ -355,11 +351,6 @@
       `POST /sn/{site}/query` + `/_search` (2026.2.4) as a typed `dslSearch` helper
       for power users building structured queries (bool/match/filter/aggs) from JS
       without the facet-param layer. → §XXI.4
-- 💭 **T404** (deps: —) **SDK: semantic-chat client** — wrap
-      `POST /v2/llm/{id}/semantic-chat` (LLM + SN tool-calling, SSE) as a chat
-      controller/hook variant alongside the existing site/agent/llm chat, so a
-      widget can "talk to the index" through tool calls without an AI Agent
-      configured. → §XXI.5
 - 💭 **T405** (deps: —) **SDK: platform discovery helpers** — small read wrappers for
       `GET /discovery`, `/features`, `/locale`, `/v2/summary`, `/llm/vendor` so a
       widget self-configures (which sites/features/locales/vendors exist) instead

@@ -513,6 +513,46 @@ export async function postLlmChat(
   return { role: "assistant", content: text, options: [] };
 }
 
+export interface PostSemanticChatOptions {
+  readonly onToken?: (token: string) => void;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * T404 — streams a turn against an explicit {@code TurLLMInstance} running the
+ * Semantic Navigation tool set (list_sites / get_site_fields / search_site /
+ * catalog_search + any MCP tools) — "talk to the index" without configuring a
+ * full AI Agent. Server endpoint: {@code POST /v2/llm/{id}/semantic-chat}.
+ *
+ * <p>Unlike {@link postLlmChat} this endpoint consumes JSON only (no multipart
+ * attachments) — the model reaches content through tool calls, not uploads.
+ * The SSE stream reuses the same `data:` envelope, so {@link
+ * consumeAssistantStream} parses it unchanged.
+ */
+export async function postSemanticChat(
+  client: TuringClient,
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostSemanticChatOptions,
+): Promise<TurChatConversationResponse> {
+  const response = await client.fetchRaw(`/v2/llm/${llmInstanceId}/semantic-chat`, {
+    method: "POST",
+    headers: {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ messages }),
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const { text } = await consumeAssistantStream(response, options?.onToken);
+  return { role: "assistant", content: text, options: [] };
+}
+
 /**
  * Drops every chat-flow runtime state for {@code conversationId} on the site's
  * agent. Use to wire a "New chat" button on public search UIs.
@@ -926,6 +966,11 @@ export function createTuringApi(client: TuringClient) {
       messages: TurChatConversationMessage[],
       options?: PostLlmChatOptions,
     ) => postLlmChat(client, llmInstanceId, messages, options),
+    postSemanticChat: (
+      llmInstanceId: string,
+      messages: TurChatConversationMessage[],
+      options?: PostSemanticChatOptions,
+    ) => postSemanticChat(client, llmInstanceId, messages, options),
     deleteSiteConversationState: (site: string, conversationId: string) =>
       deleteSiteConversationState(client, site, conversationId),
     deleteAgentFlowState: (agentId: string, flowId: string, conversationId: string) =>

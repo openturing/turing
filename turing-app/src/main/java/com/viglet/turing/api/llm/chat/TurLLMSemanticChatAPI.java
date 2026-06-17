@@ -31,6 +31,7 @@ import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurDslToolService;
+import com.viglet.turing.genai.catalog.TurCatalogCopilotToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
@@ -56,7 +57,8 @@ public class TurLLMSemanticChatAPI {
             1. List all available Semantic Navigation sites (list_sites)
             2. Get field mappings for a site (get_site_fields)
             3. Search content within a site (search_site)
-            4. Any additional tools provided by registered MCP servers
+            4. Talk to a catalog in plain language and get cited, objectively-ranked results (catalog_search)
+            5. Any additional tools provided by registered MCP servers
 
             CRITICAL RULES:
             1. ALWAYS call list_sites first to discover available sites and their exact locale codes.
@@ -79,6 +81,7 @@ public class TurLLMSemanticChatAPI {
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurDslToolService dslToolService;
+    private final TurCatalogCopilotToolService catalogCopilotToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurLLMTokenUsageService tokenUsageService;
@@ -90,6 +93,7 @@ public class TurLLMSemanticChatAPI {
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurDslToolService dslToolService,
+            TurCatalogCopilotToolService catalogCopilotToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
             TurToolCallbackPipeline toolCallbackPipeline,
             TurLLMTokenUsageService tokenUsageService,
@@ -100,6 +104,7 @@ public class TurLLMSemanticChatAPI {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.dslToolService = dslToolService;
+        this.catalogCopilotToolService = catalogCopilotToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.toolCallbackPipeline = toolCallbackPipeline;
         this.tokenUsageService = tokenUsageService;
@@ -132,7 +137,7 @@ public class TurLLMSemanticChatAPI {
         ChatModel chatModel = llmModelFactory.createChatModel(turLLMInstance, decryptedApiKey);
 
         ToolCallback[] semanticCallbacks = MethodToolCallbackProvider.builder()
-                .toolObjects(dslToolService)
+                .toolObjects(dslToolService, catalogCopilotToolService)
                 .build()
                 .getToolCallbacks();
 

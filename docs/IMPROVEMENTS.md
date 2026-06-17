@@ -2446,16 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.12 Grounded conversational catalog copilot (T392)
-
-The value layer that ties structured search to the GenAI moat. Compose the **NL→facet
-path (T385)** (prose → filters/ranges over the declared schema) with **hybrid SN search
-(T383)** and the existing RAG/agent stack into a "talk to the catalog" assistant:
-"mestrado em dados, online, até 20 mil, perto de SP" returns ranked, faceted, **cited**
-results and can follow up conversationally. It answers strictly from the index (grounded)
-and orders by objective signals only. This is what differentiates Turing from a bare
-search box — and from a source-less ChatGPT answer — for a catalog buyer.
-
 ### XX.14 End-to-end NL→facet eval integration test (T407)
 
 T385 shipped the eval engine with thorough **unit** coverage — the `TurNLFacetEvalScorer`
@@ -2541,15 +2531,6 @@ helper for power users (dashboards, custom relevance experiments, the catalog
 copilot's tool layer) that need full query control from JS. Lower priority than the
 end-user features above because the facet path covers the common case.
 
-### XXI.5 Semantic-chat client (T404)
-
-`POST /v2/llm/{id}/semantic-chat` runs an LLM with the Semantic Navigation tool set
-(list_sites / get_site_fields / search_site) over SSE — "talk to the index" without
-configuring a full AI Agent. The SDKs wrap site-RAG, agent, and raw-LLM chat but not
-this mode. T404 adds it as another chat controller/hook variant, reusing the existing
-SSE parsing (`data: {type:"token"|"options"}`) so it's mostly a new endpoint binding,
-not new streaming machinery.
-
 ### XXI.6 Platform discovery helpers (T405)
 
 Small read endpoints a widget needs to self-configure — `GET /discovery` (which
@@ -2575,7 +2556,7 @@ T400 first — it has a shipped dependency (T384) and the clearest customer pull
 (cursarei "similar courses"). T402 (spell-check) and T405 (discovery) are tiny,
 read-only quick wins that can land any time. T401 (slot-upload/resume) completes the
 chat surface and pairs naturally with whoever is next touching the chat widget. T403
-(DSL) and T404 (semantic-chat) are power-user features — schedule on demand. T406
+(DSL) is a power-user feature — schedule on demand (T404 semantic-chat shipped). T406
 (parity guard) lands **last**, once T400–T405 make the baseline green, then keeps it
 green going forward.
 

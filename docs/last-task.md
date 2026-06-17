@@ -43,7 +43,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T395** — Expand `viglet-core-tenancy` to the full shared feature set (Block Q / parity) — 2026-06-16
 - **T394** — Audit + design the canonical shared tenancy surface (Block Q / parity) — 2026-06-16
 - **T393** — Lift manifest + grounding contract into `viglet-core` (Block R) — 2026-06-16
-- **T392** — Grounded conversational catalog copilot (Block R) — 2026-06-16
+- **T392** — Grounded conversational catalog copilot (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T391** — Structured-source onboarding wizard (Block R) — 2026-06-16
 - **T390** — Multi-source duplicate clustering (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T389** — Pluggable ranking pipeline + ranking explainability (Block R) — 2026-06-16 (shipped 2026-06-17)
