@@ -821,6 +821,16 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                     >
                                                         {t("forms.snGenai.snRankingHybrid")}
                                                     </GradientButton>
+                                                    {/* T389 / §XX.9 — full retrieve → fuse → rerank pipeline:
+                                                        HYBRID_RRF plus the Block N reranker strategy (selected
+                                                        in Global Settings). */}
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "HYBRID_RRF_RERANK" ? "default" : "outline"}
+                                                        onClick={() => field.onChange("HYBRID_RRF_RERANK")}
+                                                    >
+                                                        {t("forms.snGenai.snRankingRerank")}
+                                                    </GradientButton>
                                                 </div>
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>

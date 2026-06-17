@@ -125,4 +125,47 @@ class TurRagRerankerTest {
 
         assertThat(result).extracting(Document::getId).containsExactly("d1");
     }
+
+    // ---- reorder (T389): full-list permutation, no truncation ------------
+
+    @Test
+    void reorderReturnsFullPermutationModelDocsFirstThenTheRest() {
+        List<Document> candidates = docs(4);
+        // Model ranks snippets 4 and 2 (1-based); the other two must survive at the tail.
+        ChatModel model = modelReturning("4, 2");
+
+        List<Document> result = reranker.reorder(model, "question", candidates);
+
+        assertThat(result).extracting(Document::getId).containsExactly("d3", "d1", "d0", "d2");
+    }
+
+    @Test
+    void reorderFailsOpenToInputOrderOnGarbledResponse() {
+        List<Document> candidates = docs(3);
+        ChatModel model = modelReturning("no numbers here");
+
+        List<Document> result = reranker.reorder(model, "question", candidates);
+
+        assertThat(result).extracting(Document::getId).containsExactly("d0", "d1", "d2");
+    }
+
+    @Test
+    void reorderFailsOpenWhenModelThrows() {
+        List<Document> candidates = docs(3);
+        ChatModel model = mock(ChatModel.class);
+        when(model.call(any(Prompt.class))).thenThrow(new RuntimeException("boom"));
+
+        List<Document> result = reranker.reorder(model, "question", candidates);
+
+        assertThat(result).extracting(Document::getId).containsExactly("d0", "d1", "d2");
+    }
+
+    @Test
+    void reorderKeepsInputWhenBlankQuery() {
+        List<Document> candidates = docs(3);
+
+        List<Document> result = reranker.reorder(mock(ChatModel.class), "  ", candidates);
+
+        assertThat(result).isSameAs(candidates);
+    }
 }

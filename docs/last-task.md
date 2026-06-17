@@ -46,7 +46,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T392** — Grounded conversational catalog copilot (Block R) — 2026-06-16
 - **T391** — Structured-source onboarding wizard (Block R) — 2026-06-16
 - **T390** — Multi-source duplicate clustering (Block R) — 2026-06-16
-- **T389** — Pluggable ranking pipeline + ranking explainability (Block R) — 2026-06-16
+- **T389** — Pluggable ranking pipeline + ranking explainability (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T388** — Per-field coverage / completeness observability (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T387** — LLM-assisted manifest derivation from sample documents (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T386** — Manifest as versioned schema-as-code (Block R) — 2026-06-16

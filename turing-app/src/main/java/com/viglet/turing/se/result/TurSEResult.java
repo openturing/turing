@@ -30,6 +30,15 @@ import java.util.Map;
 public class TurSEResult {
 	private Map<String, Object> fields;
 
+	/**
+	 * T389 / §XX.9 — optional "why this result ranked here" breakdown
+	 * (lexical/semantic/fused/final ranks, RRF score, reranker delta), populated
+	 * only by the hybrid ranking pipeline. Kept separate from {@link #fields} so
+	 * it is never confused with a search-engine field. {@code null} on the legacy
+	 * (lexical-only) path.
+	 */
+	private Map<String, Object> rankingExplanation;
+
 	@Tolerate
 	TurSEResult() {}
 }

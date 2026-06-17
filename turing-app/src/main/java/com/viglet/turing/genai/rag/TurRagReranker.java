@@ -10,7 +10,9 @@
 package com.viglet.turing.genai.rag;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
@@ -99,6 +101,63 @@ public class TurRagReranker {
             log.warn("[RAG] reranker strategy {} failed ({}); keeping retrieval order",
                     type, e.getMessage());
             return firstK;
+        }
+    }
+
+    /**
+     * T389 / §XX.9 — re-orders an <em>entire</em> candidate list by query
+     * relevance, keeping every input document (no top-k truncation). This is the
+     * variant the public Semantic Navigation pipeline needs: it reorders a result
+     * page rather than selecting a few chunks for prompt stuffing, so dropping
+     * documents is not an option.
+     *
+     * <p>Reuses the exact same strategy seam and Global-Settings selection as
+     * {@link #rerank}, and inherits the same fail-open guarantee: on no chat model
+     * for the LLM strategy, a strategy exception, or an empty/garbled response the
+     * input list is returned <strong>unchanged</strong>. Documents the strategy
+     * ranked are placed first in its order; any it omitted keep their original
+     * relative order at the tail, so the result is always a permutation of the
+     * input.
+     *
+     * @param chatModel  model for the LLM strategy; ignored (may be {@code null})
+     *                   by the HTTP strategies (cross-encoder, Cohere)
+     * @param query      the user query the documents should answer
+     * @param candidates the documents to re-order (retrieval/fused order)
+     * @return a re-ordered permutation of {@code candidates}, or {@code candidates}
+     *         unchanged when reranking can't run or adds no signal
+     */
+    public List<Document> reorder(ChatModel chatModel, String query, List<Document> candidates) {
+        if (candidates == null || candidates.size() < 2 || query == null || query.isBlank()) {
+            return candidates == null ? List.of() : candidates;
+        }
+        TurRagRerankStrategyType type = globalSettingsService.getRagSnRerankStrategy();
+        try {
+            TurRagRerankStrategy strategy = strategyFactory.resolve(type);
+            // topK == size: ask the strategy to rank the whole list, not a subset.
+            List<Document> reranked = strategy.rerank(
+                    new TurRagRerankRequest(query, candidates, candidates.size(), chatModel));
+            if (reranked == null || reranked.isEmpty()) {
+                return candidates;
+            }
+            // Re-attach any document the strategy dropped (off-topic omissions),
+            // in original order, so the page never loses a result.
+            List<Document> ordered = new ArrayList<>(candidates.size());
+            Set<String> seen = new HashSet<>();
+            for (Document d : reranked) {
+                if (d != null && d.getId() != null && seen.add(d.getId())) {
+                    ordered.add(d);
+                }
+            }
+            for (Document d : candidates) {
+                if (d != null && d.getId() != null && seen.add(d.getId())) {
+                    ordered.add(d);
+                }
+            }
+            return ordered.size() == candidates.size() ? ordered : candidates;
+        } catch (RuntimeException e) {
+            log.warn("[RAG] reranker strategy {} reorder failed ({}); keeping input order",
+                    type, e.getMessage());
+            return candidates;
         }
     }
 }

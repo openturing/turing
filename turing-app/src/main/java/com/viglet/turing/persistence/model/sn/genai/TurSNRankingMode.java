@@ -29,6 +29,14 @@ import java.util.Locale;
  *       result page is reordered. Facet counts, pagination and explicit
  *       non-relevance sorts are left untouched — the conservative,
  *       objective-ranking-preserving choice for a public catalog.</li>
+ *   <li>{@link #HYBRID_RRF_RERANK} — T389 / §XX.9. The full pluggable
+ *       {@code retrieve → fuse → rerank} pipeline: everything {@link #HYBRID_RRF}
+ *       does, then the fused page is re-ordered once more by the Block N
+ *       {@link com.viglet.turing.genai.rag.TurRagReranker} strategy seam
+ *       (LLM | CROSS_ENCODER | COHERE, selected in Global Settings). Like the
+ *       rest of the pipeline it is fail-open: a missing/failing reranker leaves
+ *       the RRF-fused order in place. Still objective-signal-only — no commercial
+ *       boost ever enters the pipeline.</li>
  * </ul>
  *
  * @author Alexandre Oliveira
@@ -36,7 +44,18 @@ import java.util.Locale;
  */
 public enum TurSNRankingMode {
     LEGACY,
-    HYBRID_RRF;
+    HYBRID_RRF,
+    HYBRID_RRF_RERANK;
+
+    /** Whether this mode needs the per-site vector collection (any hybrid mode). */
+    public boolean isHybrid() {
+        return this == HYBRID_RRF || this == HYBRID_RRF_RERANK;
+    }
+
+    /** Whether this mode runs the optional rerank stage after RRF fusion (T389). */
+    public boolean isRerank() {
+        return this == HYBRID_RRF_RERANK;
+    }
 
     /**
      * Lenient parse used wherever a stored/config string is turned into a mode.

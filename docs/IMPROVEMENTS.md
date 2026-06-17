@@ -2446,18 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.9 Pluggable ranking pipeline + explainability (T389)
-
-T383 brings RRF fusion to public SN search. T389 generalizes it from a boolean
-("hybrid on/off") into a **configurable `retrieve → fuse → rerank` pipeline** that reuses
-the existing **Block N `TurRagReranker` strategy seam** (LLM | CROSS_ENCODER | COHERE,
-fail-open) rather than inventing a parallel ranking path — the RAG and SN ranking stacks
-converge on one abstraction. It also exposes a **"why this result ranked here"** breakdown
-(lexical score, semantic score, fused rank, reranker delta). Explainability is not a
-nicety here: for a public-data catalog the objective-ranking invariant is a *claim*, and a
-visible score breakdown is how that claim is audited. No commercial signal ever enters the
-pipeline.
-
 ### XX.10 Multi-source duplicate clustering (T390)
 
 The same real-world entity arrives from many of the 120 sources — the identical course

@@ -166,10 +166,13 @@ public class TurSNSiteGenAi implements Serializable {
      * ({@code k=60}), reusing {@link com.viglet.turing.genai.rag.TurRagRrf} and
      * the embedded vector store the RAG path already builds. Effective only when
      * the request sort is relevance; facet counts and pagination stay BM25-derived.
+     * {@link TurSNRankingMode#HYBRID_RRF_RERANK} (T389) additionally re-orders the
+     * fused page through the Block N {@link com.viglet.turing.genai.rag.TurRagReranker}
+     * strategy seam.
      *
      * @since 2026.3.1
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "snRankingMode", nullable = false, length = 16)
+    @Column(name = "snRankingMode", nullable = false, length = 32)
     private TurSNRankingMode snRankingMode = TurSNRankingMode.LEGACY;
 }

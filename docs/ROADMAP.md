@@ -308,10 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T389** (deps: T383) **Pluggable ranking pipeline + ranking explainability** — generalize
-      T383 from "RRF on/off" into a configurable `retrieve → fuse → rerank` pipeline that reuses
-      the Block N `TurRagReranker` strategy seam (LLM | CROSS_ENCODER | COHERE), plus a "why this
-      result ranked here" breakdown. Objective signals only — no partner boost. → §XX.9
 - 💭 **T390** (deps: T384 ✅) **Multi-source duplicate clustering** — use the T384 vector-neighbor
       retrieval to cluster the same real-world entity arriving from many sources (a course listed
       by 5 portals collapses to one result, not five). The concrete multi-source-aggregator

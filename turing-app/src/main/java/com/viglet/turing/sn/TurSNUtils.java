@@ -249,6 +249,9 @@ public class TurSNUtils {
                         .source(getSourceFromDocument(turSEResultAttr))
                         .fields(addFieldsFromDocument(fieldExtMap, turSEResultAttr,
                                 turSEResultAttr.keySet()))
+                        // T389 — carry the hybrid pipeline's ranking explanation through
+                        // to the response (absent on the legacy lexical path).
+                        .rankingExplanation(result.getRankingExplanation())
                         .build())
                 .orElse(TurSNSiteSearchDocumentBean.builder().build());
     }

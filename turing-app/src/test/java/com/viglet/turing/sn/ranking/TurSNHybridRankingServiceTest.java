@@ -11,12 +11,15 @@ package com.viglet.turing.sn.ranking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,10 +37,13 @@ import org.springframework.ai.vectorstore.VectorStore;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
+import com.viglet.turing.genai.rag.TurRagReranker;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.system.TurDefaultChatModelResolver;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 /**
@@ -57,12 +63,17 @@ class TurSNHybridRankingServiceTest {
     private TurGlobalSettingsService globalSettingsService;
     @Mock
     private VectorStore vectorStore;
+    @Mock
+    private TurRagReranker reranker;
+    @Mock
+    private TurDefaultChatModelResolver defaultChatModelResolver;
 
     private TurSNHybridRankingService service;
 
     @BeforeEach
     void setUp() {
-        service = new TurSNHybridRankingService(ragContextBuilder, globalSettingsService);
+        service = new TurSNHybridRankingService(ragContextBuilder, globalSettingsService,
+                reranker, defaultChatModelResolver);
         lenient().when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
         lenient().when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
     }
@@ -108,6 +119,11 @@ class TurSNHybridRankingServiceTest {
     void hybridModeWithoutDefaultEmbeddingModelIsNotEnabled() {
         when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("");
         assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF))).isFalse();
+    }
+
+    @Test
+    void rerankModeWithDefaultsConfiguredIsEnabled() {
+        assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF_RERANK))).isTrue();
     }
 
     // ---- fuse reordering --------------------------------------------------
@@ -157,6 +173,90 @@ class TurSNHybridRankingServiceTest {
                 Locale.ENGLISH, "query", page);
 
         assertThat(fused).isSameAs(page);
+    }
+
+    // ---- ranking explanation (T389) --------------------------------------
+
+    @Test
+    void fuseAttachesObjectiveRankingExplanation() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // BM25 order: A, B. Vector pass returns only B → RRF lifts B above A.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("B").text("").build()));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> fused = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Locale.ENGLISH, "query", page);
+
+        // B is the vector winner → fusedRank/finalRank 1, lexicalRank 2, semanticRank 1.
+        Map<String, Object> bExplain = fused.get(0).getRankingExplanation();
+        assertThat(bExplain).containsEntry("pipeline", "HYBRID_RRF")
+                .containsEntry("lexicalRank", 2)
+                .containsEntry("semanticRank", 1)
+                .containsEntry("fusedRank", 1)
+                .containsEntry("finalRank", 1)
+                .containsKey("rrfScore");
+        // No rerank stage on HYBRID_RRF → no rerankerDelta, reranker untouched.
+        assertThat(bExplain).doesNotContainKey("rerankerDelta");
+        verify(reranker, never()).reorder(any(), anyString(), anyList());
+    }
+
+    // ---- rerank stage (T389) ---------------------------------------------
+
+    @Test
+    void rerankStageReordersFusedPageAndRecordsDelta() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // BM25: A, B. Vector returns only B → fused order [B, A].
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("B").text("").build()));
+        // HTTP strategy → no chat model needed; reranker reverses the fused order → [A, B].
+        when(globalSettingsService.getRagSnRerankStrategy())
+                .thenReturn(TurRagRerankStrategyType.CROSS_ENCODER);
+        when(reranker.reorder(any(), anyString(), anyList())).thenAnswer(inv -> {
+            List<Document> candidates = inv.getArgument(2);
+            List<Document> reversed = new ArrayList<>(candidates);
+            Collections.reverse(reversed);
+            return reversed;
+        });
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> ranked = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF_RERANK),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(ranked).extracting(r -> r.getFields().get(TurSNFieldName.ID))
+                .containsExactly("A", "B");
+        // A was fusedRank 2, reranked to finalRank 1 → delta +1; strategy recorded.
+        Map<String, Object> aExplain = ranked.get(0).getRankingExplanation();
+        assertThat(aExplain).containsEntry("pipeline", "HYBRID_RRF_RERANK")
+                .containsEntry("fusedRank", 2)
+                .containsEntry("finalRank", 1)
+                .containsEntry("rerankerDelta", 1)
+                .containsEntry("rerankStrategy", "CROSS_ENCODER");
+        // HTTP strategy must not resolve a chat model.
+        verify(defaultChatModelResolver, never()).resolve();
+    }
+
+    @Test
+    void rerankStageKeepsFusedOrderWhenRerankerNoOps() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("B").text("").build()));
+        when(globalSettingsService.getRagSnRerankStrategy())
+                .thenReturn(TurRagRerankStrategyType.CROSS_ENCODER);
+        // Reranker fails open: returns the candidates unchanged (fused order [B, A]).
+        when(reranker.reorder(any(), anyString(), anyList())).thenAnswer(inv -> inv.getArgument(2));
+
+        List<TurSEResult> page = List.of(result("A"), result("B"));
+        List<TurSEResult> ranked = service.fuse(siteWithMode(TurSNRankingMode.HYBRID_RRF_RERANK),
+                Locale.ENGLISH, "query", page);
+
+        assertThat(ranked).extracting(r -> r.getFields().get(TurSNFieldName.ID))
+                .containsExactly("B", "A");
+        // Rerank ran but changed nothing → delta 0 for the top result.
+        assertThat(ranked.get(0).getRankingExplanation()).containsEntry("rerankerDelta", 0);
     }
 
     // ---- fail-open --------------------------------------------------------

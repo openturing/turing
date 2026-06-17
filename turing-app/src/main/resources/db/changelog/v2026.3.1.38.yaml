@@ -1,0 +1,24 @@
+databaseChangeLog:
+  # T389 / §XX.9 — widen snRankingMode to fit the new HYBRID_RRF_RERANK value.
+  #
+  # T383 created snRankingMode as varchar(16), which fits LEGACY and HYBRID_RRF
+  # but NOT HYBRID_RRF_RERANK (17 chars), the new pluggable retrieve → fuse →
+  # rerank pipeline mode. Widen to varchar(32) so the additional mode (and any
+  # future one) persists. Additive and idempotent: the default and existing
+  # rows are untouched; modifyDataType is a no-op when the column is already
+  # wide enough.
+  - changeSet:
+      id: v2026.3.1.38-widen-sn-site-genai-snRankingMode
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: snRankingMode
+      changes:
+        - modifyDataType:
+            tableName: sn_site_genai
+            columnName: snRankingMode
+            newDataType: varchar(32)

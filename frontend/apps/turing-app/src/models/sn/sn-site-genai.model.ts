@@ -13,9 +13,11 @@ export type TurRagBm25Source = "EMBEDDED" | "SE_INSTANCE";
  * results), distinct from the RAG flags which only affect the chat
  * knowledge-base tool. `LEGACY` (default) is lexical-only; `HYBRID_RRF`
  * fuses BM25 + a vector ranking of the same documents via Reciprocal Rank
- * Fusion (k=60) when the sort is relevance.
+ * Fusion (k=60) when the sort is relevance. `HYBRID_RRF_RERANK` (T389)
+ * additionally re-orders the fused page through the Block N reranker strategy
+ * seam (LLM | CROSS_ENCODER | COHERE, selected in Global Settings).
  */
-export type TurSNRankingMode = "LEGACY" | "HYBRID_RRF";
+export type TurSNRankingMode = "LEGACY" | "HYBRID_RRF" | "HYBRID_RRF_RERANK";
 
 export interface TurSNSiteGenAi {
   id: string;
@@ -63,7 +65,8 @@ export interface TurSNSiteGenAi {
   /**
    * T383 / §XX.3 — ranking mode for the public SN search. `LEGACY` (default)
    * keeps lexical-only ranking; `HYBRID_RRF` opts into BM25 + vector RRF
-   * fusion. Independent of the `rag*` flags above. @since 2026.3.1
+   * fusion; `HYBRID_RRF_RERANK` (T389) adds the reranker stage on top.
+   * Independent of the `rag*` flags above. @since 2026.3.1
    */
   snRankingMode?: TurSNRankingMode;
 }

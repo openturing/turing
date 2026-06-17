@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.stereotype.Service;
@@ -26,11 +27,14 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
+import com.viglet.turing.genai.rag.TurRagReranker;
 import com.viglet.turing.genai.rag.TurRagRrf;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.system.TurDefaultChatModelResolver;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +63,15 @@ import lombok.extern.slf4j.Slf4j;
  * WARN and degrades to the legacy lexical behaviour. A site left on
  * {@link TurSNRankingMode#LEGACY} never touches this service.
  *
+ * <p><strong>T389 / §XX.9</strong> generalizes this into a configurable
+ * {@code retrieve → fuse → rerank} pipeline. {@link TurSNRankingMode#HYBRID_RRF}
+ * stops after fusion; {@link TurSNRankingMode#HYBRID_RRF_RERANK} runs the fused
+ * page once more through the Block N {@link TurRagReranker} strategy seam
+ * (LLM | CROSS_ENCODER | COHERE). Both modes also attach a per-result
+ * <em>ranking explanation</em> (lexical rank, semantic rank, fused rank, RRF
+ * score, final rank, reranker delta) so the objective-ranking claim is auditable
+ * — no commercial signal ever enters the pipeline.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
@@ -77,31 +90,45 @@ public class TurSNHybridRankingService {
 
     private final TurRagContextBuilder ragContextBuilder;
     private final TurGlobalSettingsService globalSettingsService;
+    private final TurRagReranker reranker;
+    private final TurDefaultChatModelResolver defaultChatModelResolver;
 
     /** Cached infra per (site, embeddingModel, store) so search latency doesn't pay a rebuild per query. */
     private final Map<String, RagInfrastructure> infraCache = new ConcurrentHashMap<>();
 
     public TurSNHybridRankingService(TurRagContextBuilder ragContextBuilder,
-            TurGlobalSettingsService globalSettingsService) {
+            TurGlobalSettingsService globalSettingsService,
+            TurRagReranker reranker,
+            TurDefaultChatModelResolver defaultChatModelResolver) {
         this.ragContextBuilder = ragContextBuilder;
         this.globalSettingsService = globalSettingsService;
+        this.reranker = reranker;
+        this.defaultChatModelResolver = defaultChatModelResolver;
     }
 
     /**
-     * Whether the site opted into hybrid ranking AND the platform has a default
-     * embedding model + store configured (without those there is nothing to
-     * embed against, so we stay on the legacy path).
+     * Whether the site opted into a hybrid ranking mode ({@code HYBRID_RRF} or
+     * {@code HYBRID_RRF_RERANK}) AND the platform has a default embedding model +
+     * store configured (without those there is nothing to embed against, so we
+     * stay on the legacy path).
      */
     public boolean isEnabled(TurSNSite turSNSite) {
         if (turSNSite == null) {
             return false;
         }
-        TurSNSiteGenAi genAi = turSNSite.getTurSNSiteGenAi();
-        if (genAi == null || genAi.getSnRankingMode() != TurSNRankingMode.HYBRID_RRF) {
+        TurSNRankingMode mode = modeOf(turSNSite);
+        if (!mode.isHybrid()) {
             return false;
         }
         return StringUtils.hasText(globalSettingsService.getDefaultEmbeddingModelId())
                 && StringUtils.hasText(globalSettingsService.getDefaultEmbeddingStoreId());
+    }
+
+    private static TurSNRankingMode modeOf(TurSNSite turSNSite) {
+        TurSNSiteGenAi genAi = turSNSite.getTurSNSiteGenAi();
+        return genAi != null && genAi.getSnRankingMode() != null
+                ? genAi.getSnRankingMode()
+                : TurSNRankingMode.LEGACY;
     }
 
     /**
@@ -172,15 +199,19 @@ public class TurSNHybridRankingService {
     }
 
     /**
-     * Reorders a lexical result page by fusing the BM25 ranking with a vector
-     * ranking of the same documents via RRF. Returns the input unchanged on any
-     * failure or when there is nothing meaningful to fuse.
+     * Runs the T389 {@code retrieve → fuse → rerank} pipeline over a lexical
+     * result page: fuses the BM25 ranking with a vector ranking of the same
+     * documents via RRF and, for {@link TurSNRankingMode#HYBRID_RRF_RERANK},
+     * re-orders the fused page through the {@link TurRagReranker} strategy seam.
+     * Each surviving result gets a per-result ranking explanation attached.
+     * Returns the input unchanged on any failure or when there is nothing
+     * meaningful to fuse.
      *
-     * @param turSNSite the (snapshot) site — must be HYBRID_RRF
+     * @param turSNSite the (snapshot) site — must be a hybrid mode
      * @param locale    request locale (unused for filtering today; the collection is per-site)
      * @param query     the user query text
      * @param page      the BM25-ordered result page
-     * @return a new list with the page reordered by fused rank, or {@code page} as-is
+     * @return a new list with the page reordered by the pipeline, or {@code page} as-is
      */
     public List<TurSEResult> fuse(TurSNSite turSNSite, Locale locale, String query, List<TurSEResult> page) {
         if (!isEnabled(turSNSite) || page == null || page.size() < 2 || !StringUtils.hasText(query)) {
@@ -191,31 +222,37 @@ public class TurSNHybridRankingService {
             if (infra == null) {
                 return page;
             }
-            // Index page results by id so the fused id ordering can be mapped back.
+            // Stage 1 (retrieve): index the BM25 page by id, capturing 1-based lexical rank.
             Map<String, TurSEResult> byId = new LinkedHashMap<>();
+            Map<String, Integer> lexicalRank = new LinkedHashMap<>();
             List<Document> bm25Hits = new ArrayList<>(page.size());
             for (TurSEResult result : page) {
                 String id = asString(result.getFields().get(TurSNFieldName.ID));
                 if (StringUtils.hasText(id) && !byId.containsKey(id)) {
                     byId.put(id, result);
+                    lexicalRank.put(id, lexicalRank.size() + 1);
                     bm25Hits.add(Document.builder().id(id).text("").build());
                 }
             }
             if (byId.size() < 2) {
                 return page;
             }
+            // Stage 2 (fuse): vector pass over the per-site collection, restricted to
+            // documents already on the page; fusion can only reorder what BM25 returned
+            // (facets/pagination stay BM25-derived). Capture 1-based semantic rank.
             SearchRequest request = SearchRequest.builder()
                     .query(query)
                     .topK(VECTOR_TOP_K)
                     .similarityThreshold(0.0)
                     .build();
             List<Document> vectorAll = infra.vectorStore().similaritySearch(request);
-            // Keep only vector hits that are actually on this page; fusion can only
-            // reorder what BM25 already returned (facets/pagination stay BM25-derived).
             List<Document> vectorHits = new ArrayList<>();
+            Map<String, Integer> semanticRank = new LinkedHashMap<>();
             if (vectorAll != null) {
                 for (Document d : vectorAll) {
-                    if (d.getId() != null && byId.containsKey(d.getId())) {
+                    if (d.getId() != null && byId.containsKey(d.getId())
+                            && !semanticRank.containsKey(d.getId())) {
+                        semanticRank.put(d.getId(), vectorHits.size() + 1);
                         vectorHits.add(d);
                     }
                 }
@@ -224,21 +261,111 @@ public class TurSNHybridRankingService {
                 return page;
             }
             List<Document> fused = TurRagRrf.fuse(vectorHits, bm25Hits, byId.size());
-            List<TurSEResult> reordered = new ArrayList<>(page.size());
+            Map<String, Integer> fusedRank = new LinkedHashMap<>();
+            Map<String, Double> rrfScore = new LinkedHashMap<>();
             for (Document d : fused) {
-                TurSEResult result = byId.remove(d.getId());
-                if (result != null) {
-                    reordered.add(result);
+                if (d.getId() != null && !fusedRank.containsKey(d.getId())) {
+                    fusedRank.put(d.getId(), fusedRank.size() + 1);
+                    rrfScore.put(d.getId(), d.getScore());
                 }
             }
-            // Any page result the fusion didn't cover (shouldn't happen) keeps BM25 order at the tail.
+            // Stage 3 (rerank, optional): re-order the fused page through the seam.
+            TurSNRankingMode mode = modeOf(turSNSite);
+            List<String> finalOrder = new ArrayList<>(fusedRank.keySet());
+            boolean rerankApplied = false;
+            TurRagRerankStrategyType rerankStrategy = null;
+            if (mode.isRerank()) {
+                rerankStrategy = globalSettingsService.getRagSnRerankStrategy();
+                List<String> rerankedOrder = rerank(rerankStrategy, query, fused, byId, finalOrder);
+                if (rerankedOrder != null) {
+                    finalOrder = rerankedOrder;
+                    rerankApplied = true;
+                }
+            }
+            // Build the reordered page and attach the per-result ranking explanation.
+            List<TurSEResult> reordered = new ArrayList<>(page.size());
+            for (String id : finalOrder) {
+                TurSEResult result = byId.remove(id);
+                if (result == null) {
+                    continue;
+                }
+                attachExplanation(result, mode, lexicalRank.get(id), semanticRank.get(id),
+                        fusedRank.get(id), rrfScore.get(id), reordered.size() + 1,
+                        rerankApplied, rerankStrategy);
+                reordered.add(result);
+            }
+            // Any page result the pipeline didn't cover (shouldn't happen) keeps order at the tail.
             reordered.addAll(byId.values());
             return reordered;
         } catch (RuntimeException e) {
-            log.warn("[SN-HYBRID] fusion on site '{}' failed: {} — returning lexical order",
+            log.warn("[SN-HYBRID] pipeline on site '{}' failed: {} — returning lexical order",
                     turSNSite.getName(), e.getMessage());
             return page;
         }
+    }
+
+    /**
+     * Re-orders the fused id list via the {@link TurRagReranker} seam. Builds
+     * candidate documents whose text is rebuilt from the page result fields (so
+     * the strategy has real content to judge), resolves a default chat model only
+     * for the LLM strategy, and delegates to {@link TurRagReranker#reorder}.
+     *
+     * @return the reranked id order when it is a full permutation of the page, or
+     *         {@code null} when reranking added no signal (caller keeps fused order)
+     */
+    private List<String> rerank(TurRagRerankStrategyType strategy, String query,
+            List<Document> fused, Map<String, TurSEResult> byId, List<String> fusedOrder) {
+        ChatModel chatModel = strategy == TurRagRerankStrategyType.LLM
+                ? defaultChatModelResolver.resolve().orElse(null)
+                : null;
+        List<Document> candidates = new ArrayList<>(fused.size());
+        for (Document d : fused) {
+            TurSEResult result = byId.get(d.getId());
+            String text = result != null ? buildContent(result.getFields()) : d.getText();
+            candidates.add(Document.builder().id(d.getId()).text(text == null ? "" : text).build());
+        }
+        List<Document> reranked = reranker.reorder(chatModel, query, candidates);
+        List<String> order = new ArrayList<>(reranked.size());
+        for (Document d : reranked) {
+            if (d.getId() != null && !order.contains(d.getId())) {
+                order.add(d.getId());
+            }
+        }
+        // Only adopt a complete permutation; otherwise keep the fused order.
+        return order.size() == fusedOrder.size() ? order : null;
+    }
+
+    /**
+     * Attaches the "why this result ranked here" breakdown — objective signals
+     * only (ranks + the RRF score), never any commercial weight.
+     */
+    private static void attachExplanation(TurSEResult result, TurSNRankingMode mode,
+            Integer lexicalRank, Integer semanticRank, Integer fusedRank, Double rrfScore,
+            int finalRank, boolean rerankApplied, TurRagRerankStrategyType rerankStrategy) {
+        Map<String, Object> explain = new LinkedHashMap<>();
+        explain.put("pipeline", mode.name());
+        if (lexicalRank != null) {
+            explain.put("lexicalRank", lexicalRank);
+        }
+        if (semanticRank != null) {
+            explain.put("semanticRank", semanticRank);
+        }
+        if (fusedRank != null) {
+            explain.put("fusedRank", fusedRank);
+        }
+        if (rrfScore != null) {
+            explain.put("rrfScore", Math.round(rrfScore * 1_000_000d) / 1_000_000d);
+        }
+        explain.put("finalRank", finalRank);
+        if (rerankApplied) {
+            if (rerankStrategy != null) {
+                explain.put("rerankStrategy", rerankStrategy.name());
+            }
+            if (fusedRank != null) {
+                explain.put("rerankerDelta", fusedRank - finalRank);
+            }
+        }
+        result.setRankingExplanation(explain);
     }
 
     /**
