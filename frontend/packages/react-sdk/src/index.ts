@@ -269,6 +269,8 @@ export type {
   TurSearchResults,
   TurDocument,
   TurDocumentMetadata,
+  TurDuplicateCluster,
+  TurDuplicateClusterMember,
   TurPaginationItem,
   TurWidget,
   TurFacetGroup,

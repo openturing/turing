@@ -85,6 +85,36 @@ export interface TurDocument {
   elevate: boolean;
   fields: Record<string, any>;
   metadata: TurDocumentMetadata[];
+  /**
+   * T390 — cluster of near-identical documents (the same real-world entity from
+   * many sources). Present only on hybrid sites with MoreLikeThis enabled and
+   * when this result actually has a duplicate; absent otherwise.
+   */
+  duplicateCluster?: TurDuplicateCluster;
+}
+
+/** T390 — one member of a {@link TurDuplicateCluster}, kept with its provenance. */
+export interface TurDuplicateClusterMember {
+  id: string;
+  title?: string | null;
+  type?: string | null;
+  url?: string | null;
+  /** Originating source/app (the `source_apps` field), or null when not indexed. */
+  source?: string | null;
+  /** Similarity to the seed document; null for the seed itself. */
+  similarity?: number | null;
+}
+
+/**
+ * T390 — near-identical documents collapsed into one cluster. `canonicalId` is the
+ * deterministic representative (lexicographically smallest member id), so any
+ * member resolves to the same canonical result.
+ */
+export interface TurDuplicateCluster {
+  canonicalId: string;
+  size: number;
+  duplicate: boolean;
+  members: TurDuplicateClusterMember[];
 }
 
 export interface TurDocumentMetadata {
