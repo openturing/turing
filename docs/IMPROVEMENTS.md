@@ -2446,25 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.14 End-to-end NL→facet eval integration test (T407)
-
-T385 shipped the eval engine with thorough **unit** coverage — the `TurNLFacetEvalScorer`
-is exercised against hand-built `TurDslQueryRequest`s and the service against a deterministic
-fake parser over a JSON fixture. What that proves is the scorer's matching logic and the
-fixture wiring; what it deliberately does **not** prove is the part that actually breaks in
-production: the **real LLM** turning prose into a grounded query, and that query being a
-*valid, executable* search against a *live index*. T407 closes that gap with an
-`AbstractTuringSpringIT` that provisions a small catalog site + schema through the T382
-manifest, indexes a handful of fixture documents, then drives `POST /api/sn/nl-facet-eval`
-end-to-end: the production `TurLlmNLFacetParser` parses each case, the scorer grounds/scores
-it, **and** each parsed `TurDslQueryRequest` is run through `TurDslSearchService` to assert it
-returns the expected documents — catching prompt regressions, schema-drift, and DSL that
-scores well but fails to execute. Like `TurAgentEvalRunnerAgentEvalIT` it is gated on
-`OPENAI_API_KEY` (`@EnabledIfEnvironmentVariable`) and excluded from the default Failsafe
-profile, so PR/CI runs stay zero-cost; it is opt-in via a profile when validating the
-parser against a real model. This is the IT that makes the eval pack trustworthy as the
-regression gate the catalog copilot (T392) will depend on.
-
 ### Sequencing
 
 T381 first (contract + test, unblocks the rest), then T382 (provisioning) since both

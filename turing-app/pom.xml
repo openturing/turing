@@ -746,6 +746,13 @@
                             Re-include them under -Pagent-eval (see profiles).
                         -->
                         <exclude>**/*AgentEvalIT.java</exclude>
+                        <!--
+                            NLFacetEvalIT classes (T407 NL→facet eval gate,
+                            real-LLM + live index, gated by OPENAI_API_KEY) are
+                            excluded from the default run for the same reason.
+                            Re-include them under -Pnl-facet-eval (see profiles).
+                        -->
+                        <exclude>**/*NLFacetEvalIT.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -852,6 +859,38 @@
                             <excludes combine.self="override"/>
                             <includes>
                                 <include>**/*AgentEvalIT.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!--
+            nl-facet-eval: runs ONLY the NL→facet eval ITs (*NLFacetEvalIT.java) —
+            the T407 end-to-end gate that provisions a catalog site+schema via the
+            T382 manifest, indexes fixture docs, then drives the real
+            TurLlmNLFacetParser and executes each parsed query against the live
+            Lucene index. Gated by @EnabledIfEnvironmentVariable("OPENAI_API_KEY"),
+            so it short-circuits to "skipped" without the key (no cost). Mirrors
+            -Pagent-eval:
+
+                mvn verify -Pnl-facet-eval -pl turing-app -Dskip.npm=true
+
+            The default failsafe configuration excludes *NLFacetEvalIT.java
+            (see the maven-failsafe-plugin block above), so this profile is
+            additive only when explicitly activated.
+        -->
+        <profile>
+            <id>nl-facet-eval</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/*NLFacetEvalIT.java</include>
                             </includes>
                         </configuration>
                     </plugin>

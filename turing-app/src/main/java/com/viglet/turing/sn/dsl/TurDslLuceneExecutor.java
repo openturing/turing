@@ -1,9 +1,17 @@
 package com.viglet.turing.sn.dsl;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.lucene.TurLuceneInstanceProcess;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.sn.field.TurSNSiteFieldService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoublePoint;
+import org.apache.lucene.document.FloatPoint;
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -30,14 +38,42 @@ import java.util.stream.Collectors;
 public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, TopDocs> {
 
     private final TurLuceneInstanceProcess turLuceneInstanceProcess;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteFieldService turSNSiteFieldService;
 
-    public TurDslLuceneExecutor(TurLuceneInstanceProcess turLuceneInstanceProcess) {
+    public TurDslLuceneExecutor(TurLuceneInstanceProcess turLuceneInstanceProcess,
+            TurSNSiteRepository turSNSiteRepository,
+            TurSNSiteFieldService turSNSiteFieldService) {
         this.turLuceneInstanceProcess = turLuceneInstanceProcess;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteFieldService = turSNSiteFieldService;
     }
 
     @Override
     public String getEngineType() {
         return "lucene";
+    }
+
+    /**
+     * Resolves the {@code field → TurSEFieldType} map for a site so range and sort
+     * translation can pick the right Lucene primitive — numeric fields are indexed
+     * as {@code *Point} + {@code NumericDocValues} (not string terms), so a
+     * lexicographic {@code TermRangeQuery} matches nothing and a
+     * {@code SortedSetSortField} throws on them. Returns an empty map when the site
+     * isn't found, in which case translation falls back to the string-term behavior.
+     */
+    private Map<String, TurSEFieldType> resolveFieldTypes(String siteName) {
+        return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                .map(site -> {
+                    Map<String, TurSEFieldType> types = new HashMap<>();
+                    for (TurSNSiteField field : turSNSiteFieldService.toMap(site).values()) {
+                        if (field.getName() != null && field.getType() != null) {
+                            types.put(field.getName(), field.getType());
+                        }
+                    }
+                    return types;
+                })
+                .orElseGet(Map::of);
     }
 
     @Override
@@ -47,10 +83,11 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                 .flatMap(instance -> {
                     long startTime = System.currentTimeMillis();
                     try {
+                        Map<String, TurSEFieldType> fieldTypes = resolveFieldTypes(siteName);
                         IndexSearcher searcher = instance.getSearcher();
                         TurDslQuery dslQuery = request.query() != null
                                 ? request.query() : new TurDslQuery.MatchAll();
-                        Query luceneQuery = translateQuery(dslQuery);
+                        Query luceneQuery = translateQuery(dslQuery, fieldTypes);
 
                         int from = request.from() != null ? request.from() : 0;
                         int size = request.size() != null ? request.size() : 10;
@@ -68,16 +105,27 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         if (request.postFilter() != null) {
                             luceneQuery = new BooleanQuery.Builder()
                                     .add(luceneQuery, BooleanClause.Occur.MUST)
-                                    .add(translateQuery(request.postFilter()), BooleanClause.Occur.FILTER)
+                                    .add(translateQuery(request.postFilter(), fieldTypes),
+                                            BooleanClause.Occur.FILTER)
                                     .build();
                         }
 
-                        Sort sort = (Sort) translateSort(request.sort());
+                        Sort sort = buildSort(request.sort(), fieldTypes);
 
-                        // Timeout: use TimeLimitingCollector approach (simplified)
-                        TopDocs topDocs = sort != null
-                                ? searcher.search(luceneQuery, hitsNeeded, sort)
-                                : searcher.search(luceneQuery, hitsNeeded);
+                        // A sort over a field that lacks matching doc values throws at
+                        // search time. Rather than failing the whole query (and losing
+                        // the results), fall back to relevance order — the query is more
+                        // valuable than the requested ordering.
+                        TopDocs topDocs;
+                        try {
+                            topDocs = sort != null
+                                    ? searcher.search(luceneQuery, hitsNeeded, sort)
+                                    : searcher.search(luceneQuery, hitsNeeded);
+                        } catch (IllegalStateException sortFailure) {
+                            log.warn("DSL Lucene sort failed ({}). Falling back to relevance order.",
+                                    sortFailure.getMessage());
+                            topDocs = searcher.search(luceneQuery, hitsNeeded);
+                        }
 
                         // Build response using template methods
                         TurDslSearchResponse response = buildResponse(topDocs, request,
@@ -105,6 +153,12 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
     @Override
     public Query translateQuery(TurDslQuery query) {
+        // Interface entry point — no field-type context (used by callers/tests that
+        // don't resolve a site). Numeric ranges fall back to string-term behavior.
+        return translateQuery(query, Map.of());
+    }
+
+    Query translateQuery(TurDslQuery query, Map<String, TurSEFieldType> fieldTypes) {
         return switch (query) {
             case TurDslQuery.MatchAll() -> new MatchAllDocsQuery();
 
@@ -152,21 +206,16 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             case TurDslQuery.Bool(var must, var should, var mustNot, var filter, var msm) -> {
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
-                for (var m : must) builder.add(translateQuery(m), BooleanClause.Occur.MUST);
-                for (var s : should) builder.add(translateQuery(s), BooleanClause.Occur.SHOULD);
-                for (var mn : mustNot) builder.add(translateQuery(mn), BooleanClause.Occur.MUST_NOT);
-                for (var f : filter) builder.add(translateQuery(f), BooleanClause.Occur.FILTER);
+                for (var m : must) builder.add(translateQuery(m, fieldTypes), BooleanClause.Occur.MUST);
+                for (var s : should) builder.add(translateQuery(s, fieldTypes), BooleanClause.Occur.SHOULD);
+                for (var mn : mustNot) builder.add(translateQuery(mn, fieldTypes), BooleanClause.Occur.MUST_NOT);
+                for (var f : filter) builder.add(translateQuery(f, fieldTypes), BooleanClause.Occur.FILTER);
                 if (msm != null) builder.setMinimumNumberShouldMatch(msm);
                 yield builder.build();
             }
 
-            case TurDslQuery.Range(var field, var gte, var gt, var lte, var lt) -> {
-                String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : null;
-                String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : null;
-                boolean includeLower = gte != null;
-                boolean includeUpper = lte != null;
-                yield TermRangeQuery.newStringRange(field, lower, upper, includeLower, includeUpper);
-            }
+            case TurDslQuery.Range(var field, var gte, var gt, var lte, var lt) ->
+                    buildRangeQuery(field, gte, gt, lte, lt, fieldTypes.get(field));
 
             case TurDslQuery.Wildcard(var field, var value) ->
                     new WildcardQuery(new Term(field, value));
@@ -237,33 +286,33 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                     new RegexpQuery(new Term(field, value));
 
             case TurDslQuery.ConstantScore(var filter, var boost) -> {
-                Query inner = translateQuery(filter);
+                Query inner = translateQuery(filter, fieldTypes);
                 ConstantScoreQuery csq = new ConstantScoreQuery(inner);
                 yield boost != null ? new BoostQuery(csq, boost.floatValue()) : csq;
             }
 
             case TurDslQuery.DisMax(var queries, var tieBreaker) -> {
                 DisjunctionMaxQuery dmq = new DisjunctionMaxQuery(
-                        queries.stream().map(this::translateQuery).toList(),
+                        queries.stream().map(q -> translateQuery(q, fieldTypes)).toList(),
                         tieBreaker != null ? tieBreaker.floatValue() : 0.0f);
                 yield dmq;
             }
 
             case TurDslQuery.Boosting(var positive, var negative, var negBoost) -> {
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
-                builder.add(translateQuery(positive), BooleanClause.Occur.MUST);
-                builder.add(translateQuery(negative), BooleanClause.Occur.MUST_NOT);
+                builder.add(translateQuery(positive, fieldTypes), BooleanClause.Occur.MUST);
+                builder.add(translateQuery(negative, fieldTypes), BooleanClause.Occur.MUST_NOT);
                 yield builder.build();
             }
 
             case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) ->
                     // Lucene: no native nested — translate inner query directly
-                    translateQuery(nestedQuery);
+                    translateQuery(nestedQuery, fieldTypes);
 
             case TurDslQuery.FunctionScore(var innerQuery, var functions,
                                             var sm, var bm, var maxBoost, var ms) -> {
                 // Lucene: apply BoostQuery for field_value_factor, otherwise just inner query
-                Query base = translateQuery(innerQuery);
+                Query base = translateQuery(innerQuery, fieldTypes);
                 if (functions != null) {
                     for (var fn : functions) {
                         if (fn.weight() != null) {
@@ -277,7 +326,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             case TurDslQuery.ScriptScore(var innerQuery, var script, var ms) ->
                     // Lucene: script scoring not supported — fallback to inner query
-                    translateQuery(innerQuery);
+                    translateQuery(innerQuery, fieldTypes);
 
             case TurDslQuery.Knn(var field, var queryVector, var k,
                                   var numCandidates, var similarity, var knnFilter) -> {
@@ -340,7 +389,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                             BooleanClause.Occur.SHOULD);
                 }
                 if (organic != null) {
-                    builder.add(translateQuery(organic), BooleanClause.Occur.SHOULD);
+                    builder.add(translateQuery(organic, fieldTypes), BooleanClause.Occur.SHOULD);
                 }
                 yield builder.build();
             }
@@ -364,9 +413,9 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             // --- Low-priority queries (translate inner query or fallback) ---
             case TurDslQuery.HasChild(var type, var childQuery, var sm, var minC, var maxC) ->
-                    translateQuery(childQuery);
+                    translateQuery(childQuery, fieldTypes);
             case TurDslQuery.HasParent(var parentType, var parentQuery, var score) ->
-                    translateQuery(parentQuery);
+                    translateQuery(parentQuery, fieldTypes);
             case TurDslQuery.Intervals(var field, var rule) -> {
                 if (rule != null && rule.query() != null) {
                     try {
@@ -380,21 +429,21 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                     new TermQuery(new Term(field, value));
             case TurDslQuery.SpanNear(var clauses, var slop, var inOrder) -> {
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
-                for (var c : clauses) builder.add(translateQuery(c), BooleanClause.Occur.MUST);
+                for (var c : clauses) builder.add(translateQuery(c, fieldTypes), BooleanClause.Occur.MUST);
                 yield builder.build();
             }
             case TurDslQuery.SpanOr(var clauses) -> {
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
-                for (var c : clauses) builder.add(translateQuery(c), BooleanClause.Occur.SHOULD);
+                for (var c : clauses) builder.add(translateQuery(c, fieldTypes), BooleanClause.Occur.SHOULD);
                 yield builder.build();
             }
             case TurDslQuery.SpanNot(var include, var exclude) -> {
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
-                builder.add(translateQuery(include), BooleanClause.Occur.MUST);
-                builder.add(translateQuery(exclude), BooleanClause.Occur.MUST_NOT);
+                builder.add(translateQuery(include, fieldTypes), BooleanClause.Occur.MUST);
+                builder.add(translateQuery(exclude, fieldTypes), BooleanClause.Occur.MUST_NOT);
                 yield builder.build();
             }
-            case TurDslQuery.SpanFirst(var match, var end) -> translateQuery(match);
+            case TurDslQuery.SpanFirst(var match, var end) -> translateQuery(match, fieldTypes);
             case TurDslQuery.RankFeature(var field, var boost, var s1, var s2, var s3) ->
                     new FieldExistsQuery(field);
             case TurDslQuery.DistanceFeature(var field, var origin, var pivot) ->
@@ -408,13 +457,19 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
     @Override
     public Object translateSort(List<Object> sortEntries) {
+        // Interface entry point — no field-type context, so every field sorts as a
+        // SortedSet (string). Numeric fields are sorted correctly via buildSort(...).
+        return buildSort(sortEntries, Map.of());
+    }
+
+    Sort buildSort(List<Object> sortEntries, Map<String, TurSEFieldType> fieldTypes) {
         if (sortEntries == null || sortEntries.isEmpty()) return null;
         List<SortField> sortFields = new ArrayList<>();
         for (Object entry : sortEntries) {
             if (entry instanceof String field) {
                 sortFields.add("_score".equals(field)
                         ? SortField.FIELD_SCORE
-                        : new SortedSetSortField(field, true));
+                        : sortFieldFor(field, true, fieldTypes.get(field)));
             } else if (entry instanceof Map<?, ?> map) {
                 map.forEach((key, val) -> {
                     String field = key.toString();
@@ -428,11 +483,97 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         Object order = opts.get("order");
                         reverse = order == null || "desc".equalsIgnoreCase(order.toString());
                     }
-                    sortFields.add(new SortedSetSortField(field, reverse));
+                    sortFields.add(sortFieldFor(field, reverse, fieldTypes.get(field)));
                 });
             }
         }
         return sortFields.isEmpty() ? null : new Sort(sortFields.toArray(SortField[]::new));
+    }
+
+    /**
+     * Builds the right {@link SortField} for a field: numeric fields are indexed
+     * with {@link org.apache.lucene.document.NumericDocValuesField} (raw bits for
+     * FLOAT/DOUBLE, reconstructed losslessly by the matching comparator), so they
+     * must sort via a typed {@link SortField}; everything else has SortedSet doc
+     * values on the bare field name and sorts as a {@link SortedSetSortField}.
+     */
+    private static SortField sortFieldFor(String field, boolean reverse, TurSEFieldType type) {
+        if (type == null) {
+            return new SortedSetSortField(field, reverse);
+        }
+        return switch (type) {
+            case INT -> new SortField(field, SortField.Type.INT, reverse);
+            case LONG, DATE -> new SortField(field, SortField.Type.LONG, reverse);
+            case FLOAT -> new SortField(field, SortField.Type.FLOAT, reverse);
+            case DOUBLE, CURRENCY -> new SortField(field, SortField.Type.DOUBLE, reverse);
+            default -> new SortedSetSortField(field, reverse);
+        };
+    }
+
+    /**
+     * Builds a range query honoring the field's indexed type. Numeric / currency /
+     * date fields are indexed as {@code *Point} (not string terms), so they use the
+     * matching point range query; all other types use a lexicographic
+     * {@link TermRangeQuery}. {@code gte}/{@code lte} are inclusive bounds and
+     * {@code gt}/{@code lt} exclusive — translated to inclusive point bounds via the
+     * next representable value.
+     */
+    private static Query buildRangeQuery(String field, Object gte, Object gt, Object lte, Object lt,
+            TurSEFieldType type) {
+        if (type == null) {
+            String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : null;
+            String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : null;
+            return TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
+        }
+        return switch (type) {
+            case INT -> {
+                int lo = gte != null ? toInt(gte) : gt != null ? Math.addExact(toInt(gt), 1) : Integer.MIN_VALUE;
+                int hi = lte != null ? toInt(lte) : lt != null ? Math.addExact(toInt(lt), -1) : Integer.MAX_VALUE;
+                yield IntPoint.newRangeQuery(field, lo, hi);
+            }
+            case LONG, DATE -> {
+                long lo = gte != null ? toLong(gte) : gt != null ? Math.addExact(toLong(gt), 1) : Long.MIN_VALUE;
+                long hi = lte != null ? toLong(lte) : lt != null ? Math.addExact(toLong(lt), -1) : Long.MAX_VALUE;
+                yield LongPoint.newRangeQuery(field, lo, hi);
+            }
+            case FLOAT -> {
+                float lo = gte != null ? toFloat(gte) : gt != null ? Math.nextUp(toFloat(gt)) : Float.NEGATIVE_INFINITY;
+                float hi = lte != null ? toFloat(lte) : lt != null ? Math.nextDown(toFloat(lt)) : Float.POSITIVE_INFINITY;
+                yield FloatPoint.newRangeQuery(field, lo, hi);
+            }
+            case DOUBLE, CURRENCY -> {
+                double lo = gte != null ? toDouble(gte) : gt != null ? Math.nextUp(toDouble(gt)) : Double.NEGATIVE_INFINITY;
+                double hi = lte != null ? toDouble(lte) : lt != null ? Math.nextDown(toDouble(lt)) : Double.POSITIVE_INFINITY;
+                yield DoublePoint.newRangeQuery(field, lo, hi);
+            }
+            default -> {
+                String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : null;
+                String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : null;
+                yield TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
+            }
+        };
+    }
+
+    private static int toInt(Object v) {
+        return v instanceof Number n ? n.intValue() : Integer.parseInt(v.toString().trim());
+    }
+
+    private static long toLong(Object v) {
+        return v instanceof Number n ? n.longValue() : Long.parseLong(v.toString().trim());
+    }
+
+    private static float toFloat(Object v) {
+        return v instanceof Number n ? n.floatValue() : Float.parseFloat(v.toString().trim());
+    }
+
+    private static double toDouble(Object v) {
+        // CURRENCY may arrive as "1500,BRL" — keep the numeric part (mirrors indexing).
+        String s = v.toString().trim();
+        int comma = s.lastIndexOf(',');
+        if (comma > 0) {
+            s = s.substring(0, comma);
+        }
+        return v instanceof Number n ? n.doubleValue() : Double.parseDouble(s);
     }
 
     @Override
