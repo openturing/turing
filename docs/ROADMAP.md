@@ -362,6 +362,16 @@
       field-manifest provisioning are product-neutral; candidate for `viglet-core` (Block Q) so
       Shio and Dumont index structured sources the same way. Gated on Phase-2 promotion
       ([STRATEGY.md](STRATEGY.md) §XII.3). → §XX.13
+- 📋 **T407** (deps: T385 ✅, T382 ✅) **End-to-end NL→facet eval integration test** — the T385
+      unit tests cover the scorer with a fake parser; this is the missing IT that exercises the
+      whole path against a **real** LLM and a **live index**: boot the full context
+      (`AbstractTuringSpringIT`), provision a catalog site+schema via the T382 manifest, index a
+      handful of fixture docs, then call `POST /api/sn/nl-facet-eval` so the real
+      `TurLlmNLFacetParser` parses each prose case and the resulting `TurDslQueryRequest` is
+      *executed* against the index — asserting both that the parse is grounded/scored and that the
+      query returns the expected documents. Gated on `OPENAI_API_KEY` via
+      `@EnabledIfEnvironmentVariable` + an `*EvalIT`/profile exclusion (mirrors
+      `TurAgentEvalRunnerAgentEvalIT`), so PR/CI runs stay zero-cost. → §XX.14
 
 ## Block S — SDK / client parity (vanilla + React)
 

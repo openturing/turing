@@ -1,7 +1,7 @@
-# Last task number — `T406`
+# Last task number — `T407`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T407`; after assigning it, bump the number above and the log line below.
+> `T408`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T407** — End-to-end NL→facet eval integration test (Block R) — 2026-06-16
 - **T406** — SDK parity guard (CI contract test) (Block S) — 2026-06-16
 - **T405** — SDK platform discovery helpers (Block S) — 2026-06-16
 - **T404** — SDK semantic-chat client (Block S) — 2026-06-16
