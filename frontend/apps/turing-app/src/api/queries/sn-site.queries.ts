@@ -14,6 +14,15 @@ export function useSnSites() {
   });
 }
 
+/** Cached single SN site. Used by the field-derivation wizard to resolve the site name + SE instance. */
+export function useSnSite(id: string | undefined) {
+  return useQuery<TurSNSite>({
+    queryKey: id ? queryKeys.snSites.detail(id) : ['sn-sites', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateSnSites(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.snSites.all() });
 }

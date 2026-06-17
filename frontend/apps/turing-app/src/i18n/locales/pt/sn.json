@@ -52,7 +52,32 @@
       "description": "Campos personalizados do mecanismo de busca.",
       "newField": "Novo Campo",
       "deleted": "O campo foi excluído",
-      "notDeleted": "O campo não foi excluído"
+      "notDeleted": "O campo não foi excluído",
+      "wizard": {
+        "action": "Gerar a partir de amostra",
+        "title": "Gerar campos a partir de documentos de amostra",
+        "step1Description": "Cole ou envie uma amostra dos documentos da fonte. Vamos inferir um rascunho de esquema de campos para você revisar.",
+        "step2Description": "Revise os campos inferidos e escolha quais adicionar. Nada é criado até você aplicar.",
+        "jsonPlaceholder": "Cole um array JSON de documentos, ex.: [{\"name\":\"Algoritmos\",\"price\":1500.0,\"online\":true}, ...]",
+        "uploadFile": "Enviar arquivo JSON",
+        "heuristicOnly": "Nenhum LLM configurado — usando derivação heurística.",
+        "invalidJson": "Não foi possível interpretar a amostra. Informe um array JSON de objetos (ou um objeto por linha).",
+        "deriveError": "Falha ao derivar um esquema a partir da amostra.",
+        "analyze": "Gerar esquema",
+        "analyzing": "Analisando…",
+        "back": "Voltar",
+        "apply": "Adicionar {{count}} campo(s)",
+        "applying": "Adicionando…",
+        "applied": "{{created}} campo(s) adicionado(s), {{skipped}} ignorado(s).",
+        "applyError": "Falha ao adicionar os campos selecionados.",
+        "exists": "já existe",
+        "selectedCount": "{{count}} campo(s) selecionado(s)",
+        "colName": "Nome",
+        "colType": "Tipo",
+        "colFacet": "Facet",
+        "colMulti": "Multi",
+        "colRequired": "Obrigatório"
+      }
     },
     "facets": {
       "title": "Facetas",

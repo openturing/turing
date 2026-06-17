@@ -52,7 +52,32 @@
       "description": "Custom Search Engine Fields.",
       "newField": "New Field",
       "deleted": "The field was deleted",
-      "notDeleted": "The field was not deleted"
+      "notDeleted": "The field was not deleted",
+      "wizard": {
+        "action": "Generate from sample",
+        "title": "Generate fields from sample documents",
+        "step1Description": "Paste or upload a sample of the source's documents. We'll infer a draft field schema for you to review.",
+        "step2Description": "Review the inferred fields and choose which ones to add. Nothing is created until you apply.",
+        "jsonPlaceholder": "Paste a JSON array of documents, e.g. [{\"name\":\"Algorithms\",\"price\":1500.0,\"online\":true}, ...]",
+        "uploadFile": "Upload JSON file",
+        "heuristicOnly": "No LLM configured — using heuristic derivation.",
+        "invalidJson": "Could not parse the sample. Provide a JSON array of objects (or one object per line).",
+        "deriveError": "Failed to derive a schema from the sample.",
+        "analyze": "Generate schema",
+        "analyzing": "Analyzing…",
+        "back": "Back",
+        "apply": "Add {{count}} field(s)",
+        "applying": "Adding…",
+        "applied": "{{created}} field(s) added, {{skipped}} skipped.",
+        "applyError": "Failed to add the selected fields.",
+        "exists": "exists",
+        "selectedCount": "{{count}} field(s) selected",
+        "colName": "Name",
+        "colType": "Type",
+        "colFacet": "Facet",
+        "colMulti": "Multi",
+        "colRequired": "Required"
+      }
     },
     "facets": {
       "title": "Facets",
