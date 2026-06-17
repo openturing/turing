@@ -386,6 +386,36 @@ public class TurSNHybridRankingService {
      * @return up to {@code topK} neighbor ids, seed excluded; empty on any failure
      */
     public List<String> findNeighbors(TurSNSite turSNSite, Map<String, Object> seedAttributes, int topK) {
+        return findScoredNeighbors(turSNSite, seedAttributes, topK, 0.0).stream()
+                .map(TurSNScoredNeighbor::id)
+                .toList();
+    }
+
+    /**
+     * T390 / §XX.10 — scored vector-neighbor retrieval: the same machinery as
+     * {@link #findNeighbors} but it keeps the per-neighbor similarity score and
+     * applies a minimum-similarity cut-off, so a caller can tell "near-identical"
+     * (duplicate clustering) apart from merely "related" (similar documents).
+     *
+     * <p>Neighbors are returned ordered by similarity descending, seed excluded.
+     * The {@code minSimilarity} cut-off is applied both as the store's
+     * {@link SearchRequest#getSimilarityThreshold()} (so capable stores prune
+     * server-side) and defensively in this method against each
+     * {@link Document#getScore()}. A neighbor whose score is unknown ({@code null})
+     * is kept only when {@code minSimilarity <= 0} — so any positive threshold
+     * conservatively excludes scoreless hits rather than wrongly merging them.
+     *
+     * <p>Fail-open: any failure (no embedding model, store unavailable, embedding
+     * error) returns an empty list.
+     *
+     * @param turSNSite      the HYBRID_RRF site
+     * @param seedAttributes the seed document's field map (must include its id)
+     * @param topK           maximum number of neighbors to return
+     * @param minSimilarity  the minimum similarity score a neighbor must clear
+     * @return up to {@code topK} scored neighbors, seed excluded; empty on any failure
+     */
+    public List<TurSNScoredNeighbor> findScoredNeighbors(TurSNSite turSNSite,
+            Map<String, Object> seedAttributes, int topK, double minSimilarity) {
         if (!isEnabled(turSNSite) || seedAttributes == null || topK < 1) {
             return List.of();
         }
@@ -402,23 +432,30 @@ public class TurSNHybridRankingService {
             SearchRequest request = SearchRequest.builder()
                     .query(content)
                     .topK(topK + 1)
-                    .similarityThreshold(0.0)
+                    .similarityThreshold(Math.max(0.0, minSimilarity))
                     .build();
             List<Document> hits = infra.vectorStore().similaritySearch(request);
             if (hits == null || hits.isEmpty()) {
                 return List.of();
             }
-            List<String> ids = new ArrayList<>(Math.min(topK, hits.size()));
+            List<TurSNScoredNeighbor> neighbors = new ArrayList<>(Math.min(topK, hits.size()));
+            List<String> seen = new ArrayList<>(neighbors.size());
             for (Document d : hits) {
                 String id = d.getId();
-                if (StringUtils.hasText(id) && !id.equals(seedId) && !ids.contains(id)) {
-                    ids.add(id);
-                    if (ids.size() >= topK) {
-                        break;
-                    }
+                if (!StringUtils.hasText(id) || id.equals(seedId) || seen.contains(id)) {
+                    continue;
+                }
+                Double score = d.getScore();
+                if (minSimilarity > 0.0 && (score == null || score < minSimilarity)) {
+                    continue;
+                }
+                seen.add(id);
+                neighbors.add(new TurSNScoredNeighbor(id, score));
+                if (neighbors.size() >= topK) {
+                    break;
                 }
             }
-            return ids;
+            return neighbors;
         } catch (RuntimeException e) {
             log.warn("[SN-HYBRID] neighbors of doc '{}' on site '{}' failed: {} — degrading to lexical",
                     seedId, turSNSite.getName(), e.getMessage());

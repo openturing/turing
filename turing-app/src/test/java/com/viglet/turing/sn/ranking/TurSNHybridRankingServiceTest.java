@@ -397,6 +397,57 @@ class TurSNHybridRankingServiceTest {
         verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
     }
 
+    // ---- scored vector-neighbor retrieval (T390) -------------------------
+
+    @Test
+    void findScoredNeighborsKeepsScoresAndExcludesSeed() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        Document.builder().id("seed").text("").score(1.0).build(),
+                        Document.builder().id("dup-1").text("").score(0.97).build(),
+                        Document.builder().id("dup-2").text("").score(0.94).build()));
+
+        List<TurSNScoredNeighbor> neighbors = service.findScoredNeighbors(
+                siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "Course"), 5, 0.9);
+
+        assertThat(neighbors).extracting(TurSNScoredNeighbor::id).containsExactly("dup-1", "dup-2");
+        assertThat(neighbors).extracting(TurSNScoredNeighbor::score).containsExactly(0.97, 0.94);
+    }
+
+    @Test
+    void findScoredNeighborsDropsHitsBelowThreshold() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        Document.builder().id("dup-1").text("").score(0.95).build(),
+                        Document.builder().id("related").text("").score(0.70).build()));
+
+        List<TurSNScoredNeighbor> neighbors = service.findScoredNeighbors(
+                siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "Course"), 5, 0.9);
+
+        assertThat(neighbors).extracting(TurSNScoredNeighbor::id).containsExactly("dup-1");
+    }
+
+    @Test
+    void findScoredNeighborsExcludesScorelessHitsUnderPositiveThreshold() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // No score from the store → conservatively below any positive threshold.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("dup-1").text("").build()));
+
+        List<TurSNScoredNeighbor> neighbors = service.findScoredNeighbors(
+                siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "Course"), 5, 0.9);
+
+        assertThat(neighbors).isEmpty();
+    }
+
     // ---- content extraction ----------------------------------------------
 
     @Test

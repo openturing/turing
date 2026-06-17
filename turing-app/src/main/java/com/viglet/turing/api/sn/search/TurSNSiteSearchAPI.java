@@ -46,6 +46,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.sn.TurSNDuplicateCluster;
+import com.viglet.turing.sn.TurSNDuplicateClusteringService;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNSimilarDocumentsService;
 import com.viglet.turing.sn.TurSNSimilarMode;
@@ -65,15 +67,18 @@ public class TurSNSiteSearchAPI {
         private final TurSNSearchProcess turSNSearchProcess;
         private final TurSNSiteSearchSnapshotService snapshotService;
         private final TurSNSimilarDocumentsService similarDocumentsService;
+        private final TurSNDuplicateClusteringService duplicateClusteringService;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
                         TurSNSiteSearchSnapshotService snapshotService,
-                        TurSNSimilarDocumentsService similarDocumentsService) {
+                        TurSNSimilarDocumentsService similarDocumentsService,
+                        TurSNDuplicateClusteringService duplicateClusteringService) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
                 this.snapshotService = snapshotService;
                 this.similarDocumentsService = similarDocumentsService;
+                this.duplicateClusteringService = duplicateClusteringService;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -230,6 +235,32 @@ public class TurSNSiteSearchAPI {
                         @RequestParam(required = false, name = "mode") TurSNSimilarMode mode) {
                 return ResponseEntity.ok(
                                 similarDocumentsService.findSimilar(siteName, id, rows, locale, mode));
+        }
+
+        /**
+         * T390 / §XX.10 — public "duplicate cluster" endpoint. Returns the
+         * documents near-identical to {@code id} on the site (the same real-world
+         * entity arriving from many sources), collapsed into one cluster with each
+         * member's provenance kept. Clustering is content-based only and runs over
+         * the per-site vector collection; non-hybrid sites get a single-member,
+         * non-duplicate cluster.
+         *
+         * @param id        the seed document id
+         * @param threshold minimum similarity for a document to count as a duplicate
+         *                 (default {@code 0.92}; a non-positive value uses the default)
+         * @param rows      max extra members beyond the seed (default 10, capped at 50)
+         * @param locale    request locale (a default site locale is used when omitted)
+         * @since 2026.3.4
+         */
+        @GetMapping("duplicates")
+        public ResponseEntity<TurSNDuplicateCluster> turSNSiteDuplicateCluster(
+                        @PathVariable String siteName,
+                        @RequestParam(name = "id") String id,
+                        @RequestParam(required = false, name = "threshold", defaultValue = "0.92") double threshold,
+                        @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") int rows,
+                        @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale) {
+                return ResponseEntity.ok(
+                                duplicateClusteringService.findCluster(siteName, id, threshold, rows, locale));
         }
 
         @PostMapping("latest")

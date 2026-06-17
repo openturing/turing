@@ -2446,17 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.10 Multi-source duplicate clustering (T390)
-
-The same real-world entity arrives from many of the 120 sources — the identical course
-listed by five portals. Without dedup the catalog shows it five times and facet counts
-inflate. T390 uses the **T384 vector-neighbor retrieval** with a high-similarity threshold
-to cluster near-identical documents into one canonical result (keeping provenance for all
-members). It is the aggregator-specific data-quality win that a generic search engine does
-not give you, and it is content-based only — clustering never prefers one source
-commercially. Depends on T384 because it is the same neighbor machinery, tuned for
-identity rather than similarity.
-
 ### XX.11 Structured-source onboarding wizard (T391)
 
 The capstone that makes the block feel like one product instead of five capabilities. A
