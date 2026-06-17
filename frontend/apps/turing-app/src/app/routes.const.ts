@@ -10,6 +10,7 @@ export const ROUTES = {
   ANN_SEARCH: `/ann`,
   SN_ROOT: `${consolePath}/sn`,
   SN_INSTANCE: `${consolePath}/sn/instance`,
+  SN_ONBOARDING: `${consolePath}/sn/onboarding`,
   SE_ROOT: `${consolePath}/se`,
   SE_INSTANCE: `${consolePath}/se/instance`,
   STORE_ROOT: `${consolePath}/store`,

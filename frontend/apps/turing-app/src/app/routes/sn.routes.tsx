@@ -26,6 +26,7 @@ const SNSiteMultiLanguagePage = lazy(() => import("../console/sn/multi-language/
 const SNSiteResultRankingListPage = lazy(() => import("../console/sn/result-ranking/sn.site.result.ranking.list.page"))
 const SNSiteResultRankingPage = lazy(() => import("../console/sn/result-ranking/sn.site.result.ranking.page"))
 const SNSiteListPage = lazy(() => import("../console/sn/sn.site.list.page"))
+const SNOnboardingWizardPage = lazy(() => import("../console/sn/onboarding/sn.onboarding.wizard.page"))
 const SNSitePage = lazy(() => import("../console/sn/sn.site.page"))
 const SNSiteRootPage = lazy(() => import("../console/sn/sn.site.root.page"))
 const SNSiteSpotlightListPage = lazy(() => import("../console/sn/spotlight/sn.site.spotlight.list.page"))
@@ -42,6 +43,7 @@ export const SNRoutes = (
     <Route path={ROUTES.SN_ROOT} element={<SNSiteRootPage />}>
         <Route index element={<Navigate to={ROUTES.SN_INSTANCE} replace />} />
         <Route path={ROUTES.SN_INSTANCE} element={<SNSiteListPage />} />
+        <Route path={ROUTES.SN_ONBOARDING} element={<SNOnboardingWizardPage />} />
         <Route path={`${ROUTES.SN_INSTANCE}/:id`} element={<SNSitePage />}>
             <Route index element={<RedirectToSNDetail />} />
             <Route path={'insights'} element={<SNSiteInsightsPage />} />

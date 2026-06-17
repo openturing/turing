@@ -308,10 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T391** (deps: T382 ✅, T387 ✅, T385 ✅) **Structured-source onboarding wizard** — the capstone flow
-      that chains the block: sample data → derived manifest (T387) → provision (T382) → run the
-      NL→facet eval pack (T385) → live. Turns "index a new catalog" into a minutes-long guided op
-      and productizes the whole block. → §XX.11
 - 💭 **T392** (deps: T383, T385 ✅) **Grounded conversational catalog copilot** — compose the NL→facet
       path (T385) with hybrid SN search (T383) and the existing RAG/agent stack into a "talk to the
       catalog" assistant that answers from the index with citations and objective ranking. The

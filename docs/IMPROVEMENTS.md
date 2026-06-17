@@ -2446,16 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.11 Structured-source onboarding wizard (T391)
-
-The capstone that makes the block feel like one product instead of five capabilities. A
-guided flow: **point at sample data → review the derived manifest (T387) → provision the
-site (T382) → run the NL→facet eval pack (T385) → go live.** Each step is a task above;
-T391 is the seam that chains them into a minutes-long operation a non-engineer can run.
-This is the Turing-side analog of the Cloud signup wizard (STRATEGY §VIII.2) but for
-*indexing a catalog* rather than *creating an agent*, and it is what turns "Turing can
-index structured sources" into "Turing onboards a catalog in an afternoon."
-
 ### XX.12 Grounded conversational catalog copilot (T392)
 
 The value layer that ties structured search to the GenAI moat. Compose the **NL→facet

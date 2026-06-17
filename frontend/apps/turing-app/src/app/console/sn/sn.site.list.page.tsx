@@ -9,15 +9,17 @@ import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurGridItemAction, TurGridItemDropdownItem } from "@/models/ui/grid-item";
 import { TurSNSiteService } from "@/services/sn/sn.service";
-import { IconAtom, IconDownload, IconSearch, IconSettings } from "@tabler/icons-react";
+import { IconAtom, IconDownload, IconRocket, IconSearch, IconSettings } from "@tabler/icons-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turSNSiteService = new TurSNSiteService();
 
 export default function SNSiteListPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: snInstances, isError } = useSnSites();
   const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
   const { data: features } = useFeatures();
@@ -146,6 +148,10 @@ export default function SNSiteListPage() {
         <GridList gridItemList={gridItemList ?? []}>
           <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/new`} label={t("sn.title")} />
           <GridList.Action>
+            <DropdownMenuItem onClick={() => navigate(ROUTES.SN_ONBOARDING)}>
+              <IconRocket className="size-4 mr-2" />
+              {t("sn.onboarding.action")}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportAll} disabled={exporting}>
               <IconDownload className="size-4 mr-2" />
               {exporting ? t("sn.exporting") : t("sn.exportAll")}
