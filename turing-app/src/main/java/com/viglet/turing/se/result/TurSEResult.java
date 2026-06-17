@@ -25,6 +25,8 @@ import lombok.experimental.Tolerate;
 
 import java.util.Map;
 
+import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
+
 @Builder
 @Data
 public class TurSEResult {
@@ -38,6 +40,13 @@ public class TurSEResult {
 	 * (lexical-only) path.
 	 */
 	private Map<String, Object> rankingExplanation;
+
+	/**
+	 * T390 / §XX.10 — optional cluster of near-identical documents (the same
+	 * real-world entity from many sources) attached inline on hybrid sites with
+	 * MoreLikeThis enabled. {@code null} when the result has no duplicate.
+	 */
+	private TurSNDuplicateCluster duplicateCluster;
 
 	@Tolerate
 	TurSEResult() {}

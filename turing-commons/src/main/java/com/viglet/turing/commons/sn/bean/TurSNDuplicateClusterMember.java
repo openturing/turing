@@ -7,7 +7,9 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.viglet.turing.sn;
+package com.viglet.turing.commons.sn.bean;
+
+import java.io.Serializable;
 
 /**
  * One document inside a {@link TurSNDuplicateCluster} — the same real-world
@@ -32,5 +34,5 @@ public record TurSNDuplicateClusterMember(
         String type,
         String url,
         String source,
-        Double similarity) {
+        Double similarity) implements Serializable {
 }

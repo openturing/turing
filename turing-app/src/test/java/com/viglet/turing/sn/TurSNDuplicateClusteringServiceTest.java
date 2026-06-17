@@ -31,11 +31,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
+import com.viglet.turing.commons.sn.bean.TurSNDuplicateClusterMember;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.sn.ranking.TurSNScoredNeighbor;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
@@ -245,5 +248,48 @@ class TurSNDuplicateClusteringServiceTest {
 
         verify(hybridRankingService).findScoredNeighbors(any(), any(),
                 eq(TurSNDuplicateClusteringService.MAX_MEMBERS), anyDouble());
+    }
+
+    // ---- attachClusters (inline per-result enrichment) -------------------
+
+    private TurSNSiteSearchSnapshot snapshot(Locale language) {
+        return new TurSNSiteSearchSnapshot(site(), language, "solr", false, List.of(),
+                java.util.Set.of(), Map.of(), Map.of(), List.of(locale(language)), List.of());
+    }
+
+    @Test
+    void attachClustersIsNoOpOnNonHybridSite() {
+        when(hybridRankingService.isEnabled(any())).thenReturn(false);
+        TurSEResult r = TurSEResult.builder().fields(doc(SEED, "Course", "portal-a")).build();
+
+        service.attachClusters(snapshot(Locale.ENGLISH), Locale.ENGLISH, plugin, List.of(r), 0.92, 5);
+
+        assertThat(r.getDuplicateCluster()).isNull();
+        verify(hybridRankingService, never()).findScoredNeighbors(any(), any(), anyInt(), anyDouble());
+    }
+
+    @Test
+    void attachClustersEnrichesOnlyResultsWithDuplicatesAndHydratesOnce() {
+        when(hybridRankingService.isEnabled(any())).thenReturn(true);
+        TurSEResult withDup = TurSEResult.builder().fields(doc(SEED, "Course", "portal-a")).build();
+        TurSEResult noDup = TurSEResult.builder().fields(doc("solo", "Other", "portal-x")).build();
+        when(hybridRankingService.findScoredNeighbors(any(), eq(withDup.getFields()), eq(5), anyDouble()))
+                .thenReturn(List.of(new TurSNScoredNeighbor("doc-2", 0.96)));
+        when(hybridRankingService.findScoredNeighbors(any(), eq(noDup.getFields()), eq(5), anyDouble()))
+                .thenReturn(List.of());
+        // A single batched hydration call carries every neighbor id across the page.
+        when(plugin.getDocumentsByIds(any(), eq(List.of("doc-2"))))
+                .thenReturn(List.of(doc("doc-2", "Course", "portal-b")));
+
+        service.attachClusters(snapshot(Locale.ENGLISH), Locale.ENGLISH, plugin,
+                List.of(withDup, noDup), 0.92, 5);
+
+        assertThat(noDup.getDuplicateCluster()).isNull();
+        assertThat(withDup.getDuplicateCluster()).isNotNull();
+        assertThat(withDup.getDuplicateCluster().duplicate()).isTrue();
+        assertThat(withDup.getDuplicateCluster().members())
+                .extracting(TurSNDuplicateClusterMember::id).containsExactly(SEED, "doc-2");
+        // Exactly one hydration call for the whole page (the batch optimization).
+        verify(plugin).getDocumentsByIds(any(), eq(List.of("doc-2")));
     }
 }

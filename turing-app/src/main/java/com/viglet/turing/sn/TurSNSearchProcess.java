@@ -100,6 +100,7 @@ public class TurSNSearchProcess {
         private final TurSNQueryContextBuilder queryContextBuilder;
         private final TurSearchPipelineObservation pipelineObservation;
         private final TurSNHybridRankingService hybridRankingService;
+        private final TurSNDuplicateClusteringService duplicateClusteringService;
 
         public TurSNSearchProcess(TurSNSiteSearchSnapshotService snapshotService,
                         TurSolrInstanceProcess turSolrInstanceProcess,
@@ -115,7 +116,8 @@ public class TurSNSearchProcess {
                         TurSNDocumentResponse documentResponse,
                         TurSNQueryContextBuilder queryContextBuilder,
                         TurSearchPipelineObservation pipelineObservation,
-                        TurSNHybridRankingService hybridRankingService) {
+                        TurSNHybridRankingService hybridRankingService,
+                        TurSNDuplicateClusteringService duplicateClusteringService) {
                 this.snapshotService = snapshotService;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSNSpotlightProcess = turSNSpotlightProcess;
@@ -131,6 +133,7 @@ public class TurSNSearchProcess {
                 this.queryContextBuilder = queryContextBuilder;
                 this.pipelineObservation = pipelineObservation;
                 this.hybridRankingService = hybridRankingService;
+                this.duplicateClusteringService = duplicateClusteringService;
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
@@ -183,6 +186,7 @@ public class TurSNSearchProcess {
                 }
                 TurSEResults turSEResults = resultsOpt.get();
                 applyHybridRanking(context, snap, turSEResults);
+                attachDuplicateClusters(context, snap, plugin, turSEResults);
                 TurSolrInstance solrInstance = turSolrInstanceProcess
                                 .initSolrInstance(context.getSiteName(), context.getLocale())
                                 .orElse(null);
@@ -214,6 +218,28 @@ public class TurSNSearchProcess {
                 }
                 turSEResults.setResults(hybridRankingService.fuse(snap.site(),
                                 context.getLocale(), query, turSEResults.getResults()));
+        }
+
+        /**
+         * T390 / §XX.10 — when the site has MoreLikeThis enabled and is on a hybrid
+         * ranking mode (so a vector collection exists), attach to each result its
+         * cluster of near-identical documents — the same real-world entity arriving
+         * from many sources — with provenance, so the catalog can collapse the
+         * duplicates. Reuses the existing MLT toggle as the opt-in; the page-level
+         * lexical {@code widget.similar} is left as-is. No-op (and never throws) on
+         * non-hybrid sites, so legacy responses are unchanged.
+         */
+        private void attachDuplicateClusters(TurSNSiteSearchContext context,
+                        TurSNSiteSearchSnapshot snap, TurSearchEnginePlugin plugin,
+                        TurSEResults turSEResults) {
+                if (!TurSNUtils.isTrue(snap.site().getMlt())
+                                || CollectionUtils.isEmpty(turSEResults.getResults())) {
+                        return;
+                }
+                duplicateClusteringService.attachClusters(snap, context.getLocale(), plugin,
+                                turSEResults.getResults(),
+                                TurSNDuplicateClusteringService.DEFAULT_THRESHOLD,
+                                TurSNDuplicateClusteringService.DEFAULT_MAX_MEMBERS);
         }
 
         public List<Object> searchList(TurSNSiteSearchContext context) {

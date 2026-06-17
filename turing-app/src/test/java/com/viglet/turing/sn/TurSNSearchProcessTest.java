@@ -118,6 +118,9 @@ class TurSNSearchProcessTest {
         @Mock
         private com.viglet.turing.sn.ranking.TurSNHybridRankingService hybridRankingService;
 
+        @Mock
+        private TurSNDuplicateClusteringService duplicateClusteringService;
+
         private com.viglet.turing.sn.facet.TurSNFacetRenderer turSNFacetRenderer() {
                 return new com.viglet.turing.sn.facet.TurSNFacetRenderer(
                                 searchEnginePluginFactory, turSolrQueryBuilder);
@@ -150,7 +153,7 @@ class TurSNSearchProcessTest {
                                 turSNPaginationBuilder(), turSNDocumentResponse(),
                                 turSNQueryContextBuilder(),
                                 new com.viglet.turing.observability.TurSearchPipelineObservation(null),
-                                hybridRankingService);
+                                hybridRankingService, duplicateClusteringService);
         }
 
         private TurSNSiteSearchContext context(String query) {

@@ -11,19 +11,25 @@ package com.viglet.turing.sn;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.commons.sn.bean.TurSNDuplicateCluster;
+import com.viglet.turing.commons.sn.bean.TurSNDuplicateClusterMember;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.sn.ranking.TurSNScoredNeighbor;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
@@ -127,6 +133,101 @@ public class TurSNDuplicateClusteringService {
             return single(seedMember);
         }
         return hydrate(siteLocale, plugin, seedMember, neighbors);
+    }
+
+    /**
+     * T390 / §XX.10 — attaches a duplicate cluster to every result on a search
+     * page that has near-identical siblings, in place. This is the inline
+     * counterpart of {@link #findCluster}: instead of re-fetching a seed by id it
+     * uses each result's own fields as the seed, runs one vector pass per result,
+     * and <em>batches</em> the hydration of all neighbor ids into a single engine
+     * call. Results without a duplicate keep {@code null} (no cluster attached).
+     *
+     * <p>No-op (and never throws) when the site is not on a hybrid ranking mode,
+     * the embedding defaults are missing, or the page is empty — so the legacy
+     * lexical response is unchanged.
+     *
+     * @param snapshot   the search snapshot (site + locales)
+     * @param locale     request locale (used to resolve the hydration locale)
+     * @param plugin     the site's search-engine plugin
+     * @param results    the result page to enrich, mutated in place
+     * @param threshold  minimum similarity for a duplicate (clamped; default
+     *                  {@value #DEFAULT_THRESHOLD})
+     * @param maxMembers maximum extra members per result (clamped to
+     *                  [1, {@value #MAX_MEMBERS}])
+     */
+    public void attachClusters(TurSNSiteSearchSnapshot snapshot, Locale locale,
+            TurSearchEnginePlugin plugin, List<TurSEResult> results, double threshold, int maxMembers) {
+        if (snapshot == null || snapshot.site() == null || plugin == null
+                || CollectionUtils.isEmpty(results)
+                || !hybridRankingService.isEnabled(snapshot.site())) {
+            return;
+        }
+        TurSNSiteLocale siteLocale = resolveLocale(snapshot, locale);
+        if (siteLocale == null) {
+            return;
+        }
+        TurSNSite site = snapshot.site();
+        double minSimilarity = clampThreshold(threshold);
+        int limit = clampMembers(maxMembers);
+        try {
+            // Pass 1: one vector pass per result; collect every neighbor id once.
+            Map<TurSEResult, List<TurSNScoredNeighbor>> neighborsByResult = new LinkedHashMap<>();
+            Set<String> allNeighborIds = new LinkedHashSet<>();
+            for (TurSEResult result : results) {
+                Map<String, Object> seedDoc = result.getFields();
+                if (CollectionUtils.isEmpty(seedDoc)) {
+                    continue;
+                }
+                List<TurSNScoredNeighbor> neighbors = hybridRankingService
+                        .findScoredNeighbors(site, seedDoc, limit, minSimilarity);
+                if (!neighbors.isEmpty()) {
+                    neighborsByResult.put(result, neighbors);
+                    neighbors.forEach(neighbor -> allNeighborIds.add(neighbor.id()));
+                }
+            }
+            if (allNeighborIds.isEmpty()) {
+                return;
+            }
+            // Pass 2: hydrate all neighbors in a single engine call, index by id.
+            Map<String, Map<String, Object>> docById = new LinkedHashMap<>();
+            for (Map<String, Object> doc : plugin.getDocumentsByIds(siteLocale,
+                    new ArrayList<>(allNeighborIds))) {
+                String docId = asString(doc.get(TurSNFieldName.ID));
+                if (docId != null) {
+                    docById.putIfAbsent(docId, doc);
+                }
+            }
+            // Pass 3: assemble each result's cluster from the shared hydration map.
+            neighborsByResult.forEach((result, neighbors) -> {
+                TurSNDuplicateClusterMember seedMember = toMember(result.getFields(), null);
+                TurSNDuplicateCluster cluster = assemble(seedMember, neighbors, docById);
+                if (cluster != null) {
+                    result.setDuplicateCluster(cluster);
+                }
+            });
+        } catch (RuntimeException e) {
+            log.warn("[SN-DEDUP] attaching clusters on site '{}' failed: {} — results unchanged",
+                    site.getName(), e.getMessage());
+        }
+    }
+
+    /** Builds a cluster for one seed from already-hydrated neighbor docs, or null when no sibling survives. */
+    private static TurSNDuplicateCluster assemble(TurSNDuplicateClusterMember seedMember,
+            List<TurSNScoredNeighbor> neighbors, Map<String, Map<String, Object>> docById) {
+        List<TurSNDuplicateClusterMember> members = new ArrayList<>(neighbors.size() + 1);
+        members.add(seedMember);
+        for (TurSNScoredNeighbor neighbor : neighbors) {
+            Map<String, Object> doc = docById.get(neighbor.id());
+            if (doc == null || neighbor.id().equals(seedMember.id())) {
+                continue;
+            }
+            members.add(toMember(doc, neighbor.score()));
+        }
+        if (members.size() < 2) {
+            return null;
+        }
+        return new TurSNDuplicateCluster(canonicalOf(members), members.size(), true, members);
     }
 
     /** Hydrates the neighbor ids into members and assembles the cluster. */

@@ -60,4 +60,14 @@ public class TurSNSiteSearchDocumentBean implements Serializable {
 	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private Map<String, Object> rankingExplanation;
 
+	/**
+	 * T390 / §XX.10 — cluster of near-identical documents (the same real-world
+	 * entity arriving from many sources), attached on hybrid sites with
+	 * MoreLikeThis enabled so a catalog can collapse the duplicates while keeping
+	 * each source's provenance. Omitted from the JSON when absent, so the legacy
+	 * response is byte-for-byte unchanged.
+	 */
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private TurSNDuplicateCluster duplicateCluster;
+
 }

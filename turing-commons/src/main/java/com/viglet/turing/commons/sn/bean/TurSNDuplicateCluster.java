@@ -7,8 +7,9 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.viglet.turing.sn;
+package com.viglet.turing.commons.sn.bean;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -22,12 +23,16 @@ import java.util.List;
  * same representative — clustering is content-based only and never prefers one
  * source commercially (the Block&nbsp;R objective-ranking invariant).
  *
+ * <p>Surfaced two ways: standalone via {@code GET /api/sn/{site}/search/duplicates},
+ * and inline on each search result ({@code TurSNSiteSearchDocumentBean.duplicateCluster})
+ * for sites with MoreLikeThis enabled on a hybrid ranking mode.
+ *
  * @param canonicalId the chosen representative document id (never null when
  *                   {@code members} is non-empty)
  * @param size        the number of documents in the cluster (= {@code members.size()})
  * @param duplicate   whether the seed has at least one near-identical sibling
  *                   ({@code size > 1})
- * @param members     every document in the cluster, the canonical first, then by
+ * @param members     every document in the cluster, the seed first, then by
  *                   similarity to the seed descending
  *
  * @author Alexandre Oliveira
@@ -37,5 +42,5 @@ public record TurSNDuplicateCluster(
         String canonicalId,
         int size,
         boolean duplicate,
-        List<TurSNDuplicateClusterMember> members) {
+        List<TurSNDuplicateClusterMember> members) implements Serializable {
 }
