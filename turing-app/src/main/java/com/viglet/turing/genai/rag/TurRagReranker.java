@@ -9,15 +9,23 @@
  */
 package com.viglet.turing.genai.rag;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.genai.rag.rerank.TurRagRerankCache;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankRequest;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategy;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyFactory;
@@ -55,11 +63,14 @@ public class TurRagReranker {
 
     private final TurRagRerankStrategyFactory strategyFactory;
     private final TurGlobalSettingsService globalSettingsService;
+    private final TurRagRerankCache rerankCache;
 
     public TurRagReranker(TurRagRerankStrategyFactory strategyFactory,
-            TurGlobalSettingsService globalSettingsService) {
+            TurGlobalSettingsService globalSettingsService,
+            TurRagRerankCache rerankCache) {
         this.strategyFactory = strategyFactory;
         this.globalSettingsService = globalSettingsService;
+        this.rerankCache = rerankCache;
     }
 
     /**
@@ -87,10 +98,13 @@ public class TurRagReranker {
         }
         TurRagRerankStrategyType type = globalSettingsService.getRagSnRerankStrategy();
         try {
-            TurRagRerankStrategy strategy = strategyFactory.resolve(type);
-            List<Document> reranked = strategy.rerank(
-                    new TurRagRerankRequest(query, candidates, topK, chatModel));
-            if (reranked == null || reranked.isEmpty()) {
+            List<String> orderedIds = cachedStrategyIds(type, query, candidates, topK, chatModel);
+            if (orderedIds.isEmpty()) {
+                return firstK;
+            }
+            Map<String, Document> byId = indexById(candidates);
+            List<Document> reranked = mapToDocuments(orderedIds, byId);
+            if (reranked.isEmpty()) {
                 return firstK;
             }
             // Defensive truncation: the facade owns the top-k contract.
@@ -132,19 +146,19 @@ public class TurRagReranker {
         }
         TurRagRerankStrategyType type = globalSettingsService.getRagSnRerankStrategy();
         try {
-            TurRagRerankStrategy strategy = strategyFactory.resolve(type);
             // topK == size: ask the strategy to rank the whole list, not a subset.
-            List<Document> reranked = strategy.rerank(
-                    new TurRagRerankRequest(query, candidates, candidates.size(), chatModel));
-            if (reranked == null || reranked.isEmpty()) {
+            List<String> orderedIds = cachedStrategyIds(type, query, candidates, candidates.size(), chatModel);
+            if (orderedIds.isEmpty()) {
                 return candidates;
             }
+            Map<String, Document> byId = indexById(candidates);
             // Re-attach any document the strategy dropped (off-topic omissions),
             // in original order, so the page never loses a result.
             List<Document> ordered = new ArrayList<>(candidates.size());
             Set<String> seen = new HashSet<>();
-            for (Document d : reranked) {
-                if (d != null && d.getId() != null && seen.add(d.getId())) {
+            for (String id : orderedIds) {
+                Document d = byId.get(id);
+                if (d != null && seen.add(id)) {
                     ordered.add(d);
                 }
             }
@@ -158,6 +172,93 @@ public class TurRagReranker {
             log.warn("[RAG] reranker strategy {} reorder failed ({}); keeping input order",
                     type, e.getMessage());
             return candidates;
+        }
+    }
+
+    /**
+     * Resolves the strategy's ordering for the request as a list of document ids
+     * (most relevant first). When the rerank-score cache is enabled (Global
+     * Settings, default off) the call is memoized by
+     * {@code (strategy, model, query, candidate-hash, topK)} via
+     * {@link TurRagRerankCache}; otherwise the strategy runs every time, exactly
+     * like the pre-T341 path. A strategy exception propagates to the caller's
+     * fail-open handler.
+     */
+    private List<String> cachedStrategyIds(TurRagRerankStrategyType type, String query,
+            List<Document> candidates, int topK, ChatModel chatModel) {
+        Supplier<List<String>> compute = () -> computeStrategyIds(type, query, candidates, topK, chatModel);
+        if (!globalSettingsService.isRagSnRerankCacheEnabled()) {
+            return compute.get();
+        }
+        String model = type == TurRagRerankStrategyType.LLM
+                ? globalSettingsService.getDefaultLlmId()
+                : globalSettingsService.getRagSnRerankModel();
+        return rerankCache.orderedIds(type.name(), model == null ? "" : model, query,
+                candidatesHash(candidates), topK, compute);
+    }
+
+    /** Runs the resolved strategy and returns its result as ordered document ids. */
+    private List<String> computeStrategyIds(TurRagRerankStrategyType type, String query,
+            List<Document> candidates, int topK, ChatModel chatModel) {
+        TurRagRerankStrategy strategy = strategyFactory.resolve(type);
+        List<Document> reranked = strategy.rerank(new TurRagRerankRequest(query, candidates, topK, chatModel));
+        if (reranked == null || reranked.isEmpty()) {
+            return List.of();
+        }
+        List<String> ids = new ArrayList<>(reranked.size());
+        for (Document d : reranked) {
+            if (d != null && d.getId() != null) {
+                ids.add(d.getId());
+            }
+        }
+        return ids;
+    }
+
+    private static Map<String, Document> indexById(List<Document> candidates) {
+        Map<String, Document> byId = new HashMap<>(candidates.size() * 2);
+        for (Document d : candidates) {
+            if (d != null && d.getId() != null) {
+                byId.putIfAbsent(d.getId(), d);
+            }
+        }
+        return byId;
+    }
+
+    private static List<Document> mapToDocuments(List<String> orderedIds, Map<String, Document> byId) {
+        List<Document> docs = new ArrayList<>(orderedIds.size());
+        for (String id : orderedIds) {
+            Document d = byId.get(id);
+            if (d != null) {
+                docs.add(d);
+            }
+        }
+        return docs;
+    }
+
+    /**
+     * SHA-256 over each candidate's id + text, in order — pins the exact
+     * candidate set <em>and</em> ordering the strategy saw, so an edited chunk
+     * or a different retrieval pool yields a different cache key (self-eviction
+     * on content change) rather than a stale ordering.
+     */
+    private static String candidatesHash(List<Document> candidates) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (Document d : candidates) {
+                digest.update((d.getId() == null ? "" : d.getId()).getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) 0x1f);
+                digest.update((d.getText() == null ? "" : d.getText()).getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) 0x1e);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JLS; unreachable. Fall back to a cheap
+            // hash so caching degrades to "best effort" rather than failing.
+            StringBuilder sb = new StringBuilder();
+            for (Document d : candidates) {
+                sb.append(d.getId()).append("|").append(d.getText()).append(";");
+            }
+            return Integer.toHexString(sb.toString().hashCode());
         }
     }
 }

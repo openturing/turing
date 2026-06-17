@@ -26,6 +26,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 
 import com.viglet.turing.genai.rag.rerank.TurLlmRerankStrategy;
+import com.viglet.turing.genai.rag.rerank.TurRagRerankCache;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyFactory;
 import com.viglet.turing.genai.rag.rerank.TurRagRerankStrategyType;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -42,10 +43,15 @@ class TurRagRerankerTest {
 
     private final TurGlobalSettingsService settings = mock(TurGlobalSettingsService.class);
     private final TurRagReranker reranker = new TurRagReranker(
-            new TurRagRerankStrategyFactory(List.of(new TurLlmRerankStrategy())), settings);
+            new TurRagRerankStrategyFactory(List.of(new TurLlmRerankStrategy())), settings,
+            new TurRagRerankCache());
 
     TurRagRerankerTest() {
         when(settings.getRagSnRerankStrategy()).thenReturn(TurRagRerankStrategyType.LLM);
+        // Cache off for the legacy-behavior cases; the cache path is exercised
+        // separately in TurRagRerankCacheTest (the @Cacheable proxy needs a
+        // Spring CacheManager, which a plain unit test can't supply).
+        when(settings.isRagSnRerankCacheEnabled()).thenReturn(false);
     }
 
     private static List<Document> docs(int n) {
@@ -167,5 +173,45 @@ class TurRagRerankerTest {
         List<Document> result = reranker.reorder(mock(ChatModel.class), "  ", candidates);
 
         assertThat(result).isSameAs(candidates);
+    }
+
+    // ---- cache wiring (T341) ---------------------------------------------
+
+    @Test
+    void whenCacheEnabledRerankRoutesThroughCacheAndMapsIdsBack() {
+        // A cache that returns a fixed ordering without ever touching a strategy
+        // — proves the facade consults the cache and re-maps ids → live docs.
+        TurRagRerankCache cache = mock(TurRagRerankCache.class);
+        when(cache.orderedIds(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyInt(), any()))
+                .thenReturn(List.of("d3", "d1"));
+        TurGlobalSettingsService cachingSettings = mock(TurGlobalSettingsService.class);
+        when(cachingSettings.getRagSnRerankStrategy()).thenReturn(TurRagRerankStrategyType.LLM);
+        when(cachingSettings.isRagSnRerankCacheEnabled()).thenReturn(true);
+        TurRagReranker cachingReranker = new TurRagReranker(
+                new TurRagRerankStrategyFactory(List.of(new TurLlmRerankStrategy())), cachingSettings, cache);
+
+        // Model would throw if it were called — it must not be, the cache short-circuits.
+        ChatModel model = mock(ChatModel.class);
+        when(model.call(any(Prompt.class))).thenThrow(new RuntimeException("strategy must not run on cache hit"));
+
+        List<Document> result = cachingReranker.rerank(model, "question", docs(5), 2);
+
+        assertThat(result).extracting(Document::getId).containsExactly("d3", "d1");
+    }
+
+    @Test
+    void whenCacheReturnsEmptyRerankFailsOpenToRetrievalOrder() {
+        TurRagRerankCache cache = mock(TurRagRerankCache.class);
+        when(cache.orderedIds(any(), any(), any(), any(), org.mockito.ArgumentMatchers.anyInt(), any()))
+                .thenReturn(List.of());
+        TurGlobalSettingsService cachingSettings = mock(TurGlobalSettingsService.class);
+        when(cachingSettings.getRagSnRerankStrategy()).thenReturn(TurRagRerankStrategyType.LLM);
+        when(cachingSettings.isRagSnRerankCacheEnabled()).thenReturn(true);
+        TurRagReranker cachingReranker = new TurRagReranker(
+                new TurRagRerankStrategyFactory(List.of(new TurLlmRerankStrategy())), cachingSettings, cache);
+
+        List<Document> result = cachingReranker.rerank(mock(ChatModel.class), "question", docs(4), 2);
+
+        assertThat(result).extracting(Document::getId).containsExactly("d0", "d1");
     }
 }

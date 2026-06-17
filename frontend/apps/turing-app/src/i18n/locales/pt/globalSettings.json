@@ -93,6 +93,8 @@
     "rerankApiKey": "Chave de API Cohere",
     "rerankApiKeyDesc": "Chave de API da Cohere Rerank. Armazenada de forma criptografada.",
     "rerankApiKeySetDesc": "Uma chave está configurada. Deixe em branco para mantê-la; digite um novo valor para substituí-la.",
+    "rerankCacheEnable": "Cachear pontuações de rerank",
+    "rerankCacheEnableDesc": "Memoiza os resultados do rerank para que uma consulta idêntica sobre o mesmo conjunto de candidatos evite reprocessar a pontuação. Desativado por padrão — ative apenas quando o perfil de uso mostrar chamadas de rerank idênticas repetidas.",
     "emailSettings": "Configurações de E-mail",
     "emailSettingsDesc": "Configure o serviço de e-mail para notificações e relatórios semanais.",
     "emailProvider": "Provedor de E-mail",

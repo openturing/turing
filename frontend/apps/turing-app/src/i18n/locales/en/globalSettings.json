@@ -93,6 +93,8 @@
     "rerankApiKey": "Cohere API Key",
     "rerankApiKeyDesc": "API key for the Cohere Rerank API. Stored encrypted.",
     "rerankApiKeySetDesc": "A key is configured. Leave blank to keep it; type a new value to replace it.",
+    "rerankCacheEnable": "Cache rerank scores",
+    "rerankCacheEnableDesc": "Memoize rerank results so an identical query over the same candidate pool skips re-scoring. Default off — enable only when profiling shows repeated identical rerank calls.",
     "emailSettings": "Email Settings",
     "emailSettingsDesc": "Configure email service for notifications and weekly reports.",
     "emailProvider": "Email Provider",

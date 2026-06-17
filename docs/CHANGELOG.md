@@ -332,12 +332,13 @@
 
 ## Block N — Pluggable reranker (cross-encoder / managed)
 
-> Makes the SN RAG rerank stage (T328) a selectable strategy. Opt-in, **default `LLM`** → existing rerank-on deployments unchanged. Design follow-up (optional cache, T341) in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XVIII.
+> Makes the SN RAG rerank stage (T328) a selectable strategy. Opt-in, **default `LLM`** → existing rerank-on deployments unchanged.
 
 - **T337** — **Reranker strategy seam** — new `genai/rag/rerank/` package: `TurRagRerankStrategy` interface + `TurRagRerankStrategyType` enum (`LLM` | `CROSS_ENCODER` | `COHERE`, lenient `fromValue`) + `TurRagRerankRequest` record (chatModel rides in the record) + `TurRagRerankStrategyFactory` (routes by type, falls back to `LLM`). The old LLM logic moved verbatim into `TurLlmRerankStrategy`; `TurRagReranker` became the fail-open facade (resolves strategy from Global Settings, returns retrieval order on any exception/empty). Caller `TurSNGenAi` unchanged. `GLOBAL_RAG_SN_RERANK_STRATEGY` (default `LLM`).
 - **T338** — **Cross-encoder strategy (self-hosted)** — `TurCrossEncoderRerankStrategy` + shared `TurHttpRerankClient` (JDK HttpClient + Jackson 3, 2s timeout, no retry; tolerates TEI bare-array and Cohere `{results:[]}` shapes) against a TEI/Infinity/Jina-compatible `/rerank`. `GLOBAL_RAG_SN_RERANK_ENDPOINT` / `_MODEL`.
 - **T339** — **Cohere Rerank strategy (managed)** — `TurCohereRerankStrategy` (fixed `/v2/rerank`, default `rerank-v3.5`); API key encrypted via `TurSecretCryptoService` (`GLOBAL_RAG_SN_RERANK_API_KEY`), write-only in the bean/API.
 - **T340** — **Global Settings UI** — rerank section in the admin Global Settings page: enable switch, strategy `Select`, top-K, and conditional endpoint/model/apiKey fields; api-key `password`/write-only with a configured-status hint. Bean fields exposed via `/api/system/global-settings`; en/pt i18n.
+- **T341** — **Rerank-score cache (opt-in)** — `TurRagRerankCache` wraps the strategy call in `@Cacheable("turRagRerankScore")` keyed by `(strategy, model, query, SHA-256(candidate ids+text), topK)`; the `TurRagReranker` facade caches the strategy's **ordered doc-id list** (serialization-safe across Hazelcast), then re-maps ids → live `Document`s. Gated by `GLOBAL_RAG_SN_RERANK_CACHE_ENABLED` (default off) — when off, the pre-T341 path is byte-identical. Paired `@CacheEvict(allEntries)` on the rerank-config setters (strategy/model/endpoint/api-key/cache-enabled); content edits self-invalidate via the candidate hash. Settings bean/API + en/pt UI toggle.
 
 ## Block O — GEO / LLM discoverability & content distribution
 

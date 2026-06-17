@@ -66,6 +66,7 @@ public class TurGlobalSettingsAPI {
                 // write-only secret: never echo the key, only its set/not-set status
                 .ragSnRerankApiKey("")
                 .ragSnRerankApiKeySet(turGlobalSettingsService.isRagSnRerankApiKeySet())
+                .ragSnRerankCacheEnabled(turGlobalSettingsService.isRagSnRerankCacheEnabled())
                 .build();
     }
 
@@ -127,6 +128,8 @@ public class TurGlobalSettingsAPI {
                 // arrives, blank leaves the stored key untouched, never echoed
                 .ragSnRerankApiKey("")
                 .ragSnRerankApiKeySet(updateRerankApiKeyIfPresent(globalSettings.getRagSnRerankApiKey()))
+                .ragSnRerankCacheEnabled(turGlobalSettingsService
+                        .updateRagSnRerankCacheEnabled(globalSettings.isRagSnRerankCacheEnabled()))
                 .build();
     }
 

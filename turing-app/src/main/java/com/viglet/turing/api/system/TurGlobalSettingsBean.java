@@ -99,4 +99,13 @@ public class TurGlobalSettingsBean {
     private String ragSnRerankApiKey;
     /** T339 — read-only status: whether a Cohere API key is configured. */
     private boolean ragSnRerankApiKeySet;
+    /**
+     * T341 — whether reranker results are memoized in the {@code turRagRerankScore}
+     * cache (default off). Skips repeat scoring of an identical query+candidate
+     * pool; worth enabling only when profiling shows repeated identical rerank
+     * calls in production.
+     *
+     * @since 2026.3.1
+     */
+    private boolean ragSnRerankCacheEnabled;
 }

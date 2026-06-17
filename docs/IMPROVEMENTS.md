@@ -2282,22 +2282,6 @@ Per-agent `monthlyBudgetUsd` / `perTurnSoftCapUsd`. On projected breach (rolling
 to a cheaper model tier for non-critical stages or surfaces a confirm gate — a
 generalization of T185 that works on the Spring AI path, not only the native one.
 
-## XVIII. Pluggable reranker — follow-up (Block N)
-
-The pluggable reranker seam (strategy interface + factory + fail-open facade,
-the self-hosted cross-encoder, and managed Cohere) **shipped** as T337–T340 —
-see [CHANGELOG.md](CHANGELOG.md) → Block N and `git log`. Only the optional cache
-remains unshipped:
-
-### XVIII.1 Rerank-score cache — optional (T341)
-
-A rerank score is deterministic per `(strategy, model, query, docHash)`, so a
-`@Cacheable("turRagRerankScore")` (paired with a `@CacheEvict` per the cache
-convention) could skip repeat scoring of the same query+chunk. Deferred: the win
-of this block is *precision*, not latency, and the facade already absorbs cost
-spikes by failing open. Ship only if profiling shows repeated identical rerank
-calls in production.
-
 ## XIX. Open-core publish mechanics (Block P)
 
 > Added 2026-06-15. The *how* for the §XI source split (private `turing` →

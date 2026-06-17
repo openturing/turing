@@ -84,4 +84,10 @@ export interface TurGlobalSettings {
   ragSnRerankApiKey?: string;
   /** T339 — read-only status: whether a Cohere API key is configured. */
   ragSnRerankApiKeySet?: boolean;
+  /**
+   * T341 — memoize reranker results in the `turRagRerankScore` cache (default
+   * off). Skips repeat scoring of an identical query+candidate pool; enable only
+   * when profiling shows repeated identical rerank calls in production.
+   */
+  ragSnRerankCacheEnabled?: boolean;
 }

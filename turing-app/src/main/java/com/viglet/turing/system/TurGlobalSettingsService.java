@@ -1,5 +1,6 @@
 package com.viglet.turing.system;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import com.viglet.core.settings.VigletConfigVarService;
@@ -351,6 +352,7 @@ public class TurGlobalSettingsService {
                 .orElse(TurRagRerankStrategyType.LLM);
     }
 
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public TurRagRerankStrategyType updateRagSnRerankStrategy(TurRagRerankStrategyType strategy) {
         TurRagRerankStrategyType value = strategy == null ? TurRagRerankStrategyType.LLM : strategy;
         configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_STRATEGY, value.name());
@@ -362,6 +364,7 @@ public class TurGlobalSettingsService {
         return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT, "");
     }
 
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public String updateRagSnRerankEndpoint(String endpoint) {
         return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_ENDPOINT, endpoint);
     }
@@ -371,8 +374,26 @@ public class TurGlobalSettingsService {
         return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, "");
     }
 
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public String updateRagSnRerankModel(String model) {
         return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, model);
+    }
+
+    /**
+     * T341 — whether reranker results are memoized in the
+     * {@code turRagRerankScore} cache. Default off: a rerank ordering is
+     * deterministic per {@code (strategy, model, query, candidate-set)}, so
+     * caching skips repeat scoring of an identical query+pool, but the win is
+     * only realized when the same query keeps hitting the same retrieval pool —
+     * ship it only after profiling confirms that pattern in production.
+     */
+    public boolean isRagSnRerankCacheEnabled() {
+        return configVars.getBoolean(TurConfigVarOnStartup.RAG_SN_RERANK_CACHE_ENABLED, false);
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public boolean updateRagSnRerankCacheEnabled(boolean enabled) {
+        return configVars.setBoolean(TurConfigVarOnStartup.RAG_SN_RERANK_CACHE_ENABLED, enabled);
     }
 
     /**
@@ -400,6 +421,7 @@ public class TurGlobalSettingsService {
      * T339 — sets the Cohere API key (encrypted at rest). A {@code null}/blank
      * value clears it. Returns the resulting "configured" status, never the key.
      */
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public boolean updateRagSnRerankApiKey(String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
             configVars.setRaw(TurConfigVarOnStartup.RAG_SN_RERANK_API_KEY, "");

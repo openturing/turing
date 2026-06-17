@@ -73,6 +73,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     ragSnRerankModel: "",
     ragSnRerankApiKey: "",
     ragSnRerankApiKeySet: false,
+    ragSnRerankCacheEnabled: false,
 };
 
 export default function GlobalSettingsPage() {
@@ -972,6 +973,32 @@ export default function GlobalSettingsPage() {
                                             )}
                                         />
                                     )}
+                                    {/* T341 — opt-in rerank-score cache. Applies to every
+                                        strategy; default off (the win is precision, not
+                                        latency — enable only on repeated identical calls). */}
+                                    <FormField
+                                        control={form.control}
+                                        name="ragSnRerankCacheEnabled"
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>{t("globalSettings.rerankCacheEnable")}</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        {t("globalSettings.rerankCacheEnableDesc")}
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <GradientSwitch
+                                                            checked={field.value ?? false}
+                                                            onCheckedChange={field.onChange}
+                                                            disabled={isLoading}
+                                                        />
+                                                    </FormControl>
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
                                 </>
                             )}
                         </SectionCard.Content>

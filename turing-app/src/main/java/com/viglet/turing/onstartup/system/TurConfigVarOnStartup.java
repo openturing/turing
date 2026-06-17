@@ -131,6 +131,14 @@ public class TurConfigVarOnStartup {
 	/** T339 — Cohere API key, stored encrypted; required only for the COHERE strategy. */
 	public static final String RAG_SN_RERANK_API_KEY = "GLOBAL_RAG_SN_RERANK_API_KEY";
 	/**
+	 * T341 — opt-in memoization of reranker results in the {@code turRagRerankScore}
+	 * cache (default off). A rerank ordering is deterministic per
+	 * {@code (strategy, model, query, candidate-set)}; enabling this skips repeat
+	 * scoring of an identical query+pool. Only worth it when profiling shows
+	 * repeated identical rerank calls in production.
+	 */
+	public static final String RAG_SN_RERANK_CACHE_ENABLED = "GLOBAL_RAG_SN_RERANK_CACHE_ENABLED";
+	/**
 	 * T331 — opt-in generation of 2–3 grounded follow-up questions after each SN
 	 * AI-mode answer (rendered as clickable chips). Default off (one extra cheap
 	 * LLM call per turn).
@@ -197,6 +205,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(RAG_SN_RERANK_ENDPOINT, GLOBAL_PATH, "");
 		ensureConfigVar(RAG_SN_RERANK_MODEL, GLOBAL_PATH, "");
 		ensureConfigVar(RAG_SN_RERANK_API_KEY, GLOBAL_PATH, "");
+		ensureConfigVar(RAG_SN_RERANK_CACHE_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_GROUNDEDNESS_CHECK_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 	}

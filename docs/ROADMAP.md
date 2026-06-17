@@ -242,14 +242,6 @@
 > (groundedness audit) and T331 (follow-up suggestions) shipped as opt-in Global
 > Settings (default off), not per-agent flags.
 
-## Block N — Pluggable reranker (cross-encoder / managed)
-
-> **T337–T340 shipped 2026-06-12** (selectable reranker strategy + self-hosted
-> cross-encoder + managed Cohere + Settings UI). See
-> [CHANGELOG.md](CHANGELOG.md) → Block N. Only the optional cache remains.
-
-- 💭 **T341** (deps: T338) **Rerank-score cache** — optional `@Cacheable("turRagRerankScore")` keyed by `(strategy, model, query, docHash)` with paired `@CacheEvict`. Precision is the win, not latency — ship only if measured. → §XVIII.1
-
 ## Block O — GEO / LLM discoverability & content distribution
 
 > Make LLM assistants (ChatGPT/Claude/Gemini/Copilot) suggest Turing for
