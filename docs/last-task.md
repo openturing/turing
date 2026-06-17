@@ -1,7 +1,7 @@
-# Last task number — `T399`
+# Last task number — `T406`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T400`; after assigning it, bump the number above and the log line below.
+> `T407`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,13 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T406** — SDK parity guard (CI contract test) (Block S) — 2026-06-16
+- **T405** — SDK platform discovery helpers (Block S) — 2026-06-16
+- **T404** — SDK semantic-chat client (Block S) — 2026-06-16
+- **T403** — SDK DSL search client (Block S) — 2026-06-16
+- **T402** — SDK spell-check client (Block S) — 2026-06-16
+- **T401** — SDK multimodal slot-upload + flow resume (Block S) — 2026-06-16
+- **T400** — SDK public "similar documents" client (Block S) — 2026-06-16
 - **T399** — Cross-product tenancy conformance test (Block Q / parity) — 2026-06-16
 - **T398** — Dumont: audit + adopt the shared tenancy (Block Q / parity) — 2026-06-16
 - **T397** — Shio: adopt the full shared tenancy (Block Q / parity) — 2026-06-16
