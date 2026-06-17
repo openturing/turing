@@ -322,13 +322,6 @@
 > polluted and "field present?" logic breaks. This is a public-data catalog, so
 > **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
 
-- 💭 **T385** (deps: T382 ✅) **NL→facet query parsing eval pack for faceted catalogs** —
-      harden and regression-test the LLM tool path that turns prose ("online graduate
-      programs under 20k") into facet filters + ranges over a declared field schema,
-      with a catalog eval fixture. Lets cursarei retire its hand-written `nlFilters`
-      (cursarei `V03`). Eval queries can be auto-generated from the T382 manifest; feeds
-      the catalog copilot (**T392**). → §XX.5
-
 > **Amplification (2026-06-16).** T381–T385 are the cursarei migration's indexing half.
 > Read together they are the foundation of a reusable capability — **Turing as a
 > declarative, self-hosted structured-search engine** for public/enterprise catalogs
@@ -356,11 +349,11 @@
       retrieval to cluster the same real-world entity arriving from many sources (a course listed
       by 5 portals collapses to one result, not five). The concrete multi-source-aggregator
       data-quality win; content-based only. → §XX.10
-- 💭 **T391** (deps: T382 ✅, T387, T385) **Structured-source onboarding wizard** — the capstone flow
+- 💭 **T391** (deps: T382 ✅, T387, T385 ✅) **Structured-source onboarding wizard** — the capstone flow
       that chains the block: sample data → derived manifest (T387) → provision (T382) → run the
       NL→facet eval pack (T385) → live. Turns "index a new catalog" into a minutes-long guided op
       and productizes the whole block. → §XX.11
-- 💭 **T392** (deps: T383, T385) **Grounded conversational catalog copilot** — compose the NL→facet
+- 💭 **T392** (deps: T383, T385 ✅) **Grounded conversational catalog copilot** — compose the NL→facet
       path (T385) with hybrid SN search (T383) and the existing RAG/agent stack into a "talk to the
       catalog" assistant that answers from the index with citations and objective ranking. The
       GenAI value layer on top of the structured-search foundation. → §XX.12

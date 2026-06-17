@@ -1,0 +1,61 @@
+{
+  "name": "courses-catalog",
+  "index": "courses",
+  "locale": "pt_BR",
+  "fields": [
+    { "name": "title", "type": "TEXT", "facet": false, "description": "Course title" },
+    { "name": "degree", "type": "STRING", "facet": true, "description": "graduacao | pos | tecnico | mestrado | doutorado" },
+    { "name": "modality", "type": "STRING", "facet": true, "description": "online | presencial | hibrido" },
+    { "name": "area", "type": "STRING", "facet": true, "description": "Knowledge area" },
+    { "name": "city", "type": "STRING", "facet": true, "description": "Campus city" },
+    { "name": "institution", "type": "STRING", "facet": true, "description": "Institution name" },
+    { "name": "tuition", "type": "CURRENCY", "facet": false, "description": "Monthly tuition" },
+    { "name": "durationMonths", "type": "INT", "facet": false, "description": "Program duration in months" }
+  ],
+  "cases": [
+    {
+      "name": "online graduate under 20k",
+      "query": "online graduate programs under 20000",
+      "expect": {
+        "filters": [
+          { "field": "modality", "value": "online" },
+          { "field": "degree", "value": "pos" }
+        ],
+        "ranges": [
+          { "field": "tuition", "lte": 20000 }
+        ]
+      }
+    },
+    {
+      "name": "cheapest in-person courses in Sao Paulo",
+      "query": "cheapest in-person courses in Sao Paulo",
+      "expect": {
+        "filters": [
+          { "field": "modality", "value": "presencial" },
+          { "field": "city", "value": "Sao Paulo" }
+        ],
+        "sort": { "field": "tuition", "order": "asc" }
+      }
+    },
+    {
+      "name": "data science between 12 and 24 months",
+      "query": "data science programs lasting between 12 and 24 months",
+      "expect": {
+        "filters": [
+          { "field": "area", "value": "data science" }
+        ],
+        "ranges": [
+          { "field": "durationMonths", "gte": 12, "lte": 24 }
+        ]
+      }
+    },
+    {
+      "name": "free-text only, no facets",
+      "query": "artificial intelligence",
+      "expect": {
+        "filters": [],
+        "ranges": []
+      }
+    }
+  ]
+}

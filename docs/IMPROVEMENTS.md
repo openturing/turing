@@ -2446,18 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.5 NL→facet query parsing eval pack for faceted catalogs (T385)
-
-The LLM tool path (`search_site` + `get_site_fields`, see §VII) already parses prose
-into facet filters and ranges. For a faceted catalog this is the replacement for
-cursarei's hand-written `nlFilters.ts` ("pós em dados, online, até 20 mil" → filters).
-T385 hardens it with a **catalog eval fixture** (a declared field schema + a set of
-NL queries with expected filter/range/sort outputs) so NL-parsing regressions surface
-in CI, the same way the agent CI gate (Block K) guards flows. Depends on T382 (a
-declared field manifest is what the parser maps onto). The eval queries can be
-**auto-generated from the T382 manifest** (declared fields ⇒ candidate filter/range
-queries), and the hardened parser is what the catalog copilot (T392) drives.
-
 ### XX.6 Manifest as versioned schema-as-code (T386)
 
 T382 delivers an idempotent *provisioning call*; T386 makes the manifest a **versioned
