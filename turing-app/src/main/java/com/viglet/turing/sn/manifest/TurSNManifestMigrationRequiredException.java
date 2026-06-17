@@ -24,9 +24,12 @@ package com.viglet.turing.sn.manifest;
 import java.io.Serial;
 import java.util.List;
 
+import com.viglet.core.manifest.VigletFieldMigration;
+import com.viglet.core.manifest.VigletManifestFieldChange;
+
 /**
  * Raised when a manifest would change the type or cardinality of one or more
- * existing fields but does not declare a {@link TurSNFieldMigration} for them
+ * existing fields but does not declare a {@link VigletFieldMigration} for them
  * (T386 / §XX.6). Provisioning is rejected and nothing is mutated — the operator
  * must add an explicit migration to acknowledge the breaking change. Mapped to
  * HTTP 409 Conflict by {@code TurSNSiteManifestAPI}.
@@ -39,18 +42,18 @@ public class TurSNManifestMigrationRequiredException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final transient List<TurSNManifestFieldChange> changes;
+    private final transient List<VigletManifestFieldChange> changes;
 
-    public TurSNManifestMigrationRequiredException(List<TurSNManifestFieldChange> changes) {
+    public TurSNManifestMigrationRequiredException(List<VigletManifestFieldChange> changes) {
         super(buildMessage(changes));
         this.changes = changes;
     }
 
-    public List<TurSNManifestFieldChange> getChanges() {
+    public List<VigletManifestFieldChange> getChanges() {
         return changes;
     }
 
-    private static String buildMessage(List<TurSNManifestFieldChange> changes) {
+    private static String buildMessage(List<VigletManifestFieldChange> changes) {
         String fields = changes.stream()
                 .map(c -> "%s.%s: %s -> %s".formatted(
                         c.field(), c.attribute(), c.liveValue(), c.manifestValue()))

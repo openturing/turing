@@ -32,12 +32,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.sn.manifest.TurSNManifestDeriveRequest;
-import com.viglet.turing.sn.manifest.TurSNManifestDeriver;
-import com.viglet.turing.sn.manifest.TurSNManifestDiff;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletManifestDeriveRequest;
+import com.viglet.core.manifest.VigletManifestDeriver;
+import com.viglet.core.manifest.VigletManifestDiff;
+import com.viglet.core.manifest.VigletManifestResult;
 import com.viglet.turing.sn.manifest.TurSNManifestMigrationRequiredException;
-import com.viglet.turing.sn.manifest.TurSNManifestResult;
-import com.viglet.turing.sn.manifest.TurSNSiteManifest;
 import com.viglet.turing.sn.manifest.TurSNSiteManifestService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * Field-manifest site provisioning endpoint (T382 / §XX.2).
  *
  * <p>{@code POST /api/sn/manifest} takes a single declarative
- * {@link TurSNSiteManifest} (site + locales + ordered field specs) and converges
+ * {@link VigletFieldManifest} (site + locales + ordered field specs) and converges
  * the SN site and its field schema to it in one idempotent call — re-posting the
  * same manifest is a no-op. This is how a structured connector (Dumont, cursarei)
  * stands up its schema as code instead of hand-clicking the console.</p>
@@ -78,14 +78,14 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteManifestAPI {
 
     private final TurSNSiteManifestService manifestService;
-    private final TurSNManifestDeriver manifestDeriver;
+    private final VigletManifestDeriver manifestDeriver;
 
     @Operation(summary = "Provision (create or converge) an SN site and its field schema from a manifest")
     @PostMapping
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<Object> provision(@RequestBody TurSNSiteManifest manifest) {
+    public ResponseEntity<Object> provision(@RequestBody VigletFieldManifest manifest) {
         try {
-            TurSNManifestResult result = manifestService.provision(manifest);
+            VigletManifestResult result = manifestService.provision(manifest);
             return ResponseEntity.ok(result);
         } catch (TurSNManifestMigrationRequiredException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -99,9 +99,9 @@ public class TurSNSiteManifestAPI {
     @Operation(summary = "Compute the diff a manifest would apply against the live site (dry-run, no mutation)")
     @PostMapping("/plan")
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<Object> plan(@RequestBody TurSNSiteManifest manifest) {
+    public ResponseEntity<Object> plan(@RequestBody VigletFieldManifest manifest) {
         try {
-            TurSNManifestDiff diff = manifestService.plan(manifest);
+            VigletManifestDiff diff = manifestService.plan(manifest);
             return ResponseEntity.ok(diff);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -112,9 +112,9 @@ public class TurSNSiteManifestAPI {
     @Operation(summary = "Derive a draft manifest from a sample of a source's documents (T387; not provisioned)")
     @PostMapping("/derive")
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<Object> derive(@RequestBody TurSNManifestDeriveRequest request) {
+    public ResponseEntity<Object> derive(@RequestBody VigletManifestDeriveRequest request) {
         try {
-            TurSNSiteManifest draft = manifestDeriver.derive(request);
+            VigletFieldManifest draft = manifestDeriver.derive(request);
             return ResponseEntity.ok(draft);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

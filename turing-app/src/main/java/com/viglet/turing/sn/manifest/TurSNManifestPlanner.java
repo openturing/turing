@@ -35,7 +35,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldMigration;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletManifestDiff;
+import com.viglet.core.manifest.VigletManifestFieldChange;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -45,7 +50,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import lombok.RequiredArgsConstructor;
 
 /**
- * Computes the {@link TurSNManifestDiff} between a {@link TurSNSiteManifest} and
+ * Computes the {@link VigletManifestDiff} between a {@link VigletFieldManifest} and
  * the live site — the diff half of schema-as-code (T386 / §XX.6).
  *
  * <p>Classification mirrors the Liquibase model the team already trusts:</p>
@@ -54,7 +59,7 @@ import lombok.RequiredArgsConstructor;
  *       site lacks. Converges silently.</li>
  *   <li><b>Breaking</b> — a {@code type} or {@code multiValued} change on a field
  *       that already exists. These alter the search-engine schema and invalidate
- *       indexed values, so they must be declared via a {@link TurSNFieldMigration}
+ *       indexed values, so they must be declared via a {@link VigletFieldMigration}
  *       rather than inferred.</li>
  *   <li><b>Unchanged</b> — a field already matching the manifest (no-op).</li>
  * </ul>
@@ -78,14 +83,14 @@ public class TurSNManifestPlanner {
      * Diffs the manifest against the current state of the site it names.
      * Read-only: never mutates.
      */
-    public TurSNManifestDiff diff(TurSNSiteManifest manifest) {
+    public VigletManifestDiff diff(VigletFieldManifest manifest) {
         Optional<TurSNSite> existing = StringUtils.hasText(manifest.name())
                 ? turSNSiteRepository.findByNameIgnoreCase(manifest.name())
                 : Optional.empty();
 
         if (existing.isEmpty()) {
             // Brand-new site: every declared field/locale is additive, nothing can break.
-            return new TurSNManifestDiff(manifest.schemaVersion(), false,
+            return new VigletManifestDiff(manifest.schemaVersion(), false,
                     fieldNames(manifest.fields()), List.of(), List.of(),
                     localeCodes(manifest.locales()));
         }
@@ -98,46 +103,47 @@ public class TurSNManifestPlanner {
      * Diffs the manifest against an already-resolved site. Used by the
      * provisioning path, which has already loaded the (uncached) site.
      */
-    public TurSNManifestDiff diff(TurSNSiteManifest manifest, TurSNSite site) {
+    public VigletManifestDiff diff(VigletFieldManifest manifest, TurSNSite site) {
         Map<String, TurSNSiteFieldExt> liveFields = liveFieldsByName(site);
         Set<String> migratedFields = declaredMigrationFields(manifest);
 
         List<String> fieldsToAdd = new ArrayList<>();
-        List<TurSNManifestFieldChange> breaking = new ArrayList<>();
+        List<VigletManifestFieldChange> breaking = new ArrayList<>();
         List<String> unchanged = new ArrayList<>();
 
-        for (TurSNJobAttributeSpec spec : safe(manifest.fields())) {
-            if (spec == null || !StringUtils.hasText(spec.getName())) {
+        for (VigletFieldSpec spec : safe(manifest.fields())) {
+            if (spec == null || !StringUtils.hasText(spec.name())) {
                 continue;
             }
-            TurSNSiteFieldExt live = liveFields.get(spec.getName());
+            TurSNSiteFieldExt live = liveFields.get(spec.name());
             if (live == null) {
-                fieldsToAdd.add(spec.getName());
+                fieldsToAdd.add(spec.name());
                 continue;
             }
-            TurSNManifestFieldChange change = breakingChange(spec, live, migratedFields);
+            VigletManifestFieldChange change = breakingChange(spec, live, migratedFields);
             if (change != null) {
                 breaking.add(change);
             } else {
-                unchanged.add(spec.getName());
+                unchanged.add(spec.name());
             }
         }
 
-        return new TurSNManifestDiff(manifest.schemaVersion(), true, fieldsToAdd, breaking,
+        return new VigletManifestDiff(manifest.schemaVersion(), true, fieldsToAdd, breaking,
                 unchanged, localesToAdd(site, manifest.locales()));
     }
 
-    private TurSNManifestFieldChange breakingChange(TurSNJobAttributeSpec spec,
+    private VigletManifestFieldChange breakingChange(VigletFieldSpec spec,
             TurSNSiteFieldExt live, Set<String> migratedFields) {
-        boolean declared = migratedFields.contains(spec.getName());
-        if (spec.getType() != null && live.getType() != spec.getType()) {
-            return new TurSNManifestFieldChange(spec.getName(), "type",
-                    String.valueOf(live.getType()), String.valueOf(spec.getType()), declared);
+        boolean declared = migratedFields.contains(spec.name());
+        TurSEFieldType manifestType = TurSNManifestMapper.toSeType(spec.type());
+        if (manifestType != null && live.getType() != manifestType) {
+            return new VigletManifestFieldChange(spec.name(), "type",
+                    String.valueOf(live.getType()), String.valueOf(manifestType), declared);
         }
         boolean liveMulti = live.getMultiValued() == 1;
-        if (liveMulti != spec.isMultiValued()) {
-            return new TurSNManifestFieldChange(spec.getName(), "multiValued",
-                    String.valueOf(liveMulti), String.valueOf(spec.isMultiValued()), declared);
+        if (liveMulti != spec.multiValued()) {
+            return new VigletManifestFieldChange(spec.name(), "multiValued",
+                    String.valueOf(liveMulti), String.valueOf(spec.multiValued()), declared);
         }
         return null;
     }
@@ -164,10 +170,10 @@ public class TurSNManifestPlanner {
         return toAdd;
     }
 
-    private static Set<String> declaredMigrationFields(TurSNSiteManifest manifest) {
+    private static Set<String> declaredMigrationFields(VigletFieldManifest manifest) {
         Set<String> names = new HashSet<>();
         if (manifest.migrations() != null) {
-            for (TurSNFieldMigration migration : manifest.migrations()) {
+            for (VigletFieldMigration migration : manifest.migrations()) {
                 if (migration != null && StringUtils.hasText(migration.field())) {
                     names.add(migration.field());
                 }
@@ -176,10 +182,10 @@ public class TurSNManifestPlanner {
         return names;
     }
 
-    private static List<String> fieldNames(List<TurSNJobAttributeSpec> fields) {
+    private static List<String> fieldNames(List<VigletFieldSpec> fields) {
         return safe(fields).stream()
-                .filter(spec -> spec != null && StringUtils.hasText(spec.getName()))
-                .map(TurSNJobAttributeSpec::getName)
+                .filter(spec -> spec != null && StringUtils.hasText(spec.name()))
+                .map(VigletFieldSpec::name)
                 .toList();
     }
 

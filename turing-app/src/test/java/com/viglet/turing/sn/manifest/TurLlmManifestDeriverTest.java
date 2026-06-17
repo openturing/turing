@@ -16,8 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletFieldType;
+import com.viglet.core.manifest.VigletManifestDeriveRequest;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -36,7 +38,7 @@ class TurLlmManifestDeriverTest {
     private TurSecretCryptoService secretCryptoService;
 
     private TurLlmManifestDeriver deriver() {
-        return new TurLlmManifestDeriver(new TurSNManifestSampleAnalyzer(), globalSettingsService,
+        return new TurLlmManifestDeriver(globalSettingsService,
                 llmInstanceRepository, llmModelFactory, secretCryptoService);
     }
 
@@ -48,8 +50,8 @@ class TurLlmManifestDeriverTest {
         return m;
     }
 
-    private TurSNJobAttributeSpec field(List<TurSNJobAttributeSpec> fields, String name) {
-        return fields.stream().filter(f -> f.getName().equals(name)).findFirst().orElseThrow();
+    private VigletFieldSpec field(List<VigletFieldSpec> fields, String name) {
+        return fields.stream().filter(f -> f.name().equals(name)).findFirst().orElseThrow();
     }
 
     @Test
@@ -59,7 +61,7 @@ class TurLlmManifestDeriverTest {
 
         assertFalse(deriver.isLlmAvailable());
 
-        TurSNSiteManifest draft = deriver.derive(new TurSNManifestDeriveRequest(
+        VigletFieldManifest draft = deriver.derive(new VigletManifestDeriveRequest(
                 "courses", "Course catalog", "se1", List.of("pt_BR"),
                 List.of(
                         doc("name", "Algorithms", "modalidade", "online", "price", 1500.0, "credits", 4),
@@ -71,13 +73,13 @@ class TurLlmManifestDeriverTest {
         assertEquals(List.of("pt_BR"), draft.locales());
         assertEquals("1", draft.schemaVersion());
 
-        List<TurSNJobAttributeSpec> f = draft.fields();
+        List<VigletFieldSpec> f = draft.fields();
         assertEquals(4, f.size());
-        assertEquals(TurSEFieldType.STRING, field(f, "name").getType());
-        assertTrue(field(f, "modalidade").isFacet());           // low-cardinality string
-        assertEquals(TurSEFieldType.DOUBLE, field(f, "price").getType());
-        assertTrue(field(f, "price").isFacet());                // numeric -> range facet
-        assertTrue(field(f, "name").isMandatory());             // present in every doc
+        assertEquals(VigletFieldType.STRING, field(f, "name").type());
+        assertTrue(field(f, "modalidade").facet());            // low-cardinality string
+        assertEquals(VigletFieldType.DOUBLE, field(f, "price").type());
+        assertTrue(field(f, "price").facet());                 // numeric -> range facet
+        assertTrue(field(f, "name").mandatory());              // present in every doc
     }
 
     @Test
@@ -86,9 +88,9 @@ class TurLlmManifestDeriverTest {
         TurLlmManifestDeriver deriver = deriver();
 
         assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new TurSNManifestDeriveRequest("x", null, "se1", List.of(), List.of())));
+                new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of())));
         assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new TurSNManifestDeriveRequest("x", null, "se1", List.of(), null)));
+                new VigletManifestDeriveRequest("x", null, "se1", List.of(), null)));
     }
 
     @Test
@@ -97,7 +99,7 @@ class TurLlmManifestDeriverTest {
         TurLlmManifestDeriver deriver = deriver();
 
         assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new TurSNManifestDeriveRequest("x", null, "se1", List.of(), List.of(Map.of()))));
+                new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of(Map.of()))));
     }
 
     @Test

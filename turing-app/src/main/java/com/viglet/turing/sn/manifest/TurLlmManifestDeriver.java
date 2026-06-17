@@ -35,8 +35,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletFieldType;
+import com.viglet.core.manifest.VigletManifestDeriveRequest;
+import com.viglet.core.manifest.VigletManifestDeriver;
+import com.viglet.core.manifest.VigletManifestFieldObservation;
+import com.viglet.core.manifest.VigletManifestHeuristics;
+import com.viglet.core.manifest.VigletManifestSampleAnalyzer;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
@@ -48,15 +54,15 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Production {@link TurSNManifestDeriver} (T387 / §XX.7): derives a draft
- * {@link TurSNSiteManifest} from a sample of a source's documents.
+ * Production {@link VigletManifestDeriver} (T387 / §XX.7): derives a draft
+ * {@link VigletFieldManifest} from a sample of a source's documents.
  *
  * <p>The work is split so the expensive, non-deterministic part is small and the
  * useful part runs even without an LLM:</p>
  * <ol>
- *   <li>{@link TurSNManifestSampleAnalyzer} computes pure per-field statistics
+ *   <li>{@link VigletManifestSampleAnalyzer} computes pure per-field statistics
  *       (coverage, observed types, cardinality, multi-valued) from the sample.</li>
- *   <li>{@link TurSNManifestHeuristics} turns those into a baseline draft schema —
+ *   <li>{@link VigletManifestHeuristics} turns those into a baseline draft schema —
  *       this is the whole answer when no LLM is configured.</li>
  *   <li>When the default LLM <em>is</em> configured, it is grounded on the
  *       observations and asked to <b>refine</b> the baseline: better type calls,
@@ -66,15 +72,17 @@ import tools.jackson.databind.json.JsonMapper;
  *       loses an observed field or hallucinates one (conservative grounding).</li>
  * </ol>
  *
- * <p>The result is always a <em>draft for human review</em> — it is returned to
- * the caller, never provisioned automatically.</p>
+ * <p>The neutral manifest model lives in viglet-core (T393); this implementation
+ * is the per-product seam that binds it to Turing's LLM stack. The result is
+ * always a <em>draft for human review</em> — it is returned to the caller, never
+ * provisioned automatically.</p>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 @Slf4j
 @Service
-public class TurLlmManifestDeriver implements TurSNManifestDeriver {
+public class TurLlmManifestDeriver implements VigletManifestDeriver {
 
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder().build();
 
@@ -84,18 +92,16 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
     /** How many raw documents to show the model as concrete examples. */
     private static final int MAX_RAW_SAMPLES = 5;
 
-    private final TurSNManifestSampleAnalyzer sampleAnalyzer;
+    private final VigletManifestSampleAnalyzer sampleAnalyzer = new VigletManifestSampleAnalyzer();
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
 
-    public TurLlmManifestDeriver(TurSNManifestSampleAnalyzer sampleAnalyzer,
-            TurGlobalSettingsService globalSettingsService,
+    public TurLlmManifestDeriver(TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService) {
-        this.sampleAnalyzer = sampleAnalyzer;
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
@@ -108,34 +114,34 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
     }
 
     @Override
-    public TurSNSiteManifest derive(TurSNManifestDeriveRequest request) {
+    public VigletFieldManifest derive(VigletManifestDeriveRequest request) {
         if (request == null || request.documents() == null || request.documents().isEmpty()) {
             throw new IllegalArgumentException("At least one sample document is required to derive a manifest");
         }
 
-        List<TurSNManifestFieldObservation> observations = sampleAnalyzer.analyze(request.documents());
+        List<VigletManifestFieldObservation> observations = sampleAnalyzer.analyze(request.documents());
         if (observations.isEmpty()) {
             throw new IllegalArgumentException("Sample documents contain no fields to derive a schema from");
         }
 
         // Deterministic baseline — the full answer with no LLM, and the per-field
         // fallback when the model declines/garbles a field.
-        List<TurSNJobAttributeSpec> fields = TurSNManifestHeuristics.toFieldSpecs(observations);
+        List<VigletFieldSpec> fields = VigletManifestHeuristics.toFieldSpecs(observations);
 
         TurLLMInstance llm = resolveLlm();
         if (llm != null) {
             fields = refineWithLlm(llm, request, observations, fields);
         }
 
-        return new TurSNSiteManifest(request.name(), request.description(), request.seInstanceId(),
+        return new VigletFieldManifest(request.name(), request.description(), request.seInstanceId(),
                 DRAFT_SCHEMA_VERSION, request.locales(), fields, null);
     }
 
     // ─────────────────────────── LLM refinement ───────────────────────────
 
-    private List<TurSNJobAttributeSpec> refineWithLlm(TurLLMInstance llm,
-            TurSNManifestDeriveRequest request, List<TurSNManifestFieldObservation> observations,
-            List<TurSNJobAttributeSpec> baseline) {
+    private List<VigletFieldSpec> refineWithLlm(TurLLMInstance llm,
+            VigletManifestDeriveRequest request, List<VigletManifestFieldObservation> observations,
+            List<VigletFieldSpec> baseline) {
         try {
             ChatModel chatModel = createChatModel(llm);
             List<Message> messages = List.of(
@@ -156,7 +162,7 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
      * invented field name in the reply is ignored, and an observed field the
      * model omitted keeps its heuristic spec.
      */
-    private List<TurSNJobAttributeSpec> merge(List<TurSNJobAttributeSpec> baseline,
+    private List<VigletFieldSpec> merge(List<VigletFieldSpec> baseline,
             List<DerivedField> derived) {
         Map<String, DerivedField> byName = new LinkedHashMap<>();
         for (DerivedField d : derived) {
@@ -164,31 +170,31 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
                 byName.put(d.name(), d);
             }
         }
-        List<TurSNJobAttributeSpec> merged = new ArrayList<>(baseline.size());
-        for (TurSNJobAttributeSpec base : baseline) {
-            DerivedField d = byName.get(base.getName());
+        List<VigletFieldSpec> merged = new ArrayList<>(baseline.size());
+        for (VigletFieldSpec base : baseline) {
+            DerivedField d = byName.get(base.name());
             merged.add(d == null ? base : apply(base, d));
         }
         return merged;
     }
 
-    private TurSNJobAttributeSpec apply(TurSNJobAttributeSpec base, DerivedField d) {
-        return TurSNJobAttributeSpec.builder()
-                .name(base.getName())
-                .type(parseType(d.type(), base.getType()))
-                .mandatory(d.mandatory() != null ? d.mandatory() : base.isMandatory())
-                .multiValued(d.multiValued() != null ? d.multiValued() : base.isMultiValued())
-                .facet(d.facet() != null ? d.facet() : base.isFacet())
-                .description(StringUtils.hasText(d.description()) ? d.description() : base.getDescription())
+    private VigletFieldSpec apply(VigletFieldSpec base, DerivedField d) {
+        return VigletFieldSpec.builder()
+                .name(base.name())
+                .type(parseType(d.type(), base.type()))
+                .mandatory(d.mandatory() != null ? d.mandatory() : base.mandatory())
+                .multiValued(d.multiValued() != null ? d.multiValued() : base.multiValued())
+                .facet(d.facet() != null ? d.facet() : base.facet())
+                .description(StringUtils.hasText(d.description()) ? d.description() : base.description())
                 .build();
     }
 
-    private static TurSEFieldType parseType(String type, TurSEFieldType fallback) {
+    private static VigletFieldType parseType(String type, VigletFieldType fallback) {
         if (!StringUtils.hasText(type)) {
             return fallback;
         }
         try {
-            return TurSEFieldType.valueOf(type.trim().toUpperCase());
+            return VigletFieldType.valueOf(type.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             return fallback;
         }
@@ -227,11 +233,11 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
                 """;
     }
 
-    private String userPrompt(List<TurSNManifestFieldObservation> observations,
+    private String userPrompt(List<VigletManifestFieldObservation> observations,
             List<Map<String, Object>> documents) {
         StringBuilder sb = new StringBuilder();
         sb.append("OBSERVATIONS (field | coverage | observed types | distinct | multiValued | examples):\n");
-        for (TurSNManifestFieldObservation o : observations) {
+        for (VigletManifestFieldObservation o : observations) {
             sb.append("- ").append(o.name())
                     .append(" | ").append(Math.round(o.coverage() * 100)).append("% (")
                     .append(o.presentCount()).append('/').append(o.totalDocuments()).append(')')
@@ -247,7 +253,7 @@ public class TurLlmManifestDeriver implements TurSNManifestDeriver {
         return sb.toString();
     }
 
-    private static String renderTypes(java.util.Set<TurSEFieldType> types) {
+    private static String renderTypes(java.util.Set<VigletFieldType> types) {
         if (types == null || types.isEmpty()) {
             return "STRING";
         }

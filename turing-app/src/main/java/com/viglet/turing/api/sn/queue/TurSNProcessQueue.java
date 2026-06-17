@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.viglet.core.manifest.VigletGrounding;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -340,16 +341,9 @@ public class TurSNProcessQueue {
      *         when it is grounding-absent and must be dropped at this boundary.
      */
     static boolean isGroundedValue(Object value) {
-        if (value == null) {
-            return false;
-        }
-        if (value instanceof CharSequence charSequence) {
-            return StringUtils.hasText(charSequence.toString());
-        }
-        if (value instanceof java.util.Collection<?> collection) {
-            return !collection.isEmpty();
-        }
-        return true;
+        // The contract is product-neutral (Turing, Shio, Dumont all index
+        // structured sources): it lives in viglet-core as VigletGrounding (T393).
+        return VigletGrounding.isGroundedValue(value);
     }
 
     public Map<String, Object> removeDuplicateTerms(Map<String, Object> attributes) {

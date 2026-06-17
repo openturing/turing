@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.junit.jupiter.api.Test;
@@ -17,15 +18,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
-import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldMigration;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletFieldType;
+import com.viglet.core.manifest.VigletManifestDiff;
+import com.viglet.core.manifest.VigletManifestFieldChange;
+import com.viglet.core.manifest.VigletManifestMigrationAction;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
-
-import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class TurSNManifestPlannerTest {
@@ -39,8 +44,8 @@ class TurSNManifestPlannerTest {
     @InjectMocks
     private TurSNManifestPlanner planner;
 
-    private TurSNJobAttributeSpec spec(String name, TurSEFieldType type, boolean multi) {
-        return TurSNJobAttributeSpec.builder().name(name).type(type).multiValued(multi).build();
+    private VigletFieldSpec spec(String name, VigletFieldType type, boolean multi) {
+        return VigletFieldSpec.builder().name(name).type(type).multiValued(multi).build();
     }
 
     private TurSNSiteFieldExt liveField(String name, TurSEFieldType type, boolean multi) {
@@ -49,12 +54,12 @@ class TurSNManifestPlannerTest {
 
     @Test
     void newSiteMakesEverythingAdditive() {
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, "se1", "1", List.of("pt_BR"),
-                List.of(spec("mensalidade", TurSEFieldType.STRING, false)), null);
+                List.of(spec("mensalidade", VigletFieldType.STRING, false)), null);
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.empty());
 
-        TurSNManifestDiff diff = planner.diff(manifest);
+        VigletManifestDiff diff = planner.diff(manifest);
 
         assertFalse(diff.siteExists());
         assertEquals(List.of("mensalidade"), diff.fieldsToAdd());
@@ -66,15 +71,15 @@ class TurSNManifestPlannerTest {
     @Test
     void newFieldIsAdditiveAndMatchingFieldIsUnchanged() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, null,
-                List.of(spec("mensalidade", TurSEFieldType.STRING, false),
-                        spec("modalidade", TurSEFieldType.STRING, false)));
+                List.of(spec("mensalidade", VigletFieldType.STRING, false),
+                        spec("modalidade", VigletFieldType.STRING, false)));
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(liveField("mensalidade", TurSEFieldType.STRING, false)));
 
-        TurSNManifestDiff diff = planner.diff(manifest, site);
+        VigletManifestDiff diff = planner.diff(manifest, site);
 
         assertEquals(List.of("modalidade"), diff.fieldsToAdd());
         assertEquals(List.of("mensalidade"), diff.fieldsUnchanged());
@@ -84,18 +89,18 @@ class TurSNManifestPlannerTest {
     @Test
     void typeChangeIsBreakingAndUndeclaredWithoutMigration() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, null,
-                List.of(spec("mensalidade", TurSEFieldType.INT, false)));
+                List.of(spec("mensalidade", VigletFieldType.INT, false)));
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(liveField("mensalidade", TurSEFieldType.STRING, false)));
 
-        TurSNManifestDiff diff = planner.diff(manifest, site);
+        VigletManifestDiff diff = planner.diff(manifest, site);
 
         assertTrue(diff.hasBreakingChanges());
         assertEquals(1, diff.breakingChanges().size());
-        TurSNManifestFieldChange change = diff.breakingChanges().get(0);
+        VigletManifestFieldChange change = diff.breakingChanges().get(0);
         assertEquals("type", change.attribute());
         assertEquals("STRING", change.liveValue());
         assertEquals("INT", change.manifestValue());
@@ -106,14 +111,14 @@ class TurSNManifestPlannerTest {
     @Test
     void multiValuedChangeIsBreaking() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, null,
-                List.of(spec("tags", TurSEFieldType.STRING, true)));
+                List.of(spec("tags", VigletFieldType.STRING, true)));
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(liveField("tags", TurSEFieldType.STRING, false)));
 
-        TurSNManifestDiff diff = planner.diff(manifest, site);
+        VigletManifestDiff diff = planner.diff(manifest, site);
 
         assertTrue(diff.hasBreakingChanges());
         assertEquals("multiValued", diff.breakingChanges().get(0).attribute());
@@ -122,15 +127,15 @@ class TurSNManifestPlannerTest {
     @Test
     void declaredMigrationMarksBreakingChangeAsDeclared() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, null, null,
-                List.of(spec("mensalidade", TurSEFieldType.INT, false)),
-                List.of(new TurSNFieldMigration("mensalidade", TurSNManifestMigrationAction.RECREATE)));
+                List.of(spec("mensalidade", VigletFieldType.INT, false)),
+                List.of(new VigletFieldMigration("mensalidade", VigletManifestMigrationAction.RECREATE)));
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(liveField("mensalidade", TurSEFieldType.STRING, false)));
 
-        TurSNManifestDiff diff = planner.diff(manifest, site);
+        VigletManifestDiff diff = planner.diff(manifest, site);
 
         assertTrue(diff.hasBreakingChanges());
         assertTrue(diff.breakingChanges().get(0).migrationDeclared());
@@ -140,7 +145,7 @@ class TurSNManifestPlannerTest {
     @Test
     void localeAlreadyPresentIsNotAdded() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, List.of("pt_BR", "en_US"), List.of());
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
@@ -150,7 +155,7 @@ class TurSNManifestPlannerTest {
         when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(eq(site), eq(LocaleUtils.toLocale("en_US"))))
                 .thenReturn(false);
 
-        TurSNManifestDiff diff = planner.diff(manifest, site);
+        VigletManifestDiff diff = planner.diff(manifest, site);
 
         assertEquals(List.of("en_US"), diff.localesToAdd());
     }

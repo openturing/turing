@@ -15,14 +15,15 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldSpec;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetExpectation.ExpectedFilter;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetExpectation.ExpectedRange;
-import com.viglet.turing.sn.manifest.TurSNSiteManifest;
+import com.viglet.turing.sn.manifest.TurSNManifestMapper;
 
 /**
  * Auto-generates a candidate {@link TurNLFacetEvalPack} from a T382
- * {@link TurSNSiteManifest} (T385 / §XX.5): declared fields become candidate
+ * {@link VigletFieldManifest} (T385 / §XX.5): declared fields become candidate
  * filter/range eval cases, so onboarding a new catalog starts from a generated
  * eval pack instead of hand-writing every case.
  *
@@ -45,7 +46,7 @@ public class TurNLFacetEvalGenerator {
      * @param facetSamples    {@code field -> sample value} for facet-equality cases.
      * @param rangeThresholds {@code field -> threshold} for "under N" range cases.
      */
-    public TurNLFacetEvalPack fromManifest(TurSNSiteManifest manifest,
+    public TurNLFacetEvalPack fromManifest(VigletFieldManifest manifest,
             Map<String, String> facetSamples, Map<String, Double> rangeThresholds) {
         Map<String, String> samples = facetSamples == null ? Map.of() : facetSamples;
         Map<String, Double> thresholds = rangeThresholds == null ? Map.of() : rangeThresholds;
@@ -53,19 +54,20 @@ public class TurNLFacetEvalGenerator {
         List<TurNLFacetField> fields = new ArrayList<>();
         List<TurNLFacetEvalCase> cases = new ArrayList<>();
 
-        for (TurSNJobAttributeSpec spec : safe(manifest.fields())) {
-            if (spec == null || spec.getName() == null) {
+        for (VigletFieldSpec spec : safe(manifest.fields())) {
+            if (spec == null || spec.name() == null) {
                 continue;
             }
             TurNLFacetField field = new TurNLFacetField(
-                    spec.getName(), spec.getType(), spec.isFacet(), spec.getDescription());
+                    spec.name(), TurSNManifestMapper.toSeType(spec.type()), spec.facet(),
+                    spec.description());
             fields.add(field);
 
-            String sample = samples.get(spec.getName());
-            if (spec.isFacet() && sample != null && !sample.isBlank()) {
+            String sample = samples.get(spec.name());
+            if (spec.facet() && sample != null && !sample.isBlank()) {
                 cases.add(facetCase(field, sample));
             }
-            Double threshold = thresholds.get(spec.getName());
+            Double threshold = thresholds.get(spec.name());
             if (field.numeric() && threshold != null) {
                 cases.add(rangeCase(field, threshold));
             }
@@ -96,12 +98,12 @@ public class TurNLFacetEvalGenerator {
         return d == Math.floor(d) ? String.valueOf((long) d) : String.valueOf(d);
     }
 
-    private static String firstLocale(TurSNSiteManifest manifest) {
+    private static String firstLocale(VigletFieldManifest manifest) {
         List<String> locales = manifest.locales();
         return locales != null && !locales.isEmpty() ? locales.get(0) : null;
     }
 
-    private static List<TurSNJobAttributeSpec> safe(List<TurSNJobAttributeSpec> fields) {
+    private static List<VigletFieldSpec> safe(List<VigletFieldSpec> fields) {
         return fields == null ? List.of() : fields;
     }
 }

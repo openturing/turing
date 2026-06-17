@@ -32,6 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletManifestDiff;
+import com.viglet.core.manifest.VigletManifestFieldChange;
+import com.viglet.core.manifest.VigletManifestResult;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.domain.sn.SnSiteIndexInvalidatedEvent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -49,15 +54,17 @@ import lombok.extern.slf4j.Slf4j;
  * Field-manifest site provisioning (T382 / §XX.2).
  *
  * <p>Turns "stand up a structured source" into a single idempotent call: given a
- * {@link TurSNSiteManifest} (site + locales + ordered field specs) it
+ * {@link VigletFieldManifest} (site + locales + ordered field specs) it
  * creates-or-converges the SN site and its field schema. Re-running with the
  * same manifest is a no-op; adding a field/locale is additive. This is the
  * declarative counterpart to console-clicking each {@code TurSNSiteField}, and
  * the foundation for schema-as-code (T386) and LLM-assisted derivation (T387).</p>
  *
- * <p>Field creation is delegated to the shared {@link TurSNFieldProvisioner} so
- * the manifest path and the indexing-time auto-create path share one
- * implementation.</p>
+ * <p>The manifest model is the product-neutral viglet-core kernel (T393); this
+ * service maps each {@link VigletFieldSpec} to Turing's {@link TurSNJobAttributeSpec}
+ * via {@link TurSNManifestMapper} and delegates field creation to the shared
+ * {@link TurSNFieldProvisioner} so the manifest path and the indexing-time
+ * auto-create path share one implementation.</p>
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -83,7 +90,7 @@ public class TurSNSiteManifestService {
      * change reviewable in a PR before it is provisioned.
      */
     @Transactional(readOnly = true)
-    public TurSNManifestDiff plan(TurSNSiteManifest manifest) {
+    public VigletManifestDiff plan(VigletFieldManifest manifest) {
         if (manifest == null || !StringUtils.hasText(manifest.name())) {
             throw new IllegalArgumentException("Manifest 'name' is required");
         }
@@ -92,7 +99,7 @@ public class TurSNSiteManifestService {
     }
 
     @Transactional
-    public TurSNManifestResult provision(TurSNSiteManifest manifest) {
+    public VigletManifestResult provision(VigletFieldManifest manifest) {
         if (manifest == null || !StringUtils.hasText(manifest.name())) {
             throw new IllegalArgumentException("Manifest 'name' is required");
         }
@@ -119,7 +126,7 @@ public class TurSNSiteManifestService {
 
         // Schema-as-code diff (T386): reject undeclared breaking changes before
         // touching anything, so a type/cardinality rewrite is never silent.
-        TurSNManifestDiff diff = turSNManifestPlanner.diff(manifest, site);
+        VigletManifestDiff diff = turSNManifestPlanner.diff(manifest, site);
         if (!diff.undeclaredBreakingChanges().isEmpty()) {
             throw new TurSNManifestMigrationRequiredException(diff.undeclaredBreakingChanges());
         }
@@ -127,8 +134,8 @@ public class TurSNSiteManifestService {
         // Declared breaking changes: drop + recreate the field (destructive, but
         // explicitly authorized by a migration entry).
         List<String> fieldsMigrated = new ArrayList<>();
-        for (TurSNManifestFieldChange change : diff.breakingChanges()) {
-            TurSNJobAttributeSpec spec = fieldSpec(manifest, change.field());
+        for (VigletManifestFieldChange change : diff.breakingChanges()) {
+            TurSNJobAttributeSpec spec = TurSNManifestMapper.toJobSpec(fieldSpec(manifest, change.field()));
             if (spec != null && turSNFieldProvisioner.recreateField(site, spec)) {
                 fieldsMigrated.add(change.field());
             }
@@ -137,14 +144,14 @@ public class TurSNSiteManifestService {
         List<String> fieldsCreated = new ArrayList<>();
         List<String> fieldsSkipped = new ArrayList<>();
         if (manifest.fields() != null) {
-            for (TurSNJobAttributeSpec spec : manifest.fields()) {
-                if (fieldsMigrated.contains(spec.getName())) {
+            for (VigletFieldSpec field : manifest.fields()) {
+                if (fieldsMigrated.contains(field.name())) {
                     continue; // already converged by the migration above
                 }
-                if (turSNFieldProvisioner.ensureField(site, spec)) {
-                    fieldsCreated.add(spec.getName());
+                if (turSNFieldProvisioner.ensureField(site, TurSNManifestMapper.toJobSpec(field))) {
+                    fieldsCreated.add(field.name());
                 } else {
-                    fieldsSkipped.add(spec.getName());
+                    fieldsSkipped.add(field.name());
                 }
             }
         }
@@ -158,20 +165,20 @@ public class TurSNSiteManifestService {
                 site.getName(), siteCreated, manifest.schemaVersion(), fieldsCreated.size(),
                 fieldsMigrated.size(), fieldsSkipped.size(), localesCreated.size());
 
-        return new TurSNManifestResult(site.getId(), site.getName(), siteCreated,
+        return new VigletManifestResult(site.getId(), site.getName(), siteCreated,
                 fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated, manifest.schemaVersion());
     }
 
-    private static TurSNJobAttributeSpec fieldSpec(TurSNSiteManifest manifest, String name) {
+    private static VigletFieldSpec fieldSpec(VigletFieldManifest manifest, String name) {
         if (manifest.fields() == null) {
             return null;
         }
         return manifest.fields().stream()
-                .filter(spec -> spec != null && name.equals(spec.getName()))
+                .filter(spec -> spec != null && name.equals(spec.name()))
                 .findFirst().orElse(null);
     }
 
-    private TurSNSite createSite(TurSNSiteManifest manifest, List<Locale> locales,
+    private TurSNSite createSite(VigletFieldManifest manifest, List<Locale> locales,
             List<String> localesCreated) {
         TurSEInstance seInstance = turSEInstanceRepository.findById(
                 Optional.ofNullable(manifest.seInstanceId())
@@ -216,17 +223,17 @@ public class TurSNSiteManifestService {
         return locales;
     }
 
-    private static void validateFields(List<TurSNJobAttributeSpec> fields) {
+    private static void validateFields(List<VigletFieldSpec> fields) {
         if (fields == null) {
             return;
         }
-        for (TurSNJobAttributeSpec spec : fields) {
-            if (spec == null || !StringUtils.hasText(spec.getName())) {
+        for (VigletFieldSpec spec : fields) {
+            if (spec == null || !StringUtils.hasText(spec.name())) {
                 throw new IllegalArgumentException("Every manifest field must declare a 'name'");
             }
-            if (spec.getType() == null) {
+            if (spec.type() == null) {
                 throw new IllegalArgumentException(
-                        "Manifest field '" + spec.getName() + "' must declare a 'type'");
+                        "Manifest field '" + spec.name() + "' must declare a 'type'");
             }
         }
     }

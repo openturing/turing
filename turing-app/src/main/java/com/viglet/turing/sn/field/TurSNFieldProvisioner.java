@@ -106,7 +106,7 @@ public class TurSNFieldProvisioner {
      * search-engine schema definition in every locale core — then recreates it
      * from {@code spec}. Destructive: values indexed under the old type are gone
      * and the source must reindex. Only ever called when the manifest declares a
-     * {@link com.viglet.turing.sn.manifest.TurSNFieldMigration} for the field.
+     * {@link com.viglet.core.manifest.VigletFieldMigration} for the field.
      *
      * @return {@code true} once the field has been recreated.
      */

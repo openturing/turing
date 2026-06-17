@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,8 +23,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import com.viglet.core.manifest.VigletFieldManifest;
+import com.viglet.core.manifest.VigletFieldMigration;
+import com.viglet.core.manifest.VigletFieldSpec;
+import com.viglet.core.manifest.VigletFieldType;
+import com.viglet.core.manifest.VigletManifestDiff;
+import com.viglet.core.manifest.VigletManifestFieldChange;
+import com.viglet.core.manifest.VigletManifestMigrationAction;
+import com.viglet.core.manifest.VigletManifestResult;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.domain.sn.SnSiteIndexInvalidatedEvent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -53,13 +61,18 @@ class TurSNSiteManifestServiceTest {
     @InjectMocks
     private TurSNSiteManifestService service;
 
-    private TurSNJobAttributeSpec field(String name) {
-        return TurSNJobAttributeSpec.builder()
-                .name(name).type(TurSEFieldType.STRING).facet(true).build();
+    private VigletFieldSpec field(String name) {
+        return VigletFieldSpec.builder()
+                .name(name).type(VigletFieldType.STRING).facet(true).build();
     }
 
-    private TurSNManifestDiff cleanDiff() {
-        return new TurSNManifestDiff(null, true, List.of(), List.of(), List.of(), List.of());
+    /** The service maps a VigletFieldSpec to a fresh TurSNJobAttributeSpec (no equals), so match by name. */
+    private static TurSNJobAttributeSpec named(String name) {
+        return argThat(spec -> spec != null && name.equals(spec.getName()));
+    }
+
+    private VigletManifestDiff cleanDiff() {
+        return new VigletManifestDiff(null, true, List.of(), List.of(), List.of(), List.of());
     }
 
     @Test
@@ -68,7 +81,7 @@ class TurSNSiteManifestServiceTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setId("se1");
 
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", "Course catalog", "se1", List.of("pt_BR"), List.of(field("mensalidade")));
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.empty());
@@ -77,10 +90,10 @@ class TurSNSiteManifestServiceTest {
         // the convergence check sees it as present.
         when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(any(), eq(ptBr))).thenReturn(true);
         when(turSNManifestPlanner.diff(eq(manifest), any(TurSNSite.class))).thenReturn(cleanDiff());
-        when(turSNFieldProvisioner.ensureField(any(TurSNSite.class), eq(manifest.fields().get(0))))
+        when(turSNFieldProvisioner.ensureField(any(TurSNSite.class), named("mensalidade")))
                 .thenReturn(true);
 
-        TurSNManifestResult result = service.provision(manifest);
+        VigletManifestResult result = service.provision(manifest);
 
         assertTrue(result.siteCreated());
         assertEquals(List.of("mensalidade"), result.fieldsCreated());
@@ -95,16 +108,16 @@ class TurSNSiteManifestServiceTest {
         TurSNSite existing = new TurSNSite();
         existing.setName("courses");
 
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, null, List.of(field("mensalidade")));
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
         when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
         when(turSNManifestPlanner.diff(eq(manifest), eq(existing))).thenReturn(cleanDiff());
-        when(turSNFieldProvisioner.ensureField(eq(existing), eq(manifest.fields().get(0))))
+        when(turSNFieldProvisioner.ensureField(eq(existing), named("mensalidade")))
                 .thenReturn(false);
 
-        TurSNManifestResult result = service.provision(manifest);
+        VigletManifestResult result = service.provision(manifest);
 
         assertFalse(result.siteCreated());
         assertTrue(result.fieldsCreated().isEmpty());
@@ -117,21 +130,21 @@ class TurSNSiteManifestServiceTest {
 
     @Test
     void provisionRejectsMissingName() {
-        TurSNSiteManifest manifest = new TurSNSiteManifest(" ", null, "se1", null, null);
+        VigletFieldManifest manifest = new VigletFieldManifest(" ", null, "se1", null, null);
         assertThrows(IllegalArgumentException.class, () -> service.provision(manifest));
     }
 
     @Test
     void provisionRejectsNewSiteWithoutSeInstance() {
-        TurSNSiteManifest manifest = new TurSNSiteManifest("courses", null, null, null, null);
+        VigletFieldManifest manifest = new VigletFieldManifest("courses", null, null, null, null);
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class, () -> service.provision(manifest));
     }
 
     @Test
     void provisionRejectsFieldWithoutType() {
-        TurSNJobAttributeSpec bad = TurSNJobAttributeSpec.builder().name("x").build();
-        TurSNSiteManifest manifest = new TurSNSiteManifest("courses", null, "se1", null, List.of(bad));
+        VigletFieldSpec bad = VigletFieldSpec.builder().name("x").build();
+        VigletFieldManifest manifest = new VigletFieldManifest("courses", null, "se1", null, List.of(bad));
         assertThrows(IllegalArgumentException.class, () -> service.provision(manifest));
     }
 
@@ -139,12 +152,12 @@ class TurSNSiteManifestServiceTest {
     void provisionRejectsUndeclaredBreakingChange() {
         TurSNSite existing = new TurSNSite();
         existing.setName("courses");
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, null, "2", null, List.of(field("mensalidade")), null);
 
-        TurSNManifestFieldChange breaking = new TurSNManifestFieldChange(
+        VigletManifestFieldChange breaking = new VigletManifestFieldChange(
                 "mensalidade", "type", "STRING", "INT", false);
-        TurSNManifestDiff diff = new TurSNManifestDiff(
+        VigletManifestDiff diff = new VigletManifestDiff(
                 "2", true, List.of(), List.of(breaking), List.of(), List.of());
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
@@ -162,41 +175,40 @@ class TurSNSiteManifestServiceTest {
     void provisionAppliesDeclaredBreakingChangeByRecreate() {
         TurSNSite existing = new TurSNSite();
         existing.setName("courses");
-        TurSNJobAttributeSpec spec = field("mensalidade");
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
-                "courses", null, null, "2", null, List.of(spec),
-                List.of(new TurSNFieldMigration("mensalidade", TurSNManifestMigrationAction.RECREATE)));
+        VigletFieldManifest manifest = new VigletFieldManifest(
+                "courses", null, null, "2", null, List.of(field("mensalidade")),
+                List.of(new VigletFieldMigration("mensalidade", VigletManifestMigrationAction.RECREATE)));
 
-        TurSNManifestFieldChange breaking = new TurSNManifestFieldChange(
+        VigletManifestFieldChange breaking = new VigletManifestFieldChange(
                 "mensalidade", "type", "STRING", "INT", true);
-        TurSNManifestDiff diff = new TurSNManifestDiff(
+        VigletManifestDiff diff = new VigletManifestDiff(
                 "2", true, List.of(), List.of(breaking), List.of(), List.of());
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
         when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
         when(turSNManifestPlanner.diff(eq(manifest), eq(existing))).thenReturn(diff);
-        when(turSNFieldProvisioner.recreateField(eq(existing), eq(spec))).thenReturn(true);
+        when(turSNFieldProvisioner.recreateField(eq(existing), named("mensalidade"))).thenReturn(true);
 
-        TurSNManifestResult result = service.provision(manifest);
+        VigletManifestResult result = service.provision(manifest);
 
         assertEquals(List.of("mensalidade"), result.fieldsMigrated());
         assertTrue(result.fieldsCreated().isEmpty());
         assertTrue(result.fieldsSkipped().isEmpty());
         assertEquals("2", result.schemaVersion());
         // Migrated field is converged by recreate, not re-created by ensureField.
-        verify(turSNFieldProvisioner, never()).ensureField(eq(existing), eq(spec));
+        verify(turSNFieldProvisioner, never()).ensureField(eq(existing), named("mensalidade"));
         verify(eventPublisher).publishEvent(any(SnSiteIndexInvalidatedEvent.class));
     }
 
     @Test
     void planDelegatesToPlannerWithoutMutating() {
-        TurSNSiteManifest manifest = new TurSNSiteManifest(
+        VigletFieldManifest manifest = new VigletFieldManifest(
                 "courses", null, "se1", "3", List.of("pt_BR"), List.of(field("mensalidade")), null);
-        TurSNManifestDiff diff = new TurSNManifestDiff(
+        VigletManifestDiff diff = new VigletManifestDiff(
                 "3", false, List.of("mensalidade"), List.of(), List.of(), List.of("pt_BR"));
         when(turSNManifestPlanner.diff(manifest)).thenReturn(diff);
 
-        TurSNManifestDiff result = service.plan(manifest);
+        VigletManifestDiff result = service.plan(manifest);
 
         assertEquals(diff, result);
         verify(turSNFieldProvisioner, never()).ensureField(any(), any());

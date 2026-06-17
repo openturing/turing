@@ -2456,16 +2456,6 @@ results and can follow up conversationally. It answers strictly from the index (
 and orders by objective signals only. This is what differentiates Turing from a bare
 search box — and from a source-less ChatGPT answer — for a catalog buyer.
 
-### XX.13 Lift manifest + grounding into `viglet-core` (T393)
-
-Once T381/T382/T386 are stable in Turing, the **conservative-grounding contract** and the
-**field-manifest provisioning** are product-neutral framework concerns — nothing in them
-is search-specific to Turing. T393 is the candidate to lift them into `viglet-core`
-(Block Q) so Shio (CMS post-types) and Dumont (structured connectors) declare and ground
-their schemas the same way. It is explicitly **gated on Phase-2 promotion** (STRATEGY
-§XII.3 — promote only when the boundary is proven inside one consumer); listed here so the
-extraction target is recorded, not so it is scheduled now.
-
 ### XX.14 End-to-end NL→facet eval integration test (T407)
 
 T385 shipped the eval engine with thorough **unit** coverage — the `TurNLFacetEvalScorer`
@@ -2494,8 +2484,9 @@ are the highest leverage-to-cost of the amplification. T383/T384/T385 are the
 user-visible search wins and can follow independently as cursarei `V02–V04` ask for them;
 **T389/T390** layer onto T383/T384 once those land. **T391** (wizard) and **T392**
 (copilot) are capstones — schedule them only after their dependencies are real, since they
-are integration seams, not new primitives. **T393** is deferred behind `viglet-core`
-Phase 2 and is not scheduled. None of these block the Dumont collection work — a sidecar
+are integration seams, not new primitives. **T393** shipped the `viglet-core` lift (the
+neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG). None of
+these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
 
 ## XXI. SDK / client parity (Block S)
