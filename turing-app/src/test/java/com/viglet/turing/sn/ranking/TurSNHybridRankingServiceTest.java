@@ -231,6 +231,72 @@ class TurSNHybridRankingServiceTest {
         verify(vectorStore, never()).add(any());
     }
 
+    // ---- vector-neighbor retrieval (T384) --------------------------------
+
+    @Test
+    void findNeighborsReturnsSimilarIdsExcludingSeed() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        // The seed (doc-1) is echoed back by the store and must be dropped.
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        Document.builder().id("doc-1").text("").build(),
+                        Document.builder().id("doc-2").text("").build(),
+                        Document.builder().id("doc-3").text("").build()));
+
+        List<String> neighbors = service.findNeighbors(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "doc-1", TurSNFieldName.TITLE, "Data Science"), 5);
+
+        assertThat(neighbors).containsExactly("doc-2", "doc-3");
+    }
+
+    @Test
+    void findNeighborsHonoursTopKLimit() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        Document.builder().id("a").text("").build(),
+                        Document.builder().id("b").text("").build(),
+                        Document.builder().id("c").text("").build()));
+
+        List<String> neighbors = service.findNeighbors(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "X"), 2);
+
+        assertThat(neighbors).containsExactly("a", "b");
+    }
+
+    @Test
+    void findNeighborsIsEmptyOnLegacySite() {
+        List<String> neighbors = service.findNeighbors(siteWithMode(TurSNRankingMode.LEGACY),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "X"), 5);
+
+        assertThat(neighbors).isEmpty();
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void findNeighborsDegradesToEmptyWhenVectorSearchThrows() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenThrow(new RuntimeException("store down"));
+
+        List<String> neighbors = service.findNeighbors(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.TITLE, "X"), 5);
+
+        assertThat(neighbors).isEmpty();
+    }
+
+    @Test
+    void findNeighborsIsEmptyWhenSeedHasNoContent() {
+        List<String> neighbors = service.findNeighbors(siteWithMode(TurSNRankingMode.HYBRID_RRF),
+                Map.of(TurSNFieldName.ID, "seed", TurSNFieldName.URL, "http://ignored"), 5);
+
+        assertThat(neighbors).isEmpty();
+        verify(ragContextBuilder, never()).build(anyString(), anyString(), anyString());
+    }
+
     // ---- content extraction ----------------------------------------------
 
     @Test

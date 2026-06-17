@@ -296,6 +296,53 @@ public interface TurSearchEnginePlugin {
                 "moreLikeThisStandalone not supported by " + getPluginType());
     }
 
+    // ---- Similar documents (T384) ----------------------------------------
+
+    /**
+     * T384 / §XX.4 — public "documents similar to this id" retrieval over a
+     * site's live index. Returns up to {@code rows} documents most like the one
+     * identified by {@code id}, scored by the engine's native MoreLikeThis
+     * (Solr {@code /mlt} handler keyed by {@code id:<id>}, falling back to a BM25
+     * disjunction over the seed's text; Elasticsearch {@code more_like_this} with
+     * the seed text as {@code like}). The seed document itself is excluded.
+     *
+     * <p>This is the lexical half of the similar-documents seam; the semantic
+     * (vector-neighbor) half lives in {@code TurSNHybridRankingService.findNeighbors}
+     * and is orchestrated by {@code TurSNSimilarDocumentsService}.
+     *
+     * <p>Default returns an empty list so engines without a MoreLikeThis
+     * capability (Lucene-embedded) degrade silently rather than throwing.
+     *
+     * @param siteLocale the (site, locale) index to query
+     * @param id         the seed document id
+     * @param rows       maximum number of similar documents to return
+     * @return up to {@code rows} similar documents, seed excluded; empty when
+     *         the id is blank, the index is missing, or nothing is similar
+     * @since 2026.3.4
+     */
+    default List<com.viglet.turing.commons.se.similar.TurSESimilarResult> getSimilarDocuments(
+            TurSNSiteLocale siteLocale, String id, int rows) {
+        return List.of();
+    }
+
+    /**
+     * T384 / §XX.4 — fetches the standard fields ({@code id}, {@code title},
+     * {@code type}, {@code url}, {@code abstract}, {@code text}) for the given
+     * document ids, preserving the input order and dropping ids that don't
+     * resolve. Used to read a seed document's content for vector-neighbor
+     * retrieval and to hydrate neighbor ids into renderable results.
+     *
+     * <p>Default returns an empty list.
+     *
+     * @param siteLocale the (site, locale) index to query
+     * @param ids        the document ids to fetch
+     * @return one field map per resolved id, in {@code ids} order
+     * @since 2026.3.4
+     */
+    default List<Map<String, Object>> getDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        return List.of();
+    }
+
     // ---- Copy field (Solr-specific; no-op for schema-less engines) -------
 
     /**

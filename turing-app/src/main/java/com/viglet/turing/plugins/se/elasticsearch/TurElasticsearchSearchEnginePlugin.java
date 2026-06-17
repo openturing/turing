@@ -17,6 +17,8 @@
 package com.viglet.turing.plugins.se.elasticsearch;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.elasticsearch.TurElasticsearch;
 import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
@@ -436,6 +438,163 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                         return java.util.List.<com.viglet.turing.plugins.se.TurSEStandaloneHit>of();
                     }
                 }).orElse(List.of());
+    }
+
+    // ---- Similar documents (T384) ----------------------------------------
+
+    private static final List<String> SIMILAR_FIELDS = List.of(
+            TurSNFieldName.ID, TurSNFieldName.TITLE, TurSNFieldName.TYPE, TurSNFieldName.URL,
+            TurSNFieldName.ABSTRACT, TurSNFieldName.TEXT);
+    private static final int SIMILAR_MAX_SEED_CHARS = 1_000;
+
+    @Override
+    public List<TurSESimilarResult> getSimilarDocuments(TurSNSiteLocale siteLocale, String id, int rows) {
+        if (id == null || id.isBlank() || rows < 1) {
+            return List.of();
+        }
+        List<Map<String, Object>> seed = getDocumentsByIds(siteLocale, List.of(id));
+        if (seed.isEmpty()) {
+            return List.of();
+        }
+        String like = similarityText(seed.get(0));
+        if (like.isBlank()) {
+            return List.of();
+        }
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(siteLocale)
+                .map(instance -> {
+                    try {
+                        var response = instance.getClient().search(s -> s
+                                .index(instance.getIndex())
+                                .size(rows + 1)
+                                .source(src -> src.filter(f -> f.includes(TurSNFieldName.ID,
+                                        TurSNFieldName.TITLE, TurSNFieldName.TYPE, TurSNFieldName.URL)))
+                                .query(q -> q.moreLikeThis(m -> m
+                                        .fields(TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT,
+                                                TurSNFieldName.TEXT)
+                                        .like(l -> l.text(like))
+                                        .minTermFreq(1)
+                                        .minDocFreq(1)
+                                        .minWordLength(3)
+                                        .maxQueryTerms(40))),
+                                (java.lang.reflect.Type) Map.class);
+                        List<TurSESimilarResult> results = new java.util.ArrayList<>();
+                        for (var hit : response.hits().hits()) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> source = (Map<String, Object>) hit.source();
+                            String docId = firstString(source, TurSNFieldName.ID, hit.id());
+                            if (docId == null || docId.equals(id)) {
+                                continue;
+                            }
+                            results.add(TurSESimilarResult.builder()
+                                    .id(docId)
+                                    .title(firstString(source, TurSNFieldName.TITLE, null))
+                                    .type(firstString(source, TurSNFieldName.TYPE, null))
+                                    .url(firstString(source, TurSNFieldName.URL, null))
+                                    .build());
+                            if (results.size() >= rows) {
+                                break;
+                            }
+                        }
+                        return results;
+                    } catch (Exception e) {
+                        log.warn("[Elasticsearch] similar documents for id '{}' failed: {}",
+                                id, e.getMessage());
+                        return List.<TurSESimilarResult>of();
+                    }
+                })
+                .orElse(List.of());
+    }
+
+    @Override
+    public List<Map<String, Object>> getDocumentsByIds(TurSNSiteLocale siteLocale, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        List<String> wanted = ids.stream().filter(s -> s != null && !s.isBlank()).toList();
+        if (wanted.isEmpty()) {
+            return List.of();
+        }
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(siteLocale)
+                .map(instance -> {
+                    try {
+                        var response = instance.getClient().search(s -> s
+                                .index(instance.getIndex())
+                                .size(wanted.size())
+                                .source(src -> src.filter(f -> f.includes(SIMILAR_FIELDS)))
+                                .query(q -> q.terms(t -> t
+                                        .field(TurSNFieldName.ID)
+                                        .terms(tt -> tt.value(wanted.stream()
+                                                .map(co.elastic.clients.elasticsearch._types.FieldValue::of)
+                                                .toList())))),
+                                (java.lang.reflect.Type) Map.class);
+                        Map<String, Map<String, Object>> byId = new java.util.HashMap<>();
+                        for (var hit : response.hits().hits()) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> source = (Map<String, Object>) hit.source();
+                            if (source == null) {
+                                continue;
+                            }
+                            Map<String, Object> fields = new LinkedHashMap<>();
+                            for (String field : SIMILAR_FIELDS) {
+                                Object value = source.get(field);
+                                if (value instanceof java.util.Collection<?> col) {
+                                    value = col.isEmpty() ? null : col.iterator().next();
+                                }
+                                if (value != null) {
+                                    fields.put(field, value);
+                                }
+                            }
+                            Object docId = fields.getOrDefault(TurSNFieldName.ID, hit.id());
+                            if (docId != null) {
+                                byId.put(docId.toString(), fields);
+                            }
+                        }
+                        List<Map<String, Object>> ordered = new java.util.ArrayList<>();
+                        for (String key : wanted) {
+                            Map<String, Object> fields = byId.get(key);
+                            if (fields != null) {
+                                ordered.add(fields);
+                            }
+                        }
+                        return ordered;
+                    } catch (Exception e) {
+                        log.warn("[Elasticsearch] getDocumentsByIds failed: {}", e.getMessage());
+                        return List.<Map<String, Object>>of();
+                    }
+                })
+                .orElse(List.of());
+    }
+
+    private static String similarityText(Map<String, Object> fields) {
+        StringBuilder sb = new StringBuilder();
+        for (String field : List.of(TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT,
+                TurSNFieldName.TEXT)) {
+            Object value = fields.get(field);
+            if (value != null) {
+                String text = value.toString().trim();
+                if (!text.isEmpty()) {
+                    if (sb.length() > 0) {
+                        sb.append(' ');
+                    }
+                    sb.append(text);
+                }
+            }
+        }
+        String text = sb.toString().trim();
+        return text.length() > SIMILAR_MAX_SEED_CHARS
+                ? text.substring(0, SIMILAR_MAX_SEED_CHARS)
+                : text;
+    }
+
+    private static String firstString(Map<String, Object> source, String field, String fallback) {
+        if (source == null) {
+            return fallback;
+        }
+        Object value = source.get(field);
+        if (value instanceof java.util.Collection<?> col) {
+            value = col.isEmpty() ? null : col.iterator().next();
+        }
+        return value == null ? fallback : value.toString();
     }
 
     // ---- Content export ---------------------------------------------------

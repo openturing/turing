@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSearchLatestRequestBean;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
@@ -46,6 +47,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.sn.TurSNSimilarDocumentsService;
+import com.viglet.turing.sn.TurSNSimilarMode;
 import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,13 +64,16 @@ public class TurSNSiteSearchAPI {
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
         private final TurSNSiteSearchSnapshotService snapshotService;
+        private final TurSNSimilarDocumentsService similarDocumentsService;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteSearchSnapshotService snapshotService) {
+                        TurSNSiteSearchSnapshotService snapshotService,
+                        TurSNSimilarDocumentsService similarDocumentsService) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
                 this.snapshotService = snapshotService;
+                this.similarDocumentsService = similarDocumentsService;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -203,6 +209,28 @@ public class TurSNSiteSearchAPI {
          * @since 2026.1.14
          */
         public record TurSNSiteSortOptionBean(String value, String label) {}
+
+        /**
+         * T384 / §XX.4 — public "documents similar to this id" endpoint. Returns
+         * the documents most like {@code id} on the site, so a catalog can render
+         * "similar courses" live from the index. Similarity is content-based only.
+         *
+         * @param id   the seed document id
+         * @param rows desired number of results (default 10, capped at 50)
+         * @param locale request locale (a default site locale is used when omitted)
+         * @param mode {@code VECTOR} (semantic) or {@code MLT} (lexical); auto-selected when omitted
+         * @since 2026.3.4
+         */
+        @GetMapping("similar")
+        public ResponseEntity<List<TurSESimilarResult>> turSNSiteSimilarDocuments(
+                        @PathVariable String siteName,
+                        @RequestParam(name = "id") String id,
+                        @RequestParam(required = false, name = TurSNParamType.ROWS, defaultValue = "10") int rows,
+                        @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale,
+                        @RequestParam(required = false, name = "mode") TurSNSimilarMode mode) {
+                return ResponseEntity.ok(
+                                similarDocumentsService.findSimilar(siteName, id, rows, locale, mode));
+        }
 
         @PostMapping("latest")
         public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(

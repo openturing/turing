@@ -322,11 +322,6 @@
 > polluted and "field present?" logic breaks. This is a public-data catalog, so
 > **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
 
-- 💭 **T384** (deps: —) **Public "similar documents" endpoint** — expose more-like-this /
-      vector-neighbor retrieval as a first-class SN endpoint so a catalog can render
-      "similar courses" from the index instead of a pre-baked neighbors file (replaces
-      cursarei's `courseNeighbors.json`). Also the basis for cross-source dedup (**T390**).
-      → §XX.4
 - 💭 **T385** (deps: T382 ✅) **NL→facet query parsing eval pack for faceted catalogs** —
       harden and regression-test the LLM tool path that turns prose ("online graduate
       programs under 20k") into facet filters + ranges over a declared field schema,
@@ -357,7 +352,7 @@
       T383 from "RRF on/off" into a configurable `retrieve → fuse → rerank` pipeline that reuses
       the Block N `TurRagReranker` strategy seam (LLM | CROSS_ENCODER | COHERE), plus a "why this
       result ranked here" breakdown. Objective signals only — no partner boost. → §XX.9
-- 💭 **T390** (deps: T384) **Multi-source duplicate clustering** — use the T384 vector-neighbor
+- 💭 **T390** (deps: T384 ✅) **Multi-source duplicate clustering** — use the T384 vector-neighbor
       retrieval to cluster the same real-world entity arriving from many sources (a course listed
       by 5 portals collapses to one result, not five). The concrete multi-source-aggregator
       data-quality win; content-based only. → §XX.10

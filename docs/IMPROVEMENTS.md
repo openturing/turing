@@ -2446,15 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.4 Public "similar documents" endpoint (T384)
-
-`TurSESimilarResult` exists in commons and Solr/ES both support more-like-this /
-vector-neighbor retrieval, but there's no first-class public SN endpoint for
-"documents similar to this id". T384 exposes it so a catalog renders "similar
-courses" live from the index instead of shipping a pre-computed neighbors file
-(cursarei's `courseNeighbors.json`). Grounding/ranking invariants apply — similarity
-is content-based, never commercial.
-
 ### XX.5 NL→facet query parsing eval pack for faceted catalogs (T385)
 
 The LLM tool path (`search_site` + `get_site_fields`, see §VII) already parses prose

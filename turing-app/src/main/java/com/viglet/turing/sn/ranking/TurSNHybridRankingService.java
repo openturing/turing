@@ -241,6 +241,64 @@ public class TurSNHybridRankingService {
         }
     }
 
+    /**
+     * T384 / §XX.4 — vector-neighbor retrieval: returns the ids of the documents
+     * most semantically similar to a seed document, ordered by similarity
+     * descending, excluding the seed itself. The seed's content is rebuilt from
+     * {@code seedAttributes} (same {@link #buildContent} the indexing path uses)
+     * and embedded against the per-site {@code sn_<siteId>} collection.
+     *
+     * <p>This is the semantic half of the public similar-documents endpoint and
+     * the primitive {@code T390} (multi-source duplicate clustering) builds on.
+     * Fail-open: any failure (no embedding model, store unavailable, embedding
+     * error) returns an empty list so the caller can degrade to lexical MLT.
+     *
+     * @param turSNSite      the HYBRID_RRF site
+     * @param seedAttributes the seed document's field map (must include its id)
+     * @param topK           maximum number of neighbor ids to return
+     * @return up to {@code topK} neighbor ids, seed excluded; empty on any failure
+     */
+    public List<String> findNeighbors(TurSNSite turSNSite, Map<String, Object> seedAttributes, int topK) {
+        if (!isEnabled(turSNSite) || seedAttributes == null || topK < 1) {
+            return List.of();
+        }
+        String seedId = asString(seedAttributes.get(TurSNFieldName.ID));
+        String content = buildContent(seedAttributes);
+        if (!StringUtils.hasText(content)) {
+            return List.of();
+        }
+        try {
+            RagInfrastructure infra = infraFor(turSNSite);
+            if (infra == null) {
+                return List.of();
+            }
+            SearchRequest request = SearchRequest.builder()
+                    .query(content)
+                    .topK(topK + 1)
+                    .similarityThreshold(0.0)
+                    .build();
+            List<Document> hits = infra.vectorStore().similaritySearch(request);
+            if (hits == null || hits.isEmpty()) {
+                return List.of();
+            }
+            List<String> ids = new ArrayList<>(Math.min(topK, hits.size()));
+            for (Document d : hits) {
+                String id = d.getId();
+                if (StringUtils.hasText(id) && !id.equals(seedId) && !ids.contains(id)) {
+                    ids.add(id);
+                    if (ids.size() >= topK) {
+                        break;
+                    }
+                }
+            }
+            return ids;
+        } catch (RuntimeException e) {
+            log.warn("[SN-HYBRID] neighbors of doc '{}' on site '{}' failed: {} — degrading to lexical",
+                    seedId, turSNSite.getName(), e.getMessage());
+            return List.of();
+        }
+    }
+
     /** Drops the cached infrastructure for a site (e.g. after deleting it). */
     public void evict(String siteId) {
         infraCache.keySet().removeIf(k -> k.startsWith(siteId + "|"));
