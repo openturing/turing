@@ -2,7 +2,7 @@ import { BadgeColorful } from "@/components/badge-colorful";
 import { Button } from "@/components/ui/button";
 import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
 import { useTuringClickTracking } from "@viglet/turing-react-sdk";
-import { IconBraces, IconCalendar, IconExternalLink, IconPhoto } from "@tabler/icons-react";
+import { IconBraces, IconCalendar, IconCopy, IconExternalLink, IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
@@ -23,6 +23,19 @@ function resolveDocumentId(doc: ResolvedDocument, raw: TurDocument): string {
   return doc.url || (fieldId != null ? String(fieldId) : "") || doc.title || "";
 }
 
+/** A short, human label for a duplicate source: its `source_apps`, else the URL host, else the title. */
+function duplicateSourceLabel(member: { source?: string | null; url?: string | null; title?: string | null }): string {
+  if (member.source) return member.source;
+  if (member.url) {
+    try {
+      return new URL(member.url, "https://placeholder.local").hostname.replace(/^www\./, "") || member.url;
+    } catch {
+      return member.url;
+    }
+  }
+  return member.title || "—";
+}
+
 export function ResultCard({ document: doc, raw, siteName, position, defaultImageField, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
   const { t, i18n } = useTranslation();
   const { trackClick } = useTuringClickTracking();
@@ -40,6 +53,13 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
     ? `/sn/${siteName}/${rawImage}`
     : rawImage;
   const hasImage = !!imageSrc && !imgError;
+
+  // T390 — duplicate cluster: the same entity from other sources. Show the
+  // siblings (excluding this result) so the catalog collapses the duplicates.
+  const currentId = raw.fields?.id != null ? String(raw.fields.id) : undefined;
+  const duplicateMembers = raw.duplicateCluster?.duplicate
+    ? raw.duplicateCluster.members.filter((m) => m.id !== currentId)
+    : [];
 
   return (
     <article className="group relative rounded-xl border border-border/60 bg-card p-5 transition-all duration-200 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5">
@@ -124,6 +144,40 @@ export function ResultCard({ document: doc, raw, siteName, position, defaultImag
               </span>
             )}
           </div>
+
+          {/* Duplicate sources (T390) */}
+          {duplicateMembers.length > 0 && (
+            <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+              <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                <IconCopy className="size-3.5" />
+                {t("search.alsoAvailableOn", { count: duplicateMembers.length })}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {duplicateMembers.map((member) => {
+                  const label = duplicateSourceLabel(member);
+                  const chipClass =
+                    "inline-flex items-center gap-1 rounded-md bg-background/60 px-2 py-0.5 text-xs text-muted-foreground ring-1 ring-border/50 transition-colors hover:text-amber-700 hover:ring-amber-500/40 dark:hover:text-amber-400";
+                  return member.url ? (
+                    <a
+                      key={member.id}
+                      href={member.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t("search.duplicateSource")}
+                      className={chipClass}
+                    >
+                      {label}
+                      <IconExternalLink className="size-3 shrink-0 opacity-40" />
+                    </a>
+                  ) : (
+                    <span key={member.id} className={chipClass} title={t("search.duplicateSource")}>
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* JSON button */}

@@ -46,6 +46,9 @@
     "pageRange": "Exibindo {{start}} a {{end}}",
     "pageOf": "Página {{current}} de {{total}}",
     "showingResultsFor": "Mostrando resultados para",
-    "searchInsteadFor": "Em vez disso, pesquise por"
+    "searchInsteadFor": "Em vez disso, pesquise por",
+    "alsoAvailableOn_one": "Também em {{count}} outra fonte",
+    "alsoAvailableOn_other": "Também em {{count}} outras fontes",
+    "duplicateSource": "Fonte duplicada"
   }
 }
