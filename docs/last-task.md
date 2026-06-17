@@ -47,7 +47,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T390** — Multi-source duplicate clustering (Block R) — 2026-06-16
 - **T389** — Pluggable ranking pipeline + ranking explainability (Block R) — 2026-06-16
 - **T388** — Per-field coverage / completeness observability (Block R) — 2026-06-16
-- **T387** — LLM-assisted manifest derivation from sample documents (Block R) — 2026-06-16
+- **T387** — LLM-assisted manifest derivation from sample documents (Block R) — 2026-06-16 (shipped 2026-06-17)
 - **T386** — Manifest as versioned schema-as-code (Block R) — 2026-06-16
 - _(T380 left as a free gap — see note above; T381–T385 are Block R, created earlier without a log entry)_
 - **T379** — `viglet-core` HTTP/RestClient builder (Block Q) — 2026-06-16

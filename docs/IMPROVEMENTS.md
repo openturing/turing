@@ -2446,16 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.7 LLM-assisted manifest derivation (T387)
-
-The cost of onboarding is writing the manifest. T387 removes most of it: feed a sample of
-a source's documents to the default LLM and get a **proposed manifest** back — inferred
-`TurSEFieldType`, whether a field reads as a facet, multi-valued, mandatory, and the
-locale/analyzer. Output is a *draft for human review*, never auto-applied (the grounding
-and ranking invariants make silent schema guesses unacceptable). Reuses the configured
-default LLM; no new provider wiring. Turns onboarding from "declare 50 fields by hand" to
-"review and correct a generated schema."
-
 ### XX.8 Per-field coverage / completeness observability (T388)
 
 T381 guarantees absent ≠ empty; T388 turns that correctness property into a **product

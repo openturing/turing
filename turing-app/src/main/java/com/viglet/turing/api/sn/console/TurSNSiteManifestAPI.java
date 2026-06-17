@@ -26,11 +26,14 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.sn.manifest.TurSNManifestDeriveRequest;
+import com.viglet.turing.sn.manifest.TurSNManifestDeriver;
 import com.viglet.turing.sn.manifest.TurSNManifestDiff;
 import com.viglet.turing.sn.manifest.TurSNManifestMigrationRequiredException;
 import com.viglet.turing.sn.manifest.TurSNManifestResult;
@@ -57,6 +60,12 @@ import lombok.extern.slf4j.Slf4j;
  * existing field) with HTTP 409 — additive changes converge silently, breaking
  * changes must be declared via a migration.</p>
  *
+ * <p>LLM-assisted derivation (T387 / §XX.7): {@code POST /api/sn/manifest/derive}
+ * takes a sample of a source's documents and returns a <b>draft</b> manifest
+ * (inferred field types, facet/multi-valued/mandatory) for human review — the
+ * reviewed draft is then POSTed back to {@code /api/sn/manifest}. The draft is
+ * never auto-provisioned.</p>
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
@@ -69,6 +78,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteManifestAPI {
 
     private final TurSNSiteManifestService manifestService;
+    private final TurSNManifestDeriver manifestDeriver;
 
     @Operation(summary = "Provision (create or converge) an SN site and its field schema from a manifest")
     @PostMapping
@@ -97,5 +107,25 @@ public class TurSNSiteManifestAPI {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @Operation(summary = "Derive a draft manifest from a sample of a source's documents (T387; not provisioned)")
+    @PostMapping("/derive")
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
+    public ResponseEntity<Object> derive(@RequestBody TurSNManifestDeriveRequest request) {
+        try {
+            TurSNSiteManifest draft = manifestDeriver.derive(request);
+            return ResponseEntity.ok(draft);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "True when an LLM-grounded derivation is available (false = heuristic-only fallback)")
+    @GetMapping("/derive/available")
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
+    public Map<String, Boolean> deriveAvailable() {
+        return Map.of("llmAvailable", manifestDeriver.isLlmAvailable());
     }
 }

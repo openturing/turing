@@ -308,10 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T387** (deps: T382 ✅) **LLM-assisted manifest derivation from sample documents** — given a
-      sample of a source's documents, propose a draft manifest (per-field `TurSEFieldType`,
-      facet/multi-valued/mandatory, locale) for human review, so onboarding a new structured
-      source starts from a generated schema instead of hand-declaring every field. → §XX.7
 - 💭 **T388** (deps: T381) **Per-field coverage / completeness observability** — turn the
       absent-vs-empty contract into a data-quality signal: report % populated per field across a
       site's documents (which fields a source under-fills), surfaced in admin + via API. Makes
@@ -324,7 +320,7 @@
       retrieval to cluster the same real-world entity arriving from many sources (a course listed
       by 5 portals collapses to one result, not five). The concrete multi-source-aggregator
       data-quality win; content-based only. → §XX.10
-- 💭 **T391** (deps: T382 ✅, T387, T385 ✅) **Structured-source onboarding wizard** — the capstone flow
+- 💭 **T391** (deps: T382 ✅, T387 ✅, T385 ✅) **Structured-source onboarding wizard** — the capstone flow
       that chains the block: sample data → derived manifest (T387) → provision (T382) → run the
       NL→facet eval pack (T385) → live. Turns "index a new catalog" into a minutes-long guided op
       and productizes the whole block. → §XX.11
