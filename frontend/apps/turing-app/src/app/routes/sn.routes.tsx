@@ -17,6 +17,7 @@ const SNSiteFacetListPage = lazy(() => import("../console/sn/facet/sn.site.facet
 const SNSiteFacetedFieldPage = lazy(() => import("../console/sn/facet/sn.site.faceted.field.page"))
 const SNSiteFieldListPage = lazy(() => import("../console/sn/fields/sn.site.field.list.page"))
 const SNSiteFieldPage = lazy(() => import("../console/sn/fields/sn.site.field.page"))
+const SNSiteFieldCoverageListPage = lazy(() => import("../console/sn/field-coverage/sn.site.field.coverage.list.page"))
 const SNSiteGenAIPage = lazy(() => import("../console/sn/genai/sn.site.genai.page"))
 const SNSiteMergeProvidersListPage = lazy(() => import("../console/sn/merge-providers/sn.site.merge.providers.list.page"))
 const SNSiteMergeProvidersPage = lazy(() => import("../console/sn/merge-providers/sn.site.merge.providers.page"))
@@ -49,6 +50,7 @@ export const SNRoutes = (
             <Route path={'locale/:localeId'} element={<SNSiteMultiLanguagePage />} />
             <Route path={'field'} element={<SNSiteFieldListPage />} />
             <Route path={'field/:fieldId'} element={<SNSiteFieldPage />} />
+            <Route path={'field-coverage'} element={<SNSiteFieldCoverageListPage />} />
             <Route path={'behavior'} element={<SNSiteBehaviorPage />} />
             <Route path={'facet'} element={<SNSiteFacetListPage />} />
             <Route path={'facet/custom/:customFacetId'} element={<SNSiteCustomFacetPage />} />

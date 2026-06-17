@@ -2,6 +2,7 @@ import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model.ts";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import type { TurRagBm25CoreStatus } from "@/models/sn/sn-site-genai.model.ts";
+import type { TurSNFieldCoverageReport } from "@/models/sn/sn-field-coverage.model.ts";
 import axios from "axios";
 
 export class TurSNSiteService {
@@ -171,6 +172,18 @@ export class TurSNSiteService {
       console.error("Failed to deprovision RAG cores", error);
       return false;
     }
+  }
+
+  /**
+   * T388 — per-field coverage / completeness report for an SN site. Returns
+   * the total document count plus each enabled field's completeness, so admins
+   * can see which fields a source under-fills.
+   */
+  async getFieldCoverage(siteId: string): Promise<TurSNFieldCoverageReport> {
+    const response = await axios.get<TurSNFieldCoverageReport>(
+      `/sn/${siteId}/field-coverage`,
+    );
+    return response.data;
   }
 
   async subscribeExportProgress(

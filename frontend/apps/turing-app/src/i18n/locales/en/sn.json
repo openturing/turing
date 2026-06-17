@@ -264,6 +264,21 @@
       "term": "Term",
       "avgResults": "Average of results",
       "searchTotal": "Search total"
+    },
+    "fieldCoverage": {
+      "title": "Field Coverage",
+      "description": "How completely each field is populated across the indexed documents.",
+      "field": "Field",
+      "type": "Type",
+      "facet": "Facet",
+      "coverage": "Coverage",
+      "documents": "Documents",
+      "summary": "Summary",
+      "documentsIndexed": "documents indexed",
+      "fieldsMeasured": "fields measured",
+      "unsupported": "This search engine cannot report field presence, so coverage is unavailable.",
+      "empty": "No fields to measure yet.",
+      "emptyDescription": "Enable fields and index documents — completeness will show up here."
     }
   }
 }

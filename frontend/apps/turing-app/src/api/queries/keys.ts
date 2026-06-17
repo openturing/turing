@@ -29,6 +29,10 @@ export const queryKeys = {
     list: () => [...queryKeys.snSites.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.snSites.all(), 'detail', id] as const,
   },
+  snSiteFieldCoverage: {
+    all: () => ['sn-site-field-coverage'] as const,
+    bySite: (siteId: string) => [...queryKeys.snSiteFieldCoverage.all(), 'site', siteId] as const,
+  },
   locales: {
     all: () => ['locales'] as const,
     list: () => [...queryKeys.locales.all(), 'list'] as const,

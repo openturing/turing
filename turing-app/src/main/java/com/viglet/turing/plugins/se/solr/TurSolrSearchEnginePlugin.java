@@ -753,6 +753,13 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .map(turSolr::getDocumentTotal).orElse(0L);
     }
 
+    @Override
+    public long getDocumentCountWithField(TurSNSiteLocale turSNSiteLocale, String fieldName) {
+        return turSolrInstanceProcess.initSolrInstance(turSNSiteLocale)
+                .map(instance -> turSolr.getDocumentTotalWithField(instance, fieldName))
+                .orElse(-1L);
+    }
+
     // ---- Copy field ------------------------------------------------------
 
     @Override

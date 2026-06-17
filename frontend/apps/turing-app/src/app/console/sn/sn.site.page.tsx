@@ -11,6 +11,7 @@ import { TurGlobalSettingsService } from "@/services/system/global-settings.serv
 import {
     IconAlignBoxCenterStretch,
     IconArrowsSort,
+    IconChartHistogram,
     IconCpu2,
     IconDashboard,
     IconDatabase,
@@ -94,6 +95,11 @@ export default function SNSitePage() {
                 title: t("sn.fields.title"),
                 url: "/field",
                 icon: IconAlignBoxCenterStretch,
+            },
+            {
+                title: t("sn.fieldCoverage.title"),
+                url: "/field-coverage",
+                icon: IconChartHistogram,
             },
             {
                 title: t("sn.facets.title"),

@@ -393,6 +393,33 @@ public interface TurSearchEnginePlugin {
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);
 
     /**
+     * T388 — counts the documents in the site's index (for the given locale)
+     * that <em>populate</em> the named field, i.e. carry a non-null/non-empty
+     * value for it. This is the numerator behind per-field coverage /
+     * completeness observability: dividing by {@link #getDocumentTotal} yields
+     * the fraction of documents a source actually fills in for that field.
+     *
+     * <p>It honours the T381 grounding invariant — an absent field lowers
+     * coverage rather than being counted as a present empty value — by relying
+     * on each engine's "field exists" primitive (Solr {@code field:[* TO *]},
+     * Lucene {@code FieldExistsQuery}, Elasticsearch {@code exists}).
+     *
+     * <p>The default returns {@code -1}, meaning "this engine cannot report
+     * field presence"; callers should treat a negative result as
+     * <em>unknown</em> (not zero) so the UI can degrade gracefully instead of
+     * reporting a misleading 0% coverage.
+     *
+     * @param turSNSiteLocale the site locale whose index/core to query
+     * @param fieldName       the field whose presence to count
+     * @return number of documents populating the field, or {@code -1} if the
+     *         engine does not support field-presence counting
+     * @since 2026.3.1
+     */
+    default long getDocumentCountWithField(TurSNSiteLocale turSNSiteLocale, String fieldName) {
+        return -1L;
+    }
+
+    /**
      * Returns system information about the search engine instance,
      * such as version, OS, JVM info, etc.
      * Keys and values are engine-specific.

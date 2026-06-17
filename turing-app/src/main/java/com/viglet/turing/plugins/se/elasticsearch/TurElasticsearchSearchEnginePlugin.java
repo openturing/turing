@@ -644,6 +644,13 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 .map(turElasticsearch::getDocumentTotal).orElse(0L);
     }
 
+    @Override
+    public long getDocumentCountWithField(TurSNSiteLocale turSNSiteLocale, String fieldName) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(instance -> turElasticsearch.getDocumentTotalWithField(instance, fieldName))
+                .orElse(-1L);
+    }
+
     // ---- System info -----------------------------------------------------
 
     @Override

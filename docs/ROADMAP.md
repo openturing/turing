@@ -308,10 +308,6 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-- 💭 **T388** (deps: T381) **Per-field coverage / completeness observability** — turn the
-      absent-vs-empty contract into a data-quality signal: report % populated per field across a
-      site's documents (which fields a source under-fills), surfaced in admin + via API. Makes
-      grounding *visible* and pinpoints which Dumont crawler under-delivers. → §XX.8
 - 💭 **T389** (deps: T383) **Pluggable ranking pipeline + ranking explainability** — generalize
       T383 from "RRF on/off" into a configurable `retrieve → fuse → rerank` pipeline that reuses
       the Block N `TurRagReranker` strategy seam (LLM | CROSS_ENCODER | COHERE), plus a "why this

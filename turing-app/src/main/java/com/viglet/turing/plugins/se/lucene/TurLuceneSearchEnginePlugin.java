@@ -361,6 +361,24 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                 }).orElse(0L);
     }
 
+    @Override
+    public long getDocumentCountWithField(TurSNSiteLocale turSNSiteLocale, String fieldName) {
+        return turLuceneInstanceProcess.initLuceneInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        // FieldExistsQuery matches documents that have any value
+                        // indexed for the field (points, doc values, norms or
+                        // terms) — the Lucene analogue of Solr's field:[* TO *].
+                        return (long) instance.getSearcher()
+                                .count(new org.apache.lucene.search.FieldExistsQuery(fieldName));
+                    } catch (Exception e) {
+                        log.warn("[Lucene] Could not count documents with field '{}': {}",
+                                fieldName, e.getMessage());
+                        return -1L;
+                    }
+                }).orElse(-1L);
+    }
+
     // ---- System info -----------------------------------------------------
 
     @Override

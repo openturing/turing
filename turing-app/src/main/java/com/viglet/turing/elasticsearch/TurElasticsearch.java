@@ -233,6 +233,31 @@ public class TurElasticsearch {
         }
     }
 
+    /**
+     * T388 — counts documents that populate {@code fieldName} via an
+     * Elasticsearch {@code exists} query. Returns {@code -1} on error so
+     * coverage callers can treat it as "unknown".
+     */
+    public long getDocumentTotalWithField(TurElasticsearchInstance instance, String fieldName) {
+        try {
+            return instance.getClient().count(c -> c.index(instance.getIndex())
+                    .query(q -> q.exists(e -> e.field(fieldName)))).count();
+        } catch (co.elastic.clients.elasticsearch._types.ElasticsearchException e) {
+            if ("index_not_found_exception".equals(e.error().type())) {
+                log.debug("Index '{}' not found, returning -1 for field '{}'",
+                        instance.getIndex(), fieldName);
+            } else {
+                log.error("Error counting field '{}' in Elasticsearch index '{}'",
+                        fieldName, instance.getIndex(), e);
+            }
+            return -1L;
+        } catch (IOException e) {
+            log.error("Error counting field '{}' in Elasticsearch index '{}'",
+                    fieldName, instance.getIndex(), e);
+            return -1L;
+        }
+    }
+
     public void deIndexing(TurElasticsearchInstance instance, String id) {
         log.debug("Elasticsearch deIndexing id={}", id);
         try {

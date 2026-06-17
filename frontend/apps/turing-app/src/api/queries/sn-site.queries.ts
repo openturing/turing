@@ -1,10 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TurSNSite } from '@/models/sn/sn-site.model';
 import type { TurSNSiteListItem } from '@/models/sn/sn-site-list-item.model.ts';
+import type { TurSNFieldCoverageReport } from '@/models/sn/sn-field-coverage.model.ts';
 import { TurSNSiteService } from '@/services/sn/sn.service';
 import { queryKeys } from './keys';
 
 const service = new TurSNSiteService();
+
+/** T388 — per-field coverage / completeness report for an SN site. */
+export function useSnSiteFieldCoverage(siteId: string | undefined) {
+  return useQuery<TurSNFieldCoverageReport>({
+    queryKey: siteId
+      ? queryKeys.snSiteFieldCoverage.bySite(siteId)
+      : ['sn-site-field-coverage', 'pending'],
+    queryFn: () => service.getFieldCoverage(siteId as string),
+    enabled: Boolean(siteId),
+  });
+}
 
 /** Cached list of SN sites — list page uses this; cards on dashboard reuse the same cache. */
 export function useSnSites() {

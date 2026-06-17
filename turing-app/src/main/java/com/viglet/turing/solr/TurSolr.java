@@ -113,6 +113,24 @@ public class TurSolr {
         }
     }
 
+    /**
+     * T388 — counts documents that populate {@code fieldName} using Solr's
+     * {@code field:[* TO *]} existence filter (matches any document with at
+     * least one value for the field, across every field type). Returns
+     * {@code -1} on error so coverage callers can treat it as "unknown".
+     */
+    public long getDocumentTotalWithField(TurSolrInstance turSolrInstance, String fieldName) {
+        try {
+            SolrQuery query = new SolrQuery().setQuery("*:*").setRows(0)
+                    .addFilterQuery(fieldName + ":[* TO *]");
+            return executeSolrQuery(turSolrInstance, query)
+                    .map(queryResponse -> queryResponse.getResults().getNumFound()).orElse(0L);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return -1L;
+        }
+    }
+
     public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
             Map<String, Object> attributes) {
         turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);

@@ -264,6 +264,21 @@
       "term": "Termo",
       "avgResults": "Média de resultados",
       "searchTotal": "Total de buscas"
+    },
+    "fieldCoverage": {
+      "title": "Cobertura de Campos",
+      "description": "Quão completamente cada campo é preenchido nos documentos indexados.",
+      "field": "Campo",
+      "type": "Tipo",
+      "facet": "Facet",
+      "coverage": "Cobertura",
+      "documents": "Documentos",
+      "summary": "Resumo",
+      "documentsIndexed": "documentos indexados",
+      "fieldsMeasured": "campos medidos",
+      "unsupported": "Este mecanismo de busca não reporta a presença de campos, então a cobertura está indisponível.",
+      "empty": "Nenhum campo para medir ainda.",
+      "emptyDescription": "Habilite campos e indexe documentos — a completude aparecerá aqui."
     }
   }
 }

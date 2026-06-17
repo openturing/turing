@@ -2446,16 +2446,6 @@ key on `turing-ce` is the equivalent alternative.
 > `viglet-core` lift (T393). All keep both invariants above. cursarei stays the first
 > reference customer, not the ceiling.
 
-### XX.8 Per-field coverage / completeness observability (T388)
-
-T381 guarantees absent ≠ empty; T388 turns that correctness property into a **product
-signal**. For a site, report the percentage of documents that populate each field
-(`mensalidade` present in 73% of 4,000 docs; absent in 27%), in admin and via API. For a
-120-source aggregator this is directly actionable: it shows exactly which source/field
-combination a Dumont crawler under-delivers, and gives a buyer a legible data-quality
-read on the catalog. Cheap because it rides the contract T381 already pins — it is a count
-over the index, not new indexing behavior.
-
 ### XX.9 Pluggable ranking pipeline + explainability (T389)
 
 T383 brings RRF fusion to public SN search. T389 generalizes it from a boolean
