@@ -3,7 +3,6 @@ package com.viglet.turing.sn.dsl;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Sealed interface representing all supported Query DSL clause types,

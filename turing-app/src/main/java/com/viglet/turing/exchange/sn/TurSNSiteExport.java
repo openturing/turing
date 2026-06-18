@@ -47,7 +47,6 @@ import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProviders
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
