@@ -10,8 +10,8 @@
 package com.viglet.turing.mcp.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
@@ -46,7 +46,7 @@ class TurMcpLoopbackFilterTest {
 
         assertEquals(HttpServletResponse.SC_FORBIDDEN, res.getStatus());
         // The request must not have been forwarded down the chain.
-        assertTrue(chain.getRequest() == null, "non-loopback request should not reach the chain");
+        assertNull(chain.getRequest(), "non-loopback request should not reach the chain");
     }
 
     @Test
@@ -59,7 +59,7 @@ class TurMcpLoopbackFilterTest {
         filter.doFilter(req, res, chain);
 
         assertEquals(HttpServletResponse.SC_OK, res.getStatus());
-        assertFalse(chain.getRequest() == null, "loopback request should reach the chain");
+        assertNotNull(chain.getRequest(), "loopback request should reach the chain");
     }
 
     @Test
@@ -72,7 +72,7 @@ class TurMcpLoopbackFilterTest {
         filter.doFilter(req, res, chain);
 
         assertEquals(HttpServletResponse.SC_OK, res.getStatus());
-        assertFalse(chain.getRequest() == null, "IPv6 loopback request should reach the chain");
+        assertNotNull(chain.getRequest(), "IPv6 loopback request should reach the chain");
     }
 
     @Test
@@ -85,6 +85,6 @@ class TurMcpLoopbackFilterTest {
         filter.doFilter(req, res, chain);
 
         assertEquals(HttpServletResponse.SC_OK, res.getStatus());
-        assertFalse(chain.getRequest() == null, "remote request should pass when loopback-only is off");
+        assertNotNull(chain.getRequest(), "remote request should pass when loopback-only is off");
     }
 }

@@ -10,6 +10,7 @@
 package com.viglet.turing.mcp.server;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -127,7 +128,7 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
             // description replaced the "." @Tool placeholder.
             String description = listSites.description();
             assertNotNull(description);
-            assertFalse(".".equals(description.trim()),
+            assertNotEquals(".", description.trim(),
                     "tool description must be the curated .md content, not the '.' placeholder");
             assertTrue(description.length() > 1,
                     () -> "decorated description unexpectedly short: '" + description + "'");

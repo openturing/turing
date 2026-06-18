@@ -10,7 +10,7 @@
 package com.viglet.turing.genai.workspace;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -132,6 +132,6 @@ class TurAgentWorkspaceUrlSignerTest {
 
         String sigA = expAndSig(signer.signQueryString(AGENT, CONV, "a.txt"))[1];
         String sigB = expAndSig(signer.signQueryString(AGENT, CONV, "b.txt"))[1];
-        assertFalse(sigA.equals(sigB));
+        assertNotEquals(sigA, sigB);
     }
 }

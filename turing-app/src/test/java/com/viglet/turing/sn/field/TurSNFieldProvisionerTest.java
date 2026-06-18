@@ -1,5 +1,6 @@
 package com.viglet.turing.sn.field;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -102,9 +103,9 @@ class TurSNFieldProvisionerTest {
         verify(turSNSiteFieldExtRepository).save(extCaptor.capture());
         TurSNSiteFieldExt ext = extCaptor.getValue();
         // facet + mandatory→required carried from the spec; default facet label kept.
-        assertTrue(ext.getFacet() == 1);
-        assertTrue(ext.getRequired() == 1);
-        assertTrue("Custom".equals(ext.getFacetName()));
+        assertEquals(1, ext.getFacet());
+        assertEquals(1, ext.getRequired());
+        assertEquals("Custom", ext.getFacetName());
         verify(turSNSiteFieldExtFacetRepository).saveAll(any());
         verify(plugin).addOrUpdateField(seInstance, "core_en",
                 "customField", TurSEFieldType.STRING, true, false, true);
