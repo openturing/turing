@@ -386,11 +386,8 @@ public class TurCatalogCopilotService {
             case TurDslQuery.Term t -> parts.add(t.field() + "=" + t.value());
             case TurDslQuery.Terms t -> parts.add(t.field() + " in " + t.values());
             case TurDslQuery.Range r -> parts.add(renderRange(r));
-            case TurDslQuery.Match m -> {
-                if (!TurSNFieldName.DEFAULT.equals(m.field())) {
-                    parts.add(m.field() + "~\"" + m.query() + "\"");
-                }
-            }
+            case TurDslQuery.Match m when !TurSNFieldName.DEFAULT.equals(m.field()) ->
+                parts.add(m.field() + "~\"" + m.query() + "\"");
             default -> {
                 // free-text / unsupported clause — nothing to summarize
             }

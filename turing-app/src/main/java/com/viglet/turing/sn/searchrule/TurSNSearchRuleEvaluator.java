@@ -181,6 +181,9 @@ public class TurSNSearchRuleEvaluator {
         }
     }
 
+    @SuppressWarnings("java:S6916") // switch is over an enum; Java pattern-match guards
+    // (`when`) apply only to type patterns, not enum constant labels, so the inner
+    // null-check on ADD_FILTER_QUERY cannot be hoisted into a guard.
     private void applyAction(TurSNSiteSearchRuleAction action, TurSEParameters params) {
         TurSNSiteSearchRuleActionTypeEnum actionType = action.getActionType();
         String value = action.getValue();

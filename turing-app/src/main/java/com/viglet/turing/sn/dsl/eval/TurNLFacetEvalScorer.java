@@ -205,11 +205,9 @@ public class TurNLFacetEvalScorer {
         }
         switch (q) {
             case TurDslQuery.Term t -> addTerm(c, t.field(), String.valueOf(t.value()));
-            case TurDslQuery.Terms t -> {
-                if (t.values() != null) {
-                    for (Object v : t.values()) {
-                        addTerm(c, t.field(), String.valueOf(v));
-                    }
+            case TurDslQuery.Terms t when t.values() != null -> {
+                for (Object v : t.values()) {
+                    addTerm(c, t.field(), String.valueOf(v));
                 }
             }
             case TurDslQuery.Range r -> {
@@ -223,11 +221,8 @@ public class TurNLFacetEvalScorer {
             case TurDslQuery.Wildcard w -> addMatch(c, w.field(), w.value());
             case TurDslQuery.Prefix p -> addMatch(c, p.field(), p.value());
             case TurDslQuery.Fuzzy f -> addMatch(c, f.field(), f.value());
-            case TurDslQuery.MultiMatch m -> {
-                if (m.fields() != null) {
-                    m.fields().forEach(f -> addMatch(c, stripBoost(f), m.query()));
-                }
-            }
+            case TurDslQuery.MultiMatch m when m.fields() != null ->
+                m.fields().forEach(f -> addMatch(c, stripBoost(f), m.query()));
             case TurDslQuery.Exists e -> c.referencedFields.add(e.field());
             case TurDslQuery.Bool b -> {
                 walkAll(b.must(), c);
