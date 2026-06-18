@@ -11,6 +11,7 @@ package com.viglet.turing.service.chatslots;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -62,7 +63,7 @@ public class TurPiiSlotService {
     public static final String ENCRYPTED_MARKER = "pii_enc:v1:";
     public static final String REDACTED_PLACEHOLDER = "[redacted]";
 
-    private static volatile TurPiiSlotService instance;
+    private static final AtomicReference<TurPiiSlotService> instance = new AtomicReference<>();
 
     private final TurSecretCryptoService cryptoService;
     private final com.viglet.turing.system.TurGlobalSettingsService globalSettings;
@@ -75,14 +76,12 @@ public class TurPiiSlotService {
 
     @PostConstruct
     void register() {
-        instance = this;
+        instance.set(this);
     }
 
     @PreDestroy
     void unregister() {
-        if (instance == this) {
-            instance = null;
-        }
+        instance.compareAndSet(this, null);
     }
 
     /**
@@ -91,7 +90,7 @@ public class TurPiiSlotService {
      * handle that as "PII features disabled" (transparent passthrough).
      */
     public static TurPiiSlotService getInstance() {
-        return instance;
+        return instance.get();
     }
 
     /**

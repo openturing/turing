@@ -16,6 +16,8 @@
  */
 package com.viglet.turing.sn.snapshot;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -54,8 +56,9 @@ import jakarta.persistence.PostUpdate;
 @Component
 public class TurSNSiteSnapshotEvictionListener {
 
-    private static volatile CacheManager cacheManagerStatic;
-    private static volatile TurSearchPipelineObservation pipelineObservationStatic;
+    private static final AtomicReference<CacheManager> cacheManagerStatic = new AtomicReference<>();
+    private static final AtomicReference<TurSearchPipelineObservation> pipelineObservationStatic =
+            new AtomicReference<>();
 
     private final CacheManager cacheManager;
     private final TurSearchPipelineObservation pipelineObservation;
@@ -70,15 +73,15 @@ public class TurSNSiteSnapshotEvictionListener {
             TurSearchPipelineObservation pipelineObservation) {
         this.cacheManager = cacheManager;
         this.pipelineObservation = pipelineObservation;
-        TurSNSiteSnapshotEvictionListener.cacheManagerStatic = cacheManager;
-        TurSNSiteSnapshotEvictionListener.pipelineObservationStatic = pipelineObservation;
+        cacheManagerStatic.set(cacheManager);
+        pipelineObservationStatic.set(pipelineObservation);
     }
 
     @PostPersist
     @PostUpdate
     @PostRemove
     public void onChange(Object entity) {
-        CacheManager cm = cacheManager != null ? cacheManager : cacheManagerStatic;
+        CacheManager cm = cacheManager != null ? cacheManager : cacheManagerStatic.get();
         if (cm == null) {
             return;
         }
@@ -87,7 +90,7 @@ public class TurSNSiteSnapshotEvictionListener {
             cache.clear();
             TurSearchPipelineObservation observation = pipelineObservation != null
                     ? pipelineObservation
-                    : pipelineObservationStatic;
+                    : pipelineObservationStatic.get();
             if (observation != null) {
                 observation.recordSnapshotOutcome(TurMeterNames.OUTCOME_EVICT);
             }

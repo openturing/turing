@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -72,7 +73,7 @@ public class TurCodeInterpreterWarmPool {
      * service owns python-executable resolution + the locked-down env). Null
      * until initialized — {@link #acquire()} returns {@code null} while null.
      */
-    private volatile Callable<Process> factory;
+    private final AtomicReference<Callable<Process>> factory = new AtomicReference<>();
     private volatile boolean shuttingDown = false;
 
     private final BlockingQueue<Process> ready = new LinkedBlockingQueue<>();
@@ -105,10 +106,10 @@ public class TurCodeInterpreterWarmPool {
             log.debug("[CodeInterpreter] warm pool disabled");
             return;
         }
-        if (this.factory != null) {
+        if (this.factory.get() != null) {
             return; // already initialized
         }
-        this.factory = workerFactory;
+        this.factory.set(workerFactory);
         this.refillExecutor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "turing-ci-warmpool");
             t.setDaemon(true);
@@ -125,7 +126,7 @@ public class TurCodeInterpreterWarmPool {
      * so the pool tops back up toward {@link #targetSize()}.
      */
     public Process acquire() {
-        if (!enabled || factory == null || shuttingDown) {
+        if (!enabled || factory.get() == null || shuttingDown) {
             return null;
         }
         Process worker;
@@ -160,8 +161,9 @@ public class TurCodeInterpreterWarmPool {
      */
     void refill() {
         try {
-            while (!shuttingDown && ready.size() < targetSize()) {
-                Process worker = factory.call();
+            Callable<Process> workerFactory = factory.get();
+            while (workerFactory != null && !shuttingDown && ready.size() < targetSize()) {
+                Process worker = workerFactory.call();
                 if (worker == null) {
                     break;
                 }

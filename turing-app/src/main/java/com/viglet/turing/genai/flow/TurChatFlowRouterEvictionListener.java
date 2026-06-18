@@ -9,6 +9,8 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -48,7 +50,7 @@ import jakarta.persistence.PostUpdate;
 @Component
 public class TurChatFlowRouterEvictionListener {
 
-    private static volatile TurChatFlowEngineService engineStatic;
+    private static final AtomicReference<TurChatFlowEngineService> engineStatic = new AtomicReference<>();
 
     private final TurChatFlowEngineService engine;
 
@@ -59,14 +61,14 @@ public class TurChatFlowRouterEvictionListener {
     @Autowired
     public TurChatFlowRouterEvictionListener(@Lazy TurChatFlowEngineService engine) {
         this.engine = engine;
-        TurChatFlowRouterEvictionListener.engineStatic = engine;
+        engineStatic.set(engine);
     }
 
     @PostPersist
     @PostUpdate
     @PostRemove
     public void onChange(TurChatFlow entity) {
-        TurChatFlowEngineService target = engine != null ? engine : engineStatic;
+        TurChatFlowEngineService target = engine != null ? engine : engineStatic.get();
         if (target != null) {
             target.evictRouterIndexes();
         }

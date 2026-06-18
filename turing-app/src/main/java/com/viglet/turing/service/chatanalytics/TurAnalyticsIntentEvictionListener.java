@@ -9,6 +9,8 @@
  */
 package com.viglet.turing.service.chatanalytics;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -42,8 +44,8 @@ import jakarta.persistence.PostUpdate;
 @Component
 public class TurAnalyticsIntentEvictionListener {
 
-    private static volatile TurLuceneIntentClassifier classifierStatic;
-    private static volatile TurAnalyticsIntentIndexer indexerStatic;
+    private static final AtomicReference<TurLuceneIntentClassifier> classifierStatic = new AtomicReference<>();
+    private static final AtomicReference<TurAnalyticsIntentIndexer> indexerStatic = new AtomicReference<>();
 
     private final TurLuceneIntentClassifier classifier;
     private final TurAnalyticsIntentIndexer indexer;
@@ -58,8 +60,8 @@ public class TurAnalyticsIntentEvictionListener {
             @Lazy TurAnalyticsIntentIndexer indexer) {
         this.classifier = classifier;
         this.indexer = indexer;
-        TurAnalyticsIntentEvictionListener.classifierStatic = classifier;
-        TurAnalyticsIntentEvictionListener.indexerStatic = indexer;
+        classifierStatic.set(classifier);
+        indexerStatic.set(indexer);
     }
 
     @PostPersist
@@ -72,21 +74,21 @@ public class TurAnalyticsIntentEvictionListener {
     @PostRemove
     public void onRemove(TurAnalyticsIntent entity) {
         evictEmbeddedIndex();
-        TurAnalyticsIntentIndexer target = indexer != null ? indexer : indexerStatic;
+        TurAnalyticsIntentIndexer target = indexer != null ? indexer : indexerStatic.get();
         if (target != null && entity != null && entity.getTurAIAgent() != null) {
             target.removeRow(entity.getId(), entity.getTurAIAgent().getId());
         }
     }
 
     private void evictEmbeddedIndex() {
-        TurLuceneIntentClassifier target = classifier != null ? classifier : classifierStatic;
+        TurLuceneIntentClassifier target = classifier != null ? classifier : classifierStatic.get();
         if (target != null) {
             target.evictAll();
         }
     }
 
     private void pushToSe(TurAnalyticsIntent entity) {
-        TurAnalyticsIntentIndexer target = indexer != null ? indexer : indexerStatic;
+        TurAnalyticsIntentIndexer target = indexer != null ? indexer : indexerStatic.get();
         if (target != null && entity != null) {
             target.indexRow(entity);
         }
