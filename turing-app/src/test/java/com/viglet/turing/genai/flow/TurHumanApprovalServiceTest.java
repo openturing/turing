@@ -68,18 +68,18 @@ class TurHumanApprovalServiceTest {
 
         ArgumentCaptor<TurChatHumanApproval> saved = ArgumentCaptor.forClass(TurChatHumanApproval.class);
         verify(repo).save(saved.capture());
-        TurChatHumanApproval record = saved.getValue();
-        assertThat(record.getStatus()).isEqualTo(TurHumanApprovalStatus.PENDING);
-        assertThat(record.getApprovalSlot()).isEqualTo("operator_decision");
-        assertThat(record.getPromptText()).isEqualTo("Lead Acme ready");
-        assertThat(record.getExpiresAt()).isNotNull();
-        assertThat(record.getResumeToken()).isNotBlank();
+        TurChatHumanApproval approval = saved.getValue();
+        assertThat(approval.getStatus()).isEqualTo(TurHumanApprovalStatus.PENDING);
+        assertThat(approval.getApprovalSlot()).isEqualTo("operator_decision");
+        assertThat(approval.getPromptText()).isEqualTo("Lead Acme ready");
+        assertThat(approval.getExpiresAt()).isNotNull();
+        assertThat(approval.getResumeToken()).isNotBlank();
 
         ArgumentCaptor<String> resumeUrl = ArgumentCaptor.forClass(String.class);
         verify(notifier).notify(eq("email"), eq("ops@example.com"), eq("Lead Acme ready"),
                 resumeUrl.capture(), eq("conv-test"), anyMap());
         assertThat(resumeUrl.getValue())
-                .isEqualTo("https://t.example.com/api/genai/approval/" + record.getResumeToken());
+                .isEqualTo("https://t.example.com/api/genai/approval/" + approval.getResumeToken());
     }
 
     @Test

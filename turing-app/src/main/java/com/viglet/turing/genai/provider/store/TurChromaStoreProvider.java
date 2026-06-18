@@ -476,17 +476,17 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         int reEmbedded = 0;
         int failed = 0;
 
-        for (TurStoreExportRecord record : records) {
+        for (TurStoreExportRecord exportRecord : records) {
             total++;
-            if (record == null) {
+            if (exportRecord == null) {
                 failed++;
                 continue;
             }
-            String id = StringUtils.hasText(record.id())
-                    ? record.id()
+            String id = StringUtils.hasText(exportRecord.id())
+                    ? exportRecord.id()
                     : java.util.UUID.randomUUID().toString();
-            String content = record.content() == null ? "" : record.content();
-            float[] embedding = record.embedding();
+            String content = exportRecord.content() == null ? "" : exportRecord.content();
+            float[] embedding = exportRecord.embedding();
             boolean wasReEmbedded = false;
             if (embedding == null || embedding.length == 0) {
                 if (embeddingModel == null || content.isBlank()) {
@@ -504,7 +504,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                     continue;
                 }
             }
-            batch.add(id, embedding, toChromaMetadata(record.metadata()), content, wasReEmbedded);
+            batch.add(id, embedding, toChromaMetadata(exportRecord.metadata()), content, wasReEmbedded);
             if (batch.size() >= IMPORT_BATCH_SIZE) {
                 int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
                 preserved += outcome[0];

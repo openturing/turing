@@ -77,6 +77,10 @@ public class TurChatSlotAuditService {
      *                       custom tool name, route, agent id) — capped at
      *                       256 chars in storage
      */
+    // S6213: record is the natural verb for writing an audit entry and is a valid
+    // identifier (only a contextual keyword). Renaming this public method would
+    // ripple through production callers and many tests for a naming nit, so it is kept.
+    @SuppressWarnings("java:S6213")
     public void record(String conversationId, String slotName,
             String oldValue, String newValue,
             TurChatSlotAuditSource source, String originDetail) {

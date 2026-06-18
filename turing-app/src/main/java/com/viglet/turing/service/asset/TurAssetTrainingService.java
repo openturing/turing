@@ -199,17 +199,17 @@ public class TurAssetTrainingService {
             log.info("[AssetTraining] Successfully stored {} chunks for: {}", documents.size(), objectName);
 
             // Upsert training record
-            TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-            record.setObjectName(objectName);
-            record.setObjectPath(path);
-            record.setFileName(fileName);
-            record.setContentType(file.contentType());
-            record.setFileSize(file.size());
-            record.setChunkCount(documents.size());
-            record.setTrainedAt(Instant.now());
-            record.setEmbeddingModelId(globalSettingsService.getDefaultEmbeddingModelId());
-            record.setEmbeddingStoreId(globalSettingsService.getDefaultEmbeddingStoreId());
-            trainingRecordRepository.save(record);
+            TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
+            trainingRecord.setObjectName(objectName);
+            trainingRecord.setObjectPath(path);
+            trainingRecord.setFileName(fileName);
+            trainingRecord.setContentType(file.contentType());
+            trainingRecord.setFileSize(file.size());
+            trainingRecord.setChunkCount(documents.size());
+            trainingRecord.setTrainedAt(Instant.now());
+            trainingRecord.setEmbeddingModelId(globalSettingsService.getDefaultEmbeddingModelId());
+            trainingRecord.setEmbeddingStoreId(globalSettingsService.getDefaultEmbeddingStoreId());
+            trainingRecordRepository.save(trainingRecord);
 
             log.info("[AssetTraining] Training record saved for: {}", objectName);
         }

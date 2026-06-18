@@ -89,17 +89,17 @@ public class TurHumanApprovalAPI {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new DecideResponse(false, null, 0, "unknown approval token"));
         }
-        TurChatHumanApproval record = opt.get();
-        if (record.getStatus() != TurHumanApprovalStatus.PENDING) {
+        TurChatHumanApproval approval = opt.get();
+        if (approval.getStatus() != TurHumanApprovalStatus.PENDING) {
             // Already resolved (operator double-clicked, or the timeout swept it
             // first). Idempotent: report the terminal status, resume nothing.
             return ResponseEntity.ok(new DecideResponse(false,
-                    record.getStatus().name(), 0, "approval already resolved"));
+                    approval.getStatus().name(), 0, "approval already resolved"));
         }
         approvalService.recordDecision(token, decision.trim());
         TurChatFlowEngineService.ResumeResult result = chatFlowEngineService.resumeSuspendedFlow(
-                record.getConversationId(),
-                Map.of(record.getApprovalSlot(), decision.trim()),
+                approval.getConversationId(),
+                Map.of(approval.getApprovalSlot(), decision.trim()),
                 "approval=" + token);
         log.info("[HumanApproval] decision '{}' recorded for token='{}' — resumed {} state(s)",
                 decision.trim(), token, result.resumed());

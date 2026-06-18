@@ -111,21 +111,21 @@ public class TurHumanApprovalService {
         String token = UUID.randomUUID().toString().replace("-", "");
         int timeoutSeconds = resolveTimeoutSeconds(config);
 
-        TurChatHumanApproval record = new TurChatHumanApproval();
-        record.setResumeToken(token);
-        record.setConversationId(conversationId);
-        record.setNodeId(node.id());
-        record.setFlowId(state.getFlow() == null ? null : state.getFlow().getId());
-        record.setApprovalSlot(effectiveApprovalSlot(node));
-        record.setChannel(config.channel());
-        record.setTarget(config.target());
-        record.setPromptText(prompt);
-        record.setStatus(TurHumanApprovalStatus.PENDING);
-        record.setTimeoutBehavior(normalizeTimeoutBehavior(config.timeoutBehavior()));
+        TurChatHumanApproval approval = new TurChatHumanApproval();
+        approval.setResumeToken(token);
+        approval.setConversationId(conversationId);
+        approval.setNodeId(node.id());
+        approval.setFlowId(state.getFlow() == null ? null : state.getFlow().getId());
+        approval.setApprovalSlot(effectiveApprovalSlot(node));
+        approval.setChannel(config.channel());
+        approval.setTarget(config.target());
+        approval.setPromptText(prompt);
+        approval.setStatus(TurHumanApprovalStatus.PENDING);
+        approval.setTimeoutBehavior(normalizeTimeoutBehavior(config.timeoutBehavior()));
         LocalDateTime now = LocalDateTime.now();
-        record.setCreatedAt(now);
-        record.setExpiresAt(timeoutSeconds > 0 ? now.plusSeconds(timeoutSeconds) : null);
-        repository.save(record);
+        approval.setCreatedAt(now);
+        approval.setExpiresAt(timeoutSeconds > 0 ? now.plusSeconds(timeoutSeconds) : null);
+        repository.save(approval);
 
         log.info("[HumanApproval] raised approval token='{}' conv='{}' node='{}' channel='{}'",
                 token, conversationId, node.id(), config.channel());
@@ -144,14 +144,14 @@ public class TurHumanApprovalService {
         if (opt.isEmpty()) {
             return Optional.empty();
         }
-        TurChatHumanApproval record = opt.get();
-        if (record.getStatus() != TurHumanApprovalStatus.PENDING) {
+        TurChatHumanApproval approval = opt.get();
+        if (approval.getStatus() != TurHumanApprovalStatus.PENDING) {
             return opt;
         }
-        record.setStatus(TurHumanApprovalStatus.DECIDED);
-        record.setDecision(decision);
-        record.setDecidedAt(LocalDateTime.now());
-        return Optional.of(repository.save(record));
+        approval.setStatus(TurHumanApprovalStatus.DECIDED);
+        approval.setDecision(decision);
+        approval.setDecidedAt(LocalDateTime.now());
+        return Optional.of(repository.save(approval));
     }
 
     /** Pending approvals whose deadline elapsed — fed to the timeout sweep. */
@@ -167,13 +167,13 @@ public class TurHumanApprovalService {
      * into the approval slot before resuming the flow.
      */
     @Transactional
-    public String markTimedOut(TurChatHumanApproval record) {
-        String decision = "auto_approve".equals(record.getTimeoutBehavior())
+    public String markTimedOut(TurChatHumanApproval approval) {
+        String decision = "auto_approve".equals(approval.getTimeoutBehavior())
                 ? DECISION_APPROVE : DECISION_REJECT;
-        record.setStatus(TurHumanApprovalStatus.TIMED_OUT);
-        record.setDecision(decision);
-        record.setDecidedAt(LocalDateTime.now());
-        repository.save(record);
+        approval.setStatus(TurHumanApprovalStatus.TIMED_OUT);
+        approval.setDecision(decision);
+        approval.setDecidedAt(LocalDateTime.now());
+        repository.save(approval);
         return decision;
     }
 
@@ -186,10 +186,10 @@ public class TurHumanApprovalService {
     public void cancelPending(String conversationId, String nodeId) {
         repository.findFirstByConversationIdAndNodeIdAndStatus(
                 conversationId, nodeId, TurHumanApprovalStatus.PENDING)
-                .ifPresent(record -> {
-                    record.setStatus(TurHumanApprovalStatus.CANCELLED);
-                    record.setDecidedAt(LocalDateTime.now());
-                    repository.save(record);
+                .ifPresent(approval -> {
+                    approval.setStatus(TurHumanApprovalStatus.CANCELLED);
+                    approval.setDecidedAt(LocalDateTime.now());
+                    repository.save(approval);
                 });
     }
 

@@ -53,6 +53,10 @@ public class TurSearchPipelineObservation {
      * sample tagged with the given {@code stage} and a status indicating
      * whether the supplier completed normally.
      */
+    // S6213: record is the natural verb for this timing helper and is a valid
+    // identifier (only a contextual keyword). Renaming this public method would
+    // ripple through every search call site for a naming nit, so it is kept.
+    @SuppressWarnings("java:S6213")
     public <T> T record(String stage, Supplier<T> supplier) {
         Timer.Sample sample = Timer.start(meterRegistry);
         String status = TurMeterNames.STATUS_SUCCESS;

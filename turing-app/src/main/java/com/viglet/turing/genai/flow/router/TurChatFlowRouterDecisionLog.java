@@ -137,6 +137,10 @@ public class TurChatFlowRouterDecisionLog {
     /**
      * Emits the structured log line and retains the decision in both rings.
      */
+    // S6213: record reads as the natural domain verb here and is a valid identifier
+    // (only a contextual keyword). Renaming this public method would ripple through
+    // production callers and many tests for a naming nit, so it is kept as is.
+    @SuppressWarnings("java:S6213")
     public void record(TurChatFlowRouterDecision decision) {
         if (decision == null) {
             return;

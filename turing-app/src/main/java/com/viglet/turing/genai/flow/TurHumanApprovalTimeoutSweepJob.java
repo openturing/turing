@@ -59,17 +59,17 @@ public class TurHumanApprovalTimeoutSweepJob {
             return;
         }
         int resolved = 0;
-        for (TurChatHumanApproval record : expired) {
+        for (TurChatHumanApproval approval : expired) {
             try {
-                String decision = approvalService.markTimedOut(record);
+                String decision = approvalService.markTimedOut(approval);
                 chatFlowEngineService.resumeSuspendedFlow(
-                        record.getConversationId(),
-                        Map.of(record.getApprovalSlot(), decision),
+                        approval.getConversationId(),
+                        Map.of(approval.getApprovalSlot(), decision),
                         "timeout");
                 resolved++;
             } catch (RuntimeException e) {
                 log.warn("[HumanApproval] timeout sweep failed for token='{}' conv='{}': {}",
-                        record.getResumeToken(), record.getConversationId(), e.getMessage());
+                        approval.getResumeToken(), approval.getConversationId(), e.getMessage());
             }
         }
         log.info("[HumanApproval] timeout sweep auto-resolved {} expired approval(s)", resolved);

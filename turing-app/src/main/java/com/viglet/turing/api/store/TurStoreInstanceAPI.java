@@ -428,9 +428,9 @@ public class TurStoreInstanceAPI {
                 try (ZipOutputStream zip = new ZipOutputStream(output)) {
                     zip.putNextEntry(new ZipEntry(safeName + ".jsonl"));
                     Writer writer = new OutputStreamWriter(zip, StandardCharsets.UTF_8);
-                    provider.streamExport(instance, credential, collectionName, record -> {
+                    provider.streamExport(instance, credential, collectionName, row -> {
                         try {
-                            writer.write(jsonl.writeValueAsString(record));
+                            writer.write(jsonl.writeValueAsString(row));
                             writer.write('\n');
                         } catch (java.io.IOException e) {
                             throw new java.io.UncheckedIOException(e);
