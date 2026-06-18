@@ -134,7 +134,7 @@ public class TurRoutineGroovyExecutor {
         // garbage collection reclaim the shell + its ClassLoader between
         // edits.
         GroovyShell shell = new GroovyShell();
-        Class<? extends Script> clazz = (Class<? extends Script>) shell.getClassLoader().parseClass(
+        Class<? extends Script> clazz = shell.getClassLoader().parseClass(
                 source,
                 "TurRoutine_" + routine.getId() + ".groovy");
         scriptCache.put(routine.getId(), new CachedScript(clazz, hash));

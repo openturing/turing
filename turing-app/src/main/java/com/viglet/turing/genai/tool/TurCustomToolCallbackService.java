@@ -288,7 +288,7 @@ public class TurCustomToolCallbackService {
         }
         GroovyShell shell = new GroovyShell();
         String source = sanitizeGroovySource(tool.groovyScript() == null ? "" : tool.groovyScript());
-        Class<? extends Script> clazz = (Class<? extends Script>) shell.getClassLoader().parseClass(
+        Class<? extends Script> clazz = shell.getClassLoader().parseClass(
                 source,
                 "TurCustomTool_" + id + ".groovy");
         CachedScript fresh = new CachedScript(clazz, hash);

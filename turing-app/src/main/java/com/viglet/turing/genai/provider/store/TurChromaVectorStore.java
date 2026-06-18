@@ -438,7 +438,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
         } catch (Exception e) {
             // SHA-1 is mandated by the JDK, but fall back to hashCode just in case.
             int h = s == null ? 0 : s.hashCode();
-            return String.format("%012x", (long) h & 0xffffffffL);
+            return String.format("%012x", h & 0xffffffffL);
         }
     }
 }

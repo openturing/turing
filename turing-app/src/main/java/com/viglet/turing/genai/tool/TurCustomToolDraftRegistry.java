@@ -107,7 +107,7 @@ public class TurCustomToolDraftRegistry {
             String sanitized = TurCustomToolCallbackService.sanitizeGroovySource(groovySource);
             GroovyShell shell = new GroovyShell();
             @SuppressWarnings("unchecked")
-            Class<? extends Script> scriptClass = (Class<? extends Script>) shell.getClassLoader()
+            Class<? extends Script> scriptClass = shell.getClassLoader()
                     .parseClass(sanitized, "TurCustomToolDraft_" + toolId + ".groovy");
             DraftEntry entry = new DraftEntry(groovySource, scriptClass,
                     clock.instant(), clock.instant());
