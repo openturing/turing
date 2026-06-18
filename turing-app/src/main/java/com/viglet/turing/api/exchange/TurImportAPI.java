@@ -81,38 +81,40 @@ public class TurImportAPI {
 	@GetMapping(value = "/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public SseEmitter importProgress(@PathVariable String taskId) {
 		SseEmitter emitter = new SseEmitter(600_000L);
-		Thread.ofVirtual().start(() -> {
-			try {
-				boolean completed = false;
-				while (!completed) {
-					var progress = contentExchangeService.getProgress(taskId);
-					if (progress.isPresent()) {
-						var p = progress.get();
-						emitter.send(SseEmitter.event()
-								.name("progress")
-								.data(Map.of(
-										"totalDocuments", p.totalDocuments(),
-										"processedDocuments", p.processedDocuments(),
-										"percentage", p.percentage(),
-										"currentLocale", p.currentLocale(),
-										"phase", p.phase(),
-										"estimatedRemainingMillis", p.estimatedRemainingMillis()
-								)));
-						if ("completed".equals(p.phase())) {
-							completed = true;
-							contentExchangeService.removeProgress(taskId);
-						}
-					}
-					if (!completed) {
-						Thread.sleep(500);
+		Thread.ofVirtual().start(() -> streamProgress(taskId, emitter));
+		return emitter;
+	}
+
+	private void streamProgress(String taskId, SseEmitter emitter) {
+		try {
+			while (true) {
+				var progress = contentExchangeService.getProgress(taskId);
+				if (progress.isPresent()) {
+					var p = progress.get();
+					emitter.send(SseEmitter.event()
+							.name("progress")
+							.data(Map.of(
+									"totalDocuments", p.totalDocuments(),
+									"processedDocuments", p.processedDocuments(),
+									"percentage", p.percentage(),
+									"currentLocale", p.currentLocale(),
+									"phase", p.phase(),
+									"estimatedRemainingMillis", p.estimatedRemainingMillis()
+							)));
+					if ("completed".equals(p.phase())) {
+						contentExchangeService.removeProgress(taskId);
+						break;
 					}
 				}
-				emitter.complete();
-			} catch (Exception e) {
-				emitter.completeWithError(e);
+				Thread.sleep(500);
 			}
-		});
-		return emitter;
+			emitter.complete();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			emitter.completeWithError(e);
+		} catch (Exception e) {
+			emitter.completeWithError(e);
+		}
 	}
 
 	@PostMapping("/validate")

@@ -101,6 +101,10 @@ public class TurIconifyToolService {
 
             return "Found %d matches (showing %d). Pick one of these Iconify identifiers:\n%s"
                     .formatted(total, icons.size(), String.join("\n", icons));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("[Iconify Tool] search_icons interrupted", e);
+            return "Error searching Iconify: " + e.getMessage();
         } catch (Exception e) {
             log.error("[Iconify Tool] search_icons failed", e);
             return "Error searching Iconify: " + e.getMessage();

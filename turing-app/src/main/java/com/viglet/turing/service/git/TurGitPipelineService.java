@@ -153,6 +153,9 @@ public class TurGitPipelineService {
                     TurGitBuildState.COMPLETED, List.copyOf(logLines), siteName, null, startedAt, completedAt));
 
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("[GitPipeline] Build failed for repository: {}", repoName, e);
             String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             logLines.add("=== Build FAILED: " + msg + " ===");
