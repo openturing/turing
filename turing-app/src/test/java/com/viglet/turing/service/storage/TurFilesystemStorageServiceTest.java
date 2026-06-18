@@ -78,7 +78,7 @@ class TurFilesystemStorageServiceTest {
     }
 
     @Test
-    void uploadWithPrefixCreatesSubdirectory() throws Exception {
+    void uploadWithPrefixCreatesSubdirectory() {
         byte[] content = "data".getBytes();
         MockMultipartFile file = new MockMultipartFile("file", "report.pdf", "application/pdf", content);
         service.uploadObject(file, "docs/");
@@ -108,7 +108,7 @@ class TurFilesystemStorageServiceTest {
     }
 
     @Test
-    void deleteObjectShouldRemoveFile() throws Exception {
+    void deleteObjectShouldRemoveFile() {
         byte[] content = "temp".getBytes();
         MockMultipartFile file = new MockMultipartFile("file", "temp.txt", "text/plain", content);
         service.uploadObject(file, "");
@@ -119,7 +119,7 @@ class TurFilesystemStorageServiceTest {
     }
 
     @Test
-    void deleteObjectsWithPrefixShouldRemoveAll() throws Exception {
+    void deleteObjectsWithPrefixShouldRemoveAll() {
         service.uploadStream("site/a.html", new ByteArrayInputStream("a".getBytes()), 1, "text/html");
         service.uploadStream("site/b.html", new ByteArrayInputStream("b".getBytes()), 1, "text/html");
 
@@ -128,7 +128,7 @@ class TurFilesystemStorageServiceTest {
     }
 
     @Test
-    void listAllObjectsShouldReturnRecursiveFiles() throws Exception {
+    void listAllObjectsShouldReturnRecursiveFiles() {
         service.uploadStream("a.txt", new ByteArrayInputStream("a".getBytes()), 1, "text/plain");
         service.uploadStream("sub/b.txt", new ByteArrayInputStream("b".getBytes()), 1, "text/plain");
 
@@ -136,7 +136,7 @@ class TurFilesystemStorageServiceTest {
     }
 
     @Test
-    void statObjectShouldReturnMetadata() throws Exception {
+    void statObjectShouldReturnMetadata() {
         byte[] content = "test content".getBytes();
         service.uploadStream("doc.txt", new ByteArrayInputStream(content), content.length, "text/plain");
 

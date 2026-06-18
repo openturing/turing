@@ -199,7 +199,7 @@ class TurSkillFileServiceTest {
     }
 
     @Test
-    void exportThenImportRoundTrips() throws IOException {
+    void exportThenImportRoundTrips() {
         TurSkill original = fileService.createSkill("round-trip");
         fileService.writeFile(original.getId(), "references/notes.md", "# notes");
         byte[] exported = fileService.exportZip(original.getId());

@@ -107,7 +107,7 @@ class TurLuceneStorageSyncTest {
     }
 
     @Test
-    void syncToStorageDeletesOrphanedRemoteFiles() throws IOException {
+    void syncToStorageDeletesOrphanedRemoteFiles() {
         when(storageService.isEnabled()).thenReturn(true);
         when(storageService.getType()).thenReturn(TurStorageType.MINIO);
 
@@ -139,7 +139,7 @@ class TurLuceneStorageSyncTest {
     // ---- syncFromStorage ----
 
     @Test
-    void syncFromStorageDownloadsMissingFiles() throws IOException {
+    void syncFromStorageDownloadsMissingFiles() {
         when(storageService.isEnabled()).thenReturn(true);
         when(storageService.getType()).thenReturn(TurStorageType.MINIO);
         when(storageService.listObjects("lucene-indexes/test-core/")).thenReturn(List.of(

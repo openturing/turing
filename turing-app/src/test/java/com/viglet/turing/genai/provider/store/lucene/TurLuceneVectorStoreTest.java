@@ -64,7 +64,7 @@ class TurLuceneVectorStoreTest {
     }
 
     @AfterEach
-    void tearDown() throws IOException {
+    void tearDown() {
         if (index != null) {
             index.close();
         }

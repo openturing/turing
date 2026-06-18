@@ -164,7 +164,7 @@ class TurAssetTrainingServiceTest {
         }
 
         @Test
-        void startTrainingReturnsRunningWhenAlreadyRunning() throws Exception {
+        void startTrainingReturnsRunningWhenAlreadyRunning() {
                 CountDownLatch holdTraining = new CountDownLatch(1);
                 when(globalSettingsService.isRagEnabled()).thenReturn(true);
                 when(ragContextBuilder.buildFromGlobalSettings()).thenAnswer(inv -> {

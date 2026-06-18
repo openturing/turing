@@ -58,7 +58,7 @@ class TurCodeInterpreterWarmPoolTest {
     }
 
     @Test
-    void acquireShouldReturnNullWhenDisabled() throws Exception {
+    void acquireShouldReturnNullWhenDisabled() {
         TurCodeInterpreterWarmPool pool = new TurCodeInterpreterWarmPool();
         // disabled by default, and no factory
         assertThat(pool.acquire()).isNull();
