@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.core.tenancy.VigletPlatformAdminService;
 import com.viglet.turing.persistence.model.tenant.TurTenant;
 import com.viglet.turing.persistence.model.tenant.TurTenantStatus;
 import com.viglet.turing.persistence.repository.tenant.TurTenantRepository;
@@ -47,7 +48,7 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/api/platform/tenants")
-@Secured(TurPlatformAdminService.ROLE_PLATFORM_ADMIN)
+@Secured(VigletPlatformAdminService.ROLE_PLATFORM_ADMIN)
 @Tag(name = "Platform Tenant Admin", description = "Cross-tenant ops for platform admins")
 public class TurPlatformTenantAdminAPI {
 

@@ -40,6 +40,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.memory.MemoryIndex;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.Query;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
@@ -495,7 +496,7 @@ public class TurSNSpotlightProcess {
 			logger.warn("Spotlight term '{}' failed to parse as Lucene query (falling back to literal): {}",
 					spotlightTerm, raw.getMessage());
 			try {
-				return parser.parse(QueryParser.escape(spotlightTerm));
+				return parser.parse(QueryParserBase.escape(spotlightTerm));
 			} catch (ParseException escaped) {
 				// Escaped input should never fail — log at error so a
 				// future Lucene parser regression surfaces fast.

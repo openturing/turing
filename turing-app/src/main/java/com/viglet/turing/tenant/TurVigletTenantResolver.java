@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.viglet.core.tenancy.VigletPlatformAdminService;
 import com.viglet.core.tenancy.VigletTenantMembershipService;
 import com.viglet.core.tenancy.VigletTenantRef;
 import com.viglet.core.tenancy.VigletTenantResolver;
@@ -162,7 +163,7 @@ public class TurVigletTenantResolver implements VigletTenantResolver {
 
     private boolean isPlatformAdmin(Authentication authentication) {
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> TurPlatformAdminService.ROLE_PLATFORM_ADMIN.equals(a.getAuthority()));
+                .anyMatch(a -> VigletPlatformAdminService.ROLE_PLATFORM_ADMIN.equals(a.getAuthority()));
     }
 
     private boolean isAuthenticated(Authentication authentication) {

@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.viglet.core.tenancy.VigletPlatformAdminService;
 import com.viglet.turing.persistence.model.tenant.TurTenant;
 import com.viglet.turing.persistence.model.tenant.TurTenantMembership;
 import com.viglet.turing.persistence.model.tenant.TurTenantStatus;
@@ -200,7 +201,7 @@ public class TurTenantDeprovisionService {
         try {
             SecurityContext ctx = SecurityContextHolder.createEmptyContext();
             ctx.setAuthentication(new UsernamePasswordAuthenticationToken(SYSTEM_PRINCIPAL, "N/A",
-                    List.of(new SimpleGrantedAuthority(TurPlatformAdminService.ROLE_PLATFORM_ADMIN))));
+                    List.of(new SimpleGrantedAuthority(VigletPlatformAdminService.ROLE_PLATFORM_ADMIN))));
             SecurityContextHolder.setContext(ctx);
             return body.get();
         } finally {

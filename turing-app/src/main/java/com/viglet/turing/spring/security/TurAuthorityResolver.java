@@ -13,7 +13,7 @@ import com.viglet.turing.persistence.model.tenant.TurTenantMembershipStatus;
 import com.viglet.turing.persistence.repository.tenant.TurTenantMembershipRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurTenancyProperty;
-import com.viglet.turing.tenant.TurPlatformAdminService;
+import com.viglet.core.tenancy.VigletPlatformAdminService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -79,7 +79,7 @@ public class TurAuthorityResolver {
         tenantAuthorities(username)
                 .forEach(a -> authorities.add(new SimpleGrantedAuthority(a)));
         if (isPlatformAdmin(username, realmRoles)) {
-            authorities.add(new SimpleGrantedAuthority(TurPlatformAdminService.ROLE_PLATFORM_ADMIN));
+            authorities.add(new SimpleGrantedAuthority(VigletPlatformAdminService.ROLE_PLATFORM_ADMIN));
         }
     }
 

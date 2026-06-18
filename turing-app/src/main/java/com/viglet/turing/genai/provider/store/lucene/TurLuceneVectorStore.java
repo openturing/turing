@@ -36,6 +36,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -427,7 +428,7 @@ public class TurLuceneVectorStore implements VectorStore {
         if (query == null || query.isBlank() || topK < 1) {
             return List.of();
         }
-        String escaped = QueryParser.escape(query.trim());
+        String escaped = QueryParserBase.escape(query.trim());
         try {
             IndexSearcher searcher = index.getSearcher();
             if (searcher.getIndexReader().numDocs() == 0) {
