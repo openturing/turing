@@ -10,7 +10,6 @@
 package com.viglet.turing.service.chatanalytics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -98,10 +97,10 @@ class TurChatFlowFunnelServiceTest {
                 List.<ChatFlowEdge>of());
         when(chatFlowRepository.findById("f1")).thenReturn(Optional.of(flow));
         when(chatFlowEngineService.parseGraph(flow)).thenReturn(Optional.of(graph));
-        when(stateRepository.countByCurrentNodeForFlow(eq("f1"))).thenReturn(List.of(
+        when(stateRepository.countByCurrentNodeForFlow("f1")).thenReturn(List.of(
                 new Object[] { "ai-name", 5L },
                 new Object[] { "ai-cargo", 3L }));
-        when(submissionRepository.countByEndNodeForFlow(eq("f1"))).thenReturn(List.of(
+        when(submissionRepository.countByEndNodeForFlow("f1")).thenReturn(List.of(
                 new Object[] { "end", 12L },
                 new Object[] { "__abandoned__", 7L }));
 
@@ -131,8 +130,8 @@ class TurChatFlowFunnelServiceTest {
                 List.<ChatFlowEdge>of());
         when(chatFlowRepository.findById("f1")).thenReturn(Optional.of(flow));
         when(chatFlowEngineService.parseGraph(flow)).thenReturn(Optional.of(graph));
-        when(stateRepository.countByCurrentNodeForFlow(eq("f1"))).thenReturn(List.of());
-        when(submissionRepository.countByEndNodeForFlow(eq("f1"))).thenReturn(List.of());
+        when(stateRepository.countByCurrentNodeForFlow("f1")).thenReturn(List.of());
+        when(submissionRepository.countByEndNodeForFlow("f1")).thenReturn(List.of());
 
         TurChatFlowFunnelService.FunnelReport report = service.computeFunnel("f1").orElseThrow();
         assertThat(report.totalStates()).isZero();
@@ -153,12 +152,12 @@ class TurChatFlowFunnelServiceTest {
                 List.<ChatFlowEdge>of());
         when(chatFlowRepository.findById("f1")).thenReturn(Optional.of(flow));
         when(chatFlowEngineService.parseGraph(flow)).thenReturn(Optional.of(graph));
-        when(stateRepository.countByCurrentNodeForFlow(eq("f1"))).thenReturn(List.of(
+        when(stateRepository.countByCurrentNodeForFlow("f1")).thenReturn(List.of(
                 new Object[] { null, 5L },           // null id → skipped
                 new Object[] { "ai-name" },          // short row → skipped
                 new Object[] { "ai-name", "x" },     // non-numeric → skipped
                 new Object[] { "ai-name", 2L }));    // valid → counted
-        when(submissionRepository.countByEndNodeForFlow(eq("f1"))).thenReturn(List.of());
+        when(submissionRepository.countByEndNodeForFlow("f1")).thenReturn(List.of());
 
         TurChatFlowFunnelService.FunnelReport report = service.computeFunnel("f1").orElseThrow();
         assertThat(report.nodes().get(0).cursorCount()).isEqualTo(2L);

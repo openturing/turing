@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,8 +90,8 @@ class TurCopilotServiceTest {
         // Flow engine untouched on a pure interjection.
         verify(chatFlowEngineService, never()).advance(any(), any(), any(), any(), any(), any());
         // Chat memory + analytics still record the turn.
-        verify(chatMemoryService).recordTurn(eq(null), eq(agent), eq("conv-1"), eq(null), eq(null),
-                eq("Hi, this is a human operator."));
+        verify(chatMemoryService).recordTurn(null, agent, "conv-1", null, null,
+                "Hi, this is a human operator.");
         verify(chatAnalyticsService).recordTurn("conv-1", 0L, 0L);
 
         // Exactly one event reached the bus: the operator's assistant reply,

@@ -107,8 +107,8 @@ class TurRagBm25CoreProvisionerTest {
         assertThat(core.getStatus()).isEqualTo(TurRagBm25Core.Status.PROVISIONED);
         assertThat(core.getCoreName()).isEqualTo("rag_a3b2c1d4_pt-BR");
         assertThat(core.getLastError()).isNull();
-        verify(plugin).createStandaloneIndex(eq(seInstance), eq(Locale.forLanguageTag("pt-BR")),
-                eq("rag_a3b2c1d4_pt-BR"));
+        verify(plugin).createStandaloneIndex(seInstance, Locale.forLanguageTag("pt-BR"),
+                "rag_a3b2c1d4_pt-BR");
         // Saved twice: once on PROVISIONING transition, once on PROVISIONED.
         verify(coreRepository, times(2)).save(any(TurRagBm25Core.class));
     }

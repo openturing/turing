@@ -11,7 +11,6 @@ package com.viglet.turing.service.chatslots;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -126,7 +125,7 @@ class TurPiiSlotServiceTest {
         assertThat(vars).containsEntry("name", "Alex");
         assertThat(vars).containsEntry("pii_email", "alex@example.com");
         assertThat(vars).containsEntry("pii_legacy", "stillPlain");
-        verify(cryptoService, times(1)).decrypt(eq("CIPHER"));
+        verify(cryptoService, times(1)).decrypt("CIPHER");
     }
 
     @Test

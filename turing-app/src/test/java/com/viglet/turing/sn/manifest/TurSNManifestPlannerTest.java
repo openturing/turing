@@ -150,9 +150,9 @@ class TurSNManifestPlannerTest {
 
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of());
-        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(eq(site), eq(LocaleUtils.toLocale("pt_BR"))))
+        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(site, LocaleUtils.toLocale("pt_BR")))
                 .thenReturn(true);
-        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(eq(site), eq(LocaleUtils.toLocale("en_US"))))
+        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(site, LocaleUtils.toLocale("en_US")))
                 .thenReturn(false);
 
         VigletManifestDiff diff = planner.diff(manifest, site);

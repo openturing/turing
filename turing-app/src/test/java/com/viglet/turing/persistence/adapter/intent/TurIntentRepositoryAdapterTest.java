@@ -6,7 +6,6 @@
 package com.viglet.turing.persistence.adapter.intent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +68,7 @@ class TurIntentRepositoryAdapterTest {
         adapter.findEnabledByAgentIdOrderBySortOrder("agent-1");
 
         verify(turIntentRepository)
-                .findByTurAIAgent_IdAndEnabledOrderBySortOrderAsc(eq("agent-1"), eq(1));
+                .findByTurAIAgent_IdAndEnabledOrderBySortOrderAsc("agent-1", 1);
     }
 
     @Test

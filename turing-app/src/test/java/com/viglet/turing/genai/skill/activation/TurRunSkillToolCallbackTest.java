@@ -10,7 +10,6 @@
 package com.viglet.turing.genai.skill.activation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -68,7 +67,7 @@ class TurRunSkillToolCallbackTest {
 
     @Test
     void delegatesToRunnerWithScopedContext() {
-        when(runnerService.runSkill(eq(alpha), eq("make a chart"), eq("agentA"), eq("conv1")))
+        when(runnerService.runSkill(alpha, "make a chart", "agentA", "conv1"))
                 .thenReturn("done: chart.png");
 
         String out = callback.call(
@@ -95,7 +94,7 @@ class TurRunSkillToolCallbackTest {
 
     @Test
     void nullContextStillDelegatesWithNullScope() {
-        when(runnerService.runSkill(eq(alpha), eq("t"), eq(null), eq(null)))
+        when(runnerService.runSkill(alpha, "t", null, null))
                 .thenReturn("ok");
         assertThat(callback.call("{\"skill\":\"alpha\",\"task\":\"t\"}")).isEqualTo("ok");
         verify(runnerService).runSkill(alpha, "t", null, null);

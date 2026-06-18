@@ -11,7 +11,6 @@ package com.viglet.turing.service.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,27 +61,27 @@ class TurTenantScopedStorageServiceTest {
             service.downloadObject("docs/a.pdf");
             return null;
         });
-        verify(delegate).downloadObject(eq("tenants/acme/docs/a.pdf"));
+        verify(delegate).downloadObject("tenants/acme/docs/a.pdf");
     }
 
     @Test
     void passesThroughUnchangedWhenTenancyOff() {
         TurTenantScopedStorageService service = scoped(false);
         service.downloadObject("docs/a.pdf");
-        verify(delegate).downloadObject(eq("docs/a.pdf"));
+        verify(delegate).downloadObject("docs/a.pdf");
     }
 
     @Test
     void passesThroughForDefaultTenant() {
         TurTenantScopedStorageService service = scoped(true); // nothing bound -> DEFAULT
         service.deleteObject("x.bin");
-        verify(delegate).deleteObject(eq("x.bin"));
+        verify(delegate).deleteObject("x.bin");
     }
 
     @Test
     void stripsTenantPrefixFromListings() {
         TurTenantScopedStorageService service = scoped(true);
-        when(delegate.listObjects(eq("tenants/acme/")))
+        when(delegate.listObjects("tenants/acme/"))
                 .thenReturn(List.of(new TurAssetItem("tenants/acme/docs/a.pdf", 1, "application/pdf",
                         "now", false)));
 

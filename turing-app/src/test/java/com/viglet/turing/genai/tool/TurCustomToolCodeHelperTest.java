@@ -11,7 +11,6 @@ package com.viglet.turing.genai.tool;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +50,7 @@ class TurCustomToolCodeHelperTest {
         TurCodeInterpreterToolService service = mock(TurCodeInterpreterToolService.class);
         TurCodeInterpreterResult expected = sampleResult();
         when(service.executePythonStructuredForTenant(
-                eq("print('x')"), eq("reportlab"), eq("agent-1"), eq("conv-9")))
+                "print('x')", "reportlab", "agent-1", "conv-9"))
                 .thenReturn(expected);
 
         TurCustomToolCodeHelper helper = new TurCustomToolCodeHelper(

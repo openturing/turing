@@ -47,11 +47,11 @@ class TurEmbeddedLlmProviderTest {
     void readConfigParsesAllOptions() {
         Map<String, Object> options = Map.of();
         when(optionsParser.parse(any())).thenReturn(options);
-        when(optionsParser.stringValue(eq(options), eq("modelAssetKey"))).thenReturn("models/llama3-8b");
-        when(optionsParser.stringValue(eq(options), eq("role"))).thenReturn("chat");
-        when(optionsParser.stringValue(eq(options), eq("workingQuant"))).thenReturn("F16");
-        when(optionsParser.stringValue(eq(options), eq("modelQuant"))).thenReturn("I8");
-        when(optionsParser.intValue(eq(options), eq("contextLength"))).thenReturn(8192);
+        when(optionsParser.stringValue(options, "modelAssetKey")).thenReturn("models/llama3-8b");
+        when(optionsParser.stringValue(options, "role")).thenReturn("chat");
+        when(optionsParser.stringValue(options, "workingQuant")).thenReturn("F16");
+        when(optionsParser.stringValue(options, "modelQuant")).thenReturn("I8");
+        when(optionsParser.intValue(options, "contextLength")).thenReturn(8192);
 
         TurEmbeddedLlmProvider.EmbeddedConfig config = provider.readConfig(instance);
 
@@ -66,11 +66,11 @@ class TurEmbeddedLlmProviderTest {
     void readConfigAppliesQuantizationDefaults() {
         Map<String, Object> options = Map.of();
         when(optionsParser.parse(any())).thenReturn(options);
-        when(optionsParser.stringValue(eq(options), eq("modelAssetKey"))).thenReturn("models/bge-small");
-        when(optionsParser.stringValue(eq(options), eq("role"))).thenReturn("embedding");
-        when(optionsParser.stringValue(eq(options), eq("workingQuant"))).thenReturn(null);
-        when(optionsParser.stringValue(eq(options), eq("modelQuant"))).thenReturn(null);
-        when(optionsParser.intValue(eq(options), eq("contextLength"))).thenReturn(null);
+        when(optionsParser.stringValue(options, "modelAssetKey")).thenReturn("models/bge-small");
+        when(optionsParser.stringValue(options, "role")).thenReturn("embedding");
+        when(optionsParser.stringValue(options, "workingQuant")).thenReturn(null);
+        when(optionsParser.stringValue(options, "modelQuant")).thenReturn(null);
+        when(optionsParser.intValue(options, "contextLength")).thenReturn(null);
 
         TurEmbeddedLlmProvider.EmbeddedConfig config = provider.readConfig(instance);
 
@@ -84,11 +84,11 @@ class TurEmbeddedLlmProviderTest {
         instance.setContextWindow(4096);
         Map<String, Object> options = Map.of();
         when(optionsParser.parse(any())).thenReturn(options);
-        when(optionsParser.stringValue(eq(options), eq("modelAssetKey"))).thenReturn("models/x");
-        when(optionsParser.stringValue(eq(options), eq("role"))).thenReturn("chat");
-        when(optionsParser.stringValue(eq(options), eq("workingQuant"))).thenReturn(null);
-        when(optionsParser.stringValue(eq(options), eq("modelQuant"))).thenReturn(null);
-        when(optionsParser.intValue(eq(options), eq("contextLength"))).thenReturn(null);
+        when(optionsParser.stringValue(options, "modelAssetKey")).thenReturn("models/x");
+        when(optionsParser.stringValue(options, "role")).thenReturn("chat");
+        when(optionsParser.stringValue(options, "workingQuant")).thenReturn(null);
+        when(optionsParser.stringValue(options, "modelQuant")).thenReturn(null);
+        when(optionsParser.intValue(options, "contextLength")).thenReturn(null);
 
         TurEmbeddedLlmProvider.EmbeddedConfig config = provider.readConfig(instance);
 

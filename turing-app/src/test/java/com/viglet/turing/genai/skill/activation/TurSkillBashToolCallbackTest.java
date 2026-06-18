@@ -92,7 +92,7 @@ class TurSkillBashToolCallbackTest {
         when(sandboxService.isAvailable()).thenReturn(true);
         TurSkillSandboxSession session = session();
         when(sessionManager.openSession("agentA", "conv1", "id-alpha")).thenReturn(session);
-        when(sandboxService.runBash(eq(session), eq("ls /skill")))
+        when(sandboxService.runBash(session, "ls /skill"))
                 .thenReturn(new TurSkillSandboxResult("s1", "ls /skill", true, 0, false, 5L,
                         "SKILL.md\nscripts", ""));
 

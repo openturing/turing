@@ -113,7 +113,7 @@ class TurSNSiteManifestServiceTest {
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
         when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
-        when(turSNManifestPlanner.diff(eq(manifest), eq(existing))).thenReturn(cleanDiff());
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
         when(turSNFieldProvisioner.ensureField(eq(existing), named("mensalidade")))
                 .thenReturn(false);
 
@@ -162,7 +162,7 @@ class TurSNSiteManifestServiceTest {
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
         when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
-        when(turSNManifestPlanner.diff(eq(manifest), eq(existing))).thenReturn(diff);
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(diff);
 
         assertThrows(TurSNManifestMigrationRequiredException.class, () -> service.provision(manifest));
         // Nothing mutated: no field create, no migration, no event.
@@ -186,7 +186,7 @@ class TurSNSiteManifestServiceTest {
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
         when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
-        when(turSNManifestPlanner.diff(eq(manifest), eq(existing))).thenReturn(diff);
+        when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(diff);
         when(turSNFieldProvisioner.recreateField(eq(existing), named("mensalidade"))).thenReturn(true);
 
         VigletManifestResult result = service.provision(manifest);
