@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,15 @@ class TurCodeInterpreterWarmPoolTest {
         Field f = TurCodeInterpreterWarmPool.class.getDeclaredField(name);
         f.setAccessible(true);
         f.set(target, value);
+    }
+
+    /** Sets the worker factory, which is held in a final AtomicReference. */
+    @SuppressWarnings("unchecked")
+    private static void setFactory(TurCodeInterpreterWarmPool pool, Callable<Process> factory)
+            throws Exception {
+        Field f = TurCodeInterpreterWarmPool.class.getDeclaredField("factory");
+        f.setAccessible(true);
+        ((AtomicReference<Callable<Process>>) f.get(pool)).set(factory);
     }
 
     private static void refill(TurCodeInterpreterWarmPool pool) throws Exception {
@@ -82,7 +92,7 @@ class TurCodeInterpreterWarmPoolTest {
             spawned.incrementAndGet();
             return liveWorker();
         };
-        setField(pool, "factory", factory);
+        setFactory(pool, factory);
 
         refill(pool);
 
@@ -99,7 +109,7 @@ class TurCodeInterpreterWarmPoolTest {
         TurCodeInterpreterWarmPool pool = new TurCodeInterpreterWarmPool();
         setField(pool, "enabled", true);
         setField(pool, "size", 2);
-        setField(pool, "factory", (Callable<Process>) TurCodeInterpreterWarmPoolTest::liveWorker);
+        setFactory(pool, (Callable<Process>) TurCodeInterpreterWarmPoolTest::liveWorker);
 
         refill(pool);
         assertThat(pool.readyCount()).isEqualTo(2);
@@ -120,7 +130,7 @@ class TurCodeInterpreterWarmPoolTest {
         when(dead1.isAlive()).thenReturn(false);
         when(dead2.isAlive()).thenReturn(false);
         java.util.Iterator<Process> it = java.util.List.of(dead1, dead2).iterator();
-        setField(pool, "factory", (Callable<Process>) () -> it.next());
+        setFactory(pool, (Callable<Process>) it::next);
 
         refill(pool);
         assertThat(pool.readyCount()).isEqualTo(2);
@@ -140,7 +150,7 @@ class TurCodeInterpreterWarmPoolTest {
         Process w1 = liveWorker();
         Process w2 = liveWorker();
         java.util.Iterator<Process> it = java.util.List.of(w1, w2).iterator();
-        setField(pool, "factory", (Callable<Process>) () -> it.next());
+        setFactory(pool, (Callable<Process>) it::next);
 
         refill(pool);
         assertThat(pool.readyCount()).isEqualTo(2);
@@ -158,7 +168,7 @@ class TurCodeInterpreterWarmPoolTest {
         TurCodeInterpreterWarmPool pool = new TurCodeInterpreterWarmPool();
         setField(pool, "enabled", true);
         setField(pool, "size", 3);
-        setField(pool, "factory", (Callable<Process>) () -> {
+        setFactory(pool, (Callable<Process>) () -> {
             throw new IllegalStateException("Python not found");
         });
 

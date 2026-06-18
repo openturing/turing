@@ -242,7 +242,7 @@ class TurTenancyConformanceTest {
 
         Stack on = new Stack(profile, true);
         on.context.setCurrentTenant("tenantA");
-        assertThat(on.scope.visibleList(() -> unscoped, t -> List.of(t))).containsExactly("tenantA");
+        assertThat(on.scope.visibleList(() -> unscoped, List::of)).containsExactly("tenantA");
     }
 
     // ==================================================================

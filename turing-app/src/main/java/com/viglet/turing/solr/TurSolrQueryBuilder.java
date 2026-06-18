@@ -668,7 +668,7 @@ public class TurSolrQueryBuilder {
         TurSNSite turSNSite = context.getTurSNSite();
         Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
         List<TurSNSiteFieldExt> enabledFacets = snapOpt
-                .map(snap -> getEnabledFacetsFromSnapshot(snap))
+                .map(this::getEnabledFacetsFromSnapshot)
                 .orElseGet(() -> getEnabledFacets(turSNSite));
         Set<String> enabledFacetNames = enabledFacets.stream()
                 .map(TurSNSiteFieldExt::getName)

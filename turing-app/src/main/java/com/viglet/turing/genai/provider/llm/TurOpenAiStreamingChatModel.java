@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -140,7 +141,7 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
                 .takeUntil(SSE_DONE::equals)
                 .filter(s -> !SSE_DONE.equals(s) && !s.isBlank())
                 .map(this::parseChunk)
-                .filter(resp -> resp != null);
+                .filter(Objects::nonNull);
     }
 
     /**
