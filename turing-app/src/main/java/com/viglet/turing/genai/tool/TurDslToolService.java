@@ -233,8 +233,7 @@ public class TurDslToolService {
         log.info("[DSL Tool] dsl_get_document called: index={}, locale={}, id={}",
                 index, locale, documentId);
 
-        String queryBody = """
-                {"query":{"ids":{"values":["%s"]}},"size":1}""".formatted(documentId);
+        String queryBody = "{\"query\":{\"ids\":{\"values\":[\"%s\"]}},\"size\":1}".formatted(documentId);
 
         try {
             TurDslQueryRequest request = objectMapper.readValue(queryBody,

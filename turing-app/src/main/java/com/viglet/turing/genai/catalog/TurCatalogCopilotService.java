@@ -267,8 +267,7 @@ public class TurCatalogCopilotService {
     /** A plain full-text query body used when the parser is unavailable or fails. */
     private TurDslQueryRequest freeTextRequest(String query) {
         String safe = query == null ? "" : query.replace("\"", " ").replace("\\", " ");
-        String body = """
-                {"query":{"match":{"_text_":"%s"}},"size":%d}"""
+        String body = "{\"query\":{\"match\":{\"_text_\":\"%s\"}},\"size\":%d}"
                 .formatted(safe, MAX_RESULTS);
         return OBJECT_MAPPER.readValue(body, TurDslQueryRequest.class);
     }
