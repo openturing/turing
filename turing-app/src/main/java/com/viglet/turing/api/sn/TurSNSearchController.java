@@ -66,7 +66,7 @@ public class TurSNSearchController {
     }
 
     @GetMapping("/{siteName}")
-    public ResponseEntity<?> serveWithoutSlash(@PathVariable String siteName,
+    public ResponseEntity<Object> serveWithoutSlash(@PathVariable String siteName,
                                                HttpServletRequest request) {
         if (isEmbeddedRequested(request)) {
             return serveEmbeddedIndex();
@@ -87,13 +87,13 @@ public class TurSNSearchController {
     }
 
     @GetMapping("/{siteName}/")
-    public ResponseEntity<?> serveRoot(@PathVariable String siteName,
+    public ResponseEntity<Object> serveRoot(@PathVariable String siteName,
                                        HttpServletRequest request) {
         return serve(siteName, "", request);
     }
 
     @GetMapping("/{siteName}/**")
-    public ResponseEntity<?> serveSubPath(@PathVariable String siteName,
+    public ResponseEntity<Object> serveSubPath(@PathVariable String siteName,
                                           HttpServletRequest request) {
         String fullPath = request.getRequestURI();
         String sitePrefix = "/sn/" + siteName + "/";
@@ -107,7 +107,7 @@ public class TurSNSearchController {
         return "true".equals(request.getParameter("_embedded"));
     }
 
-    private ResponseEntity<?> serve(String siteName, String filePath, HttpServletRequest request) {
+    private ResponseEntity<Object> serve(String siteName, String filePath, HttpServletRequest request) {
         if (isEmbeddedRequested(request)) {
             return serveEmbeddedIndex();
         }
@@ -124,7 +124,7 @@ public class TurSNSearchController {
         return serveFromStorage(template, filePath);
     }
 
-    private ResponseEntity<?> serveFromStorage(String template, String filePath) {
+    private ResponseEntity<Object> serveFromStorage(String template, String filePath) {
         if (filePath.isBlank()) {
             filePath = "index.html";
         }
@@ -162,7 +162,7 @@ public class TurSNSearchController {
         }
     }
 
-    private ResponseEntity<?> serveEmbeddedIndex() {
+    private ResponseEntity<Object> serveEmbeddedIndex() {
         try {
             InputStream is = DEFAULT_INDEX.getInputStream();
             return ResponseEntity.ok()

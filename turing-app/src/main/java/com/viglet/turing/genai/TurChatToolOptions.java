@@ -61,6 +61,11 @@ public final class TurChatToolOptions {
      * the model exposes no tool-calling options (or none at all) — e.g. a bare
      * mock in a unit test — so tool wiring still flows.
      */
+    // S1452: the wildcard is intentional. ToolCallingChatOptions.Builder is a
+    // self-referential generic type, and each provider returns its own concrete
+    // builder subtype, so no single concrete type fits the signature and a raw
+    // type would be worse. Callers only chain builder methods and then build.
+    @SuppressWarnings("java:S1452")
     public static ToolCallingChatOptions.Builder<?> builderFrom(ChatModel chatModel) {
         ChatOptions base = chatModel == null ? null : chatModel.getOptions();
         if (base instanceof ToolCallingChatOptions toolOptions) {

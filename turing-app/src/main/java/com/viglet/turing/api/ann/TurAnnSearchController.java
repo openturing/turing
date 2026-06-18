@@ -61,7 +61,7 @@ public class TurAnnSearchController {
     }
 
     @GetMapping("/{siteName}")
-    public ResponseEntity<?> serve(@PathVariable String siteName) {
+    public ResponseEntity<Object> serve(@PathVariable String siteName) {
         if (!turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
             log.debug("ANN page requested for site '{}' but RAG is not enabled", siteName);
             return ResponseEntity.notFound().build();
@@ -69,7 +69,7 @@ public class TurAnnSearchController {
         return serveEmbeddedIndex();
     }
 
-    private ResponseEntity<?> serveEmbeddedIndex() {
+    private ResponseEntity<Object> serveEmbeddedIndex() {
         try {
             InputStream is = DEFAULT_INDEX.getInputStream();
             return ResponseEntity.ok()

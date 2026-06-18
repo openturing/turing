@@ -318,7 +318,7 @@ public class TurUserAPI {
     public record RegisterRequest(String username, String password, String firstName, String lastName, String email) {}
 
     @PostMapping("/register")
-    public ResponseEntity<?> turUserRegister(@RequestBody RegisterRequest request) {
+    public ResponseEntity<Object> turUserRegister(@RequestBody RegisterRequest request) {
         if (turConfigProperties.getAuthentication() == null
                 || !turConfigProperties.getAuthentication().isNewUser()) {
             return ResponseEntity.status(403).body(java.util.Map.of("error", "Self-registration is disabled"));
