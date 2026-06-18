@@ -149,6 +149,9 @@ public class TurCustomToolAPI {
 
     @Operation(summary = "Validate a Groovy script for syntax / compile errors")
     @PostMapping("/validate")
+    @SuppressWarnings("java:S106") // not logging: capture System.out/err to restore them
+    // after temporarily redirecting both to a sink so the Groovy parser's stray
+    // stdout/stderr chatter doesn't leak into the application log.
     public ValidateScriptResponse validate(@RequestBody ValidateScriptRequest request) {
         String script = request.script() == null ? "" : request.script();
         synchronized (PARSE_OUTPUT_LOCK) {
