@@ -582,7 +582,7 @@ public class TurDslElasticsearchExecutor
             } else if (dslQuery instanceof TurDslQuery.SpanNot(var include, var exclude)) {
                 sq.spanNot(sn -> sn.include(toSpanQuery(include)).exclude(toSpanQuery(exclude)));
             } else if (dslQuery instanceof TurDslQuery.SpanFirst(var match, var end)) {
-                sq.spanFirst(sf -> { sf.match(toSpanQuery(match)); if (end != null) sf.end(end); return sf; });
+                sq.spanFirst(sf -> { sf.match(toSpanQuery(match)); if (end != null) { sf.end(end); } return sf; });
             } else {
                 // Fallback: wrap as span_term on "id" field
                 sq.spanTerm(st -> st.field("id").value("*"));
@@ -1043,11 +1043,11 @@ public class TurDslElasticsearchExecutor
                             // Copy the parent type — use the _kind and serialize approach
                             // Simplification: re-add parent type directly
                             if (parent instanceof TurDslAggregation.TermsAgg ta) {
-                                a.terms(t -> { t.field(ta.field()); if (ta.size() != null) t.size(ta.size()); return t; });
+                                a.terms(t -> { t.field(ta.field()); if (ta.size() != null) { t.size(ta.size()); } return t; });
                             } else if (parent instanceof TurDslAggregation.DateHistogramAgg dha) {
                                 a.dateHistogram(dh -> { dh.field(dha.field()); return dh; });
                             } else if (parent instanceof TurDslAggregation.HistogramAgg ha) {
-                                a.histogram(h -> { h.field(ha.field()); if (ha.interval() != null) h.interval(ha.interval()); return h; });
+                                a.histogram(h -> { h.field(ha.field()); if (ha.interval() != null) { h.interval(ha.interval()); } return h; });
                             } else if (parent instanceof TurDslAggregation.FilterAgg fa) {
                                 a.filter(translateQuery(fa.filter()));
                             } else if (parent instanceof TurDslAggregation.FiltersAgg fla) {
