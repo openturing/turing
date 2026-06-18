@@ -321,15 +321,6 @@ public class TurSNSiteAPI {
     }
 
     /**
-     * Re-feeds every document already indexed in the search engine into the
-     * RAG vector store (async, virtual thread). Returns the {@code taskId}
-     * the client polls via {@code GET /api/sn/export/progress/{taskId}} —
-     * progress reuses the export channel because the
-     * {@link TurSNSiteContentExchangeService} progress map is shared.
-     *
-     * @since 2026.2.4
-     */
-    /**
      * Returns the in-flight reindex task id (and progress snapshot) for this
      * site so the admin UI can resume the progress display after navigating
      * away and back. {@code 204 No Content} when no task is running.

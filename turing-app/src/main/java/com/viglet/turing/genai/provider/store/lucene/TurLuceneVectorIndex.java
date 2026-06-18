@@ -95,11 +95,6 @@ public class TurLuceneVectorIndex {
     }
 
     /**
-     * Iterates stored fields of every live document in the index and hands the value of the
-     * given field to {@code consumer}. Used by callers that need to compute aggregate statistics
-     * over stored metadata (e.g., distinct document count across chunks).
-     */
-    /**
      * Returns the number of distinct values indexed under {@code fieldName}.
      * Reads Lucene's terms dictionary directly — fast and exact, since Lucene
      * already maintains a sorted index of unique terms per field. Returns

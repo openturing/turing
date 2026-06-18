@@ -411,21 +411,6 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
-	 * Public, unauthenticated <em>write</em> of a single slot on the current
-	 * conversation. Companion to {@link #chatSlots(String, String)} — lets a
-	 * React component force a slot value without round-tripping through the
-	 * chat (e.g. user clicks a quick-pick button and the corresponding
-	 * question should be skipped). Writes to every active chat-flow state for
-	 * the conversation; returns the number of state rows touched (0 when the
-	 * conversation hasn't started a flow yet).
-	 *
-	 * <p>The {@code conversationId} must match the {@code TUR_SESSION} cookie
-	 * the SDK sent on prior chat turns — otherwise there's no state to write
-	 * into and the call is a no-op.
-	 *
-	 * @since 2026.2.7
-	 */
-	/**
 	 * T121 / §IX.6.a — resume a conversation parked at a {@code suspend}
 	 * node. Optionally carries {@code slotUpdates} (a webhook payload, an
 	 * approval decision, the result of a scheduled job) which are applied

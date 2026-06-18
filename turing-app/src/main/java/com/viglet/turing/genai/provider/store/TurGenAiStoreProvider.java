@@ -135,20 +135,6 @@ public interface TurGenAiStoreProvider {
     }
 
     /**
-     * Streams every chunk in {@code collectionName} to {@code consumer} for an
-     * agnostic export (e.g., JSONL download). Implementations decide their own
-     * page/cursor strategy and must call the consumer once per chunk in any
-     * order — the writer on the other side accumulates lines.
-     * <p>
-     * The default implementation paginates via {@link #listChunks} without
-     * embeddings, so out-of-the-box exports preserve {@code id}, {@code content}
-     * and {@code metadata}. Providers that can cheaply expose the raw vector
-     * (PGVector, Lucene, Chroma) override this method and populate
-     * {@link TurStoreExportRecord#embedding()}.
-     *
-     * @since 2026.2.4
-     */
-    /**
      * Bulk upserts the given records into {@code collectionName}. Records
      * whose {@link TurStoreExportRecord#embedding()} is null/empty are
      * re-embedded using {@code embeddingModel}; records that already have a

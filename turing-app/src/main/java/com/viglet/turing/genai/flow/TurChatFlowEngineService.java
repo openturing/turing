@@ -1798,33 +1798,6 @@ public class TurChatFlowEngineService {
     private record AbResolved(TurChatFlow flow, ChatFlowGraph graph) {}
 
     /**
-     * Deterministic weighted-random assignment of a conversation to one
-     * variant within an A/B experiment. Same {@code conversationId +
-     * experimentKey} always maps to the same variant, so the assignment
-     * is sticky for the entire experiment lifetime — visitors never flip
-     * variants mid-conversation, and re-triggers preserve the original
-     * arm. Uses {@code Math.floorMod} on the hash so negative hashes
-     * still land in {@code [0, totalWeight)}.
-     *
-     * <p>Weighting rules:
-     * <ul>
-     *   <li>Sum of {@code trafficWeight} &gt; 0 → variants are picked
-     *       proportionally to their weight. {@code (1, 1)} ≡ {@code (50, 50)}
-     *       — only ratios matter, no need to sum to 100.</li>
-     *   <li>All weights null or 0 → uniform distribution. Lets authors
-     *       opt out of the weighting math entirely when they just want
-     *       an even split.</li>
-     *   <li>A single variant with weight 0 inside an experiment of
-     *       non-zero variants is excluded — useful to pause an arm
-     *       without deleting it (analytics on past assignments stay
-     *       readable).</li>
-     * </ul>
-     *
-     * <p>Package-private for unit testing.
-     *
-     * @since 2026.2.7
-     */
-    /**
      * Resolves a <em>forced</em> A/B variant by label (T73 / §VII.8.d).
      * Returns the variant in {@code variants} whose {@code variantLabel}
      * equals {@code forcedLabel} ignoring case and surrounding whitespace, or

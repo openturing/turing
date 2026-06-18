@@ -181,14 +181,6 @@ public class TurSNGenAi {
     }
 
     /**
-     * Same as {@link #assistantConversation(TurGenAiContext, List)} but applies
-     * the supplied {@code filters} as a Spring AI {@code Filter.Expression} on
-     * the similarity search — restricting the RAG context to chunks whose
-     * indexed metadata matches every selected facet.
-     *
-     * @since 2026.2.4
-     */
-    /**
      * Streaming conversational variant that delegates LLM execution and tool
      * calling to {@link TurAgentChatExecutor}, while keeping the SN-specific
      * RAG retrieval here. The retrieved chunks are injected into the system
