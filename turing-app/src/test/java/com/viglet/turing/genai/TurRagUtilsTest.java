@@ -229,9 +229,12 @@ class TurRagUtilsTest {
     void createDocumentsWithHeaderShouldPropagateHeaderAcrossEveryChunk() {
         String header = "# MBA Executivo\ncategory: Educação Executiva";
         // Long body with paragraph breaks → multiple chunks at small chunkSize.
-        String body = "Primeiro parágrafo do conteúdo do curso.\n\n"
-                + "Segundo parágrafo trata de gestão estratégica.\n\n"
-                + "Terceiro parágrafo aborda inovação corporativa.";
+        String body = """
+                Primeiro parágrafo do conteúdo do curso.
+
+                Segundo parágrafo trata de gestão estratégica.
+
+                Terceiro parágrafo aborda inovação corporativa.""";
         Map<String, Object> meta = Map.of("source_id", "course-1");
         List<Document> docs = TurRagUtils.createDocumentsWithHeader(header, body, 300, meta);
 

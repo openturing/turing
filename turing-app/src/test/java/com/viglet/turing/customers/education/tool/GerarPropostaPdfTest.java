@@ -76,11 +76,13 @@ class GerarPropostaPdfTest {
      * exactly so the parse path is identical to production.
      */
     private static final String CANNED_PYTHON_OK_OUTPUT =
-            "PDF gerado: proposta-carreira-alexandre.pdf\n" +
-            "Tamanho: 78924 bytes\n" +
-            "\n" +
-            "--- Generated Files ---\n" +
-            "[Download proposta-carreira-alexandre.pdf](/api/v2/code-interpreter/abc123/proposta-carreira-alexandre.pdf)\n";
+            """
+            PDF gerado: proposta-carreira-alexandre.pdf
+            Tamanho: 78924 bytes
+
+            --- Generated Files ---
+            [Download proposta-carreira-alexandre.pdf](/api/v2/code-interpreter/abc123/proposta-carreira-alexandre.pdf)
+            """;
 
     private MockSlots slots;
     private MockCode code;

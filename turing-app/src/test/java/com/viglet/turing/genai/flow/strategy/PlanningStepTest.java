@@ -163,8 +163,10 @@ class PlanningStepTest {
     void generatePlan_parsesModelReply() {
         ChatModel model = mock(ChatModel.class);
         when(model.call(any(Prompt.class))).thenReturn(chatResponse(
-                "```json\n[{\"id\":\"1\",\"title\":\"Collect docs\",\"status\":\"pending\"},"
-                        + "{\"id\":\"2\",\"title\":\"Review\",\"status\":\"pending\"}]\n```"));
+                """
+                ```json
+                [{"id":"1","title":"Collect docs","status":"pending"},{"id":"2","title":"Review","status":"pending"}]
+                ```"""));
         List<PlanItem> plan = ChatFlowOps.generatePlan(model, planningNode("__plan", null), Map.of());
         assertThat(plan).extracting(PlanItem::title).containsExactly("Collect docs", "Review");
     }

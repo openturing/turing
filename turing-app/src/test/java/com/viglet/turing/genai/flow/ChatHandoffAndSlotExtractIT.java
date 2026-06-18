@@ -252,9 +252,10 @@ class ChatHandoffAndSlotExtractIT extends AbstractTuringSpringIT {
 
         MockMultipartFile cv = new MockMultipartFile(
                 "file", "cv.txt", "text/plain",
-                ("Alexandre Oliveira\n"
-                        + "Gerente sênior numa fintech, há 4 anos\n"
-                        + "Objetivo: virar CFO em 3 anos.").getBytes(StandardCharsets.UTF_8));
+                """
+                Alexandre Oliveira
+                Gerente sênior numa fintech, há 4 anos
+                Objetivo: virar CFO em 3 anos.""".getBytes(StandardCharsets.UTF_8));
 
         SlotExtractionResult result = slotExtractionService.extract(
                 cv, agent, conversationId, List.of("name", "cargo_atual"));

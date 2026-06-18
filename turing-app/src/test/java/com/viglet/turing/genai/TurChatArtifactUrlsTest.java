@@ -26,8 +26,11 @@ class TurChatArtifactUrlsTest {
 
     @Test
     void stripsSandboxSchemeFromImageMarkdown() {
-        String in = "Here you go:\n\n"
-                + "![Chart](sandbox:/api/v2/code-interpreter/c4d6dfc4/bar_chart_example.png)\n";
+        String in = """
+                Here you go:
+
+                ![Chart](sandbox:/api/v2/code-interpreter/c4d6dfc4/bar_chart_example.png)
+                """;
         assertThat(TurChatArtifactUrls.normalize(in))
                 .contains("![Chart](/api/v2/code-interpreter/c4d6dfc4/bar_chart_example.png)")
                 .doesNotContain("sandbox:");

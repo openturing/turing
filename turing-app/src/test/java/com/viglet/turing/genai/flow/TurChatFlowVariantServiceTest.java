@@ -148,11 +148,10 @@ class TurChatFlowVariantServiceTest {
 
     @Test
     void stripsLlmCodeFences() {
-        String fenced = "```json\n"
-                + "{\"summary\":\"ok\",\"nodes\":["
-                + "  {\"id\":\"ask-name\",\"aiInstruction\":\"Ask name\"}"
-                + "]}\n"
-                + "```";
+        String fenced = """
+                ```json
+                {"summary":"ok","nodes":[  {"id":"ask-name","aiInstruction":"Ask name"}]}
+                ```""";
         when(llmSummaryService.generate(startsWith("chat-flow-variant:"), any(),
                 any(), anyBoolean()))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(true, null, fenced, true));
