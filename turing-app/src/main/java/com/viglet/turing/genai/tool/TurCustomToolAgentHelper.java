@@ -259,18 +259,17 @@ public class TurCustomToolAgentHelper {
         if (opts == null) return DEFAULT_TIMEOUT_MS;
         Object raw = opts.get("timeout");
         if (raw == null) return DEFAULT_TIMEOUT_MS;
-        long requested;
-        if (raw instanceof Number n) {
-            requested = n.longValue();
-        } else if (raw instanceof String s) {
-            try {
-                requested = Long.parseLong(s.trim());
-            } catch (NumberFormatException e) {
-                return DEFAULT_TIMEOUT_MS;
+        long requested = switch (raw) {
+            case Number n -> n.longValue();
+            case String s -> {
+                try {
+                    yield Long.parseLong(s.trim());
+                } catch (NumberFormatException e) {
+                    yield 0L; // unparseable → falls through to the default below
+                }
             }
-        } else {
-            return DEFAULT_TIMEOUT_MS;
-        }
+            default -> 0L;
+        };
         if (requested <= 0) return DEFAULT_TIMEOUT_MS;
         return Math.min(requested, MAX_TIMEOUT_MS);
     }

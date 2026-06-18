@@ -154,13 +154,11 @@ public class TurNativeChatExecutor {
         for (Message message : messages) {
             String text = message.getText() == null ? "" : message.getText();
             MessageType type = message.getMessageType();
-            if (type == MessageType.SYSTEM) {
+            switch (type) {
                 // Keep the first (and only) system message as the instructions.
-                systemPrompt = text;
-            } else if (type == MessageType.ASSISTANT) {
-                history.add(new ChatMessageItem("assistant", text));
-            } else {
-                history.add(new ChatMessageItem("user", text));
+                case SYSTEM -> systemPrompt = text;
+                case ASSISTANT -> history.add(new ChatMessageItem("assistant", text));
+                default -> history.add(new ChatMessageItem("user", text));
             }
         }
         return new AssembledTurn(systemPrompt, history);

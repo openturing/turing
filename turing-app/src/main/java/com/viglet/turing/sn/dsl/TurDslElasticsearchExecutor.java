@@ -568,24 +568,24 @@ public class TurDslElasticsearchExecutor
 
     private co.elastic.clients.elasticsearch._types.query_dsl.SpanQuery toSpanQuery(TurDslQuery dslQuery) {
         return co.elastic.clients.elasticsearch._types.query_dsl.SpanQuery.of(sq -> {
-            if (dslQuery instanceof TurDslQuery.SpanTerm(var field, var value)) {
-                sq.spanTerm(st -> st.field(field).value(value));
-            } else if (dslQuery instanceof TurDslQuery.SpanNear(var clauses, var slop, var inOrder)) {
-                sq.spanNear(sn -> {
-                    sn.clauses(clauses.stream().map(this::toSpanQuery).toList());
-                    if (slop != null) sn.slop(slop);
-                    if (inOrder != null) sn.inOrder(inOrder);
-                    return sn;
-                });
-            } else if (dslQuery instanceof TurDslQuery.SpanOr(var clauses)) {
-                sq.spanOr(so -> so.clauses(clauses.stream().map(this::toSpanQuery).toList()));
-            } else if (dslQuery instanceof TurDslQuery.SpanNot(var include, var exclude)) {
-                sq.spanNot(sn -> sn.include(toSpanQuery(include)).exclude(toSpanQuery(exclude)));
-            } else if (dslQuery instanceof TurDslQuery.SpanFirst(var match, var end)) {
-                sq.spanFirst(sf -> { sf.match(toSpanQuery(match)); if (end != null) { sf.end(end); } return sf; });
-            } else {
-                // Fallback: wrap as span_term on "id" field
-                sq.spanTerm(st -> st.field("id").value("*"));
+            switch (dslQuery) {
+                case TurDslQuery.SpanTerm(var field, var value) ->
+                    sq.spanTerm(st -> st.field(field).value(value));
+                case TurDslQuery.SpanNear(var clauses, var slop, var inOrder) ->
+                    sq.spanNear(sn -> {
+                        sn.clauses(clauses.stream().map(this::toSpanQuery).toList());
+                        if (slop != null) { sn.slop(slop); }
+                        if (inOrder != null) { sn.inOrder(inOrder); }
+                        return sn;
+                    });
+                case TurDslQuery.SpanOr(var clauses) ->
+                    sq.spanOr(so -> so.clauses(clauses.stream().map(this::toSpanQuery).toList()));
+                case TurDslQuery.SpanNot(var include, var exclude) ->
+                    sq.spanNot(sn -> sn.include(toSpanQuery(include)).exclude(toSpanQuery(exclude)));
+                case TurDslQuery.SpanFirst(var match, var end) ->
+                    sq.spanFirst(sf -> { sf.match(toSpanQuery(match)); if (end != null) { sf.end(end); } return sf; });
+                // Fallback (incl. null): wrap as span_term on "id" field
+                case null, default -> sq.spanTerm(st -> st.field("id").value("*"));
             }
             return sq;
         });
