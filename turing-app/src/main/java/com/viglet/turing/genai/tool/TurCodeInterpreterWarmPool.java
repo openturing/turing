@@ -169,7 +169,10 @@ public class TurCodeInterpreterWarmPool {
                     destroyQuietly(worker);
                     break;
                 }
-                ready.offer(worker);
+                if (!ready.offer(worker)) {
+                    destroyQuietly(worker);
+                    break;
+                }
                 log.debug("[CodeInterpreter] warm worker spawned (ready={}/{})",
                         ready.size(), targetSize());
             }

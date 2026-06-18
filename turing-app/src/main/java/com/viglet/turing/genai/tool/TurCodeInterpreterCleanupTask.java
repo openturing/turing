@@ -130,10 +130,19 @@ public class TurCodeInterpreterCleanupTask {
             for (File convDir : convDirs) {
                 sweepDateBucketedTree(convDir, cutoff, stats);
                 // Prune empty conversation dir.
-                if (isEmptyDirectory(convDir)) convDir.delete();
+                if (isEmptyDirectory(convDir)) pruneDirectory(convDir);
             }
             // Prune empty agent dir.
-            if (isEmptyDirectory(agentDir)) agentDir.delete();
+            if (isEmptyDirectory(agentDir)) pruneDirectory(agentDir);
+        }
+    }
+
+    /** Best-effort removal of an empty directory, logging instead of ignoring failure. */
+    private void pruneDirectory(File dir) {
+        try {
+            Files.deleteIfExists(dir.toPath());
+        } catch (IOException e) {
+            log.debug("[CodeInterpreterCleanup] could not prune empty dir {}: {}", dir, e.getMessage());
         }
     }
 

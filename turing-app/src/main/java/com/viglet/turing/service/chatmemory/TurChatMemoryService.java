@@ -140,8 +140,12 @@ public class TurChatMemoryService {
             // not a strong durability guarantee. Better to lose the oldest event
             // than block the request thread waiting for capacity.
             queue.pollFirst();
-            queue.offer(queued);
-            log.warn("Chat memory queue is full ({}); dropped oldest event", MAX_QUEUE_SIZE);
+            if (!queue.offer(queued)) {
+                log.warn("Chat memory queue still full ({}) after dropping oldest; event discarded",
+                        MAX_QUEUE_SIZE);
+            } else {
+                log.warn("Chat memory queue is full ({}); dropped oldest event", MAX_QUEUE_SIZE);
+            }
         }
     }
 

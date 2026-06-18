@@ -111,7 +111,11 @@ public class TurSkillSandboxCleanupTask {
     private static void pruneIfEmpty(File dir) {
         File[] children = dir.listFiles();
         if (children == null || children.length == 0) {
-            dir.delete();
+            try {
+                Files.deleteIfExists(dir.toPath());
+            } catch (IOException e) {
+                log.debug("[SkillSandboxCleanup] could not prune empty dir {}: {}", dir, e.getMessage());
+            }
         }
     }
 
