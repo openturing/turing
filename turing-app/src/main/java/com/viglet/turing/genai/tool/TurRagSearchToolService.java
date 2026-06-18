@@ -145,9 +145,11 @@ public class TurRagSearchToolService {
                 allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
                         Boolean.TRUE.equals(d.getMetadata()
                                 .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
-                log.debug("[RAG] SE hybrid search '{}' (locale={}, seInstance={}) returned {} fused result(s); allKeywordOnly={}",
-                        query, locale.toLanguageTag(), flags.seInstance().getId(),
-                        results.size(), allKeywordOnly);
+                if (log.isDebugEnabled()) {
+                    log.debug("[RAG] SE hybrid search '{}' (locale={}, seInstance={}) returned {} fused result(s); allKeywordOnly={}",
+                            query, locale.toLanguageTag(), flags.seInstance().getId(),
+                            results.size(), allKeywordOnly);
+                }
             } else if (useEmbeddedHybrid) {
                 TurLuceneVectorStore lucene = (TurLuceneVectorStore) vectorStore;
                 results = lucene.hybridSearch(query, topK, 0.0);
@@ -433,8 +435,10 @@ public class TurRagSearchToolService {
         Optional<TurRagBm25Core> coreOpt = ragBm25CoreRepository
                 .findByTurStoreInstance_IdAndLocale(storeInstanceId, locale);
         if (coreOpt.isEmpty() || coreOpt.get().getStatus() != TurRagBm25Core.Status.PROVISIONED) {
-            log.warn("[RAG] No PROVISIONED BM25 core for store={} locale={}; degrading to vector-only",
-                    storeInstanceId, locale.toLanguageTag());
+            if (log.isWarnEnabled()) {
+                log.warn("[RAG] No PROVISIONED BM25 core for store={} locale={}; degrading to vector-only",
+                        storeInstanceId, locale.toLanguageTag());
+            }
             return vectorOnly(query, topK, vectorStore);
         }
         TurRagBm25Core core = coreOpt.get();
