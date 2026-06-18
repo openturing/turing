@@ -260,7 +260,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         Path basePath = resolveBasePath(turStoreInstance, options);
         TurLuceneVectorIndex index = openIndex(basePath, collectionName);
 
-        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
         int offset = safePage * safePageSize;
         Query filter = buildFilterQuery(filters);

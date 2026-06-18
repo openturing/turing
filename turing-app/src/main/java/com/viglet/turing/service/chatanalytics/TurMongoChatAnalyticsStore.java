@@ -165,7 +165,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             FindIterable<Document> cursor = collection()
                     .find(Filters.and(filters))
                     .sort(Sorts.descending("startedAt"))
-                    .limit(Math.max(1, Math.min(limit, 1000)));
+                    .limit(Math.clamp(limit, 1, 1000));
             List<Map<String, Object>> result = new ArrayList<>();
             for (Document doc : cursor) result.add(toRow(doc));
             return result;
@@ -189,7 +189,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
                                     new Document("$ifNull", List.of("$" + field, "unknown")))
                             .append("count", new Document("$sum", 1))),
                     new Document("$sort", new Document("count", -1)),
-                    new Document("$limit", Math.max(1, Math.min(maxGroups, 100))));
+                    new Document("$limit", Math.clamp(maxGroups, 1, 100)));
             AggregateIterable<Document> cursor = collection().aggregate(pipeline);
             List<Map<String, Object>> result = new ArrayList<>();
             for (Document doc : cursor) {
@@ -215,7 +215,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             filters.add(Filters.ne("outcome", "IN_PROGRESS"));
             // No processedAt yet → not enriched.
             filters.add(Filters.exists("processedAt", false));
-            int cap = Math.max(1, Math.min(limit, 200));
+            int cap = Math.clamp(limit, 1, 200);
             com.mongodb.client.FindIterable<Document> cursor = collection()
                     .find(Filters.and(filters))
                     .sort(com.mongodb.client.model.Sorts.ascending("startedAt"))
@@ -359,7 +359,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             // anything outside the list falls back to agentId. Shared with the
             // Redis store via the interface so both pivot identically.
             String field = TurChatAnalyticsStore.scorecardDimensionField(dimension);
-            int cap = Math.max(1, Math.min(maxRows, 100));
+            int cap = Math.clamp(maxRows, 1, 100);
 
             // T74 — narrow the population BEFORE grouping. The match merges the
             // time-range with each whitelisted cohort/identity filter so

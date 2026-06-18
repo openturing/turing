@@ -133,7 +133,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             String agentId, String personaId, String outcome,
             String intentLabel, String goalAchieved, String sentiment,
             int limit) {
-        int cap = Math.max(1, Math.min(limit, 1000));
+        int cap = Math.clamp(limit, 1, 1000);
         List<Map<String, Object>> rows = new ArrayList<>();
         try (Jedis jedis = pool.getResource()) {
             // Sorted set is ascending by score; we walk from the highest score
@@ -177,7 +177,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         }
         return counts.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
-                .limit(Math.max(1, Math.min(maxGroups, 100)))
+                .limit(Math.clamp(maxGroups, 1, 100))
                 .map(e -> {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("bucket", e.getKey());
@@ -189,7 +189,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
     @Override
     public List<Map<String, Object>> findUnenrichedSessions(int limit) {
-        int cap = Math.max(1, Math.min(limit, 200));
+        int cap = Math.clamp(limit, 1, 200);
         List<Map<String, Object>> rows = new ArrayList<>();
         try (Jedis jedis = pool.getResource()) {
             // Walk all known sessions oldest-first; for each, check eligibility
@@ -300,7 +300,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         // interface so both pivot identically (identity / experiment / T74
         // cohort dimensions).
         String field = TurChatAnalyticsStore.scorecardDimensionField(dimension);
-        int cap = Math.max(1, Math.min(maxRows, 100));
+        int cap = Math.clamp(maxRows, 1, 100);
 
         // dim → aggregates: [sessions, durationSum, processedCount, achievedScore, negativeCount]
         Map<String, double[]> agg = new HashMap<>();

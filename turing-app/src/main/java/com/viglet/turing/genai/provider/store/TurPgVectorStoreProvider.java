@@ -266,7 +266,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
                 optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
         String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
 
-        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
         int offset = safePage * safePageSize;
 

@@ -328,7 +328,7 @@ public class TurAgentEvalRunnerService {
             String verdict = String.valueOf(parsed.getOrDefault("verdict", "fail")).trim().toLowerCase();
             boolean pass = "pass".equals(verdict);
             double score = parsed.get("score") instanceof Number n ? n.doubleValue() : (pass ? 1d : 0d);
-            score = Math.max(0d, Math.min(1d, score));
+            score = Math.clamp(score, 0d, 1d);
             Object rationale = parsed.get("rationale");
             return new JudgeVerdict(pass, score, rationale == null ? null : String.valueOf(rationale));
         } catch (RuntimeException e) {

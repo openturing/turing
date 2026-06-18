@@ -408,7 +408,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
             connectBuilder.withDatabaseName(databaseName);
         }
 
-        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
         long offset = (long) safePage * safePageSize;
         String filterExpr = buildMilvusFilterExpression(filters);

@@ -314,7 +314,7 @@ public class TurGlobalSettingsService {
     }
 
     public double updateRagSnSimilarityThreshold(double threshold) {
-        double value = Math.max(0.0, Math.min(1.0, threshold));
+        double value = Math.clamp(threshold, 0.0, 1.0);
         configVars.setDouble(TurConfigVarOnStartup.RAG_SN_SIMILARITY_THRESHOLD, value);
         return value;
     }

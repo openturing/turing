@@ -774,7 +774,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         Map<String, Double> percentiles = new LinkedHashMap<>();
         for (double p : percents) {
             int idx = (int) Math.ceil(p / 100.0 * values.size()) - 1;
-            idx = Math.max(0, Math.min(idx, values.size() - 1));
+            idx = Math.clamp(idx, 0, values.size() - 1);
             percentiles.put(String.valueOf(p), values.isEmpty() ? 0.0 : values.get(idx));
         }
         return new TurDslSearchResponse.AggregationResult(percentiles);

@@ -109,7 +109,7 @@ public class TurMongoChatMemoryStore implements TurChatMemoryStore {
     @Override
     public List<Map<String, Object>> findMessages(String conversationId, int limit) {
         if (conversationId == null || conversationId.isBlank()) return List.of();
-        int cap = Math.max(1, Math.min(limit, 1000));
+        int cap = Math.clamp(limit, 1, 1000);
         try {
             Document doc = client.getDatabase(databaseName)
                     .getCollection(collectionName)

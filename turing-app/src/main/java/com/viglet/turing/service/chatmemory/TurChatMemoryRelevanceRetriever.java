@@ -204,7 +204,7 @@ public class TurChatMemoryRelevanceRetriever {
         }
 
         int recentN = Math.max(0, agent.getChatMemoryRecentN());
-        int topK = Math.min(RELEVANCE_TOP_K_MAX, Math.max(1, agent.getChatMemoryRelevanceTopK()));
+        int topK = Math.clamp(agent.getChatMemoryRelevanceTopK(), 1, RELEVANCE_TOP_K_MAX);
         int readLimit = clamp(agent.getChatMemoryMaxMessages(), 1, MAX_READ_LIMIT);
 
         List<Map<String, Object>> persisted;

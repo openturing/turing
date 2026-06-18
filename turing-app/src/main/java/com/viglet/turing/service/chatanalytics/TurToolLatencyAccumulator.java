@@ -66,7 +66,7 @@ final class TurToolLatencyAccumulator {
      * {@code maxMs}, {@code minMs}.
      */
     List<Map<String, Object>> toRows(int maxTools) {
-        int cap = Math.max(1, Math.min(maxTools, 200));
+        int cap = Math.clamp(maxTools, 1, 200);
         List<Map<String, Object>> rows = new ArrayList<>(byTool.size());
         for (Map.Entry<String, ToolBucket> e : byTool.entrySet()) {
             ToolBucket b = e.getValue();

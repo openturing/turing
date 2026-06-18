@@ -480,7 +480,7 @@ public class TurChatAnalyticsAPI {
         if (session == null) return ResponseEntity.notFound().build();
         enrichWithNames(session);
         List<Map<String, Object>> messages = chatMemoryStore.findMessages(conversationId,
-                Math.max(1, Math.min(limit, 1000)));
+                Math.clamp(limit, 1, 1000));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("session", session);
         body.put("messages", messages);

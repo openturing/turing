@@ -396,7 +396,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             total = -1L;
         }
 
-        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
         int offset = safePage * safePageSize;
 
