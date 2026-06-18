@@ -223,7 +223,11 @@ class TurSkillRunnerServiceTest {
 
         assertThat(out).isEqualTo("the final result");
         verify(toolExecutionLoop).call(any(), any());
-        verify(tokenUsageService).recordUsage(any(TurLLMInstance.class), any(ChatResponse.class), anyString());
+        // Cost-governance: the skill sub-loop records usage via the 5-arg
+        // overload, tagging the cost stage "chat.skill" (agentId null on this
+        // path). any() — not anyString() — on the 4th arg so it matches null.
+        verify(tokenUsageService).recordUsage(any(TurLLMInstance.class), any(ChatResponse.class),
+                anyString(), any(), anyString());
     }
 
     @Test
