@@ -179,7 +179,7 @@ public class TurSNSiteExport {
 			});
 			return sites;
 		});
-		if (turSNSites == null || turSNSites.isEmpty()) {
+		if (turSNSites.isEmpty()) {
 			return;
 		}
 

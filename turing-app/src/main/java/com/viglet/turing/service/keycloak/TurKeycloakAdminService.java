@@ -192,7 +192,7 @@ public class TurKeycloakAdminService {
         }
         OAuth2AuthorizedClient client = authorizedClientService.get()
                 .loadAuthorizedClient(oauthToken.getAuthorizedClientRegistrationId(), oauthToken.getName());
-        if (client == null || client.getAccessToken() == null) {
+        if (client == null) {
             throw new IllegalStateException("No OAuth2 access token available for current user");
         }
         return client.getAccessToken().getTokenValue();

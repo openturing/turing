@@ -215,7 +215,7 @@ public class TurLuceneVectorStore implements VectorStore {
             return List.of();
         }
         String query = request.getQuery();
-        if (query == null || query.isBlank()) {
+        if (query.isBlank()) {
             return List.of();
         }
         int topK = Math.max(1, request.getTopK());
@@ -346,7 +346,7 @@ public class TurLuceneVectorStore implements VectorStore {
 
         for (int i = 0; i < vectorHits.size(); i++) {
             Document d = vectorHits.get(i);
-            if (d == null || d.getId() == null) {
+            if (d == null) {
                 continue;
             }
             vectorIds.add(d.getId());
@@ -355,7 +355,7 @@ public class TurLuceneVectorStore implements VectorStore {
         }
         for (int i = 0; i < bm25Hits.size(); i++) {
             Document d = bm25Hits.get(i);
-            if (d == null || d.getId() == null) {
+            if (d == null) {
                 continue;
             }
             rrfScores.merge(d.getId(), 1.0 / (RRF_K + i + 1), (a, b) -> a + b);

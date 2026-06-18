@@ -66,7 +66,7 @@ public class TurGitBrowseService {
         List<GitBranch> branches = new ArrayList<>();
         try (Repository repo = openBareRepo(repoPath)) {
             Ref head = repo.exactRef("HEAD");
-            String headTarget = head != null && head.getTarget() != null
+            String headTarget = head != null
                     ? head.getTarget().getName() : null;
             Collection<Ref> refs = repo.getRefDatabase().getRefsByPrefix("refs/heads/");
             for (Ref ref : refs) {

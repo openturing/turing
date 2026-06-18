@@ -174,7 +174,7 @@ public class TurLlmIntentClassifier implements TurIntentClassifierStrategy {
     }
 
     private void recordTokens(String provider, String model, ChatResponse response) {
-        if (response == null || response.getMetadata() == null) return;
+        if (response == null) return;
         Usage usage = response.getMetadata().getUsage();
         if (usage == null) return;
         long in  = usage.getPromptTokens()     == null ? 0L : usage.getPromptTokens().longValue();

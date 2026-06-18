@@ -85,7 +85,7 @@ public class TurLlmNLFacetParser implements TurNLFacetParser {
                     new SystemMessage(systemPrompt(request.schema())),
                     new UserMessage(userPrompt(request)));
             var result = chatModel.call(new Prompt(messages)).getResult();
-            reply = result != null && result.getOutput() != null ? result.getOutput().getText() : null;
+            reply = result != null ? result.getOutput().getText() : null;
         } catch (RuntimeException e) {
             throw new TurNLFacetParseException("LLM call failed: " + e.getMessage(), e);
         }

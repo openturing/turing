@@ -207,7 +207,7 @@ public class TurRagReranker {
         }
         List<String> ids = new ArrayList<>(reranked.size());
         for (Document d : reranked) {
-            if (d != null && d.getId() != null) {
+            if (d != null) {
                 ids.add(d.getId());
             }
         }
@@ -217,7 +217,7 @@ public class TurRagReranker {
     private static Map<String, Document> indexById(List<Document> candidates) {
         Map<String, Document> byId = new HashMap<>(candidates.size() * 2);
         for (Document d : candidates) {
-            if (d != null && d.getId() != null) {
+            if (d != null) {
                 byId.putIfAbsent(d.getId(), d);
             }
         }

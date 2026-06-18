@@ -584,9 +584,7 @@ public class TurCustomToolSearchHelper {
         List<Map<String, Object>> out = new ArrayList<>(hits.size());
         for (Document doc : hits) {
             Map<String, Object> hit = new LinkedHashMap<>();
-            if (doc.getMetadata() != null) {
-                hit.putAll(doc.getMetadata());
-            }
+            hit.putAll(doc.getMetadata());
             // Reserved fields come AFTER the metadata so they always win when a
             // metadata key happens to use one of these names.
             hit.put("id", doc.getId());

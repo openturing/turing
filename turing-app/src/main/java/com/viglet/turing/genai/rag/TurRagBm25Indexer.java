@@ -211,7 +211,7 @@ public class TurRagBm25Indexer {
             return null;
         }
         String id = chunk.getId();
-        if (id == null || id.isBlank()) {
+        if (id.isBlank()) {
             return null;
         }
         String text = chunk.getText();
@@ -222,19 +222,17 @@ public class TurRagBm25Indexer {
         doc.put(FIELD_ID, id);
         doc.put(FIELD_CONTENT, text);
         Map<String, Object> metadata = chunk.getMetadata();
-        if (metadata != null) {
-            Object assetId = metadata.get("objectName");
-            if (assetId != null) {
-                doc.put(FIELD_ASSET_ID, assetId.toString());
-            }
-            Object chunkIndex = metadata.get("chunkIndex");
-            if (chunkIndex != null) {
-                doc.put(FIELD_CHUNK_INDEX, chunkIndex);
-            }
-            Object sourceFile = metadata.get("fileName");
-            if (sourceFile != null) {
-                doc.put(FIELD_SOURCE_FILE, sourceFile.toString());
-            }
+        Object assetId = metadata.get("objectName");
+        if (assetId != null) {
+            doc.put(FIELD_ASSET_ID, assetId.toString());
+        }
+        Object chunkIndex = metadata.get("chunkIndex");
+        if (chunkIndex != null) {
+            doc.put(FIELD_CHUNK_INDEX, chunkIndex);
+        }
+        Object sourceFile = metadata.get("fileName");
+        if (sourceFile != null) {
+            doc.put(FIELD_SOURCE_FILE, sourceFile.toString());
         }
         return doc;
     }

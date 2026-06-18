@@ -86,7 +86,7 @@ public final class TurRagRrf {
         if (vectorHits != null) {
             for (int i = 0; i < vectorHits.size(); i++) {
                 Document d = vectorHits.get(i);
-                if (d == null || d.getId() == null) {
+                if (d == null) {
                     continue;
                 }
                 vectorIds.add(d.getId());
@@ -97,7 +97,7 @@ public final class TurRagRrf {
         if (bm25Hits != null) {
             for (int i = 0; i < bm25Hits.size(); i++) {
                 Document d = bm25Hits.get(i);
-                if (d == null || d.getId() == null) {
+                if (d == null) {
                     continue;
                 }
                 rrfScores.merge(d.getId(), 1.0 / (RRF_K + i + 1), (a, b) -> a + b);

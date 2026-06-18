@@ -211,6 +211,9 @@ public class TurLuceneVectorIndex {
         }
     }
 
+    @SuppressWarnings("java:S2589") // DirectoryReader.openIfChanged returns null when
+    // the index has not changed since the reader was opened, so this null check is
+    // required despite Sonar inferring the result is always non-null.
     private DirectoryReader refreshReader() throws IOException {
         DirectoryReader current = directoryReader.get();
         DirectoryReader refreshed = DirectoryReader.openIfChanged(current, indexWriter);
