@@ -3,6 +3,7 @@
 /build/
 /target/
 /dist/
+/frontend/dist/
 /backup/
 
 # ── IDE & editor ─────────────────────────────────────────────
