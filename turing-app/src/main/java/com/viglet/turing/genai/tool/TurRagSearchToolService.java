@@ -369,9 +369,6 @@ public class TurRagSearchToolService {
             return Locale.ROOT;
         }
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) {
-            return Locale.ROOT;
-        }
         Object raw = ctx.get(TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE);
         if (raw == null) {
             return Locale.ROOT;
@@ -395,9 +392,6 @@ public class TurRagSearchToolService {
             return null;
         }
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) {
-            return null;
-        }
         Object raw = ctx.get(TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
         return raw instanceof TurRagSourceCollector collector ? collector : null;
     }
@@ -451,9 +445,6 @@ public class TurRagSearchToolService {
                 .similarityThreshold(0.0)
                 .build();
         List<Document> vectorHits = vectorStore.similaritySearch(searchRequest);
-        if (vectorHits == null) {
-            vectorHits = List.of();
-        }
 
         List<Document> bm25Hits;
         try {
@@ -509,7 +500,7 @@ public class TurRagSearchToolService {
                 .similarityThreshold(0.0)
                 .build();
         List<Document> results = vectorStore.similaritySearch(searchRequest);
-        return results == null ? List.of() : results;
+        return results;
     }
 
     @Tool(name = "knowledge_base_stats", description = ".")

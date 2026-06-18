@@ -478,9 +478,6 @@ public class TurCustomToolCallbackService {
             return null;
         }
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) {
-            return null;
-        }
         Object value = ctx.get(TOOL_CONTEXT_USERNAME);
         if (value == null) {
             return null;
@@ -500,9 +497,6 @@ public class TurCustomToolCallbackService {
             return null;
         }
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) {
-            return null;
-        }
         Object value = ctx.get(TOOL_CONTEXT_CONVERSATION_ID);
         return value == null ? null : value.toString();
     }
@@ -517,7 +511,6 @@ public class TurCustomToolCallbackService {
     private static String resolveAgentPythonRequirements(ToolContext toolContext) {
         if (toolContext == null) return null;
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) return null;
         Object value = ctx.get(TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS);
         if (value == null) return null;
         String text = value.toString();
@@ -533,7 +526,6 @@ public class TurCustomToolCallbackService {
     private static String resolveAgentId(ToolContext toolContext) {
         if (toolContext == null) return null;
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) return null;
         Object value = ctx.get(TOOL_CONTEXT_AGENT_ID);
         if (value == null) return null;
         String text = value.toString();
@@ -551,7 +543,6 @@ public class TurCustomToolCallbackService {
     private static int resolveAgentInvokeDepth(ToolContext toolContext) {
         if (toolContext == null) return 0;
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) return 0;
         Object value = ctx.get(TOOL_CONTEXT_AGENT_INVOKE_DEPTH);
         if (value == null) return 0;
         if (value instanceof Number n) return Math.max(0, n.intValue());

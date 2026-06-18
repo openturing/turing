@@ -247,7 +247,7 @@ public class TurRagReranker {
             for (Document d : candidates) {
                 String id = d.getId();
                 String text = d.getText();
-                digest.update((id == null ? "" : id).getBytes(StandardCharsets.UTF_8));
+                digest.update(id.getBytes(StandardCharsets.UTF_8));
                 digest.update((byte) 0x1f);
                 digest.update((text == null ? "" : text).getBytes(StandardCharsets.UTF_8));
                 digest.update((byte) 0x1e);

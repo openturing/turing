@@ -98,9 +98,6 @@ final class TurSkillActivationSupport {
             return null;
         }
         Map<String, Object> ctx = toolContext.getContext();
-        if (ctx == null) {
-            return null;
-        }
         Object value = ctx.get(key);
         if (value == null) {
             return null;
