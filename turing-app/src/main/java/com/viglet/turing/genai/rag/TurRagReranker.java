@@ -215,7 +215,7 @@ public class TurRagReranker {
     }
 
     private static Map<String, Document> indexById(List<Document> candidates) {
-        Map<String, Document> byId = new HashMap<>(candidates.size() * 2);
+        Map<String, Document> byId = HashMap.newHashMap(candidates.size());
         for (Document d : candidates) {
             if (d != null) {
                 byId.putIfAbsent(d.getId(), d);

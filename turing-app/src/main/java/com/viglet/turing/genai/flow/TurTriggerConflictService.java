@@ -128,7 +128,7 @@ public class TurTriggerConflictService {
         }
         // Group by analyzer so PT/EN pairs do not get compared — the
         // procedural router never scores them together either.
-        Map<Analyzer, List<EligibleFlow>> byAnalyzer = new HashMap<>(2);
+        Map<Analyzer, List<EligibleFlow>> byAnalyzer = HashMap.newHashMap(2);
         for (TurChatFlow flow : flows) {
             if (flow.getEnabled() != 1) {
                 continue;

@@ -291,7 +291,7 @@ public final class ChatFlowOps {
      * same truncation treatment.
      */
     private static String summarizeVariables(Map<String, String> variables) {
-        LinkedHashMap<String, String> rendered = new LinkedHashMap<>(variables.size());
+        LinkedHashMap<String, String> rendered = LinkedHashMap.newLinkedHashMap(variables.size());
         for (Map.Entry<String, String> entry : variables.entrySet()) {
             String value = entry.getValue();
             if (value == null) {

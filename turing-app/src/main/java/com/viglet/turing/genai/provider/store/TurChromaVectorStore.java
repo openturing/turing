@@ -181,7 +181,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
         if (original == null || original.isEmpty()) {
             return doc;
         }
-        Map<String, Object> rewritten = new LinkedHashMap<>(original.size() * 2);
+        Map<String, Object> rewritten = LinkedHashMap.newLinkedHashMap(original.size());
         for (Map.Entry<String, Object> entry : original.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();

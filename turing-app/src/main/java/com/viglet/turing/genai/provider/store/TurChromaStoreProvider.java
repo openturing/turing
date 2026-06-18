@@ -598,7 +598,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         if (source == null || source.isEmpty()) {
             return new LinkedHashMap<>();
         }
-        Map<String, Object> result = new LinkedHashMap<>(source.size());
+        Map<String, Object> result = LinkedHashMap.newLinkedHashMap(source.size());
         for (Map.Entry<String, Object> e : source.entrySet()) {
             if (e.getKey() == null || e.getValue() == null) {
                 continue;

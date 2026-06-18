@@ -169,7 +169,7 @@ public class TurPiiSlotService {
     // empty map, preserving the caller's distinction between absent and empty.
     public static Map<String, String> redact(Map<String, String> variables) {
         if (variables == null) return null;
-        Map<String, String> out = new LinkedHashMap<>(variables.size());
+        Map<String, String> out = LinkedHashMap.newLinkedHashMap(variables.size());
         for (Map.Entry<String, String> e : variables.entrySet()) {
             String name = e.getKey();
             String value = e.getValue();

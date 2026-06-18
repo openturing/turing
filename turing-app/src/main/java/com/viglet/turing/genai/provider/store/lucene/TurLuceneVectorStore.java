@@ -343,7 +343,7 @@ public class TurLuceneVectorStore implements VectorStore {
             List<Document> bm25Hits, int topK) {
         Map<String, Double> rrfScores = new LinkedHashMap<>();
         Map<String, Document> sourceDocs = new LinkedHashMap<>();
-        java.util.Set<String> vectorIds = new java.util.HashSet<>(vectorHits.size());
+        java.util.Set<String> vectorIds = java.util.HashSet.newHashSet(vectorHits.size());
 
         for (int i = 0; i < vectorHits.size(); i++) {
             Document d = vectorHits.get(i);

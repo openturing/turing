@@ -81,7 +81,7 @@ public final class TurRagRrf {
         }
         Map<String, Double> rrfScores = new LinkedHashMap<>();
         Map<String, Document> sourceDocs = new LinkedHashMap<>();
-        Set<String> vectorIds = new HashSet<>(vectorHits == null ? 0 : vectorHits.size());
+        Set<String> vectorIds = HashSet.newHashSet(vectorHits == null ? 0 : vectorHits.size());
 
         if (vectorHits != null) {
             for (int i = 0; i < vectorHits.size(); i++) {

@@ -1403,7 +1403,7 @@ public class TurChatFlowEngineService {
                         flow.getId());
                 return Map.of();
             }
-            Map<String, String> out = new LinkedHashMap<>(raw.size());
+            Map<String, String> out = LinkedHashMap.newLinkedHashMap(raw.size());
             for (Map.Entry<?, ?> e : raw.entrySet()) {
                 if (e.getKey() == null) continue;
                 out.put(String.valueOf(e.getKey()),
@@ -1952,7 +1952,7 @@ public class TurChatFlowEngineService {
         if (!hasSubstantiveToken(userMessage)) {
             return Optional.empty();
         }
-        Map<Analyzer, List<RouterCandidate>> byAnalyzer = new HashMap<>(2);
+        Map<Analyzer, List<RouterCandidate>> byAnalyzer = HashMap.newHashMap(2);
         for (RouterCandidate c : candidates) {
             String description = c.flow().getTriggerDescription();
             if (description != null && !description.isBlank()) {
@@ -2143,7 +2143,7 @@ public class TurChatFlowEngineService {
 
     private AgentRouterIndex buildRouterIndex(String agentId) {
         List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agentId);
-        Map<Analyzer, List<TurChatFlow>> grouped = new HashMap<>(2);
+        Map<Analyzer, List<TurChatFlow>> grouped = HashMap.newHashMap(2);
         for (TurChatFlow flow : flows) {
             if (flow.getEnabled() != 1) {
                 continue;
@@ -2158,7 +2158,7 @@ public class TurChatFlowEngineService {
         if (grouped.isEmpty()) {
             return AgentRouterIndex.empty();
         }
-        Map<Analyzer, AnalyzerBucket> buckets = new HashMap<>(grouped.size());
+        Map<Analyzer, AnalyzerBucket> buckets = HashMap.newHashMap(grouped.size());
         for (Map.Entry<Analyzer, List<TurChatFlow>> entry : grouped.entrySet()) {
             AnalyzerBucket bucket = buildBucket(entry.getKey(), entry.getValue());
             if (bucket != null) {
