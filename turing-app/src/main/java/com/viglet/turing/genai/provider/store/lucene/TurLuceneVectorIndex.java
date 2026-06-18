@@ -211,9 +211,11 @@ public class TurLuceneVectorIndex {
         }
     }
 
-    @SuppressWarnings("java:S2589") // DirectoryReader.openIfChanged returns null when
-    // the index has not changed since the reader was opened, so this null check is
-    // required despite Sonar inferring the result is always non-null.
+    @SuppressWarnings({"java:S2589", "java:S2095"}) // S2589: openIfChanged returns null
+    // when the index has not changed, so this null check is required despite Sonar
+    // inferring the result is always non-null. S2095: the refreshed reader is a
+    // long-lived NRT reader cached in directoryReader and closed in close(); closing it
+    // here in a finally would defeat the cache.
     private DirectoryReader refreshReader() throws IOException {
         DirectoryReader current = directoryReader.get();
         DirectoryReader refreshed = DirectoryReader.openIfChanged(current, indexWriter);

@@ -59,8 +59,10 @@ public class TurLuceneInstance {
      * If the underlying index has changed since the last call, the reader is
      * refreshed.
      */
-    @SuppressWarnings("java:S2589") // openIfChanged returns null when the index is
-    // unchanged, so this null check is required despite Sonar's always-true inference.
+    @SuppressWarnings({"java:S2589", "java:S2095"}) // S2589: openIfChanged returns null
+    // when the index is unchanged, so this null check is required despite Sonar's
+    // always-true inference. S2095: newReader is a long-lived NRT reader cached in
+    // directoryReader and closed in close(); closing it here would defeat the cache.
     public synchronized IndexSearcher getSearcher() throws IOException {
         DirectoryReader current = directoryReader.get();
         DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter);
@@ -75,8 +77,10 @@ public class TurLuceneInstance {
      * Returns the current {@link DirectoryReader}, refreshing it if the index has
      * changed.
      */
-    @SuppressWarnings("java:S2589") // openIfChanged returns null when the index is
-    // unchanged, so this null check is required despite Sonar's always-true inference.
+    @SuppressWarnings({"java:S2589", "java:S2095"}) // S2589: openIfChanged returns null
+    // when the index is unchanged, so this null check is required despite Sonar's
+    // always-true inference. S2095: newReader is a long-lived NRT reader cached in
+    // directoryReader and closed in close(); closing it here would defeat the cache.
     public synchronized DirectoryReader getReader() throws IOException {
         DirectoryReader current = directoryReader.get();
         DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter);
