@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -290,7 +289,7 @@ class TurChatMemoryRelevanceRetrieverTest {
         assertThat(prepended).isNotEmpty();
         // Roles must be drawn from the persisted store (user OR assistant),
         // not all coerced to "user".
-        List<String> roles = prepended.stream().map(ChatMessageItem::role).collect(Collectors.toList());
+        List<String> roles = prepended.stream().map(ChatMessageItem::role).toList();
         assertThat(roles).containsAnyOf("user", "assistant");
     }
 

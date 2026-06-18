@@ -19,7 +19,6 @@ package com.viglet.turing.persistence.adapter.sn;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -63,7 +62,7 @@ public class TurSNSiteCustomFacetRepositoryAdapter implements TurSNSiteCustomFac
             Collection<String> fieldExtIds) {
         List<TurSNSiteFieldExt> stubs = fieldExtIds.stream()
                 .map(TurSNSiteCustomFacetRepositoryAdapter::stubFieldExt)
-                .collect(Collectors.toList());
+                .toList();
         return mapper.toDomainList(
                 turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(stubs));
     }

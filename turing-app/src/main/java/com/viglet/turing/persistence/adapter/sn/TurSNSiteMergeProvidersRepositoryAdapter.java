@@ -18,7 +18,6 @@ package com.viglet.turing.persistence.adapter.sn;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -57,7 +56,7 @@ public class TurSNSiteMergeProvidersRepositoryAdapter
     public List<TurSNSiteMergeProvidersDomain> findBySnSiteId(String snSiteId) {
         return turSNSiteMergeProvidersRepository.findByTurSNSite(stub(snSiteId)).stream()
                 .map(mapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static TurSNSite stub(String id) {
