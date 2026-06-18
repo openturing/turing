@@ -254,7 +254,7 @@ public class TurLuceneIntentClassifier implements TurIntentClassifierStrategy {
         for (String line : raw.split("\n")) {
             String trimmed = line.trim();
             if (trimmed.isEmpty()) continue;
-            if (sb.length() > 0) sb.append(' ');
+            if (!sb.isEmpty()) sb.append(' ');
             sb.append(trimmed);
         }
         return sb.toString();

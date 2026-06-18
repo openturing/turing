@@ -653,7 +653,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
             if (value != null) {
                 String text = value.toString().trim();
                 if (!text.isEmpty()) {
-                    if (sb.length() > 0) {
+                    if (!sb.isEmpty()) {
                         sb.append(' ');
                     }
                     sb.append(text);

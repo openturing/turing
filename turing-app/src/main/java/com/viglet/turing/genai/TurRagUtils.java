@@ -109,7 +109,7 @@ public final class TurRagUtils {
             if (unit.isEmpty()) {
                 continue;
             }
-            if (current.length() == 0) {
+            if (current.isEmpty()) {
                 current.append(unit);
                 continue;
             }
@@ -122,7 +122,7 @@ public final class TurRagUtils {
                 current.append(unit);
             }
         }
-        if (current.length() > 0) {
+        if (!current.isEmpty()) {
             chunks.add(current.toString().trim());
         }
         return chunks;
@@ -318,7 +318,7 @@ public final class TurRagUtils {
                 continue;
             }
             if (word.length() > chunkSize) {
-                if (buf.length() > 0) {
+                if (!buf.isEmpty()) {
                     parts.add(buf.toString().trim());
                     buf.setLength(0);
                 }
@@ -327,7 +327,7 @@ public final class TurRagUtils {
                 }
                 continue;
             }
-            if (buf.length() == 0) {
+            if (buf.isEmpty()) {
                 buf.append(word);
             } else if (buf.length() + 1 + word.length() <= chunkSize) {
                 buf.append(' ').append(word);
@@ -337,7 +337,7 @@ public final class TurRagUtils {
                 buf.append(word);
             }
         }
-        if (buf.length() > 0) {
+        if (!buf.isEmpty()) {
             parts.add(buf.toString().trim());
         }
         return parts;

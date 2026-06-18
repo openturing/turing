@@ -287,7 +287,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
                 if (nonBlank.isEmpty()) {
                     continue;
                 }
-                if (whereClause.length() > 0) {
+                if (!whereClause.isEmpty()) {
                     whereClause.append(" AND ");
                 }
                 String placeholders = String.join(",", nonBlank.stream().map(v -> "?").toList());
@@ -295,7 +295,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
                 bindings.addAll(nonBlank);
             }
         }
-        String whereSql = whereClause.length() > 0 ? " WHERE " + whereClause : "";
+        String whereSql = !whereClause.isEmpty() ? " WHERE " + whereClause : "";
 
         long total;
         try {

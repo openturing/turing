@@ -451,7 +451,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     private static String encodeToolLatencies(List<TurToolLatencySample> samples) {
         StringBuilder sb = new StringBuilder();
         for (TurToolLatencySample s : samples) {
-            if (sb.length() > 0) sb.append(';');
+            if (!sb.isEmpty()) sb.append(';');
             sb.append(s.tool().replace(';', '_').replace('|', '_'))
               .append('|').append(s.latencyMs())
               .append('|').append(s.success() ? '1' : '0');

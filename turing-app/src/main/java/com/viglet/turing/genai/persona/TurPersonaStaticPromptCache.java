@@ -120,7 +120,7 @@ public class TurPersonaStaticPromptCache {
         if (tone == null && style == null && verbosity == 0) {
             return;
         }
-        if (sb.length() > 0) {
+        if (!sb.isEmpty()) {
             sb.append("\n\n");
         }
         sb.append("# Style Guidelines\n");

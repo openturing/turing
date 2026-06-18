@@ -253,7 +253,7 @@ public class TurLlmIntentClassifier implements TurIntentClassifierStrategy {
                   .append("\n");
             }
         }
-        if (sb.length() == 0 && StringUtils.isNotBlank(firstUserMessage)) {
+        if (sb.isEmpty() && StringUtils.isNotBlank(firstUserMessage)) {
             sb.append("user: ").append(truncate(firstUserMessage, 800));
         }
         return sb.toString();
