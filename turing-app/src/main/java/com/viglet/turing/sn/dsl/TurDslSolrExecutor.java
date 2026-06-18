@@ -322,10 +322,9 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             }
             case TurDslQuery.Boosting(var positive, var negative, var negBoost) ->
                     "+(%s) -(%s)".formatted(translateClause(positive), translateClause(negative));
-            case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) -> {
-                // Solr: {!parent} or flatten — best effort: translate inner query
-                yield translateClause(nestedQuery);
-            }
+            // Solr: {!parent} or flatten — best effort: translate inner query
+            case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) ->
+                    translateClause(nestedQuery);
             case TurDslQuery.FunctionScore(var innerQuery, var functions,
                                             var sm, var bm, var mb, var ms) -> {
                 // Solr: boost query as fallback
@@ -347,11 +346,10 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             case TurDslQuery.ScriptScore(var innerQuery, var script, var ms) ->
                     translateClause(innerQuery);
             case TurDslQuery.Knn(var field, var queryVector, var k,
-                                  var numCandidates, var similarity, var filter) -> {
-                yield "{!knn f=%s topK=%d}[%s]".formatted(field, k,
-                        queryVector.stream().map(String::valueOf)
-                                .collect(Collectors.joining(",")));
-            }
+                                  var numCandidates, var similarity, var filter) ->
+                    "{!knn f=%s topK=%d}[%s]".formatted(field, k,
+                            queryVector.stream().map(String::valueOf)
+                                    .collect(Collectors.joining(",")));
             case TurDslQuery.MoreLikeThis(var fields, var likeText, var likeIds,
                                            var mtf, var mdf, var mqt) -> {
                 // Solr: {!mlt} query parser

@@ -272,9 +272,8 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
             case OR -> {
                 return combine("$or", expression);
             }
-            case NE, NIN, GT, GTE, LT, LTE, ISNULL, ISNOTNULL, NOT -> {
+            case NE, NIN, GT, GTE, LT, LTE, ISNULL, ISNOTNULL, NOT ->
                 throw new UnsupportedOperationException("Operator not supported: " + type);
-            }
             default -> throw new UnsupportedOperationException("Operator not supported: " + type);
         }
     }

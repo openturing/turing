@@ -204,9 +204,7 @@ public class TurNLFacetEvalScorer {
             return;
         }
         switch (q) {
-            case TurDslQuery.Term t -> {
-                addTerm(c, t.field(), String.valueOf(t.value()));
-            }
+            case TurDslQuery.Term t -> addTerm(c, t.field(), String.valueOf(t.value()));
             case TurDslQuery.Terms t -> {
                 if (t.values() != null) {
                     for (Object v : t.values()) {
