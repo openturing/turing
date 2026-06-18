@@ -2003,7 +2003,7 @@ public class TurChatFlowEngineService {
             return false;
         }
         for (String raw : userMessage.split("\\s+")) {
-            String trimmed = raw.replaceAll("^[^\\p{L}]+|[^\\p{L}]+$", "");
+            String trimmed = raw.replaceAll("(?:^[^\\p{L}]+)|(?:[^\\p{L}]+$)", "");
             if (trimmed.length() >= PROCEDURAL_MIN_TOKEN_LENGTH) {
                 return true;
             }

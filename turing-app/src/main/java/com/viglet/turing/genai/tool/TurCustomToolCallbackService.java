@@ -700,7 +700,7 @@ public class TurCustomToolCallbackService {
         }
         String sanitized = title.trim().toLowerCase()
                 .replaceAll("[^a-z0-9_]+", "_")
-                .replaceAll("^_+|_+$", "");
+                .replaceAll("(?:^_+)|(?:_+$)", "");
         return sanitized.isEmpty() ? "custom_tool" : sanitized;
     }
 }

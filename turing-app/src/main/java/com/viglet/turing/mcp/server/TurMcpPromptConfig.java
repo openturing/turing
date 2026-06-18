@@ -88,7 +88,7 @@ public class TurMcpPromptConfig {
         if (name == null || name.isBlank()) {
             return "persona";
         }
-        String s = name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
+        String s = name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(?:^-+)|(?:-+$)", "");
         return s.isBlank() ? "persona" : s;
     }
 }
