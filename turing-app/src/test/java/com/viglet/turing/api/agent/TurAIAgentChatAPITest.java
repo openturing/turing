@@ -431,12 +431,12 @@ class TurAIAgentChatAPITest {
         // (fromIterable + Flux.just); the 25s heartbeat hasn't fired.
         assertThat(received).hasSize(2);
         assertThat(received.get(0).event())
-                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.PUT);
+                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.EVENT_PUT);
         assertThat(received.get(0).key()).isEqualTo("reports/a.csv");
         assertThat(received.get(0).contentType()).isEqualTo("text/csv");
         assertThat(received.get(0).size()).isEqualTo(12L);
         assertThat(received.get(1).event())
-                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.DELETE);
+                .isEqualTo(com.viglet.turing.genai.workspace.TurWorkspaceEvent.EVENT_DELETE);
         assertThat(received.get(1).key()).isEqualTo("old.txt");
         sub.dispose();
     }

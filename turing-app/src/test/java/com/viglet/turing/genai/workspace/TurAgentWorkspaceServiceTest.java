@@ -183,7 +183,7 @@ class TurAgentWorkspaceServiceTest {
 
         assertEquals(1, events.size());
         TurWorkspaceEvent ev = events.get(0);
-        assertEquals(TurWorkspaceEvent.PUT, ev.event());
+        assertEquals(TurWorkspaceEvent.EVENT_PUT, ev.event());
         assertEquals(CONV, ev.conversationId());
         assertEquals("reports/b.csv", ev.key());
         assertEquals("text/csv", ev.contentType());
@@ -202,7 +202,7 @@ class TurAgentWorkspaceServiceTest {
         workspace.delete(AGENT, CONV, "tmp.txt");
 
         assertEquals(1, events.size());
-        assertEquals(TurWorkspaceEvent.DELETE, events.get(0).event());
+        assertEquals(TurWorkspaceEvent.EVENT_DELETE, events.get(0).event());
         assertEquals("tmp.txt", events.get(0).key());
         sub.dispose();
     }

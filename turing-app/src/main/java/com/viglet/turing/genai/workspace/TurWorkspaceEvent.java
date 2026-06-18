@@ -45,18 +45,18 @@ public record TurWorkspaceEvent(
         String signedUrl) {
 
     /** Wire token for a create/overwrite event. */
-    public static final String PUT = "put";
+    public static final String EVENT_PUT = "put";
     /** Wire token for a delete event. */
-    public static final String DELETE = "delete";
+    public static final String EVENT_DELETE = "delete";
 
     /** A {@code put} event carrying the artifact's current metadata. */
     public static TurWorkspaceEvent put(String conversationId, String key, String contentType,
             long size, String signedUrl) {
-        return new TurWorkspaceEvent(conversationId, PUT, key, contentType, size, signedUrl);
+        return new TurWorkspaceEvent(conversationId, EVENT_PUT, key, contentType, size, signedUrl);
     }
 
     /** A {@code delete} event — only the key is meaningful. */
     public static TurWorkspaceEvent delete(String conversationId, String key) {
-        return new TurWorkspaceEvent(conversationId, DELETE, key, null, 0L, null);
+        return new TurWorkspaceEvent(conversationId, EVENT_DELETE, key, null, 0L, null);
     }
 }

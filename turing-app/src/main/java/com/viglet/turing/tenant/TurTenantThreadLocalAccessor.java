@@ -28,7 +28,7 @@ import io.micrometer.context.ThreadLocalAccessor;
  */
 public class TurTenantThreadLocalAccessor implements ThreadLocalAccessor<String> {
 
-    public static final String KEY = "turing.tenant";
+    public static final String CONTEXT_KEY = "turing.tenant";
 
     private final TurTenantContext tenantContext;
 
@@ -38,7 +38,7 @@ public class TurTenantThreadLocalAccessor implements ThreadLocalAccessor<String>
 
     @Override
     public Object key() {
-        return KEY;
+        return CONTEXT_KEY;
     }
 
     @Override

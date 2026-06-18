@@ -41,16 +41,16 @@ class TurWorkspaceEventBusTest {
         bus.publish(TurWorkspaceEvent.delete("conv-1", "a.csv"));
 
         assertEquals(2, received.size());
-        assertEquals(TurWorkspaceEvent.PUT, received.get(0).event());
+        assertEquals(TurWorkspaceEvent.EVENT_PUT, received.get(0).event());
         assertEquals("a.csv", received.get(0).key());
-        assertEquals(TurWorkspaceEvent.DELETE, received.get(1).event());
+        assertEquals(TurWorkspaceEvent.EVENT_DELETE, received.get(1).event());
         sub.dispose();
     }
 
     @Test
     void deleteEventCarriesOnlyKey() {
         TurWorkspaceEvent ev = TurWorkspaceEvent.delete("conv-1", "reports/x.csv");
-        assertEquals(TurWorkspaceEvent.DELETE, ev.event());
+        assertEquals(TurWorkspaceEvent.EVENT_DELETE, ev.event());
         assertEquals("reports/x.csv", ev.key());
         assertEquals(0L, ev.size());
         assertTrue(ev.contentType() == null && ev.signedUrl() == null);

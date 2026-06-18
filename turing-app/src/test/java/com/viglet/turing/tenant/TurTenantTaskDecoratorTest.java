@@ -60,7 +60,7 @@ class TurTenantTaskDecoratorTest {
     void accessorReadsWritesAndClearsTheTenant() {
         TurTenantThreadLocalAccessor accessor = new TurTenantThreadLocalAccessor(context);
 
-        assertThat(accessor.key()).isEqualTo(TurTenantThreadLocalAccessor.KEY);
+        assertThat(accessor.key()).isEqualTo(TurTenantThreadLocalAccessor.CONTEXT_KEY);
         accessor.setValue("acme");
         assertThat(accessor.getValue()).isEqualTo("acme");
         accessor.setValue();
