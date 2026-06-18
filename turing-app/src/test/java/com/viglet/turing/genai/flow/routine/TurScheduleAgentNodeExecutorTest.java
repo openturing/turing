@@ -89,7 +89,7 @@ class TurScheduleAgentNodeExecutorTest {
         Map<String, String> vars = ChatFlowOps.readVariables(state);
         assertThat(vars).doesNotContainKey("__scheduleAgent_pending_" + NODE_ID);
         assertThat(vars).doesNotContainKey("__scheduleAgent_startedAt_" + NODE_ID);
-        assertThat(vars.get(OUTPUT_SLOT)).isEqualTo("https://example.com/proposal.pdf");
+        assertThat(vars).containsEntry(OUTPUT_SLOT, "https://example.com/proposal.pdf");
         verify(jms, never()).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE),
                 any(TurScheduleAgentMessage.class));
     }

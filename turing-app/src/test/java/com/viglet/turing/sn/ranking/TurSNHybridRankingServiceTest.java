@@ -141,8 +141,8 @@ class TurSNHybridRankingServiceTest {
                 Locale.ENGLISH, "query", page);
 
         assertThat(fused).hasSize(2);
-        assertThat(fused.get(0).getFields().get(TurSNFieldName.ID)).isEqualTo("B");
-        assertThat(fused.get(1).getFields().get(TurSNFieldName.ID)).isEqualTo("A");
+        assertThat(fused.get(0).getFields()).containsEntry(TurSNFieldName.ID, "B");
+        assertThat(fused.get(1).getFields()).containsEntry(TurSNFieldName.ID, "A");
     }
 
     @Test

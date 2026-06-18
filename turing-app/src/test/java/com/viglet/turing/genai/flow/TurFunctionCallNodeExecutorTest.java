@@ -73,7 +73,7 @@ class TurFunctionCallNodeExecutorTest {
         verify(callback).call("{\"site\": \"edu\", \"q\": \"machine learning\"}");
         assertThat(result.ok()).isTrue();
         assertThat(result.result()).isEqualTo("hit-1 hit-2 hit-3");
-        assertThat(ChatFlowOps.readVariables(state).get("ann_results")).isEqualTo("hit-1 hit-2 hit-3");
+        assertThat(ChatFlowOps.readVariables(state)).containsEntry("ann_results", "hit-1 hit-2 hit-3");
     }
 
     @Test

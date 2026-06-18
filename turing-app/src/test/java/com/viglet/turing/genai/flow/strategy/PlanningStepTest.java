@@ -243,7 +243,7 @@ class PlanningStepTest {
     void apply_nullModelWritesEmptyArray() {
         TurChatFlowState state = stateWith("{}");
         ChatFlowOps.applyPlanningStepNode(state, planningNode("__plan", null), null);
-        assertThat(ChatFlowOps.readVariables(state).get("__plan")).isEqualTo("[]");
+        assertThat(ChatFlowOps.readVariables(state)).containsEntry("__plan", "[]");
     }
 
     // ─────────────────────────── helpers ───────────────────────────

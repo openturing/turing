@@ -141,7 +141,7 @@ class TurSNSiteLocaleRepositoryAdapterTest {
 
         assertThat(domains).hasSize(2);
         assertThat(domains.get(0).id()).isEqualTo("locale-1");
-        assertThat(domains.get(0).position()).isEqualTo(0);
+        assertThat(domains.get(0).position()).isZero();
         assertThat(domains.get(0).language()).isEqualTo(Locale.US);
         assertThat(domains.get(1).id()).isEqualTo("locale-2");
         assertThat(domains.get(1).position()).isEqualTo(1);

@@ -152,9 +152,9 @@ class TurChatFlowRouterLanguageTest {
         // -s intact → distinct stems for running/runs that should collapse.
         Set<String> tokens = TurChatFlowEngineService.tokenize(
                 "running runs ran", new PortugueseAnalyzer());
-        assertThat(tokens.size())
+        assertThat(tokens)
                 .as("PT analyzer fails to collapse EN run/running/ran")
-                .isGreaterThan(1);
+                .hasSizeGreaterThan(1);
     }
 
     @Test
@@ -163,8 +163,8 @@ class TurChatFlowRouterLanguageTest {
         // "planos / plano / planejar" do NOT all share a stem under Porter.
         Set<String> tokens = TurChatFlowEngineService.tokenize(
                 "planos plano planejar", new EnglishAnalyzer());
-        assertThat(tokens.size())
+        assertThat(tokens)
                 .as("EN analyzer fails to collapse PT plano/planos/planejar")
-                .isGreaterThan(1);
+                .hasSizeGreaterThan(1);
     }
 }

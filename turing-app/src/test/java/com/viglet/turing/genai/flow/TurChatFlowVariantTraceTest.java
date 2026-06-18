@@ -59,8 +59,8 @@ class TurChatFlowVariantTraceTest {
                 flow, "ai-cargo", "Quero saber sobre o MBA");
         assertThat(trace).isPresent();
         // Spec: `experimentKey:variantLabel:nodeId:userMessage`
-        assertThat(trace.get())
-                .isEqualTo("programa-match-headline:lucas-alumni:ai-cargo:Quero saber sobre o MBA");
+        assertThat(trace)
+                .contains("programa-match-headline:lucas-alumni:ai-cargo:Quero saber sobre o MBA");
     }
 
     @Test

@@ -469,8 +469,8 @@ class TurCustomToolGroovyParserBugTest {
     @Test
     @DisplayName("backend sanitizer: null and empty don't NPE")
     void sanitizer_nullAndEmpty() {
-        assertThat(TurCustomToolCallbackService.sanitizeGroovySource(null)).isEqualTo("");
-        assertThat(TurCustomToolCallbackService.sanitizeGroovySource("")).isEqualTo("");
+        assertThat(TurCustomToolCallbackService.sanitizeGroovySource(null)).isEmpty();
+        assertThat(TurCustomToolCallbackService.sanitizeGroovySource("")).isEmpty();
     }
 
     @Test

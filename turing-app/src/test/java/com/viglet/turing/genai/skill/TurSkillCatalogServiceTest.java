@@ -140,7 +140,7 @@ class TurSkillCatalogServiceTest {
         TurSkill after = store.values().iterator().next();
         assertThat(after.getId()).isEqualTo(idBefore);
         assertThat(after.getVersion()).isEqualTo("2.0.0");
-        assertThat(after.getEnabled()).isEqualTo(0);
+        assertThat(after.getEnabled()).isZero();
     }
 
     @Test

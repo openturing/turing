@@ -256,7 +256,7 @@ class TurNLFacetEvalIT extends AbstractTuringSpringIT {
         // parser reliably emits modality=online — every returned doc must be online,
         // proving the parsed filter was applied to the live index.
         assertThat(hits)
-                .allSatisfy(h -> assertThat(h.source().get("modality")).isEqualTo("online"));
+                .allSatisfy(h -> assertThat(h.source()).containsEntry("modality", "online"));
     }
 
     // ─────────────── Setup helpers ───────────────

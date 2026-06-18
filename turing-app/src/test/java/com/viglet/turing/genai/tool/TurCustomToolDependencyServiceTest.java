@@ -206,7 +206,7 @@ class TurCustomToolDependencyServiceTest {
                 .isEqualTo(2);
         // Both dirs sit under the same store root but in different
         // hash-named subdirs.
-        assertThat(agentA.getParent()).isEqualTo(agentB.getParent());
+        assertThat(agentA).hasParentRaw(agentB.getParent());
     }
 
     @Test

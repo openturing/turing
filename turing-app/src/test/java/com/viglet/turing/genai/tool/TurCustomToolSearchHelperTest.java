@@ -353,8 +353,8 @@ class TurCustomToolSearchHelperTest {
 
         List<Map<String, Object>> hits = TurCustomToolSearchHelper.toSnHitList(List.of(doc));
 
-        assertThat(hits.get(0).get("source"))
+        assertThat(hits.get(0))
                 .as("reserved 'source' wins over a stored field with the same name")
-                .isEqualTo("solr");
+                .containsEntry("source", "solr");
     }
 }

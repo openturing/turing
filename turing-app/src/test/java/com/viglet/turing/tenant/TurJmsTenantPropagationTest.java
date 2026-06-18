@@ -60,7 +60,7 @@ class TurJmsTenantPropagationTest {
 
         propagation.runForHeader("acme", () -> seen.append(context.getCurrentTenant()));
 
-        assertThat(seen.toString()).isEqualTo("acme");
+        assertThat(seen).hasToString("acme");
         assertThat(context.getCurrentTenant()).isNull(); // cleared after
     }
 

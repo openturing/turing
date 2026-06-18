@@ -97,10 +97,10 @@ class TurAnalyticsIntentIndexerTest {
         verify(plugin).indexStandaloneDocument(eq(seInstance), eq("intent_agent1"),
                 docCaptor.capture());
         Map<String, Object> doc = docCaptor.getValue();
-        assertThat(doc.get("id")).isEqualTo("intent-1");
-        assertThat(doc.get("agentId")).isEqualTo("agent-1");
-        assertThat(doc.get("label")).isEqualTo("Refund request");
-        assertThat(doc.get("samples")).isEqualTo("refund money back");
+        assertThat(doc).containsEntry("id", "intent-1");
+        assertThat(doc).containsEntry("agentId", "agent-1");
+        assertThat(doc).containsEntry("label", "Refund request");
+        assertThat(doc).containsEntry("samples", "refund money back");
         verify(plugin).commitStandalone(seInstance, "intent_agent1");
     }
 
