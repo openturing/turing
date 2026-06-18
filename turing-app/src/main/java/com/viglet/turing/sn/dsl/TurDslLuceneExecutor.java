@@ -722,7 +722,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             for (String val : doc.getValues(field)) {
                 if (val != null && !val.isEmpty()) {
                     unique.add(val);
-                    try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+                    try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) { /* skip non-numeric values in numeric aggregation */ }
                 }
             }
         }
@@ -745,7 +745,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         for (ScoreDoc sd : allDocs.scoreDocs) {
             Document doc = searcher.storedFields().document(sd.doc);
             for (String val : doc.getValues(field)) {
-                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) { /* skip non-numeric values in numeric aggregation */ }
             }
         }
         Map<String, Double> stats = new LinkedHashMap<>();
@@ -764,7 +764,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         for (ScoreDoc sd : allDocs.scoreDocs) {
             Document doc = searcher.storedFields().document(sd.doc);
             for (String val : doc.getValues(pAgg.field())) {
-                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) { /* skip non-numeric values in numeric aggregation */ }
             }
         }
         Collections.sort(values);
@@ -818,7 +818,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         for (ScoreDoc sd : allDocs.scoreDocs) {
             Document doc = searcher.storedFields().document(sd.doc);
             for (String val : doc.getValues(prAgg.field())) {
-                try { allValues.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+                try { allValues.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) { /* skip non-numeric values in numeric aggregation */ }
             }
         }
         Collections.sort(allValues);
