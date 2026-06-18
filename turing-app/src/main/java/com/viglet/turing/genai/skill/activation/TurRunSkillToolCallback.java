@@ -74,8 +74,8 @@ public class TurRunSkillToolCallback implements ToolCallback {
             a dedicated model) and returns the result, which you should use to \
             answer the user.""";
 
-    private final transient Map<String, TurSkill> index;
-    private final transient TurSkillRunnerService runnerService;
+    private final Map<String, TurSkill> index;
+    private final TurSkillRunnerService runnerService;
     private final ToolDefinition definition;
 
     public TurRunSkillToolCallback(List<TurSkill> offeredSkills, TurSkillRunnerService runnerService) {

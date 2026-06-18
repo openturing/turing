@@ -79,9 +79,9 @@ public class TurSkillBashToolCallback implements ToolCallback {
             `load_skill`. Pass the skill `name` and the `command`. The container has \
             no network by default and limited CPU/memory.""";
 
-    private final transient Map<String, TurSkill> index;
-    private final transient TurSkillSandboxSessionManager sessionManager;
-    private final transient TurSkillSandboxService sandboxService;
+    private final Map<String, TurSkill> index;
+    private final TurSkillSandboxSessionManager sessionManager;
+    private final TurSkillSandboxService sandboxService;
     private final ToolDefinition definition;
 
     public TurSkillBashToolCallback(List<TurSkill> offeredSkills,

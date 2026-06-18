@@ -66,8 +66,8 @@ public class TurLoadSkillToolCallback implements ToolCallback {
             exactly as listed. After loading, follow the returned instructions and \
             use `skill_bash` to run the skill's scripts and read its bundled files.""";
 
-    private final transient Map<String, TurSkill> index;
-    private final transient TurSkillCatalogService catalogService;
+    private final Map<String, TurSkill> index;
+    private final TurSkillCatalogService catalogService;
     private final ToolDefinition definition;
 
     public TurLoadSkillToolCallback(List<TurSkill> offeredSkills, TurSkillCatalogService catalogService) {
