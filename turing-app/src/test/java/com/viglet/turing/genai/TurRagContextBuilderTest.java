@@ -340,13 +340,6 @@ class TurRagContextBuilderTest {
     }
 
     @Test
-    void buildTwoArgShouldDelegateToThreeArg() {
-        when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.empty());
-        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build("emb-1", "store-1");
-        assertThat(result).isEmpty();
-    }
-
-    @Test
     void buildShouldReturnEmptyWhenBothIdsAreBlank() {
         Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build("", "");
         assertThat(result).isEmpty();

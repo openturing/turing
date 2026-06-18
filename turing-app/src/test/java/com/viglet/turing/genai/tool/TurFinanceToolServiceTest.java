@@ -76,7 +76,10 @@ class TurFinanceToolServiceTest {
     @CsvSource({
             "1500000000, '1[.,]5B'",
             "2500000, '2[.,]5M'",
-            "50000, '50[.,]0K'"
+            "50000, '50[.,]0K'",
+            "1000000000, '1[.,]0B'",
+            "1000000, '1[.,]0M'",
+            "1000, '1[.,]0K'"
     })
     void shouldFormatVolume(long value, String expectedPattern) throws Exception {
         Method method = TurFinanceToolService.class.getDeclaredMethod("formatVolume", long.class);
@@ -406,20 +409,6 @@ class TurFinanceToolServiceTest {
                 .contains("Symbol: AAPL")
                 .contains("Apple Inc.")
                 .contains("Current Quote");
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-            "1000000000, '1[.,]0B'",
-            "1000000, '1[.,]0M'",
-            "1000, '1[.,]0K'"
-    })
-    void shouldFormatVolumeAtBoundaries(long value, String expectedPattern) throws Exception {
-        Method method = TurFinanceToolService.class.getDeclaredMethod("formatVolume", long.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, value);
-        assertThat(result).matches(expectedPattern);
     }
 
     @Test

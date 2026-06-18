@@ -248,10 +248,8 @@ public class TurAnnSearchAPI {
     }
 
     private int clampPageSize(Integer requested) {
-        if (requested == null || requested <= 0) {
-            return DEFAULT_TOP_K;
-        }
-        return Math.min(requested, MAX_TOP_K);
+        // Page size and top-K share the same bounds; delegate to keep one source of truth.
+        return clampTopK(requested);
     }
 
     private int clampTopK(Integer requested) {
