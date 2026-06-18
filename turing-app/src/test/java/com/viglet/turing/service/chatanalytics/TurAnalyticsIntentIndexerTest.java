@@ -179,7 +179,6 @@ class TurAnalyticsIntentIndexerTest {
     @Test
     void perAgentBindingWinsOverConfiguredProperty() {
         TurSEInstance agentBoundSe = mockSeInstance("agent-bound");
-        TurSEInstance configuredSe = mockSeInstance("configured");
         TurAIAgent agent = new TurAIAgent();
         agent.setId("agent-1");
         agent.setAnalyticsSeInstance(agentBoundSe);

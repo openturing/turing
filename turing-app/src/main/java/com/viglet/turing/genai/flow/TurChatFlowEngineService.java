@@ -1277,7 +1277,7 @@ public class TurChatFlowEngineService {
         // terminal leaf remains after this method returns.
         int resetCount = resetAllStatesForAgent(conversationId, agent.getId());
 
-        TurChatFlowState leaf = createInitialStateWithSeed(conversationId, flow, graph, seedSlots);
+        createInitialStateWithSeed(conversationId, flow, graph, seedSlots);
 
         log.info("[FlowEngine.pinFlow] conv='{}' agent='{}' selector='{}' → flow='{}' "
                 + "(name='{}'), reset {} prior state(s), seeded {} slot(s)",

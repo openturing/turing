@@ -175,7 +175,6 @@ public class TurRagBm25Indexer {
     @Transactional
     public boolean clear(TurRagBm25Core core) {
         ensureProvisioned(core);
-        TurSearchEnginePlugin plugin = pluginFactory.getPluginForInstance(core.getTurSEInstance());
         // deleteByField with a match-all-ish query is engine-dependent;
         // the simpler and more portable path is delete-by-field on a
         // sentinel that every chunk has. Every RAG chunk has FIELD_ID
