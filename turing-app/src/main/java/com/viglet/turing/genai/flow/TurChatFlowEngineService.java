@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -2245,40 +2246,36 @@ public class TurChatFlowEngineService {
      */
     private static void collectBucketScores(AnalyzerBucket bucket, Set<String> eligibleIds,
             String userMessage, Map<String, Float> sink) {
-        IndexSearcher searcher = null;
+        SearcherManager searcherManager = bucket.searcherManager();
         try {
-            searcher = bucket.searcherManager().acquire();
-            MoreLikeThis moreLikeThis = new MoreLikeThis(searcher.getIndexReader());
-            moreLikeThis.setAnalyzer(bucket.analyzer());
-            moreLikeThis.setFieldNames(new String[] { MLT_FIELD_TRIGGER });
-            moreLikeThis.setMinTermFreq(1);
-            moreLikeThis.setMinDocFreq(1);
-            moreLikeThis.setMinWordLen(2);
-            moreLikeThis.setMaxQueryTerms(25);
-            Query query = moreLikeThis.like(MLT_FIELD_TRIGGER, new StringReader(userMessage));
-            int topK = Math.max(2, bucket.docCount());
-            TopDocs hits = searcher.search(query, topK);
-            if (hits.scoreDocs.length == 0) {
-                return;
-            }
-            StoredFields storedFields = searcher.storedFields();
-            for (ScoreDoc sd : hits.scoreDocs) {
-                String flowId = storedFields.document(sd.doc).get(MLT_FIELD_ID);
-                if (flowId == null || !eligibleIds.contains(flowId)) {
-                    continue;
+            IndexSearcher searcher = searcherManager.acquire();
+            // Release the searcher back to the manager (never close()) via an
+            // AutoCloseable lease so the body reads as try-with-resources.
+            try (Closeable ignored = () -> searcherManager.release(searcher)) {
+                MoreLikeThis moreLikeThis = new MoreLikeThis(searcher.getIndexReader());
+                moreLikeThis.setAnalyzer(bucket.analyzer());
+                moreLikeThis.setFieldNames(new String[] { MLT_FIELD_TRIGGER });
+                moreLikeThis.setMinTermFreq(1);
+                moreLikeThis.setMinDocFreq(1);
+                moreLikeThis.setMinWordLen(2);
+                moreLikeThis.setMaxQueryTerms(25);
+                Query query = moreLikeThis.like(MLT_FIELD_TRIGGER, new StringReader(userMessage));
+                int topK = Math.max(2, bucket.docCount());
+                TopDocs hits = searcher.search(query, topK);
+                if (hits.scoreDocs.length == 0) {
+                    return;
                 }
-                sink.merge(flowId, sd.score, Math::max);
+                StoredFields storedFields = searcher.storedFields();
+                for (ScoreDoc sd : hits.scoreDocs) {
+                    String flowId = storedFields.document(sd.doc).get(MLT_FIELD_ID);
+                    if (flowId == null || !eligibleIds.contains(flowId)) {
+                        continue;
+                    }
+                    sink.merge(flowId, sd.score, Math::max);
+                }
             }
         } catch (IOException e) {
             log.warn("[FlowEngine] Cached MoreLikeThis search failed: {}", e.getMessage());
-        } finally {
-            if (searcher != null) {
-                try {
-                    bucket.searcherManager().release(searcher);
-                } catch (IOException e) {
-                    log.debug("[FlowEngine] Failed to release IndexSearcher: {}", e.getMessage());
-                }
-            }
         }
     }
 
