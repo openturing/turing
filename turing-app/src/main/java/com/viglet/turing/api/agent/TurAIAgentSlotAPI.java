@@ -163,7 +163,7 @@ public class TurAIAgentSlotAPI {
         if (name.length() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Slot name is too long");
         }
-        if (!name.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+        if (!name.matches("[A-Za-z_]\\w*")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Slot name must start with a letter or underscore and contain only letters, digits, and underscores");
         }

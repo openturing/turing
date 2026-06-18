@@ -206,7 +206,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         }
         // Timeout
         if (request.timeout() != null) {
-            solrQuery.setParam("timeAllowed", request.timeout().replaceAll("[^0-9]", ""));
+            solrQuery.setParam("timeAllowed", request.timeout().replaceAll("\\D", ""));
         }
         // Suggest → Solr spellcheck component
         if (request.suggest() != null && !request.suggest().isEmpty()) {

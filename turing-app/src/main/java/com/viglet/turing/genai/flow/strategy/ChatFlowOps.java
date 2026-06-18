@@ -64,7 +64,7 @@ public final class ChatFlowOps {
     /** Validation patterns understood by node {@code validationRule} fields. */
     private static final Map<String, Pattern> VALIDATION_PATTERNS = Map.ofEntries(
             Map.entry("email", Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b")),
-            Map.entry("phone", Pattern.compile("\\+?[0-9][0-9 ()\\-]{6,}\\b")),
+            Map.entry("phone", Pattern.compile("\\+?\\d[0-9 ()\\-]{6,}\\b")),
             Map.entry("url",   Pattern.compile("https?://[\\w.\\-/?#=&%+]+", Pattern.CASE_INSENSITIVE)),
             Map.entry("number",Pattern.compile("-?\\d+(?:[.,]\\d+)?")),
             Map.entry("date",  Pattern.compile("\\b\\d{1,4}[/-]\\d{1,2}[/-]\\d{1,4}\\b")),

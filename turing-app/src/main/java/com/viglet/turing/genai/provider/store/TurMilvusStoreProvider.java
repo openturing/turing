@@ -479,7 +479,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
             String key = e.getKey();
             List<String> values = e.getValue();
             if (key == null || key.isBlank() || values == null || values.isEmpty()
-                    || !key.matches("[A-Za-z0-9_]+")) {
+                    || !key.matches("\\w+")) {
                 continue;
             }
             List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();

@@ -338,7 +338,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
      * malicious filter key cannot break out of the {@code ->>} expression.
      */
     private static String sanitizeMetadataKey(String key) {
-        if (key == null || key.isBlank() || !key.matches("[A-Za-z0-9_]+")) {
+        if (key == null || key.isBlank() || !key.matches("\\w+")) {
             return null;
         }
         return key;

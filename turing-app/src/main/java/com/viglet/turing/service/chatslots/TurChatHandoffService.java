@@ -244,7 +244,7 @@ public class TurChatHandoffService {
     private static String buildWhatsAppUrl(String phone, String body) {
         // Strip non-digits — WhatsApp's wa.me expects digits-only (with
         // country code). Tolerant of "+55 11 99999-9999" / "(11) 99999-9999".
-        String digits = phone.replaceAll("[^0-9]", "");
+        String digits = phone.replaceAll("\\D", "");
         return WHATSAPP_LINK_BASE + digits + "?text=" + urlEncode(body);
     }
 
