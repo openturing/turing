@@ -55,7 +55,9 @@ public class TurChatSlotSseRegistry {
     public enum Mode {
         SNAPSHOT, DELTA,
         /** T113 — the per-conversation workspace artifact stream. */
-        WORKSPACE;
+        WORKSPACE,
+        /** T120 — the per-conversation spectator message stream. */
+        SPECTATE;
 
         /** Lowercase wire token used in the DTO and the SDK key. */
         public String wire() {

@@ -253,6 +253,7 @@ const mainFlow = defineFlow({
                 { id: "opt-ouro", label: "ouroboros", subFlowId: "chaos-ouroboros" },
                 { id: "opt-sched", label: "scheduler", subFlowId: "chaos-scheduler" },
                 { id: "opt-suspend", label: "suspend", subFlowId: "chaos-suspend" },
+                { id: "opt-approval", label: "approval", subFlowId: "chaos-approval" },
             ],
         },
         {
@@ -620,6 +621,61 @@ const suspendFlow = defineFlow({
         { source: "slot-post", target: "end-suspend" },
     ],
 });
+/* ─────────────────────────── Sub-flow: human approval (HITL) ───────────────────────────
+ * start → slot → humanApproval → slot → end. The mirror of the suspend
+ * sub-flow above, but parking on a real T119 {@code humanApproval} node
+ * instead of a generic {@code suspend}: loadOrInitState parks the cursor on
+ * the approval node (ensurePending raises a PENDING record + best-effort
+ * notification), and recording the operator's decision into the approvalSlot
+ * (via the approval endpoint, the T120 co-pilot, or the timeout sweep) pops it
+ * and advances to the end. Exercises the HITL parking path side-by-side with
+ * the generic suspend gate — a path no other harness fixture covered.
+ */
+const approvalFlow = defineFlow({
+    id: "chaos-approval",
+    name: "Absurd Approval Bureau",
+    description: "Parks on a humanApproval node until an operator's decision lands in the approval slot — the T119 HITL analogue of the suspend hold.",
+    enabled: 1,
+    guardrailMethod: "HEURISTIC",
+    triggerMode: "ONCE",
+    nodes: [
+        { id: "start", type: "start" },
+        {
+            id: "slot-pre-approval",
+            type: "slot",
+            slotName: "approval_pre",
+            slotOperation: "SET",
+            slotValue: "before",
+        },
+        {
+            id: "approval-gate",
+            type: "humanApproval",
+            label: "Awaiting absurd human approval",
+            humanApproval: {
+                channel: "email",
+                target: "absurd-approver@ministry.test",
+                template: "Approve the absurd quest '{{quest_name}}'? (chaos_key={{chaos_key}})",
+                approvalSlot: "operator_decision",
+                timeoutSeconds: 3600,
+                timeoutBehavior: "auto_reject",
+            },
+        },
+        {
+            id: "slot-post-approval",
+            type: "slot",
+            slotName: "approval_post",
+            slotOperation: "SET",
+            slotValue: "after",
+        },
+        { id: "end-approval", type: "end" },
+    ],
+    edges: [
+        { source: "start", target: "slot-pre-approval" },
+        { source: "slot-pre-approval", target: "approval-gate" },
+        { source: "approval-gate", target: "slot-post-approval" },
+        { source: "slot-post-approval", target: "end-approval" },
+    ],
+});
 /**
  * The complete bundle. Element 0 (the main flow) is the entry point; the
  * rest are descended into by {@code subFlow} / {@code subFlowSwitch} nodes,
@@ -633,6 +689,7 @@ export const chaoticBundle = defineBundle([
     ouroborosFlow,
     schedulerFlow,
     suspendFlow,
+    approvalFlow,
 ]);
 export default chaoticBundle;
 //# sourceMappingURL=chaotic-chatflow.js.map

@@ -9,9 +9,14 @@
  */
 package com.viglet.turing.api.chat;
 
+import java.time.Duration;
+
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +27,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
+import com.viglet.turing.genai.spectator.TurChatMessageEvent;
+import com.viglet.turing.genai.spectator.TurChatMessageEventBus;
+import com.viglet.turing.genai.spectator.TurCopilotService;
+import com.viglet.turing.genai.spectator.TurCopilotService.ManualTurnResult;
+import com.viglet.turing.genai.workspace.TurWorkspaceEvent;
+import com.viglet.turing.genai.workspace.TurWorkspaceEventBus;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionExportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessagesDto;
@@ -30,11 +42,14 @@ import com.viglet.turing.persistence.dto.agent.TurChatSlotAuditDto;
 import com.viglet.turing.persistence.model.agent.TurChatSlotAuditEntry;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.chatslots.TurChatSlotAuditService;
+import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
+import com.viglet.turing.service.chatslots.TurChatSlotSseRegistry;
 import com.viglet.turing.service.chatslots.TurSubmissionRetentionService;
 import com.viglet.turing.system.TurLlmSummaryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import reactor.core.publisher.Flux;
 
 /**
  * Cross-agent lookup of variables collected during a single chat session.
@@ -79,17 +94,32 @@ public class TurChatSessionAPI {
     private final TurLlmSummaryService llmSummaryService;
     private final TurChatSlotAuditService slotAuditService;
     private final TurSubmissionRetentionService submissionRetentionService;
+    private final TurChatMessageEventBus chatMessageEventBus;
+    private final TurChatSlotEventBus slotEventBus;
+    private final TurWorkspaceEventBus workspaceEventBus;
+    private final TurChatSlotSseRegistry slotSseRegistry;
+    private final TurCopilotService copilotService;
 
     public TurChatSessionAPI(TurChatFlowEngineService chatFlowEngineService,
             TurChatMemoryService chatMemoryService,
             TurLlmSummaryService llmSummaryService,
             TurChatSlotAuditService slotAuditService,
-            TurSubmissionRetentionService submissionRetentionService) {
+            TurSubmissionRetentionService submissionRetentionService,
+            TurChatMessageEventBus chatMessageEventBus,
+            TurChatSlotEventBus slotEventBus,
+            TurWorkspaceEventBus workspaceEventBus,
+            TurChatSlotSseRegistry slotSseRegistry,
+            TurCopilotService copilotService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatMemoryService = chatMemoryService;
         this.llmSummaryService = llmSummaryService;
         this.slotAuditService = slotAuditService;
         this.submissionRetentionService = submissionRetentionService;
+        this.chatMessageEventBus = chatMessageEventBus;
+        this.slotEventBus = slotEventBus;
+        this.workspaceEventBus = workspaceEventBus;
+        this.slotSseRegistry = slotSseRegistry;
+        this.copilotService = copilotService;
     }
 
     @Operation(summary = "List slots captured during a chat session, merged into a "
@@ -179,6 +209,139 @@ public class TurChatSessionAPI {
         // submissions now that the bundle is built. No-op for the other modes.
         submissionRetentionService.applyPostExportRetention(conversationId);
         return response;
+    }
+
+    // ---------------------------------------------------------------------
+    // T120 — Spectator + Co-pilot mode
+    //
+    // A spectating operator opens /conversation/{id}?spectate=true in the admin
+    // console and watches a conversation they did not initiate, live, over three
+    // conversation-scoped SSE streams below (message / slots / workspace).
+    // Toggling ?manual=true lets them take the wheel for a turn via the
+    // manual-turn endpoint — the LLM is skipped and the operator's text becomes
+    // the assistant message, written through the same flow-advance + telemetry
+    // path so slots and analytics stay consistent.
+    // ---------------------------------------------------------------------
+
+    @Operation(summary = "T120 — current flow/cursor state for a conversation: the "
+            + "active flow id/name, the current node, the guardrail method, A/B "
+            + "experiment metadata, and a suspended reason when the cursor parks on a "
+            + "suspend/humanApproval node. Powers the spectator header.")
+    @GetMapping("/{conversationId}/state")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public ConversationStateDto conversationState(@PathVariable String conversationId) {
+        return chatFlowEngineService.getConversationState(conversationId);
+    }
+
+    @Operation(summary = "T120 — live message stream for a spectated conversation. "
+            + "Emits a transcript snapshot (one event per stored chat-memory message) "
+            + "then one event per completed turn (visitor + assistant), whether the "
+            + "assistant reply came from the LLM or an operator who took the wheel "
+            + "(manual=true). 25s comment heartbeat; single-node bus, same caveat as "
+            + "the slot/workspace streams.")
+    @GetMapping(value = "/{conversationId}/spectate/stream",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public Flux<ServerSentEvent<TurChatMessageEvent>> spectateMessages(
+            @PathVariable String conversationId,
+            @RequestParam(defaultValue = "200") int snapshotLimit) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return Flux.empty();
+        }
+        Flux<TurChatMessageEvent> snapshot = Flux.fromIterable(
+                chatMemoryService.listMessages(conversationId, snapshotLimit).messages())
+                .map(m -> new TurChatMessageEvent(conversationId, m.role(), m.content(), false, 0L));
+        Flux<ServerSentEvent<TurChatMessageEvent>> data =
+                Flux.concat(snapshot, chatMessageEventBus.subscribe(conversationId))
+                        .map(event -> ServerSentEvent.<TurChatMessageEvent>builder(event).build());
+        return Flux.merge(data, TurChatSessionAPI.<TurChatMessageEvent>heartbeat())
+                .doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+                        TurChatSlotSseRegistry.Mode.SPECTATE))
+                .doFinally(sig -> slotSseRegistry.release(conversationId,
+                        TurChatSlotSseRegistry.Mode.SPECTATE));
+    }
+
+    @Operation(summary = "T120 — conversation-scoped live slot stream for spectator "
+            + "mode. Prepends the current merged slot snapshot, then relays every slot "
+            + "write. Mirrors the public /api/sn/{site}/chat/slots/stream but keyed only "
+            + "on the conversation, so a spectator needs no site/agent context.")
+    @GetMapping(value = "/{conversationId}/spectate/slots/stream",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public Flux<ServerSentEvent<TurChatSessionSlotsDto>> spectateSlots(
+            @PathVariable String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return Flux.empty();
+        }
+        TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
+        Flux<ServerSentEvent<TurChatSessionSlotsDto>> data =
+                Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId))
+                        .map(event -> ServerSentEvent.<TurChatSessionSlotsDto>builder(event).build());
+        return Flux.merge(data, TurChatSessionAPI.<TurChatSessionSlotsDto>heartbeat())
+                .doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+                        TurChatSlotSseRegistry.Mode.SNAPSHOT))
+                .doFinally(sig -> slotSseRegistry.release(conversationId,
+                        TurChatSlotSseRegistry.Mode.SNAPSHOT));
+    }
+
+    @Operation(summary = "T120 — conversation-scoped live workspace stream for "
+            + "spectator mode. Relays workspace blob put/delete metadata as it happens. "
+            + "Live-only (no initial snapshot — the artifact list is agent-scoped and "
+            + "the spectator path is keyed on the conversation alone).")
+    @GetMapping(value = "/{conversationId}/spectate/workspace/stream",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public Flux<ServerSentEvent<TurWorkspaceEvent>> spectateWorkspace(
+            @PathVariable String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return Flux.empty();
+        }
+        Flux<ServerSentEvent<TurWorkspaceEvent>> data = workspaceEventBus.subscribe(conversationId)
+                .map(event -> ServerSentEvent.<TurWorkspaceEvent>builder(event).build());
+        return Flux.merge(data, TurChatSessionAPI.<TurWorkspaceEvent>heartbeat())
+                .doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
+                        TurChatSlotSseRegistry.Mode.WORKSPACE))
+                .doFinally(sig -> slotSseRegistry.release(conversationId,
+                        TurChatSlotSseRegistry.Mode.WORKSPACE));
+    }
+
+    /**
+     * T120 — co-pilot "take the wheel": inject an operator-authored assistant
+     * turn. Skips the LLM; the operator's {@code assistantMessage} becomes the
+     * reply and (when paired with a {@code userMessage}) the flow advances
+     * through the same path a normal turn uses, so slots/analytics stay
+     * consistent. The reply reaches the visitor and any spectator via the
+     * message bus.
+     */
+    @Operation(summary = "T120 — co-pilot manual turn. The operator's text becomes the "
+            + "assistant message (LLM skipped); the flow advances and telemetry records "
+            + "exactly as a normal turn, keeping slots and analytics consistent.")
+    @PostMapping("/{conversationId}/manual-turn")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public ManualTurnResult manualTurn(@PathVariable String conversationId,
+            @RequestBody ManualTurnRequest request) {
+        return copilotService.manualTurn(conversationId,
+                request == null ? null : request.agentId(),
+                request == null ? null : request.flowId(),
+                request == null ? null : request.userMessage(),
+                request == null ? null : request.assistantMessage());
+    }
+
+    /**
+     * Body of {@code POST /{conversationId}/manual-turn}. {@code agentId} and
+     * {@code assistantMessage} are required; {@code flowId} defaults to the
+     * conversation's active flow and {@code userMessage} is the visitor message
+     * being answered (omit for a pure operator interjection that does not
+     * advance the flow).
+     */
+    public record ManualTurnRequest(String agentId, String flowId, String userMessage,
+            String assistantMessage) {
+    }
+
+    /** 25s comment heartbeat shared by the three spectator SSE streams. */
+    private static <T> Flux<ServerSentEvent<T>> heartbeat() {
+        return Flux.interval(Duration.ofSeconds(25))
+                .map(tick -> ServerSentEvent.<T>builder().comment("heartbeat").build());
     }
 
     private java.util.List<TurChatSlotAuditDto.Entry> slotAuditEntries(String conversationId) {

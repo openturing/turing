@@ -62,7 +62,12 @@ class TurChatSessionExportTest {
         TurLlmSummaryService summary = mock(TurLlmSummaryService.class);
         audit = mock(TurChatSlotAuditService.class);
         retention = mock(TurSubmissionRetentionService.class);
-        api = new TurChatSessionAPI(engine, memory, summary, audit, retention);
+        api = new TurChatSessionAPI(engine, memory, summary, audit, retention,
+                mock(com.viglet.turing.genai.spectator.TurChatMessageEventBus.class),
+                mock(com.viglet.turing.service.chatslots.TurChatSlotEventBus.class),
+                mock(com.viglet.turing.genai.workspace.TurWorkspaceEventBus.class),
+                mock(com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.class),
+                mock(com.viglet.turing.genai.spectator.TurCopilotService.class));
     }
 
     private TurChatSlotAuditEntry auditEntry(String slot, String oldV, String newV,

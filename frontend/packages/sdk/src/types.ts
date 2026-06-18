@@ -183,6 +183,10 @@ export interface TurLlmVendor {
   readonly id: string;
   readonly title: string;
   readonly description?: string;
+  /** Provider plugin type (e.g. `openai`); present on the `/llm/vendor` list. */
+  readonly plugin?: string;
+  /** Vendor website; present on the `/llm/vendor` list. */
+  readonly website?: string;
 }
 
 export interface TurLlmInstance {

@@ -25,4 +25,5 @@ export { StoreRoutes } from "./store.routes";
 export { TokenUsageRoutes } from "./token-usage.routes";
 export { ChatAnalyticsRoutes } from "./chat-analytics.routes";
 export { ParkedConversationsRoutes } from "./parked-conversations.routes";
+export { ConversationRoutes } from "./conversation.routes";
 export { UserRoutes } from "./user.routes";

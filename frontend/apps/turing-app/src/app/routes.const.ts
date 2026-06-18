@@ -33,6 +33,7 @@ export const ROUTES = {
   TOKEN_USAGE: `${consolePath}/token-usage`,
   CHAT_ANALYTICS: `${consolePath}/chat-analytics`,
   PARKED_CONVERSATIONS: `${consolePath}/parked-conversations`,
+  CONVERSATION_DETAIL: `${consolePath}/conversation`,
   MCP_ROOT: `${consolePath}/mcp`,
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
   CUSTOM_TOOL_ROOT: `${consolePath}/custom-tool`,

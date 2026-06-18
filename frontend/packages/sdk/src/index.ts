@@ -44,6 +44,17 @@ export {
   fetchAgentContextInfo,
   fetchAutoComplete,
   fetchSortOptions,
+  fetchSimilar,
+  postSiteSlotUpload,
+  postSiteChatResume,
+  fetchSpellCheck,
+  dslSearch,
+  dslQuery,
+  fetchDiscovery,
+  fetchFeatures,
+  fetchSystemLocales,
+  fetchLlmVendors,
+  postSummary,
   parseHrefToParams,
   createTuringApi,
   CHAT_DISABLED_HINTS,
@@ -68,6 +79,19 @@ export type {
   TurChatHandoffChannel,
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
+  TurSimilarMode,
+  TurSimilarResult,
+  FetchSimilarParams,
+  TurChatSlotUploadResponse,
+  PostSlotUploadOptions,
+  TurChatResumeResponse,
+  TurDslSearchRequest,
+  TurDslSearchHit,
+  TurDslSearchResponse,
+  TurDiscoveryInfo,
+  TurFeaturesInfo,
+  TurSystemLocale,
+  TurSummaryResult,
   TuringApi,
 } from "./api";
 
@@ -140,6 +164,13 @@ export type {
   SlotsControllerScope,
   SlotsStatus,
 } from "./controllers/slots";
+export { createSimilarController } from "./controllers/similar";
+export type {
+  SimilarController,
+  SimilarControllerState,
+  SimilarControllerOptions,
+  SimilarStatus,
+} from "./controllers/similar";
 
 // ── Types ──
 export type {

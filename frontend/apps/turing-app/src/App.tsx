@@ -36,6 +36,7 @@ import {
   TokenUsageRoutes,
   ChatAnalyticsRoutes,
   ParkedConversationsRoutes,
+  ConversationRoutes,
   UserRoutes
 } from "./app/routes"
 import { ROUTES } from "./app/routes.const"
@@ -91,6 +92,7 @@ function App() {
                 {TokenUsageRoutes}
                 {ChatAnalyticsRoutes}
                 {ParkedConversationsRoutes}
+                {ConversationRoutes}
                 {UserRoutes}
                 {AdminRoutes}
               </Route>

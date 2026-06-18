@@ -30,6 +30,7 @@ const DEFAULT_LABEL = {
     switch: "SWITCH",
     slot: "SLOT",
     writeSlot: "WRITE SLOT",
+    humanApproval: "HUMAN APPROVAL",
     suspend: "SUSPEND",
 };
 /**
@@ -359,6 +360,7 @@ const NODE_DATA_KEYS_BY_TYPE = {
     switch: ["switchVariable", "switchOptions"],
     slot: ["slotName", "slotOperation", "slotValue", "overrideExistingValue"],
     writeSlot: ["slotName", "slotValue"],
+    humanApproval: ["humanApproval"],
     suspend: [],
 };
 function copyDefinedFields(target, source, keys) {

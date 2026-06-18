@@ -31,6 +31,8 @@ import com.viglet.turing.genai.persona.TurPersonaToneValidator;
 import com.viglet.turing.genai.persona.TurPersonaValidationResult;
 import com.viglet.turing.genai.rag.TurRagSource;
 import com.viglet.turing.genai.rag.TurRagSourceCollector;
+import com.viglet.turing.genai.spectator.TurChatMessageEvent;
+import com.viglet.turing.genai.spectator.TurChatMessageEventBus;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -85,6 +87,7 @@ public class TurChatStreamingDispatcher {
     private final TurChatMemoryService chatMemoryService;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurToolExecutionLoop toolExecutionLoop;
+    private final TurChatMessageEventBus chatMessageEventBus;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -92,7 +95,8 @@ public class TurChatStreamingDispatcher {
             TurChatAnalyticsService chatAnalyticsService,
             TurChatMemoryService chatMemoryService,
             TurChatPipelineObservation chatPipelineObservation,
-            TurToolExecutionLoop toolExecutionLoop) {
+            TurToolExecutionLoop toolExecutionLoop,
+            TurChatMessageEventBus chatMessageEventBus) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -100,6 +104,7 @@ public class TurChatStreamingDispatcher {
         this.chatMemoryService = chatMemoryService;
         this.chatPipelineObservation = chatPipelineObservation;
         this.toolExecutionLoop = toolExecutionLoop;
+        this.chatMessageEventBus = chatMessageEventBus;
     }
 
     /**
@@ -430,6 +435,14 @@ public class TurChatStreamingDispatcher {
             }
         } catch (RuntimeException e) {
             log.debug("[AgentExec] turn telemetry failed: {}", e.getMessage());
+        }
+        // T120 — tee the completed turn onto the spectator message bus so an
+        // operator watching this conversation sees it fill in live. Best-effort,
+        // off the chat's critical path; a dropped event self-heals from the
+        // chat-memory snapshot on the spectator's next subscribe.
+        if (chatMessageEventBus != null && conversationId != null && !conversationId.isBlank()) {
+            chatMessageEventBus.publish(TurChatMessageEvent.user(conversationId, userMessage));
+            chatMessageEventBus.publish(TurChatMessageEvent.assistant(conversationId, assistantMessage));
         }
     }
 

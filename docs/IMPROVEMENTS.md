@@ -1266,20 +1266,8 @@ interop boundary.)
 Deep Agents has HITL as middleware (the harness pauses for you when
 appropriate). **Turing's better move**: HITL is a node type, visible in
 the editor, observable in the analytics, auditable in the slot audit
-log. The `humanApproval` node (T119) shipped — see CHANGELOG §E.4.
-
-#### IX.5.b Spectator + Co-pilot mode (T120, 💭)
-
-Where `humanApproval` is an *async, graph-declared* pause (notify →
-wait → resume), Spectator mode is the *live, in-the-loop* complement: an
-operator opens `/conversation/{id}?spectate=true` and watches the chat,
-slots, and workspace stream in real time over the T54/T63 SSE buses.
-Toggling `manual=true` lets them **take the wheel** for a turn — the LLM
-step is skipped and the operator's typed text becomes the assistant
-message, written through the same flow-advance path so slots and
-analytics stay consistent. The two compose: an approval node can hand
-off to a spectating operator who then co-drives the rest of the
-conversation.
+log. Both HITL tasks — the async `humanApproval` node (T119) and the
+live Spectator + Co-pilot mode (T120) — have shipped; see CHANGELOG §E.4.
 
 ### IX.6 Long-horizon tasks — explicit suspend / resume
 
@@ -2422,85 +2410,3 @@ are integration seams, not new primitives. **T393** shipped the `viglet-core` li
 neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG). None of
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
-
-## XXI. SDK / client parity (Block S)
-
-The two JavaScript SDKs — `@viglet/turing-sdk` (vanilla, zero-dep, for Adobe EDS /
-plain `<script>`) and `@viglet/turing-react-sdk` (hooks + UI) — are the supported
-way a website or catalog talks to Turing. A 2026-06-16 audit against the public
-REST/SSE surface confirmed the **core is well covered** (search, click,
-autocomplete, sort-options, the three chat modes, slots with poll/SSE/delta,
-workspace SSE, form-submit, flow-select, handoff, state, intents, slot-extract,
-context-info). The gaps are all endpoints that shipped in 2026.2–2026.3 **after**
-the SDK surface was last swept. The invariant for this block: every task lands in
-**both** SDKs (the React SDK keeps its own `core/` copy until that dependency is
-inverted) so they never diverge, and each new client function reuses the existing
-patterns (`fetchX` low-level fn → optional controller/hook → barrel export).
-
-### XXI.1 Public "similar documents" client (T400)
-
-T384 shipped `GET /sn/{site}/search/similar` but neither SDK wraps it. T400 adds the
-vanilla `fetchSimilar` + a `createSimilarController` (mirrors `createSearchController`:
-observable state, `resolveDocuments` mapping) and the React `useTuringSimilar` hook,
-plus an optional headless `TuringSimilarList` in `react-ui` so the admin and
-viglet.com skins share one renderer. The `mode` (VECTOR|MLT) and `rows` knobs are
-surfaced but optional — the default auto-selection is the common path. This is what
-lets a catalog render "similar courses" with a single hook instead of hand-rolling
-the fetch + field resolution.
-
-### XXI.2 Multimodal slot-upload + flow resume (T401)
-
-The SDKs already cover most of the chat-capture surface (`slot-extract`,
-`form-submit`, single-slot write) but miss two newer write paths: `slot-upload`
-(T64 — posting an IMAGE/AUDIO/FILE to a slot with optional vision-LLM extraction)
-and `chat/resume` (continuing a conversation parked at a suspend node, optionally
-applying slot updates). Both are small multipart/JSON POSTs that fit the existing
-slot-writer/handoff helper shape; without them a host app that captures a photo or
-parks a flow has to drop to raw `fetch`.
-
-### XXI.3 Spell-check client (T402)
-
-`GET /sn/{site}/{locale}/spell-check` returns "did you mean" corrections, but today
-a host either parses the spell-check block out of the search bean or skips the
-feature. T402 wraps it as a first-class `fetchSpellCheck` + `useTuringSpellCheck`
-so a search box can render corrections directly. Tiny, read-only, no streaming —
-the cheapest gap to close.
-
-### XXI.4 DSL search client (T403)
-
-The Elasticsearch-compatible `POST /sn/{site}/query` and `/_search` (2026.2.4) let a
-caller send a structured query (bool/match/filter/aggregations) instead of the
-facet-param layer the search controller builds. T403 exposes a typed `dslSearch`
-helper for power users (dashboards, custom relevance experiments, the catalog
-copilot's tool layer) that need full query control from JS. Lower priority than the
-end-user features above because the facet path covers the common case.
-
-### XXI.6 Platform discovery helpers (T405)
-
-Small read endpoints a widget needs to self-configure — `GET /discovery` (which
-sites exist), `/features` (which capabilities are on), `/locale` (supported
-locales), `/v2/summary`, `/llm/vendor` — have no SDK wrappers, so integrators
-hard-code site names and feature flags. T405 adds thin typed getters so a generic
-embed can discover its environment at runtime. Read-only, no state.
-
-### XXI.7 SDK parity guard (T406)
-
-The root cause this block exists: nothing fails when a new public endpoint ships
-without an SDK wrapper, so the SDKs silently drift behind the backend (exactly how
-T384 / slot-upload / resume / spell-check accumulated). T406 adds a contract test
-that enumerates the public, client-facing endpoints (the admin/console surface is
-explicitly out of scope) and asserts each has a vanilla **and** a React wrapper —
-failing CI otherwise. It depends on T400–T405 so the baseline is green when the
-guard turns on. After this, "ship a public endpoint" includes "ship its SDK
-wrapper" by construction.
-
-### Sequencing
-
-T400 first — it has a shipped dependency (T384) and the clearest customer pull
-(cursarei "similar courses"). T402 (spell-check) and T405 (discovery) are tiny,
-read-only quick wins that can land any time. T401 (slot-upload/resume) completes the
-chat surface and pairs naturally with whoever is next touching the chat widget. T403
-(DSL) is a power-user feature — schedule on demand (T404 semantic-chat shipped). T406
-(parity guard) lands **last**, once T400–T405 make the baseline green, then keeps it
-green going forward.
-

@@ -29,6 +29,17 @@ export {
   postSiteFormSubmit,
   fetchSiteChatState,
   fetchSortOptions,
+  fetchSimilar,
+  postSiteSlotUpload,
+  postSiteChatResume,
+  fetchSpellCheck,
+  dslSearch,
+  dslQuery,
+  fetchDiscovery,
+  fetchFeatures,
+  fetchSystemLocales,
+  fetchLlmVendors,
+  postSummary,
   parseHrefToParams,
   postClick,
   CHAT_DISABLED_HINTS,
@@ -52,6 +63,19 @@ export type {
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
   TurChatConversationState,
+  TurSimilarMode,
+  TurSimilarResult,
+  FetchSimilarParams,
+  TurChatSlotUploadResponse,
+  PostSlotUploadOptions,
+  TurChatResumeResponse,
+  TurDslSearchRequest,
+  TurDslSearchHit,
+  TurDslSearchResponse,
+  TurDiscoveryInfo,
+  TurFeaturesInfo,
+  TurSystemLocale,
+  TurSummaryResult,
 } from "./core/api";
 
 // ── Session ──
@@ -176,6 +200,41 @@ export type {
 } from "./hooks/use-turing-flow-chooser";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
+
+// ── Block S — SDK parity hooks (v2026.3.4) ──
+export { useTuringSimilar } from "./hooks/use-turing-similar";
+export type {
+  UseTuringSimilarReturn,
+  UseTuringSimilarOptions,
+} from "./hooks/use-turing-similar";
+export { useTuringSpellCheck } from "./hooks/use-turing-spell-check";
+export type {
+  UseTuringSpellCheckReturn,
+  UseTuringSpellCheckOptions,
+} from "./hooks/use-turing-spell-check";
+export { useTuringSlotUpload } from "./hooks/use-turing-slot-upload";
+export type {
+  UseTuringSlotUploadReturn,
+  UseTuringSlotUploadOptions,
+  SlotUploadStatus,
+} from "./hooks/use-turing-slot-upload";
+export { useTuringResume } from "./hooks/use-turing-resume";
+export type {
+  UseTuringResumeReturn,
+  UseTuringResumeOptions,
+  ResumeStatus,
+} from "./hooks/use-turing-resume";
+export { useTuringDslSearch } from "./hooks/use-turing-dsl-search";
+export type {
+  UseTuringDslSearchReturn,
+  UseTuringDslSearchOptions,
+  DslSearchStatus,
+} from "./hooks/use-turing-dsl-search";
+export { useTuringPlatformInfo } from "./hooks/use-turing-platform-info";
+export type {
+  UseTuringPlatformInfoReturn,
+  UseTuringPlatformInfoOptions,
+} from "./hooks/use-turing-platform-info";
 
 // ── UI Components ──
 // TuringSearchBar / TuringResultList / TuringPagination moved to

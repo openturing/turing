@@ -66,7 +66,9 @@
 
 ## E.4 — Human-in-the-loop (parity, made graph-visible)
 
-- 💭 **T120** (deps: T119) **Spectator + Co-pilot mode** — operator opens `/conversation/{id}?spectate=true`, sees live chat + slots + workspace, can take the wheel by toggling `manual=true` (LLM step is skipped on that turn; operator's text becomes the assistant mes… → §IX.5.b
+> **Block complete.** Both HITL tasks have shipped — the async, graph-declared
+> `humanApproval` node (T119) and the live, in-the-loop Spectator + Co-pilot mode
+> (T120). See [CHANGELOG.md](CHANGELOG.md) §E.4.
 
 ## E.6 — Context engineering enforcement
 
@@ -294,47 +296,6 @@
 > declarative, self-hosted structured-search engine** for public/enterprise catalogs
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
-
-## Block S — SDK / client parity (vanilla + React)
-
-> A cross-SDK audit (2026-06-16) of `@viglet/turing-sdk` (vanilla) and
-> `@viglet/turing-react-sdk` against the public REST/SSE surface found both
-> cover the search + chat + slots + workspace core well, but several endpoints
-> shipped in 2026.2–2026.3 have **no client wrapper** — newest first: similar
-> documents (T384), multimodal slot-upload (T64), flow resume, spell-check, the
-> DSL search endpoints, and `semantic-chat`. The SDKs drift behind the backend
-> because nothing fails when an endpoint ships without a wrapper. This block
-> closes the known gaps and adds a guard so it stops happening. Both SDKs must
-> stay in lockstep (the React SDK keeps its own `core/` copy for now). Design
-> rationale → §XXI.
-
-- 💭 **T400** (deps: T384 ✅) **SDK: public "similar documents" client** — wrap
-      `GET /sn/{site}/search/similar` in both SDKs: vanilla `fetchSimilar` + a
-      `createSimilarController`, React `useTuringSimilar` (and an optional headless
-      `TuringSimilarList` view in `react-ui`). Exposes the `mode` (VECTOR|MLT) +
-      `rows` knobs; reuses `resolveDocuments`. Lets a catalog render "similar
-      courses" with one hook. → §XXI.1
-- 💭 **T401** (deps: —) **SDK: multimodal slot-upload + flow resume** — wrap
-      `POST /sn/{site}/chat/slot-upload` (IMAGE/AUDIO/FILE + optional vision
-      extraction, T64) and `POST /sn/{site}/chat/resume` (resume a suspended
-      flow) in both SDKs, completing the chat-capture surface they already
-      half-cover (`slot-extract` / `form-submit`). → §XXI.2
-- 💭 **T402** (deps: —) **SDK: spell-check client** — wrap
-      `GET /sn/{site}/{locale}/spell-check` as `fetchSpellCheck` +
-      `useTuringSpellCheck` (suggested corrections / "did you mean"), so a search
-      box can surface corrections without parsing them out of the search bean. → §XXI.3
-- 💭 **T403** (deps: —) **SDK: DSL search client** — wrap the Elasticsearch-compatible
-      `POST /sn/{site}/query` + `/_search` (2026.2.4) as a typed `dslSearch` helper
-      for power users building structured queries (bool/match/filter/aggs) from JS
-      without the facet-param layer. → §XXI.4
-- 💭 **T405** (deps: —) **SDK: platform discovery helpers** — small read wrappers for
-      `GET /discovery`, `/features`, `/locale`, `/v2/summary`, `/llm/vendor` so a
-      widget self-configures (which sites/features/locales/vendors exist) instead
-      of hard-coding them. → §XXI.6
-- 💭 **T406** (deps: T400, T401, T402, T403, T404, T405) **SDK parity guard** — a
-      contract test that enumerates the public (client-facing) endpoints and fails
-      CI when one ships without a vanilla **and** React wrapper. Fixes the root
-      cause behind this block: the SDKs silently fall behind the backend. → §XXI.7
 
 ## Non-goals (do NOT add as tasks)
 

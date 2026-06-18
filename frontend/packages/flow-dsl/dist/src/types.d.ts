@@ -44,7 +44,7 @@ export type PersonaLanguageStyle = "NEUTRAL" | "DIRECT" | "NARRATIVE" | "PERSUAS
  * All node kinds the editor (and engine) understand. New types added on
  * the backend must be listed here for the DSL to compile-check them.
  */
-export type NodeType = "start" | "end" | "aiQuestion" | "formCapture" | "condition" | "functionCall" | "scheduleAgent" | "subFlow" | "subFlowSwitch" | "persona" | "switch" | "slot" | "writeSlot" | "suspend";
+export type NodeType = "start" | "end" | "aiQuestion" | "formCapture" | "condition" | "functionCall" | "scheduleAgent" | "subFlow" | "subFlowSwitch" | "persona" | "switch" | "slot" | "writeSlot" | "humanApproval" | "suspend";
 /**
  * One branch on a {@code switch} or {@code subFlowSwitch} node —
  * {@code id} is also the edge {@code sourceHandle}. {@link subFlowId} is
@@ -236,8 +236,41 @@ export interface WriteSlotNode extends NodeBase {
     slotName: string;
     slotValue: string;
 }
+/**
+ * T119 / §IX.5.a — runtime config for a {@code humanApproval} node, nested
+ * under the node's {@code data.humanApproval} on the wire (Jackson maps it to
+ * the backend {@code ChatFlowNode.HumanApprovalConfig}). The engine parks the
+ * cursor on the node, fires a notification on {@code channel}, and advances once
+ * the operator's decision lands in {@code approvalSlot} (or the timeout sweep
+ * resolves it).
+ */
+export interface HumanApprovalConfig {
+    /** Notification channel fired on park: {@code email} | {@code slack} | {@code webhook}. */
+    channel: string;
+    /** Channel target — an email address, Slack channel, or webhook URL. */
+    target?: string;
+    /** Optional notification body template. */
+    template?: string;
+    /** Slot the operator's decision is written into. Defaults to {@code operator_decision}. */
+    approvalSlot?: string;
+    /** Auto-resolve deadline in seconds; omit for the configured default. */
+    timeoutSeconds?: number;
+    /** What the sweep does on timeout: {@code auto_reject} (default) | {@code auto_approve}. */
+    timeoutBehavior?: string;
+}
+/**
+ * T119 — pauses the flow for a human decision. The engine parks the cursor on
+ * this node (like {@link SuspendNode}) and fires a notification; an operator's
+ * decision (via the approval endpoint, the spectator co-pilot, or the timeout
+ * sweep) writes the {@code approvalSlot} and pops it. Carries its config nested
+ * under {@code humanApproval}.
+ */
+export interface HumanApprovalNode extends NodeBase {
+    type: "humanApproval";
+    humanApproval: HumanApprovalConfig;
+}
 /** Discriminated union of every node type the DSL accepts. */
-export type FlowNode = StartNode | EndNode | AiQuestionNode | FormCaptureNode | ConditionNode | FunctionCallNode | ScheduleAgentNode | SubFlowNode | SubFlowSwitchNode | PersonaNode | SwitchNode | SlotNode | WriteSlotNode | SuspendNode;
+export type FlowNode = StartNode | EndNode | AiQuestionNode | FormCaptureNode | ConditionNode | FunctionCallNode | ScheduleAgentNode | SubFlowNode | SubFlowSwitchNode | PersonaNode | SwitchNode | SlotNode | WriteSlotNode | HumanApprovalNode | SuspendNode;
 /**
  * Edge from {@code source} to {@code target}. The {@code sourceHandle} is
  * required when {@code source} is a {@code condition} ({@code "yes" | "no"})

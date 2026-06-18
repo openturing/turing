@@ -14,8 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { TurParkedConversation } from "@/models/parked-conversation/parked-conversation.model";
-import { IconPlayerPause, IconPlayerPlay, IconRefresh } from "@tabler/icons-react";
+import { ROUTES } from "@/app/routes.const";
+import { IconBroadcast, IconPlayerPause, IconPlayerPlay, IconRefresh } from "@tabler/icons-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
@@ -112,7 +114,15 @@ export default function ParkedConversationsPage() {
                 <TableCell className="text-sm text-muted-foreground">
                   {formatWaiting(row.waitingSeconds)}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
+                  {/* T120 — open the live spectator/co-pilot view for this conversation. */}
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link
+                      to={`${ROUTES.CONVERSATION_DETAIL}/${encodeURIComponent(row.conversationId)}?spectate=true${row.agentId ? `&agentId=${encodeURIComponent(row.agentId)}` : ""}`}>
+                      <IconBroadcast className="mr-2 h-4 w-4 text-blue-600" />
+                      {t("parkedConversations.spectate", { defaultValue: "Spectate" })}
+                    </Link>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

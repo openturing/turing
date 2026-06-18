@@ -38,6 +38,42 @@ describe("flow-dsl new capabilities", () => {
         // Only label + type — suspend reads nothing else.
         assert.deepEqual(Object.keys(park.data).sort(), ["label", "type"]);
     });
+    it("transpiles a humanApproval node with its nested config under data.humanApproval", () => {
+        const flow = transpileFlow({
+            name: "Approval",
+            nodes: [
+                { id: "start", type: "start" },
+                {
+                    id: "gate",
+                    type: "humanApproval",
+                    label: "Awaiting approval",
+                    humanApproval: {
+                        channel: "email",
+                        target: "approver@example.test",
+                        template: "Approve {{quest}}?",
+                        approvalSlot: "operator_decision",
+                        timeoutSeconds: 3600,
+                        timeoutBehavior: "auto_reject",
+                    },
+                },
+                { id: "end", type: "end" },
+            ],
+            edges: [
+                { source: "start", target: "gate" },
+                { source: "gate", target: "end" },
+            ],
+        });
+        const gate = nodeById(flow, "gate");
+        assert.equal(gate.type, "humanApproval");
+        assert.equal(gate.data.label, "Awaiting approval");
+        // Only label + type + the nested config object — nothing else leaks.
+        assert.deepEqual(Object.keys(gate.data).sort(), ["humanApproval", "label", "type"]);
+        const config = gate.data.humanApproval;
+        assert.equal(config.channel, "email");
+        assert.equal(config.approvalSlot, "operator_decision");
+        assert.equal(config.timeoutSeconds, 3600);
+        assert.equal(config.timeoutBehavior, "auto_reject");
+    });
     it("copies outputVariable + continueOnFailure onto a functionCall node", () => {
         const flow = transpileFlow({
             name: "FnFail",
@@ -263,8 +299,8 @@ describe("transpileBundle", () => {
 });
 describe("chaotic-chatflow bundle (the giant stress fixture)", () => {
     const bundle = transpileBundle([...chaoticBundle]);
-    it("transpiles all seven flows", () => {
-        assert.equal(bundle.length, 7);
+    it("transpiles all eight flows", () => {
+        assert.equal(bundle.length, 8);
         assert.deepEqual(bundle.map((f) => f.id), [
             "chaos-main",
             "chaos-sandwich",
@@ -273,6 +309,7 @@ describe("chaotic-chatflow bundle (the giant stress fixture)", () => {
             "chaos-ouroboros",
             "chaos-scheduler",
             "chaos-suspend",
+            "chaos-approval",
         ]);
     });
     it("exercises EVERY node type the engine supports", () => {
@@ -290,6 +327,7 @@ describe("chaotic-chatflow bundle (the giant stress fixture)", () => {
             "switch",
             "slot",
             "writeSlot",
+            "humanApproval",
             "suspend",
         ];
         const present = nodeTypes(bundle);

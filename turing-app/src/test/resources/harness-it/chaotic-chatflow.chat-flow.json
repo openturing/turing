@@ -337,6 +337,12 @@
                 "label": "suspend",
                 "subFlowId": "chaos-suspend",
                 "subFlowName": "Indefinite Hold"
+              },
+              {
+                "id": "opt-approval",
+                "label": "approval",
+                "subFlowId": "chaos-approval",
+                "subFlowName": "Absurd Approval Bureau"
               }
             ]
           }
@@ -1722,5 +1728,126 @@
       ]
     },
     "id": "chaos-suspend"
+  },
+  {
+    "name": "Absurd Approval Bureau",
+    "description": "Parks on a humanApproval node until an operator's decision lands in the approval slot — the T119 HITL analogue of the suspend hold.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": null,
+    "triggerMode": "ONCE",
+    "triggerLanguage": "AUTO",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "data": {
+            "label": "START",
+            "type": "start"
+          }
+        },
+        {
+          "id": "slot-pre-approval",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 120
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "approval_pre",
+            "slotOperation": "SET",
+            "slotValue": "before"
+          }
+        },
+        {
+          "id": "approval-gate",
+          "type": "humanApproval",
+          "position": {
+            "x": 0,
+            "y": 240
+          },
+          "data": {
+            "label": "Awaiting absurd human approval",
+            "type": "humanApproval",
+            "humanApproval": {
+              "channel": "email",
+              "target": "absurd-approver@ministry.test",
+              "template": "Approve the absurd quest '{{quest_name}}'? (chaos_key={{chaos_key}})",
+              "approvalSlot": "operator_decision",
+              "timeoutSeconds": 3600,
+              "timeoutBehavior": "auto_reject"
+            }
+          }
+        },
+        {
+          "id": "slot-post-approval",
+          "type": "slot",
+          "position": {
+            "x": 0,
+            "y": 360
+          },
+          "data": {
+            "label": "SLOT",
+            "type": "slot",
+            "slotName": "approval_post",
+            "slotOperation": "SET",
+            "slotValue": "after"
+          }
+        },
+        {
+          "id": "end-approval",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 480
+          },
+          "data": {
+            "label": "END",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start",
+          "target": "slot-pre-approval",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "slot-pre-approval",
+          "target": "approval-gate",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "approval-gate",
+          "target": "slot-post-approval",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "slot-post-approval",
+          "target": "end-approval",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    },
+    "id": "chaos-approval"
   }
 ]

@@ -10,8 +10,10 @@ import type {
   TurIntent,
   TurLlmContextInfo,
   TurLlmInstance,
+  TurLlmVendor,
   TurSearchResponse,
   TurSortOption,
+  TurSpellCheck,
 } from "./types";
 
 /**
@@ -902,6 +904,347 @@ export function fetchSortOptions(
   return client.get<TurSortOption[]>(`/sn/${site}/search/sort-options`);
 }
 
+// ── T400: Similar documents ────────────────────────────────────────────────
+
+/**
+ * Strategy for {@link fetchSimilar}: {@code VECTOR} (semantic / embedding
+ * neighbours) or {@code MLT} (lexical "more like this"). Omit to let the server
+ * auto-select based on the site's configured engine.
+ */
+export type TurSimilarMode = "VECTOR" | "MLT";
+
+/**
+ * T384 — one related document returned by {@link fetchSimilar} (server
+ * {@code TurSESimilarResult}). Lightweight by design: render the link directly
+ * or hydrate the full document via a follow-up search if needed.
+ */
+export interface TurSimilarResult {
+  readonly id: string;
+  readonly title: string;
+  readonly type: string;
+  readonly url: string;
+}
+
+export interface FetchSimilarParams {
+  /** Seed document id to find neighbours for. */
+  readonly id: string;
+  /** Max results to return (server caps at 50; default 10). */
+  readonly rows?: number;
+  /** Locale override (e.g. {@code "en_US"}); omit to use the site default. */
+  readonly locale?: string;
+  /** Force {@code VECTOR} or {@code MLT}; omit for server auto-selection. */
+  readonly mode?: TurSimilarMode;
+}
+
+/**
+ * T400 — fetches documents similar to a seed document (T384's
+ * {@code GET /sn/{site}/search/similar}). Powers a "related" / "you may also
+ * like" rail next to a result or detail page with one call.
+ */
+export function fetchSimilar(
+  client: TuringClient,
+  site: string,
+  params: FetchSimilarParams,
+): Promise<TurSimilarResult[]> {
+  const qs = new URLSearchParams({ id: params.id });
+  if (params.rows != null) qs.append("rows", String(params.rows));
+  if (params.locale) qs.append("locale", params.locale);
+  if (params.mode) qs.append("mode", params.mode);
+  return client.get<TurSimilarResult[]>(`/sn/${site}/search/similar?${qs}`);
+}
+
+// ── T401: Multimodal slot-upload + flow resume ──────────────────────────────
+
+/**
+ * T64 — response of {@link postSiteSlotUpload}. The uploaded artifact is stored
+ * via the configured storage backend; {@link url} is a signed link to download
+ * it. When {@code vision} was requested, {@link visionExtracted} carries the
+ * scalar slots the vision LLM filled.
+ */
+export interface TurChatSlotUploadResponse {
+  readonly slotName: string;
+  readonly slotType: string;
+  readonly objectName: string;
+  readonly url: string;
+  readonly contentType: string;
+  readonly size: number;
+  readonly visionExtracted: Readonly<Record<string, string>>;
+  readonly visionSlotsWritten: number;
+  readonly error?: string | null;
+}
+
+export interface PostSlotUploadOptions {
+  /** Run a vision LLM over an image to fill scalar slots (T64). */
+  readonly vision?: boolean;
+  /** Scalar slot names to fill via vision when {@link vision} is on. */
+  readonly visionSlotNames?: ReadonlyArray<string>;
+}
+
+/**
+ * T401 — uploads an IMAGE / AUDIO / FILE to a multimodal slot (T64's
+ * {@code POST /sn/{site}/chat/slot-upload}). The slot holds the storage URL;
+ * with {@code vision} the server also runs a vision LLM to extract scalar
+ * values into the named slots.
+ */
+export async function postSiteSlotUpload(
+  client: TuringClient,
+  site: string,
+  conversationId: string,
+  slotName: string,
+  file: File,
+  options?: PostSlotUploadOptions,
+): Promise<TurChatSlotUploadResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("conversationId", conversationId);
+  form.append("slotName", slotName);
+  if (options?.vision) form.append("vision", "true");
+  if (options?.visionSlotNames && options.visionSlotNames.length > 0) {
+    form.append("visionSlotNames", options.visionSlotNames.join(","));
+  }
+  const data = await client.post<TurChatSlotUploadResponse>(
+    `/sn/${site}/chat/slot-upload`,
+    form,
+  );
+  return (
+    data ?? {
+      slotName,
+      slotType: "",
+      objectName: "",
+      url: "",
+      contentType: "",
+      size: 0,
+      visionExtracted: {},
+      visionSlotsWritten: 0,
+      error: "empty response",
+    }
+  );
+}
+
+/**
+ * T121 — response of {@link postSiteChatResume}. {@link wasParked} is
+ * {@code false} when the conversation had no suspended flow to resume.
+ */
+export interface TurChatResumeResponse {
+  readonly resumed: number;
+  readonly wasParked: boolean;
+  readonly error?: string | null;
+}
+
+/**
+ * T401 — resumes a conversation parked at a suspend node
+ * ({@code POST /sn/{site}/chat/resume}), optionally applying {@code slotUpdates}
+ * before advancing past the suspend point.
+ */
+export async function postSiteChatResume(
+  client: TuringClient,
+  site: string,
+  conversationId: string,
+  slotUpdates?: Readonly<Record<string, string>>,
+  resumeReason?: string,
+): Promise<TurChatResumeResponse> {
+  const data = await client.post<TurChatResumeResponse>(`/sn/${site}/chat/resume`, {
+    conversationId,
+    slotUpdates,
+    resumeReason,
+  });
+  return data ?? { resumed: 0, wasParked: false, error: "empty response" };
+}
+
+// ── T402: Spell-check ───────────────────────────────────────────────────────
+
+/**
+ * T402 — fetches "did you mean" corrections for a query
+ * ({@code GET /sn/{site}/{locale}/spell-check?q=...}). Returns the same
+ * {@link TurSpellCheck} shape the search bean embeds, so a search box can render
+ * a correction prompt without parsing the full search response.
+ */
+export function fetchSpellCheck(
+  client: TuringClient,
+  site: string,
+  locale: string,
+  q: string,
+): Promise<TurSpellCheck> {
+  const qs = new URLSearchParams({ q });
+  return client.get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`);
+}
+
+// ── T403: Elasticsearch-compatible DSL search ───────────────────────────────
+
+/**
+ * T403 — a structured Elasticsearch-compatible query body for {@link dslSearch}
+ * ({@code POST /sn/{site}/_search}). Mirrors the server {@code TurDslQueryRequest}:
+ * {@code query} (match / bool / term / range …), pagination ({@code from} /
+ * {@code size}), {@code sort}, {@code _source} projection, {@code highlight},
+ * {@code aggs}, {@code post_filter}, and {@code min_score}. Extra ES keys pass
+ * through unchanged.
+ */
+export interface TurDslSearchRequest {
+  query?: Record<string, unknown>;
+  from?: number;
+  size?: number;
+  sort?: unknown[];
+  _source?: unknown;
+  highlight?: Record<string, unknown>;
+  aggs?: Record<string, unknown>;
+  post_filter?: Record<string, unknown>;
+  min_score?: number;
+  [key: string]: unknown;
+}
+
+/** One document hit in a {@link TurDslSearchResponse}. */
+export interface TurDslSearchHit {
+  readonly _id: string;
+  readonly _score?: number | null;
+  readonly _source: Record<string, unknown>;
+  readonly highlight?: Record<string, string[]>;
+  readonly fields?: Record<string, unknown>;
+}
+
+/**
+ * T403 — Elasticsearch-compatible response of {@link dslSearch} (server
+ * {@code TurDslSearchResponse}). {@code aggregations} / {@code suggest} are left
+ * loosely typed because their shape depends on the aggregation/suggester used.
+ */
+export interface TurDslSearchResponse {
+  readonly took: number;
+  readonly timed_out: boolean;
+  readonly hits: {
+    readonly total: { value: number; relation: string };
+    readonly max_score?: number | null;
+    readonly hits: TurDslSearchHit[];
+  };
+  readonly aggregations?: Record<string, unknown>;
+  readonly suggest?: Record<string, unknown>;
+}
+
+/**
+ * T403 — runs a structured Elasticsearch-compatible query against a site
+ * ({@code POST /sn/{site}/_search}). For power users building bool/filter/aggs
+ * queries from JS without the facet-param layer.
+ */
+export function dslSearch(
+  client: TuringClient,
+  site: string,
+  request: TurDslSearchRequest,
+  locale = "en",
+): Promise<TurDslSearchResponse> {
+  const qs = new URLSearchParams({ locale });
+  return client.post<TurDslSearchResponse>(`/sn/${site}/_search?${qs}`, request);
+}
+
+/**
+ * T403 — runs a raw Solr-style DSL query ({@code POST /sn/{site}/query}) and
+ * returns the parsed JSON response verbatim. Lower-level than {@link dslSearch};
+ * the {@code locale} is required by this endpoint.
+ */
+export function dslQuery(
+  client: TuringClient,
+  site: string,
+  query: Record<string, unknown> | string,
+  locale: string,
+): Promise<unknown> {
+  const qs = new URLSearchParams({ locale });
+  const body = typeof query === "string" ? query : JSON.stringify(query);
+  return client.post<unknown>(`/sn/${site}/query?${qs}`, body, {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// ── T405: Platform discovery helpers ────────────────────────────────────────
+
+/**
+ * T405 — public platform identity from {@code GET /discovery} (server
+ * {@code TurAPIBean}): product name, multi-tenancy / auth topology, and the
+ * available OAuth providers. Lets a generic embed discover its environment.
+ */
+export interface TurDiscoveryInfo {
+  readonly product: string;
+  readonly multiTenant: boolean;
+  readonly keycloak: boolean;
+  readonly authThirdparty: boolean;
+  readonly selfRegistration: boolean;
+  readonly oauth2Providers: string[];
+}
+
+/**
+ * T405 — which platform capabilities are on, from {@code GET /features} (server
+ * {@code FeaturesResponse}). A widget reads this to hide features the backend
+ * has disabled (e.g. storage-backed assets, RAG, skills).
+ */
+export interface TurFeaturesInfo {
+  readonly storageEnabled: boolean;
+  readonly ragEnabled: boolean;
+  readonly gitServerEnabled: boolean;
+  readonly marketplaceEnabled: boolean;
+  readonly seInstanceReadOnly: boolean;
+  readonly skillsEnabled: boolean;
+  readonly tenancyEnabled: boolean;
+  readonly platformAdmin: boolean;
+  readonly loggingEngine: string;
+}
+
+/** T405 — a supported system locale from {@code GET /locale} (server {@code TurLocale}). */
+export interface TurSystemLocale {
+  readonly initials: string;
+  readonly en: string;
+  readonly pt: string;
+}
+
+/**
+ * T405 — result of {@link postSummary} (server
+ * {@code TurLlmSummaryService.SummaryResult}). The cached AI summary plus
+ * whether the caller may force a regenerate.
+ */
+export interface TurSummaryResult {
+  readonly success: boolean;
+  readonly error: string | null;
+  readonly content: string;
+  readonly canRegenerate: boolean;
+}
+
+/** T405 — platform identity / auth topology. Server: {@code GET /api/discovery}. */
+export function fetchDiscovery(client: TuringClient): Promise<TurDiscoveryInfo> {
+  return client.get<TurDiscoveryInfo>(`/discovery`);
+}
+
+/** T405 — enabled platform capabilities. Server: {@code GET /api/features}. */
+export function fetchFeatures(client: TuringClient): Promise<TurFeaturesInfo> {
+  return client.get<TurFeaturesInfo>(`/features`);
+}
+
+/** T405 — supported system locales. Server: {@code GET /api/locale}. */
+export function fetchSystemLocales(client: TuringClient): Promise<TurSystemLocale[]> {
+  return client.get<TurSystemLocale[]>(`/locale`);
+}
+
+/** T405 — configured LLM vendors. Server: {@code GET /api/llm/vendor}. */
+export function fetchLlmVendors(client: TuringClient): Promise<TurLlmVendor[]> {
+  return client.get<TurLlmVendor[]>(`/llm/vendor`);
+}
+
+/**
+ * T405 — generates (or returns a cached) LLM summary for arbitrary data
+ * ({@code POST /api/v2/summary}). {@code regenerate} bypasses the cache.
+ */
+export async function postSummary(
+  client: TuringClient,
+  params: {
+    readonly cacheKey: string;
+    readonly data: string;
+    readonly systemPrompt?: string;
+    readonly regenerate?: boolean;
+  },
+): Promise<TurSummaryResult> {
+  const path = params.regenerate ? `/v2/summary?regenerate=true` : `/v2/summary`;
+  const data = await client.post<TurSummaryResult>(path, {
+    cacheKey: params.cacheKey,
+    data: params.data,
+    systemPrompt: params.systemPrompt,
+  });
+  return data ?? { success: false, error: "empty response", content: "", canRegenerate: false };
+}
+
 /**
  * Parses an href link from the Turing API (e.g. facet link, pagination link)
  * into a SearchParams object that can be used to re-execute a search.
@@ -1003,6 +1346,33 @@ export function createTuringApi(client: TuringClient) {
     fetchAutoComplete: (site: string, params: SearchParams) =>
       fetchAutoComplete(client, site, params),
     fetchSortOptions: (site: string) => fetchSortOptions(client, site),
+    fetchSimilar: (site: string, params: FetchSimilarParams) =>
+      fetchSimilar(client, site, params),
+    postSiteSlotUpload: (
+      site: string,
+      conversationId: string,
+      slotName: string,
+      file: File,
+      options?: PostSlotUploadOptions,
+    ) => postSiteSlotUpload(client, site, conversationId, slotName, file, options),
+    postSiteChatResume: (
+      site: string,
+      conversationId: string,
+      slotUpdates?: Readonly<Record<string, string>>,
+      resumeReason?: string,
+    ) => postSiteChatResume(client, site, conversationId, slotUpdates, resumeReason),
+    fetchSpellCheck: (site: string, locale: string, q: string) =>
+      fetchSpellCheck(client, site, locale, q),
+    dslSearch: (site: string, request: TurDslSearchRequest, locale?: string) =>
+      dslSearch(client, site, request, locale),
+    dslQuery: (site: string, query: Record<string, unknown> | string, locale: string) =>
+      dslQuery(client, site, query, locale),
+    fetchDiscovery: () => fetchDiscovery(client),
+    fetchFeatures: () => fetchFeatures(client),
+    fetchSystemLocales: () => fetchSystemLocales(client),
+    fetchLlmVendors: () => fetchLlmVendors(client),
+    postSummary: (params: Parameters<typeof postSummary>[1]) =>
+      postSummary(client, params),
   };
 }
 

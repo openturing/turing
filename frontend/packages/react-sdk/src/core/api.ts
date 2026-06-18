@@ -10,8 +10,10 @@ import type {
   TurIntent,
   TurLlmContextInfo,
   TurLlmInstance,
+  TurLlmVendor,
   TurSearchResponse,
   TurSortOption,
+  TurSpellCheck,
 } from "./types";
 
 /**
@@ -52,6 +54,19 @@ export type {
   TurChatHandoffChannel,
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
+  TurSimilarMode,
+  TurSimilarResult,
+  FetchSimilarParams,
+  TurChatSlotUploadResponse,
+  PostSlotUploadOptions,
+  TurChatResumeResponse,
+  TurDslSearchRequest,
+  TurDslSearchHit,
+  TurDslSearchResponse,
+  TurDiscoveryInfo,
+  TurFeaturesInfo,
+  TurSystemLocale,
+  TurSummaryResult,
 } from "@viglet/turing-sdk";
 
 import type {
@@ -69,6 +84,17 @@ import type {
   TurChatHandoffChannel,
   TurChatHandoffResponse,
   TurChatFlowSelectResponse,
+  FetchSimilarParams,
+  TurSimilarResult,
+  TurChatSlotUploadResponse,
+  PostSlotUploadOptions,
+  TurChatResumeResponse,
+  TurDslSearchRequest,
+  TurDslSearchResponse,
+  TurDiscoveryInfo,
+  TurFeaturesInfo,
+  TurSystemLocale,
+  TurSummaryResult,
 } from "@viglet/turing-sdk";
 
 function buildQueryString(params: SearchParams): string {
@@ -804,4 +830,198 @@ export function fetchAutoComplete(site: string, params: SearchParams): Promise<s
 
 export function fetchSortOptions(site: string): Promise<TurSortOption[]> {
   return get<TurSortOption[]>(`/sn/${site}/search/sort-options`);
+}
+
+/**
+ * T400 — fetches documents similar to a seed document (T384's
+ * {@code GET /sn/{site}/search/similar}). Powers a "related" / "you may also
+ * like" rail with one call.
+ *
+ * @since 2026.3.4
+ */
+export function fetchSimilar(
+  site: string,
+  params: FetchSimilarParams,
+): Promise<TurSimilarResult[]> {
+  const qs = new URLSearchParams({ id: params.id });
+  if (params.rows != null) qs.append("rows", String(params.rows));
+  if (params.locale) qs.append("locale", params.locale);
+  if (params.mode) qs.append("mode", params.mode);
+  return get<TurSimilarResult[]>(`/sn/${site}/search/similar?${qs}`);
+}
+
+/**
+ * T401 — uploads an IMAGE / AUDIO / FILE to a multimodal slot (T64's
+ * {@code POST /sn/{site}/chat/slot-upload}). With {@code vision} the server also
+ * runs a vision LLM to extract scalar values into the named slots.
+ *
+ * @since 2026.3.4
+ */
+export async function postSiteSlotUpload(
+  site: string,
+  conversationId: string,
+  slotName: string,
+  file: File,
+  options?: PostSlotUploadOptions,
+): Promise<TurChatSlotUploadResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("conversationId", conversationId);
+  form.append("slotName", slotName);
+  if (options?.vision) form.append("vision", "true");
+  if (options?.visionSlotNames && options.visionSlotNames.length > 0) {
+    form.append("visionSlotNames", options.visionSlotNames.join(","));
+  }
+  const { data } = await axios.post<TurChatSlotUploadResponse>(
+    `/sn/${site}/chat/slot-upload`,
+    form,
+  );
+  return (
+    data ?? {
+      slotName,
+      slotType: "",
+      objectName: "",
+      url: "",
+      contentType: "",
+      size: 0,
+      visionExtracted: {},
+      visionSlotsWritten: 0,
+      error: "empty response",
+    }
+  );
+}
+
+/**
+ * T401 — resumes a conversation parked at a suspend node
+ * ({@code POST /sn/{site}/chat/resume}), optionally applying {@code slotUpdates}
+ * before advancing past the suspend point.
+ *
+ * @since 2026.3.4
+ */
+export async function postSiteChatResume(
+  site: string,
+  conversationId: string,
+  slotUpdates?: Readonly<Record<string, string>>,
+  resumeReason?: string,
+): Promise<TurChatResumeResponse> {
+  const { data } = await axios.post<TurChatResumeResponse>(
+    `/sn/${site}/chat/resume`,
+    { conversationId, slotUpdates, resumeReason },
+  );
+  return data ?? { resumed: 0, wasParked: false, error: "empty response" };
+}
+
+/**
+ * T402 — fetches "did you mean" corrections for a query
+ * ({@code GET /sn/{site}/{locale}/spell-check?q=...}). Returns the same
+ * {@link TurSpellCheck} shape the search bean embeds.
+ *
+ * @since 2026.3.4
+ */
+export function fetchSpellCheck(
+  site: string,
+  locale: string,
+  q: string,
+): Promise<TurSpellCheck> {
+  const qs = new URLSearchParams({ q });
+  return get<TurSpellCheck>(`/sn/${site}/${locale}/spell-check?${qs}`);
+}
+
+/**
+ * T403 — runs a structured Elasticsearch-compatible query against a site
+ * ({@code POST /sn/{site}/_search}). For power users building bool/filter/aggs
+ * queries from JS without the facet-param layer.
+ *
+ * @since 2026.3.4
+ */
+export async function dslSearch(
+  site: string,
+  request: TurDslSearchRequest,
+  locale = "en",
+): Promise<TurDslSearchResponse> {
+  const { data } = await axios.post<TurDslSearchResponse>(
+    `/sn/${site}/_search`,
+    request,
+    { params: { locale } },
+  );
+  return data;
+}
+
+/**
+ * T403 — runs a raw Solr-style DSL query ({@code POST /sn/{site}/query}) and
+ * returns the parsed JSON verbatim. Lower-level than {@link dslSearch}.
+ *
+ * @since 2026.3.4
+ */
+export async function dslQuery(
+  site: string,
+  query: Record<string, unknown> | string,
+  locale: string,
+): Promise<unknown> {
+  const body = typeof query === "string" ? query : JSON.stringify(query);
+  const { data } = await axios.post<unknown>(`/sn/${site}/query`, body, {
+    params: { locale },
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+/**
+ * T405 — platform identity / auth topology. Server: {@code GET /api/discovery}.
+ *
+ * @since 2026.3.4
+ */
+export function fetchDiscovery(): Promise<TurDiscoveryInfo> {
+  return get<TurDiscoveryInfo>(`/discovery`);
+}
+
+/**
+ * T405 — enabled platform capabilities. Server: {@code GET /api/features}.
+ *
+ * @since 2026.3.4
+ */
+export function fetchFeatures(): Promise<TurFeaturesInfo> {
+  return get<TurFeaturesInfo>(`/features`);
+}
+
+/**
+ * T405 — supported system locales. Server: {@code GET /api/locale}.
+ *
+ * @since 2026.3.4
+ */
+export function fetchSystemLocales(): Promise<TurSystemLocale[]> {
+  return get<TurSystemLocale[]>(`/locale`);
+}
+
+/**
+ * T405 — configured LLM vendors. Server: {@code GET /api/llm/vendor}.
+ *
+ * @since 2026.3.4
+ */
+export function fetchLlmVendors(): Promise<TurLlmVendor[]> {
+  return get<TurLlmVendor[]>(`/llm/vendor`);
+}
+
+/**
+ * T405 — generates (or returns a cached) LLM summary for arbitrary data
+ * ({@code POST /api/v2/summary}). {@code regenerate} bypasses the cache.
+ *
+ * @since 2026.3.4
+ */
+export async function postSummary(params: {
+  readonly cacheKey: string;
+  readonly data: string;
+  readonly systemPrompt?: string;
+  readonly regenerate?: boolean;
+}): Promise<TurSummaryResult> {
+  const { data } = await axios.post<TurSummaryResult>(
+    `/v2/summary`,
+    {
+      cacheKey: params.cacheKey,
+      data: params.data,
+      systemPrompt: params.systemPrompt,
+    },
+    params.regenerate ? { params: { regenerate: true } } : undefined,
+  );
+  return data ?? { success: false, error: "empty response", content: "", canRegenerate: false };
 }

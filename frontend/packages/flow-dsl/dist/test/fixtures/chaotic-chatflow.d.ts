@@ -1044,6 +1044,57 @@ export declare const chaoticBundle: ({
         source: string;
         target: string;
     }[];
+} | {
+    id: string;
+    name: string;
+    description: string;
+    enabled: 1;
+    guardrailMethod: "HEURISTIC";
+    triggerMode: "ONCE";
+    nodes: ({
+        id: string;
+        type: "start";
+        slotName?: undefined;
+        slotOperation?: undefined;
+        slotValue?: undefined;
+        label?: undefined;
+        humanApproval?: undefined;
+    } | {
+        id: string;
+        type: "slot";
+        slotName: string;
+        slotOperation: "SET";
+        slotValue: string;
+        label?: undefined;
+        humanApproval?: undefined;
+    } | {
+        id: string;
+        type: "humanApproval";
+        label: string;
+        humanApproval: {
+            channel: string;
+            target: string;
+            template: string;
+            approvalSlot: string;
+            timeoutSeconds: number;
+            timeoutBehavior: string;
+        };
+        slotName?: undefined;
+        slotOperation?: undefined;
+        slotValue?: undefined;
+    } | {
+        id: string;
+        type: "end";
+        slotName?: undefined;
+        slotOperation?: undefined;
+        slotValue?: undefined;
+        label?: undefined;
+        humanApproval?: undefined;
+    })[];
+    edges: {
+        source: string;
+        target: string;
+    }[];
 })[];
 export default chaoticBundle;
 //# sourceMappingURL=chaotic-chatflow.d.ts.map
