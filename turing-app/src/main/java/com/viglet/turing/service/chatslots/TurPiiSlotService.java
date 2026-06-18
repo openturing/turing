@@ -165,6 +165,9 @@ public class TurPiiSlotService {
      * Used by every log statement / analytics writer that would otherwise
      * leak PII into log aggregators / event stores.
      */
+    @SuppressWarnings("java:S1168") // null in, null out: this is a defensive-copy
+    // passthrough, so a null argument deliberately yields null rather than an
+    // empty map, preserving the caller's distinction between absent and empty.
     public static Map<String, String> redact(Map<String, String> variables) {
         if (variables == null) return null;
         Map<String, String> out = new LinkedHashMap<>(variables.size());

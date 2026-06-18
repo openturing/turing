@@ -97,7 +97,8 @@ public class TurLlmRerankStrategy implements TurRagRerankStrategy {
     }
 
     private static String preview(Document doc) {
-        String text = doc.getText() == null ? "" : doc.getText().strip().replaceAll("\\s+", " ");
+        String raw = doc.getText();
+        String text = raw == null ? "" : raw.strip().replaceAll("\\s+", " ");
         return text.length() > MAX_PREVIEW_CHARS ? text.substring(0, MAX_PREVIEW_CHARS) + "…" : text;
     }
 

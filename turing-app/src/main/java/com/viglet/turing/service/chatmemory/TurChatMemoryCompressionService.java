@@ -319,7 +319,8 @@ public class TurChatMemoryCompressionService {
                     new SystemMessage(compressionSystemPrompt),
                     new UserMessage(olderText));
             var response = chatModel.call(new Prompt(messages));
-            tokenUsageService.recordUsage(instance, response, "system");
+            tokenUsageService.recordUsage(instance, response, "system",
+                    null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_BACKGROUND);
             return response.getResult().getOutput().getText();
         } catch (Exception e) {
             log.warn("[ChatMemoryCompression] summary call failed: {}", e.getMessage());

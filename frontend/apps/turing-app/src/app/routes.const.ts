@@ -31,6 +31,7 @@ export const ROUTES = {
   GRAPHQL_ROOT: `${consolePath}/graphql`,
   USER_ACCOUNT: `${consolePath}/user/account`,
   TOKEN_USAGE: `${consolePath}/token-usage`,
+  COST_GOVERNANCE: `${consolePath}/cost-governance`,
   CHAT_ANALYTICS: `${consolePath}/chat-analytics`,
   PARKED_CONVERSATIONS: `${consolePath}/parked-conversations`,
   CONVERSATION_DETAIL: `${consolePath}/conversation`,

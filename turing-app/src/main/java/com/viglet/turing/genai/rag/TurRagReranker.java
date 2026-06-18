@@ -245,9 +245,11 @@ public class TurRagReranker {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             for (Document d : candidates) {
-                digest.update((d.getId() == null ? "" : d.getId()).getBytes(StandardCharsets.UTF_8));
+                String id = d.getId();
+                String text = d.getText();
+                digest.update((id == null ? "" : id).getBytes(StandardCharsets.UTF_8));
                 digest.update((byte) 0x1f);
-                digest.update((d.getText() == null ? "" : d.getText()).getBytes(StandardCharsets.UTF_8));
+                digest.update((text == null ? "" : text).getBytes(StandardCharsets.UTF_8));
                 digest.update((byte) 0x1e);
             }
             return HexFormat.of().formatHex(digest.digest());

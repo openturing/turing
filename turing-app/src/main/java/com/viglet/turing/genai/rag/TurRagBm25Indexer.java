@@ -203,6 +203,9 @@ public class TurRagBm25Indexer {
      * the SE plugin expects. Returns {@code null} when the chunk is
      * unusable (no id, no text).
      */
+    @SuppressWarnings("java:S1168") // null is an "unusable chunk → skip" sentinel
+    // (caller adds to the batch only when non-null); an empty map would index a
+    // doc with no id/content.
     private static Map<String, Object> toIndexableDoc(Document chunk) {
         if (chunk == null) {
             return null;

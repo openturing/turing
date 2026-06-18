@@ -20,7 +20,9 @@ import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
+import com.viglet.turing.persistence.repository.llm.TurLLMPriceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
+import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
@@ -40,6 +42,9 @@ class TurLLMTokenUsageServiceTest {
     @Mock
     private Usage usage;
 
+    @Mock
+    private TurLLMPriceRepository priceRepository;
+
     private TurLLMTokenUsageService service;
     private TurLLMInstance instance;
 
@@ -49,7 +54,12 @@ class TurLLMTokenUsageServiceTest {
         com.viglet.turing.tenant.TurTenantContext tenantContext =
                 new com.viglet.turing.tenant.TurTenantContext(
                         new com.viglet.turing.properties.TurConfigProperties());
-        service = new TurLLMTokenUsageService(tokenUsageRepository, observation, tenantContext);
+        // No price rows configured → computeCost returns 0.0 (the local/unpriced
+        // path). The cache self-proxy isn't needed in a plain unit test, so the
+        // service is its own self-reference.
+        TurLLMPriceService priceService = buildPriceService(priceRepository);
+        service = new TurLLMTokenUsageService(tokenUsageRepository, observation, tenantContext,
+                priceService);
 
         instance = new TurLLMInstance();
         instance.setId("inst-1");
@@ -57,6 +67,18 @@ class TurLLMTokenUsageServiceTest {
         TurLLMVendor vendor = new TurLLMVendor();
         vendor.setId("openai");
         instance.setTurLLMVendor(vendor);
+    }
+
+    /**
+     * Builds a real {@link TurLLMPriceService} for the unit test. {@code rates()}
+     * never touches the self-proxy, so an inner instance with a {@code null} self
+     * satisfies the outer's {@code computeCost} delegation without a Spring
+     * context. With no price rows configured the repository mock returns
+     * {@code Optional.empty()} → cost resolves to {@code 0.0}.
+     */
+    private static TurLLMPriceService buildPriceService(TurLLMPriceRepository repo) {
+        TurLLMPriceService inner = new TurLLMPriceService(repo, null);
+        return new TurLLMPriceService(repo, inner);
     }
 
     @Test

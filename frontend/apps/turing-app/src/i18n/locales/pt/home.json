@@ -68,6 +68,10 @@
         "title": "Uso de Tokens",
         "description": "Monitore o consumo de tokens em todas as instâncias e modelos de LLM."
       },
+      "costGovernance": {
+        "title": "Governança de Custos",
+        "description": "Painel de gastos de IA em tempo real com custo por agente / modelo / etapa, tabela de preços e orçamentos por agente."
+      },
       "chatAnalytics": {
         "title": "Análise de Chat",
         "description": "Investigue sessões de chat recentes, classificação de intenção e sentimento, e transcrições completas."

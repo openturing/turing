@@ -314,7 +314,8 @@ public class TurSkillRunnerService {
                     new Prompt(messages, optionsBuilder.build()));
 
             try {
-                tokenUsageService.recordUsage(llmInstance, response, resolveUsername());
+                tokenUsageService.recordUsage(llmInstance, response, resolveUsername(),
+                        null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_SKILL);
             } catch (RuntimeException usageError) {
                 log.debug("[run_skill] token usage record failed: {}", usageError.getMessage());
             }

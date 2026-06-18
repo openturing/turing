@@ -17,6 +17,7 @@
 .metals
 .bloop
 .sonar_lock
+scripts/sonar/.sonar-token
 .mtj.tmp/
 
 # ── JVM crash logs ───────────────────────────────────────────
@@ -100,3 +101,4 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /frontend/packages/sdk/.turbo
 /frontend/packages/react-ui/dist
 /frontend/packages/react-ui/.turbo
+scripts/sonar/scan.log

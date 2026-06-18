@@ -33,6 +33,9 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
+        if (oAuth2User == null) {
+            throw new OAuth2AuthenticationException("invalid_user_info_response");
+        }
 
         String username = oAuth2User.getAttribute(PREFERRED_USERNAME);
         if (username == null) {

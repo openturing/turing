@@ -1,0 +1,68 @@
+# Local SonarQube stack for analyzing the Turing project.
+#
+# Brings up a self-contained SonarQube Community + PostgreSQL on http://localhost:9100.
+# This is intentionally a SEPARATE compose file from the repo-root docker-compose.yaml
+# so you can run code analysis without starting the whole app stack.
+#
+# Usage (from repo root):
+#   docker compose -f containers/sonarqube/docker-compose.yaml up -d
+#   # wait until http://localhost:9100 is UP (first boot ~1-2 min)
+#   scripts/sonar/sonar-scan.sh        # bootstraps token + runs the Maven scan
+#   scripts/sonar/sonar-issues.sh      # lists open issues via the Web API
+#
+# Default login: admin / admin (you'll be asked to change it on first UI login;
+# the helper scripts change it automatically to the value of SONAR_ADMIN_PASSWORD).
+#
+# Stop / wipe:
+#   docker compose -f containers/sonarqube/docker-compose.yaml down       # keep data
+#   docker compose -f containers/sonarqube/docker-compose.yaml down -v    # wipe data
+
+services:
+  sonarqube-db:
+    container_name: turing-sonarqube-db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - vol-sonarqube-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sonarqube:
+    container_name: turing-sonarqube
+    image: sonarqube:community
+    restart: unless-stopped
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    ports:
+      # Host 9100 -> container 9000 (host 9000 is taken by MinIO in this repo).
+      - "9100:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      # Embedded Elasticsearch bootstrap checks are too strict for a dev laptop
+      # (they require host vm.max_map_count=262144). Relaxing them keeps the
+      # single-node dev instance from refusing to boot on Docker Desktop/WSL2.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - vol-sonarqube-data:/opt/sonarqube/data
+      - vol-sonarqube-extensions:/opt/sonarqube/extensions
+      - vol-sonarqube-logs:/opt/sonarqube/logs
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+volumes:
+  vol-sonarqube-db:
+  vol-sonarqube-data:
+  vol-sonarqube-extensions:
+  vol-sonarqube-logs:

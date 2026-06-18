@@ -22,6 +22,7 @@
 package com.viglet.turing.api.auth;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
@@ -124,17 +125,18 @@ public class TurUserAPI {
     }
 
     private String currentUsername() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null ? authentication.getName() : null;
     }
 
     private boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication()
-                .getAuthorities().stream()
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
     private boolean isAdminOrSelf(String username) {
-        return isAdmin() || currentUsername().equals(username);
+        return isAdmin() || Objects.equals(currentUsername(), username);
     }
 
     @Secured("ROLE_ADMIN")
@@ -146,7 +148,7 @@ public class TurUserAPI {
     @GetMapping("/current")
     public TurCurrentUser turUserCurrent() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
             if (authentication.getPrincipal() instanceof OAuth2User) {
                 return oauth2User();
             } else {

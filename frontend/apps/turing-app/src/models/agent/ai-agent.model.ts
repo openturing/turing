@@ -100,6 +100,22 @@ export interface TurAIAgent {
    * WARN with a logged notice). @since 2026.3.1
    */
   overBudgetBehavior?: "WARN" | "ERROR" | "COMPACT";
+  /**
+   * T291 / §XVI.3 (Block L) — soft monthly spend cap (USD). null/<=0 disables
+   * the turn-time budget gate. On breach the gate downgrades to
+   * {@link budgetDowngradeLlmId} (if set) or warns and proceeds. @since 2026.3.4
+   */
+  monthlyBudgetUsd?: number | null;
+  /**
+   * T291 / §XVI.3 (Block L) — per-turn cost warning threshold (USD). null/<=0
+   * disables it. Post-hoc operator signal; never aborts a turn. @since 2026.3.4
+   */
+  perTurnSoftCapUsd?: number | null;
+  /**
+   * T291 / §XVI.3 (Block L) — cheaper LLM instance id to downgrade to once the
+   * monthly budget is breached. null/blank = warn only. @since 2026.3.4
+   */
+  budgetDowngradeLlmId?: string | null;
   nativeTools?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;

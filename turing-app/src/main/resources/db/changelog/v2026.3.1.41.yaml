@@ -1,0 +1,70 @@
+databaseChangeLog:
+  # T291 / §XVI.3 (Block L) — turn-time soft budget gate per agent.
+  #
+  # monthly_budget_usd       — soft month-to-date spend cap (null/<=0 = off).
+  # per_turn_soft_cap_usd    — post-hoc per-turn cost warning threshold.
+  # budget_downgrade_llm_id  — cheaper LLM to switch to on monthly breach
+  #                            (null = warn only).
+  #
+  # All nullable, no behaviour change for existing agents (gate is opt-in).
+  # snake_case to match the ai_agent table; idempotent via columnExists.
+
+  - changeSet:
+      id: v2026.3.1.41-add-ai_agent-monthly_budget_usd
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: monthly_budget_usd
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: monthly_budget_usd
+                  type: double
+                  remarks: "T291/§XVI.3 soft monthly spend cap (USD); null/<=0 disables."
+
+  - changeSet:
+      id: v2026.3.1.41-add-ai_agent-per_turn_soft_cap_usd
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: per_turn_soft_cap_usd
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: per_turn_soft_cap_usd
+                  type: double
+                  remarks: "T291/§XVI.3 per-turn cost warning threshold (USD); null/<=0 disables."
+
+  - changeSet:
+      id: v2026.3.1.41-add-ai_agent-budget_downgrade_llm_id
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: budget_downgrade_llm_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: budget_downgrade_llm_id
+                  type: varchar(255)
+                  remarks: "T291/§XVI.3 cheaper LLM id to downgrade to on monthly breach (null = warn only)."

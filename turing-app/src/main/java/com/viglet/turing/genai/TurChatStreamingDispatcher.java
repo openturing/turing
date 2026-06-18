@@ -88,6 +88,7 @@ public class TurChatStreamingDispatcher {
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurToolExecutionLoop toolExecutionLoop;
     private final TurChatMessageEventBus chatMessageEventBus;
+    private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -96,7 +97,8 @@ public class TurChatStreamingDispatcher {
             TurChatMemoryService chatMemoryService,
             TurChatPipelineObservation chatPipelineObservation,
             TurToolExecutionLoop toolExecutionLoop,
-            TurChatMessageEventBus chatMessageEventBus) {
+            TurChatMessageEventBus chatMessageEventBus,
+            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -105,6 +107,7 @@ public class TurChatStreamingDispatcher {
         this.chatPipelineObservation = chatPipelineObservation;
         this.toolExecutionLoop = toolExecutionLoop;
         this.chatMessageEventBus = chatMessageEventBus;
+        this.costBudgetGate = costBudgetGate;
     }
 
     /**
@@ -264,7 +267,10 @@ public class TurChatStreamingDispatcher {
                             TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
                     var lastResp = lastRaw.get();
                     if (lastResp != null) {
-                        tokenUsageService.recordUsage(llmInstance, lastResp, username);
+                        double turnCost = tokenUsageService.recordUsage(llmInstance, lastResp, username,
+                                agent == null ? null : agent.getId(),
+                                TurMeterNames.STAGE_CHAT_LIVE);
+                        costBudgetGate.warnIfTurnOverCap(agent, turnCost);
                     }
                     recordTurnTelemetry(agent, conversationId, lastUserMessage,
                             accumulated.toString(), lastResp);
@@ -314,7 +320,10 @@ public class TurChatStreamingDispatcher {
             org.springframework.ai.chat.model.ChatResponse response =
                     toolExecutionLoop.call(chatModel, prompt);
             long tLlmEnd = System.currentTimeMillis();
-            tokenUsageService.recordUsage(llmInstance, response, username);
+            double turnCost = tokenUsageService.recordUsage(llmInstance, response, username,
+                    agent == null ? null : agent.getId(),
+                    TurMeterNames.STAGE_CHAT_LIVE);
+            costBudgetGate.warnIfTurnOverCap(agent, turnCost);
             if (response.getResult() != null
                     && response.getResult().getOutput() != null
                     && response.getResult().getOutput().getText() != null) {

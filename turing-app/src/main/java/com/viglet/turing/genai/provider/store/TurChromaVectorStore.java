@@ -231,6 +231,9 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
      *         but Spring AI's filter translation already handles for scalars,
      *         so the caller is told to fall back to the default path).
      */
+    @SuppressWarnings("java:S1168") // null is a no-op-filter sentinel: callers
+    // (similaritySearch line ~146, combine line ~284) branch on null to mean
+    // "match all / no clause on this side", which an empty map cannot express.
     Map<String, Object> translateFilter(Filter.Expression expression) {
         Filter.ExpressionType type = expression.type();
         switch (type) {

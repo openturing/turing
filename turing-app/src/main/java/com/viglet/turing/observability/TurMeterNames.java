@@ -165,6 +165,20 @@ public final class TurMeterNames {
     public static final String STAGE_CHAT_SETUP_TOOLS = "chat.setup.tools";
     public static final String STAGE_CHAT_SETUP_COMPOSE = "chat.setup.compose";
 
+    // ---- Cost-attribution stages (T289 / §XVI.1) -------------------------
+    //
+    // Coarse stage tags stamped on each per-turn cost sample
+    // ({@code TurLLMTokenUsage.stage}) so the Block L spend dashboard can
+    // split live, user-facing turns from background (insights / summaries /
+    // memory compression / scheduled reports) and skill sub-loops.
+
+    /** User-facing chat turn (agent executor, semantic navigation, direct chat). */
+    public static final String STAGE_CHAT_LIVE = "chat.live";
+    /** Background LLM work: insights, summaries, memory compression, scheduled reports. */
+    public static final String STAGE_CHAT_BACKGROUND = "chat.background";
+    /** Skill sub-loop turns (delegated, always on the Default LLM). */
+    public static final String STAGE_CHAT_SKILL = "chat.skill";
+
     // ---- Cache stats & retrieval (T32 / §IV.7) ---------------------------
 
     /**

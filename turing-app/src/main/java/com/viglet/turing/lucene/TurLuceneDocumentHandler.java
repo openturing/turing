@@ -109,7 +109,7 @@ public class TurLuceneDocumentHandler {
                     addAttributeToDocument(doc, key, value, fieldType, multiValued);
                 }));
 
-        String docId = Optional.ofNullable(attributes.get(ID))
+        String docId = Optional.ofNullable(attributes == null ? null : attributes.get(ID))
                 .map(Object::toString)
                 .orElse(UUID.randomUUID().toString());
         try {

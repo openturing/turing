@@ -23,6 +23,7 @@ export { SERoutes } from "./se.routes";
 export { SNRoutes } from "./sn.routes";
 export { StoreRoutes } from "./store.routes";
 export { TokenUsageRoutes } from "./token-usage.routes";
+export { CostGovernanceRoutes } from "./cost-governance.routes";
 export { ChatAnalyticsRoutes } from "./chat-analytics.routes";
 export { ParkedConversationsRoutes } from "./parked-conversations.routes";
 export { ConversationRoutes } from "./conversation.routes";

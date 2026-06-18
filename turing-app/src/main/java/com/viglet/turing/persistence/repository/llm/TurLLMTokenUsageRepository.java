@@ -62,4 +62,83 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
             ORDER BY totalTokens DESC
             """)
     List<Object[]> findUsageByTenant(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // ---- T290 / §XVI.2 — cost-governance aggregations -------------------
+    // Each returns [dimensionKey..., costUsd, totalTokens, requestCount]. Cost
+    // is the frozen per-row cost_usd summed; works for every provider (local =
+    // 0). All cross-tenant by default — the API restricts the window/scope.
+
+    @Query("""
+            SELECT u.agentId AS agentId,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY u.agentId
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findCostByAgent(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT u.tenantId AS tenantId,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY u.tenantId
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findCostByTenant(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT u.vendorId AS vendorId,
+                   u.modelName AS modelName,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY u.vendorId, u.modelName
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findCostByModel(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT u.stage AS stage,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY u.stage
+            ORDER BY costUsd DESC
+            """)
+    List<Object[]> findCostByStage(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("""
+            SELECT CAST(u.createdAt AS date) AS day,
+                   SUM(u.costUsd) AS costUsd,
+                   SUM(u.totalTokens) AS totalTokens,
+                   COUNT(u) AS requestCount
+            FROM TurLLMTokenUsage u
+            WHERE u.createdAt >= :start AND u.createdAt < :end
+            GROUP BY CAST(u.createdAt AS date)
+            ORDER BY day ASC
+            """)
+    List<Object[]> findDailyCostTimeseries(@Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    /**
+     * T291 / §XVI.3 — month-to-date (or any window) spend for one agent, used by
+     * the turn-time soft budget gate. Returns {@code 0.0} when the agent has no
+     * rows in the window (COALESCE).
+     */
+    @Query("""
+            SELECT COALESCE(SUM(u.costUsd), 0.0)
+            FROM TurLLMTokenUsage u
+            WHERE u.agentId = :agentId AND u.createdAt >= :start
+            """)
+    double sumCostByAgentSince(@Param("agentId") String agentId, @Param("start") LocalDateTime start);
 }

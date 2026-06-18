@@ -170,7 +170,8 @@ public class TurCatalogCopilotService {
                 messages.add(new UserMessage(turn.content()));
             }
         }
-        var output = chatModel.call(new Prompt(messages)).getResult().getOutput();
+        var result = chatModel.call(new Prompt(messages)).getResult();
+        var output = result != null ? result.getOutput() : null;
         return output != null && output.getText() != null ? output.getText() : "";
     }
 

@@ -61,4 +61,33 @@ public class TurLLMTokenUsage implements Serializable {
      */
     @Column(name = "tenantId", length = 40)
     private String tenantId;
+
+    /**
+     * T289 / §XVI.1 — id of the {@link com.viglet.turing.persistence.model.agent.TurAIAgent}
+     * this turn belongs to, when the call originated from the agent chat
+     * executor. {@code null} for non-agent calls (direct LLM chat API, weekly
+     * report, memory compression) so the cost dashboard can group "per agent"
+     * without those rows polluting an agent's bill.
+     */
+    @Column(name = "agent_id", length = 255)
+    private String agentId;
+
+    /**
+     * T289 / §XVI.1 — coarse cost-attribution stage (e.g. {@code chat.live},
+     * {@code chat.background}, {@code chat.skill}). Reuses the {@code STAGE_CHAT_*}
+     * spirit from T32 so live vs. background spend splits for free. Stored as a
+     * short string; {@code null} on legacy / un-tagged rows.
+     */
+    @Column(name = "stage", length = 40)
+    private String stage;
+
+    /**
+     * T289 / §XVI.1 — frozen USD cost of this turn, computed at write time as
+     * {@code (inputTokens × inputRate + outputTokens × outputRate)} from the
+     * {@code tur_llm_price} table. Frozen-at-capture (standard billing) so a
+     * later price edit doesn't silently rewrite history. {@code 0.0} for local /
+     * embedded / unpriced models — the "$0 fully local" story keys off this.
+     */
+    @Column(name = "cost_usd", nullable = false)
+    private double costUsd;
 }

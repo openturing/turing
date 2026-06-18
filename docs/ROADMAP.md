@@ -221,16 +221,20 @@
 > pre-publish gate in the flow-editor Lint panel, `-Pagent-eval` CI). See
 > [CHANGELOG.md](CHANGELOG.md) → Block K. No active backlog remains here.
 
-## Block L — Cost & token governance (provider-agnostic)
+## Block L — Cost & token governance (provider-agnostic) ✅ shipped 2026-06-18
 
-> Productizes the X.17 promise ("the bill drops 50%") with a screen that proves it.
-> Provider-agnostic + real-time, so it works on the Spring AI path, Ollama, and
-> embedded ($0) — **not** coupled to the native-SDK seam. The vendor Usage-API
-> import (F.13 T183–T185) becomes the *enrichment* layer, not the foundation.
-
-- 📋 **T289** (deps: —) **`TurChatCostSample` per-turn capture** — read prompt/completion tokens from Spring AI `ChatResponse` usage metadata × a per-model price table; one sample per turn tagged `(tenant, agent, llm, stage)`. Rides the T32 observability plumbing; works for every provider incl. local ($0). → §XVI.1
-- 📋 **T290** (deps: T289) **Live AI-spend dashboard** — per agent / tenant / LLM / stage time-series + budget thresholds. Complements (does not duplicate) F.13 T184's 30-day vendor-Usage import. → §XVI.2
-- 📋 **T291** (deps: T289) **Turn-time soft budget gate** — per-agent `monthlyBudgetUsd` / `perTurnSoftCapUsd`; on projected breach, downgrade to a cheaper model or warn. Generalizes F.13 T185 beyond the native path. → §XVI.3
+> Shipped: T289–T291 — per-model price table + frozen per-turn USD cost on the
+> always-on relational `llm_token_usage` (agent/stage tagged), a live all-provider
+> AI-spend dashboard (`/console/cost-governance`), and a per-agent turn-time soft
+> budget gate (monthly cap → downgrade/warn). Built on the Spring AI `ChatResponse`
+> usage metadata (local/embedded = $0), **not** the native-SDK seam. See
+> [CHANGELOG.md](CHANGELOG.md) → Block L. No active backlog remains here.
+>
+> Implementation note: built on the existing `TurLLMTokenUsage` JPA table (which
+> already captured per-call tokens + tenant) rather than a parallel
+> `TurChatCostSample` in the Mongo/Redis chat-analytics store — the relational
+> path is always on, so cost data survives `turing.logging.engine=none`, matching
+> the "always works / $0 local" design goal.
 
 ## Block M — Verifiable answers (provider-agnostic provenance)
 

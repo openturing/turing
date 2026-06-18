@@ -68,6 +68,10 @@
         "title": "Token Usage",
         "description": "Monitor token consumption across all LLM instances and models."
       },
+      "costGovernance": {
+        "title": "Cost Governance",
+        "description": "Live AI-spend dashboard with per-agent / model / stage cost, a model price table, and per-agent budgets."
+      },
       "chatAnalytics": {
         "title": "Chat Analytics",
         "description": "Drill into recent chat sessions, intent and sentiment classification, and full transcripts."

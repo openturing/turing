@@ -707,6 +707,9 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
      * passes {@code null} to Chroma to match all (an empty {@code {}} is
      * rejected as "Invalid where clause").
      */
+    // S1168: null is required by the Chroma API contract (see javadoc) — it means
+    // "match all", whereas an empty map {} is rejected as "Invalid where clause".
+    @SuppressWarnings("java:S1168")
     private Map<String, Object> buildWhereClause(Map<String, List<String>> filters) {
         if (filters == null || filters.isEmpty()) {
             return null;

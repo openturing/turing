@@ -138,7 +138,10 @@ public class TurFormLabelTidyService {
         return "Form fields to tidy:\n" + tableJson;
     }
 
-    /** Parse the LLM response into a {name → tidied label} map. */
+    /** Parse the LLM response into a {name → tidied label} map, or null if it could not be parsed. */
+    // S1168: null is a parse-failure sentinel (the caller maps null → fail(...)),
+    // distinct from an empty map ("parsed, no labels"). Empty would mask bad JSON.
+    @SuppressWarnings("java:S1168")
     private Map<String, String> parseTidyLabels(String content) {
         if (!StringUtils.hasText(content)) {
             return null;

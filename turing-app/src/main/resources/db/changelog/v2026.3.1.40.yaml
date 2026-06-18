@@ -1,0 +1,206 @@
+databaseChangeLog:
+  # T289 / §XVI.1 (Block L) — cost & token governance.
+  #
+  # 1. tur_llm_price — admin-editable per-model price table (USD per 1M tokens).
+  # 2. agent_id / stage / cost_usd on llm_token_usage — per-turn cost
+  #    attribution so the Block L dashboard can slice spend per agent / tenant /
+  #    model / stage. Provider-agnostic: local / embedded / unpriced models
+  #    record cost_usd = 0.
+  #
+  # Portable lowercase types (double / timestamp / varchar); idempotent via
+  # tableExists / columnExists + onFail:MARK_RAN.
+
+  - changeSet:
+      id: v2026.3.1.40-create-tur_llm_price
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_llm_price
+      changes:
+        - createTable:
+            tableName: tur_llm_price
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: vendor_id
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: model_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: input_price_per_million
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: output_price_per_million
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: varchar(3)
+                  defaultValue: USD
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+        - addUniqueConstraint:
+            tableName: tur_llm_price
+            columnNames: vendor_id, model_name
+            constraintName: uk_llm_price_vendor_model
+
+  - changeSet:
+      id: v2026.3.1.40-add-llm_token_usage-agent_id
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_token_usage
+        - not:
+            - columnExists:
+                tableName: llm_token_usage
+                columnName: agent_id
+      changes:
+        - addColumn:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: agent_id
+                  type: varchar(255)
+                  remarks: "T289/§XVI.1 originating agent id (null for non-agent calls)."
+
+  - changeSet:
+      id: v2026.3.1.40-add-llm_token_usage-stage
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_token_usage
+        - not:
+            - columnExists:
+                tableName: llm_token_usage
+                columnName: stage
+      changes:
+        - addColumn:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: stage
+                  type: varchar(40)
+                  remarks: "T289/§XVI.1 cost stage: chat.live / chat.background / chat.skill / chat.other."
+
+  - changeSet:
+      id: v2026.3.1.40-add-llm_token_usage-cost_usd
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_token_usage
+        - not:
+            - columnExists:
+                tableName: llm_token_usage
+                columnName: cost_usd
+      changes:
+        - addColumn:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: cost_usd
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+                  remarks: "T289/§XVI.1 frozen USD cost of the turn (0 for local/unpriced)."
+
+  - changeSet:
+      id: v2026.3.1.40-seed-tur_llm_price
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: tur_llm_price
+        - changeSetExecuted:
+            id: v2026.3.1.40-create-tur_llm_price
+            author: alexandre-oliveira
+            changeLogFile: db/changelog/v2026.3.1.40.yaml
+      changes:
+        # Illustrative public list prices (USD / 1M tokens) as of early 2026.
+        # Fully editable from the admin UI — customers plug their own rates.
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-openai-gpt-4o } }
+              - { column: { name: vendor_id, value: openai } }
+              - { column: { name: model_name, value: gpt-4o } }
+              - { column: { name: input_price_per_million, valueNumeric: 2.5 } }
+              - { column: { name: output_price_per_million, valueNumeric: 10.0 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-openai-gpt-4o-mini } }
+              - { column: { name: vendor_id, value: openai } }
+              - { column: { name: model_name, value: gpt-4o-mini } }
+              - { column: { name: input_price_per_million, valueNumeric: 0.15 } }
+              - { column: { name: output_price_per_million, valueNumeric: 0.6 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-openai-gpt-4-turbo } }
+              - { column: { name: vendor_id, value: openai } }
+              - { column: { name: model_name, value: gpt-4-turbo } }
+              - { column: { name: input_price_per_million, valueNumeric: 10.0 } }
+              - { column: { name: output_price_per_million, valueNumeric: 30.0 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-anthropic-claude-3-5-sonnet } }
+              - { column: { name: vendor_id, value: anthropic } }
+              - { column: { name: model_name, value: claude-3-5-sonnet } }
+              - { column: { name: input_price_per_million, valueNumeric: 3.0 } }
+              - { column: { name: output_price_per_million, valueNumeric: 15.0 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-anthropic-claude-3-5-haiku } }
+              - { column: { name: vendor_id, value: anthropic } }
+              - { column: { name: model_name, value: claude-3-5-haiku } }
+              - { column: { name: input_price_per_million, valueNumeric: 0.8 } }
+              - { column: { name: output_price_per_million, valueNumeric: 4.0 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-gemini-1-5-pro } }
+              - { column: { name: vendor_id, value: gemini } }
+              - { column: { name: model_name, value: gemini-1.5-pro } }
+              - { column: { name: input_price_per_million, valueNumeric: 1.25 } }
+              - { column: { name: output_price_per_million, valueNumeric: 5.0 } }
+              - { column: { name: currency, value: USD } }
+        - insert:
+            tableName: tur_llm_price
+            columns:
+              - { column: { name: id, value: price-gemini-1-5-flash } }
+              - { column: { name: vendor_id, value: gemini } }
+              - { column: { name: model_name, value: gemini-1.5-flash } }
+              - { column: { name: input_price_per_million, valueNumeric: 0.075 } }
+              - { column: { name: output_price_per_million, valueNumeric: 0.3 } }
+              - { column: { name: currency, value: USD } }

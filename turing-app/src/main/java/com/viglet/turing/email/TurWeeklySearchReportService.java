@@ -233,7 +233,8 @@ public class TurWeeklySearchReportService {
             var response = chatModel.call(prompt);
 
             if (llmInstance != null) {
-                tokenUsageService.recordUsage(llmInstance, response, "system-scheduler");
+                tokenUsageService.recordUsage(llmInstance, response, "system-scheduler",
+                        null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_BACKGROUND);
             }
 
             String aiContent = response.getResult().getOutput().getText();

@@ -2217,37 +2217,14 @@ not about correctness of the single-service flow:
 
 ## XVI. Cost & token governance (Block L)
 
-> Productizes the X.17 promise — *"the customer flips a toggle, the bill drops
-> 50%"* — with a screen that proves it. Deliberately **provider-agnostic and
-> real-time**: it reads token usage from the Spring AI `ChatResponse`, so it works
-> on every provider (OpenAI, Anthropic, Gemini, Ollama, embedded = $0) and does
-> **not** depend on the native-SDK seam (§X) or any vendor Usage API. The vendor
-> Admin/Usage import (F.13 T183-T185) layers *on top* as reconciliation/enrichment.
-
-### XVI.1 `TurChatCostSample` — per-turn capture (T289)
-
-One sample per turn: prompt + completion tokens (from `ChatResponse.getMetadata()
-.getUsage()`) times a per-model price table (`tur_llm_price`, admin-editable,
-defaults seeded per known model), tagged `(tenantId, agentId, llmInstanceId,
-stage)`. Stage reuses the `STAGE_CHAT_*` taxonomy already emitted by T32, so
-`chat.live` vs `chat.background` (insights/summaries) split for free. Local/embedded
-calls record `usd=0` so the "$0 fully local" story (former T218) survives the Jlama
-downgrade — it keys off cost, not engine.
-
-### XVI.2 Live AI-spend dashboard (T290)
-
-Per agent / tenant / LLM / stage time-series with budget thresholds — the live,
-all-provider companion to F.13 T184's 30-day vendor-Usage card. Lives in System
-Info (single-tenant) and per-tenant in the multi-tenancy console (Block J).
-Cross-references, not duplicates, the F.13 importer: where both exist, the vendor
-number is the source of truth and the live number is the early-warning estimate.
-
-### XVI.3 Turn-time soft budget gate (T291)
-
-Per-agent `monthlyBudgetUsd` / `perTurnSoftCapUsd`. On projected breach (rolling
-7-day average, same heuristic sketched for F.13 T185) the engine either downgrades
-to a cheaper model tier for non-critical stages or surfaces a confirm gate — a
-generalization of T185 that works on the Spring AI path, not only the native one.
+> **Shipped 2026-06-18** (T289–T291). Design realized; see
+> [CHANGELOG.md](CHANGELOG.md) → Block L for the as-built summary. One deliberate
+> deviation from the original sketch: the per-turn cost is captured on the
+> always-on relational `llm_token_usage` table (extended with `agent_id` /
+> `stage` / `cost_usd`) instead of a separate `TurChatCostSample` in the
+> Mongo/Redis chat-analytics store — the relational path is always present, so
+> cost data survives `turing.logging.engine=none`, which the "always works / $0
+> local" goal requires. No active backlog remains here.
 
 ## XIX. Open-core publish mechanics (Block P)
 

@@ -4,6 +4,7 @@ import {
   IconBuildingStore,
   IconChartBar,
   IconClock,
+  IconCoin,
   IconCompass,
   IconCpu2,
   IconCube,
@@ -56,7 +57,7 @@ interface SidebarNavItem {
   icon: Icon
 }
 
-const LLM_ONLY_KEYS = new Set(["chat", "tokenUsage"])
+const LLM_ONLY_KEYS = new Set(["chat", "tokenUsage", "costGovernance"])
 
 /** Maps sidebar item keys to the privilege required to view them. */
 const ITEM_PRIVILEGE: Record<string, string> = {
@@ -81,6 +82,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "persona", titleKey: "home.features.persona.title", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle },
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+  { key: "costGovernance", titleKey: "home.features.costGovernance.title", url: ROUTES.COST_GOVERNANCE, icon: IconCoin },
   { key: "chatAnalytics", titleKey: "home.features.chatAnalytics.title", url: ROUTES.CHAT_ANALYTICS, icon: IconMessageCircle2 },
   { key: "parkedConversations", titleKey: "home.features.parkedConversations.title", url: ROUTES.PARKED_CONVERSATIONS, icon: IconPlayerPause },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },

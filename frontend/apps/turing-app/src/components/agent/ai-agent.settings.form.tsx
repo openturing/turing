@@ -144,6 +144,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // behaviour (no enforcement) until the operator opts in.
       maxPromptTokens: value.maxPromptTokens ?? 0,
       overBudgetBehavior: value.overBudgetBehavior ?? "WARN",
+      // T291 / §XVI.3 (Block L) — cost budget gate off by default (null caps).
+      monthlyBudgetUsd: value.monthlyBudgetUsd ?? null,
+      perTurnSoftCapUsd: value.perTurnSoftCapUsd ?? null,
+      budgetDowngradeLlmId: value.budgetDowngradeLlmId ?? null,
       // T66 / §VII.6.g — RETAIN_FOREVER matches the backend enum default so
       // existing agents keep every submission until the operator opts in.
       submissionRetention: value.submissionRetention ?? "RETAIN_FOREVER",
@@ -921,6 +925,117 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           <option value="WARN">WARN</option>
                           <option value="ERROR">ERROR</option>
                           <option value="COMPACT">COMPACT (V1: degrades to WARN)</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              {/* T291 / §XVI.3 (Block L) — turn-time soft cost budget.
+                  Provider-agnostic; reads the frozen per-turn USD cost. */}
+              <FormField
+                control={form.control}
+                name="monthlyBudgetUsd"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.monthlyBudgetUsd", { defaultValue: "Monthly budget (USD)" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.monthlyBudgetUsdDesc", {
+                          defaultValue:
+                            "Soft month-to-date spend cap. Empty or 0 disables the gate. On breach the agent downgrades to the LLM below (if set) or logs a warning and proceeds — it never aborts a turn.",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="0 (disabled)"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="perTurnSoftCapUsd"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.perTurnSoftCapUsd", { defaultValue: "Per-turn soft cap (USD)" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.perTurnSoftCapUsdDesc", {
+                          defaultValue:
+                            "Logs a warning when a single turn costs more than this. Empty or 0 disables it. Post-hoc signal only — the cost is known after the LLM responds, so it never aborts the turn.",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="0 (disabled)"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="budgetDowngradeLlmId"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>
+                        {t("forms.agentSettings.budgetDowngradeLlm", { defaultValue: "Downgrade LLM on breach" })}
+                      </FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.budgetDowngradeLlmDesc", {
+                          defaultValue:
+                            "Cheaper LLM to switch to for the rest of the month once the monthly budget is breached. Leave as \"Warn only\" to keep the current model and just log.",
+                        })}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <select
+                          aria-label={t("forms.agentSettings.budgetDowngradeLlm", { defaultValue: "Downgrade LLM on breach" })}
+                          className="border rounded-md px-3 py-2 text-sm bg-background"
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!form.watch("monthlyBudgetUsd")}
+                        >
+                          <option value="">{t("forms.agentSettings.budgetWarnOnly", { defaultValue: "Warn only (no downgrade)" })}</option>
+                          {(form.watch("llmInstances") ?? []).map((llm) => (
+                            <option key={llm.id} value={llm.id}>{llm.title}</option>
+                          ))}
                         </select>
                       </FormControl>
                       <FormMessage />

@@ -193,6 +193,9 @@ public class TurSkillSandboxSessionManager {
     }
 
     private static String relativize(String root, String objectName) {
+        if (root == null || objectName == null) {
+            return "";
+        }
         if (objectName.equals(root)) {
             return "";
         }

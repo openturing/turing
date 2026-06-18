@@ -72,7 +72,8 @@ public class TurLlmSummaryService {
             Prompt prompt = new Prompt(messages);
             var response = chatModel.call(prompt);
 
-            tokenUsageService.recordUsage(llmInstance, response, resolveUsername());
+            tokenUsageService.recordUsage(llmInstance, response, resolveUsername(),
+                    null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_BACKGROUND);
 
             String content = response.getResult().getOutput().getText();
 

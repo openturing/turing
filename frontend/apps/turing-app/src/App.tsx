@@ -34,6 +34,7 @@ import {
   SNRoutes,
   StoreRoutes,
   TokenUsageRoutes,
+  CostGovernanceRoutes,
   ChatAnalyticsRoutes,
   ParkedConversationsRoutes,
   ConversationRoutes,
@@ -90,6 +91,7 @@ function App() {
                 {PageRoutes}
                 {ChatRoutes}
                 {TokenUsageRoutes}
+                {CostGovernanceRoutes}
                 {ChatAnalyticsRoutes}
                 {ParkedConversationsRoutes}
                 {ConversationRoutes}

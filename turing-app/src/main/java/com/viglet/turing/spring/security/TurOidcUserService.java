@@ -34,6 +34,9 @@ public class TurOidcUserService extends OidcUserService {
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
         OidcUser oidcUser = super.loadUser(userRequest);
+        if (oidcUser == null) {
+            throw new OAuth2AuthenticationException("invalid_user_info_response");
+        }
 
         String username = oidcUser.getAttribute(PREFERRED_USERNAME);
         if (username == null) {

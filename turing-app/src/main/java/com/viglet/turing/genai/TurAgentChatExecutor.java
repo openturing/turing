@@ -107,6 +107,7 @@ public class TurAgentChatExecutor {
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatCohortResolver chatCohortResolver;
     private final TurChatPipelineObservation chatPipelineObservation;
+    private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -119,7 +120,8 @@ public class TurAgentChatExecutor {
             TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatCohortResolver chatCohortResolver,
-            TurChatPipelineObservation chatPipelineObservation) {
+            TurChatPipelineObservation chatPipelineObservation,
+            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.toolResolver = toolResolver;
@@ -132,6 +134,7 @@ public class TurAgentChatExecutor {
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatCohortResolver = chatCohortResolver;
         this.chatPipelineObservation = chatPipelineObservation;
+        this.costBudgetGate = costBudgetGate;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -378,6 +381,14 @@ public class TurAgentChatExecutor {
         // Micrometer timer registry — DECRYPT/MODEL/FLOW/PERSONA are owned
         // here; TOOLS/COMPOSE are recorded inside the collaborators.
         final long tStart = System.currentTimeMillis();
+
+        // T291 / §XVI.3 (Block L) — turn-time soft budget gate. When the agent's
+        // month-to-date spend has reached its monthlyBudgetUsd cap and a cheaper
+        // downgrade LLM is configured, swap to it BEFORE decrypt/createChatModel
+        // so the cheaper provider's key + client are the ones built. Soft: never
+        // aborts the turn; warn-only when no downgrade is set. No-op (returns the
+        // same instance) when the gate is disabled — the common case.
+        llmInstance = costBudgetGate.resolveInstance(agent, llmInstance);
 
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         final long tAfterDecrypt = System.currentTimeMillis();

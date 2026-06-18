@@ -18,11 +18,10 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+
+import com.viglet.testsupport.cache.TurRagRerankCacheTestConfig;
 
 /**
  * T341 — verifies the {@code @Cacheable} memoization on {@link TurRagRerankCache}.
@@ -33,31 +32,22 @@ import org.springframework.context.annotation.Configuration;
  * would bypass it. Asserts that an identical key reuses the cached ordering (the
  * {@link Supplier} runs once) while a changed key recomputes.
  *
+ * <p>The cache config lives in {@link TurRagRerankCacheTestConfig} under
+ * {@code com.viglet.testsupport.*} — deliberately <b>outside</b> the
+ * {@code com.viglet.turing} component-scan base so its fixed-name cache manager
+ * cannot leak into other {@code @SpringBootTest} contexts.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
 class TurRagRerankCacheTest {
-
-    @Configuration
-    @EnableCaching
-    static class Config {
-        @Bean
-        ConcurrentMapCacheManager cacheManager() {
-            return new ConcurrentMapCacheManager("turRagRerankScore");
-        }
-
-        @Bean
-        TurRagRerankCache rerankCache() {
-            return new TurRagRerankCache();
-        }
-    }
 
     private AnnotationConfigApplicationContext context;
     private TurRagRerankCache cache;
 
     @BeforeEach
     void setUp() {
-        context = new AnnotationConfigApplicationContext(Config.class);
+        context = new AnnotationConfigApplicationContext(TurRagRerankCacheTestConfig.class);
         cache = context.getBean(TurRagRerankCache.class);
     }
 

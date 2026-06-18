@@ -272,6 +272,44 @@ public class TurAIAgent implements Serializable {
     private TurAgentOverBudgetBehavior overBudgetBehavior = TurAgentOverBudgetBehavior.WARN;
 
     /**
+     * T291 / §XVI.3 (Block L) — soft monthly spend cap in USD for this agent.
+     * {@code null} or {@code <= 0} disables the gate. When the agent's
+     * month-to-date USD cost (summed from {@code llm_token_usage.cost_usd})
+     * reaches this value, the turn-time budget gate fires: it either downgrades
+     * the turn to {@link #budgetDowngradeLlmId} (when set and resolvable) or
+     * logs a warning and proceeds. Soft by design — it never hard-fails a turn,
+     * so a paying conversation is never dropped mid-flight.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "monthly_budget_usd")
+    private Double monthlyBudgetUsd;
+
+    /**
+     * T291 / §XVI.3 (Block L) — per-turn soft cost cap in USD. {@code null} or
+     * {@code <= 0} disables it. Enforced post-hoc: when a completed turn's
+     * {@code cost_usd} exceeds this value a warning is logged (operator signal
+     * that a single turn is unusually expensive). Does not abort the turn —
+     * the cost is only known after the LLM responds.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "per_turn_soft_cap_usd")
+    private Double perTurnSoftCapUsd;
+
+    /**
+     * T291 / §XVI.3 (Block L) — id of a cheaper {@link TurLLMInstance} to switch
+     * to for the remainder of the month once {@link #monthlyBudgetUsd} is
+     * breached. {@code null}/blank means "warn only" (no downgrade). The
+     * instance must be one this agent can use; if it can't be resolved the gate
+     * degrades to warn-only.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "budget_downgrade_llm_id", length = 255)
+    private String budgetDowngradeLlmId;
+
+    /**
      * T66 / §VII.6.g — retention policy for this agent's completed
      * {@code chat_flow_submission} rows (LGPD / GDPR compliance hook).
      * {@code RETAIN_FOREVER} (default) keeps everything; {@code RETAIN_DAYS}

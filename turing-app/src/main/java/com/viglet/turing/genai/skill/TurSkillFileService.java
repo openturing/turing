@@ -479,6 +479,9 @@ public class TurSkillFileService {
     }
 
     private static String relativize(String root, String objectName) {
+        if (root == null || objectName == null) {
+            return "";
+        }
         if (objectName.equals(root)) {
             return "";
         }
@@ -490,6 +493,9 @@ public class TurSkillFileService {
     }
 
     private static String lastSegment(String path) {
+        if (path == null) {
+            return "";
+        }
         int slash = path.lastIndexOf('/');
         return slash >= 0 ? path.substring(slash + 1) : path;
     }

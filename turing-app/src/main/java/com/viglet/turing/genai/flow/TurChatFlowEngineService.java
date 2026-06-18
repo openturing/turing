@@ -1349,6 +1349,11 @@ public class TurChatFlowEngineService {
      *
      * @since 2026.3.1
      */
+    // S1168: null here is a documented sentinel ("no inheritance contract — caller
+    // decides the fallback"), distinct from an empty map ("inherit nothing"). The
+    // caller at applySlotInheritance's call sites branches on null vs empty, so
+    // returning an empty map would silently break the legacy full-snapshot fallback.
+    @SuppressWarnings("java:S1168")
     Map<String, String> applySlotInheritance(TurChatFlow receivingFlow,
             Map<String, String> sourceSlots) {
         if (receivingFlow == null) {
