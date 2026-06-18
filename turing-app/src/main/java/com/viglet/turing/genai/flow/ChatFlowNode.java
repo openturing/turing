@@ -355,6 +355,19 @@ public record ChatFlowNode(String id, String type, NodeData data) {
     }
 
     /**
+     * Configuration for a {@code humanApproval} node (T119 / §IX.5.a): the
+     * notification channel/target/template fired when the flow reaches the
+     * node, the slot the operator's decision is written into, and the
+     * timeout policy. {@code null} on every other node type. See
+     * {@link HumanApprovalConfig}.
+     *
+     * @since 2026.3.1
+     */
+    public HumanApprovalConfig humanApproval() {
+        return data.humanApproval();
+    }
+
+    /**
      * Per-node A/B experiment key (T72). When non-blank <em>and</em> the node
      * declares at least one {@link #nodeVariants() variant}, the engine swaps
      * this single node's behavior (currently its {@link #aiInstruction()}) for
@@ -520,7 +533,31 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             List<NodeVariant> nodeVariants,
             List<FormField> formFields,
             String planSchema,
-            String completionMode) {
+            String completionMode,
+            HumanApprovalConfig humanApproval) {
+
+        /**
+         * Back-compat constructor for callers/tests predating the T119
+         * {@code humanApproval} node config ({@code humanApproval}) — this is
+         * the post-T108-2 / pre-T119 canonical signature. Delegates with
+         * {@code humanApproval = null}.
+         */
+        public NodeData(String label, String type, String aiInstruction, String outputVariable,
+                String validationRule, String functionName, String conditionExpression, String toolSource,
+                String mcpServerId, String subFlowId, String subFlowName, String personaId,
+                String switchVariable, List<SwitchOption> switchOptions, List<String> inlineOptions,
+                Boolean overrideExistingValue, String slotName, String slotOperation, String slotValue,
+                String onJudgeReject, Boolean toolsEnabled, List<String> requiredTools,
+                String routineId, Integer routineTimeoutMs, Boolean continueOnFailure,
+                String nodeExperimentKey, List<NodeVariant> nodeVariants, List<FormField> formFields,
+                String planSchema, String completionMode) {
+            this(label, type, aiInstruction, outputVariable, validationRule, functionName,
+                    conditionExpression, toolSource, mcpServerId, subFlowId, subFlowName, personaId,
+                    switchVariable, switchOptions, inlineOptions, overrideExistingValue, slotName,
+                    slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools, routineId,
+                    routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants, formFields,
+                    planSchema, completionMode, null);
+        }
 
         /**
          * Back-compat constructor for callers/tests predating the T108-2
@@ -636,8 +673,46 @@ public record ChatFlowNode(String id, String type, NodeData data) {
                     personaId, switchVariable, switchOptions, inlineOptions, overrideExistingValue,
                     slotName, slotOperation, slotValue, onJudgeReject, toolsEnabled, requiredTools,
                     routineId, routineTimeoutMs, continueOnFailure, nodeExperimentKey, nodeVariants,
-                    formFields, planSchema, completionMode);
+                    formFields, planSchema, completionMode, humanApproval);
         }
+    }
+
+    /**
+     * Runtime configuration of a {@code humanApproval} node (T119 / §IX.5.a).
+     * When the engine walks onto the node it fires a notification on the chosen
+     * {@code channel} to {@code target} (rendering {@code template} with
+     * {@code {{slot}}} placeholders), persists a pending-approval record, and
+     * parks the conversation. An operator's decision — delivered through
+     * {@code POST /api/genai/approval/{token}} — is written into
+     * {@code approvalSlot} and the flow advances. If no decision arrives within
+     * {@code timeoutSeconds}, the {@code timeoutBehavior} resolves it
+     * automatically.
+     *
+     * <ul>
+     *   <li>{@code channel} — {@code slack} | {@code email} | {@code webhook}.
+     *       Selects how the approver is notified.</li>
+     *   <li>{@code target} — channel-specific destination: an e-mail address
+     *       ({@code email}), a Slack incoming-webhook URL ({@code slack}), or
+     *       the name of an admin-declared {@link com.viglet.turing.persistence.model.agent.TurChatWebhook}
+     *       to fire ({@code webhook}).</li>
+     *   <li>{@code template} — message body; {@code {{slot}}} placeholders are
+     *       substituted with the conversation's slot values. A blank template
+     *       falls back to a generic "approval required" message.</li>
+     *   <li>{@code approvalSlot} — slot the decision lands in
+     *       ({@code approve} | {@code reject} | {@code edit:<text>}). Downstream
+     *       {@code condition}/{@code switch} nodes branch on it.</li>
+     *   <li>{@code timeoutSeconds} — seconds to wait before auto-resolving;
+     *       {@code null} or {@code <= 0} means wait indefinitely (no sweep).</li>
+     *   <li>{@code timeoutBehavior} — {@code auto_reject} (default) or
+     *       {@code auto_approve}: the decision written into {@code approvalSlot}
+     *       when the timeout elapses.</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record HumanApprovalConfig(String channel, String target, String template,
+            String approvalSlot, Integer timeoutSeconds, String timeoutBehavior) {
     }
 
     /**

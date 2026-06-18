@@ -30,7 +30,7 @@ import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
 import { planFormConversion, type FormConversionPlan } from "../chat-flow.form-converter";
-import type { FlowCompletionMode, FlowFormField, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowApprovalChannel, FlowApprovalTimeoutBehavior, FlowCompletionMode, FlowFormField, FlowHumanApprovalConfig, FlowNodeData, FlowNodeType, FlowNodeVariant, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 /** T107 — widget hints offered for a formCapture form field. */
 const FORM_FIELD_TYPES = ["text", "email", "tel", "number", "date", "textarea", "select"] as const;
@@ -542,6 +542,10 @@ export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onC
 
             <ContinueOnFailureField data={data} onChange={update} />
           </>
+        )}
+
+        {type === "humanApproval" && (
+          <HumanApprovalSection data={data} onChange={update} />
         )}
 
         {type === "condition" && (
@@ -1178,6 +1182,139 @@ export function FlowProperties({ node, nodes, edges, onChange, onApplyGraph, onC
  * edge); when unchecked, the legacy lenient default applies — log + advance
  * to the first edge.
  */
+/**
+ * T119 — property editor for a {@code humanApproval} node. Edits the nested
+ * {@link FlowHumanApprovalConfig} under {@code data.humanApproval}: the
+ * notification channel + target, the message template, the slot the operator's
+ * decision lands in, and the timeout policy. Round-trips through the flow
+ * export/import for free (no entity column — it lives in {@code definitionJson}).
+ */
+function HumanApprovalSection({
+  data,
+  onChange,
+}: {
+  readonly data: FlowNodeData;
+  readonly onChange: (patch: Partial<FlowNodeData>) => void;
+}) {
+  const { t } = useTranslation();
+  const config: FlowHumanApprovalConfig = data.humanApproval ?? {};
+  const channel: FlowApprovalChannel = config.channel ?? "email";
+
+  const updateConfig = (patch: Partial<FlowHumanApprovalConfig>) =>
+    onChange({ humanApproval: { ...config, ...patch } });
+
+  const targetLabelKey =
+    channel === "slack"
+      ? "chatFlow.properties.humanApproval.targetSlack"
+      : channel === "webhook"
+        ? "chatFlow.properties.humanApproval.targetWebhook"
+        : "chatFlow.properties.humanApproval.targetEmail";
+
+  return (
+    <>
+      <div className="flex flex-col gap-1">
+        <Label>{t("chatFlow.properties.humanApproval.channel")}</Label>
+        <Select
+          value={channel}
+          onValueChange={(value) => updateConfig({ channel: value as FlowApprovalChannel })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="email">{t("chatFlow.properties.humanApproval.channelEmail")}</SelectItem>
+            <SelectItem value="slack">{t("chatFlow.properties.humanApproval.channelSlack")}</SelectItem>
+            <SelectItem value="webhook">{t("chatFlow.properties.humanApproval.channelWebhook")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="flow-node-approval-target">{t(targetLabelKey)}</Label>
+        <Input
+          id="flow-node-approval-target"
+          value={config.target ?? ""}
+          onChange={(e) => updateConfig({ target: e.target.value || undefined })}
+          placeholder={t("chatFlow.properties.humanApproval.targetPlaceholder")}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="flow-node-approval-template">
+          {t("chatFlow.properties.humanApproval.template")}
+        </Label>
+        <Textarea
+          id="flow-node-approval-template"
+          rows={3}
+          value={config.template ?? ""}
+          onChange={(e) => updateConfig({ template: e.target.value || undefined })}
+          placeholder={t("chatFlow.properties.humanApproval.templatePlaceholder")}
+        />
+        <span className="text-[11px] text-muted-foreground">
+          {t("chatFlow.properties.humanApproval.templateHint")}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="flow-node-approval-slot">
+          {t("chatFlow.properties.humanApproval.approvalSlot")}
+        </Label>
+        <Input
+          id="flow-node-approval-slot"
+          value={config.approvalSlot ?? ""}
+          onChange={(e) => updateConfig({ approvalSlot: e.target.value || undefined })}
+          placeholder="operator_decision"
+        />
+        <span className="text-[11px] text-muted-foreground">
+          {t("chatFlow.properties.humanApproval.approvalSlotHint")}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="flow-node-approval-timeout">
+          {t("chatFlow.properties.humanApproval.timeoutSeconds")}
+        </Label>
+        <Input
+          id="flow-node-approval-timeout"
+          type="number"
+          min={0}
+          value={config.timeoutSeconds ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            updateConfig({ timeoutSeconds: v === "" ? undefined : Number(v) });
+          }}
+          placeholder="0"
+        />
+        <span className="text-[11px] text-muted-foreground">
+          {t("chatFlow.properties.humanApproval.timeoutHint")}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label>{t("chatFlow.properties.humanApproval.timeoutBehavior")}</Label>
+        <Select
+          value={config.timeoutBehavior ?? "auto_reject"}
+          onValueChange={(value) =>
+            updateConfig({ timeoutBehavior: value as FlowApprovalTimeoutBehavior })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto_reject">
+              {t("chatFlow.properties.humanApproval.autoReject")}
+            </SelectItem>
+            <SelectItem value="auto_approve">
+              {t("chatFlow.properties.humanApproval.autoApprove")}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+}
+
 function ContinueOnFailureField({
   data,
   onChange,
@@ -1385,6 +1522,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.scheduleAgent";
     case "suspend":
       return "chatFlow.palette.suspend";
+    case "humanApproval":
+      return "chatFlow.palette.humanApproval";
     case "planningStep":
       return "chatFlow.palette.planningStep";
     case "iteratePlan":

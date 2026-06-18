@@ -21,8 +21,25 @@ export type FlowNodeType =
   | "writeSlot"
   | "webhook"
   | "suspend"
+  | "humanApproval"
   | "planningStep"
   | "iteratePlan";
+
+/**
+ * Notification channel a {@code humanApproval} node (T119) uses to alert an
+ * operator: e-mail (target = address), Slack (target = incoming-webhook URL),
+ * or an admin-declared webhook (target = webhook name).
+ * @since 2026.3.1
+ */
+export type FlowApprovalChannel = "email" | "slack" | "webhook";
+
+/**
+ * What a {@code humanApproval} node does when its timeout elapses without an
+ * operator decision: auto-reject (default) or auto-approve. The matching
+ * decision string is written into the approval slot before the flow resumes.
+ * @since 2026.3.1
+ */
+export type FlowApprovalTimeoutBehavior = "auto_reject" | "auto_approve";
 
 /**
  * Completion policy for an {@code iteratePlan} node (T108-2): what happens to
@@ -279,6 +296,35 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.3.1
    */
   completionMode?: FlowCompletionMode;
+  /**
+   * T119 — configuration for a `humanApproval` node. Mirrors the backend
+   * `ChatFlowNode.HumanApprovalConfig` record: the engine fires a notification
+   * on {@link FlowApprovalChannel} to a target, parks the conversation, and
+   * advances once the operator's decision lands in the approval slot. Present
+   * only on `humanApproval` nodes.
+   * @since 2026.3.1
+   */
+  humanApproval?: FlowHumanApprovalConfig;
+}
+
+/**
+ * Configuration of a `humanApproval` node (T119). Stored nested under
+ * `node.data.humanApproval` to match the backend record shape.
+ * @since 2026.3.1
+ */
+export interface FlowHumanApprovalConfig {
+  /** Notification channel used to alert the operator. */
+  channel?: FlowApprovalChannel;
+  /** Channel-specific destination: e-mail address, Slack URL, or webhook name. */
+  target?: string;
+  /** Message body; `{{slot}}` placeholders are substituted with slot values. */
+  template?: string;
+  /** Slot the decision lands in (approve | reject | edit:<text>). */
+  approvalSlot?: string;
+  /** Seconds to wait before auto-resolving; 0/omitted = wait indefinitely. */
+  timeoutSeconds?: number;
+  /** Decision applied on timeout. Defaults to `auto_reject`. */
+  timeoutBehavior?: FlowApprovalTimeoutBehavior;
 }
 
 /**
@@ -396,6 +442,14 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-slate-50 dark:bg-slate-900/40",
     border: "border-slate-500",
     text: "text-slate-900 dark:text-slate-100",
+  },
+  humanApproval: {
+    // T119 — rose: a human-gated checkpoint. Warmer than suspend's neutral
+    // slate (both park the conversation) so authors spot at a glance that this
+    // pause is waiting on a *person's* decision, not an external system.
+    bg: "bg-rose-50 dark:bg-rose-950/40",
+    border: "border-rose-500",
+    text: "text-rose-900 dark:text-rose-100",
   },
   planningStep: {
     // T108 — amber/yellow signals "think before acting". Adjacent to

@@ -21,6 +21,9 @@ public class TurGenAiProperty {
     /** Auto-offload-large-tool-results knobs (§IX.3.d / T114). */
     private TurGenAiToolResultOffloadProperty toolResultOffload = new TurGenAiToolResultOffloadProperty();
 
+    /** Human-in-the-loop {@code humanApproval} node knobs (§IX.5.a / T119). */
+    private TurGenAiHumanApprovalProperty humanApproval = new TurGenAiHumanApprovalProperty();
+
     @Getter
     @Setter
     public static class TurGenAiReindexProperty {
@@ -108,5 +111,35 @@ public class TurGenAiProperty {
          * reference. Default {@code 4096}.
          */
         private int inlineMaxChars = 4096;
+    }
+
+    /**
+     * Knobs for the §IX.5.a / T119 {@code humanApproval} node. The node itself
+     * is opt-in per flow (an author drops it on the canvas); these settings
+     * only shape how the notification resume link is built and how the timeout
+     * sweep runs.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.1
+     */
+    @Getter
+    @Setter
+    public static class TurGenAiHumanApprovalProperty {
+        /**
+         * Public base URL of this Turing instance (scheme + host[:port], no
+         * trailing slash) used to build the absolute approval link embedded in
+         * notifications, e.g. {@code https://turing.example.com}. When blank,
+         * the notification carries a relative {@code /api/genai/approval/{token}}
+         * path — fine for same-origin operators, but set this in production so
+         * Slack/e-mail links resolve.
+         */
+        private String baseUrl = "";
+
+        /**
+         * Default timeout (seconds) applied to a {@code humanApproval} node that
+         * leaves {@code timeoutSeconds} unset. {@code 0} (the default) means
+         * "wait indefinitely" — the conversation parks until an operator acts.
+         */
+        private int defaultTimeoutSeconds = 0;
     }
 }

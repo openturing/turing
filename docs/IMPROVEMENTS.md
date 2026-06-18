@@ -1264,27 +1264,22 @@ interop boundary.)
 ### IX.5 Human-in-the-loop — make it a graph node, not magic
 
 Deep Agents has HITL as middleware (the harness pauses for you when
-appropriate). **Turing's better move**: `humanApproval` is a node
-type, visible in the editor, observable in the analytics, auditable
-in the slot audit log.
+appropriate). **Turing's better move**: HITL is a node type, visible in
+the editor, observable in the analytics, auditable in the slot audit
+log. The `humanApproval` node (T119) shipped — see CHANGELOG §E.4.
 
-```jsonc
-{
-  "type": "humanApproval",
-  "data": {
-    "notificationChannel": "slack",
-    "notificationTarget": "#sales-approvals",
-    "notificationTemplate": "Lead {{name}} from {{company}} ready to convert. Review: {{transcript_url}}",
-    "approvalSlot": "operator_decision",       // 'approve' | 'reject' | 'edit:<text>'
-    "timeoutSeconds": 3600,
-    "timeoutBehavior": "auto_reject"
-  }
-}
-```
+#### IX.5.b Spectator + Co-pilot mode (T120, 💭)
 
-This is **graph-visible** — every flow's audit trail shows where humans
-intervened. Spectator + Co-pilot mode (T120) layers in for live
-co-driving.
+Where `humanApproval` is an *async, graph-declared* pause (notify →
+wait → resume), Spectator mode is the *live, in-the-loop* complement: an
+operator opens `/conversation/{id}?spectate=true` and watches the chat,
+slots, and workspace stream in real time over the T54/T63 SSE buses.
+Toggling `manual=true` lets them **take the wheel** for a turn — the LLM
+step is skipped and the operator's typed text becomes the assistant
+message, written through the same flow-advance path so slots and
+analytics stay consistent. The two compose: an approval node can hand
+off to a spectating operator who then co-drives the rest of the
+conversation.
 
 ### IX.6 Long-horizon tasks — explicit suspend / resume
 

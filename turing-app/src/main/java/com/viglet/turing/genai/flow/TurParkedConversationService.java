@@ -85,10 +85,14 @@ public class TurParkedConversationService {
             // straight to their authored label without re-walking the graph.
             Map<String, String> suspendReasons = new HashMap<>();
             for (ChatFlowNode node : graph.nodes()) {
-                if ("suspend".equals(node.type())) {
+                // T119/T121 — both suspend and humanApproval park the cursor and
+                // belong on the dashboard so an operator can triage / unblock.
+                if ("suspend".equals(node.type()) || "humanApproval".equals(node.type())) {
                     String label = node.label();
+                    String fallback = "humanApproval".equals(node.type())
+                            ? "awaiting approval" : "suspended";
                     suspendReasons.put(node.id(),
-                            label == null || label.isBlank() ? "suspended" : label);
+                            label == null || label.isBlank() ? fallback : label);
                 }
             }
             if (suspendReasons.isEmpty()) {

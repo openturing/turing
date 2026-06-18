@@ -202,6 +202,10 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/chat/**"),
                                                 mvc.matcher("/api/sn/*/*/spell-check"),
                                                 mvc.matcher("/api/ann/*/search"),
+                                                // T119 — token-gated human-approval resolve endpoints
+                                                // (the opaque token is the capability). The plural
+                                                // /api/genai/approvals admin list stays authenticated.
+                                                mvc.matcher("/api/genai/approval/*"),
                                                 mvc.matcher("/ann/**"),
                                                 mvc.matcher("/pages/**"),
                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
@@ -266,6 +270,10 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/chat/**"),
                                                                 mvc.matcher("/api/sn/*/*/spell-check"),
                                                                 mvc.matcher("/api/ann/*/search"),
+                                                                // T119 — token-gated human-approval resolve
+                                                                // endpoints (token = capability). The plural
+                                                                // /api/genai/approvals list stays authenticated.
+                                                                mvc.matcher("/api/genai/approval/*"),
                                                                 mvc.matcher("/ann/**"),
                                                                 mvc.matcher("/pages/**"),
                                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).

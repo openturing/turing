@@ -16,6 +16,7 @@ import {
   IconRouteAltLeft,
   IconSparkles,
   IconSubtask,
+  IconUserCheck,
   IconVariable,
   IconWebhook,
 } from "@tabler/icons-react";
@@ -678,6 +679,61 @@ export function IteratePlanNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+/**
+ * T119 — humanApproval node. Parks the conversation like `suspend`, but first
+ * fires a notification (Slack / Email / webhook) to an operator and persists a
+ * pending-approval record. The flow advances once the operator's decision lands
+ * in the approval slot. Rose signals a human-gated checkpoint.
+ *
+ * @since 2026.3.1
+ */
+export function HumanApprovalNode({ data }: ChatFlowNodeProps) {
+  const config = data.humanApproval ?? {};
+  const channel = typeof config.channel === "string" ? config.channel : null;
+  const slot =
+    typeof config.approvalSlot === "string" && config.approvalSlot.trim().length > 0
+      ? config.approvalSlot.trim()
+      : typeof data.outputVariable === "string" && data.outputVariable.trim().length > 0
+        ? data.outputVariable.trim()
+        : "operator_decision";
+  const timeout = typeof config.timeoutSeconds === "number" && config.timeoutSeconds > 0
+    ? config.timeoutSeconds
+    : null;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-rose-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-rose-500 px-3 py-2 text-white">
+        <IconUserCheck className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">
+          {data.label || "Human Approval"}
+        </div>
+      </div>
+      <div className="bg-rose-50 p-3 text-xs leading-relaxed text-rose-900 dark:bg-rose-950/40 dark:text-rose-100">
+        <div>
+          <span className="font-semibold">Notify: </span>
+          {channel ? (
+            <code className="rounded bg-rose-200/60 px-1 py-0.5 text-[11px] dark:bg-rose-900/50">
+              {channel}
+            </code>
+          ) : (
+            <span className="italic opacity-60">no channel</span>
+          )}
+        </div>
+        <div className="mt-1">
+          <span className="font-semibold">Decision slot: </span>
+          <code className="rounded bg-rose-200/60 px-1 py-0.5 text-[11px] dark:bg-rose-900/50">
+            {slot}
+          </code>
+        </div>
+        <div className="mt-1 opacity-80">
+          {timeout ? `Auto-${config.timeoutBehavior === "auto_approve" ? "approve" : "reject"} after ${timeout}s` : "Waits indefinitely"}
+        </div>
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-rose-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-rose-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -694,6 +750,7 @@ export const nodeTypes = {
   writeSlot: WriteSlotNode,
   webhook: WebhookNode,
   suspend: SuspendNode,
+  humanApproval: HumanApprovalNode,
   planningStep: PlanningStepNode,
   iteratePlan: IteratePlanNode,
 };

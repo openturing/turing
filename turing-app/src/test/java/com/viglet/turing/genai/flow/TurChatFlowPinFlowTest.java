@@ -110,6 +110,7 @@ class TurChatFlowPinFlowTest {
                 org.mockito.Mockito.mock(
                         com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor.class),
                 org.mockito.Mockito.mock(TurChatWebhookNodeExecutor.class),
+                org.mockito.Mockito.mock(TurHumanApprovalNodeExecutor.class),
                 List.<TurChatFlowGuardrailStrategy>of());
         // stateRepository.save returns the argument — production JPA would
         // populate the id, but the pin path doesn't rely on the id being

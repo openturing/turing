@@ -19,6 +19,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   writeSlot: "WRITE SLOT",
   webhook: "WEBHOOK",
   suspend: "SUSPEND",
+  humanApproval: "HUMAN APPROVAL",
   planningStep: "PLANNING STEP",
   iteratePlan: "ITERATE PLAN",
 };

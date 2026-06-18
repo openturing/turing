@@ -261,7 +261,18 @@ public class TurChatFlowEngineService {
     private final TurFunctionCallNodeExecutor functionCallExecutor;
     private final TurScheduleAgentNodeExecutor scheduleAgentExecutor;
     private final TurChatWebhookNodeExecutor webhookNodeExecutor;
+    private final TurHumanApprovalNodeExecutor humanApprovalNodeExecutor;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
+
+    /**
+     * T119 — node types that <em>park</em> the conversation: the engine stops
+     * walking and waits for an external resume. {@code suspend} (T121) is
+     * resumed via {@code POST /chat/resume}; {@code humanApproval} (T119) via
+     * the approval endpoint / timeout sweep. Both are advanced by
+     * {@link #resumeSuspendedFlow} and surfaced on the parked-conversations
+     * dashboard.
+     */
+    static final Set<String> PARKED_NODE_TYPES = Set.of("suspend", "humanApproval");
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
             TurChatFlowRepository chatFlowRepository,
@@ -274,6 +285,7 @@ public class TurChatFlowEngineService {
             TurFunctionCallNodeExecutor functionCallExecutor,
             TurScheduleAgentNodeExecutor scheduleAgentExecutor,
             TurChatWebhookNodeExecutor webhookNodeExecutor,
+            TurHumanApprovalNodeExecutor humanApprovalNodeExecutor,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
@@ -286,6 +298,7 @@ public class TurChatFlowEngineService {
         this.functionCallExecutor = functionCallExecutor;
         this.scheduleAgentExecutor = scheduleAgentExecutor;
         this.webhookNodeExecutor = webhookNodeExecutor;
+        this.humanApprovalNodeExecutor = humanApprovalNodeExecutor;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -655,10 +668,17 @@ public class TurChatFlowEngineService {
             if (graph == null) continue;
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) continue;
-            if (!"suspend".equals(currentOpt.get().type())) continue;
-            log.info("[FlowEngine] resume: conv='{}' walking past suspend node '{}' (reason='{}')",
-                    conversationId, state.getCurrentNodeId(), resumeReason);
-            ChatFlowOps.advanceToFirstEdge(state, graph, currentOpt.get());
+            ChatFlowNode parkedNode = currentOpt.get();
+            if (!PARKED_NODE_TYPES.contains(parkedNode.type())) continue;
+            log.info("[FlowEngine] resume: conv='{}' walking past {} node '{}' (reason='{}')",
+                    conversationId, parkedNode.type(), state.getCurrentNodeId(), resumeReason);
+            // T119 — when force-advancing past a humanApproval node, cancel any
+            // still-PENDING record (the decide/timeout paths already moved it to
+            // DECIDED/TIMED_OUT, so this is a no-op except on an admin unblock).
+            if ("humanApproval".equals(parkedNode.type())) {
+                humanApprovalNodeExecutor.cancelPending(conversationId, parkedNode.id());
+            }
+            ChatFlowOps.advanceToFirstEdge(state, graph, parkedNode);
             state = stateRepository.save(state);
             TurChatFlowState leaf = walkTransparentNodes(state, null);
             if (leaf != state) {
@@ -767,11 +787,13 @@ public class TurChatFlowEngineService {
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) continue;
             ChatFlowNode current = currentOpt.get();
-            if ("suspend".equals(current.type())) {
+            if (PARKED_NODE_TYPES.contains(current.type())) {
                 String label = current.label();
-                return Optional.of(label == null || label.isBlank()
-                        ? "suspended"
-                        : label);
+                if (label != null && !label.isBlank()) {
+                    return Optional.of(label);
+                }
+                return Optional.of("humanApproval".equals(current.type())
+                        ? "awaiting approval" : "suspended");
             }
         }
         return Optional.empty();
@@ -893,9 +915,14 @@ public class TurChatFlowEngineService {
             ChatFlowGraph leafGraph = parseGraph(flow).orElse(null);
             if (leafGraph != null) {
                 Optional<ChatFlowNode> currentOpt = leafGraph.nodeById(leaf.getCurrentNodeId());
-                if (currentOpt.isPresent() && "suspend".equals(currentOpt.get().type())) {
+                if (currentOpt.isPresent() && PARKED_NODE_TYPES.contains(currentOpt.get().type())) {
                     String label = currentOpt.get().label();
-                    suspendedReason = label == null || label.isBlank() ? "suspended" : label;
+                    if (label != null && !label.isBlank()) {
+                        suspendedReason = label;
+                    } else {
+                        suspendedReason = "humanApproval".equals(currentOpt.get().type())
+                                ? "awaiting approval" : "suspended";
+                    }
                 }
             }
         }
@@ -2985,6 +3012,23 @@ public class TurChatFlowEngineService {
                 }
                 state = parent;
                 continue;
+            }
+
+            // T119 — `humanApproval` node parks the cursor like `suspend`,
+            // but on first entry it raises a pending-approval record and fires
+            // a notification (Slack/Email/webhook). The executor returns true
+            // only once the operator's decision has landed in the approval slot
+            // (written by resumeSuspendedFlow from the approval endpoint or the
+            // timeout sweep) — then the engine advances on the first edge.
+            // Until then it parks; the notification fires exactly once thanks to
+            // the idempotent PENDING-record guard in the service.
+            if ("humanApproval".equals(current.type())) {
+                if (humanApprovalNodeExecutor.onEnter(state, current)) {
+                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                    state = stateRepository.save(state);
+                    continue;
+                }
+                return state;
             }
 
             // T121 — `suspend` node parks the cursor indefinitely. The

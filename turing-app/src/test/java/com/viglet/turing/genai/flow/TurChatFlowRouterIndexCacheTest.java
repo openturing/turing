@@ -79,6 +79,7 @@ class TurChatFlowRouterIndexCacheTest {
                 org.mockito.Mockito.mock(
                         com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor.class),
                 org.mockito.Mockito.mock(TurChatWebhookNodeExecutor.class),
+                org.mockito.Mockito.mock(TurHumanApprovalNodeExecutor.class),
                 List.<TurChatFlowGuardrailStrategy>of());
     }
 

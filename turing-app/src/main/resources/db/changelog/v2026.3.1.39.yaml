@@ -1,0 +1,106 @@
+databaseChangeLog:
+  # T119 / §IX.5.a — humanApproval node pending-approval record.
+  #
+  # One row per approval raised by a humanApproval chat-flow node: the
+  # conversation is parked, a notification carrying the resumeToken is fired,
+  # and an operator resolves it through /api/genai/approval/{token}. The daily/
+  # minutely sweep auto-resolves rows whose expiresAt has passed. Idempotent:
+  # the changeSet no-ops when the table already exists.
+  - changeSet:
+      id: v2026.3.1.39-create-chat-human-approval
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_human_approval
+      changes:
+        - createTable:
+            tableName: chat_human_approval
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: resumeToken
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nodeId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: flowId
+                  type: varchar(40)
+              - column:
+                  name: approvalSlot
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: channel
+                  type: varchar(20)
+              - column:
+                  name: target
+                  type: varchar(500)
+              - column:
+                  name: promptText
+                  type: longtext
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: decision
+                  type: varchar(500)
+              - column:
+                  name: timeoutBehavior
+                  type: varchar(20)
+              - column:
+                  name: createdAt
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiresAt
+                  type: datetime
+              - column:
+                  name: decidedAt
+                  type: datetime
+        - createIndex:
+            tableName: chat_human_approval
+            indexName: ix_chat_human_approval_token
+            unique: true
+            columns:
+              - column:
+                  name: resumeToken
+        - createIndex:
+            tableName: chat_human_approval
+            indexName: ix_chat_human_approval_conv_node
+            columns:
+              - column:
+                  name: conversationId
+              - column:
+                  name: nodeId
+        - createIndex:
+            tableName: chat_human_approval
+            indexName: ix_chat_human_approval_status_expires
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: expiresAt
