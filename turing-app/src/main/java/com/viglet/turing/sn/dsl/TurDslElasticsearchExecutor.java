@@ -28,7 +28,7 @@ import java.util.*;
 @Slf4j
 @Component
 public class TurDslElasticsearchExecutor
-        implements TurDslSearchEngineExecutor<Query, SearchResponse<Map>> {
+        implements TurDslSearchEngineExecutor<Query, SearchResponse<Map<String, Object>>> {
 
     private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
 
@@ -193,7 +193,7 @@ public class TurDslElasticsearchExecutor
                             reqBuilder.terminateAfter((long) request.terminateAfter());
                         }
 
-                        SearchResponse<Map> response = client.search(
+                        SearchResponse<Map<String, Object>> response = client.search(
                                 reqBuilder.build(), (java.lang.reflect.Type) Map.class);
 
                         TurDslSearchResponse dslResponse = buildResponse(response, request,
@@ -632,14 +632,14 @@ public class TurDslElasticsearchExecutor
 
     @Override
     @SuppressWarnings("unchecked")
-    public TurDslSearchResponse buildResponse(SearchResponse<Map> response,
+    public TurDslSearchResponse buildResponse(SearchResponse<Map<String, Object>> response,
                                                TurDslQueryRequest request, long elapsedMs) {
         long numFound = response.hits().total() != null ? response.hits().total().value() : 0;
         Double maxScore = response.hits().maxScore() != null
                 ? response.hits().maxScore() : null;
 
         List<TurDslSearchResponse.Hit> hits = new ArrayList<>();
-        for (Hit<Map> hit : response.hits().hits()) {
+        for (Hit<Map<String, Object>> hit : response.hits().hits()) {
             Map<String, Object> source = hit.source() != null
                     ? (Map<String, Object>) hit.source() : Map.of();
             String id = hit.id();
@@ -666,7 +666,7 @@ public class TurDslElasticsearchExecutor
 
     @Override
     public Map<String, TurDslSearchResponse.AggregationResult> buildAggregations(
-            SearchResponse<Map> response, Map<String, TurDslAggregation> aggs) {
+            SearchResponse<Map<String, Object>> response, Map<String, TurDslAggregation> aggs) {
         Map<String, TurDslSearchResponse.AggregationResult> result = new LinkedHashMap<>();
         for (var entry : aggs.entrySet()) {
             String aggName = entry.getKey();
@@ -1133,7 +1133,7 @@ public class TurDslElasticsearchExecutor
 
     @SuppressWarnings("unchecked")
     private TurDslSearchResponse attachSuggestResults(TurDslSearchResponse dslResponse,
-                                                       SearchResponse<Map> response) {
+                                                       SearchResponse<Map<String, Object>> response) {
         Map<String, List<TurDslSearchResponse.SuggestResult>> suggestMap = new LinkedHashMap<>();
         for (var entry : response.suggest().entrySet()) {
             List<TurDslSearchResponse.SuggestResult> results = new ArrayList<>();
