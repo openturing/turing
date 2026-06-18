@@ -109,7 +109,7 @@ class TurLuceneVectorStoreTest {
 
         List<Document> results = store.similaritySearch(
                 SearchRequest.builder().query("banana").topK(5).build());
-        assertThat(results.stream().map(Document::getId)).doesNotContain("drop");
+        assertThat(results.stream().map(Document::getId)).isNotEmpty().doesNotContain("drop");
     }
 
     @Test

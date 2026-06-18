@@ -310,6 +310,7 @@ class TurChatFlowLinterServiceTest {
         // that one warning, but no errors.
         List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
         assertThat(issues).extracting(TurChatFlowLintIssueDto::severity)
+                .isNotEmpty()
                 .doesNotContain("ERROR");
     }
 
@@ -383,9 +384,10 @@ class TurChatFlowLinterServiceTest {
 
         List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
 
-        assertThat(issues).extracting(TurChatFlowLintIssueDto::code)
-                .doesNotContain("form_field_unknown_slot", "form_field_blank_name",
-                        "form_field_duplicate_name");
+        // A fully clean native form produces no lint issues at all — assert the
+        // strong, non-vacuous expectation rather than just the absence of the
+        // form_field_* codes (which would pass trivially on an empty list).
+        assertThat(issues).isEmpty();
     }
 
     @Test
@@ -442,8 +444,10 @@ class TurChatFlowLinterServiceTest {
 
         List<TurChatFlowLintIssueDto> issues = linter.lint(AGENT_ID, flow);
 
-        assertThat(issues).extracting(TurChatFlowLintIssueDto::code)
-                .doesNotContain("planning_step_unused_plan", "iterate_plan_no_body");
+        // The plan is consumed by iteratePlan, so neither planning_step_unused_plan
+        // nor iterate_plan_no_body should fire — and this clean flow yields no lint
+        // issues at all, so assert the non-vacuous empty expectation.
+        assertThat(issues).isEmpty();
     }
 
     @Test

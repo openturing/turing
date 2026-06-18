@@ -126,7 +126,7 @@ class TurCustomToolDescriptorServiceTest {
     void everyMethodHasNonBlankSignatureAndDescription() {
         ToolEditorDescriptor descriptor = service.get();
 
-        assertThat(descriptor.helpers()).allSatisfy(helper -> {
+        assertThat(descriptor.helpers()).isNotEmpty().allSatisfy(helper -> {
             assertThat(helper.name()).isNotBlank();
             assertThat(helper.className()).isNotBlank();
             assertThat(helper.description()).isNotBlank();

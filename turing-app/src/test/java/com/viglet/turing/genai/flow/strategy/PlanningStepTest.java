@@ -94,7 +94,7 @@ class PlanningStepTest {
     void parsePlan_statusDefaultsToPending() {
         List<PlanItem> plan = ChatFlowOps.parsePlan(
                 "[{\"title\":\"no status\"},{\"title\":\"weird\",\"status\":\"in_progress\"}]");
-        assertThat(plan).allSatisfy(item ->
+        assertThat(plan).isNotEmpty().allSatisfy(item ->
                 assertThat(item.status()).isEqualTo(PlanItem.PENDING));
     }
 

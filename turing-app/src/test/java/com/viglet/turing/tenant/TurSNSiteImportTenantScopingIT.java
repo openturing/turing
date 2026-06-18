@@ -107,8 +107,13 @@ class TurSNSiteImportTenantScopingIT extends AbstractTuringSpringIT {
         List<String> seenByA = listSiteIds(TENANT_A);
         assertThat(seenByA).contains(assignedId);
 
+        // Seed a tenant-B-owned site so the listing is genuinely non-empty: this
+        // proves B sees its own data while A's site is filtered out, rather than
+        // the assertion passing vacuously on an empty list.
+        String bSiteId = seedSite(TENANT_B);
+
         List<String> seenByB = listSiteIds(TENANT_B);
-        assertThat(seenByB).doesNotContain(assignedId);
+        assertThat(seenByB).contains(bSiteId).doesNotContain(assignedId);
     }
 
     /**
@@ -128,6 +133,9 @@ class TurSNSiteImportTenantScopingIT extends AbstractTuringSpringIT {
             return turSNSiteRepository.saveAndFlush(site);
         });
 
+        // Seed a tenant-B-owned site so B's listing is genuinely non-empty.
+        String bSiteId = seedSite(TENANT_B);
+
         // Tenant A warms the cache first, then tenant B reads through it.
         List<String> seenByA = inTenant(TENANT_A,
                 () -> turSNSiteRepository.findAllForListing().stream().map(TurSNSite::getId).toList());
@@ -135,7 +143,7 @@ class TurSNSiteImportTenantScopingIT extends AbstractTuringSpringIT {
                 () -> turSNSiteRepository.findAllForListing().stream().map(TurSNSite::getId).toList());
 
         assertThat(seenByA).contains(assignedId);
-        assertThat(seenByB).doesNotContain(assignedId);
+        assertThat(seenByB).contains(bSiteId).doesNotContain(assignedId);
     }
 
     /**
@@ -230,6 +238,19 @@ class TurSNSiteImportTenantScopingIT extends AbstractTuringSpringIT {
                 .createNativeQuery("select tenantId from se_instance where id = :id")
                 .setParameter("id", seId)
                 .getSingleResult());
+    }
+
+    /** Creates a site owned by {@code tenant} and returns its assigned id. */
+    private String seedSite(String tenant) {
+        String siteId = UUID.randomUUID().toString();
+        inTenant(tenant, () -> {
+            TurSNSite site = new TurSNSite();
+            site.setId(siteId);
+            site.setName("seeded-" + siteId);
+            site.setTurSEInstance(entityManager.find(TurSEInstance.class, instanceId));
+            return turSNSiteRepository.saveAndFlush(site);
+        });
+        return siteId;
     }
 
     private List<String> listSiteIds(String tenant) {

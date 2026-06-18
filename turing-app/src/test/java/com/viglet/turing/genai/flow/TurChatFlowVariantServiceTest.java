@@ -234,6 +234,7 @@ class TurChatFlowVariantServiceTest {
         // The hallucinated node was not injected into the graph.
         JsonNode root = MAPPER.readTree(result.candidate().getDefinitionJson());
         assertThat(root.path("nodes").findValuesAsString("id"))
+                .isNotEmpty()
                 .doesNotContain("hallucinated-node");
     }
 
