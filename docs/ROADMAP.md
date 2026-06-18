@@ -85,10 +85,6 @@
 - 💭 **T128** (deps: T32) **LangSmith-compatible export** — `TurChatPipelineObservation` events can be optionally mirrored to a LangSmith project via the public LangSmith API. → §IX.9.a
 - 💭 **T129** (deps: T32) **OpenTelemetry trace export** — wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP-compatible backend (Honeycomb, Datadog, Jaeger). → §IX.9.b
 
-## F.1 — Foundation (the seam itself)
-
-- ⏳ **T131** (deps: T130 ✅) **`TurNativeChatExecutor` variant** — sibling executor shipped & wired into the agent chat path (opt-in, plain turns only); **remaining**: fuse the post-T33 collaborators (RAG / persona / chat-flow assembly) onto the native path — today it uses the agent base prompt + raw history. → §X.2
-
 ## F.2 — OpenAI Responses API + built-in tools
 
 - 💭 **T136** (deps: T131) **OpenAI `computer_use` built-in tool** — agentic browser. Capability key advertised in the matrix but not wired (needs the screenshot/action loop). → §X.3.d

@@ -1495,13 +1495,11 @@ seam (T130). The existing `TurGenAiLlmProvider` gains two parallel
 factory methods — `createNativeOpenAiClient()` and
 `createNativeAnthropicClient()` — returning `Optional<NativeClient>`
 that defaults to `empty()` and gets populated by the OpenAI / Anthropic
-providers only. A sibling executor `TurNativeChatExecutor` (T131)
-routes a turn through the native client when both `TurLLMInstance.vendor`
-and `TurAIAgent.nativeCapabilitiesJson` agree on a feature; otherwise
-it delegates to the post-T33 collaborator graph (resolver / assembler
-/ dispatcher) verbatim, with one `[Native]` tag added to every
-`STAGE_CHAT_*` meter so dashboards can A/B the two paths at observation
-time.
+providers only. A sibling executor `TurNativeChatExecutor` routes a turn
+through the native client when both `TurLLMInstance.vendor` and the
+per-instance capability matrix agree on a feature; otherwise it returns
+empty and the caller delegates to the Spring AI collaborator graph
+verbatim.
 
 **Migration philosophy**: this is **not** "rip out Spring AI". It's
 "keep Spring AI as the default, opt into native paths per capability
@@ -1511,20 +1509,6 @@ on instance X turns on T133 for that instance only, every other
 instance keeps falling through to the Spring AI executor. Block F has
 **no monolithic flag day** — features ship one at a time, each guarded
 by its own capability row.
-
-### X.2 The seam — `TurNativeProviderClient` (T131 remaining)
-
-T130 (the seam) and T132 (the capability matrix) shipped — see the
-CHANGELOG / `git log`. The remaining design note is for **T131**: the
-`TurNativeChatExecutor` is a thin variant of `TurAgentChatExecutor`,
-not a replacement. It is wired and working as an opt-in fast path, but
-today it uses the agent's base system prompt + raw history. The
-remaining work is to fuse the three post-T33 collaborators
-(`TurChatToolResolver` / `TurChatPromptAssembler` /
-`TurChatStreamingDispatcher`) onto the native path so RAG, persona
-voice, chat-flow addenda, token observability, slot/workspace SSE and
-chat memory all apply identically whether a turn dispatches through
-Spring AI or the native SDK.
 
 ### X.3 OpenAI Responses API + built-in tools (T136 remaining)
 

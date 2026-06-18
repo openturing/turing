@@ -28,9 +28,13 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  * not data). The executor uses this to skip the early-advance pass so the
  * trigger text doesn't get force-captured as the first slot.
  *
+ * <p>Public because it is a parameter of {@link TurChatPromptAssembler#assemble}
+ * — a collaborator the native chat path (in {@code genai.nativeapi}) now reuses
+ * — so it must be referenceable from outside this package.
+ *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
-record TurAgentChatFlowContext(TurChatFlow flow, ChatFlowGraph graph, TurChatFlowState state,
+public record TurAgentChatFlowContext(TurChatFlow flow, ChatFlowGraph graph, TurChatFlowState state,
         boolean freshlyTriggered) {
 }

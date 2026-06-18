@@ -21,14 +21,19 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 
 import com.openai.client.OpenAIClient;
+import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -43,12 +48,14 @@ class TurNativeChatExecutorTest {
     @Mock private TurNativeProviderClient nativeClient;
     @Mock private TurNativeCapabilityService capabilityService;
     @Mock private TurOpenAiResponsesService openAiResponsesService;
+    @Mock private TurChatPromptAssembler promptAssembler;
+    @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
 
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
-                openAiResponsesService);
+                openAiResponsesService, promptAssembler, personaResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -107,7 +114,14 @@ class TurNativeChatExecutorTest {
                 List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null));
         when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(caps);
         when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
-        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), eq(history),
+        // T131 — the assembler now composes the system prompt + history; return
+        // a persona-fused system message + the same user turn so the executor
+        // splits it back into instructions + a flat input list.
+        when(promptAssembler.assemble(any(), eq(history), eq("conv-1"), any(), any(),
+                eq("hello"), eq("You are helpful.")))
+                .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
+                        new UserMessage("hello")));
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
                 any(), anyList()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
@@ -118,6 +132,31 @@ class TurNativeChatExecutorTest {
         List<ChatResponse> emitted = result.get().collectList().block();
         assertThat(emitted).hasSize(1);
         assertThat(emitted.get(0).content()).isEqualTo("hi");
+    }
+
+    @Test
+    void passesAssembledSystemPromptAndHistoryToResponsesService() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        when(capabilityService.enabledFor("inst-1", "openai"))
+                .thenReturn(List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null)));
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(), eq(history), eq("conv-1"), any(), any(),
+                eq("hello"), eq("You are helpful.")))
+                .thenReturn(List.of(new SystemMessage("FUSED PROMPT"), new UserMessage("hello")));
+        ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
+                promptCaptor.capture(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
+
+        executor().tryExecute(agent(), instance, history, null, "conv-1").get()
+                .collectList().block();
+
+        assertThat(promptCaptor.getValue()).isEqualTo("FUSED PROMPT");
+        assertThat(historyCaptor.getValue())
+                .containsExactly(new ChatMessageItem("user", "hello"));
     }
 
     @Test
