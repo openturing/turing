@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -145,7 +146,7 @@ class TurLoggingToolServiceTest {
         Date result = (Date) method.invoke(service, "2026-03-15", false);
         assertThat(result).isNotNull();
 
-        LocalDate expected = LocalDate.of(2026, 3, 15);
+        LocalDate expected = LocalDate.of(2026, Month.MARCH, 15);
         LocalDate actual = result.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         assertThat(actual).isEqualTo(expected);
     }
@@ -159,7 +160,7 @@ class TurLoggingToolServiceTest {
         assertThat(result).isNotNull();
 
         // endOfDay should be start of next day
-        LocalDate expected = LocalDate.of(2026, 3, 16);
+        LocalDate expected = LocalDate.of(2026, Month.MARCH, 16);
         LocalDate actual = result.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         assertThat(actual).isEqualTo(expected);
     }

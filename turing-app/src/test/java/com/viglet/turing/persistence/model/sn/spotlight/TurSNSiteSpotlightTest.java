@@ -24,6 +24,7 @@ package com.viglet.turing.persistence.model.sn.spotlight;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -223,11 +224,11 @@ class TurSNSiteSpotlightTest {
 
     @Test
     void testModificationDateField() {
-        LocalDateTime date1 = LocalDateTime.of(2025, 1, 10, 10, 30);
+        LocalDateTime date1 = LocalDateTime.of(2025, Month.JANUARY, 10, 10, 30);
         turSNSiteSpotlight.setModificationDate(date1);
         assertThat(turSNSiteSpotlight.getModificationDate()).isEqualTo(date1);
 
-        LocalDateTime date2 = LocalDateTime.of(2025, 2, 15, 14, 45);
+        LocalDateTime date2 = LocalDateTime.of(2025, Month.FEBRUARY, 15, 14, 45);
         turSNSiteSpotlight.setModificationDate(date2);
         assertThat(turSNSiteSpotlight.getModificationDate()).isEqualTo(date2);
     }
@@ -243,7 +244,7 @@ class TurSNSiteSpotlightTest {
         String id = "complete-spotlight";
         String name = "Complete Spotlight";
         String description = "Complete description";
-        LocalDateTime modDate = LocalDateTime.of(2025, 1, 10, 12, 0);
+        LocalDateTime modDate = LocalDateTime.of(2025, Month.JANUARY, 10, 12, 0);
         int managed = 0;
         String unmanagedId = "ext-id-123";
         String provider = "EXTERNAL";

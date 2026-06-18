@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ class TurLLMTokenUsageRepositoryAdapterTest {
 
     @Test
     void findByIdProjectsScalarsAndManyToOneId() {
-        LocalDateTime createdAt = LocalDateTime.of(2026, 4, 15, 10, 30);
+        LocalDateTime createdAt = LocalDateTime.of(2026, Month.APRIL, 15, 10, 30);
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("llm-1");
         instance.setTitle("OpenAI prod");
@@ -83,10 +84,10 @@ class TurLLMTokenUsageRepositoryAdapterTest {
 
     @Test
     void findDailyUsageMapsObjectArrayRows() {
-        LocalDateTime start = LocalDateTime.of(2026, 4, 1, 0, 0);
-        LocalDateTime end = LocalDateTime.of(2026, 5, 1, 0, 0);
+        LocalDateTime start = LocalDateTime.of(2026, Month.APRIL, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, Month.MAY, 1, 0, 0);
         Object[] row = new Object[] {
-                LocalDate.of(2026, 4, 15),
+                LocalDate.of(2026, Month.APRIL, 15),
                 "llm-1", "OpenAI prod", "openai", "gpt-4o-mini",
                 120L, 80L, 200L, 5L
         };
@@ -96,7 +97,7 @@ class TurLLMTokenUsageRepositoryAdapterTest {
         List<TurLLMTokenUsageSummaryDomain> result = adapter.findDailyUsage(start, end);
 
         assertThat(result).singleElement().satisfies(d -> {
-            assertThat(d.day()).isEqualTo(LocalDate.of(2026, 4, 15));
+            assertThat(d.day()).isEqualTo(LocalDate.of(2026, Month.APRIL, 15));
             assertThat(d.instanceId()).isEqualTo("llm-1");
             assertThat(d.instanceTitle()).isEqualTo("OpenAI prod");
             assertThat(d.vendorId()).isEqualTo("openai");
@@ -110,10 +111,10 @@ class TurLLMTokenUsageRepositoryAdapterTest {
 
     @Test
     void findDailyUsageCoercesSqlDateToLocalDate() {
-        LocalDateTime start = LocalDateTime.of(2026, 4, 1, 0, 0);
-        LocalDateTime end = LocalDateTime.of(2026, 5, 1, 0, 0);
+        LocalDateTime start = LocalDateTime.of(2026, Month.APRIL, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, Month.MAY, 1, 0, 0);
         Object[] row = new Object[] {
-                java.sql.Date.valueOf(LocalDate.of(2026, 4, 15)),
+                java.sql.Date.valueOf(LocalDate.of(2026, Month.APRIL, 15)),
                 "llm-1", "OpenAI prod", "openai", "gpt-4o-mini",
                 120, 80, 200, 5  // ints coerced to long
         };
@@ -123,7 +124,7 @@ class TurLLMTokenUsageRepositoryAdapterTest {
         List<TurLLMTokenUsageSummaryDomain> result = adapter.findDailyUsage(start, end);
 
         assertThat(result).singleElement().satisfies(d -> {
-            assertThat(d.day()).isEqualTo(LocalDate.of(2026, 4, 15));
+            assertThat(d.day()).isEqualTo(LocalDate.of(2026, Month.APRIL, 15));
             assertThat(d.inputTokens()).isEqualTo(120L);
             assertThat(d.totalTokens()).isEqualTo(200L);
         });
@@ -131,8 +132,8 @@ class TurLLMTokenUsageRepositoryAdapterTest {
 
     @Test
     void findMonthlySummaryProjectsWithoutDay() {
-        LocalDateTime start = LocalDateTime.of(2026, 4, 1, 0, 0);
-        LocalDateTime end = LocalDateTime.of(2026, 5, 1, 0, 0);
+        LocalDateTime start = LocalDateTime.of(2026, Month.APRIL, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, Month.MAY, 1, 0, 0);
         Object[] row = new Object[] {
                 "llm-1", "OpenAI prod", "openai", "gpt-4o-mini",
                 3600L, 2400L, 6000L, 150L

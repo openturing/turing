@@ -24,6 +24,7 @@ package com.viglet.turing.api.queue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +70,7 @@ class TurQueueMessageTest {
 
     @Test
     void testBuilder() {
-        LocalDateTime timestamp = LocalDateTime.of(2025, 1, 10, 10, 30, 0);
+        LocalDateTime timestamp = LocalDateTime.of(2025, Month.JANUARY, 10, 10, 30, 0);
         TurQueueMessage message = TurQueueMessage.builder()
                 .messageId("msg-456")
                 .content("Document to index")
@@ -109,7 +110,7 @@ class TurQueueMessageTest {
 
     @Test
     void testEqualsAndHashCode() {
-        LocalDateTime timestamp = LocalDateTime.of(2025, 1, 10, 12, 0, 0);
+        LocalDateTime timestamp = LocalDateTime.of(2025, Month.JANUARY, 10, 12, 0, 0);
 
         TurQueueMessage message1 = TurQueueMessage.builder()
                 .messageId("msg-1")
@@ -146,7 +147,7 @@ class TurQueueMessageTest {
 
     @Test
     void testToString() {
-        LocalDateTime timestamp = LocalDateTime.of(2025, 1, 10, 14, 30, 0);
+        LocalDateTime timestamp = LocalDateTime.of(2025, Month.JANUARY, 10, 14, 30, 0);
         TurQueueMessage message = TurQueueMessage.builder()
                 .messageId("msg-test")
                 .content("Test content")

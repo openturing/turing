@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -39,7 +40,7 @@ class TurSNSiteSpotlightMapperTest {
         entity.setUnmanagedId("ext-123");
         entity.setProvider("TURING");
         entity.setLanguage(Locale.ENGLISH);
-        entity.setModificationDate(LocalDateTime.of(2026, 3, 26, 10, 0));
+        entity.setModificationDate(LocalDateTime.of(2026, Month.MARCH, 26, 10, 0));
         return entity;
     }
 
@@ -52,7 +53,7 @@ class TurSNSiteSpotlightMapperTest {
         dto.setUnmanagedId("ext-456");
         dto.setProvider("EXTERNAL");
         dto.setLanguage(Locale.FRENCH);
-        dto.setModificationDate(LocalDateTime.of(2026, 1, 15, 12, 30));
+        dto.setModificationDate(LocalDateTime.of(2026, Month.JANUARY, 15, 12, 30));
         return dto;
     }
 
@@ -70,7 +71,7 @@ class TurSNSiteSpotlightMapperTest {
         assertEquals("ext-123", dto.getUnmanagedId());
         assertEquals("TURING", dto.getProvider());
         assertEquals(Locale.ENGLISH, dto.getLanguage());
-        assertEquals(LocalDateTime.of(2026, 3, 26, 10, 0), dto.getModificationDate());
+        assertEquals(LocalDateTime.of(2026, Month.MARCH, 26, 10, 0), dto.getModificationDate());
     }
 
     @Test
