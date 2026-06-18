@@ -513,7 +513,7 @@ public class TurCustomToolSearchHelper {
 
     @SuppressWarnings("unchecked")
     private static List<String> asStringList(Object raw) {
-        if (raw == null) return null;
+        if (raw == null) return List.of();
         if (raw instanceof List<?> list) {
             List<String> out = new ArrayList<>(list.size());
             for (Object o : list) {
@@ -525,9 +525,9 @@ public class TurCustomToolSearchHelper {
             // Single string → singleton list. Groovy callers often pass
             // a bare string for the common case ({@code fq: "area:tech"}).
             String trimmed = s.trim();
-            return trimmed.isEmpty() ? null : List.of(trimmed);
+            return trimmed.isEmpty() ? List.of() : List.of(trimmed);
         }
-        return null;
+        return List.of();
     }
 
     private static TurSNFilterQueryOperator asFqOperator(Object raw) {

@@ -632,8 +632,11 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
     @Override
     public Map<String, TurDslSearchResponse.AggregationResult> buildAggregations(
             TopDocs topDocs, Map<String, TurDslAggregation> aggs) {
-        // Requires searcher context — use the overloaded version
-        return null;
+        // Lucene aggregation needs an IndexSearcher to resolve doc values, which this
+        // interface signature does not carry. The Lucene path always calls the
+        // searcher-aware overload below, so this variant is never the right entry point.
+        throw new UnsupportedOperationException(
+                "Lucene aggregation requires an IndexSearcher; call buildAggregations(TopDocs, Map, IndexSearcher)");
     }
 
     Map<String, TurDslSearchResponse.AggregationResult> buildAggregations(

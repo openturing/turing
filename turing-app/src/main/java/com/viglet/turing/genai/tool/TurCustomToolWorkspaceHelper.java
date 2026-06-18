@@ -128,6 +128,9 @@ public class TurCustomToolWorkspaceHelper {
      * Reads the raw bytes stored at {@code key}, or {@code null} when the key
      * does not exist, storage is disabled, or the helper is in no-op mode.
      */
+    @SuppressWarnings("java:S1168") // null means the key is absent (see javadoc and
+    // the orElse(null) below); an empty array would wrongly read as a stored but
+    // empty blob, and Groovy scripts test the result against null.
     public byte[] get(String key) {
         if (isNoOp("get", key)) {
             return null;
