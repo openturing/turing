@@ -1560,7 +1560,7 @@ public final class ChatFlowOps {
                             : "";
             // The model occasionally wraps the answer in backticks or quotes; strip them before
             // the lookup. We also accept the id case-insensitively to be lenient.
-            String cleaned = reply.replaceAll("(?:^[`\"']+)|(?:[`\"']+$)", "").trim();
+            String cleaned = reply.replaceAll("^[`\"']+", "").replaceAll("[`\"']+$", "").trim();
             if (cleaned.isEmpty() || "NONE".equalsIgnoreCase(cleaned)) {
                 log.info("[FlowOps] Switch '{}' LLM classifier returned NONE for '{}'",
                         switchNode.id(), value);
