@@ -1310,11 +1310,9 @@ public class TurChatFlowEngineService {
      */
     private TurChatFlowState createInitialStateWithSeed(String conversationId, TurChatFlow flow,
             ChatFlowGraph graph, Map<String, String> seedSlots) {
-        ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(graph,
-                graph.startNode().orElseThrow(() ->
-                        new IllegalStateException("graph for flow '" + flow.getId()
-                                + "' has no start node")))
-                .orElse(graph.startNode().get());
+        ChatFlowNode startNode = graph.startNode().orElseThrow(() ->
+                new IllegalStateException("graph for flow '" + flow.getId() + "' has no start node"));
+        ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(graph, startNode).orElse(startNode);
         TurChatFlowState created = new TurChatFlowState();
         created.setConversationId(conversationId);
         created.setFlow(flow);
