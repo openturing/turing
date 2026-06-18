@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -54,7 +55,8 @@ public class TurMcpJwtAuthenticationConverter implements Converter<Jwt, Abstract
     public AbstractAuthenticationToken convert(Jwt jwt) {
         Collection<GrantedAuthority> authorities = new ArrayList<>(scopesConverter.convert(jwt));
         authorities.addAll(realmRoles(jwt));
-        return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
+        String name = Objects.requireNonNull(jwt.getSubject(), "JWT subject (sub claim) must not be null");
+        return new JwtAuthenticationToken(jwt, authorities, name);
     }
 
     @SuppressWarnings("unchecked")

@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -50,8 +51,10 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
         Set<String> realmRoles = TurAuthorityResolver.extractRealmRoles(oAuth2User.getAttributes());
         turAuthorityResolver.resolve(username, realmRoles, authorities);
 
-        return new DefaultOAuth2User(authorities, oAuth2User.getAttributes(),
+        String nameAttributeKey = Objects.requireNonNull(
                 userRequest.getClientRegistration().getProviderDetails()
-                        .getUserInfoEndpoint().getUserNameAttributeName());
+                        .getUserInfoEndpoint().getUserNameAttributeName(),
+                "OAuth2 user-name attribute key must be configured");
+        return new DefaultOAuth2User(authorities, oAuth2User.getAttributes(), nameAttributeKey);
     }
 }
