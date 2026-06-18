@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.tool;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.io.File;
 import java.io.IOException;
@@ -145,8 +146,9 @@ class TurCodeInterpreterCleanupTaskTest {
 
     @Test
     void sweep_emptySessionsRoot_isNoop() {
-        // sessionsRoot exists but is empty — sweep must not throw.
-        task.sweep();
+        // sessionsRoot exists but is empty — sweep must not throw and must leave it intact.
+        assertThatCode(() -> task.sweep()).doesNotThrowAnyException();
+        assertThat(Files.exists(sessionsRoot)).isTrue();
     }
 
     @Test
@@ -154,7 +156,8 @@ class TurCodeInterpreterCleanupTaskTest {
         // sessionsRoot doesn't exist yet (fresh install before any tool ran).
         deleteRecursively(sessionsRoot);
 
-        task.sweep(); // must not throw
+        assertThatCode(() -> task.sweep()).doesNotThrowAnyException();
+        assertThat(Files.exists(sessionsRoot)).isFalse();
     }
 
     @Test

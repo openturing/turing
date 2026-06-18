@@ -90,8 +90,10 @@ class TurChatSlotAuditServiceTest {
     @Test
     void recordSwallowsPersistenceFailure() {
         when(repository.save(any())).thenThrow(new RuntimeException("DB down"));
-        // Must not throw — audit is best-effort.
+        // Must not throw — audit is best-effort. Reaching this verify proves the
+        // save was attempted and the persistence exception was swallowed.
         service.record("conv-1", "name", null, "Alex", TurChatSlotAuditSource.NODE, null);
+        verify(repository).save(any());
     }
 
     @Test
