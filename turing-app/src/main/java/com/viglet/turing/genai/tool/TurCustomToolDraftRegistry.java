@@ -181,10 +181,8 @@ public class TurCustomToolDraftRegistry {
         Instant now = clock.instant();
         int count = 0;
         for (var e : drafts.entrySet()) {
-            if (isExpired(e.getValue(), now)) {
-                if (drafts.remove(e.getKey(), e.getValue())) {
-                    count++;
-                }
+            if (isExpired(e.getValue(), now) && drafts.remove(e.getKey(), e.getValue())) {
+                count++;
             }
         }
         evictedCount.addAndGet(count);

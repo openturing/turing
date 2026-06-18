@@ -2034,11 +2034,9 @@ public final class ChatFlowOps {
             // instead of 2. Admin-friendly default.
             LevenshteinAutomata la = new LevenshteinAutomata(optionLower, true);
             ByteRunAutomaton matcher = new ByteRunAutomaton(la.toAutomaton(maxEdits));
-            if (matcher.run(valueBytes, 0, valueBytes.length)) {
-                if (optionLower.length() > bestLen) {
-                    best = option.trim();
-                    bestLen = optionLower.length();
-                }
+            if (matcher.run(valueBytes, 0, valueBytes.length) && optionLower.length() > bestLen) {
+                best = option.trim();
+                bestLen = optionLower.length();
             }
         }
         return best;

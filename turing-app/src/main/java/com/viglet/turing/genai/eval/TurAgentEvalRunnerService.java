@@ -223,10 +223,8 @@ public class TurAgentEvalRunnerService {
         for (ChatResponse r : emissions) {
             // Only token emissions are assistant text; "options" carries a
             // JSON chip array that isn't part of the spoken reply.
-            if (r.type() == null || "token".equals(r.type())) {
-                if (r.content() != null) {
-                    sb.append(r.content());
-                }
+            if ((r.type() == null || "token".equals(r.type())) && r.content() != null) {
+                sb.append(r.content());
             }
         }
         return sb.toString();
