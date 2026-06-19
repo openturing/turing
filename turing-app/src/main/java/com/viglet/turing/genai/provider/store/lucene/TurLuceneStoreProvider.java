@@ -383,26 +383,33 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         }
         Set<String> identifiers = new HashSet<>();
         try {
-            index.visitStoredField(TurLuceneVectorStore.FIELD_METADATA_JSON, json -> {
-                Map<String, Object> metadata = TurLuceneVectorStore.parseMetadata(json);
-                if (metadata.isEmpty()) {
-                    return;
-                }
-                for (String key : DOCUMENT_IDENTIFIER_KEYS) {
-                    Object value = metadata.get(key);
-                    if (value != null) {
-                        String asString = String.valueOf(value);
-                        if (!asString.isBlank()) {
-                            identifiers.add(asString);
-                            return;
-                        }
-                    }
-                }
-            });
+            index.visitStoredField(TurLuceneVectorStore.FIELD_METADATA_JSON, json ->
+                    collectIdentifier(TurLuceneVectorStore.parseMetadata(json), identifiers));
         } catch (Exception e) {
             log.debug("[Lucene] Could not compute distinct document count: {}", e.getMessage());
         }
         return identifiers.size();
+    }
+
+    /**
+     * Adds the first non-blank document-identifier value found in
+     * {@code metadata} to {@code identifiers}. No-op when the metadata is empty
+     * or carries no identifier key.
+     */
+    private void collectIdentifier(Map<String, Object> metadata, Set<String> identifiers) {
+        if (metadata.isEmpty()) {
+            return;
+        }
+        for (String key : DOCUMENT_IDENTIFIER_KEYS) {
+            Object value = metadata.get(key);
+            if (value != null) {
+                String asString = String.valueOf(value);
+                if (!asString.isBlank()) {
+                    identifiers.add(asString);
+                    return;
+                }
+            }
+        }
     }
 
     private Path resolveBasePath(TurStoreInstance turStoreInstance, Map<String, Object> options) {

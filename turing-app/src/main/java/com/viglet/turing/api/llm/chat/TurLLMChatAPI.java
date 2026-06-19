@@ -227,90 +227,99 @@ public class TurLLMChatAPI {
         springMessages.addAll(buildMessages(request.messages(), files));
 
         if (turLLMInstance.isToolsEnabled()) {
-            // Build base tool objects list, conditionally add RAG search
-            java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
-                    webCrawlerToolService, weatherToolService, financeToolService,
-                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService,
-                    loggingToolService, integrationMonitoringToolService, systemInfoToolService,
-                    iconifyToolService));
-            if (ragSearchToolService.isAvailable()) {
-                toolObjects.add(ragSearchToolService);
-            }
-
-            ToolCallback[] toolCallbacks = toolCallbackPipeline.decorate(
-                    MethodToolCallbackProvider.builder()
-                            .toolObjects(toolObjects.toArray())
-                            .build()
-                            .getToolCallbacks());
-
-            log.debug("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
-                    toolCallbacks.length, id, ragSearchToolService.isAvailable());
-
-            // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
-            // internal tool execution is now the default once callbacks are present.
-            //
-            // Seed from the provider's own concrete options — Spring AI 2.0.0
-            // hard-casts prompt.getOptions() to the provider type, so a generic
-            // DefaultToolCallingChatOptions throws ClassCastException. See
-            // TurChatToolOptions.
-            var chatOptions = TurChatToolOptions.builderFrom(chatModel)
-                    .toolCallbacks(toolCallbacks)
-                    .build();
-
-            Prompt prompt = new Prompt(springMessages, chatOptions);
-
-            // Use call() instead of stream() to ensure tool calling works reliably.
-            // Spring AI's stream() with internal tool execution does not execute
-            // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
-            // RC1 also stopped running the tool loop inside call(); drive it
-            // explicitly via TurToolExecutionLoop so the registered tools fire.
-            return Mono.fromCallable(() -> {
-                log.info("[Chat] Calling LLM with tool support for instance {}", id);
-                var response = toolExecutionLoop.call(chatModel, prompt);
-
-                tokenUsageService.recordUsage(turLLMInstance, response, username);
-
-                String text = response.getResult() != null
-                        && response.getResult().getOutput() != null
-                        && response.getResult().getOutput().getText() != null
-                                ? response.getResult().getOutput().getText()
-                                : "";
-                // Translate `sandbox:` artifact URLs to relative /api/... paths
-                // so code-interpreter charts render inline (see TurChatArtifactUrls).
-                text = com.viglet.turing.genai.TurChatArtifactUrls.normalize(text);
-                log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
-                return new ChatResponse(ROLE_ASSISTANT, text);
-            })
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .doOnError(err -> log.error("[Chat] Call error: {}", err.getMessage(), err))
-                    .filter(response -> !response.content().isEmpty())
-                    .flux();
-        } else {
-            log.info("[Chat] Tools disabled, using stream for LLM instance {}", id);
-            Prompt prompt = new Prompt(springMessages);
-
-            var lastStreamResponse = new java.util.concurrent.atomic.AtomicReference<
-                    org.springframework.ai.chat.model.ChatResponse>();
-
-            return chatModel.stream(prompt)
-                    .doOnNext(lastStreamResponse::set)
-                    .map(response -> {
-                        String text = response.getResult() != null
-                                && response.getResult().getOutput() != null
-                                && response.getResult().getOutput().getText() != null
-                                        ? response.getResult().getOutput().getText()
-                                        : "";
-                        return new ChatResponse(ROLE_ASSISTANT, text);
-                    })
-                    .filter(response -> !response.content().isEmpty())
-                    .doOnComplete(() -> {
-                        var finalResponse = lastStreamResponse.get();
-                        if (finalResponse != null) {
-                            tokenUsageService.recordUsage(turLLMInstance, finalResponse, username);
-                        }
-                    })
-                    .doOnError(err -> log.error("[Chat] Stream error: {}", err.getMessage(), err));
+            return chatWithTools(chatModel, springMessages, turLLMInstance, id, username);
         }
+        return chatWithoutTools(chatModel, springMessages, turLLMInstance, id, username);
+    }
+
+    private Flux<ChatResponse> chatWithTools(ChatModel chatModel, List<Message> springMessages,
+            TurLLMInstance turLLMInstance, String id, String username) {
+        // Build base tool objects list, conditionally add RAG search
+        java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
+                webCrawlerToolService, weatherToolService, financeToolService,
+                codeInterpreterToolService, imageSearchToolService, dateTimeToolService,
+                loggingToolService, integrationMonitoringToolService, systemInfoToolService,
+                iconifyToolService));
+        if (ragSearchToolService.isAvailable()) {
+            toolObjects.add(ragSearchToolService);
+        }
+
+        ToolCallback[] toolCallbacks = toolCallbackPipeline.decorate(
+                MethodToolCallbackProvider.builder()
+                        .toolObjects(toolObjects.toArray())
+                        .build()
+                        .getToolCallbacks());
+
+        log.debug("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
+                toolCallbacks.length, id, ragSearchToolService.isAvailable());
+
+        // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
+        // internal tool execution is now the default once callbacks are present.
+        //
+        // Seed from the provider's own concrete options — Spring AI 2.0.0
+        // hard-casts prompt.getOptions() to the provider type, so a generic
+        // DefaultToolCallingChatOptions throws ClassCastException. See
+        // TurChatToolOptions.
+        var chatOptions = TurChatToolOptions.builderFrom(chatModel)
+                .toolCallbacks(toolCallbacks)
+                .build();
+
+        Prompt prompt = new Prompt(springMessages, chatOptions);
+
+        // Use call() instead of stream() to ensure tool calling works reliably.
+        // Spring AI's stream() with internal tool execution does not execute
+        // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
+        // RC1 also stopped running the tool loop inside call(); drive it
+        // explicitly via TurToolExecutionLoop so the registered tools fire.
+        return Mono.fromCallable(() -> {
+            log.info("[Chat] Calling LLM with tool support for instance {}", id);
+            var response = toolExecutionLoop.call(chatModel, prompt);
+
+            tokenUsageService.recordUsage(turLLMInstance, response, username);
+
+            String text = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText()
+                            : "";
+            // Translate `sandbox:` artifact URLs to relative /api/... paths
+            // so code-interpreter charts render inline (see TurChatArtifactUrls).
+            text = com.viglet.turing.genai.TurChatArtifactUrls.normalize(text);
+            log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
+            return new ChatResponse(ROLE_ASSISTANT, text);
+        })
+                .subscribeOn(Schedulers.boundedElastic())
+                .doOnError(err -> log.error("[Chat] Call error: {}", err.getMessage(), err))
+                .filter(response -> !response.content().isEmpty())
+                .flux();
+    }
+
+    private Flux<ChatResponse> chatWithoutTools(ChatModel chatModel, List<Message> springMessages,
+            TurLLMInstance turLLMInstance, String id, String username) {
+        log.info("[Chat] Tools disabled, using stream for LLM instance {}", id);
+        Prompt prompt = new Prompt(springMessages);
+
+        var lastStreamResponse = new java.util.concurrent.atomic.AtomicReference<
+                org.springframework.ai.chat.model.ChatResponse>();
+
+        return chatModel.stream(prompt)
+                .doOnNext(lastStreamResponse::set)
+                .map(response -> {
+                    String text = response.getResult() != null
+                            && response.getResult().getOutput() != null
+                            && response.getResult().getOutput().getText() != null
+                                    ? response.getResult().getOutput().getText()
+                                    : "";
+                    return new ChatResponse(ROLE_ASSISTANT, text);
+                })
+                .filter(response -> !response.content().isEmpty())
+                .doOnComplete(() -> {
+                    var finalResponse = lastStreamResponse.get();
+                    if (finalResponse != null) {
+                        tokenUsageService.recordUsage(turLLMInstance, finalResponse, username);
+                    }
+                })
+                .doOnError(err -> log.error("[Chat] Stream error: {}", err.getMessage(), err));
     }
 
     private String resolveUsername() {

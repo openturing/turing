@@ -491,28 +491,42 @@ public class TurSNGenAi {
      *
      * @since 2026.3.1 (T328)
      */
+    /**
+     * Attempts to derive facet filters from the user query when the caller
+     * supplied none. Returns an empty map when no facets are available, none
+     * are extracted, or extraction fails (fail-open to plain similarity).
+     */
+    private java.util.Map<String, List<String>> autoExtractFilters(TurGenAiContext context,
+            String latestUserQuery) {
+        try {
+            java.util.Map<String, List<String>> available = facetExtractor
+                    .getAvailableFacets(context.getRagInfrastructure());
+            if (!available.isEmpty()) {
+                java.util.Map<String, List<String>> extracted = facetExtractor
+                        .extractFilters(context.getChatModel(), latestUserQuery, available);
+                if (!extracted.isEmpty()) {
+                    log.debug("RAG chat auto-extracted filters from query '{}': {}",
+                            latestUserQuery, extracted);
+                    return extracted;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("RAG chat auto-extraction failed, falling back to plain similarity: {}",
+                    e.getMessage());
+        }
+        return Collections.emptyMap();
+    }
+
     private List<Document> retrieveDocuments(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
         java.util.Map<String, List<String>> effectiveFilters = filters;
         boolean autoExtracted = false;
         if (effectiveFilters == null || effectiveFilters.isEmpty()) {
-            try {
-                java.util.Map<String, List<String>> available = facetExtractor
-                        .getAvailableFacets(context.getRagInfrastructure());
-                if (!available.isEmpty()) {
-                    java.util.Map<String, List<String>> extracted = facetExtractor
-                            .extractFilters(context.getChatModel(), latestUserQuery, available);
-                    if (!extracted.isEmpty()) {
-                        effectiveFilters = extracted;
-                        autoExtracted = true;
-                        log.debug("RAG chat auto-extracted filters from query '{}': {}",
-                                latestUserQuery, extracted);
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("RAG chat auto-extraction failed, falling back to plain similarity: {}",
-                        e.getMessage());
+            java.util.Map<String, List<String>> extracted = autoExtractFilters(context, latestUserQuery);
+            if (!extracted.isEmpty()) {
+                effectiveFilters = extracted;
+                autoExtracted = true;
             }
         }
         boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();

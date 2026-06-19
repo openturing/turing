@@ -74,30 +74,7 @@ public class TurChatAttachmentService {
         StringBuilder extractedText = new StringBuilder();
 
         for (MultipartFile file : files) {
-            String contentType = file.getContentType() != null
-                    ? file.getContentType()
-                    : "application/octet-stream";
-
-            // Tika handles text + PDF + DOCX + OCR fallback for images.
-            String content = extractTextFromFile(file);
-            if (!content.isBlank()) {
-                extractedText.append("\n\n--- File: ")
-                        .append(file.getOriginalFilename())
-                        .append(" ---\n")
-                        .append(content);
-            }
-
-            if (IMAGE_MIME_TYPES.contains(contentType)) {
-                try {
-                    imageMedia.add(Media.builder()
-                            .mimeType(MimeType.valueOf(contentType))
-                            .data(new ByteArrayResource(file.getBytes()))
-                            .name(file.getOriginalFilename())
-                            .build());
-                } catch (IOException e) {
-                    log.warn("Failed to read image file: {}", file.getOriginalFilename(), e);
-                }
-            }
+            extractFileInto(file, extractedText, imageMedia);
         }
 
         String baseText = text == null ? "" : text;
@@ -110,6 +87,39 @@ public class TurChatAttachmentService {
                     .build();
         }
         return new UserMessage(fullText);
+    }
+
+    /**
+     * Extracts text + (optional) image media from a single {@code file},
+     * appending textual content to {@code extractedText} and any image block
+     * to {@code imageMedia}.
+     */
+    private void extractFileInto(MultipartFile file, StringBuilder extractedText,
+            List<Media> imageMedia) {
+        String contentType = file.getContentType() != null
+                ? file.getContentType()
+                : "application/octet-stream";
+
+        // Tika handles text + PDF + DOCX + OCR fallback for images.
+        String content = extractTextFromFile(file);
+        if (!content.isBlank()) {
+            extractedText.append("\n\n--- File: ")
+                    .append(file.getOriginalFilename())
+                    .append(" ---\n")
+                    .append(content);
+        }
+
+        if (IMAGE_MIME_TYPES.contains(contentType)) {
+            try {
+                imageMedia.add(Media.builder()
+                        .mimeType(MimeType.valueOf(contentType))
+                        .data(new ByteArrayResource(file.getBytes()))
+                        .name(file.getOriginalFilename())
+                        .build());
+            } catch (IOException e) {
+                log.warn("Failed to read image file: {}", file.getOriginalFilename(), e);
+            }
+        }
     }
 
     /**
