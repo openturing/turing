@@ -737,28 +737,34 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                             .map(response -> {
                                 List<Map<String, Object>> docs = new ArrayList<>();
                                 for (var doc : response.getResults()) {
-                                    Map<String, Object> fields = new HashMap<>();
-                                    for (String fieldName : doc.getFieldNames()) {
-                                        if (!ALWAYS_EXPORT_FIELDS.contains(fieldName)
-                                                && !siteFieldMap.containsKey(fieldName)) {
-                                            continue;
-                                        }
-                                        Object value = doc.getFieldValue(fieldName);
-                                        boolean isMultiValued = isFieldMultiValued(siteFieldMap, fieldName);
-                                        if (!isMultiValued && value instanceof java.util.Collection<?> col) {
-                                            value = col.isEmpty() ? null : col.iterator().next();
-                                        }
-                                        if (value != null) {
-                                            fields.put(fieldName, value);
-                                        }
-                                    }
-                                    docs.add(fields);
+                                    docs.add(extractExportFields(doc, siteFieldMap));
                                 }
                                 return docs;
                             })
                             .orElse(List.of());
                 })
                 .orElse(List.of());
+    }
+
+    /** Projects one Solr doc into the requested export fields (id/type always), collapsing single-value multis. */
+    private Map<String, Object> extractExportFields(org.apache.solr.common.SolrDocument doc,
+            Map<String, ?> siteFieldMap) {
+        Map<String, Object> fields = new HashMap<>();
+        for (String fieldName : doc.getFieldNames()) {
+            if (!ALWAYS_EXPORT_FIELDS.contains(fieldName)
+                    && !siteFieldMap.containsKey(fieldName)) {
+                continue;
+            }
+            Object value = doc.getFieldValue(fieldName);
+            boolean isMultiValued = isFieldMultiValued(siteFieldMap, fieldName);
+            if (!isMultiValued && value instanceof java.util.Collection<?> col) {
+                value = col.isEmpty() ? null : col.iterator().next();
+            }
+            if (value != null) {
+                fields.put(fieldName, value);
+            }
+        }
+        return fields;
     }
 
     private static boolean isFieldMultiValued(Map<String, ?> siteFieldMap, String fieldName) {

@@ -314,53 +314,71 @@ public class TurChatFlowLinterService {
      */
     private void checkFormFields(ChatFlowGraph graph, String agentId,
             List<TurChatFlowLintIssueDto> out) {
+        List<ChatFlowNode> formNodes = collectFormNodes(graph);
+        if (formNodes.isEmpty()) {
+            // No native forms on this flow — skip the slot-catalog lookup.
+            return;
+        }
+        Set<String> declaredSlots = loadDeclaredSlots(agentId);
+        for (ChatFlowNode node : formNodes) {
+            Set<String> seen = new HashSet<>();
+            for (ChatFlowNode.FormField field : node.formFields()) {
+                lintFormField(node, field, seen, declaredSlots, out);
+            }
+        }
+    }
+
+    /** Collects the flow's native formCapture nodes that declare at least one field. */
+    private List<ChatFlowNode> collectFormNodes(ChatFlowGraph graph) {
         List<ChatFlowNode> formNodes = new ArrayList<>();
         for (ChatFlowNode node : graph.nodes()) {
             if ("formCapture".equals(node.type()) && !node.formFields().isEmpty()) {
                 formNodes.add(node);
             }
         }
-        if (formNodes.isEmpty()) {
-            // No native forms on this flow — skip the slot-catalog lookup.
+        return formNodes;
+    }
+
+    /** Loads the agent's declared slot names, or null when no agent id resolves a catalog. */
+    private Set<String> loadDeclaredSlots(String agentId) {
+        if (agentId == null || agentId.isBlank()) {
+            return null;
+        }
+        Set<String> declaredSlots = new HashSet<>();
+        for (TurAIAgentSlot slot : slotRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)) {
+            if (slot.getName() != null && !slot.getName().isBlank()) {
+                declaredSlots.add(slot.getName().trim());
+            }
+        }
+        return declaredSlots;
+    }
+
+    /** Lints one form field: blank name (error), duplicate slot, or undeclared slot (warnings). */
+    private void lintFormField(ChatFlowNode node, ChatFlowNode.FormField field, Set<String> seen,
+            Set<String> declaredSlots, List<TurChatFlowLintIssueDto> out) {
+        String name = field == null ? null : field.name();
+        if (name == null || name.isBlank()) {
+            out.add(new TurChatFlowLintIssueDto(node.id(), null, ERROR,
+                    "form_field_blank_name",
+                    "A form field has no slot name — its value cannot be captured",
+                    "Pick a declared slot for every field on the form."));
             return;
         }
-        Set<String> declaredSlots = null;
-        if (agentId != null && !agentId.isBlank()) {
-            declaredSlots = new HashSet<>();
-            for (TurAIAgentSlot slot : slotRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)) {
-                if (slot.getName() != null && !slot.getName().isBlank()) {
-                    declaredSlots.add(slot.getName().trim());
-                }
-            }
+        String trimmed = name.trim();
+        if (!seen.add(trimmed)) {
+            out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
+                    "form_field_duplicate_name",
+                    "Two form fields write the same slot '" + trimmed
+                            + "' — the later value wins",
+                    "Give each field its own slot, or remove the duplicate field."));
         }
-        for (ChatFlowNode node : formNodes) {
-            Set<String> seen = new HashSet<>();
-            for (ChatFlowNode.FormField field : node.formFields()) {
-                String name = field == null ? null : field.name();
-                if (name == null || name.isBlank()) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, ERROR,
-                            "form_field_blank_name",
-                            "A form field has no slot name — its value cannot be captured",
-                            "Pick a declared slot for every field on the form."));
-                    continue;
-                }
-                String trimmed = name.trim();
-                if (!seen.add(trimmed)) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
-                            "form_field_duplicate_name",
-                            "Two form fields write the same slot '" + trimmed
-                                    + "' — the later value wins",
-                            "Give each field its own slot, or remove the duplicate field."));
-                }
-                if (declaredSlots != null && !declaredSlots.contains(trimmed)) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
-                            "form_field_unknown_slot",
-                            "Form field writes slot '" + trimmed
-                                    + "' which is not declared on the agent",
-                            "Declare the slot in the agent's slot catalog so the value lands in the"
-                                    + " typed schema and is readable downstream."));
-                }
-            }
+        if (declaredSlots != null && !declaredSlots.contains(trimmed)) {
+            out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
+                    "form_field_unknown_slot",
+                    "Form field writes slot '" + trimmed
+                            + "' which is not declared on the agent",
+                    "Declare the slot in the agent's slot catalog so the value lands in the"
+                            + " typed schema and is readable downstream."));
         }
     }
 
