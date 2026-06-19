@@ -61,9 +61,10 @@ class TurToolLatencyAccumulatorTest {
         List<Map<String, Object>> rows = acc.toRows(50);
         assertThat(rows).hasSize(1);
         Map<String, Object> r = rows.get(0);
-        assertThat(r).containsEntry("tool", "search_site");
-        assertThat(r).containsEntry("count", 4);
-        assertThat(r).containsEntry("errors", 1);
+        assertThat(r)
+                .containsEntry("tool", "search_site")
+                .containsEntry("count", 4)
+                .containsEntry("errors", 1);
         assertThat(((Number) r.get("errorRatePct")).doubleValue()).isCloseTo(25.0, within(1e-9));
         assertThat(((Number) r.get("avgMs")).doubleValue()).isCloseTo(25.0, within(1e-9));
         assertThat(((Number) r.get("minMs")).longValue()).isEqualTo(10L);

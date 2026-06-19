@@ -53,8 +53,8 @@ class TurSNPaginationBuilderTest {
 
         List<TurSNPaginationType> types = pagination.stream()
                 .map(TurSNSiteSearchPaginationBean::getType).toList();
-        assertThat(types).doesNotContain(TurSNPaginationType.FIRST, TurSNPaginationType.PREVIOUS);
-        assertThat(types).contains(TurSNPaginationType.NEXT, TurSNPaginationType.LAST);
+        assertThat(types).doesNotContain(TurSNPaginationType.FIRST, TurSNPaginationType.PREVIOUS)
+                .contains(TurSNPaginationType.NEXT, TurSNPaginationType.LAST);
         assertThat(pagination).filteredOn(p -> p.getType() == TurSNPaginationType.CURRENT)
                 .singleElement().extracting(TurSNSiteSearchPaginationBean::getPage).isEqualTo(1);
     }
@@ -65,8 +65,8 @@ class TurSNPaginationBuilderTest {
 
         List<TurSNPaginationType> types = pagination.stream()
                 .map(TurSNSiteSearchPaginationBean::getType).toList();
-        assertThat(types).contains(TurSNPaginationType.FIRST, TurSNPaginationType.PREVIOUS);
-        assertThat(types).doesNotContain(TurSNPaginationType.NEXT, TurSNPaginationType.LAST);
+        assertThat(types).contains(TurSNPaginationType.FIRST, TurSNPaginationType.PREVIOUS)
+                .doesNotContain(TurSNPaginationType.NEXT, TurSNPaginationType.LAST);
         assertThat(pagination).filteredOn(p -> p.getType() == TurSNPaginationType.CURRENT)
                 .singleElement().extracting(TurSNSiteSearchPaginationBean::getPage).isEqualTo(5);
     }
@@ -161,7 +161,7 @@ class TurSNPaginationBuilderTest {
 
         List<TurSNPaginationType> types = pagination.stream()
                 .map(TurSNSiteSearchPaginationBean::getType).toList();
-        assertThat(types).contains(TurSNPaginationType.FIRST, TurSNPaginationType.LAST);
-        assertThat(types).doesNotContain(TurSNPaginationType.PREVIOUS, TurSNPaginationType.NEXT);
+        assertThat(types).contains(TurSNPaginationType.FIRST, TurSNPaginationType.LAST)
+                .doesNotContain(TurSNPaginationType.PREVIOUS, TurSNPaginationType.NEXT);
     }
 }

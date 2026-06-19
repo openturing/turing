@@ -262,8 +262,9 @@ class TurChatMultiModalSlotServiceTest {
                 "conv/../x", "my slot", "../../etc/passwd");
         // conversation/slot segments neutralise '/'; the filename's path
         // component is stripped to its base name ("passwd").
-        assertThat(name).isEqualTo("chat-slots/conv_.._x/my_slot/passwd");
-        assertThat(name).doesNotContain("/..");
+        assertThat(name)
+                .isEqualTo("chat-slots/conv_.._x/my_slot/passwd")
+                .doesNotContain("/..");
     }
 
     @Test

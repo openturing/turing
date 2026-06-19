@@ -56,10 +56,11 @@ class TurPersonaStaticPromptCacheTest {
         p.setVerbosity(3);
         p.setLanguageStyle(TurPersonaLanguageStyle.NEUTRAL);
         String out = cache.composeStaticBlock(p);
-        assertThat(out).contains("# Style Guidelines");
-        assertThat(out).contains("Tone: formal");
-        assertThat(out).contains("Verbosity (1=terse, 5=expansive): 3");
-        assertThat(out).contains("Language Style: neutral");
+        assertThat(out)
+                .contains("# Style Guidelines")
+                .contains("Tone: formal")
+                .contains("Verbosity (1=terse, 5=expansive): 3")
+                .contains("Language Style: neutral");
     }
 
     @Test
@@ -77,10 +78,11 @@ class TurPersonaStaticPromptCacheTest {
         TurPersona p = persona("p-4", null);
         p.setMandatoryTerms("agile | iteration | sprint");
         String out = cache.composeStaticBlock(p);
-        assertThat(out).contains("# Required Vocabulary");
-        assertThat(out).contains("- agile");
-        assertThat(out).contains("- iteration");
-        assertThat(out).contains("- sprint");
+        assertThat(out)
+                .contains("# Required Vocabulary")
+                .contains("- agile")
+                .contains("- iteration")
+                .contains("- sprint");
     }
 
     @Test
@@ -88,9 +90,10 @@ class TurPersonaStaticPromptCacheTest {
         TurPersona p = persona("p-5", null);
         p.setForbiddenTerms("guaranteed | risk-free");
         String out = cache.composeStaticBlock(p);
-        assertThat(out).contains("# Forbidden Vocabulary");
-        assertThat(out).contains("- guaranteed");
-        assertThat(out).contains("- risk-free");
+        assertThat(out)
+                .contains("# Forbidden Vocabulary")
+                .contains("- guaranteed")
+                .contains("- risk-free");
     }
 
     @Test
@@ -100,8 +103,9 @@ class TurPersonaStaticPromptCacheTest {
         p.setMandatoryTerms("  |  ");
         p.setForbiddenTerms(null);
         String out = cache.composeStaticBlock(p);
-        assertThat(out).doesNotContain("# Required Vocabulary");
-        assertThat(out).doesNotContain("# Forbidden Vocabulary");
+        assertThat(out)
+                .doesNotContain("# Required Vocabulary")
+                .doesNotContain("# Forbidden Vocabulary");
     }
 
     @Test

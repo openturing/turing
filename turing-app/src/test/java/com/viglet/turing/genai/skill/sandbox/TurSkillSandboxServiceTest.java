@@ -117,22 +117,23 @@ class TurSkillSandboxServiceTest {
                 sampleSession(), "ls /skill", "python:3.12-slim");
 
         // Hardening flags present.
-        assertThat(cmd).containsSubsequence("docker", "run", "--rm");
-        assertThat(cmd).containsSubsequence("--network", "none");
-        assertThat(cmd).containsSubsequence("--memory", "512m");
-        assertThat(cmd).containsSubsequence("--cpus", "1.0");
-        assertThat(cmd).containsSubsequence("--pids-limit", "128");
-        assertThat(cmd).containsSubsequence("--cap-drop", "ALL");
-        assertThat(cmd).containsSubsequence("--security-opt", "no-new-privileges");
-        assertThat(cmd).contains("--read-only");
-        assertThat(cmd).contains("/tmp:rw,size=64m");
-        // Skill folder mounted read-only, workspace read-write.
-        assertThat(cmd).anyMatch(a -> a.endsWith("/skill:ro"));
-        assertThat(cmd).anyMatch(a -> a.endsWith("/workspace:rw"));
-        // Working dir is the persistent workspace.
-        assertThat(cmd).containsSubsequence("-w", "/workspace");
-        // The command is the last arg, driven through bash -lc.
-        assertThat(cmd).containsSubsequence("bash", "-lc", "ls /skill");
+        assertThat(cmd)
+                .containsSubsequence("docker", "run", "--rm")
+                .containsSubsequence("--network", "none")
+                .containsSubsequence("--memory", "512m")
+                .containsSubsequence("--cpus", "1.0")
+                .containsSubsequence("--pids-limit", "128")
+                .containsSubsequence("--cap-drop", "ALL")
+                .containsSubsequence("--security-opt", "no-new-privileges")
+                .contains("--read-only")
+                .contains("/tmp:rw,size=64m")
+                // Skill folder mounted read-only, workspace read-write.
+                .anyMatch(a -> a.endsWith("/skill:ro"))
+                .anyMatch(a -> a.endsWith("/workspace:rw"))
+                // Working dir is the persistent workspace.
+                .containsSubsequence("-w", "/workspace")
+                // The command is the last arg, driven through bash -lc.
+                .containsSubsequence("bash", "-lc", "ls /skill");
         assertThat(cmd.get(cmd.size() - 1)).isEqualTo("ls /skill");
         // Image precedes the bash invocation.
         assertThat(cmd).containsSubsequence("python:3.12-slim", "bash");

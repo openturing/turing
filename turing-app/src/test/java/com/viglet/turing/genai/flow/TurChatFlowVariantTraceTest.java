@@ -57,9 +57,9 @@ class TurChatFlowVariantTraceTest {
         TurChatFlow flow = experiment("programa-match-headline", "lucas-alumni");
         Optional<String> trace = TurChatFlowEngineService.formatVariantTrace(
                 flow, "ai-cargo", "Quero saber sobre o MBA");
-        assertThat(trace).isPresent();
         // Spec: `experimentKey:variantLabel:nodeId:userMessage`
         assertThat(trace)
+                .isPresent()
                 .contains("programa-match-headline:lucas-alumni:ai-cargo:Quero saber sobre o MBA");
     }
 
@@ -82,8 +82,9 @@ class TurChatFlowVariantTraceTest {
         String emitted = trace.get();
         // Strip the prefix to isolate the userMessage segment.
         String userField = emitted.substring("exp-x:v1:node-1:".length());
-        assertThat(userField).hasSize(201); // 200 chars + 1 ellipsis char
-        assertThat(userField).startsWith("a".repeat(200)).endsWith("…");
+        assertThat(userField)
+                .hasSize(201) // 200 chars + 1 ellipsis char
+                .startsWith("a".repeat(200)).endsWith("…");
     }
 
     @Test

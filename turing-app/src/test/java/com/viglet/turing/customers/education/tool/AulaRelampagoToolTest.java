@@ -285,17 +285,13 @@ class AulaRelampagoToolTest {
         assertThat(mindmap)
                 .as("Must be Mermaid mindmap syntax")
                 .startsWith("mindmap")
-                .contains("root((Real Options))");
-
-        // Search term and stop-words MUST NOT appear as branches
-        assertThat(mindmap)
+                .contains("root((Real Options))")
+                // Search term and stop-words MUST NOT appear as branches
                 .as("Search-term tokens excluded from branches")
                 .doesNotContain("    Real\n")
                 .doesNotContain("    Options\n")
-                .doesNotContain("    the\n");
-
-        // Top-4 frequent Title-Case concepts SHOULD appear (Decisão 4x, Investimento 3x, Mercado 2x, Estratégia 2x, Incerteza 2x)
-        assertThat(mindmap)
+                .doesNotContain("    the\n")
+                // Top-4 frequent Title-Case concepts SHOULD appear (Decisão 4x, Investimento 3x, Mercado 2x, Estratégia 2x, Incerteza 2x)
                 .as("Most frequent concepts appear as branches")
                 .contains("Decisão")
                 .contains("Investimento");

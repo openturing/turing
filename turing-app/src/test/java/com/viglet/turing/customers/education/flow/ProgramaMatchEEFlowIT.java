@@ -360,9 +360,10 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
         assertThat(vars.get("area"))
                 .as("Switch routing variable must be populated")
                 .isEqualToIgnoringCase(fixture.areaInput);
-        assertThat(vars).containsEntry("area_label", fixture.expectedAreaLabel);
-        assertThat(vars).containsEntry("color", fixture.expectedColor);
-        assertThat(vars).containsEntry("cta_visible", "true");
+        assertThat(vars)
+                .containsEntry("area_label", fixture.expectedAreaLabel)
+                .containsEntry("color", fixture.expectedColor)
+                .containsEntry("cta_visible", "true");
         assertThat(vars.get("career_path"))
                 .as("career_path slot must hold a JSON array")
                 .startsWith("[").endsWith("]");
@@ -473,8 +474,7 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
         // no longer belong in the chat text — they live in the slot.
         assertThat(secondReply)
                 .as("Reply must reference the cards UI (not repeat program names)")
-                .containsIgnoringCase("card");
-        assertThat(secondReply)
+                .containsIgnoringCase("card")
                 .as("Reply must close with the scheduling/email CTA — accept both 'email' and 'e-mail'")
                 .containsIgnoringCase("consultor");
         assertThat(secondReply.toLowerCase())
@@ -753,9 +753,10 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
         assertThat(vars.get("area"))
                 .as("Switch routing variable must be populated")
                 .isEqualToIgnoringCase(fixture.areaInput);
-        assertThat(vars).containsEntry("area_label", fixture.expectedAreaLabel);
-        assertThat(vars).containsEntry("color", fixture.expectedColor);
-        assertThat(vars).containsEntry("cta_visible", "true");
+        assertThat(vars)
+                .containsEntry("area_label", fixture.expectedAreaLabel)
+                .containsEntry("color", fixture.expectedColor)
+                .containsEntry("cta_visible", "true");
         // Lucas-specific slot writes (stat_pitch and final_pitch carry peer voice)
         assertThat(vars.get("stat_pitch"))
                 .as("Lucas stat_pitch must be a peer-tone quote signed '— Lucas'")

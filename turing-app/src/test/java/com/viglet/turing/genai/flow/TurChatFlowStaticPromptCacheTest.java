@@ -85,13 +85,13 @@ class TurChatFlowStaticPromptCacheTest {
         String out = cache.buildAddendum(flow, q, state, graph, true);
 
         // Head pieces: ACTIVE FLOW STEP, Goal, Collect
-        assertThat(out).contains("=== ACTIVE FLOW STEP: Ask for name ===");
-        assertThat(out).contains("Goal: What is your name?");
-        assertThat(out).contains("Collect: userName");
-        // Dynamic line from state
-        assertThat(out).contains("Already collected: {company=Viglet}");
-        // Tail: HARD_RULES (one of its anchor phrases)
-        assertThat(out).contains("Hard rules");
+        // Dynamic line from state; Tail: HARD_RULES (one of its anchor phrases)
+        assertThat(out)
+                .contains("=== ACTIVE FLOW STEP: Ask for name ===")
+                .contains("Goal: What is your name?")
+                .contains("Collect: userName")
+                .contains("Already collected: {company=Viglet}")
+                .contains("Hard rules");
     }
 
     @Test
@@ -99,9 +99,10 @@ class TurChatFlowStaticPromptCacheTest {
         ChatFlowNode q = node("q-id", "aiQuestion", "Ask",
                 "What is your name?", null, null);
         String out = cache.buildAddendum(flow, q, blankState(), graph, true);
-        assertThat(out).doesNotContain("Already collected:");
-        assertThat(out).contains("Goal: What is your name?");
-        assertThat(out).contains("Hard rules");
+        assertThat(out)
+                .doesNotContain("Already collected:")
+                .contains("Goal: What is your name?")
+                .contains("Hard rules");
     }
 
     @Test
@@ -111,8 +112,9 @@ class TurChatFlowStaticPromptCacheTest {
         ChatFlowNode q = node("q-id", "aiQuestion", "Ask",
                 "Goal text", null, null);
         String out = cache.buildAddendum(null, q, blankState(), graph, true);
-        assertThat(out).contains("Goal: Goal text");
-        assertThat(out).contains("Hard rules");
+        assertThat(out)
+                .contains("Goal: Goal text")
+                .contains("Hard rules");
     }
 
     // ─────────────── staticHead / staticTail content ───────────────
@@ -122,15 +124,15 @@ class TurChatFlowStaticPromptCacheTest {
         ChatFlowNode q = node("q-id", "aiQuestion", "Capture email",
                 "Ask for the email", "email", "email");
         String head = cache.staticHead(flow.getId(), q.id(), q);
-        assertThat(head).contains("=== ACTIVE FLOW STEP: Capture email ===");
-        assertThat(head).contains("Goal: Ask for the email");
-        assertThat(head).contains("Collect: email");
-        assertThat(head).contains("Validate the collected value as: email");
-        // Static head should NOT contain HARD_RULES (that's in the tail)
-        assertThat(head).doesNotContain("Hard rules");
-        // Static head should NOT contain the variables line (that's
-        // dynamic and assembled by buildAddendum)
-        assertThat(head).doesNotContain("Already collected:");
+        // Static head should NOT contain HARD_RULES (that's in the tail) nor
+        // the variables line (that's dynamic and assembled by buildAddendum).
+        assertThat(head)
+                .contains("=== ACTIVE FLOW STEP: Capture email ===")
+                .contains("Goal: Ask for the email")
+                .contains("Collect: email")
+                .contains("Validate the collected value as: email")
+                .doesNotContain("Hard rules")
+                .doesNotContain("Already collected:");
     }
 
     @Test
@@ -143,9 +145,10 @@ class TurChatFlowStaticPromptCacheTest {
     void staticTail_includesHardRules() {
         ChatFlowNode q = node("q-id", "aiQuestion", "Ask", "Goal", null, null);
         String tail = cache.staticTail(flow.getId(), q.id(), true, q, graph);
-        assertThat(tail).contains("Hard rules");
-        assertThat(tail).doesNotContain("=== ACTIVE FLOW STEP:");
-        assertThat(tail).doesNotContain("Already collected:");
+        assertThat(tail)
+                .contains("Hard rules")
+                .doesNotContain("=== ACTIVE FLOW STEP:")
+                .doesNotContain("Already collected:");
     }
 
     @Test
@@ -158,8 +161,9 @@ class TurChatFlowStaticPromptCacheTest {
         // discriminator vs the quoted reference inside the rules block.
         ChatFlowNode q = node("q-id", "aiQuestion", "Ask", "Goal", null, null);
         String tail = cache.staticTail(flow.getId(), q.id(), false, q, graph);
-        assertThat(tail).doesNotContain("Next step preview (");
-        assertThat(tail).contains("Hard rules");
+        assertThat(tail)
+                .doesNotContain("Next step preview (")
+                .contains("Hard rules");
     }
 
     // ─────────────── ChatFlowOps split helpers ───────────────
@@ -174,10 +178,11 @@ class TurChatFlowStaticPromptCacheTest {
     void chatFlowOps_buildVariablesLine_rendersCollectedSlots() {
         TurChatFlowState state = stateWithVariables("{\"name\":\"Marina\",\"role\":\"CFO\"}");
         String line = com.viglet.turing.genai.flow.strategy.ChatFlowOps.buildVariablesLine(state);
-        assertThat(line).startsWith("Already collected:");
-        assertThat(line).contains("name=Marina");
-        assertThat(line).contains("role=CFO");
-        assertThat(line).endsWith("\n");
+        assertThat(line)
+                .startsWith("Already collected:")
+                .contains("name=Marina")
+                .contains("role=CFO")
+                .endsWith("\n");
     }
 
     @Test

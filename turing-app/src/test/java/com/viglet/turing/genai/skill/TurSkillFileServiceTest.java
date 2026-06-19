@@ -109,9 +109,10 @@ class TurSkillFileServiceTest {
 
         List<String> paths = fileService.listFiles(skill.getId()).stream().map(TurSkillFileNode::path).toList();
 
-        assertThat(paths).contains("SKILL.md", "scripts", "scripts/build.py", "references", "references/guide.md");
-        // Paths are relative — none leaks the storage prefix.
-        assertThat(paths).noneMatch(p -> p.startsWith("skills/"));
+        assertThat(paths)
+                .contains("SKILL.md", "scripts", "scripts/build.py", "references", "references/guide.md")
+                // Paths are relative — none leaks the storage prefix.
+                .noneMatch(p -> p.startsWith("skills/"));
     }
 
     @Test

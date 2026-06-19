@@ -566,9 +566,10 @@ class TurFinanceToolServiceTest {
         method.invoke(service, sb, result, "1mo");
 
         String output = sb.toString();
-        assertThat(output).contains("Price History (1mo)");
-        // Should have at most 15 data rows (limited from 20) plus header lines
-        assertThat(output).isNotEmpty();
+        assertThat(output)
+                .contains("Price History (1mo)")
+                // Should have at most 15 data rows (limited from 20) plus header lines
+                .isNotEmpty();
     }
 
     @Test

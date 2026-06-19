@@ -133,14 +133,15 @@ class TurChatSessionExportTest {
 
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
         String disposition = response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
-        assertThat(disposition).isNotNull();
-        assertThat(disposition).startsWith("attachment");
-        assertThat(disposition).contains(".json");
-        // The real injection vectors — path separators and spaces — are stripped
-        // (dots are kept so the ".json" extension and dotted ids stay intact).
-        assertThat(disposition).doesNotContain("/");
-        assertThat(disposition).doesNotContain("\\");
-        assertThat(disposition).doesNotContain("passwd weird");
+        assertThat(disposition)
+                .isNotNull()
+                .startsWith("attachment")
+                .contains(".json")
+                // The real injection vectors — path separators and spaces — are stripped
+                // (dots are kept so the ".json" extension and dotted ids stay intact).
+                .doesNotContain("/")
+                .doesNotContain("\\")
+                .doesNotContain("passwd weird");
     }
 
     @Test

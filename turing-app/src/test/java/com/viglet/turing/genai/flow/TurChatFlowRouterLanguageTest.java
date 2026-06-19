@@ -129,8 +129,9 @@ class TurChatFlowRouterLanguageTest {
         // "the", "and", "for" should be filtered; "career plan" survives as stems.
         Set<String> tokens = TurChatFlowEngineService.tokenize(
                 "the career plan and the manager", new EnglishAnalyzer());
-        assertThat(tokens).doesNotContain("the", "and", "for");
-        assertThat(tokens).contains("career", "plan", "manag");
+        assertThat(tokens)
+                .doesNotContain("the", "and", "for")
+                .contains("career", "plan", "manag");
     }
 
     @Test

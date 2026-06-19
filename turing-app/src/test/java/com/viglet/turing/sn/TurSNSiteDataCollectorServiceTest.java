@@ -100,15 +100,16 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("# Site: MySite");
-        assertThat(result).contains("Search Engine: Solr Engine");
-        assertThat(result).contains("Rows per page: 20");
-        assertThat(result).contains("Highlight: enabled");
-        assertThat(result).contains("Spell check: enabled");
-        assertThat(result).contains("More like this: disabled");
-        assertThat(result).contains("Facets: enabled (items per facet: 10)");
-        assertThat(result).contains("Wildcard on no results: no");
-        assertThat(result).contains("Exact match: enabled");
+        assertThat(result)
+                .contains("# Site: MySite")
+                .contains("Search Engine: Solr Engine")
+                .contains("Rows per page: 20")
+                .contains("Highlight: enabled")
+                .contains("Spell check: enabled")
+                .contains("More like this: disabled")
+                .contains("Facets: enabled (items per facet: 10)")
+                .contains("Wildcard on no results: no")
+                .contains("Exact match: enabled");
     }
 
     @Test
@@ -193,9 +194,10 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Locales (2)");
-        assertThat(result).contains("(core: en_core)");
-        assertThat(result).contains("(core: pt_core)");
+        assertThat(result)
+                .contains("## Locales (2)")
+                .contains("(core: en_core)")
+                .contains("(core: pt_core)");
     }
 
     @Test
@@ -214,8 +216,9 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Document Counts");
-        assertThat(result).contains("500 documents");
+        assertThat(result)
+                .contains("## Document Counts")
+                .contains("500 documents");
     }
 
     @Test
@@ -265,10 +268,11 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Fields (2)");
-        assertThat(result).contains("- Enabled: 1");
-        assertThat(result).contains("- Faceted: 1");
-        assertThat(result).contains("- Required: 1");
+        assertThat(result)
+                .contains("## Fields (2)")
+                .contains("- Enabled: 1")
+                .contains("- Faceted: 1")
+                .contains("- Required: 1");
     }
 
     @Test
@@ -320,11 +324,12 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Search Metrics (Last 7 days)");
-        assertThat(result).contains("Total searches: 200");
-        assertThat(result).contains("\"java\" (50 searches)");
-        assertThat(result).contains("\"spring\" (30 searches)");
-        assertThat(result).contains("## Search Metrics (Last 30 days)");
+        assertThat(result)
+                .contains("## Search Metrics (Last 7 days)")
+                .contains("Total searches: 200")
+                .contains("\"java\" (50 searches)")
+                .contains("\"spring\" (30 searches)")
+                .contains("## Search Metrics (Last 30 days)");
     }
 
     @Test
@@ -339,8 +344,9 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("Total searches: 0");
-        assertThat(result).doesNotContain("Top search terms:");
+        assertThat(result)
+                .contains("Total searches: 0")
+                .doesNotContain("Top search terms:");
     }
 
     @Test
@@ -367,9 +373,10 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Generative AI Configuration");
-        assertThat(result).contains("- Enabled: yes");
-        assertThat(result).contains("- LLM: GPT-4");
+        assertThat(result)
+                .contains("## Generative AI Configuration")
+                .contains("- Enabled: yes")
+                .contains("- LLM: GPT-4");
     }
 
     @Test
@@ -394,8 +401,9 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("- Enabled: yes");
-        assertThat(result).doesNotContain("- LLM:");
+        assertThat(result)
+                .contains("- Enabled: yes")
+                .doesNotContain("- LLM:");
     }
 
     @Test
@@ -451,13 +459,14 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("Highlight: disabled");
-        assertThat(result).contains("Spell check: disabled");
-        assertThat(result).contains("More like this: disabled");
-        assertThat(result).contains("Facets: disabled");
-        assertThat(result).doesNotContain("items per facet");
-        assertThat(result).contains("Wildcard on no results: no");
-        assertThat(result).contains("Exact match: disabled");
+        assertThat(result)
+                .contains("Highlight: disabled")
+                .contains("Spell check: disabled")
+                .contains("More like this: disabled")
+                .contains("Facets: disabled")
+                .doesNotContain("items per facet")
+                .contains("Wildcard on no results: no")
+                .contains("Exact match: disabled");
     }
 
     @Test
@@ -478,9 +487,10 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("Highlight: disabled");
-        assertThat(result).contains("Spell check: disabled");
-        assertThat(result).contains("Facets: disabled");
+        assertThat(result)
+                .contains("Highlight: disabled")
+                .contains("Spell check: disabled")
+                .contains("Facets: disabled");
     }
 
     @Test
@@ -520,10 +530,11 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("## Locales (3)");
-        assertThat(result).contains("1000 documents");
-        assertThat(result).contains("500 documents");
-        assertThat(result).contains("250 documents");
+        assertThat(result)
+                .contains("## Locales (3)")
+                .contains("1000 documents")
+                .contains("500 documents")
+                .contains("250 documents");
     }
 
     @Test
@@ -555,8 +566,9 @@ class TurSNSiteDataCollectorServiceTest {
 
         String result = service.collectSiteData(site);
 
-        assertThat(result).contains("Facets: disabled");
-        assertThat(result).doesNotContain("items per facet: 15");
+        assertThat(result)
+                .contains("Facets: disabled")
+                .doesNotContain("items per facet: 15");
     }
 
     @Test

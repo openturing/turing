@@ -73,8 +73,9 @@ class TurNativeToolServiceTest {
         var d1 = new TurNativeToolService.NativeToolDescriptor("tool", "desc", "grp");
         var d2 = new TurNativeToolService.NativeToolDescriptor("tool", "desc", "grp");
         var d3 = new TurNativeToolService.NativeToolDescriptor("other", "desc", "grp");
-        assertThat(d1).isEqualTo(d2);
-        assertThat(d1).isNotEqualTo(d3);
+        assertThat(d1)
+                .isEqualTo(d2)
+                .isNotEqualTo(d3);
     }
 
     @Test

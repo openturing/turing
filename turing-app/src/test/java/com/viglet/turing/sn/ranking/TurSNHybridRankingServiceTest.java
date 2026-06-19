@@ -196,9 +196,9 @@ class TurSNHybridRankingServiceTest {
                 .containsEntry("semanticRank", 1)
                 .containsEntry("fusedRank", 1)
                 .containsEntry("finalRank", 1)
-                .containsKey("rrfScore");
-        // No rerank stage on HYBRID_RRF → no rerankerDelta, reranker untouched.
-        assertThat(bExplain).doesNotContainKey("rerankerDelta");
+                .containsKey("rrfScore")
+                // No rerank stage on HYBRID_RRF → no rerankerDelta, reranker untouched.
+                .doesNotContainKey("rerankerDelta");
         verify(reranker, never()).reorder(any(), anyString(), anyList());
     }
 

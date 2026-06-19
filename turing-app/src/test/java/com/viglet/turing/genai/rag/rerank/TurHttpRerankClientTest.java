@@ -108,10 +108,11 @@ class TurHttpRerankClientTest {
                 List.of("doc one", "doc two"), 7);
 
         String body = lastBody.get();
-        assertThat(body).contains("\"query\":\"my question\"");
-        assertThat(body).contains("\"top_n\":7");
-        assertThat(body).contains("\"model\":\"bge-reranker\"");
-        assertThat(body).contains("doc one").contains("doc two");
+        assertThat(body)
+                .contains("\"query\":\"my question\"")
+                .contains("\"top_n\":7")
+                .contains("\"model\":\"bge-reranker\"")
+                .contains("doc one").contains("doc two");
     }
 
     @Test

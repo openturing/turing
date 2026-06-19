@@ -54,9 +54,10 @@ class TurOpenAiResponsesServiceTest {
         List<Tool> tools = service.buildTools(List.of(
                 cap(TurNativeCapability.OPENAI_CODE_INTERPRETER, null),
                 cap(TurNativeCapability.OPENAI_IMAGE_GENERATION, null)));
-        assertThat(tools).hasSize(2);
-        assertThat(tools).anyMatch(Tool::isCodeInterpreter);
-        assertThat(tools).anyMatch(Tool::isImageGeneration);
+        assertThat(tools)
+                .hasSize(2)
+                .anyMatch(Tool::isCodeInterpreter)
+                .anyMatch(Tool::isImageGeneration);
     }
 
     @Test

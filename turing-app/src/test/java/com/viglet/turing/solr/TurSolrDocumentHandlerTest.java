@@ -208,8 +208,9 @@ class TurSolrDocumentHandlerTest {
                 UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
                 SolrInputDocument document = updateRequest.getDocuments().getFirst();
                 String value = (String) document.getFieldValue("desc");
-                assertThat(value).contains("line1");
-                assertThat(value).contains("line2");
+                assertThat(value)
+                                .contains("line1")
+                                .contains("line2");
         }
 
         @Test
@@ -226,8 +227,9 @@ class TurSolrDocumentHandlerTest {
                 UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
                 SolrInputDocument document = updateRequest.getDocuments().getFirst();
                 String value = (String) document.getFieldValue("body");
-                assertThat(value).contains("para1");
-                assertThat(value).contains("para2");
+                assertThat(value)
+                                .contains("para1")
+                                .contains("para2");
         }
 
         @Test

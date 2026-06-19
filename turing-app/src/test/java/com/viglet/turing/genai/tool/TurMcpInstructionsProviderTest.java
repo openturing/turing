@@ -102,7 +102,8 @@ class TurMcpInstructionsProviderTest {
 
         String block = provider.buildSystemPromptBlock(servers);
 
-        assertThat(block).contains("## Enabled").contains("keep me");
-        assertThat(block).doesNotContain("drop me").doesNotContain("## Disabled").doesNotContain("## Blank");
+        assertThat(block)
+                .contains("## Enabled").contains("keep me")
+                .doesNotContain("drop me").doesNotContain("## Disabled").doesNotContain("## Blank");
     }
 }

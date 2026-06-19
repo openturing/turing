@@ -54,9 +54,8 @@ class TurChatAnalyticsStoreScorecardContractTest {
     void filterableFields_coverCohortAndIdentityButNotArbitraryColumns() {
         assertThat(TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS)
                 .contains("deviceType", "locale", "timezone",
-                        "agentId", "personaId", "experimentKey", "variantLabel", "outcome");
-        // Free-text / sensitive columns are NOT filterable (injection guard).
-        assertThat(TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS)
+                        "agentId", "personaId", "experimentKey", "variantLabel", "outcome")
+                // Free-text / sensitive columns are NOT filterable (injection guard).
                 .doesNotContain("firstUserMessage", "userId", "conversationId", "goalSummary");
     }
 }

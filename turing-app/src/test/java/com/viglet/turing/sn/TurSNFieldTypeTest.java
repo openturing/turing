@@ -32,8 +32,9 @@ class TurSNFieldTypeTest {
     void testAllEnumValuesExist() {
         TurSNFieldType[] values = TurSNFieldType.values();
 
-        assertThat(values).hasSize(3);
-        assertThat(values).containsExactly(TurSNFieldType.SE, TurSNFieldType.NER, TurSNFieldType.THESAURUS);
+        assertThat(values)
+                .hasSize(3)
+                .containsExactly(TurSNFieldType.SE, TurSNFieldType.NER, TurSNFieldType.THESAURUS);
     }
 
     @Test

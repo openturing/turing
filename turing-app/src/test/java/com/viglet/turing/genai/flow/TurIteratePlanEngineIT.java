@@ -90,17 +90,17 @@ class TurIteratePlanEngineIT extends AbstractTuringSpringIT {
 
         // Every plan item was visited and marked done (the plan is preserved).
         List<PlanItem> plan = ChatFlowOps.parsePlan(vars.get("__plan"));
-        assertThat(plan).hasSize(2);
-        assertThat(plan).allSatisfy(item -> assertThat(item.isPending()).isFalse());
-        assertThat(plan).extracting(PlanItem::title).containsExactly("First", "Second");
+        assertThat(plan)
+                .hasSize(2)
+                .allSatisfy(item -> assertThat(item.isPending()).isFalse())
+                .extracting(PlanItem::title).containsExactly("First", "Second");
 
         // The body sub-flow ran (at least once) and saw the per-item marker —
         // last_item holds the LAST iterated item's title (override writeSlot).
-        assertThat(vars).containsEntry("body_ran", "yes");
-        assertThat(vars).containsEntry("last_item", "Second");
-
-        // The reserved iteration markers were cleared on completion.
         assertThat(vars)
+                .containsEntry("body_ran", "yes")
+                .containsEntry("last_item", "Second")
+                // The reserved iteration markers were cleared on completion.
                 .doesNotContainKey(ChatFlowOps.PLAN_ITEM_ID_SLOT)
                 .doesNotContainKey(ChatFlowOps.PLAN_ITEM_TITLE_SLOT);
 
@@ -122,8 +122,9 @@ class TurIteratePlanEngineIT extends AbstractTuringSpringIT {
         Map<String, String> vars = ChatFlowOps.readVariables(leaf);
         // remove mode drains the plan entirely.
         assertThat(ChatFlowOps.parsePlan(vars.get("__plan"))).isEmpty();
-        assertThat(vars).containsEntry("body_ran", "yes");
-        assertThat(vars).doesNotContainKey(ChatFlowOps.PLAN_ITEM_ID_SLOT);
+        assertThat(vars)
+                .containsEntry("body_ran", "yes")
+                .doesNotContainKey(ChatFlowOps.PLAN_ITEM_ID_SLOT);
     }
 
     @Test

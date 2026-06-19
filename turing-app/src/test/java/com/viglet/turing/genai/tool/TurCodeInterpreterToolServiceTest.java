@@ -203,8 +203,9 @@ class TurCodeInterpreterToolServiceTest {
 
         String result = (String) method.invoke(service, "s1", 0, stdout, stderr, new File[0], null);
 
-        assertThat(result).isEqualTo("ok\n");
-        assertThat(result).doesNotContain("Generated Files");
+        assertThat(result)
+                .isEqualTo("ok\n")
+                .doesNotContain("Generated Files");
     }
 
     @ParameterizedTest
@@ -744,11 +745,12 @@ class TurCodeInterpreterToolServiceTest {
 
         @SuppressWarnings("unchecked")
         java.util.List<String> prefix = (java.util.List<String>) method.invoke(svc, "/usr/bin/prlimit");
-        assertThat(prefix).containsExactly(
-                "/usr/bin/prlimit",
-                "--as=" + (512L * 1024 * 1024),
-                "--");
-        assertThat(prefix).noneMatch(arg -> arg.startsWith("--cpu="));
+        assertThat(prefix)
+                .containsExactly(
+                        "/usr/bin/prlimit",
+                        "--as=" + (512L * 1024 * 1024),
+                        "--")
+                .noneMatch(arg -> arg.startsWith("--cpu="));
     }
 
     @Test

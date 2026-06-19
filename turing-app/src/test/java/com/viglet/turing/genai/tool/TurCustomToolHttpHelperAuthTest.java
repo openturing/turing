@@ -233,9 +233,10 @@ class TurCustomToolHttpHelperAuthTest {
 
         String repr = http.toString();
 
-        assertThat(repr).contains("auth=REDACTED");
-        assertThat(repr).doesNotContain("super-secret-token");
-        assertThat(repr).doesNotContain("Bearer");
+        assertThat(repr)
+                .contains("auth=REDACTED")
+                .doesNotContain("super-secret-token")
+                .doesNotContain("Bearer");
     }
 
     @Test
@@ -245,9 +246,10 @@ class TurCustomToolHttpHelperAuthTest {
 
         String repr = http.toString();
 
-        assertThat(repr).contains("auth=REDACTED");
-        assertThat(repr).doesNotContain("alice");
-        assertThat(repr).doesNotContain("topsecret");
+        assertThat(repr)
+                .contains("auth=REDACTED")
+                .doesNotContain("alice")
+                .doesNotContain("topsecret");
     }
 
     @Test

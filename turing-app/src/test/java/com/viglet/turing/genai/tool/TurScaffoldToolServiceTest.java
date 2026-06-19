@@ -27,15 +27,15 @@ class TurScaffoldToolServiceTest {
     @Test
     void scaffoldMarkdownUsesProvidedBeatsUnderTheTitle() {
         String md = tool.scaffoldMarkdown("Pix agendado", "Hook, Conceito, Call to Action");
-        assertThat(md).startsWith("# Pix agendado");
-        assertThat(md).contains("## Hook").contains("## Conceito").contains("## Call to Action");
+        assertThat(md).startsWith("# Pix agendado")
+                .contains("## Hook").contains("## Conceito").contains("## Call to Action");
     }
 
     @Test
     void scaffoldMarkdownFallsBackToDefaultBeatsAndTitle() {
         String md = tool.scaffoldMarkdown(null, "  ");
-        assertThat(md).startsWith("# Untitled");
-        assertThat(md).contains("## Hook").contains("## Development").contains("## Call to Action");
+        assertThat(md).startsWith("# Untitled")
+                .contains("## Hook").contains("## Development").contains("## Call to Action");
     }
 
     @Test
@@ -61,9 +61,9 @@ class TurScaffoldToolServiceTest {
     void buildMindMapRootsOnTheTermAndDropsStopWordsAndTheTerm() {
         String text = "Search search search relevance relevance ranking the the the of of pix pix";
         String mm = tool.scaffoldBuildMindMap(text, "pix");
-        assertThat(mm).startsWith("mindmap\n  root((Pix))");
-        assertThat(mm).contains("Search").contains("Relevance");
-        // term itself and stop-words must not appear as branches
-        assertThat(mm).doesNotContain("    Pix").doesNotContain("    The").doesNotContain("    Of");
+        assertThat(mm).startsWith("mindmap\n  root((Pix))")
+                .contains("Search").contains("Relevance")
+                // term itself and stop-words must not appear as branches
+                .doesNotContain("    Pix").doesNotContain("    The").doesNotContain("    Of");
     }
 }

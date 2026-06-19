@@ -199,8 +199,7 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         org.assertj.core.api.Assertions.assertThat(systemText)
                 .as("Initial-call SystemMessage must reflect the post-walk Lucas persona "
                         + "(distinctive: 'alumni'). Got: %s", systemText)
-                .contains("alumni");
-        org.assertj.core.api.Assertions.assertThat(systemText)
+                .contains("alumni")
                 .as("SystemMessage must NOT carry Marina's voice — the post-walk resolve "
                         + "wrote Lucas. Pre-T10 regressions show 'consultora' here.")
                 .doesNotContain("consultora");

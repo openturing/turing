@@ -468,10 +468,11 @@ class TurFileUtilsTest {
         @SuppressWarnings("unchecked")
         Map<String, String> metadataMap = (Map<String, String>) metadataMethod.invoke(null, attrs);
 
-        assertThat(metadataMap).containsEntry("author", "Alex");
-        assertThat(metadataMap).containsEntry("title", "Doc Title");
-        assertThat(metadataMap).containsEntry("keywords", "java, test");
-        assertThat(metadataMap).hasSize(3);
+        assertThat(metadataMap)
+                .containsEntry("author", "Alex")
+                .containsEntry("title", "Doc Title")
+                .containsEntry("keywords", "java, test")
+                .hasSize(3);
     }
 
     @Test

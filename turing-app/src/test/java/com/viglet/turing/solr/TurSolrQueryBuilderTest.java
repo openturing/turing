@@ -1439,8 +1439,9 @@ class TurSolrQueryBuilderTest {
                 method.setAccessible(true);
 
                 String result = (String) method.invoke(null, "price_range", "0-100", true);
-                assertThat(result).contains("key='price_range::0-100'");
-                assertThat(result).contains("ex=_all_");
+                assertThat(result)
+                                .contains("key='price_range::0-100'")
+                                .contains("ex=_all_");
         }
 
         @Test
@@ -1450,8 +1451,9 @@ class TurSolrQueryBuilderTest {
                 method.setAccessible(true);
 
                 String result = (String) method.invoke(null, "price_range", "0-100", false);
-                assertThat(result).contains("key='price_range::0-100'");
-                assertThat(result).doesNotContain("ex=_all_");
+                assertThat(result)
+                                .contains("key='price_range::0-100'")
+                                .doesNotContain("ex=_all_");
         }
 
         // --- isFacetTypeDefault (via reflection) ---

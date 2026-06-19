@@ -108,8 +108,9 @@ class TurMinioStorageServiceIT {
         List<TurAssetItem> alpha = service.listObjects("alpha/");
         List<String> alphaNames = alpha.stream().map(TurAssetItem::name).toList();
 
-        assertThat(alphaNames).contains("alpha/one.txt", "alpha/two.txt");
-        assertThat(alphaNames).noneMatch(n -> n.startsWith("beta/"));
+        assertThat(alphaNames)
+                .contains("alpha/one.txt", "alpha/two.txt")
+                .noneMatch(n -> n.startsWith("beta/"));
     }
 
     @Test
@@ -142,8 +143,9 @@ class TurMinioStorageServiceIT {
 
         List<String> remaining = service.listAllObjects().stream()
                 .map(TurAssetItem::name).toList();
-        assertThat(remaining).noneMatch(n -> n.startsWith("trash/"));
-        assertThat(remaining).contains("keep/c.txt");
+        assertThat(remaining)
+                .noneMatch(n -> n.startsWith("trash/"))
+                .contains("keep/c.txt");
     }
 
     @Test

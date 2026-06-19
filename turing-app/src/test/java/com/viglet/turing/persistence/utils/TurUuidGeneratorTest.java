@@ -42,8 +42,8 @@ class TurUuidGeneratorTest {
     void shouldGenerateUuidWhenCurrentValueIsNull() {
         Object generated = generator.generate(null, new Object(), null, EventType.INSERT);
 
-        assertThat(generated).isNotNull();
-        assertThat(generated).isInstanceOf(String.class);
+        assertThat(generated).isNotNull()
+                .isInstanceOf(String.class);
         assertThat((String) generated).hasSize(36);
     }
 
@@ -53,8 +53,8 @@ class TurUuidGeneratorTest {
 
         // Should not throw
         UUID parsed = UUID.fromString(generated);
-        assertThat(parsed).isNotNull();
-        assertThat(parsed).hasToString(generated);
+        assertThat(parsed).isNotNull()
+                .hasToString(generated);
     }
 
     @Test
@@ -96,8 +96,8 @@ class TurUuidGeneratorTest {
     void shouldHandleNullOwner() {
         Object generated = generator.generate(null, null, null, EventType.INSERT);
 
-        assertThat(generated).isNotNull();
-        assertThat(generated).isInstanceOf(String.class);
+        assertThat(generated).isNotNull()
+                .isInstanceOf(String.class);
     }
 
     @Test

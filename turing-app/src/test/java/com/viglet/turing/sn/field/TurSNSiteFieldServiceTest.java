@@ -47,8 +47,10 @@ class TurSNSiteFieldServiceTest {
 
         Map<String, TurSNSiteField> map = service.toMap(site);
 
-        assertThat(map).containsEntry("title", field1).containsEntry("text", field2);
-        assertThat(map).hasSize(2);
+        assertThat(map)
+                .containsEntry("title", field1)
+                .containsEntry("text", field2)
+                .hasSize(2);
     }
 
     @Test

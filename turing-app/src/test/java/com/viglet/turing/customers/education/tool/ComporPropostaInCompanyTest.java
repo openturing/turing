@@ -118,11 +118,12 @@ class ComporPropostaInCompanyTest {
         runScript();
 
         Map<String, Object> proposta = parseJson(slots.get("proposta_in_company"));
-        assertThat(proposta).containsEntry("tier", tier);
-        assertThat(proposta).containsEntry("tierLabel", tierLabel);
-        assertThat(proposta).containsEntry("precoPorPessoa", basePrice);
-        assertThat(proposta).containsEntry("descontoPercentual", discount);
-        assertThat(proposta).containsEntry("numPessoas", numPessoas);
+        assertThat(proposta)
+                .containsEntry("tier", tier)
+                .containsEntry("tierLabel", tierLabel)
+                .containsEntry("precoPorPessoa", basePrice)
+                .containsEntry("descontoPercentual", discount)
+                .containsEntry("numPessoas", numPessoas);
 
         // precoTotal = numPessoas × basePrice (verified manually)
         int expectedTotal = numPessoas * basePrice;
@@ -334,8 +335,9 @@ class ComporPropostaInCompanyTest {
         runScript();
 
         Map<String, Object> proposta = parseJson(slots.get("proposta_in_company"));
-        assertThat(proposta).containsEntry("prazoLabel", expectedLabel);
-        assertThat(proposta).containsEntry("fastTrack", expectedFastTrack);
+        assertThat(proposta)
+                .containsEntry("prazoLabel", expectedLabel)
+                .containsEntry("fastTrack", expectedFastTrack);
     }
 
     @Test
@@ -534,9 +536,10 @@ class ComporPropostaInCompanyTest {
         runScript();
 
         Map<String, Object> proposta = parseJson(slots.get("proposta_in_company"));
-        assertThat(proposta).containsEntry("empresa", "Sua empresa");
-        assertThat(proposta).containsEntry("numPessoas", 15);
-        assertThat(proposta).containsEntry("tier", "medium");
+        assertThat(proposta)
+                .containsEntry("empresa", "Sua empresa")
+                .containsEntry("numPessoas", 15)
+                .containsEntry("tier", "medium");
     }
 
     // ─────────────────────── Helpers ───────────────────────

@@ -73,8 +73,9 @@ class TurAnalyticsIntentIndexerTest {
     void indexNameStripsDashesAndCapsTo12Chars() {
         String name = TurAnalyticsIntentIndexer.indexNameFor("ab12cd34-aaaa-bbbb-cccc-ddddeeeeffff");
 
-        assertThat(name).isEqualTo("intent_ab12cd34aaaa");
-        assertThat(name).startsWith("intent_");
+        assertThat(name)
+                .isEqualTo("intent_ab12cd34aaaa")
+                .startsWith("intent_");
     }
 
     @Test
@@ -97,10 +98,11 @@ class TurAnalyticsIntentIndexerTest {
         verify(plugin).indexStandaloneDocument(eq(seInstance), eq("intent_agent1"),
                 docCaptor.capture());
         Map<String, Object> doc = docCaptor.getValue();
-        assertThat(doc).containsEntry("id", "intent-1");
-        assertThat(doc).containsEntry("agentId", "agent-1");
-        assertThat(doc).containsEntry("label", "Refund request");
-        assertThat(doc).containsEntry("samples", "refund money back");
+        assertThat(doc)
+                .containsEntry("id", "intent-1")
+                .containsEntry("agentId", "agent-1")
+                .containsEntry("label", "Refund request")
+                .containsEntry("samples", "refund money back");
         verify(plugin).commitStandalone(seInstance, "intent_agent1");
     }
 

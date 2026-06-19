@@ -65,9 +65,10 @@ class TurToolResultOffloadCallbackTest {
 
         String out = cb.call("{}", activeContext());
 
-        assertThat(out).startsWith("Stored at workspace://" + TurToolResultOffloadCallback.OFFLOAD_PREFIX
-                + "search_site-");
-        assertThat(out).contains("Call workspace_read with key=");
+        assertThat(out)
+                .startsWith("Stored at workspace://" + TurToolResultOffloadCallback.OFFLOAD_PREFIX
+                        + "search_site-")
+                .contains("Call workspace_read with key=");
 
         ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);

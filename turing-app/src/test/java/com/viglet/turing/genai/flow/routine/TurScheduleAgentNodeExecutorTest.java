@@ -66,8 +66,8 @@ class TurScheduleAgentNodeExecutorTest {
         assertThat(outcome).isEqualTo(Outcome.WAITING_FIRED);
         verify(jms).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE), any(TurScheduleAgentMessage.class), anyMap());
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).containsKey("__scheduleAgent_pending_" + NODE_ID);
-        assertThat(vars).containsKey("__scheduleAgent_startedAt_" + NODE_ID);
+        assertThat(vars).containsKey("__scheduleAgent_pending_" + NODE_ID)
+                .containsKey("__scheduleAgent_startedAt_" + NODE_ID);
     }
 
     @Test
@@ -87,9 +87,9 @@ class TurScheduleAgentNodeExecutorTest {
 
         assertThat(outcome).isEqualTo(Outcome.COMPLETED);
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).doesNotContainKey("__scheduleAgent_pending_" + NODE_ID);
-        assertThat(vars).doesNotContainKey("__scheduleAgent_startedAt_" + NODE_ID);
-        assertThat(vars).containsEntry(OUTPUT_SLOT, "https://example.com/proposal.pdf");
+        assertThat(vars).doesNotContainKey("__scheduleAgent_pending_" + NODE_ID)
+                .doesNotContainKey("__scheduleAgent_startedAt_" + NODE_ID)
+                .containsEntry(OUTPUT_SLOT, "https://example.com/proposal.pdf");
         verify(jms, never()).convertAndSend(eq(TurSNConstants.ROUTINE_QUEUE),
                 any(TurScheduleAgentMessage.class));
     }
@@ -132,8 +132,8 @@ class TurScheduleAgentNodeExecutorTest {
 
         assertThat(outcome).isEqualTo(Outcome.TIMEOUT);
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).doesNotContainKey("__scheduleAgent_pending_" + NODE_ID);
-        assertThat(vars).doesNotContainKey("__scheduleAgent_startedAt_" + NODE_ID);
+        assertThat(vars).doesNotContainKey("__scheduleAgent_pending_" + NODE_ID)
+                .doesNotContainKey("__scheduleAgent_startedAt_" + NODE_ID);
     }
 
     @Test

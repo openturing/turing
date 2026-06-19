@@ -198,9 +198,9 @@ class TurChaoticChatFlowEngineIT extends AbstractTuringSpringIT {
                 .containsEntry("sw", "exact")                       // exact-match switch branch
                 .containsEntry("stamp", "approved")                 // from descended paperwork sub-flow
                 .containsEntry("paperwork", "stamped")              // paperwork condition YES
-                .containsEntry("paper_summary", "Form approved for alpha"); // cross-scope interpolation
-        // slot DELETE removed the marker the YES branch set earlier.
-        assertThat(vars).doesNotContainKey("marker");
+                .containsEntry("paper_summary", "Form approved for alpha") // cross-scope interpolation
+                // slot DELETE removed the marker the YES branch set earlier.
+                .doesNotContainKey("marker");
 
         // Last persona walked was the Stamp Clerk inside the paperwork sub-flow.
         TurPersona clerk = personaRepository.findByNameIgnoreCase("Stamp Clerk").orElseThrow();
@@ -232,9 +232,9 @@ class TurChaoticChatFlowEngineIT extends AbstractTuringSpringIT {
                 .containsEntry("sandwich", "club")
                 .containsEntry("order", "club on rye")          // writeSlot interpolation
                 .containsEntry("abyss_depth", "3")              // set INSIDE the descended abyss
-                .containsEntry("abyss_fn", "recovered");        // functionCall failure-edge routing
-        // The functionCall failed (missing tool) so its outputVariable was never written.
-        assertThat(vars).doesNotContainKey("abyss_out");
+                .containsEntry("abyss_fn", "recovered")         // functionCall failure-edge routing
+                // The functionCall failed (missing tool) so its outputVariable was never written.
+                .doesNotContainKey("abyss_out");
     }
 
     // ─────────────────────────── scheduleAgent failure edge ───────────────────────────
@@ -251,8 +251,9 @@ class TurChaoticChatFlowEngineIT extends AbstractTuringSpringIT {
         // no JMS enqueue, no parking.
         assertThat(leaf.getCurrentNodeId()).isEqualTo("end-sched");
         Map<String, String> vars = ChatFlowOps.readVariables(leaf);
-        assertThat(vars).containsEntry("sched_status", "recovered");
-        assertThat(vars).doesNotContainKey("sched_out");
+        assertThat(vars)
+                .containsEntry("sched_status", "recovered")
+                .doesNotContainKey("sched_out");
         // No pending marker left behind (fire() bailed before enqueue).
         assertThat(vars.keySet()).noneMatch(k -> k.startsWith("__scheduleAgent_pending_"));
     }

@@ -66,8 +66,9 @@ class TurChatAttachmentServiceTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "page.html", "text/html", html.getBytes());
         String result = service.extractTextFromFile(file);
-        assertThat(result).contains("Title");
-        assertThat(result).contains("Content paragraph");
+        assertThat(result)
+                .contains("Title")
+                .contains("Content paragraph");
     }
 
     @Test

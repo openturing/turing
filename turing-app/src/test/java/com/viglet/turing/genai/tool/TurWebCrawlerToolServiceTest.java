@@ -240,9 +240,10 @@ class TurWebCrawlerToolServiceTest {
         method.invoke(service, sb, doc);
 
         String result = sb.toString();
-        assertThat(result).contains("Links found on page");
         // No link entries like "- Page -> https://..."
-        assertThat(result).doesNotContain("-> http");
+        assertThat(result)
+                .contains("Links found on page")
+                .doesNotContain("-> http");
     }
 
     @Test
@@ -262,8 +263,9 @@ class TurWebCrawlerToolServiceTest {
         method.invoke(service, sb, doc);
 
         String result = sb.toString();
-        assertThat(result).contains("Links found on page");
-        assertThat(result).doesNotContain("Link1").doesNotContain("Link2");
+        assertThat(result)
+                .contains("Links found on page")
+                .doesNotContain("Link1").doesNotContain("Link2");
     }
 
     // --- extractLinks with blank filter keyword ---

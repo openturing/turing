@@ -388,8 +388,9 @@ class TurAIAgentChatAPITest {
         var r1 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item), null, null);
         var r2 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item), null, null);
 
-        assertThat(r1).isEqualTo(r2);
-        assertThat(r1).hasSameHashCodeAs(r2);
+        assertThat(r1)
+                .isEqualTo(r2)
+                .hasSameHashCodeAs(r2);
     }
 
     @Test
@@ -397,8 +398,9 @@ class TurAIAgentChatAPITest {
         var r1 = new TurAIAgentChatAPI.ChatResponse("assistant", "Hi");
         var r2 = new TurAIAgentChatAPI.ChatResponse("assistant", "Hi");
 
-        assertThat(r1).isEqualTo(r2);
-        assertThat(r1).hasSameHashCodeAs(r2);
+        assertThat(r1)
+                .isEqualTo(r2)
+                .hasSameHashCodeAs(r2);
     }
 
     @Test

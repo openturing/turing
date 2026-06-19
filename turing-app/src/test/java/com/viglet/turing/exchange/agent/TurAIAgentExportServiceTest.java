@@ -174,11 +174,9 @@ class TurAIAgentExportServiceTest {
         assertThat(agentJson)
                 .as("LLM secrets must never appear in the export envelope")
                 .doesNotContain("sk-SECRET-MUST-NOT-LEAK")
-                .doesNotContain("ENC-MUST-NOT-LEAK");
-        assertThat(agentJson)
+                .doesNotContain("ENC-MUST-NOT-LEAK")
                 .as("Chat-flow definitionJson must NOT be inlined — it goes to a sibling file")
-                .doesNotContain("\"definitionJson\"");
-        assertThat(agentJson)
+                .doesNotContain("\"definitionJson\"")
                 .as("Custom-tool groovyScript must NOT be inlined — it goes to a sibling file")
                 .doesNotContain("\"groovyScript\"");
 

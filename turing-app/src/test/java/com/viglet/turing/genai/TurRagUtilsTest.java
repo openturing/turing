@@ -169,30 +169,33 @@ class TurRagUtilsTest {
     void stripHtmlShouldRemoveTagsAndDecodeEntities() {
         String html = "<p>Hello <strong>world</strong>&nbsp;&amp; goodbye</p>";
         String result = TurRagUtils.stripHtml(html);
-        assertThat(result).contains("Hello world");
-        assertThat(result).contains("& goodbye");
-        assertThat(result).doesNotContain("<");
-        assertThat(result).doesNotContain(">");
-        assertThat(result).doesNotContain("&nbsp;");
-        assertThat(result).doesNotContain("&amp;");
+        assertThat(result)
+                .contains("Hello world")
+                .contains("& goodbye")
+                .doesNotContain("<")
+                .doesNotContain(">")
+                .doesNotContain("&nbsp;")
+                .doesNotContain("&amp;");
     }
 
     @Test
     void stripHtmlShouldPreserveParagraphBreaks() {
         String html = "<p>First paragraph.</p><p>Second paragraph.</p>";
         String result = TurRagUtils.stripHtml(html);
-        assertThat(result).contains("First paragraph.");
-        assertThat(result).contains("Second paragraph.");
-        assertThat(result).contains("\n\n");
+        assertThat(result)
+                .contains("First paragraph.")
+                .contains("Second paragraph.")
+                .contains("\n\n");
     }
 
     @Test
     void stripHtmlShouldNormalizeWhitespace() {
         String html = "<div>Lots\t  of   spaces\n\n\n\nand   newlines</div>";
         String result = TurRagUtils.stripHtml(html);
-        assertThat(result).doesNotContain("\t");
-        assertThat(result).doesNotContain("    ");
-        assertThat(result).doesNotContain("\n\n\n");
+        assertThat(result)
+                .doesNotContain("\t")
+                .doesNotContain("    ")
+                .doesNotContain("\n\n\n");
     }
 
     @Test

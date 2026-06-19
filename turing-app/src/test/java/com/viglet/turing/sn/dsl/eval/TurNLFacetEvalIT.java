@@ -251,11 +251,10 @@ class TurNLFacetEvalIT extends AbstractTuringSpringIT {
         List<TurDslSearchResponse.Hit> hits = response.hits().hits();
         assertThat(hits)
                 .as("an 'online' query must return at least one online course")
-                .isNotEmpty();
-        // "online" is an enumerated modality value in the schema description, so the
-        // parser reliably emits modality=online — every returned doc must be online,
-        // proving the parsed filter was applied to the live index.
-        assertThat(hits)
+                .isNotEmpty()
+                // "online" is an enumerated modality value in the schema description, so the
+                // parser reliably emits modality=online — every returned doc must be online,
+                // proving the parsed filter was applied to the live index.
                 .allSatisfy(h -> assertThat(h.source()).containsEntry("modality", "online"));
     }
 

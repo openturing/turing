@@ -137,8 +137,9 @@ class TurSystemInfoAPITest {
     void getSystemVariablesShouldReturnNonEmptyMap() {
         var result = api.getSystemVariables();
 
-        assertThat(result).isNotEmpty();
-        assertThat(result).containsKey("java.version");
+        assertThat(result)
+                .isNotEmpty()
+                .containsKey("java.version");
     }
 
     @Test

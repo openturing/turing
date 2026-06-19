@@ -130,9 +130,10 @@ class TurAssetTrainingServiceTest {
 
                 var result = service.getTrainedAtMap(List.of("trained.pdf", "untrained.pdf"));
 
-                assertThat(result).hasSize(1);
-                assertThat(result).containsKey("trained.pdf");
-                assertThat(result).doesNotContainKey("untrained.pdf");
+                assertThat(result)
+                                .hasSize(1)
+                                .containsKey("trained.pdf")
+                                .doesNotContainKey("untrained.pdf");
         }
 
         @Test
@@ -212,8 +213,9 @@ class TurAssetTrainingServiceTest {
         void turAssetTrainingStateEnumValues() {
                 TurAssetTrainingState[] values = TurAssetTrainingState.values();
 
-                assertThat(values).hasSize(4);
-                assertThat(values).containsExactly(
+                assertThat(values)
+                                .hasSize(4)
+                                .containsExactly(
                                 TurAssetTrainingState.IDLE,
                                 TurAssetTrainingState.RUNNING,
                                 TurAssetTrainingState.COMPLETED,

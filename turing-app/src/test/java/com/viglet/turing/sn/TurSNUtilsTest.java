@@ -193,9 +193,10 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.addFilterQuery(uri, "category:books");
         String resultStr = result.toString();
 
-        assertThat(resultStr).containsAnyOf("fq%5B%5D=category", "fq[]=category");
-        assertThat(resultStr).contains("category");
-        assertThat(resultStr).contains("books");
+        assertThat(resultStr)
+                .containsAnyOf("fq%5B%5D=category", "fq[]=category")
+                .contains("category")
+                .contains("books");
     }
 
     @Test
@@ -214,8 +215,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.addFilterQuery(uri, "category:books");
         String resultStr = result.toString();
 
-        assertThat(resultStr).contains("p=1");
-        assertThat(resultStr).doesNotContain("p=5");
+        assertThat(resultStr)
+                .contains("p=1")
+                .doesNotContain("p=5");
     }
 
     @Test
@@ -224,8 +226,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.addFilterQuery(uri, "type:pdf");
         String resultStr = result.toString();
 
-        assertThat(resultStr).contains("q=test");
-        assertThat(resultStr).contains("sort=date");
+        assertThat(resultStr)
+                .contains("q=test")
+                .contains("sort=date");
     }
 
     @Test
@@ -235,8 +238,9 @@ class TurSNUtilsTest {
         URI result2 = TurSNUtils.addFilterQuery(result1, "type:pdf");
         String resultStr = result2.toString();
 
-        assertThat(resultStr).contains("category");
-        assertThat(resultStr).contains("pdf");
+        assertThat(resultStr)
+                .contains("category")
+                .contains("pdf");
     }
 
     // --- removeFilterQuery ---
@@ -257,8 +261,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeFilterQuery(uri, "category:books");
         String resultStr = result.toString();
 
-        assertThat(resultStr).doesNotContain("category");
-        assertThat(resultStr).contains("type");
+        assertThat(resultStr)
+                .doesNotContain("category")
+                .contains("type");
     }
 
     @Test
@@ -279,8 +284,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeQueryStringParameter(uri, "p");
         String resultStr = result.toString();
 
-        assertThat(resultStr).doesNotContain("p=2");
-        assertThat(resultStr).contains("q=test");
+        assertThat(resultStr)
+                .doesNotContain("p=2")
+                .contains("q=test");
     }
 
     @Test
@@ -298,8 +304,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeQueryStringParameter(uri, "sort");
         String resultStr = result.toString();
 
-        assertThat(resultStr).doesNotContain("sort");
-        assertThat(resultStr).contains("q=test");
+        assertThat(resultStr)
+                .doesNotContain("sort")
+                .contains("q=test");
     }
 
     // --- removeFilterQueryByFieldName / removeFilterQueryByFieldNames ---
@@ -311,8 +318,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeFilterQueryByFieldName(uri, "category");
         String resultStr = result.toString();
 
-        assertThat(resultStr).doesNotContain("category");
-        assertThat(resultStr).contains("q=test");
+        assertThat(resultStr)
+                .doesNotContain("category")
+                .contains("q=test");
     }
 
     @Test
@@ -322,9 +330,10 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeFilterQueryByFieldNames(uri, Arrays.asList("category", "type"));
         String resultStr = result.toString();
 
-        assertThat(resultStr).doesNotContain("category");
-        assertThat(resultStr).doesNotContain("type");
-        assertThat(resultStr).contains("author");
+        assertThat(resultStr)
+                .doesNotContain("category")
+                .doesNotContain("type")
+                .contains("author");
     }
 
     @Test
@@ -334,8 +343,9 @@ class TurSNUtilsTest {
         URI result = TurSNUtils.removeFilterQueryByFieldNames(uri, Collections.singletonList("category"));
         String resultStr = result.toString();
 
-        assertThat(resultStr).contains("q=test");
-        assertThat(resultStr).contains("sort=date");
+        assertThat(resultStr)
+                .contains("q=test")
+                .contains("sort=date");
     }
 
     // --- filterQueryByFieldName / filterQueryByFieldNames ---

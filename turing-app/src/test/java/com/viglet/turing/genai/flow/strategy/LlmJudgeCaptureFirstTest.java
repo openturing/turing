@@ -84,8 +84,9 @@ class LlmJudgeCaptureFirstTest {
                         flow(TurChatFlowCaptureMode.CAPTURE_THEN_GATE)));
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).containsEntry("name", "Alexandre");
-        assertThat(vars).containsEntry("name" + CONF, "low");
+        assertThat(vars)
+                .containsEntry("name", "Alexandre")
+                .containsEntry("name" + CONF, "low");
         assertThat(state.getCurrentNodeId()).isEqualTo("next");
         // Advanced past an off-goal verdict — don't surface the stale redirect.
         assertThat(reply).isNull();
@@ -105,8 +106,9 @@ class LlmJudgeCaptureFirstTest {
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
         // Captured (never null), but the deterministic rule failed → stay + low.
-        assertThat(vars).containsEntry("email", "not-an-email");
-        assertThat(vars).containsEntry("email" + CONF, "low");
+        assertThat(vars)
+                .containsEntry("email", "not-an-email")
+                .containsEntry("email" + CONF, "low");
         assertThat(state.getCurrentNodeId()).isEqualTo("ask-email");
         // Off-topic + staying → surface the judge's redirect.
         assertThat(reply).isEqualTo("Pode informar um e-mail válido?");
@@ -126,8 +128,9 @@ class LlmJudgeCaptureFirstTest {
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
         // Refined with the judge's clean extraction, not the raw sentence.
-        assertThat(vars).containsEntry("email", "x@y.com");
-        assertThat(vars).containsEntry("email" + CONF, "high");
+        assertThat(vars)
+                .containsEntry("email", "x@y.com")
+                .containsEntry("email" + CONF, "high");
         assertThat(state.getCurrentNodeId()).isEqualTo("next");
     }
 
@@ -168,8 +171,9 @@ class LlmJudgeCaptureFirstTest {
                         flow(TurChatFlowCaptureMode.CAPTURE_THEN_GATE)));
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).containsEntry("email", "x@y.com");
-        assertThat(vars).containsEntry("email" + CONF, "high");
+        assertThat(vars)
+                .containsEntry("email", "x@y.com")
+                .containsEntry("email" + CONF, "high");
         assertThat(state.getCurrentNodeId()).isEqualTo("next");
     }
 
@@ -197,8 +201,9 @@ class LlmJudgeCaptureFirstTest {
                         flow(TurChatFlowCaptureMode.CAPTURE_THEN_GATE)));
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).containsEntry("name", "Alexandre");
-        assertThat(vars).containsEntry("name" + CONF, "low");
+        assertThat(vars)
+                .containsEntry("name", "Alexandre")
+                .containsEntry("name" + CONF, "low");
         assertThat(state.getCurrentNodeId()).isEqualTo("next");
     }
 
@@ -217,8 +222,9 @@ class LlmJudgeCaptureFirstTest {
                         flow(TurChatFlowCaptureMode.CAPTURE_THEN_GRADE)));
 
         Map<String, String> vars = ChatFlowOps.readVariables(state);
-        assertThat(vars).containsEntry("email", "garbage");
-        assertThat(vars).containsEntry("email" + CONF, "low");
+        assertThat(vars)
+                .containsEntry("email", "garbage")
+                .containsEntry("email" + CONF, "low");
         // Pure capture-then-grade: never stalls, even on an invalid value.
         assertThat(state.getCurrentNodeId()).isEqualTo("next");
     }
