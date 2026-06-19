@@ -53,9 +53,11 @@ class TurAbBanditServiceTest {
 
     @Test
     void pickVariantRequiresNonEmpty() {
-        assertThatThrownBy(() -> bandit(0).pickVariant(List.of(), "exp"))
+        var bandit = bandit(0);
+        List<TurChatFlow> empty = List.of();
+        assertThatThrownBy(() -> bandit.pickVariant(empty, "exp"))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> bandit(0).pickVariant(null, "exp"))
+        assertThatThrownBy(() -> bandit.pickVariant(null, "exp"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

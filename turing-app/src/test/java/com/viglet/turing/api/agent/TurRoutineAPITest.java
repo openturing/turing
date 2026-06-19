@@ -109,8 +109,9 @@ class TurRoutineAPITest {
         when(repo.findByName("hello")).thenReturn(Optional.of(routine("r1", "hello")));
         TurRoutineAPI api = new TurRoutineAPI(repo);
 
-        assertThatThrownBy(() -> api.create(new TurRoutineDto(
-                null, "hello", null, TurRoutineKind.NATIVE, "x", null, 1000, true)))
+        TurRoutineDto dto = new TurRoutineDto(
+                null, "hello", null, TurRoutineKind.NATIVE, "x", null, 1000, true);
+        assertThatThrownBy(() -> api.create(dto))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasFieldOrPropertyWithValue("statusCode", HttpStatus.CONFLICT);
         verify(repo, never()).save(any(TurRoutine.class));
@@ -123,8 +124,9 @@ class TurRoutineAPITest {
         TurRoutineAPI api = new TurRoutineAPI(repo);
 
         for (String bad : new String[] { null, "", "  ", "1starts-with-digit", "has spaces", "has/slash" }) {
-            assertThatThrownBy(() -> api.create(new TurRoutineDto(
-                    null, bad, null, TurRoutineKind.NATIVE, "x", null, 1000, true)))
+            TurRoutineDto dto = new TurRoutineDto(
+                    null, bad, null, TurRoutineKind.NATIVE, "x", null, 1000, true);
+            assertThatThrownBy(() -> api.create(dto))
                     .as("name '%s'", bad)
                     .isInstanceOf(ResponseStatusException.class)
                     .hasFieldOrPropertyWithValue("statusCode", HttpStatus.BAD_REQUEST);
@@ -162,8 +164,9 @@ class TurRoutineAPITest {
         when(repo.findByName("taken")).thenReturn(Optional.of(routine("r2", "taken")));
         TurRoutineAPI api = new TurRoutineAPI(repo);
 
-        assertThatThrownBy(() -> api.update("r1", new TurRoutineDto(
-                "r1", "taken", null, TurRoutineKind.NATIVE, null, null, 1000, true)))
+        TurRoutineDto dto = new TurRoutineDto(
+                "r1", "taken", null, TurRoutineKind.NATIVE, null, null, 1000, true);
+        assertThatThrownBy(() -> api.update("r1", dto))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasFieldOrPropertyWithValue("statusCode", HttpStatus.CONFLICT);
     }

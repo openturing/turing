@@ -87,10 +87,10 @@ class TurLlmManifestDeriverTest {
         lenient().when(globalSettingsService.getDefaultLlmId()).thenReturn(null);
         TurLlmManifestDeriver deriver = deriver();
 
-        assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of())));
-        assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new VigletManifestDeriveRequest("x", null, "se1", List.of(), null)));
+        var emptyDocsRequest = new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of());
+        assertThrows(IllegalArgumentException.class, () -> deriver.derive(emptyDocsRequest));
+        var nullDocsRequest = new VigletManifestDeriveRequest("x", null, "se1", List.of(), null);
+        assertThrows(IllegalArgumentException.class, () -> deriver.derive(nullDocsRequest));
     }
 
     @Test
@@ -98,8 +98,8 @@ class TurLlmManifestDeriverTest {
         lenient().when(globalSettingsService.getDefaultLlmId()).thenReturn(null);
         TurLlmManifestDeriver deriver = deriver();
 
-        assertThrows(IllegalArgumentException.class, () -> deriver.derive(
-                new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of(Map.of()))));
+        var noFieldsRequest = new VigletManifestDeriveRequest("x", null, "se1", List.of(), List.of(Map.of()));
+        assertThrows(IllegalArgumentException.class, () -> deriver.derive(noFieldsRequest));
     }
 
     @Test

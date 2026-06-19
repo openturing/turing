@@ -50,7 +50,8 @@ class TurSolrPropertySourceTest {
     void saveIsNotSupported() {
         TurSolrPropertySource source = new TurSolrPropertySource(ENDPOINT);
 
-        assertThatThrownBy(() -> source.save(new TurSEInstance()))
+        TurSEInstance instance = new TurSEInstance();
+        assertThatThrownBy(() -> source.save(instance))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 

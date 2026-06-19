@@ -58,6 +58,7 @@ class TurAgentWorkspaceServiceTest {
     private static final String AGENT = "agent-1";
     private static final String CONV = "conv-9";
     private static final String SCOPE = "tenants/agent-1/conv-9/workspace/";
+    private static final byte[] PAYLOAD = "x".getBytes();
 
     @Mock
     private TurAgentWorkspaceUrlSigner urlSigner;
@@ -103,7 +104,7 @@ class TurAgentWorkspaceServiceTest {
         workspace.put(AGENT, CONV, "reports/b.csv", "2".getBytes(), "text/csv");
         workspace.put(AGENT, CONV, "reports/2026/c.csv", "3".getBytes(), "text/csv");
         // Another conversation's blob must NOT leak in.
-        workspace.put(AGENT, "conv-OTHER", "secret.txt", "x".getBytes(), "text/plain");
+        workspace.put(AGENT, "conv-OTHER", "secret.txt", PAYLOAD, "text/plain");
 
         List<WorkspaceEntry> all = workspace.list(AGENT, CONV, null);
         TreeSet<String> keys = new TreeSet<>();
@@ -124,7 +125,7 @@ class TurAgentWorkspaceServiceTest {
 
     @Test
     void deleteRemovesBlob() {
-        workspace.put(AGENT, CONV, "tmp.txt", "x".getBytes(), "text/plain");
+        workspace.put(AGENT, CONV, "tmp.txt", PAYLOAD, "text/plain");
         workspace.delete(AGENT, CONV, "tmp.txt");
         assertFalse(storage.blobs.containsKey(SCOPE + "tmp.txt"));
         assertTrue(workspace.get(AGENT, CONV, "tmp.txt").isEmpty());
@@ -148,9 +149,9 @@ class TurAgentWorkspaceServiceTest {
     @Test
     void pathTraversalKeyRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> workspace.put(AGENT, CONV, "../escape.txt", "x".getBytes(), "text/plain"));
+                () -> workspace.put(AGENT, CONV, "../escape.txt", PAYLOAD, "text/plain"));
         assertThrows(IllegalArgumentException.class,
-                () -> workspace.put(AGENT, CONV, "ok/../../escape.txt", "x".getBytes(), "text/plain"));
+                () -> workspace.put(AGENT, CONV, "ok/../../escape.txt", PAYLOAD, "text/plain"));
     }
 
     @Test
@@ -162,14 +163,14 @@ class TurAgentWorkspaceServiceTest {
     @Test
     void blankKeyAndBlankTenantRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> workspace.put(AGENT, CONV, "  ", "x".getBytes(), "text/plain"));
+                () -> workspace.put(AGENT, CONV, "  ", PAYLOAD, "text/plain"));
         assertThrows(IllegalArgumentException.class,
-                () -> workspace.put(" ", CONV, "a.txt", "x".getBytes(), "text/plain"));
+                () -> workspace.put(" ", CONV, "a.txt", PAYLOAD, "text/plain"));
     }
 
     @Test
     void leadingSlashesStrippedFromKey() {
-        workspace.put(AGENT, CONV, "/leading.txt", "x".getBytes(), "text/plain");
+        workspace.put(AGENT, CONV, "/leading.txt", PAYLOAD, "text/plain");
         assertTrue(storage.blobs.containsKey(SCOPE + "leading.txt"));
     }
 
@@ -195,7 +196,7 @@ class TurAgentWorkspaceServiceTest {
     @Test
     void deletePublishesDeleteEvent() {
         when(urlSigner.signQueryString(anyString(), anyString(), anyString())).thenReturn("");
-        workspace.put(AGENT, CONV, "tmp.txt", "x".getBytes(), "text/plain");
+        workspace.put(AGENT, CONV, "tmp.txt", PAYLOAD, "text/plain");
 
         List<TurWorkspaceEvent> events = new ArrayList<>();
         var sub = eventBus.subscribe(CONV).subscribe(events::add);
@@ -225,7 +226,7 @@ class TurAgentWorkspaceServiceTest {
         assertTrue(disabled.get(AGENT, CONV, "a.txt").isEmpty());
         assertTrue(disabled.list(AGENT, CONV, null).isEmpty());
         assertThrows(IllegalStateException.class,
-                () -> disabled.put(AGENT, CONV, "a.txt", "x".getBytes(), "text/plain"));
+                () -> disabled.put(AGENT, CONV, "a.txt", PAYLOAD, "text/plain"));
     }
 
     // -----------------------------------------------------------------

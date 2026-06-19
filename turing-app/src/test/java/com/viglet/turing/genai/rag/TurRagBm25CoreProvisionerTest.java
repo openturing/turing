@@ -153,7 +153,8 @@ class TurRagBm25CoreProvisionerTest {
         when(coreRepository.findByTurStoreInstance_IdAndLocale(eq(store.getId()), any(Locale.class)))
                 .thenReturn(Optional.of(deleting));
 
-        assertThatThrownBy(() -> provisioner.provision(store, Locale.forLanguageTag("pt-BR"), seInstance))
+        Locale ptBr = Locale.forLanguageTag("pt-BR");
+        assertThatThrownBy(() -> provisioner.provision(store, ptBr, seInstance))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("being deleted");
         verify(plugin, never()).createStandaloneIndex(any(), any(), anyString());
@@ -169,7 +170,8 @@ class TurRagBm25CoreProvisionerTest {
         when(plugin.getPluginType()).thenReturn("solr");
         doThrowFromCreate(new RuntimeException("Solr is down"));
 
-        assertThatThrownBy(() -> provisioner.provision(store, Locale.forLanguageTag("pt-BR"), seInstance))
+        Locale ptBr = Locale.forLanguageTag("pt-BR");
+        assertThatThrownBy(() -> provisioner.provision(store, ptBr, seInstance))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Solr is down");
 

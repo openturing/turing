@@ -118,8 +118,8 @@ class TurHttpRerankClientTest {
     void throwsOnNon2xxStatus() throws IOException {
         stub(500, "boom");
 
-        assertThatThrownBy(() -> client.rankIndices(endpoint, null, null, "q",
-                List.of("a", "b"), 2))
+        var indices = List.of("a", "b");
+        assertThatThrownBy(() -> client.rankIndices(endpoint, null, null, "q", indices, 2))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("500");
     }

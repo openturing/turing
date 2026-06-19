@@ -396,13 +396,15 @@ class TurTenancyConformanceTest {
 
         // A non-admin cannot tear down.
         authenticateAs("alice", "ROLE_USER");
-        assertThatThrownBy(() -> teardown.delete(acme.id(), false))
+        String acmeId = acme.id();
+        assertThatThrownBy(() -> teardown.delete(acmeId, false))
                 .isInstanceOf(SecurityException.class);
 
         authenticateAs("root", VigletPlatformAdminService.ROLE_PLATFORM_ADMIN);
 
         // The default tenant can never be deleted.
-        assertThatThrownBy(() -> teardown.delete(profile.defaultTenantId(), false))
+        String defaultTenantId = profile.defaultTenantId();
+        assertThatThrownBy(() -> teardown.delete(defaultTenantId, false))
                 .isInstanceOf(IllegalArgumentException.class);
 
         // Dry-run plans without purging or deleting rows.

@@ -174,8 +174,8 @@ class TurRagBm25IndexerTest {
     @Test
     void indexChunks_corePending_throws() {
         core.setStatus(TurRagBm25Core.Status.NOT_PROVISIONED);
-        assertThatThrownBy(() -> indexer.indexChunks(core,
-                List.of(chunkWithMetadata("c1", "x", Map.of()))))
+        var chunks = List.of(chunkWithMetadata("c1", "x", Map.of()));
+        assertThatThrownBy(() -> indexer.indexChunks(core, chunks))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("NOT_PROVISIONED");
     }

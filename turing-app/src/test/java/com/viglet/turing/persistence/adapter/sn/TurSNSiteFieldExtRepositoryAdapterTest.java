@@ -145,9 +145,11 @@ class TurSNSiteFieldExtRepositoryAdapterTest {
 
         TurSNSiteFieldExtDomain domain = adapter.findById("f-1").orElseThrow();
 
-        assertThatThrownBy(() -> domain.facetLocaleIds().add("smuggled"))
+        var facetLocaleIds = domain.facetLocaleIds();
+        assertThatThrownBy(() -> facetLocaleIds.add("smuggled"))
                 .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> domain.customFacetIds().add("smuggled"))
+        var customFacetIds = domain.customFacetIds();
+        assertThatThrownBy(() -> customFacetIds.add("smuggled"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 

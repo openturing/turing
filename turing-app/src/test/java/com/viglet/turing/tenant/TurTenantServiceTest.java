@@ -134,13 +134,14 @@ class TurTenantServiceTest {
 
     @Test
     void normalizeSlugRejectsReservedAndMalformed() {
-        assertThatThrownBy(() -> service().normalizeSlug("admin"))
+        var svc = service();
+        assertThatThrownBy(() -> svc.normalizeSlug("admin"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("reserved");
-        assertThatThrownBy(() -> service().normalizeSlug("turing"))
+        assertThatThrownBy(() -> svc.normalizeSlug("turing"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("reserved");
-        assertThatThrownBy(() -> service().normalizeSlug("A"))
+        assertThatThrownBy(() -> svc.normalizeSlug("A"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Invalid slug");
-        assertThatThrownBy(() -> service().normalizeSlug("bad slug!"))
+        assertThatThrownBy(() -> svc.normalizeSlug("bad slug!"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("Invalid slug");
     }
 

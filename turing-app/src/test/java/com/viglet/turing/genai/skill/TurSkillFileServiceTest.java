@@ -152,9 +152,10 @@ class TurSkillFileServiceTest {
     @Test
     void pathTraversalIsRejected() {
         TurSkill skill = fileService.createSkill("safe");
-        assertThatThrownBy(() -> fileService.writeFile(skill.getId(), "../escape.txt", "x"))
+        String skillId = skill.getId();
+        assertThatThrownBy(() -> fileService.writeFile(skillId, "../escape.txt", "x"))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> fileService.readFile(skill.getId(), "/etc/passwd"))
+        assertThatThrownBy(() -> fileService.readFile(skillId, "/etc/passwd"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -217,7 +218,8 @@ class TurSkillFileServiceTest {
     @Test
     void importZipWithNoSkillMdIsRejected() throws IOException {
         byte[] zip = zip(Map.of("README.md", "not a skill"));
-        assertThatThrownBy(() -> fileService.importZip(new MockMultipartFile("file", "x.zip", "application/zip", zip)))
+        var file = new MockMultipartFile("file", "x.zip", "application/zip", zip);
+        assertThatThrownBy(() -> fileService.importZip(file))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

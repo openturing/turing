@@ -88,7 +88,9 @@ class TurTenantAPITest {
         when(turTenantRepository.findBySlug("acme")).thenReturn(Optional.of(t));
         when(turTenantService.isActiveMember("t-1", "alice")).thenReturn(false);
 
-        assertThatThrownBy(() -> api().switchTenant("acme", alice, new MockHttpServletRequest()))
+        var api = api();
+        var request = new MockHttpServletRequest();
+        assertThatThrownBy(() -> api.switchTenant("acme", alice, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("403");
     }

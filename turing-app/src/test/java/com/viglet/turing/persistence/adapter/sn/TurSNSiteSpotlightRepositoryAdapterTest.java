@@ -87,9 +87,11 @@ class TurSNSiteSpotlightRepositoryAdapterTest {
 
         TurSNSiteSpotlightDomain domain = adapter.findById("sp-1").orElseThrow();
 
-        assertThatThrownBy(() -> domain.termIds().add("smuggled"))
+        var termIds = domain.termIds();
+        assertThatThrownBy(() -> termIds.add("smuggled"))
                 .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> domain.documentIds().add("smuggled"))
+        var documentIds = domain.documentIds();
+        assertThatThrownBy(() -> documentIds.add("smuggled"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 

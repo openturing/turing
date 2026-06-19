@@ -92,7 +92,8 @@ class TurSkillSandboxServiceTest {
     @Test
     void runBashThrowsWhenUnavailable() {
         when(sessionManager.isStorageEnabled()).thenReturn(false);
-        assertThatThrownBy(() -> service.runBash(sampleSession(), "echo hi"))
+        var session = sampleSession();
+        assertThatThrownBy(() -> service.runBash(session, "echo hi"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("DOCKER");
     }
