@@ -148,21 +148,13 @@ public class TurImportExchange {
 
 	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
 			boolean includeContent, boolean includeTemplate, String taskId, boolean overwrite) {
-		File extractFolder = this.extractZipFile(multipartFile);
-		if (extractFolder == null) {
+		File rawExtractFolder = this.extractZipFile(multipartFile);
+		if (rawExtractFolder == null) {
 			return ImportResult.error("Failed to extract ZIP file");
 		}
-		File parentExtractFolder = null;
-
-		if (!(new File(extractFolder, EXPORT_FILE).exists())
-				&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
-			for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
-				if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
-					parentExtractFolder = extractFolder;
-					extractFolder = fileOrDirectory;
-				}
-			}
-		}
+		ExtractRoots roots = unwrapSingleSubdirectory(rawExtractFolder);
+		File extractFolder = roots.extractFolder();
+		File parentExtractFolder = roots.parentExtractFolder();
 
 		// export.json is mandatory
 		File exportFile = new File(extractFolder, EXPORT_FILE);
@@ -241,6 +233,27 @@ public class TurImportExchange {
 	 * carries no agents — the import endpoint can then ignore the agent half
 	 * of the response without inspecting an empty record.
 	 */
+	/** The resolved export root and (optional) wrapper directory above it. */
+	private record ExtractRoots(File extractFolder, File parentExtractFolder) {
+	}
+
+	/**
+	 * When the ZIP wrapped everything in a single top-level directory (no
+	 * {@code export.json} at the root), descends into that directory and reports
+	 * the original as the parent (for cleanup). Otherwise returns the root as-is.
+	 */
+	private ExtractRoots unwrapSingleSubdirectory(File extractFolder) {
+		if (!(new File(extractFolder, EXPORT_FILE).exists())
+				&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+			for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
+				if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
+					return new ExtractRoots(fileOrDirectory, extractFolder);
+				}
+			}
+		}
+		return new ExtractRoots(extractFolder, null);
+	}
+
 	private AgentImportSummary importAgentsFromExportFile(File extractFolder, boolean overwrite) {
 		File exportFile = new File(extractFolder, EXPORT_FILE);
 		if (!exportFile.isFile()) return null;
