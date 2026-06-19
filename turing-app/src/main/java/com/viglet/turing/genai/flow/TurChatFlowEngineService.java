@@ -2594,6 +2594,31 @@ public class TurChatFlowEngineService {
         if (routerModel == null || candidates.isEmpty()) {
             return null;
         }
+        String sys = buildRouterSystemPrompt(candidates);
+        String userText = userMessage == null ? "" : userMessage;
+        try {
+            Prompt prompt = new Prompt(List.of(
+                    new SystemMessage(sys),
+                    new UserMessage(userText)));
+            var response = routerModel.call(prompt);
+            String reply = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText().trim()
+                            : "";
+            log.info("[FlowEngine] Router raw reply: '{}'", reply);
+            if (reply.isEmpty() || "none".equalsIgnoreCase(reply)) {
+                return null;
+            }
+            return matchRouterReply(reply, candidates);
+        } catch (Exception e) {
+            log.warn("[FlowEngine] Router call failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** Builds the router system prompt listing the candidate flows and the allowed reply ids. */
+    private String buildRouterSystemPrompt(List<RouterCandidate> candidates) {
         StringBuilder sys = new StringBuilder();
         sys.append("""
                 You are a chat-flow router. Given a user message and a list of named flows,
@@ -2618,35 +2643,20 @@ public class TurChatFlowEngineService {
             sys.append(candidates.get(i).flow().getId());
         }
         sys.append(", none");
+        return sys.toString();
+    }
 
-        String userText = userMessage == null ? "" : userMessage;
-        try {
-            Prompt prompt = new Prompt(List.of(
-                    new SystemMessage(sys.toString()),
-                    new UserMessage(userText)));
-            var response = routerModel.call(prompt);
-            String reply = response.getResult() != null
-                    && response.getResult().getOutput() != null
-                    && response.getResult().getOutput().getText() != null
-                            ? response.getResult().getOutput().getText().trim()
-                            : "";
-            log.info("[FlowEngine] Router raw reply: '{}'", reply);
-            if (reply.isEmpty() || "none".equalsIgnoreCase(reply)) {
-                return null;
-            }
-            String normalized = reply.replaceAll("[^A-Za-z0-9\\-]", " ").trim();
-            for (String token : normalized.split("\\s+")) {
-                for (RouterCandidate c : candidates) {
-                    if (token.equalsIgnoreCase(c.flow().getId())) {
-                        return c.flow().getId();
-                    }
+    /** Resolves the model's free-text reply to a candidate flow id, or null when none match. */
+    private String matchRouterReply(String reply, List<RouterCandidate> candidates) {
+        String normalized = reply.replaceAll("[^A-Za-z0-9\\-]", " ").trim();
+        for (String token : normalized.split("\\s+")) {
+            for (RouterCandidate c : candidates) {
+                if (token.equalsIgnoreCase(c.flow().getId())) {
+                    return c.flow().getId();
                 }
             }
-            return null;
-        } catch (Exception e) {
-            log.warn("[FlowEngine] Router call failed: {}", e.getMessage());
-            return null;
         }
+        return null;
     }
 
     // ─────────────────────────── Submission recording ───────────────────────────

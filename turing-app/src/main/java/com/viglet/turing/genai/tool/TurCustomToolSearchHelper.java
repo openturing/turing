@@ -562,19 +562,7 @@ public class TurCustomToolSearchHelper {
         Object filters = params.get("filters");
         Map<String, List<String>> resolved = new LinkedHashMap<>();
         if (filters instanceof Map<?, ?> rawMap) {
-            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
-                String key = String.valueOf(entry.getKey());
-                Object value = entry.getValue();
-                if (value instanceof List<?> list) {
-                    List<String> stringList = new ArrayList<>(list.size());
-                    for (Object o : list) {
-                        if (o != null) stringList.add(String.valueOf(o));
-                    }
-                    resolved.put(key, stringList);
-                } else if (value != null) {
-                    resolved.put(key, List.of(String.valueOf(value)));
-                }
-            }
+            parseFilterMap(rawMap, resolved);
         }
         // Shorthand: templateName=string → filters.templateName=[string]
         Object templateName = params.get(TEMPLATE_NAME);
@@ -582,6 +570,28 @@ public class TurCustomToolSearchHelper {
             resolved.put(TEMPLATE_NAME, List.of(String.valueOf(templateName)));
         }
         return resolved;
+    }
+
+    /** Normalises each raw filter entry into a {@code key → List<String>} pair. */
+    private static void parseFilterMap(Map<?, ?> rawMap, Map<String, List<String>> resolved) {
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Object value = entry.getValue();
+            if (value instanceof List<?> list) {
+                resolved.put(key, toStringList(list));
+            } else if (value != null) {
+                resolved.put(key, List.of(String.valueOf(value)));
+            }
+        }
+    }
+
+    /** Converts a heterogeneous list to a list of non-null string values. */
+    private static List<String> toStringList(List<?> list) {
+        List<String> stringList = new ArrayList<>(list.size());
+        for (Object o : list) {
+            if (o != null) stringList.add(String.valueOf(o));
+        }
+        return stringList;
     }
 
     private static List<Map<String, Object>> toHitList(List<Document> hits) {
