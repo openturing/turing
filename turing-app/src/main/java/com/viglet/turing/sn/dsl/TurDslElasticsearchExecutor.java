@@ -64,134 +64,11 @@ public class TurDslElasticsearchExecutor
                                 .trackScores(true)
                                 .trackTotalHits(t -> t.enabled(true));
 
-                        // Sort
-                        if (request.sort() != null) {
-                            applySortToRequest(request.sort(), reqBuilder);
-                        }
-
-                        // Source fields
-                        applySourceToRequest(request.source(), reqBuilder);
-
-                        // Highlight
-                        if (request.highlight() != null) {
-                            applyHighlightToRequest(request.highlight(), reqBuilder);
-                        }
-
-                        // Aggregations
-                        if (request.aggs() != null && !request.aggs().isEmpty()) {
-                            applyAggregationsToRequest(request.aggs(), reqBuilder);
-                        }
-
-                        // Post filter
-                        if (request.postFilter() != null) {
-                            reqBuilder.postFilter(translateQuery(request.postFilter()));
-                        }
-
-                        // Min score
-                        if (request.minScore() != null) {
-                            reqBuilder.minScore(request.minScore());
-                        }
-
-                        // Search after (cursor-based pagination)
-                        if (request.searchAfter() != null && !request.searchAfter().isEmpty()) {
-                            reqBuilder.searchAfter(request.searchAfter().stream()
-                                    .map(v -> FieldValue.of(v.toString())).toList());
-                        }
-
-                        // Collapse (field collapsing / dedup)
-                        if (request.collapse() != null) {
-                            applyCollapseToRequest(request.collapse(), reqBuilder);
-                        }
-
-                        // Suggest
-                        if (request.suggest() != null && !request.suggest().isEmpty()) {
-                            applySuggestToRequest(request.suggest(), reqBuilder);
-                        }
-
-                        // Rescore
-                        if (request.rescore() != null && !request.rescore().isEmpty()) {
-                            applyRescoreToRequest(request.rescore(), reqBuilder);
-                        }
-
-                        // Timeout
-                        if (request.timeout() != null) {
-                            reqBuilder.timeout(request.timeout());
-                        }
-
-                        // Explain
-                        if (request.explain() != null && request.explain()) {
-                            reqBuilder.explain(true);
-                        }
-
-                        // Script fields
-                        if (request.scriptFields() != null && !request.scriptFields().isEmpty()) {
-                            applyScriptFieldsToRequest(request.scriptFields(), reqBuilder);
-                        }
-
-                        // Indices boost
-                        if (request.indicesBoost() != null && !request.indicesBoost().isEmpty()) {
-                            List<co.elastic.clients.util.NamedValue<Double>> boosts = new ArrayList<>();
-                            for (var boostMap : request.indicesBoost()) {
-                                boostMap.forEach((idx, val) ->
-                                        boosts.add(co.elastic.clients.util.NamedValue.of(idx, val)));
-                            }
-                            reqBuilder.indicesBoost(boosts);
-                        }
-
-                        // Track total hits
-                        if (request.trackTotalHits() != null) {
-                            if (request.trackTotalHits() instanceof Boolean b) {
-                                reqBuilder.trackTotalHits(t -> t.enabled(b));
-                            } else if (request.trackTotalHits() instanceof Number n) {
-                                reqBuilder.trackTotalHits(t -> t.count(n.intValue()));
-                            }
-                        }
-
-                        // Stored fields
-                        if (request.storedFields() != null && !request.storedFields().isEmpty()) {
-                            reqBuilder.storedFields(request.storedFields());
-                        }
-
-                        // Scroll
-                        if (request.scroll() != null) {
-                            reqBuilder.scroll(s -> s.time(request.scroll()));
-                        }
-
-                        // --- Low-priority features ---
-                        if (request.profile() != null && request.profile()) {
-                            reqBuilder.profile(true);
-                        }
-                        if (request.pit() != null && request.pit().id() != null) {
-                            reqBuilder.pit(p -> {
-                                p.id(request.pit().id());
-                                if (request.pit().keepAlive() != null)
-                                    p.keepAlive(ka -> ka.time(request.pit().keepAlive()));
-                                return p;
-                            });
-                        }
-                        if (request.docvalueFields() != null && !request.docvalueFields().isEmpty()) {
-                            List<co.elastic.clients.elasticsearch._types.query_dsl.FieldAndFormat> dvFields =
-                                    request.docvalueFields().stream()
-                                            .map(f -> co.elastic.clients.elasticsearch._types.query_dsl
-                                                    .FieldAndFormat.of(ff -> ff.field(f.toString())))
-                                            .toList();
-                            reqBuilder.docvalueFields(dvFields);
-                        }
-                        if (request.version() != null && request.version()) {
-                            reqBuilder.version(true);
-                        }
-                        if (request.seqNoPrimaryTerm() != null && request.seqNoPrimaryTerm()) {
-                            reqBuilder.seqNoPrimaryTerm(true);
-                        }
-                        if (request.preference() != null) {
-                            reqBuilder.preference(request.preference());
-                        }
-                        if (request.routing() != null) {
-                            reqBuilder.routing(request.routing());
-                        }
-                        if (request.terminateAfter() != null) {
-                            reqBuilder.terminateAfter((long) request.terminateAfter());
-                        }
+                        applyQueryShaping(reqBuilder, request);
+                        applyResultFeatures(reqBuilder, request);
+                        applyBoostingAndTracking(reqBuilder, request);
+                        applyScrollPitOptions(reqBuilder, request);
+                        applyFieldAndRoutingOptions(reqBuilder, request);
 
                         SearchResponse<Map<String, Object>> response = client.search(
                                 reqBuilder.build(), (java.lang.reflect.Type) Map.class);
@@ -210,6 +87,116 @@ public class TurDslElasticsearchExecutor
                         return Optional.empty();
                     }
                 });
+    }
+
+    // ============ SearchRequest feature appliers (S3776: keep execute() flat) ============
+
+    private void applyQueryShaping(SearchRequest.Builder reqBuilder, TurDslQueryRequest request) {
+        if (request.sort() != null) {
+            applySortToRequest(request.sort(), reqBuilder);
+        }
+        applySourceToRequest(request.source(), reqBuilder);
+        if (request.highlight() != null) {
+            applyHighlightToRequest(request.highlight(), reqBuilder);
+        }
+        if (request.aggs() != null && !request.aggs().isEmpty()) {
+            applyAggregationsToRequest(request.aggs(), reqBuilder);
+        }
+        if (request.postFilter() != null) {
+            reqBuilder.postFilter(translateQuery(request.postFilter()));
+        }
+        if (request.minScore() != null) {
+            reqBuilder.minScore(request.minScore());
+        }
+    }
+
+    private void applyResultFeatures(SearchRequest.Builder reqBuilder, TurDslQueryRequest request) {
+        if (request.searchAfter() != null && !request.searchAfter().isEmpty()) {
+            reqBuilder.searchAfter(request.searchAfter().stream()
+                    .map(v -> FieldValue.of(v.toString())).toList());
+        }
+        if (request.collapse() != null) {
+            applyCollapseToRequest(request.collapse(), reqBuilder);
+        }
+        if (request.suggest() != null && !request.suggest().isEmpty()) {
+            applySuggestToRequest(request.suggest(), reqBuilder);
+        }
+        if (request.rescore() != null && !request.rescore().isEmpty()) {
+            applyRescoreToRequest(request.rescore(), reqBuilder);
+        }
+        if (request.timeout() != null) {
+            reqBuilder.timeout(request.timeout());
+        }
+        if (request.explain() != null && request.explain()) {
+            reqBuilder.explain(true);
+        }
+        if (request.scriptFields() != null && !request.scriptFields().isEmpty()) {
+            applyScriptFieldsToRequest(request.scriptFields(), reqBuilder);
+        }
+    }
+
+    private void applyBoostingAndTracking(SearchRequest.Builder reqBuilder, TurDslQueryRequest request) {
+        if (request.indicesBoost() != null && !request.indicesBoost().isEmpty()) {
+            List<co.elastic.clients.util.NamedValue<Double>> boosts = new ArrayList<>();
+            for (var boostMap : request.indicesBoost()) {
+                boostMap.forEach((idx, val) ->
+                        boosts.add(co.elastic.clients.util.NamedValue.of(idx, val)));
+            }
+            reqBuilder.indicesBoost(boosts);
+        }
+        if (request.trackTotalHits() != null) {
+            if (request.trackTotalHits() instanceof Boolean b) {
+                reqBuilder.trackTotalHits(t -> t.enabled(b));
+            } else if (request.trackTotalHits() instanceof Number n) {
+                reqBuilder.trackTotalHits(t -> t.count(n.intValue()));
+            }
+        }
+    }
+
+    private void applyScrollPitOptions(SearchRequest.Builder reqBuilder, TurDslQueryRequest request) {
+        if (request.storedFields() != null && !request.storedFields().isEmpty()) {
+            reqBuilder.storedFields(request.storedFields());
+        }
+        if (request.scroll() != null) {
+            reqBuilder.scroll(s -> s.time(request.scroll()));
+        }
+        if (request.profile() != null && request.profile()) {
+            reqBuilder.profile(true);
+        }
+        if (request.pit() != null && request.pit().id() != null) {
+            reqBuilder.pit(p -> {
+                p.id(request.pit().id());
+                if (request.pit().keepAlive() != null)
+                    p.keepAlive(ka -> ka.time(request.pit().keepAlive()));
+                return p;
+            });
+        }
+    }
+
+    private void applyFieldAndRoutingOptions(SearchRequest.Builder reqBuilder, TurDslQueryRequest request) {
+        if (request.docvalueFields() != null && !request.docvalueFields().isEmpty()) {
+            List<co.elastic.clients.elasticsearch._types.query_dsl.FieldAndFormat> dvFields =
+                    request.docvalueFields().stream()
+                            .map(f -> co.elastic.clients.elasticsearch._types.query_dsl
+                                    .FieldAndFormat.of(ff -> ff.field(f.toString())))
+                            .toList();
+            reqBuilder.docvalueFields(dvFields);
+        }
+        if (request.version() != null && request.version()) {
+            reqBuilder.version(true);
+        }
+        if (request.seqNoPrimaryTerm() != null && request.seqNoPrimaryTerm()) {
+            reqBuilder.seqNoPrimaryTerm(true);
+        }
+        if (request.preference() != null) {
+            reqBuilder.preference(request.preference());
+        }
+        if (request.routing() != null) {
+            reqBuilder.routing(request.routing());
+        }
+        if (request.terminateAfter() != null) {
+            reqBuilder.terminateAfter((long) request.terminateAfter());
+        }
     }
 
     // ==================== DSL → Elasticsearch Query Translation ====================
