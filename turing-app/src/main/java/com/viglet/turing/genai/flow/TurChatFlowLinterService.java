@@ -193,51 +193,56 @@ public class TurChatFlowLinterService {
         Set<String> out = new HashSet<>();
         for (TurChatFlow flow : flows) {
             // Interpolation in any text field: aiInstruction, slotValue, label.
-            Optional<ChatFlowGraph> graphOpt = TurChatFlowLinterService.staticParse(flow);
-            if (graphOpt.isPresent()) {
-                ChatFlowGraph graph = graphOpt.get();
-                for (ChatFlowNode node : graph.nodes()) {
-                    collectInterpolated(out, node.aiInstruction());
-                    collectInterpolated(out, node.slotValue());
-                    collectInterpolated(out, node.label());
-                    if (node.switchVariable() != null && !node.switchVariable().isBlank()) {
-                        out.add(node.switchVariable().trim());
-                    }
-                    if ("slot".equals(node.type()) && node.slotName() != null
-                            && !node.slotName().isBlank()) {
-                        out.add(node.slotName().trim());
-                    }
-                    if ("writeSlot".equals(node.type()) && node.outputVariable() != null
-                            && !node.outputVariable().isBlank()) {
-                        // writeSlot's outputVariable is the destination — but the value field can
-                        // reference others. Both directions count as references.
-                        out.add(node.outputVariable().trim());
-                    }
-                    collectInterpolated(out, node.validationRule());
-                    collectInterpolated(out, node.conditionExpression());
-                }
-            }
+            TurChatFlowLinterService.staticParse(flow).ifPresent(graph -> collectNodeSlots(out, graph));
             // Slot inheritance: sources declared by this flow count as
             // downstream readers of upstream slots.
-            String mapping = flow.getSlotInheritanceJson();
-            if (mapping != null && !mapping.isBlank()) {
-                Matcher m = SLOT_REFERENCE.matcher(mapping);
-                while (m.find()) {
-                    out.add(m.group(1));
-                }
-                // Quick-and-cheap: also pick string literals on the right-
-                // hand side of a JSON object via a regex; the linter doesn't
-                // need to formally parse the mapping for the unused-slot
-                // detector (false-positive avoidance), and unrelated tokens
-                // don't typically match slot names.
-                Matcher q = Pattern.compile("\"([\\w.-]+)\"\\s*:\\s*\"([\\w.-]+)\"")
-                        .matcher(mapping);
-                while (q.find()) {
-                    out.add(q.group(2));
-                }
-            }
+            collectInheritedSlots(out, flow.getSlotInheritanceJson());
         }
         return out;
+    }
+
+    /** Collects every slot referenced or written by the graph's nodes into {@code out}. */
+    private static void collectNodeSlots(Set<String> out, ChatFlowGraph graph) {
+        for (ChatFlowNode node : graph.nodes()) {
+            collectInterpolated(out, node.aiInstruction());
+            collectInterpolated(out, node.slotValue());
+            collectInterpolated(out, node.label());
+            if (node.switchVariable() != null && !node.switchVariable().isBlank()) {
+                out.add(node.switchVariable().trim());
+            }
+            if ("slot".equals(node.type()) && node.slotName() != null
+                    && !node.slotName().isBlank()) {
+                out.add(node.slotName().trim());
+            }
+            if ("writeSlot".equals(node.type()) && node.outputVariable() != null
+                    && !node.outputVariable().isBlank()) {
+                // writeSlot's outputVariable is the destination — but the value field can
+                // reference others. Both directions count as references.
+                out.add(node.outputVariable().trim());
+            }
+            collectInterpolated(out, node.validationRule());
+            collectInterpolated(out, node.conditionExpression());
+        }
+    }
+
+    /** Collects slot names referenced by a flow's slot-inheritance mapping JSON into {@code out}. */
+    private static void collectInheritedSlots(Set<String> out, String mapping) {
+        if (mapping == null || mapping.isBlank()) {
+            return;
+        }
+        Matcher m = SLOT_REFERENCE.matcher(mapping);
+        while (m.find()) {
+            out.add(m.group(1));
+        }
+        // Quick-and-cheap: also pick string literals on the right-hand side of a
+        // JSON object via a regex; the linter doesn't need to formally parse the
+        // mapping for the unused-slot detector (false-positive avoidance), and
+        // unrelated tokens don't typically match slot names.
+        Matcher q = Pattern.compile("\"([\\w.-]+)\"\\s*:\\s*\"([\\w.-]+)\"")
+                .matcher(mapping);
+        while (q.find()) {
+            out.add(q.group(2));
+        }
     }
 
     private static void collectInterpolated(Set<String> out, String text) {

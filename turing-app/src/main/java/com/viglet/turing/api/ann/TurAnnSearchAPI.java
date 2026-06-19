@@ -287,29 +287,37 @@ public class TurAnnSearchAPI {
         Map<String, Map<String, Integer>> raw = new LinkedHashMap<>();
         for (TurAnnResultItem item : items) {
             for (Map.Entry<String, Object> entry : item.metadata().entrySet()) {
-                String key = entry.getKey();
                 Object value = entry.getValue();
                 if (value == null) {
                     continue;
                 }
-                Map<String, Integer> bucket = raw.computeIfAbsent(key, k -> new LinkedHashMap<>());
-                if (value instanceof Collection<?> collection) {
-                    for (Object v : collection) {
-                        if (v != null) {
-                            bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
-                        }
-                    }
-                } else if (value.getClass().isArray()) {
-                    for (Object v : (Object[]) value) {
-                        if (v != null) {
-                            bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
-                        }
-                    }
-                } else {
-                    bucket.merge(String.valueOf(value), 1, (a, c) -> a + c);
-                }
+                mergeMetadataValue(value, raw.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>()));
             }
         }
+        return sortFacets(raw);
+    }
+
+    /** Counts {@code value} (scalar, collection, or array) into {@code bucket} by string form. */
+    private void mergeMetadataValue(Object value, Map<String, Integer> bucket) {
+        if (value instanceof Collection<?> collection) {
+            for (Object v : collection) {
+                if (v != null) {
+                    bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
+                }
+            }
+        } else if (value.getClass().isArray()) {
+            for (Object v : (Object[]) value) {
+                if (v != null) {
+                    bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
+                }
+            }
+        } else {
+            bucket.merge(String.valueOf(value), 1, (a, c) -> a + c);
+        }
+    }
+
+    /** Renders the raw counts into per-key facet items sorted by descending count. */
+    private Map<String, List<TurAnnFacetItem>> sortFacets(Map<String, Map<String, Integer>> raw) {
         Map<String, List<TurAnnFacetItem>> facets = new LinkedHashMap<>();
         for (Map.Entry<String, Map<String, Integer>> entry : raw.entrySet()) {
             List<TurAnnFacetItem> sorted = entry.getValue().entrySet().stream()
