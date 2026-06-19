@@ -154,36 +154,64 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             String aggName = entry.getKey();
             TurDslAggregation agg = entry.getValue();
 
+            TurDslSearchResponse.AggregationResult aggResult = null;
             if (agg instanceof TurDslAggregation.TermsAgg termsAgg) {
-                FacetField facetField = response.getFacetField(termsAgg.field());
-                if (facetField != null) {
-                    List<TurDslSearchResponse.Bucket> buckets = facetField.getValues().stream()
-                            .filter(count -> count.getCount() > 0)
-                            .map(count -> new TurDslSearchResponse.Bucket(
-                                    count.getName(), count.getCount()))
-                            .toList();
-                    result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));
-                }
+                aggResult = termsAggResult(response, termsAgg);
             } else if (agg instanceof TurDslAggregation.RangeAgg rangeAgg) {
-                Map<String, Integer> facetQueryMap = response.getFacetQuery();
-                if (facetQueryMap != null) {
-                    List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
-                    for (var range : rangeAgg.ranges()) {
-                        String lower = range.from() != null ? range.from().toString() : "*";
-                        String upper = range.to() != null ? range.to().toString() : "*";
-                        String fqKey = "%s:[%s TO %s]".formatted(rangeAgg.field(), lower, upper);
-                        Integer count = facetQueryMap.get(fqKey);
-                        String key = range.key() != null ? range.key()
-                                : "%s-%s".formatted(lower, upper);
-                        if (count != null) {
-                            buckets.add(new TurDslSearchResponse.Bucket(key, count));
-                        }
-                    }
-                    result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));
-                }
+                aggResult = rangeAggResult(response, rangeAgg);
+            }
+            if (aggResult != null) {
+                result.put(aggName, aggResult);
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Builds the bucket list for a terms facet from the Solr response, or
+     * {@code null} when the facet field is absent.
+     *
+     * @since 2026.3.1
+     */
+    private TurDslSearchResponse.AggregationResult termsAggResult(QueryResponse response,
+            TurDslAggregation.TermsAgg termsAgg) {
+        FacetField facetField = response.getFacetField(termsAgg.field());
+        if (facetField == null) {
+            return null;
+        }
+        List<TurDslSearchResponse.Bucket> buckets = facetField.getValues().stream()
+                .filter(count -> count.getCount() > 0)
+                .map(count -> new TurDslSearchResponse.Bucket(
+                        count.getName(), count.getCount()))
+                .toList();
+        return new TurDslSearchResponse.AggregationResult(buckets);
+    }
+
+    /**
+     * Builds the bucket list for a range facet from the Solr facet-query map, or
+     * {@code null} when no facet queries were returned.
+     *
+     * @since 2026.3.1
+     */
+    private TurDslSearchResponse.AggregationResult rangeAggResult(QueryResponse response,
+            TurDslAggregation.RangeAgg rangeAgg) {
+        Map<String, Integer> facetQueryMap = response.getFacetQuery();
+        if (facetQueryMap == null) {
+            return null;
+        }
+        List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
+        for (var range : rangeAgg.ranges()) {
+            String lower = range.from() != null ? range.from().toString() : "*";
+            String upper = range.to() != null ? range.to().toString() : "*";
+            String fqKey = "%s:[%s TO %s]".formatted(rangeAgg.field(), lower, upper);
+            Integer count = facetQueryMap.get(fqKey);
+            String key = range.key() != null ? range.key()
+                    : "%s-%s".formatted(lower, upper);
+            if (count != null) {
+                buckets.add(new TurDslSearchResponse.Bucket(key, count));
+            }
+        }
+        return new TurDslSearchResponse.AggregationResult(buckets);
     }
 
     // ==================== Full Request Translation ====================
@@ -196,22 +224,27 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         solrQuery.setRows(request.size() != null ? request.size() : 10);
         if (solrQuery.getFields() == null) solrQuery.setFields("*", SCORE);
 
-        if (request.sort() != null) {
-            Object sortResult = translateSort(request.sort());
-            if (sortResult instanceof List<?> clauses) {
-                for (Object clause : clauses) {
-                    if (clause instanceof SolrQuery.SortClause sc) {
-                        solrQuery.addSort(sc);
-                    }
-                }
-            }
-        }
+        applySortClauses(request, solrQuery);
 
         translateSource(request.source(), solrQuery);
         if (request.highlight() != null) translateHighlight(request.highlight(), solrQuery);
         if (request.aggs() != null && !request.aggs().isEmpty()) {
             translateAggregationParams(request.aggs(), solrQuery);
         }
+        applyRequestModifiers(request, solrQuery);
+        applySpellcheckSuggest(request, solrQuery);
+        applyRescoreFallback(request, solrQuery);
+        // Script fields, indices_boost, track_total_hits, scroll — not supported in Solr
+        return solrQuery;
+    }
+
+    /**
+     * Applies the post-filter, min-score, collapse (group), timeout, explain
+     * (debugQuery), and stored-fields request options to the Solr query.
+     *
+     * @since 2026.3.1
+     */
+    private void applyRequestModifiers(TurDslQueryRequest request, SolrQuery solrQuery) {
         if (request.postFilter() != null) {
             solrQuery.addFilterQuery(translateClause(request.postFilter()));
         }
@@ -228,22 +261,6 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         if (request.timeout() != null) {
             solrQuery.setParam("timeAllowed", request.timeout().replaceAll("\\D", ""));
         }
-        // Suggest → Solr spellcheck component
-        if (request.suggest() != null && !request.suggest().isEmpty()) {
-            solrQuery.setParam("spellcheck", "true");
-            request.suggest().values().stream().findFirst().ifPresent(s -> {
-                if (s.text() != null) solrQuery.setParam("spellcheck.q", s.text());
-            });
-        }
-        // Rescore not natively supported in Solr
-        if (request.rescore() != null && !request.rescore().isEmpty()) {
-            log.debug("Rescore is not supported in Solr DSL — applying boost query as fallback");
-            for (var rescore : request.rescore()) {
-                if (rescore.query() != null && rescore.query().rescoreQuery() != null) {
-                    solrQuery.setParam("bq", translateClause(rescore.query().rescoreQuery()));
-                }
-            }
-        }
         // Explain → Solr debugQuery
         if (request.explain() != null && request.explain()) {
             solrQuery.setParam("debugQuery", "true");
@@ -252,8 +269,45 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         if (request.storedFields() != null && !request.storedFields().isEmpty()) {
             solrQuery.setParam("fl", String.join(",", request.storedFields()));
         }
-        // Script fields, indices_boost, track_total_hits, scroll — not supported in Solr
-        return solrQuery;
+    }
+
+    /** Adds each {@link SolrQuery.SortClause} from the translated sort spec. */
+    private void applySortClauses(TurDslQueryRequest request, SolrQuery solrQuery) {
+        if (request.sort() == null) {
+            return;
+        }
+        Object sortResult = translateSort(request.sort());
+        if (sortResult instanceof List<?> clauses) {
+            for (Object clause : clauses) {
+                if (clause instanceof SolrQuery.SortClause sc) {
+                    solrQuery.addSort(sc);
+                }
+            }
+        }
+    }
+
+    /** Suggest → Solr spellcheck component (uses the first suggester's text). */
+    private void applySpellcheckSuggest(TurDslQueryRequest request, SolrQuery solrQuery) {
+        if (request.suggest() == null || request.suggest().isEmpty()) {
+            return;
+        }
+        solrQuery.setParam("spellcheck", "true");
+        request.suggest().values().stream().findFirst().ifPresent(s -> {
+            if (s.text() != null) solrQuery.setParam("spellcheck.q", s.text());
+        });
+    }
+
+    /** Rescore is not native to Solr — apply the rescore query as a boost-query fallback. */
+    private void applyRescoreFallback(TurDslQueryRequest request, SolrQuery solrQuery) {
+        if (request.rescore() == null || request.rescore().isEmpty()) {
+            return;
+        }
+        log.debug("Rescore is not supported in Solr DSL — applying boost query as fallback");
+        for (var rescore : request.rescore()) {
+            if (rescore.query() != null && rescore.query().rescoreQuery() != null) {
+                solrQuery.setParam("bq", translateClause(rescore.query().rescoreQuery()));
+            }
+        }
     }
 
     // ==================== Clause Translation ====================
@@ -261,172 +315,46 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
     String translateClause(TurDslQuery query) {
         return switch (query) {
             case TurDslQuery.MatchAll() -> "*:*";
-            case TurDslQuery.Match(var field, var queryText, var operator) -> {
-                String[] terms = queryText.trim().split("\\s+");
-                if ("and".equalsIgnoreCase(operator)) {
-                    yield S_S.formatted(field,
-                            Arrays.stream(terms)
-                                    .map(t -> "+%s".formatted(escapeQuotes(t)))
-                                    .collect(Collectors.joining(" ")));
-                }
-                yield S_S.formatted(field, escapeQuotes(queryText));
-            }
-            case TurDslQuery.MultiMatch(var queryText, var fields, var type) -> {
-                if (fields == null || fields.isEmpty()) yield escapeQuotes(queryText);
-                yield fields.stream()
-                        .map(f -> S_S.formatted(f, escapeQuotes(queryText)))
-                        .collect(Collectors.joining(" OR ", "(", ")"));
-            }
+            case TurDslQuery.Match q -> clauseMatch(q);
+            case TurDslQuery.MultiMatch q -> clauseMultiMatch(q);
             case TurDslQuery.Term(var field, var value) ->
                     S_S_2.formatted(field, escapeQuotes(value.toString()));
-            case TurDslQuery.Terms(var field, var values) -> {
-                String joined = values.stream()
-                        .map(v -> S_2.formatted(escapeQuotes(v.toString())))
-                        .collect(Collectors.joining(" OR "));
-                yield S_S.formatted(field, joined);
-            }
-            case TurDslQuery.Bool(var must, var should, var mustNot, var filter, var msm) -> {
-                List<String> parts = new ArrayList<>();
-                for (var m : must) parts.add(S.formatted(translateClause(m)));
-                for (var s : should) parts.add("(%s)".formatted(translateClause(s)));
-                for (var mn : mustNot) parts.add("-(%s)".formatted(translateClause(mn)));
-                for (var f : filter) parts.add(S.formatted(translateClause(f)));
-                yield parts.isEmpty() ? "*:*" : String.join(" ", parts);
-            }
-            case TurDslQuery.Range(var field, var gte, var gt, var lte, var lt) -> {
-                String lower = solrRangeBound(gte, gt);
-                String upper = solrRangeBound(lte, lt);
-                String lBracket = (gte == null && gt != null) ? "{" : "[";
-                String rBracket = (lte == null && lt != null) ? "}" : "]";
-                yield "%s:%s%s TO %s%s".formatted(field, lBracket, lower, upper, rBracket);
-            }
+            case TurDslQuery.Terms q -> clauseTerms(q);
+            case TurDslQuery.Bool q -> clauseBool(q);
+            case TurDslQuery.Range q -> clauseRange(q);
             case TurDslQuery.Wildcard(var field, var value) -> "%s:%s".formatted(field, value);
             case TurDslQuery.Prefix(var field, var value) ->
                     S_S_3.formatted(field, escapeQuotes(value));
             case TurDslQuery.Exists(var field) -> S_TO.formatted(field);
-            case TurDslQuery.QueryString(var queryText, var defaultField, var defaultOperator) -> {
-                if (defaultField != null) yield S_S.formatted(defaultField, queryText);
-                yield queryText;
-            }
-            case TurDslQuery.Fuzzy(var field, var value, var fuzziness) -> {
-                int fuzz = fuzziness != null ? fuzziness : 2;
-                yield "%s:%s~%d".formatted(field, escapeQuotes(value), fuzz);
-            }
-            case TurDslQuery.Ids(var values) -> {
-                String idList = values.stream()
-                        .map(v -> S_2.formatted(escapeQuotes(v)))
-                        .collect(Collectors.joining(" OR "));
-                yield "id:(%s)".formatted(idList);
-            }
+            case TurDslQuery.QueryString q -> clauseQueryString(q);
+            case TurDslQuery.Fuzzy q -> clauseFuzzy(q);
+            case TurDslQuery.Ids q -> clauseIds(q);
             case TurDslQuery.MatchPhrase(var field, var queryText, var slop) ->
                     S_S_2.formatted(field, escapeQuotes(queryText));
             case TurDslQuery.MatchPhrasePrefix(var field, var queryText, var maxExp) ->
                     S_S_2.formatted(field, escapeQuotes(queryText));
-            case TurDslQuery.SimpleQueryString(var queryText, var fields, var defOp) -> {
-                if (fields != null && !fields.isEmpty()) {
-                    yield fields.stream()
-                            .map(f -> S_S.formatted(f, escapeQuotes(queryText)))
-                            .collect(Collectors.joining(" OR ", "(", ")"));
-                }
-                yield escapeQuotes(queryText);
-            }
+            case TurDslQuery.SimpleQueryString q -> clauseSimpleQueryString(q);
             case TurDslQuery.Regexp(var field, var value, var flags) ->
                     "%s:/%s/".formatted(field, value);
             case TurDslQuery.ConstantScore(var filter, var boost) ->
                     translateClause(filter);
-            case TurDslQuery.DisMax(var queries, var tieBreaker) -> {
-                if (queries.isEmpty()) yield "*:*";
-                yield queries.stream()
-                        .map(this::translateClause)
-                        .collect(Collectors.joining(" OR ", "(", ")"));
-            }
+            case TurDslQuery.DisMax q -> clauseDisMax(q);
             case TurDslQuery.Boosting(var positive, var negative, var negBoost) ->
                     "+(%s) -(%s)".formatted(translateClause(positive), translateClause(negative));
             // Solr: {!parent} or flatten — best effort: translate inner query
             case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) ->
                     translateClause(nestedQuery);
-            case TurDslQuery.FunctionScore(var innerQuery, var functions,
-                                            var sm, var bm, var mb, var ms) -> {
-                // Solr: boost query as fallback
-                String base = translateClause(innerQuery);
-                if (functions != null && !functions.isEmpty()) {
-                    for (var fn : functions) {
-                        if (fn.fieldValueFactor() != null) {
-                            base = "{!boost b=mul(%s,%s)}%s".formatted(
-                                    fn.fieldValueFactor().field(),
-                                    fn.fieldValueFactor().factor() != null
-                                            ? fn.fieldValueFactor().factor() : "1",
-                                    base);
-                            break;
-                        }
-                    }
-                }
-                yield base;
-            }
+            case TurDslQuery.FunctionScore q -> clauseFunctionScore(q);
             case TurDslQuery.ScriptScore(var innerQuery, var script, var ms) ->
                     translateClause(innerQuery);
-            case TurDslQuery.Knn(var field, var queryVector, var k,
-                                  var numCandidates, var similarity, var filter) ->
-                    "{!knn f=%s topK=%d}[%s]".formatted(field, k,
-                            queryVector.stream().map(String::valueOf)
-                                    .collect(Collectors.joining(",")));
-            case TurDslQuery.MoreLikeThis(var fields, var likeText, var likeIds,
-                                           var mtf, var mdf, var mqt) -> {
-                // Solr: {!mlt} query parser
-                String fl = (fields != null && !fields.isEmpty())
-                        ? String.join(",", fields) : "*";
-                yield likeText != null
-                        ? "{!mlt qf=%s}%s".formatted(fl, escapeQuotes(likeText))
-                        : "*:*";
-            }
-            case TurDslQuery.CombinedFields(var queryText, var fields, var operator) -> {
-                if (fields == null || fields.isEmpty()) yield escapeQuotes(queryText);
-                yield fields.stream()
-                        .map(f -> S_S.formatted(f, escapeQuotes(queryText)))
-                        .collect(Collectors.joining(
-                                "and".equalsIgnoreCase(operator) ? " AND " : " OR ",
-                                "(", ")"));
-            }
-            case TurDslQuery.MatchBoolPrefix(var field, var queryText) -> {
-                String[] tokens = queryText.trim().split("\\s+");
-                if (tokens.length <= 1) yield S_S_3.formatted(field, escapeQuotes(queryText));
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < tokens.length - 1; i++) {
-                    sb.append("+%s:%s ".formatted(field, escapeQuotes(tokens[i])));
-                }
-                sb.append(S_S_3.formatted(field, escapeQuotes(tokens[tokens.length - 1])));
-                yield sb.toString();
-            }
-            case TurDslQuery.Pinned(var ids, var organic) -> {
-                // Solr: elevate or boost pinned IDs
-                String idBoost = ids.stream()
-                        .map(id -> "id:\"%s\"^1000".formatted(escapeQuotes(id)))
-                        .collect(Collectors.joining(" OR "));
-                String base = organic != null ? translateClause(organic) : "*:*";
-                yield "(%s) OR (%s)".formatted(idBoost, base);
-            }
-            case TurDslQuery.GeoDistance(var field, var distance, var location) -> {
-                if (location != null && distance != null) {
-                    yield "{!geofilt sfield=%s pt=%s,%s d=%s}".formatted(
-                            field, location.lat(), location.lon(),
-                            distance.replaceAll("[^0-9.]", ""));
-                }
-                yield "*:*";
-            }
-            case TurDslQuery.GeoBoundingBox(var field, var topLeft, var bottomRight) -> {
-                if (topLeft != null && bottomRight != null) {
-                    yield "%s:[%s,%s TO %s,%s]".formatted(field,
-                            bottomRight.lat(), topLeft.lon(),
-                            topLeft.lat(), bottomRight.lon());
-                }
-                yield "*:*";
-            }
-            case TurDslQuery.TermsSet(var field, var terms, var msmField, var msmScript) -> {
-                String joined = terms.stream()
-                        .map(v -> S_2.formatted(escapeQuotes(v.toString())))
-                        .collect(Collectors.joining(" OR "));
-                yield S_S.formatted(field, joined);
-            }
+            case TurDslQuery.Knn q -> clauseKnn(q);
+            case TurDslQuery.MoreLikeThis q -> clauseMoreLikeThis(q);
+            case TurDslQuery.CombinedFields q -> clauseCombinedFields(q);
+            case TurDslQuery.MatchBoolPrefix q -> clauseMatchBoolPrefix(q);
+            case TurDslQuery.Pinned q -> clausePinned(q);
+            case TurDslQuery.GeoDistance q -> clauseGeoDistance(q);
+            case TurDslQuery.GeoBoundingBox q -> clauseGeoBoundingBox(q);
+            case TurDslQuery.TermsSet q -> clauseTermsSet(q);
             // --- Low-priority queries (best-effort / translate inner query) ---
             case TurDslQuery.HasChild(var type, var childQuery, var sm, var minC, var maxC) ->
                     translateClause(childQuery);
@@ -438,16 +366,8 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                             : S_TO.formatted(field);
             case TurDslQuery.SpanTerm(var field, var value) ->
                     S_S_2.formatted(field, escapeQuotes(value));
-            case TurDslQuery.SpanNear(var clauses, var slop, var inOrder) -> {
-                if (clauses.isEmpty()) yield "*:*";
-                yield clauses.stream().map(this::translateClause)
-                        .collect(Collectors.joining(" AND ", "(", ")"));
-            }
-            case TurDslQuery.SpanOr(var clauses) -> {
-                if (clauses.isEmpty()) yield "*:*";
-                yield clauses.stream().map(this::translateClause)
-                        .collect(Collectors.joining(" OR ", "(", ")"));
-            }
+            case TurDslQuery.SpanNear q -> clauseSpanJoin(q.clauses(), " AND ");
+            case TurDslQuery.SpanOr q -> clauseSpanJoin(q.clauses(), " OR ");
             case TurDslQuery.SpanNot(var include, var exclude) ->
                     "+(%s) -(%s)".formatted(translateClause(include), translateClause(exclude));
             case TurDslQuery.SpanFirst(var match, var end) -> translateClause(match);
@@ -460,6 +380,176 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                     S_TO.formatted(field);
             case TurDslQuery.Percolate(var field, var document) -> "*:*";
         };
+    }
+
+    // ============ Per-query-type clause translators (S3776: keep the switch flat) ============
+
+    private String clauseMatch(TurDslQuery.Match q) {
+        String[] terms = q.query().trim().split("\\s+");
+        if ("and".equalsIgnoreCase(q.operator())) {
+            return S_S.formatted(q.field(),
+                    Arrays.stream(terms)
+                            .map(t -> "+%s".formatted(escapeQuotes(t)))
+                            .collect(Collectors.joining(" ")));
+        }
+        return S_S.formatted(q.field(), escapeQuotes(q.query()));
+    }
+
+    private String clauseMultiMatch(TurDslQuery.MultiMatch q) {
+        if (q.fields() == null || q.fields().isEmpty()) return escapeQuotes(q.query());
+        return q.fields().stream()
+                .map(f -> S_S.formatted(f, escapeQuotes(q.query())))
+                .collect(Collectors.joining(" OR ", "(", ")"));
+    }
+
+    private String clauseTerms(TurDslQuery.Terms q) {
+        String joined = q.values().stream()
+                .map(v -> S_2.formatted(escapeQuotes(v.toString())))
+                .collect(Collectors.joining(" OR "));
+        return S_S.formatted(q.field(), joined);
+    }
+
+    private String clauseBool(TurDslQuery.Bool q) {
+        List<String> parts = new ArrayList<>();
+        for (var m : q.must()) parts.add(S.formatted(translateClause(m)));
+        for (var s : q.should()) parts.add("(%s)".formatted(translateClause(s)));
+        for (var mn : q.mustNot()) parts.add("-(%s)".formatted(translateClause(mn)));
+        for (var f : q.filter()) parts.add(S.formatted(translateClause(f)));
+        return parts.isEmpty() ? "*:*" : String.join(" ", parts);
+    }
+
+    private String clauseRange(TurDslQuery.Range q) {
+        String lower = solrRangeBound(q.gte(), q.gt());
+        String upper = solrRangeBound(q.lte(), q.lt());
+        String lBracket = (q.gte() == null && q.gt() != null) ? "{" : "[";
+        String rBracket = (q.lte() == null && q.lt() != null) ? "}" : "]";
+        return "%s:%s%s TO %s%s".formatted(q.field(), lBracket, lower, upper, rBracket);
+    }
+
+    private String clauseQueryString(TurDslQuery.QueryString q) {
+        if (q.defaultField() != null) return S_S.formatted(q.defaultField(), q.query());
+        return q.query();
+    }
+
+    private String clauseFuzzy(TurDslQuery.Fuzzy q) {
+        int fuzz = q.fuzziness() != null ? q.fuzziness() : 2;
+        return "%s:%s~%d".formatted(q.field(), escapeQuotes(q.value()), fuzz);
+    }
+
+    private String clauseIds(TurDslQuery.Ids q) {
+        String idList = q.values().stream()
+                .map(v -> S_2.formatted(escapeQuotes(v)))
+                .collect(Collectors.joining(" OR "));
+        return "id:(%s)".formatted(idList);
+    }
+
+    private String clauseSimpleQueryString(TurDslQuery.SimpleQueryString q) {
+        if (q.fields() != null && !q.fields().isEmpty()) {
+            return q.fields().stream()
+                    .map(f -> S_S.formatted(f, escapeQuotes(q.query())))
+                    .collect(Collectors.joining(" OR ", "(", ")"));
+        }
+        return escapeQuotes(q.query());
+    }
+
+    private String clauseDisMax(TurDslQuery.DisMax q) {
+        if (q.queries().isEmpty()) return "*:*";
+        return q.queries().stream()
+                .map(this::translateClause)
+                .collect(Collectors.joining(" OR ", "(", ")"));
+    }
+
+    private String clauseFunctionScore(TurDslQuery.FunctionScore q) {
+        // Solr: boost query as fallback
+        String base = translateClause(q.query());
+        if (q.functions() != null && !q.functions().isEmpty()) {
+            for (var fn : q.functions()) {
+                if (fn.fieldValueFactor() != null) {
+                    base = "{!boost b=mul(%s,%s)}%s".formatted(
+                            fn.fieldValueFactor().field(),
+                            fn.fieldValueFactor().factor() != null
+                                    ? fn.fieldValueFactor().factor() : "1",
+                            base);
+                    break;
+                }
+            }
+        }
+        return base;
+    }
+
+    private String clauseKnn(TurDslQuery.Knn q) {
+        return "{!knn f=%s topK=%d}[%s]".formatted(q.field(), q.k(),
+                q.queryVector().stream().map(String::valueOf)
+                        .collect(Collectors.joining(",")));
+    }
+
+    private String clauseMoreLikeThis(TurDslQuery.MoreLikeThis q) {
+        // Solr: {!mlt} query parser
+        String fl = (q.fields() != null && !q.fields().isEmpty())
+                ? String.join(",", q.fields()) : "*";
+        return q.likeText() != null
+                ? "{!mlt qf=%s}%s".formatted(fl, escapeQuotes(q.likeText()))
+                : "*:*";
+    }
+
+    private String clauseCombinedFields(TurDslQuery.CombinedFields q) {
+        if (q.fields() == null || q.fields().isEmpty()) return escapeQuotes(q.query());
+        return q.fields().stream()
+                .map(f -> S_S.formatted(f, escapeQuotes(q.query())))
+                .collect(Collectors.joining(
+                        "and".equalsIgnoreCase(q.operator()) ? " AND " : " OR ",
+                        "(", ")"));
+    }
+
+    private String clauseMatchBoolPrefix(TurDslQuery.MatchBoolPrefix q) {
+        String[] tokens = q.query().trim().split("\\s+");
+        if (tokens.length <= 1) return S_S_3.formatted(q.field(), escapeQuotes(q.query()));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < tokens.length - 1; i++) {
+            sb.append("+%s:%s ".formatted(q.field(), escapeQuotes(tokens[i])));
+        }
+        sb.append(S_S_3.formatted(q.field(), escapeQuotes(tokens[tokens.length - 1])));
+        return sb.toString();
+    }
+
+    private String clausePinned(TurDslQuery.Pinned q) {
+        // Solr: elevate or boost pinned IDs
+        String idBoost = q.ids().stream()
+                .map(id -> "id:\"%s\"^1000".formatted(escapeQuotes(id)))
+                .collect(Collectors.joining(" OR "));
+        String base = q.organic() != null ? translateClause(q.organic()) : "*:*";
+        return "(%s) OR (%s)".formatted(idBoost, base);
+    }
+
+    private String clauseGeoDistance(TurDslQuery.GeoDistance q) {
+        if (q.location() != null && q.distance() != null) {
+            return "{!geofilt sfield=%s pt=%s,%s d=%s}".formatted(
+                    q.field(), q.location().lat(), q.location().lon(),
+                    q.distance().replaceAll("[^0-9.]", ""));
+        }
+        return "*:*";
+    }
+
+    private String clauseGeoBoundingBox(TurDslQuery.GeoBoundingBox q) {
+        if (q.topLeft() != null && q.bottomRight() != null) {
+            return "%s:[%s,%s TO %s,%s]".formatted(q.field(),
+                    q.bottomRight().lat(), q.topLeft().lon(),
+                    q.topLeft().lat(), q.bottomRight().lon());
+        }
+        return "*:*";
+    }
+
+    private String clauseTermsSet(TurDslQuery.TermsSet q) {
+        String joined = q.terms().stream()
+                .map(v -> S_2.formatted(escapeQuotes(v.toString())))
+                .collect(Collectors.joining(" OR "));
+        return S_S.formatted(q.field(), joined);
+    }
+
+    private String clauseSpanJoin(List<TurDslQuery> clauses, String delimiter) {
+        if (clauses.isEmpty()) return "*:*";
+        return clauses.stream().map(this::translateClause)
+                .collect(Collectors.joining(delimiter, "(", ")"));
     }
 
     // ==================== Helpers ====================
@@ -499,19 +589,8 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         solrQuery.setFacet(true);
         for (var entry : aggs.entrySet()) {
             switch (entry.getValue()) {
-                case TurDslAggregation.TermsAgg(var field, var size) -> {
-                    solrQuery.addFacetField(field);
-                    if (size != null) {
-                        solrQuery.setParam(F_S_FACET_LIMIT.formatted(field), size.toString());
-                    }
-                }
-                case TurDslAggregation.RangeAgg(var field, var ranges) -> {
-                    for (var range : ranges) {
-                        String lower = range.from() != null ? range.from().toString() : "*";
-                        String upper = range.to() != null ? range.to().toString() : "*";
-                        solrQuery.addFacetQuery("%s:[%s TO %s]".formatted(field, lower, upper));
-                    }
-                }
+                case TurDslAggregation.TermsAgg agg -> applyTermsFacet(agg, solrQuery);
+                case TurDslAggregation.RangeAgg agg -> applyRangeFacet(agg, solrQuery);
                 case TurDslAggregation.DateHistogramAgg dh ->
                         log.warn("date_histogram aggregation is not yet supported in Solr DSL translator");
                 case TurDslAggregation.AvgAgg a ->
@@ -535,6 +614,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         log.warn("histogram aggregation requires Solr JSON facet API — not yet implemented");
                 case TurDslAggregation.FilterAgg f ->
                         solrQuery.addFacetQuery(translateClause(f.filter()));
+                // (single-clause FilterAgg above; multi-clause FiltersAgg below)
                 case TurDslAggregation.StatsAgg a ->
                         solrQuery.addGetFieldStatistics(a.field());
                 case TurDslAggregation.ExtendedStatsAgg a ->
@@ -545,17 +625,10 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         log.warn("top_hits aggregation is not supported in Solr DSL translator");
                 case TurDslAggregation.CompositeAgg c ->
                         log.warn("composite aggregation is not supported in Solr DSL translator");
-                case TurDslAggregation.FiltersAgg f -> {
-                    for (var fe : f.filters().entrySet()) {
-                        solrQuery.addFacetQuery(translateClause(fe.getValue()));
-                    }
-                }
+                case TurDslAggregation.FiltersAgg agg -> applyFiltersFacet(agg, solrQuery);
                 case TurDslAggregation.WithSubAggs(var parent, var subAggs) ->
                         log.warn("Sub-aggregations are not supported in Solr DSL translator");
-                case TurDslAggregation.SignificantTermsAgg(var field, var size, var mdc) -> {
-                    solrQuery.addFacetField(field);
-                    if (size != null) solrQuery.setParam(F_S_FACET_LIMIT.formatted(field), size.toString());
-                }
+                case TurDslAggregation.SignificantTermsAgg agg -> applySignificantTermsFacet(agg, solrQuery);
                 case TurDslAggregation.NestedAgg n ->
                         log.warn("nested aggregation is not supported in Solr DSL translator");
                 case TurDslAggregation.ReverseNestedAgg rn ->
@@ -564,12 +637,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         log.warn("auto_date_histogram is not supported in Solr DSL translator");
                 case TurDslAggregation.MultiTermsAgg mt ->
                         log.warn("multi_terms aggregation is not supported in Solr DSL translator");
-                case TurDslAggregation.RareTermsAgg(var field, var mdc) -> {
-                    solrQuery.addFacetField(field);
-                    solrQuery.setParam("f.%s.facet.sort".formatted(field), "count");
-                    solrQuery.setParam(F_S_FACET_LIMIT.formatted(field),
-                            mdc != null ? mdc.toString() : "10");
-                }
+                case TurDslAggregation.RareTermsAgg agg -> applyRareTermsFacet(agg, solrQuery);
                 case TurDslAggregation.TopMetricsAgg tm ->
                         log.warn("top_metrics aggregation is not supported in Solr DSL translator");
                 case TurDslAggregation.PercentileRanksAgg pr ->
@@ -604,6 +672,41 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         log.warn("rate agg not supported in Solr DSL");
             }
         }
+    }
+
+    private void applyTermsFacet(TurDslAggregation.TermsAgg agg, SolrQuery solrQuery) {
+        solrQuery.addFacetField(agg.field());
+        if (agg.size() != null) {
+            solrQuery.setParam(F_S_FACET_LIMIT.formatted(agg.field()), agg.size().toString());
+        }
+    }
+
+    private void applyRangeFacet(TurDslAggregation.RangeAgg agg, SolrQuery solrQuery) {
+        for (var range : agg.ranges()) {
+            String lower = range.from() != null ? range.from().toString() : "*";
+            String upper = range.to() != null ? range.to().toString() : "*";
+            solrQuery.addFacetQuery("%s:[%s TO %s]".formatted(agg.field(), lower, upper));
+        }
+    }
+
+    private void applyFiltersFacet(TurDslAggregation.FiltersAgg agg, SolrQuery solrQuery) {
+        for (var fe : agg.filters().entrySet()) {
+            solrQuery.addFacetQuery(translateClause(fe.getValue()));
+        }
+    }
+
+    private void applySignificantTermsFacet(TurDslAggregation.SignificantTermsAgg agg, SolrQuery solrQuery) {
+        solrQuery.addFacetField(agg.field());
+        if (agg.size() != null) {
+            solrQuery.setParam(F_S_FACET_LIMIT.formatted(agg.field()), agg.size().toString());
+        }
+    }
+
+    private void applyRareTermsFacet(TurDslAggregation.RareTermsAgg agg, SolrQuery solrQuery) {
+        solrQuery.addFacetField(agg.field());
+        solrQuery.setParam("f.%s.facet.sort".formatted(agg.field()), "count");
+        solrQuery.setParam(F_S_FACET_LIMIT.formatted(agg.field()),
+                agg.maxDocCount() != null ? agg.maxDocCount().toString() : "10");
     }
 
     private List<TurDslSearchResponse.Hit> buildHits(SolrDocumentList docs,
