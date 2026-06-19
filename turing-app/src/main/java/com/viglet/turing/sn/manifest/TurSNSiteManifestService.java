@@ -133,28 +133,11 @@ public class TurSNSiteManifestService {
 
         // Declared breaking changes: drop + recreate the field (destructive, but
         // explicitly authorized by a migration entry).
-        List<String> fieldsMigrated = new ArrayList<>();
-        for (VigletManifestFieldChange change : diff.breakingChanges()) {
-            TurSNJobAttributeSpec spec = TurSNManifestMapper.toJobSpec(fieldSpec(manifest, change.field()));
-            if (spec != null && turSNFieldProvisioner.recreateField(site, spec)) {
-                fieldsMigrated.add(change.field());
-            }
-        }
+        List<String> fieldsMigrated = applyBreakingChanges(site, manifest, diff);
 
         List<String> fieldsCreated = new ArrayList<>();
         List<String> fieldsSkipped = new ArrayList<>();
-        if (manifest.fields() != null) {
-            for (VigletFieldSpec field : manifest.fields()) {
-                if (fieldsMigrated.contains(field.name())) {
-                    continue; // already converged by the migration above
-                }
-                if (turSNFieldProvisioner.ensureField(site, TurSNManifestMapper.toJobSpec(field))) {
-                    fieldsCreated.add(field.name());
-                } else {
-                    fieldsSkipped.add(field.name());
-                }
-            }
-        }
+        applyFieldChanges(site, manifest, fieldsMigrated, fieldsCreated, fieldsSkipped);
 
         eventPublisher.publishEvent(siteCreated
                 ? SnSiteIndexInvalidatedEvent.created(site.getId(), site.getName())
@@ -167,6 +150,44 @@ public class TurSNSiteManifestService {
 
         return new VigletManifestResult(site.getId(), site.getName(), siteCreated,
                 fieldsCreated, fieldsSkipped, fieldsMigrated, localesCreated, manifest.schemaVersion());
+    }
+
+    /**
+     * Drops + recreates each field declared as a breaking change (destructive,
+     * but explicitly authorized by a migration entry). Returns the names
+     * actually migrated.
+     */
+    private List<String> applyBreakingChanges(TurSNSite site, VigletFieldManifest manifest,
+            VigletManifestDiff diff) {
+        List<String> fieldsMigrated = new ArrayList<>();
+        for (VigletManifestFieldChange change : diff.breakingChanges()) {
+            TurSNJobAttributeSpec spec = TurSNManifestMapper.toJobSpec(fieldSpec(manifest, change.field()));
+            if (spec != null && turSNFieldProvisioner.recreateField(site, spec)) {
+                fieldsMigrated.add(change.field());
+            }
+        }
+        return fieldsMigrated;
+    }
+
+    /**
+     * Converges every manifest field not already handled by a migration,
+     * partitioning the outcomes into {@code fieldsCreated} / {@code fieldsSkipped}.
+     */
+    private void applyFieldChanges(TurSNSite site, VigletFieldManifest manifest,
+            List<String> fieldsMigrated, List<String> fieldsCreated, List<String> fieldsSkipped) {
+        if (manifest.fields() == null) {
+            return;
+        }
+        for (VigletFieldSpec field : manifest.fields()) {
+            if (fieldsMigrated.contains(field.name())) {
+                continue; // already converged by the migration above
+            }
+            if (turSNFieldProvisioner.ensureField(site, TurSNManifestMapper.toJobSpec(field))) {
+                fieldsCreated.add(field.name());
+            } else {
+                fieldsSkipped.add(field.name());
+            }
+        }
     }
 
     private static VigletFieldSpec fieldSpec(VigletFieldManifest manifest, String name) {

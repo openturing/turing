@@ -94,15 +94,9 @@ public class TurFunctionCallNodeExecutor {
             return ExecutionResult.failure("functionCall node '" + node.id()
                     + "' has no functionName — skipping");
         }
-        String source = node.toolSource() == null ? "NATIVE" : node.toolSource().trim().toUpperCase();
-        if ("MCP".equals(source)) {
-            log.warn("[FlowOps/functionCall] node '{}' uses toolSource=MCP — not yet supported in v1 (T46); "
-                    + "engine will advance without invoking. Track in TK4 follow-up.", node.id());
-            return ExecutionResult.failure("MCP toolSource not supported in v1");
-        }
-        if (!"NATIVE".equals(source)) {
-            return ExecutionResult.failure("Unknown toolSource '" + node.toolSource()
-                    + "' on functionCall node '" + node.id() + "'");
+        ExecutionResult sourceError = validateToolSource(node);
+        if (sourceError != null) {
+            return sourceError;
         }
 
         ToolCallback[] callbacks = nativeToolService.getToolCallbacks(Set.of(functionName));
@@ -127,6 +121,35 @@ public class TurFunctionCallNodeExecutor {
             return ExecutionResult.failure(e.getMessage());
         }
 
+        recordFunctionResult(state, node, functionName, variables, result);
+        return ExecutionResult.success(result);
+    }
+
+    /**
+     * Validates the node's {@code toolSource}: only {@code NATIVE} is supported
+     * in v1. Returns a failure result for MCP / unknown sources, or null when OK.
+     */
+    private ExecutionResult validateToolSource(ChatFlowNode node) {
+        String source = node.toolSource() == null ? "NATIVE" : node.toolSource().trim().toUpperCase();
+        if ("MCP".equals(source)) {
+            log.warn("[FlowOps/functionCall] node '{}' uses toolSource=MCP — not yet supported in v1 (T46); "
+                    + "engine will advance without invoking. Track in TK4 follow-up.", node.id());
+            return ExecutionResult.failure("MCP toolSource not supported in v1");
+        }
+        if (!"NATIVE".equals(source)) {
+            return ExecutionResult.failure("Unknown toolSource '" + node.toolSource()
+                    + "' on functionCall node '" + node.id() + "'");
+        }
+        return null;
+    }
+
+    /**
+     * Writes the tool result into the node's output slot (allocating a fresh
+     * variable map so the caller's view is untouched), or logs the side-effect
+     * only when no output variable is configured.
+     */
+    private void recordFunctionResult(TurChatFlowState state, ChatFlowNode node, String functionName,
+            Map<String, String> variables, String result) {
         String outputSlot = node.outputVariable();
         if (outputSlot != null && !outputSlot.isBlank()) {
             // Allocate a fresh map so we don't mutate the caller's view of
@@ -142,7 +165,6 @@ public class TurFunctionCallNodeExecutor {
                     node.id(), functionName, result == null ? 0 : result.length(),
                     state.getConversationId());
         }
-        return ExecutionResult.success(result);
     }
 
     /**
