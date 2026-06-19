@@ -728,24 +728,27 @@ public class TurDslElasticsearchExecutor
                     reqBuilder.sort(s -> s.field(f -> f.field(field).order(SortOrder.Desc)));
                 }
             } else if (entry instanceof Map<?, ?> map) {
-                map.forEach((key, val) -> {
-                    String field = key.toString();
-                    SortOrder order = SortOrder.Desc;
-                    if (val instanceof String s) {
-                        order = "asc".equalsIgnoreCase(s) ? SortOrder.Asc : SortOrder.Desc;
-                    } else if (val instanceof Map<?, ?> opts) {
-                        Object o = opts.get("order");
-                        order = o != null && "asc".equalsIgnoreCase(o.toString())
-                                ? SortOrder.Asc : SortOrder.Desc;
-                    }
-                    SortOrder finalOrder = order;
-                    if ("_score".equals(field)) {
-                        reqBuilder.sort(s -> s.score(sc -> sc.order(finalOrder)));
-                    } else {
-                        reqBuilder.sort(s -> s.field(f -> f.field(field).order(finalOrder)));
-                    }
-                });
+                map.forEach((key, val) -> addMapSort(key, val, reqBuilder));
             }
+        }
+    }
+
+    /** Appends one {@code {field: order}} sort to the request (default descending; {@code _score} aware). */
+    private void addMapSort(Object key, Object val, SearchRequest.Builder reqBuilder) {
+        String field = key.toString();
+        SortOrder order = SortOrder.Desc;
+        if (val instanceof String s) {
+            order = "asc".equalsIgnoreCase(s) ? SortOrder.Asc : SortOrder.Desc;
+        } else if (val instanceof Map<?, ?> opts) {
+            Object o = opts.get("order");
+            order = o != null && "asc".equalsIgnoreCase(o.toString())
+                    ? SortOrder.Asc : SortOrder.Desc;
+        }
+        SortOrder finalOrder = order;
+        if ("_score".equals(field)) {
+            reqBuilder.sort(s -> s.score(sc -> sc.order(finalOrder)));
+        } else {
+            reqBuilder.sort(s -> s.field(f -> f.field(field).order(finalOrder)));
         }
     }
 

@@ -83,18 +83,7 @@ public class TurParkedConversationService {
             }
             // Reason text keyed by suspend node id, so the loaded states map
             // straight to their authored label without re-walking the graph.
-            Map<String, String> suspendReasons = new HashMap<>();
-            for (ChatFlowNode node : graph.nodes()) {
-                // T119/T121 — both suspend and humanApproval park the cursor and
-                // belong on the dashboard so an operator can triage / unblock.
-                if ("suspend".equals(node.type()) || "humanApproval".equals(node.type())) {
-                    String label = node.label();
-                    String fallback = "humanApproval".equals(node.type())
-                            ? "awaiting approval" : "suspended";
-                    suspendReasons.put(node.id(),
-                            label == null || label.isBlank() ? fallback : label);
-                }
-            }
+            Map<String, String> suspendReasons = buildSuspendReasons(graph);
             if (suspendReasons.isEmpty()) {
                 continue;
             }
@@ -106,23 +95,47 @@ public class TurParkedConversationService {
             String agentId = flowRepository.findAgentIdByFlowId(flow.getId()).orElse(null);
             String agentTitle = resolveAgentTitle(agentId, agentTitleCache);
             for (TurChatFlowState state : parked) {
-                LocalDateTime since = state.getUpdatedAt();
-                long waitingSeconds = since == null ? 0L
-                        : Math.max(0L, Duration.between(since, now).getSeconds());
-                out.add(new TurParkedConversationDto(
-                        state.getConversationId(),
-                        agentId,
-                        agentTitle,
-                        flow.getId(),
-                        flow.getName(),
-                        state.getCurrentNodeId(),
-                        suspendReasons.getOrDefault(state.getCurrentNodeId(), "suspended"),
-                        since == null ? null : since.toString(),
-                        waitingSeconds));
+                out.add(toParkedDto(state, flow, agentId, agentTitle, suspendReasons, now));
             }
         }
         out.sort(Comparator.comparingLong(TurParkedConversationDto::waitingSeconds).reversed());
         return out;
+    }
+
+    /**
+     * Reason text keyed by parked node id (suspend + humanApproval). T119/T121:
+     * both park the cursor and belong on the triage dashboard.
+     */
+    private Map<String, String> buildSuspendReasons(ChatFlowGraph graph) {
+        Map<String, String> suspendReasons = new HashMap<>();
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("suspend".equals(node.type()) || "humanApproval".equals(node.type())) {
+                String label = node.label();
+                String fallback = "humanApproval".equals(node.type())
+                        ? "awaiting approval" : "suspended";
+                suspendReasons.put(node.id(),
+                        label == null || label.isBlank() ? fallback : label);
+            }
+        }
+        return suspendReasons;
+    }
+
+    /** Maps one parked state to its dashboard DTO (computing the waiting duration). */
+    private TurParkedConversationDto toParkedDto(TurChatFlowState state, TurChatFlow flow,
+            String agentId, String agentTitle, Map<String, String> suspendReasons, LocalDateTime now) {
+        LocalDateTime since = state.getUpdatedAt();
+        long waitingSeconds = since == null ? 0L
+                : Math.max(0L, Duration.between(since, now).getSeconds());
+        return new TurParkedConversationDto(
+                state.getConversationId(),
+                agentId,
+                agentTitle,
+                flow.getId(),
+                flow.getName(),
+                state.getCurrentNodeId(),
+                suspendReasons.getOrDefault(state.getCurrentNodeId(), "suspended"),
+                since == null ? null : since.toString(),
+                waitingSeconds);
     }
 
     /** Resolves (and memoizes) the agent title for an id; {@code null}-safe. */
