@@ -603,26 +603,31 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         if (docs == null) return List.of();
         List<TurDslSearchResponse.Hit> hits = new ArrayList<>();
         for (SolrDocument doc : docs) {
-            String id = Optional.ofNullable(doc.getFieldValue("id"))
-                    .map(Object::toString).orElse(null);
-            Double score = doc.getFieldValue(SCORE) instanceof Number n
-                    ? n.doubleValue() : null;
-
-            Map<String, Object> source = new LinkedHashMap<>();
-            for (String fieldName : doc.getFieldNames()) {
-                if (!SCORE.equals(fieldName) && !"_version_".equals(fieldName)) {
-                    source.put(fieldName, doc.getFieldValue(fieldName));
-                }
-            }
-
-            Map<String, List<String>> highlight = null;
-            if (hlMap != null && id != null && hlMap.containsKey(id)) {
-                Map<String, List<String>> docHl = hlMap.get(id);
-                if (docHl != null && !docHl.isEmpty()) highlight = docHl;
-            }
-            hits.add(new TurDslSearchResponse.Hit(id, score, source, highlight));
+            hits.add(buildHit(doc, hlMap));
         }
         return hits;
+    }
+
+    private TurDslSearchResponse.Hit buildHit(SolrDocument doc,
+            Map<String, Map<String, List<String>>> hlMap) {
+        String id = Optional.ofNullable(doc.getFieldValue("id"))
+                .map(Object::toString).orElse(null);
+        Double score = doc.getFieldValue(SCORE) instanceof Number n
+                ? n.doubleValue() : null;
+
+        Map<String, Object> source = new LinkedHashMap<>();
+        for (String fieldName : doc.getFieldNames()) {
+            if (!SCORE.equals(fieldName) && !"_version_".equals(fieldName)) {
+                source.put(fieldName, doc.getFieldValue(fieldName));
+            }
+        }
+
+        Map<String, List<String>> highlight = null;
+        if (hlMap != null && id != null && hlMap.containsKey(id)) {
+            Map<String, List<String>> docHl = hlMap.get(id);
+            if (docHl != null && !docHl.isEmpty()) highlight = docHl;
+        }
+        return new TurDslSearchResponse.Hit(id, score, source, highlight);
     }
 
     private static String escapeQuotes(String value) {

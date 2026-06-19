@@ -1385,28 +1385,39 @@ public class TurChatFlowEngineService {
         Map<String, String> result = new LinkedHashMap<>();
         Map<String, String> safeSource = sourceSlots == null ? Map.of() : sourceSlots;
         for (Map.Entry<String, String> entry : mapping.entrySet()) {
-            String receivingName = entry.getKey();
-            String sourceName = entry.getValue();
-            if (receivingName == null || receivingName.isBlank()) {
-                continue;
-            }
-            if ("*".equals(receivingName)) {
-                // Wildcard: copy every source slot verbatim. Names that
-                // collide with explicit entries are overwritten in this
-                // loop's iteration order — explicit entries win when they
-                // come later (LinkedHashMap preserves insertion).
-                result.putAll(safeSource);
-                continue;
-            }
-            if (sourceName == null || sourceName.isBlank()) {
-                continue;
-            }
-            String value = safeSource.get(sourceName);
-            if (value != null) {
-                result.put(receivingName, value);
-            }
+            applyInheritanceEntry(entry, safeSource, result);
         }
         return result;
+    }
+
+    /**
+     * Applies a single inheritance mapping entry into {@code result}: handles
+     * the {@code "*"} wildcard (copy every source slot) and named pass-through
+     * / rename. Entries with a blank key, or a blank source for a named entry,
+     * are skipped.
+     */
+    private void applyInheritanceEntry(Map.Entry<String, String> entry,
+            Map<String, String> safeSource, Map<String, String> result) {
+        String receivingName = entry.getKey();
+        String sourceName = entry.getValue();
+        if (receivingName == null || receivingName.isBlank()) {
+            return;
+        }
+        if ("*".equals(receivingName)) {
+            // Wildcard: copy every source slot verbatim. Names that collide
+            // with explicit entries are overwritten in iteration order —
+            // explicit entries win when they come later (LinkedHashMap
+            // preserves insertion).
+            result.putAll(safeSource);
+            return;
+        }
+        if (sourceName == null || sourceName.isBlank()) {
+            return;
+        }
+        String value = safeSource.get(sourceName);
+        if (value != null) {
+            result.put(receivingName, value);
+        }
     }
 
     @SuppressWarnings("unchecked")

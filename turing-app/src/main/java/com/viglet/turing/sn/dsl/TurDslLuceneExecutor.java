@@ -92,28 +92,12 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         IndexSearcher searcher = instance.getSearcher();
                         TurDslQuery dslQuery = request.query() != null
                                 ? request.query() : new TurDslQuery.MatchAll();
-                        Query luceneQuery = translateQuery(dslQuery, fieldTypes);
 
                         int from = request.from() != null ? request.from() : 0;
                         int size = request.size() != null ? request.size() : 10;
                         int hitsNeeded = Math.max(1, from + size);
 
-                        // Min score filter
-                        if (request.minScore() != null) {
-                            luceneQuery = new BooleanQuery.Builder()
-                                    .add(luceneQuery, BooleanClause.Occur.MUST)
-                                    .setMinimumNumberShouldMatch(0)
-                                    .build();
-                        }
-
-                        // Post filter: wrap as FILTER clause
-                        if (request.postFilter() != null) {
-                            luceneQuery = new BooleanQuery.Builder()
-                                    .add(luceneQuery, BooleanClause.Occur.MUST)
-                                    .add(translateQuery(request.postFilter(), fieldTypes),
-                                            BooleanClause.Occur.FILTER)
-                                    .build();
-                        }
+                        Query luceneQuery = buildLuceneQuery(dslQuery, request, fieldTypes);
 
                         Sort sort = buildSort(request.sort(), fieldTypes);
 
@@ -128,14 +112,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                                 System.currentTimeMillis() - startTime, searcher, luceneQuery, from,
                                 hitsNeeded);
 
-                        // Collapse not natively supported in Lucene DSL
-                        if (request.collapse() != null) {
-                            log.debug("Collapse is not natively supported in Lucene DSL executor");
-                        }
-                        // Suggest not supported in Lucene DSL
-                        if (request.suggest() != null && !request.suggest().isEmpty()) {
-                            log.debug("Suggest is not supported in Lucene DSL executor");
-                        }
+                        logUnsupportedDslFeatures(request);
 
                         return Optional.of(response);
                     } catch (Exception e) {
@@ -143,6 +120,45 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         return Optional.empty();
                     }
                 });
+    }
+
+    /**
+     * Translates {@code dslQuery} and wraps it with the optional min-score and
+     * post-filter clauses from {@code request}.
+     */
+    private Query buildLuceneQuery(TurDslQuery dslQuery, TurDslQueryRequest request,
+            Map<String, TurSEFieldType> fieldTypes) {
+        Query luceneQuery = translateQuery(dslQuery, fieldTypes);
+
+        // Min score filter
+        if (request.minScore() != null) {
+            luceneQuery = new BooleanQuery.Builder()
+                    .add(luceneQuery, BooleanClause.Occur.MUST)
+                    .setMinimumNumberShouldMatch(0)
+                    .build();
+        }
+
+        // Post filter: wrap as FILTER clause
+        if (request.postFilter() != null) {
+            luceneQuery = new BooleanQuery.Builder()
+                    .add(luceneQuery, BooleanClause.Occur.MUST)
+                    .add(translateQuery(request.postFilter(), fieldTypes),
+                            BooleanClause.Occur.FILTER)
+                    .build();
+        }
+        return luceneQuery;
+    }
+
+    /** Logs DSL features the Lucene executor does not support (collapse, suggest). */
+    private void logUnsupportedDslFeatures(TurDslQueryRequest request) {
+        // Collapse not natively supported in Lucene DSL
+        if (request.collapse() != null) {
+            log.debug("Collapse is not natively supported in Lucene DSL executor");
+        }
+        // Suggest not supported in Lucene DSL
+        if (request.suggest() != null && !request.suggest().isEmpty()) {
+            log.debug("Suggest is not supported in Lucene DSL executor");
+        }
     }
 
     /**

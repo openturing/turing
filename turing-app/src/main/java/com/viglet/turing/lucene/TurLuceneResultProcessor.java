@@ -206,14 +206,7 @@ public class TurLuceneResultProcessor {
     TurSEResult createTurSEResult(Document doc, float score,
             Map<String, String> docHL, List<TurSNSiteFieldExt> hlFields) {
         Map<String, Object> fields = new LinkedHashMap<>();
-        Map<String, TurSEFieldType> hlFieldTypes = new LinkedHashMap<>();
-        if (hlFields != null) {
-            for (TurSNSiteFieldExt f : hlFields) {
-                if (f.getType() != null) {
-                    hlFieldTypes.put(f.getName(), f.getType());
-                }
-            }
-        }
+        Map<String, TurSEFieldType> hlFieldTypes = buildHlFieldTypes(hlFields);
 
         for (IndexableField f : doc.getFields()) {
             String name = f.name();
@@ -228,19 +221,39 @@ public class TurLuceneResultProcessor {
                 newVal = docHL.get(name);
             }
 
-            Object existing = fields.get(name);
-            if (existing == null) {
-                fields.put(name, newVal);
-            } else if (existing instanceof List<?> list) {
-                List<Object> mutable = new ArrayList<>(list);
-                mutable.add(newVal);
-                fields.put(name, mutable);
-            } else {
-                fields.put(name, new ArrayList<>(List.of(existing, newVal)));
-            }
+            mergeFieldValue(fields, name, newVal);
         }
         fields.put(TurLuceneConstants.SCORE, score);
         return TurSEResult.builder().fields(fields).build();
+    }
+
+    private static Map<String, TurSEFieldType> buildHlFieldTypes(List<TurSNSiteFieldExt> hlFields) {
+        Map<String, TurSEFieldType> hlFieldTypes = new LinkedHashMap<>();
+        if (hlFields != null) {
+            for (TurSNSiteFieldExt f : hlFields) {
+                if (f.getType() != null) {
+                    hlFieldTypes.put(f.getName(), f.getType());
+                }
+            }
+        }
+        return hlFieldTypes;
+    }
+
+    /**
+     * Merges {@code newVal} into {@code fields} under {@code name}, promoting
+     * to a mutable list when the field already holds one or more values.
+     */
+    private static void mergeFieldValue(Map<String, Object> fields, String name, Object newVal) {
+        Object existing = fields.get(name);
+        if (existing == null) {
+            fields.put(name, newVal);
+        } else if (existing instanceof List<?> list) {
+            List<Object> mutable = new ArrayList<>(list);
+            mutable.add(newVal);
+            fields.put(name, mutable);
+        } else {
+            fields.put(name, new ArrayList<>(List.of(existing, newVal)));
+        }
     }
 
     private static boolean isHLAttribute(Map<String, TurSEFieldType> hlFieldTypes, String attribute) {
