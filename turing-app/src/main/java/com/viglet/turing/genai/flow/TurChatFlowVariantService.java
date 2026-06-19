@@ -192,13 +192,7 @@ public class TurChatFlowVariantService {
         }
 
         // Index source nodes by id so we don't pay O(N²) walking the array per LLM patch.
-        Map<String, ObjectNode> sourceNodeById = new LinkedHashMap<>();
-        for (JsonNode node : root.path(NODES)) {
-            String id = textOrNull(node, "id");
-            if (id != null && node instanceof ObjectNode objectNode) {
-                sourceNodeById.put(id, objectNode);
-            }
-        }
+        Map<String, ObjectNode> sourceNodeById = indexNodesById(root);
 
         List<String> changed = new ArrayList<>();
         for (JsonNode patch : rewrittenNodes) {
@@ -206,35 +200,56 @@ public class TurChatFlowVariantService {
             if (id == null) {
                 continue;
             }
-            ObjectNode sourceNode = sourceNodeById.get(id);
-            if (sourceNode == null) {
-                log.debug("[ChatFlowVariant] LLM rewrote unknown node id '{}' — skipping", id);
-                continue;
-            }
-            JsonNode dataNode = sourceNode.path("data");
-            if (!(dataNode instanceof ObjectNode dataObject)) {
-                continue;
-            }
-            boolean nodeChanged = false;
-            for (String field : REWRITABLE_FIELDS) {
-                if (!patch.has(field)) {
-                    continue;
-                }
-                String newValue = textOrNull(patch, field);
-                if (newValue == null) {
-                    continue;
-                }
-                String oldValue = textOrNull(dataObject, field);
-                if (!newValue.equals(oldValue)) {
-                    dataObject.put(field, newValue);
-                    nodeChanged = true;
-                }
-            }
-            if (nodeChanged) {
+            if (applyNodePatch(id, patch, sourceNodeById)) {
                 changed.add(id);
             }
         }
         return changed;
+    }
+
+    /** Indexes the source flow's nodes by their id for O(1) patch lookup. */
+    private Map<String, ObjectNode> indexNodesById(JsonNode root) {
+        Map<String, ObjectNode> sourceNodeById = new LinkedHashMap<>();
+        for (JsonNode node : root.path(NODES)) {
+            String id = textOrNull(node, "id");
+            if (id != null && node instanceof ObjectNode objectNode) {
+                sourceNodeById.put(id, objectNode);
+            }
+        }
+        return sourceNodeById;
+    }
+
+    /**
+     * Applies one LLM patch to the matching source node's {@code data},
+     * overwriting only the rewritable fields whose value actually changed.
+     * Returns true when at least one field was updated.
+     */
+    private boolean applyNodePatch(String id, JsonNode patch, Map<String, ObjectNode> sourceNodeById) {
+        ObjectNode sourceNode = sourceNodeById.get(id);
+        if (sourceNode == null) {
+            log.debug("[ChatFlowVariant] LLM rewrote unknown node id '{}' — skipping", id);
+            return false;
+        }
+        JsonNode dataNode = sourceNode.path("data");
+        if (!(dataNode instanceof ObjectNode dataObject)) {
+            return false;
+        }
+        boolean nodeChanged = false;
+        for (String field : REWRITABLE_FIELDS) {
+            if (!patch.has(field)) {
+                continue;
+            }
+            String newValue = textOrNull(patch, field);
+            if (newValue == null) {
+                continue;
+            }
+            String oldValue = textOrNull(dataObject, field);
+            if (!newValue.equals(oldValue)) {
+                dataObject.put(field, newValue);
+                nodeChanged = true;
+            }
+        }
+        return nodeChanged;
     }
 
     /* ─────────────────────── LLM round-trip ─────────────────────── */

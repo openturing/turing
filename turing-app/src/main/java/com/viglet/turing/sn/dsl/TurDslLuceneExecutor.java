@@ -563,88 +563,98 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             return TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
         }
         return switch (type) {
-            case INT -> {
-                int lo;
-                if (gte != null) {
-                    lo = toInt(gte);
-                } else if (gt != null) {
-                    lo = Math.addExact(toInt(gt), 1);
-                } else {
-                    lo = Integer.MIN_VALUE;
-                }
-                int hi;
-                if (lte != null) {
-                    hi = toInt(lte);
-                } else if (lt != null) {
-                    hi = Math.addExact(toInt(lt), -1);
-                } else {
-                    hi = Integer.MAX_VALUE;
-                }
-                yield IntPoint.newRangeQuery(field, lo, hi);
-            }
-            case LONG, DATE -> {
-                long lo;
-                if (gte != null) {
-                    lo = toLong(gte);
-                } else if (gt != null) {
-                    lo = Math.addExact(toLong(gt), 1);
-                } else {
-                    lo = Long.MIN_VALUE;
-                }
-                long hi;
-                if (lte != null) {
-                    hi = toLong(lte);
-                } else if (lt != null) {
-                    hi = Math.addExact(toLong(lt), -1);
-                } else {
-                    hi = Long.MAX_VALUE;
-                }
-                yield LongPoint.newRangeQuery(field, lo, hi);
-            }
-            case FLOAT -> {
-                float lo;
-                if (gte != null) {
-                    lo = toFloat(gte);
-                } else if (gt != null) {
-                    lo = Math.nextUp(toFloat(gt));
-                } else {
-                    lo = Float.NEGATIVE_INFINITY;
-                }
-                float hi;
-                if (lte != null) {
-                    hi = toFloat(lte);
-                } else if (lt != null) {
-                    hi = Math.nextDown(toFloat(lt));
-                } else {
-                    hi = Float.POSITIVE_INFINITY;
-                }
-                yield FloatPoint.newRangeQuery(field, lo, hi);
-            }
-            case DOUBLE, CURRENCY -> {
-                double lo;
-                if (gte != null) {
-                    lo = toDouble(gte);
-                } else if (gt != null) {
-                    lo = Math.nextUp(toDouble(gt));
-                } else {
-                    lo = Double.NEGATIVE_INFINITY;
-                }
-                double hi;
-                if (lte != null) {
-                    hi = toDouble(lte);
-                } else if (lt != null) {
-                    hi = Math.nextDown(toDouble(lt));
-                } else {
-                    hi = Double.POSITIVE_INFINITY;
-                }
-                yield DoublePoint.newRangeQuery(field, lo, hi);
-            }
-            default -> {
-                String lower = rangeBoundToString(gte, gt);
-                String upper = rangeBoundToString(lte, lt);
-                yield TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
-            }
+            case INT -> intRangeQuery(field, gte, gt, lte, lt);
+            case LONG, DATE -> longRangeQuery(field, gte, gt, lte, lt);
+            case FLOAT -> floatRangeQuery(field, gte, gt, lte, lt);
+            case DOUBLE, CURRENCY -> doubleRangeQuery(field, gte, gt, lte, lt);
+            default -> stringRangeQuery(field, gte, gt, lte, lt);
         };
+    }
+
+    private static Query intRangeQuery(String field, Object gte, Object gt, Object lte, Object lt) {
+        int lo;
+        if (gte != null) {
+            lo = toInt(gte);
+        } else if (gt != null) {
+            lo = Math.addExact(toInt(gt), 1);
+        } else {
+            lo = Integer.MIN_VALUE;
+        }
+        int hi;
+        if (lte != null) {
+            hi = toInt(lte);
+        } else if (lt != null) {
+            hi = Math.addExact(toInt(lt), -1);
+        } else {
+            hi = Integer.MAX_VALUE;
+        }
+        return IntPoint.newRangeQuery(field, lo, hi);
+    }
+
+    private static Query longRangeQuery(String field, Object gte, Object gt, Object lte, Object lt) {
+        long lo;
+        if (gte != null) {
+            lo = toLong(gte);
+        } else if (gt != null) {
+            lo = Math.addExact(toLong(gt), 1);
+        } else {
+            lo = Long.MIN_VALUE;
+        }
+        long hi;
+        if (lte != null) {
+            hi = toLong(lte);
+        } else if (lt != null) {
+            hi = Math.addExact(toLong(lt), -1);
+        } else {
+            hi = Long.MAX_VALUE;
+        }
+        return LongPoint.newRangeQuery(field, lo, hi);
+    }
+
+    private static Query floatRangeQuery(String field, Object gte, Object gt, Object lte, Object lt) {
+        float lo;
+        if (gte != null) {
+            lo = toFloat(gte);
+        } else if (gt != null) {
+            lo = Math.nextUp(toFloat(gt));
+        } else {
+            lo = Float.NEGATIVE_INFINITY;
+        }
+        float hi;
+        if (lte != null) {
+            hi = toFloat(lte);
+        } else if (lt != null) {
+            hi = Math.nextDown(toFloat(lt));
+        } else {
+            hi = Float.POSITIVE_INFINITY;
+        }
+        return FloatPoint.newRangeQuery(field, lo, hi);
+    }
+
+    private static Query doubleRangeQuery(String field, Object gte, Object gt, Object lte, Object lt) {
+        double lo;
+        if (gte != null) {
+            lo = toDouble(gte);
+        } else if (gt != null) {
+            lo = Math.nextUp(toDouble(gt));
+        } else {
+            lo = Double.NEGATIVE_INFINITY;
+        }
+        double hi;
+        if (lte != null) {
+            hi = toDouble(lte);
+        } else if (lt != null) {
+            hi = Math.nextDown(toDouble(lt));
+        } else {
+            hi = Double.POSITIVE_INFINITY;
+        }
+        return DoublePoint.newRangeQuery(field, lo, hi);
+    }
+
+    private static Query stringRangeQuery(String field, Object gte, Object gt, Object lte, Object lt) {
+        String lower = rangeBoundToString(gte, gt);
+        String upper = rangeBoundToString(lte, lt);
+        return TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
     }
 
     /**
