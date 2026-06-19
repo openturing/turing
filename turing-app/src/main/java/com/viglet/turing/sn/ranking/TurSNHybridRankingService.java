@@ -213,6 +213,46 @@ public class TurSNHybridRankingService {
      * @param page      the BM25-ordered result page
      * @return a new list with the page reordered by the pipeline, or {@code page} as-is
      */
+    /** Stage 1: index the BM25 page by id into {@code byId}, capturing 1-based lexical rank + hit docs. */
+    private void indexBm25Page(List<TurSEResult> page, Map<String, TurSEResult> byId,
+            Map<String, Integer> lexicalRank, List<Document> bm25Hits) {
+        for (TurSEResult result : page) {
+            String id = asString(result.getFields().get(TurSNFieldName.ID));
+            if (StringUtils.hasText(id) && !byId.containsKey(id)) {
+                byId.put(id, result);
+                lexicalRank.put(id, lexicalRank.size() + 1);
+                bm25Hits.add(Document.builder().id(id).text("").build());
+            }
+        }
+    }
+
+    /** Stage 2: keep only vector hits already on the page, capturing 1-based semantic rank. */
+    private List<Document> collectVectorHits(List<Document> vectorAll, Map<String, TurSEResult> byId,
+            Map<String, Integer> semanticRank) {
+        List<Document> vectorHits = new ArrayList<>();
+        if (vectorAll != null) {
+            for (Document d : vectorAll) {
+                if (d.getId() != null && byId.containsKey(d.getId())
+                        && !semanticRank.containsKey(d.getId())) {
+                    semanticRank.put(d.getId(), vectorHits.size() + 1);
+                    vectorHits.add(d);
+                }
+            }
+        }
+        return vectorHits;
+    }
+
+    /** Stage 2.5: capture 1-based fused rank + RRF score per id from the fused list. */
+    private void rankFused(List<Document> fused, Map<String, Integer> fusedRank,
+            Map<String, Double> rrfScore) {
+        for (Document d : fused) {
+            if (d.getId() != null && !fusedRank.containsKey(d.getId())) {
+                fusedRank.put(d.getId(), fusedRank.size() + 1);
+                rrfScore.put(d.getId(), d.getScore());
+            }
+        }
+    }
+
     public List<TurSEResult> fuse(TurSNSite turSNSite, Locale locale, String query, List<TurSEResult> page) {
         if (!isEnabled(turSNSite) || page == null || page.size() < 2 || !StringUtils.hasText(query)) {
             return page;
@@ -226,14 +266,7 @@ public class TurSNHybridRankingService {
             Map<String, TurSEResult> byId = new LinkedHashMap<>();
             Map<String, Integer> lexicalRank = new LinkedHashMap<>();
             List<Document> bm25Hits = new ArrayList<>(page.size());
-            for (TurSEResult result : page) {
-                String id = asString(result.getFields().get(TurSNFieldName.ID));
-                if (StringUtils.hasText(id) && !byId.containsKey(id)) {
-                    byId.put(id, result);
-                    lexicalRank.put(id, lexicalRank.size() + 1);
-                    bm25Hits.add(Document.builder().id(id).text("").build());
-                }
-            }
+            indexBm25Page(page, byId, lexicalRank, bm25Hits);
             if (byId.size() < 2) {
                 return page;
             }
@@ -246,29 +279,15 @@ public class TurSNHybridRankingService {
                     .similarityThreshold(0.0)
                     .build();
             List<Document> vectorAll = infra.vectorStore().similaritySearch(request);
-            List<Document> vectorHits = new ArrayList<>();
             Map<String, Integer> semanticRank = new LinkedHashMap<>();
-            if (vectorAll != null) {
-                for (Document d : vectorAll) {
-                    if (d.getId() != null && byId.containsKey(d.getId())
-                            && !semanticRank.containsKey(d.getId())) {
-                        semanticRank.put(d.getId(), vectorHits.size() + 1);
-                        vectorHits.add(d);
-                    }
-                }
-            }
+            List<Document> vectorHits = collectVectorHits(vectorAll, byId, semanticRank);
             if (vectorHits.isEmpty()) {
                 return page;
             }
             List<Document> fused = TurRagRrf.fuse(vectorHits, bm25Hits, byId.size());
             Map<String, Integer> fusedRank = new LinkedHashMap<>();
             Map<String, Double> rrfScore = new LinkedHashMap<>();
-            for (Document d : fused) {
-                if (d.getId() != null && !fusedRank.containsKey(d.getId())) {
-                    fusedRank.put(d.getId(), fusedRank.size() + 1);
-                    rrfScore.put(d.getId(), d.getScore());
-                }
-            }
+            rankFused(fused, fusedRank, rrfScore);
             // Stage 3 (rerank, optional): re-order the fused page through the seam.
             TurSNRankingMode mode = modeOf(turSNSite);
             List<String> finalOrder = new ArrayList<>(fusedRank.keySet());
