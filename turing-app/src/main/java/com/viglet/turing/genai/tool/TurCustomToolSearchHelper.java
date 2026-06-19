@@ -449,18 +449,14 @@ public class TurCustomToolSearchHelper {
         if (sort != null && !sort.isBlank()) snParams.setSort(sort);
         snParams.setLocale(resolveLocale(asString(params, "locale"), site));
 
-        List<String> fq = asStringList(params.get("fq"));
-        // templateName=<v> shorthand → fq+="templateName:<v>". Mirrors the
-        // ann() helper's same-named shortcut for muscle-memory parity.
-        Object templateName = params.get(TEMPLATE_NAME);
-        if (templateName != null) {
-            String tn = templateName.toString().trim();
-            if (!tn.isEmpty()) {
-                if (fq == null) fq = new ArrayList<>();
-                else fq = new ArrayList<>(fq);
-                fq.add("templateName:" + tn);
-            }
-        }
+        applyFilterQueries(snParams, params);
+
+        return snParams;
+    }
+
+    /** Applies the fq / fqAnd / fqOr / fqOp / fqiOp / fl filter-query params onto {@code snParams}. */
+    private void applyFilterQueries(TurSNSearchParams snParams, Map<String, Object> params) {
+        List<String> fq = appendTemplateNameFilter(params, asStringList(params.get("fq")));
         if (fq != null && !fq.isEmpty()) snParams.setFq(fq);
 
         List<String> fqAnd = asStringList(params.get("fqAnd"));
@@ -475,8 +471,25 @@ public class TurCustomToolSearchHelper {
 
         List<String> fl = asStringList(params.get("fl"));
         if (fl != null && !fl.isEmpty()) snParams.setFl(fl);
+    }
 
-        return snParams;
+    /**
+     * Applies the {@code templateName=<v>} shorthand → {@code fq+="templateName:<v>"}
+     * (mirrors the ann() helper's same-named shortcut). Returns the (possibly new)
+     * filter-query list, leaving {@code fq} untouched when there's no template name.
+     */
+    private List<String> appendTemplateNameFilter(Map<String, Object> params, List<String> fq) {
+        Object templateName = params.get(TEMPLATE_NAME);
+        if (templateName == null) {
+            return fq;
+        }
+        String tn = templateName.toString().trim();
+        if (tn.isEmpty()) {
+            return fq;
+        }
+        List<String> result = fq == null ? new ArrayList<>() : new ArrayList<>(fq);
+        result.add("templateName:" + tn);
+        return result;
     }
 
     /**

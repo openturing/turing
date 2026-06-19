@@ -1074,29 +1074,41 @@ public final class ChatFlowOps {
         List<PlanItem> out = new java.util.ArrayList<>();
         int seq = 1;
         for (Map<String, Object> row : rows) {
-            if (row == null) {
+            PlanItem item = parsePlanItem(row, seq);
+            if (item == null) {
                 continue;
             }
-            Object titleObj = row.get("title");
-            String title = titleObj == null ? null : titleObj.toString().trim();
-            if (title == null || title.isBlank()) {
-                continue;
-            }
-            Object idObj = row.get("id");
-            String id = (idObj == null || idObj.toString().isBlank())
-                    ? String.valueOf(seq)
-                    : idObj.toString().trim();
-            Object statusObj = row.get("status");
-            String status = (statusObj != null && PlanItem.DONE.equalsIgnoreCase(statusObj.toString().trim()))
-                    ? PlanItem.DONE
-                    : PlanItem.PENDING;
-            out.add(new PlanItem(id, title, status));
+            out.add(item);
             seq++;
             if (out.size() >= MAX_PLAN_ITEMS) {
                 break;
             }
         }
         return out;
+    }
+
+    /**
+     * Parses one plan row into a {@link PlanItem}, or null when the row is null
+     * or has no usable title. {@code seq} is the fallback id for rows without one.
+     */
+    private static PlanItem parsePlanItem(Map<String, Object> row, int seq) {
+        if (row == null) {
+            return null;
+        }
+        Object titleObj = row.get("title");
+        String title = titleObj == null ? null : titleObj.toString().trim();
+        if (title == null || title.isBlank()) {
+            return null;
+        }
+        Object idObj = row.get("id");
+        String id = (idObj == null || idObj.toString().isBlank())
+                ? String.valueOf(seq)
+                : idObj.toString().trim();
+        Object statusObj = row.get("status");
+        String status = (statusObj != null && PlanItem.DONE.equalsIgnoreCase(statusObj.toString().trim()))
+                ? PlanItem.DONE
+                : PlanItem.PENDING;
+        return new PlanItem(id, title, status);
     }
 
     /**
