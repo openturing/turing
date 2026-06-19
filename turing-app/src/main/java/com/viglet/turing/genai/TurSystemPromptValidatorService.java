@@ -71,7 +71,7 @@ public class TurSystemPromptValidatorService {
     // word, which keeps incidental mentions ("translate the Portuguese term")
     // from registering as a directive.
     private static final Pattern LANGUAGE_DIRECTIVE = Pattern.compile(
-            "(?i)(respond|reply|answer|write|always respond|responda|responder|escreva|sempre responda)"
+            "(?iu)(respond|reply|answer|write|always respond|responda|responder|escreva|sempre responda)"
                     + "[^\\n]{0,25}?\\b(english|ingl[eê]s|portuguese|portugu[eê]s|spanish|espa[nñ]ol|espanhol"
                     + "|french|fran[cç][eê]s|german|alem[aã]o|italian|italiano)\\b");
 
