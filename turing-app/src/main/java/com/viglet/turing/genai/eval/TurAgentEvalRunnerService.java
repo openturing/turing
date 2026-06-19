@@ -232,6 +232,24 @@ public class TurAgentEvalRunnerService {
 
     // ─────────────────────────── Scoring ───────────────────────────
 
+    /**
+     * Compares each expected slot against {@code capturedSlots} (normalized),
+     * appending a {@link SlotDiff} per slot. Returns the number that matched.
+     */
+    private int countMatchedSlots(Map<String, String> expectedSlots,
+            Map<String, String> capturedSlots, List<SlotDiff> slotDiffs) {
+        int matched = 0;
+        for (Map.Entry<String, String> e : expectedSlots.entrySet()) {
+            String actual = capturedSlots.get(e.getKey());
+            boolean match = normalize(actual).equals(normalize(e.getValue()));
+            if (match) {
+                matched++;
+            }
+            slotDiffs.add(new SlotDiff(e.getKey(), e.getValue(), actual, match));
+        }
+        return matched;
+    }
+
     private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalCase evalCase, ChatModel judgeModel,
             List<String> turns, Map<String, String> capturedSlots,
             String finalNodeId, String actualOutcome) {
@@ -242,15 +260,7 @@ public class TurAgentEvalRunnerService {
         Map<String, String> expectedSlots = parseSlots(evalCase.getExpectedSlotsJson());
         List<SlotDiff> slotDiffs = new ArrayList<>();
         if (!expectedSlots.isEmpty()) {
-            int matched = 0;
-            for (Map.Entry<String, String> e : expectedSlots.entrySet()) {
-                String actual = capturedSlots.get(e.getKey());
-                boolean match = normalize(actual).equals(normalize(e.getValue()));
-                if (match) {
-                    matched++;
-                }
-                slotDiffs.add(new SlotDiff(e.getKey(), e.getValue(), actual, match));
-            }
+            int matched = countMatchedSlots(expectedSlots, capturedSlots, slotDiffs);
             double slotScore = (double) matched / expectedSlots.size();
             dimensionScores.add(slotScore);
             allMatched &= matched == expectedSlots.size();

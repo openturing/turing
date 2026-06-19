@@ -154,21 +154,7 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
 
         StructuredVerdict verdict = parseStructuredVerdict(ctx.assistantMessage());
         if (verdict == null) {
-            // Log the raw response so the next failure tells us WHY the LLM
-            // ignored the JSON contract — usually the model produced a normal
-            // conversational reply, sometimes it wrapped JSON in fences, etc.
-            log.warn("[StructuredOutput] Could not parse JSON on node '{}'. Raw response ({} chars): {}",
-                    node.id(),
-                    ctx.assistantMessage() == null ? 0 : ctx.assistantMessage().length(),
-                    truncate(ctx.assistantMessage(), 500));
-            // Delegate to the judge: a focused, JSON-only LLM call. It runs
-            // its own heuristic fallback if the judge call also fails.
-            if (judgeFallback != null && ctx.auxiliaryModel() != null) {
-                log.info("[StructuredOutput] Falling back to dedicated judge call");
-                return judgeFallback.advance(ctx);
-            }
-            log.info("[StructuredOutput] No judge model available — falling back to heuristic");
-            return heuristicFallback.advance(ctx);
+            return fallbackOnParseFailure(ctx, node);
         }
 
         TurChatFlowState state = ctx.state();
@@ -185,31 +171,8 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
         }
 
         boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
-        String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
-        boolean hasCollected = collected != null && !collected.isBlank();
-
-        // Defensive fallback: gpt-4o-mini sometimes marks ready_to_advance=true
-        // but skips collected_value (especially for short yes/no answers like
-        // "sim"). When the model thought we should advance and there IS an
-        // output variable to fill, use the user's raw message as the value
-        // instead of dropping the turn — better than ending up with an empty
-        // variable that breaks downstream conditions.
-        if (!hasCollected && hasOutputVar && verdict.readyToAdvance()
-                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
-            collected = ctx.userMessage().trim();
-            hasCollected = true;
-            log.info("[StructuredOutput] LLM said advance but skipped extraction — "
-                    + "using user message '{}' as value for '{}'",
-                    collected, node.outputVariable());
-        }
-
-        // Normalize obvious yes/no tokens to lowercase so downstream SpEL
-        // conditions like `stuffedCrust == 'sim'` match regardless of how the
-        // model cased the value.
-        if (hasCollected) {
-            collected = ChatFlowOps.normalizeYesNo(collected);
-        }
-        if (hasCollected && hasOutputVar) {
+        String collected = resolveCollectedValue(ctx, node, verdict, hasOutputVar);
+        if (collected != null && hasOutputVar) {
             variables.put(node.outputVariable().trim(), collected);
             log.info("[StructuredOutput] Captured '{}' = '{}'", node.outputVariable(), collected);
         }
@@ -218,7 +181,7 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
         // verdict cannot push the flow past a required field (e.g. "pizza" as
         // a phone).
         boolean valid = !hasOutputVar
-                || (hasCollected
+                || (collected != null
                         && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
         if (!verdict.readyToAdvance() || !valid) {
             log.info("[StructuredOutput] Stay on node '{}' (advance={}, valid={})",
@@ -234,6 +197,56 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
         }
         ChatFlowOps.writeVariables(state, variables);
         return reply;
+    }
+
+    /**
+     * When the structured-output JSON couldn't be parsed, logs the raw reply and
+     * delegates to the dedicated judge (if available) or the heuristic fallback.
+     */
+    private String fallbackOnParseFailure(AdvanceContext ctx, ChatFlowNode node) {
+        // Log the raw response so the next failure tells us WHY the LLM
+        // ignored the JSON contract — usually the model produced a normal
+        // conversational reply, sometimes it wrapped JSON in fences, etc.
+        log.warn("[StructuredOutput] Could not parse JSON on node '{}'. Raw response ({} chars): {}",
+                node.id(),
+                ctx.assistantMessage() == null ? 0 : ctx.assistantMessage().length(),
+                truncate(ctx.assistantMessage(), 500));
+        // Delegate to the judge: a focused, JSON-only LLM call. It runs
+        // its own heuristic fallback if the judge call also fails.
+        if (judgeFallback != null && ctx.auxiliaryModel() != null) {
+            log.info("[StructuredOutput] Falling back to dedicated judge call");
+            return judgeFallback.advance(ctx);
+        }
+        log.info("[StructuredOutput] No judge model available — falling back to heuristic");
+        return heuristicFallback.advance(ctx);
+    }
+
+    /**
+     * Resolves the captured slot value from the verdict (trimmed + yes/no
+     * normalized), or null when nothing usable was collected. Defensive fallback:
+     * gpt-4o-mini sometimes marks ready_to_advance=true but skips collected_value
+     * (e.g. short "sim"); when it wanted to advance and there's an output var,
+     * fall back to the user's raw message rather than dropping the turn.
+     */
+    private String resolveCollectedValue(AdvanceContext ctx, ChatFlowNode node,
+            StructuredVerdict verdict, boolean hasOutputVar) {
+        String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
+        boolean hasCollected = collected != null && !collected.isBlank();
+        if (!hasCollected && hasOutputVar && verdict.readyToAdvance()
+                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
+            collected = ctx.userMessage().trim();
+            hasCollected = true;
+            log.info("[StructuredOutput] LLM said advance but skipped extraction — "
+                    + "using user message '{}' as value for '{}'",
+                    collected, node.outputVariable());
+        }
+        if (!hasCollected) {
+            return null;
+        }
+        // Normalize obvious yes/no tokens to lowercase so downstream SpEL
+        // conditions like `stuffedCrust == 'sim'` match regardless of how the
+        // model cased the value.
+        return ChatFlowOps.normalizeYesNo(collected);
     }
 
     private static String truncate(String s, int max) {
