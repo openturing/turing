@@ -178,42 +178,31 @@ public class TurAIAgentImportService {
      */
     private ResolvedRefs resolveAllReferences(TurExchange exchange, File extractFolder) {
         ResolvedRefs refs = new ResolvedRefs();
-        if (exchange.getPersonas() != null) {
-            for (TurPersona p : exchange.getPersonas()) {
-                String originalId = p.getId();
-                TurPersona resolved = upsertPersona(p);
-                refs.personas.put(originalId, resolved);
-                if (!originalId.equals(resolved.getId())) {
-                    refs.personaIdRemap.put(originalId, resolved.getId());
-                }
+        resolveEach(exchange.getPersonas(), p -> {
+            String originalId = p.getId();
+            TurPersona resolved = upsertPersona(p);
+            refs.personas.put(originalId, resolved);
+            if (!originalId.equals(resolved.getId())) {
+                refs.personaIdRemap.put(originalId, resolved.getId());
             }
-        }
-        if (exchange.getLlm() != null) {
-            for (TurLLMInstance llm : exchange.getLlm()) {
-                refs.llms.put(llm.getId(), upsertLLM(llm));
-            }
-        }
-        if (exchange.getMcpServers() != null) {
-            for (TurMcpServer mcp : exchange.getMcpServers()) {
-                refs.mcpServers.put(mcp.getId(), upsertMcpServer(mcp));
-            }
-        }
-        if (exchange.getStore() != null) {
-            for (TurStoreInstance s : exchange.getStore()) {
-                refs.stores.put(s.getId(), upsertStore(s));
-            }
-        }
-        if (exchange.getEmbeddingModels() != null) {
-            for (TurEmbeddingModel em : exchange.getEmbeddingModels()) {
-                refs.embeddings.put(em.getId(), upsertEmbedding(em, refs));
-            }
-        }
-        if (exchange.getCustomTools() != null) {
-            for (TurCustomToolExchange tool : exchange.getCustomTools()) {
-                refs.customTools.put(tool.getId(), upsertCustomTool(tool, extractFolder));
-            }
-        }
+        });
+        resolveEach(exchange.getLlm(), llm -> refs.llms.put(llm.getId(), upsertLLM(llm)));
+        resolveEach(exchange.getMcpServers(),
+                mcp -> refs.mcpServers.put(mcp.getId(), upsertMcpServer(mcp)));
+        resolveEach(exchange.getStore(), s -> refs.stores.put(s.getId(), upsertStore(s)));
+        resolveEach(exchange.getEmbeddingModels(),
+                em -> refs.embeddings.put(em.getId(), upsertEmbedding(em, refs)));
+        resolveEach(exchange.getCustomTools(),
+                tool -> refs.customTools.put(tool.getId(), upsertCustomTool(tool, extractFolder)));
         return refs;
+    }
+
+    /** Applies {@code resolver} to each item when the collection is non-null. */
+    private static <T> void resolveEach(java.util.Collection<T> items,
+            java.util.function.Consumer<T> resolver) {
+        if (items != null) {
+            items.forEach(resolver);
+        }
     }
 
     private TurPersona upsertPersona(TurPersona p) {

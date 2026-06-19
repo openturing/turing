@@ -275,27 +275,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
         // are joined with AND. Keys are sanitized to identifier-safe characters
         // because they're interpolated into the SQL (the values are bound).
         List<Object> bindings = new ArrayList<>();
-        StringBuilder whereClause = new StringBuilder();
-        if (filters != null && !filters.isEmpty()) {
-            for (Map.Entry<String, List<String>> e : filters.entrySet()) {
-                String key = sanitizeMetadataKey(e.getKey());
-                List<String> values = e.getValue();
-                if (key == null || values == null || values.isEmpty()) {
-                    continue;
-                }
-                List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
-                if (nonBlank.isEmpty()) {
-                    continue;
-                }
-                if (!whereClause.isEmpty()) {
-                    whereClause.append(" AND ");
-                }
-                String placeholders = String.join(",", nonBlank.stream().map(v -> "?").toList());
-                whereClause.append("metadata ->> '").append(key).append("' IN (").append(placeholders).append(")");
-                bindings.addAll(nonBlank);
-            }
-        }
-        String whereSql = !whereClause.isEmpty() ? " WHERE " + whereClause : "";
+        String whereSql = buildFilterWhereSql(filters, bindings);
 
         long total;
         try {
@@ -330,6 +310,48 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             return new TurStoreChunkPage(List.of(), total);
         }
         return new TurStoreChunkPage(chunks, total);
+    }
+
+    /**
+     * Builds a parameterized WHERE clause from the filter map. Each key/list
+     * becomes a {@code metadata ->> 'key' IN (?, ?, ...)} clause; multiple keys
+     * are joined with AND. Keys are sanitized to identifier-safe characters
+     * because they're interpolated into the SQL (the values are bound, appended
+     * to {@code bindings}). Returns the {@code " WHERE …"} prefix or an empty
+     * string when no usable filters were supplied.
+     */
+    private String buildFilterWhereSql(Map<String, List<String>> filters, List<Object> bindings) {
+        StringBuilder whereClause = new StringBuilder();
+        if (filters != null) {
+            for (Map.Entry<String, List<String>> e : filters.entrySet()) {
+                appendFilterClause(e, whereClause, bindings);
+            }
+        }
+        return !whereClause.isEmpty() ? " WHERE " + whereClause : "";
+    }
+
+    /**
+     * Appends one {@code metadata ->> 'key' IN (?, …)} clause for {@code entry}
+     * (AND-joined), binding the non-blank values. No-op when the key is unsafe
+     * or there are no non-blank values.
+     */
+    private void appendFilterClause(Map.Entry<String, List<String>> entry,
+            StringBuilder whereClause, List<Object> bindings) {
+        String key = sanitizeMetadataKey(entry.getKey());
+        List<String> values = entry.getValue();
+        if (key == null || values == null || values.isEmpty()) {
+            return;
+        }
+        List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
+        if (nonBlank.isEmpty()) {
+            return;
+        }
+        if (!whereClause.isEmpty()) {
+            whereClause.append(" AND ");
+        }
+        String placeholders = String.join(",", nonBlank.stream().map(v -> "?").toList());
+        whereClause.append("metadata ->> '").append(key).append("' IN (").append(placeholders).append(")");
+        bindings.addAll(nonBlank);
     }
 
     /**

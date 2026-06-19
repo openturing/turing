@@ -177,48 +177,52 @@ public class TurDslToolService {
                         index, searchLocale);
             }
 
-            TurDslSearchResponse response = responseOpt.get();
-            StringBuilder sb = new StringBuilder();
-            long total = response.hits() != null && response.hits().total() != null
-                    ? response.hits().total().value() : 0;
-            int shown = response.hits() != null && response.hits().hits() != null
-                    ? response.hits().hits().size() : 0;
-
-            sb.append("Found %d results (showing %d). Took %dms.\n".formatted(
-                    total, shown, response.took()));
-
-            // Hits
-            if (response.hits() != null && response.hits().hits() != null) {
-                sb.append(toJsonOrError(
-                        response.hits().hits().stream()
-                                .map(hit -> {
-                                    Map<String, Object> doc = new LinkedHashMap<>();
-                                    doc.put("_id", hit.id());
-                                    doc.put("_score", hit.score());
-                                    if (hit.source() != null) doc.putAll(hit.source());
-                                    return doc;
-                                }).toList(),
-                        "[Error serializing hits]"));
-            }
-
-            // Aggregations
-            if (response.aggregations() != null && !response.aggregations().isEmpty()) {
-                sb.append("\n\nAggregations:\n");
-                sb.append(toJsonOrError(response.aggregations(), "[Error serializing aggregations]"));
-            }
-
-            // Suggest
-            if (response.suggest() != null && !response.suggest().isEmpty()) {
-                sb.append("\n\nSuggestions:\n");
-                sb.append(toJsonOrError(response.suggest(), "[Error serializing suggestions]"));
-            }
-
-            return sb.toString();
+            return formatSearchResponse(responseOpt.get());
         } catch (Exception e) {
             log.error("[DSL Tool] dsl_search failed", e);
             return "Error executing DSL search: " + e.getMessage()
                     + "\nEnsure the query_body is valid Elasticsearch Query DSL JSON.";
         }
+    }
+
+    /** Renders a search response into the human-readable tool reply (hits + aggs + suggest). */
+    private String formatSearchResponse(TurDslSearchResponse response) {
+        StringBuilder sb = new StringBuilder();
+        long total = response.hits() != null && response.hits().total() != null
+                ? response.hits().total().value() : 0;
+        int shown = response.hits() != null && response.hits().hits() != null
+                ? response.hits().hits().size() : 0;
+
+        sb.append("Found %d results (showing %d). Took %dms.\n".formatted(
+                total, shown, response.took()));
+
+        // Hits
+        if (response.hits() != null && response.hits().hits() != null) {
+            sb.append(toJsonOrError(
+                    response.hits().hits().stream()
+                            .map(hit -> {
+                                Map<String, Object> doc = new LinkedHashMap<>();
+                                doc.put("_id", hit.id());
+                                doc.put("_score", hit.score());
+                                if (hit.source() != null) doc.putAll(hit.source());
+                                return doc;
+                            }).toList(),
+                    "[Error serializing hits]"));
+        }
+
+        // Aggregations
+        if (response.aggregations() != null && !response.aggregations().isEmpty()) {
+            sb.append("\n\nAggregations:\n");
+            sb.append(toJsonOrError(response.aggregations(), "[Error serializing aggregations]"));
+        }
+
+        // Suggest
+        if (response.suggest() != null && !response.suggest().isEmpty()) {
+            sb.append("\n\nSuggestions:\n");
+            sb.append(toJsonOrError(response.suggest(), "[Error serializing suggestions]"));
+        }
+
+        return sb.toString();
     }
 
     /** Serializes {@code value} to JSON, or returns {@code errorPlaceholder} on failure. */

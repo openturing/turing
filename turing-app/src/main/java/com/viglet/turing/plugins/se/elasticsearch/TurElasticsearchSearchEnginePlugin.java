@@ -238,47 +238,57 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 .map(instance -> {
                     co.elastic.clients.elasticsearch.core.BulkRequest.Builder bulk =
                             new co.elastic.clients.elasticsearch.core.BulkRequest.Builder();
-                    int queued = 0;
-                    for (Map<String, Object> attrs : documents) {
-                        String docId = java.util.Optional.ofNullable(attrs.get("id"))
-                                .map(Object::toString).orElse(null);
-                        if (docId == null) {
-                            log.warn("[ES] bulk standalone '{}': skipping doc with no id", indexName);
-                            continue;
-                        }
-                        final String id = docId;
-                        bulk.operations(op -> op.index(idx -> idx
-                                .index(indexName).id(id).document(attrs)));
-                        queued++;
-                    }
+                    int queued = queueBulkOperations(bulk, indexName, documents);
                     if (queued == 0) {
                         return 0;
                     }
                     try {
                         co.elastic.clients.elasticsearch.core.BulkResponse resp =
                                 instance.getClient().bulk(bulk.build());
-                        // The bulk API may partially succeed — only count
-                        // items without an errors flag. resp.errors() is
-                        // the global flag; per-item check is more precise.
-                        if (resp.errors()) {
-                            int ok = 0;
-                            for (var item : resp.items()) {
-                                co.elastic.clients.elasticsearch._types.ErrorCause itemError = item.error();
-                                if (itemError == null) {
-                                    ok++;
-                                } else {
-                                    log.warn("[ES] bulk standalone '{}': item id='{}' failed: {}",
-                                            indexName, item.id(), itemError.reason());
-                                }
-                            }
-                            return ok;
-                        }
-                        return queued;
+                        // The bulk API may partially succeed — only count items
+                        // without an error. resp.errors() is the global flag;
+                        // the per-item check is more precise.
+                        return resp.errors() ? countBulkSuccesses(resp, indexName) : queued;
                     } catch (Exception e) {
                         log.warn("[ES] bulk standalone '{}' failed: {}", indexName, e.getMessage());
                         return 0;
                     }
                 }).orElse(0);
+    }
+
+    /** Queues an index op per document with a non-null id, returning the count queued. */
+    private int queueBulkOperations(co.elastic.clients.elasticsearch.core.BulkRequest.Builder bulk,
+            String indexName, List<Map<String, Object>> documents) {
+        int queued = 0;
+        for (Map<String, Object> attrs : documents) {
+            String docId = java.util.Optional.ofNullable(attrs.get("id"))
+                    .map(Object::toString).orElse(null);
+            if (docId == null) {
+                log.warn("[ES] bulk standalone '{}': skipping doc with no id", indexName);
+                continue;
+            }
+            final String id = docId;
+            bulk.operations(op -> op.index(idx -> idx
+                    .index(indexName).id(id).document(attrs)));
+            queued++;
+        }
+        return queued;
+    }
+
+    /** Counts the bulk items that succeeded, logging each per-item failure. */
+    private int countBulkSuccesses(co.elastic.clients.elasticsearch.core.BulkResponse resp,
+            String indexName) {
+        int ok = 0;
+        for (var item : resp.items()) {
+            co.elastic.clients.elasticsearch._types.ErrorCause itemError = item.error();
+            if (itemError == null) {
+                ok++;
+            } else {
+                log.warn("[ES] bulk standalone '{}': item id='{}' failed: {}",
+                        indexName, item.id(), itemError.reason());
+            }
+        }
+        return ok;
     }
 
     @Override
