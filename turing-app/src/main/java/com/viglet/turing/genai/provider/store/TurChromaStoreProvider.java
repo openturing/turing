@@ -242,6 +242,22 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
      * legacy chunks indexed before the metadata convention existed) — same
      * semantics as the Lucene provider.
      */
+    /** Adds the first non-blank document-identifier value from each metadata row to {@code identifiers}. */
+    private void collectIdentifiers(List<Map<String, String>> metadatas, Set<String> identifiers) {
+        for (Map<String, String> meta : metadatas) {
+            if (meta == null || meta.isEmpty()) {
+                continue;
+            }
+            for (String key : DOCUMENT_IDENTIFIER_KEYS) {
+                String value = meta.get(key);
+                if (value != null && !value.isBlank()) {
+                    identifiers.add(value);
+                    break;
+                }
+            }
+        }
+    }
+
     private long countDistinctDocuments(ChromaApi chromaApi, String tenantName, String databaseName,
             ChromaApi.Collection col, long chunkCount) {
         if (chunkCount <= 0) {
@@ -270,18 +286,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                     break;
                 }
                 sawAnyMetadata = true;
-                for (Map<String, String> meta : response.metadata()) {
-                    if (meta == null || meta.isEmpty()) {
-                        continue;
-                    }
-                    for (String key : DOCUMENT_IDENTIFIER_KEYS) {
-                        String value = meta.get(key);
-                        if (value != null && !value.isBlank()) {
-                            identifiers.add(value);
-                            break;
-                        }
-                    }
-                }
+                collectIdentifiers(response.metadata(), identifiers);
                 if (response.metadata().size() < METADATA_SCAN_PAGE_SIZE) {
                     break;
                 }
