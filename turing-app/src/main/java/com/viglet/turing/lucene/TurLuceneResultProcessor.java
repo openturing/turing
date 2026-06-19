@@ -159,6 +159,7 @@ public class TurLuceneResultProcessor {
         String preTags = turSNSite.getHlPre() != null ? turSNSite.getHlPre() : "<em>";
         String postTags = turSNSite.getHlPost() != null ? turSNSite.getHlPost() : "</em>";
 
+        HlTagPair tags = new HlTagPair(preTags, postTags);
         try {
             UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(searcher, new StandardAnalyzer())
                     .build();
@@ -167,32 +168,46 @@ public class TurLuceneResultProcessor {
                 if (hlField.getType() == null || !HL_FIELD_TYPES.contains(hlField.getType())) {
                     continue;
                 }
-                String fieldName = hlField.getName();
-                try {
-                    String[] snippets = highlighter.highlight(fieldName, query, topDocs, 1);
-                    if (snippets == null) continue;
-                    for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
-                        if (snippets[i] == null) continue;
-                        // Replace default <b>/</b> tags with configured HL tags
-                        String highlighted = snippets[i]
-                                .replace("<b>", preTags)
-                                .replace("</b>", postTags);
-                        Document doc = searcher.storedFields().document(topDocs.scoreDocs[i].doc);
-                        String docId = doc.get(TurLuceneConstants.ID);
-                        if (docId != null) {
-                            hlByDoc.computeIfAbsent(docId, k -> new LinkedHashMap<>())
-                                    .put(fieldName, highlighted);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.debug("Could not highlight field '{}': {}", fieldName, e.getMessage());
-                }
+                highlightField(highlighter, hlField.getName(), query, topDocs, searcher, hlByDoc, tags);
             }
         } catch (Exception e) {
             log.warn("Error building highlighting: {}", e.getMessage());
         }
 
         return hlByDoc;
+    }
+
+    /** Configured pre/post highlight tags. */
+    private record HlTagPair(String preTags, String postTags) {
+    }
+
+    /**
+     * Highlights one field across the hit docs, writing the rewritten snippet
+     * (default {@code <b>} tags swapped for the configured pair) under each
+     * doc id in {@code hlByDoc}. Per-field failures are logged and skipped.
+     */
+    private void highlightField(UnifiedHighlighter highlighter, String fieldName, Query query,
+            TopDocs topDocs, IndexSearcher searcher, Map<String, Map<String, String>> hlByDoc,
+            HlTagPair tags) {
+        try {
+            String[] snippets = highlighter.highlight(fieldName, query, topDocs, 1);
+            if (snippets == null) return;
+            for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
+                if (snippets[i] == null) continue;
+                // Replace default <b>/</b> tags with configured HL tags
+                String highlighted = snippets[i]
+                        .replace("<b>", tags.preTags())
+                        .replace("</b>", tags.postTags());
+                Document doc = searcher.storedFields().document(topDocs.scoreDocs[i].doc);
+                String docId = doc.get(TurLuceneConstants.ID);
+                if (docId != null) {
+                    hlByDoc.computeIfAbsent(docId, k -> new LinkedHashMap<>())
+                            .put(fieldName, highlighted);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not highlight field '{}': {}", fieldName, e.getMessage());
+        }
     }
 
     static boolean isHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> hlFields) {

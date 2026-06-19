@@ -165,51 +165,36 @@ public class TurSystemInfoToolService {
         log.info("[SystemInfo Tool] get_external_services_status called");
         StringBuilder sb = new StringBuilder();
         sb.append("=== External Services Status ===\n\n");
+        appendExternalMongoStatus(sb);
+        appendExternalStorageStatus(sb);
+        return sb.toString();
+    }
 
+    private void appendExternalMongoStatus(StringBuilder sb) {
         sb.append("--- MongoDB ---\n");
         if (!mongoEnabled) {
             sb.append("Status: DISABLED\n");
-        } else {
-            try (var mongoClient = com.mongodb.client.MongoClients.create(mongoUri)) {
-                org.bson.Document buildInfo = mongoClient.getDatabase("admin")
-                        .runCommand(new org.bson.Document("buildInfo", 1));
-                sb.append(STATUS_UP);
-                sb.append("Version: ").append(buildInfo.getString("version")).append("\n");
-                sb.append("URI: ").append(mongoUri).append("\n");
-            } catch (Exception e) {
-                sb.append(STATUS_DOWN);
-                sb.append("URI: ").append(mongoUri).append("\n");
-                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
-            }
+            return;
         }
+        try (var mongoClient = com.mongodb.client.MongoClients.create(mongoUri)) {
+            org.bson.Document buildInfo = mongoClient.getDatabase("admin")
+                    .runCommand(new org.bson.Document("buildInfo", 1));
+            sb.append(STATUS_UP);
+            sb.append("Version: ").append(buildInfo.getString("version")).append("\n");
+            sb.append("URI: ").append(mongoUri).append("\n");
+        } catch (Exception e) {
+            sb.append(STATUS_DOWN);
+            sb.append("URI: ").append(mongoUri).append("\n");
+            sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
+        }
+    }
 
+    private void appendExternalStorageStatus(StringBuilder sb) {
         sb.append("\n--- Storage (").append(storageService.getType()).append(") ---\n");
         if (!storageService.isEnabled()) {
             sb.append("Status: DISABLED\n");
         } else if (storageService.getType() == TurStorageType.MINIO) {
-            var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
-            String endpoint = minio != null ? minio.getEndpoint() : "";
-            try {
-                var request = java.net.http.HttpRequest.newBuilder()
-                        .uri(java.net.URI.create(endpoint + "/minio/health/cluster"))
-                        .GET().build();
-                var response = java.net.http.HttpClient.newHttpClient()
-                        .send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
-                String status = response.statusCode() < 500 ? "UP" : "DOWN";
-                sb.append(STATUS).append(status).append("\n");
-                sb.append(ENDPOINT).append(endpoint).append("\n");
-                response.headers().firstValue("Server").ifPresent(
-                        server -> sb.append("Server: ").append(server).append("\n"));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                sb.append(STATUS_DOWN);
-                sb.append(ENDPOINT).append(endpoint).append("\n");
-                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
-            } catch (Exception e) {
-                sb.append(STATUS_DOWN);
-                sb.append(ENDPOINT).append(endpoint).append("\n");
-                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
-            }
+            appendExternalMinioStatus(sb);
         } else {
             var storage = turConfigProperties.getStorage();
             String path = storage != null && storage.getFilesystem() != null && storage.getFilesystem().getPath() != null
@@ -217,8 +202,32 @@ public class TurSystemInfoToolService {
             sb.append("Path: ").append(path).append("\n");
             sb.append(STATUS).append(new java.io.File(path).isDirectory() ? "UP" : "DOWN").append("\n");
         }
+    }
 
-        return sb.toString();
+    private void appendExternalMinioStatus(StringBuilder sb) {
+        var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
+        String endpoint = minio != null ? minio.getEndpoint() : "";
+        try {
+            var request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(endpoint + "/minio/health/cluster"))
+                    .GET().build();
+            var response = java.net.http.HttpClient.newHttpClient()
+                    .send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
+            String status = response.statusCode() < 500 ? "UP" : "DOWN";
+            sb.append(STATUS).append(status).append("\n");
+            sb.append(ENDPOINT).append(endpoint).append("\n");
+            response.headers().firstValue("Server").ifPresent(
+                    server -> sb.append("Server: ").append(server).append("\n"));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            sb.append(STATUS_DOWN);
+            sb.append(ENDPOINT).append(endpoint).append("\n");
+            sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
+        } catch (Exception e) {
+            sb.append(STATUS_DOWN);
+            sb.append(ENDPOINT).append(endpoint).append("\n");
+            sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
+        }
     }
 
     private void appendAppVersion(StringBuilder sb) {
