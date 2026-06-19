@@ -1761,40 +1761,13 @@ public class TurChatFlowEngineService {
             return new AbResolved(routerFlow, routerGraph);
         }
 
-        // T73 / §VII.8.d — forced variant for QA + sales demo. When the caller
-        // supplied `?_ab_variant=<label>` and the router landed inside this
-        // experiment, hard-pin the arm whose variantLabel matches
-        // (case-insensitive), bypassing the deterministic hash, Thompson
-        // sampling, AND the scheduled experiment window (so a reviewer can
-        // preview a not-yet-live or already-retired variant). The group is
-        // collected WITHOUT the window filter for exactly that reason. A
-        // non-matching label or an unparseable variant graph degrades to the
-        // normal assignment below so a stale demo link never blanks the chat.
-        if (forcedVariant != null && !forcedVariant.isBlank()) {
-            List<TurChatFlow> group = candidates.stream()
-                    .map(RouterCandidate::flow)
-                    .filter(f -> experimentKey.equals(f.getExperimentKey()))
-                    .toList();
-            TurChatFlow forced = forceVariant(group, forcedVariant);
-            if (forced != null) {
-                Optional<ChatFlowGraph> forcedGraph = forced.getId().equals(routerFlow.getId())
-                        ? Optional.of(routerGraph)
-                        : parseGraph(forced);
-                if (forcedGraph.isPresent()) {
-                    log.info("[A/B] Experiment '{}': FORCED variant '{}' (flow {}) via _ab_variant "
-                            + "— bypassing hash/bandit + schedule window",
-                            experimentKey, forced.getVariantLabel(), forced.getId());
-                    chatAnalyticsService.recordExperimentAssignment(conversationId,
-                            experimentKey, forced.getVariantLabel());
-                    return new AbResolved(forced, forcedGraph.get());
-                }
-                log.warn("[A/B] Experiment '{}': forced variant '{}' has an unparseable graph "
-                        + "— falling back to normal assignment", experimentKey, forcedVariant);
-            } else {
-                log.warn("[A/B] Experiment '{}': forced variant label '{}' not found among {} "
-                        + "arm(s) — falling back to normal assignment",
-                        experimentKey, forcedVariant, group.size());
-            }
+        // T73 / §VII.8.d — forced variant for QA + sales demo (bypasses
+        // hash/bandit + schedule window). A non-matching label or unparseable
+        // graph degrades to the normal assignment below.
+        Optional<AbResolved> forced = resolveForcedVariant(forcedVariant, candidates,
+                experimentKey, routerFlow, routerGraph, conversationId);
+        if (forced.isPresent()) {
+            return forced.get();
         }
 
         java.time.Instant now = java.time.Instant.now();
@@ -1811,6 +1784,56 @@ public class TurChatFlowEngineService {
                     + "falling back to router pick {}", experimentKey, routerFlow.getId());
             return new AbResolved(routerFlow, routerGraph);
         }
+        return assignExperimentVariant(variants, routerFlow, routerGraph, experimentKey, conversationId);
+    }
+
+    /**
+     * T73 — resolves a {@code ?_ab_variant=<label>} forced arm (window-bypassing),
+     * recording the assignment. Empty when no/blank label, an unknown label, or an
+     * unparseable variant graph — the caller then runs the normal assignment.
+     */
+    private Optional<AbResolved> resolveForcedVariant(String forcedVariant,
+            List<RouterCandidate> candidates, String experimentKey, TurChatFlow routerFlow,
+            ChatFlowGraph routerGraph, String conversationId) {
+        if (forcedVariant == null || forcedVariant.isBlank()) {
+            return Optional.empty();
+        }
+        // Collected WITHOUT the window filter so a reviewer can preview a
+        // not-yet-live or already-retired variant.
+        List<TurChatFlow> group = candidates.stream()
+                .map(RouterCandidate::flow)
+                .filter(f -> experimentKey.equals(f.getExperimentKey()))
+                .toList();
+        TurChatFlow forced = forceVariant(group, forcedVariant);
+        if (forced == null) {
+            log.warn("[A/B] Experiment '{}': forced variant label '{}' not found among {} "
+                    + "arm(s) — falling back to normal assignment",
+                    experimentKey, forcedVariant, group.size());
+            return Optional.empty();
+        }
+        Optional<ChatFlowGraph> forcedGraph = forced.getId().equals(routerFlow.getId())
+                ? Optional.of(routerGraph)
+                : parseGraph(forced);
+        if (forcedGraph.isEmpty()) {
+            log.warn("[A/B] Experiment '{}': forced variant '{}' has an unparseable graph "
+                    + "— falling back to normal assignment", experimentKey, forcedVariant);
+            return Optional.empty();
+        }
+        log.info("[A/B] Experiment '{}': FORCED variant '{}' (flow {}) via _ab_variant "
+                + "— bypassing hash/bandit + schedule window",
+                experimentKey, forced.getVariantLabel(), forced.getId());
+        chatAnalyticsService.recordExperimentAssignment(conversationId,
+                experimentKey, forced.getVariantLabel());
+        return Optional.of(new AbResolved(forced, forcedGraph.get()));
+    }
+
+    /**
+     * Assigns one of the in-window {@code variants} via Thompson sampling (T70,
+     * when any arm is bandit-enabled) or the deterministic hash, recording the
+     * assignment. Falls back to the router pick when the assigned graph won't parse.
+     */
+    private AbResolved assignExperimentVariant(List<TurChatFlow> variants, TurChatFlow routerFlow,
+            ChatFlowGraph routerGraph, String experimentKey, String conversationId) {
         TurChatFlow finalFlow = routerFlow;
         ChatFlowGraph finalGraph = routerGraph;
         if (variants.size() > 1 || !variants.get(0).getId().equals(routerFlow.getId())) {

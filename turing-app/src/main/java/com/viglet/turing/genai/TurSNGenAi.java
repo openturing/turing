@@ -868,6 +868,36 @@ public class TurSNGenAi {
             }
         }
 
+        appendCustomFields(attributes, header, body, customMetadata);
+
+        Object abstractValue = attributes.get(ABSTRACT);
+        if (abstractValue != null) {
+            String stripped = TurRagUtils.stripHtml(abstractValue.toString()).trim();
+            if (!stripped.isEmpty()) {
+                body.append(stripped).append("\n\n");
+            }
+        }
+        Object textValue = attributes.get(TEXT);
+        if (textValue != null) {
+            String stripped = TurRagUtils.stripHtml(textValue.toString()).trim();
+            if (!stripped.isEmpty()) {
+                body.append(stripped).append("\n\n");
+            }
+        }
+
+        return new RagFields(
+                header.toString().stripTrailing(),
+                body.toString().stripTrailing(),
+                customMetadata);
+    }
+
+    /**
+     * Appends each simple, non-excluded attribute to the header (short values,
+     * tracked in {@code customMetadata}) or body (long values), skipping the
+     * title/abstract/text fields handled separately.
+     */
+    private void appendCustomFields(Map<String, Object> attributes, StringBuilder header,
+            StringBuilder body, Map<String, Object> customMetadata) {
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -890,26 +920,6 @@ public class TurSNGenAi {
             header.append(key).append(": ").append(formatted).append("\n");
             customMetadata.put(key, value);
         }
-
-        Object abstractValue = attributes.get(ABSTRACT);
-        if (abstractValue != null) {
-            String stripped = TurRagUtils.stripHtml(abstractValue.toString()).trim();
-            if (!stripped.isEmpty()) {
-                body.append(stripped).append("\n\n");
-            }
-        }
-        Object textValue = attributes.get(TEXT);
-        if (textValue != null) {
-            String stripped = TurRagUtils.stripHtml(textValue.toString()).trim();
-            if (!stripped.isEmpty()) {
-                body.append(stripped).append("\n\n");
-            }
-        }
-
-        return new RagFields(
-                header.toString().stripTrailing(),
-                body.toString().stripTrailing(),
-                customMetadata);
     }
 
     private static String formatHeaderValue(Object value) {
