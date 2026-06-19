@@ -155,8 +155,8 @@ public sealed interface TurDslAggregation {
 
             // Sub-aggregations: "aggs" or "aggregations" key alongside the type
             Map<String, TurDslAggregation> subAggs = null;
-            JsonNode subNode = node.has("aggs") ? node.get("aggs")
-                    : node.has("aggregations") ? node.get("aggregations") : null;
+            JsonNode aggregationsNode = node.has("aggregations") ? node.get("aggregations") : null;
+            JsonNode subNode = node.has("aggs") ? node.get("aggs") : aggregationsNode;
             if (subNode != null && subNode.isObject()) {
                 subAggs = new LinkedHashMap<>();
                 for (var entry : subNode.properties()) {

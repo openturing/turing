@@ -104,8 +104,8 @@ public class TurSNSimilarDocumentsService {
         TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(site);
 
         boolean hybrid = hybridRankingService.isEnabled(site);
-        TurSNSimilarMode effective = mode != null ? mode : (hybrid ? TurSNSimilarMode.VECTOR
-                : TurSNSimilarMode.MLT);
+        TurSNSimilarMode defaultMode = hybrid ? TurSNSimilarMode.VECTOR : TurSNSimilarMode.MLT;
+        TurSNSimilarMode effective = mode != null ? mode : defaultMode;
 
         if (effective == TurSNSimilarMode.VECTOR && hybrid) {
             List<TurSESimilarResult> vector = vectorNeighbors(site, siteLocale, plugin, id, limit);

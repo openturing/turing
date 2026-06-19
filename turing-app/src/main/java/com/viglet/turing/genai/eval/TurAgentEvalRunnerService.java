@@ -325,7 +325,8 @@ public class TurAgentEvalRunnerService {
             Map<String, Object> parsed = OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
             String verdict = String.valueOf(parsed.getOrDefault("verdict", "fail")).trim().toLowerCase();
             boolean pass = "pass".equals(verdict);
-            double score = parsed.get("score") instanceof Number n ? n.doubleValue() : (pass ? 1d : 0d);
+            double defaultScore = pass ? 1d : 0d;
+            double score = parsed.get("score") instanceof Number n ? n.doubleValue() : defaultScore;
             score = Math.clamp(score, 0d, 1d);
             Object rationale = parsed.get("rationale");
             return new JudgeVerdict(pass, score, rationale == null ? null : String.valueOf(rationale));

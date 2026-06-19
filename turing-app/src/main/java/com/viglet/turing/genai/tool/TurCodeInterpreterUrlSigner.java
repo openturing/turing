@@ -179,7 +179,8 @@ public class TurCodeInterpreterUrlSigner {
         // can't peek at the "signed convId" because that's exactly what
         // the HMAC verifies — instead we trust the cookie as the
         // verifying claim, and a mismatch will simply fail HMAC.
-        String boundConv = cookieBound ? (cookieConv == null ? "" : cookieConv) : "";
+        String cookieConvValue = cookieConv == null ? "" : cookieConv;
+        String boundConv = cookieBound ? cookieConvValue : "";
         String expected = hmacHex(payload(sessionId, filename, exp, boundConv));
         if (!constantTimeEquals(expected, sigParam.trim())) {
             // Without cookie-binding, OR if cookie is missing/wrong, try

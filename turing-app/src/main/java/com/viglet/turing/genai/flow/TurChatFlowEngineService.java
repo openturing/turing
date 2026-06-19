@@ -1595,10 +1595,10 @@ public class TurChatFlowEngineService {
             RouterCacheResult llm = askRouterCached(agent.getId(), routerModel, candidates,
                     lastUserMessage);
             pickedId = llm.pickedId();
-            routerMethod = pickedId == null
-                    ? TurChatFlowRouterMethod.NONE
-                    : (llm.cacheHit() ? TurChatFlowRouterMethod.LLM_CACHE
-                            : TurChatFlowRouterMethod.LLM);
+            TurChatFlowRouterMethod llmMethod = llm.cacheHit()
+                    ? TurChatFlowRouterMethod.LLM_CACHE
+                    : TurChatFlowRouterMethod.LLM;
+            routerMethod = pickedId == null ? TurChatFlowRouterMethod.NONE : llmMethod;
         }
         // T89 / §VII.10.f — structured router-decision log (candidate flows +
         // scores + winner + method). Best-effort; never breaks the turn.

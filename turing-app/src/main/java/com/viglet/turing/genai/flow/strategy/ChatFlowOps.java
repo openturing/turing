@@ -395,9 +395,10 @@ public final class ChatFlowOps {
             }
             String handle = edge.sourceHandle();
             String label = handle == null ? null : labelByHandle.get(handle);
+            String fallbackBranch = handle == null || handle.isBlank() ? "default" : handle;
             String displayBranch = label != null && !label.isBlank()
                     ? label
-                    : handle == null || handle.isBlank() ? "default" : handle;
+                    : fallbackBranch;
             hint.append("  - If '").append(displayBranch).append("' branch: ")
                     .append(instruction.trim()).append("\n");
             any = true;

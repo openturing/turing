@@ -668,11 +668,12 @@ public class TurCodeInterpreterToolService {
                         ? TurCodeInterpreterResourceLimiter.SYSTEMD_RUN
                         : TurCodeInterpreterResourceLimiter.NONE;
                 case NONE -> TurCodeInterpreterResourceLimiter.NONE;
-                case AUTO -> prlimit != null
-                        ? TurCodeInterpreterResourceLimiter.PRLIMIT
-                        : (systemdRun != null
-                                ? TurCodeInterpreterResourceLimiter.SYSTEMD_RUN
-                                : TurCodeInterpreterResourceLimiter.NONE);
+                case AUTO -> {
+                    TurCodeInterpreterResourceLimiter autoFallback = systemdRun != null
+                            ? TurCodeInterpreterResourceLimiter.SYSTEMD_RUN
+                            : TurCodeInterpreterResourceLimiter.NONE;
+                    yield prlimit != null ? TurCodeInterpreterResourceLimiter.PRLIMIT : autoFallback;
+                }
             };
 
             return switch (chosen) {

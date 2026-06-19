@@ -106,7 +106,8 @@ public class TurScaffoldToolService {
                 bestWithTerm = sentence;
             }
         }
-        return bestWithTerm != null ? bestWithTerm : (longestOverall == null ? "" : longestOverall);
+        String longestFallback = longestOverall == null ? "" : longestOverall;
+        return bestWithTerm != null ? bestWithTerm : longestFallback;
     }
 
     /**

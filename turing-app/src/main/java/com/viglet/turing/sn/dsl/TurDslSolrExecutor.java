@@ -274,10 +274,10 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 yield parts.isEmpty() ? "*:*" : String.join(" ", parts);
             }
             case TurDslQuery.Range(var field, var gte, var gt, var lte, var lt) -> {
-                String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : "*";
-                String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : "*";
-                String lBracket = gte != null ? "[" : gt != null ? "{" : "[";
-                String rBracket = lte != null ? "]" : lt != null ? "}" : "]";
+                String lower = solrRangeBound(gte, gt);
+                String upper = solrRangeBound(lte, lt);
+                String lBracket = (gte == null && gt != null) ? "{" : "[";
+                String rBracket = (lte == null && lt != null) ? "}" : "]";
                 yield "%s:%s%s TO %s%s".formatted(field, lBracket, lower, upper, rBracket);
             }
             case TurDslQuery.Wildcard(var field, var value) -> "%s:%s".formatted(field, value);
@@ -615,5 +615,20 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
 
     private static String escapeQuotes(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * First non-null range bound rendered as a Solr range token
+     * ({@code inclusive} wins over {@code exclusive}), or {@code "*"} (open
+     * bound) when both are absent.
+     */
+    private static String solrRangeBound(Object inclusive, Object exclusive) {
+        if (inclusive != null) {
+            return inclusive.toString();
+        }
+        if (exclusive != null) {
+            return exclusive.toString();
+        }
+        return "*";
     }
 }

@@ -556,7 +556,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         return switch (metric) {
             case "goal_achievement_rate" -> {
                 String g = hash.get("goalAchieved");
-                yield "YES".equals(g) ? 1d : "PARTIAL".equals(g) ? 0.5d : 0d;
+                double partialGoal = "PARTIAL".equals(g) ? 0.5d : 0d;
+                yield "YES".equals(g) ? 1d : partialGoal;
             }
             case "negative_sentiment_rate" -> {
                 String s = hash.get("sentiment");

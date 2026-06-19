@@ -688,10 +688,10 @@ public class TurDslElasticsearchExecutor
                 try {
                     List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
                     for (var bucket : esAgg.range().buckets().array()) {
+                        String from = bucket.fromAsString() != null ? bucket.fromAsString() : "*";
+                        String to = bucket.toAsString() != null ? bucket.toAsString() : "*";
                         String key = bucket.key() != null ? bucket.key()
-                                : "%s-%s".formatted(
-                                bucket.fromAsString() != null ? bucket.fromAsString() : "*",
-                                bucket.toAsString() != null ? bucket.toAsString() : "*");
+                                : "%s-%s".formatted(from, to);
                         buckets.add(new TurDslSearchResponse.Bucket(key, bucket.docCount()));
                     }
                     result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));

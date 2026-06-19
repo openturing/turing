@@ -156,7 +156,8 @@ public class TurChatAnalyticsAPI {
         for (Map<String, Object> row : rows) {
             String id = stringValue(row.get("bucket"));
             String name = id == null ? null : names.get(id);
-            row.put("bucketLabel", name != null ? name : (id == null ? "unknown" : id));
+            String fallbackLabel = id == null ? "unknown" : id;
+            row.put("bucketLabel", name != null ? name : fallbackLabel);
         }
     }
 

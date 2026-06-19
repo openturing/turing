@@ -224,8 +224,8 @@ public class TurHumanApprovalService {
     }
 
     private static String normalizeTimeoutBehavior(String behavior) {
-        return "auto_approve".equalsIgnoreCase(behavior == null ? null : behavior.trim())
-                ? "auto_approve" : "auto_reject";
+        String trimmed = behavior == null ? null : behavior.trim();
+        return "auto_approve".equalsIgnoreCase(trimmed) ? "auto_approve" : "auto_reject";
     }
 
     private String buildResumeUrl(String token) {

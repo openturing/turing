@@ -134,8 +134,9 @@ public class TurSNSearchRuleEvaluator {
             return fqValues.isEmpty();
         }
 
+        String safeExpectedValue = expectedValue != null ? expectedValue : "";
         String fqExpression = StringUtils.hasText(fieldName)
-                ? fieldName + ":" + (expectedValue != null ? expectedValue : "")
+                ? fieldName + ":" + safeExpectedValue
                 : expectedValue;
 
         return switch (operator) {

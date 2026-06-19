@@ -131,9 +131,10 @@ public class TurSystemPromptValidatorService {
         Set<String> all = new LinkedHashSet<>(baseLangs);
         all.addAll(personaLangs);
         if (all.size() > 1) {
+            String singleSource = baseLangs.size() > 1 ? "AGENT" : "PERSONA";
             String source = !baseLangs.isEmpty() && !personaLangs.isEmpty()
                     ? "AGENT + PERSONA"
-                    : (baseLangs.size() > 1 ? "AGENT" : "PERSONA");
+                    : singleSource;
             issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "language_directive_conflict",
                     "Conflicting response-language directives: " + String.join(", ", all)
                             + ". The model gets contradictory instructions about which language to answer in.",

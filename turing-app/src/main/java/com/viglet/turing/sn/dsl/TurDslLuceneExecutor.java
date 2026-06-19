@@ -521,37 +521,107 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
     private static Query buildRangeQuery(String field, Object gte, Object gt, Object lte, Object lt,
             TurSEFieldType type) {
         if (type == null) {
-            String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : null;
-            String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : null;
+            String lower = rangeBoundToString(gte, gt);
+            String upper = rangeBoundToString(lte, lt);
             return TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
         }
         return switch (type) {
             case INT -> {
-                int lo = gte != null ? toInt(gte) : gt != null ? Math.addExact(toInt(gt), 1) : Integer.MIN_VALUE;
-                int hi = lte != null ? toInt(lte) : lt != null ? Math.addExact(toInt(lt), -1) : Integer.MAX_VALUE;
+                int lo;
+                if (gte != null) {
+                    lo = toInt(gte);
+                } else if (gt != null) {
+                    lo = Math.addExact(toInt(gt), 1);
+                } else {
+                    lo = Integer.MIN_VALUE;
+                }
+                int hi;
+                if (lte != null) {
+                    hi = toInt(lte);
+                } else if (lt != null) {
+                    hi = Math.addExact(toInt(lt), -1);
+                } else {
+                    hi = Integer.MAX_VALUE;
+                }
                 yield IntPoint.newRangeQuery(field, lo, hi);
             }
             case LONG, DATE -> {
-                long lo = gte != null ? toLong(gte) : gt != null ? Math.addExact(toLong(gt), 1) : Long.MIN_VALUE;
-                long hi = lte != null ? toLong(lte) : lt != null ? Math.addExact(toLong(lt), -1) : Long.MAX_VALUE;
+                long lo;
+                if (gte != null) {
+                    lo = toLong(gte);
+                } else if (gt != null) {
+                    lo = Math.addExact(toLong(gt), 1);
+                } else {
+                    lo = Long.MIN_VALUE;
+                }
+                long hi;
+                if (lte != null) {
+                    hi = toLong(lte);
+                } else if (lt != null) {
+                    hi = Math.addExact(toLong(lt), -1);
+                } else {
+                    hi = Long.MAX_VALUE;
+                }
                 yield LongPoint.newRangeQuery(field, lo, hi);
             }
             case FLOAT -> {
-                float lo = gte != null ? toFloat(gte) : gt != null ? Math.nextUp(toFloat(gt)) : Float.NEGATIVE_INFINITY;
-                float hi = lte != null ? toFloat(lte) : lt != null ? Math.nextDown(toFloat(lt)) : Float.POSITIVE_INFINITY;
+                float lo;
+                if (gte != null) {
+                    lo = toFloat(gte);
+                } else if (gt != null) {
+                    lo = Math.nextUp(toFloat(gt));
+                } else {
+                    lo = Float.NEGATIVE_INFINITY;
+                }
+                float hi;
+                if (lte != null) {
+                    hi = toFloat(lte);
+                } else if (lt != null) {
+                    hi = Math.nextDown(toFloat(lt));
+                } else {
+                    hi = Float.POSITIVE_INFINITY;
+                }
                 yield FloatPoint.newRangeQuery(field, lo, hi);
             }
             case DOUBLE, CURRENCY -> {
-                double lo = gte != null ? toDouble(gte) : gt != null ? Math.nextUp(toDouble(gt)) : Double.NEGATIVE_INFINITY;
-                double hi = lte != null ? toDouble(lte) : lt != null ? Math.nextDown(toDouble(lt)) : Double.POSITIVE_INFINITY;
+                double lo;
+                if (gte != null) {
+                    lo = toDouble(gte);
+                } else if (gt != null) {
+                    lo = Math.nextUp(toDouble(gt));
+                } else {
+                    lo = Double.NEGATIVE_INFINITY;
+                }
+                double hi;
+                if (lte != null) {
+                    hi = toDouble(lte);
+                } else if (lt != null) {
+                    hi = Math.nextDown(toDouble(lt));
+                } else {
+                    hi = Double.POSITIVE_INFINITY;
+                }
                 yield DoublePoint.newRangeQuery(field, lo, hi);
             }
             default -> {
-                String lower = gte != null ? gte.toString() : gt != null ? gt.toString() : null;
-                String upper = lte != null ? lte.toString() : lt != null ? lt.toString() : null;
+                String lower = rangeBoundToString(gte, gt);
+                String upper = rangeBoundToString(lte, lt);
                 yield TermRangeQuery.newStringRange(field, lower, upper, gte != null, lte != null);
             }
         };
+    }
+
+    /**
+     * First non-null range bound rendered as a string ({@code inclusive} wins
+     * over {@code exclusive}), or {@code null} when both are absent.
+     */
+    private static String rangeBoundToString(Object inclusive, Object exclusive) {
+        if (inclusive != null) {
+            return inclusive.toString();
+        }
+        if (exclusive != null) {
+            return exclusive.toString();
+        }
+        return null;
     }
 
     private static int toInt(Object v) {
