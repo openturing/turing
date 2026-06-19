@@ -959,30 +959,43 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                     ? hl.preTags().getFirst() : "<em>";
             String postTag = (hl.postTags() != null && !hl.postTags().isEmpty())
                     ? hl.postTags().getFirst() : "</em>";
+            int maxPassages = hl.numberOfFragments() != null ? hl.numberOfFragments() : 3;
+            HlTags tags = new HlTags(preTag, postTag, maxPassages);
 
             for (String fieldName : hl.fields().keySet()) {
-                try {
-                    int maxPassages = hl.numberOfFragments() != null ? hl.numberOfFragments() : 3;
-                    String[] snippets = highlighter.highlight(fieldName, query, topDocs,
-                            maxPassages);
-                    if (snippets == null) continue;
-                    for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
-                        if (snippets[i] == null) continue;
-                        String highlighted = snippets[i]
-                                .replace("<b>", preTag).replace("</b>", postTag);
-                        hlByDocId.computeIfAbsent(topDocs.scoreDocs[i].doc,
-                                        k -> new LinkedHashMap<>())
-                                .computeIfAbsent(fieldName, k -> new ArrayList<>())
-                                .add(highlighted);
-                    }
-                } catch (Exception e) {
-                    log.debug("Could not highlight field '{}': {}", fieldName, e.getMessage());
-                }
+                highlightField(highlighter, fieldName, query, topDocs, hlByDocId, tags);
             }
         } catch (Exception e) {
             log.warn("Error building Lucene highlighting: {}", e.getMessage());
         }
         return hlByDocId;
+    }
+
+    /** Pre/post highlight tags + max passage count for one highlight pass. */
+    private record HlTags(String preTag, String postTag, int maxPassages) {
+    }
+
+    /**
+     * Highlights one field across the hit docs, appending the rewritten snippets
+     * (b→configured tags) into {@code hlByDocId}. Per-field failures are logged
+     * and skipped so one bad field can't void the whole highlight set.
+     */
+    private void highlightField(UnifiedHighlighter highlighter, String fieldName, Query query,
+            TopDocs topDocs, Map<Integer, Map<String, List<String>>> hlByDocId, HlTags tags) {
+        try {
+            String[] snippets = highlighter.highlight(fieldName, query, topDocs, tags.maxPassages());
+            if (snippets == null) return;
+            for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
+                if (snippets[i] == null) continue;
+                String highlighted = snippets[i]
+                        .replace("<b>", tags.preTag()).replace("</b>", tags.postTag());
+                hlByDocId.computeIfAbsent(topDocs.scoreDocs[i].doc, k -> new LinkedHashMap<>())
+                        .computeIfAbsent(fieldName, k -> new ArrayList<>())
+                        .add(highlighted);
+            }
+        } catch (Exception e) {
+            log.debug("Could not highlight field '{}': {}", fieldName, e.getMessage());
+        }
     }
 
     // ==================== Helpers ====================

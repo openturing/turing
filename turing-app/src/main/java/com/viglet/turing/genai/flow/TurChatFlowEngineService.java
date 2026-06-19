@@ -659,39 +659,55 @@ public class TurChatFlowEngineService {
         // Apply slot updates first so the post-advance walker reads the
         // freshest values (a condition node downstream of the suspend
         // node may branch on what the webhook just delivered).
-        if (slotUpdates != null && !slotUpdates.isEmpty()) {
-            for (Map.Entry<String, String> e : slotUpdates.entrySet()) {
-                writeSlot(conversationId, e.getKey(), e.getValue(),
-                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
-                        resumeReason == null ? "resume" : "resume=" + resumeReason);
-            }
-        }
+        applyResumeSlotUpdates(conversationId, slotUpdates, resumeReason);
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         int resumed = 0;
         for (TurChatFlowState state : states) {
-            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
-            if (graph == null) continue;
-            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
-            if (currentOpt.isEmpty()) continue;
-            ChatFlowNode parkedNode = currentOpt.get();
-            if (!PARKED_NODE_TYPES.contains(parkedNode.type())) continue;
-            log.info("[FlowEngine] resume: conv='{}' walking past {} node '{}' (reason='{}')",
-                    conversationId, parkedNode.type(), state.getCurrentNodeId(), resumeReason);
-            // T119 — when force-advancing past a humanApproval node, cancel any
-            // still-PENDING record (the decide/timeout paths already moved it to
-            // DECIDED/TIMED_OUT, so this is a no-op except on an admin unblock).
-            if (HUMAN_APPROVAL.equals(parkedNode.type())) {
-                humanApprovalNodeExecutor.cancelPending(conversationId, parkedNode.id());
+            if (resumeState(conversationId, state, resumeReason)) {
+                resumed++;
             }
-            ChatFlowOps.advanceToFirstEdge(state, graph, parkedNode);
-            state = stateRepository.save(state);
-            TurChatFlowState leaf = walkTransparentNodes(state, null);
-            if (leaf != state) {
-                stateRepository.save(leaf);
-            }
-            resumed++;
         }
         return new ResumeResult(resumed, resumed == 0);
+    }
+
+    private void applyResumeSlotUpdates(String conversationId, Map<String, String> slotUpdates,
+            String resumeReason) {
+        if (slotUpdates == null || slotUpdates.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> e : slotUpdates.entrySet()) {
+            writeSlot(conversationId, e.getKey(), e.getValue(),
+                    com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+                    resumeReason == null ? "resume" : "resume=" + resumeReason);
+        }
+    }
+
+    /**
+     * Walks one state past its parked node if it sits on a parked type. Returns
+     * true when the state was actually resumed.
+     */
+    private boolean resumeState(String conversationId, TurChatFlowState state, String resumeReason) {
+        ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+        if (graph == null) return false;
+        Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+        if (currentOpt.isEmpty()) return false;
+        ChatFlowNode parkedNode = currentOpt.get();
+        if (!PARKED_NODE_TYPES.contains(parkedNode.type())) return false;
+        log.info("[FlowEngine] resume: conv='{}' walking past {} node '{}' (reason='{}')",
+                conversationId, parkedNode.type(), state.getCurrentNodeId(), resumeReason);
+        // T119 — when force-advancing past a humanApproval node, cancel any
+        // still-PENDING record (the decide/timeout paths already moved it to
+        // DECIDED/TIMED_OUT, so this is a no-op except on an admin unblock).
+        if (HUMAN_APPROVAL.equals(parkedNode.type())) {
+            humanApprovalNodeExecutor.cancelPending(conversationId, parkedNode.id());
+        }
+        ChatFlowOps.advanceToFirstEdge(state, graph, parkedNode);
+        state = stateRepository.save(state);
+        TurChatFlowState leaf = walkTransparentNodes(state, null);
+        if (leaf != state) {
+            stateRepository.save(leaf);
+        }
+        return true;
     }
 
     /**
