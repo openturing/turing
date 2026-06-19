@@ -12,6 +12,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -130,17 +132,22 @@ class TurMilvusStoreProviderTest {
         }
     }
 
-    @Test
-    void testCreateVectorStore_invalidMetricType() {
+    @ParameterizedTest(name = "baseUrl={0}, metricType={1}, indexType={2}")
+    @CsvSource(nullValues = "null", value = {
+            "null,                INVALID_METRIC, INVALID_INDEX", // invalid metric/index type
+            "http://custom:19530, null,           null",         // custom base url
+            "null,                '',             ''"             // empty metric/index type strings
+    })
+    void testCreateVectorStore_metricAndBaseUrlVariants(String baseUrl, String metricType, String indexType) {
         when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
+        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(baseUrl);
         when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
         when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
         when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(false);
         when(optionsParser.intValue(any(), eq("embeddingDimension"))).thenReturn(null);
         when(optionsParser.stringValue(any(), eq("indexParameters"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("metricType"))).thenReturn("INVALID_METRIC");
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn("INVALID_INDEX");
+        when(optionsParser.stringValue(any(), eq("metricType"))).thenReturn(metricType);
+        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(indexType);
 
         try (var mocked = Mockito.mockConstruction(io.milvus.client.MilvusServiceClient.class)) {
             VectorStore store = provider.createVectorStore(instance, embeddingModel, "token");
@@ -185,24 +192,6 @@ class TurMilvusStoreProviderTest {
     }
 
     @Test
-    void testCreateVectorStore_withCustomBaseUrl() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn("http://custom:19530");
-        when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(false);
-        when(optionsParser.intValue(any(), eq("embeddingDimension"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexParameters"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("metricType"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(null);
-
-        try (var mocked = Mockito.mockConstruction(io.milvus.client.MilvusServiceClient.class)) {
-            VectorStore store = provider.createVectorStore(instance, embeddingModel, "token");
-            assertNotNull(store);
-        }
-    }
-
-    @Test
     void testCreateVectorStore_collectionNameFromInstance() {
         instance.setCollectionName("instance_collection");
 
@@ -233,24 +222,6 @@ class TurMilvusStoreProviderTest {
             assertEquals("Milvus", info.get("store"));
             assertEquals("DOWN", info.get("status"));
             assertNotNull(info.get("error"));
-        }
-    }
-
-    @Test
-    void testCreateVectorStore_emptyMetricAndIndexTypeStrings() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(false);
-        when(optionsParser.intValue(any(), eq("embeddingDimension"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexParameters"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("metricType"))).thenReturn("");
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn("");
-
-        try (var mocked = Mockito.mockConstruction(io.milvus.client.MilvusServiceClient.class)) {
-            VectorStore store = provider.createVectorStore(instance, embeddingModel, "token");
-            assertNotNull(store);
         }
     }
 

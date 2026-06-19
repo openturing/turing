@@ -207,10 +207,12 @@ public class TurSystemInfoToolService {
     private void appendExternalMinioStatus(StringBuilder sb) {
         var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
         String endpoint = minio != null ? minio.getEndpoint() : "";
-        var request = java.net.http.HttpRequest.newBuilder()
-                .uri(java.net.URI.create(endpoint + "/minio/health/cluster"))
-                .GET().build();
         try (var client = java.net.http.HttpClient.newHttpClient()) {
+            // URI.create + .uri() validate the scheme and throw on a blank/relative
+            // endpoint — keep them inside the try so that surfaces as Status: DOWN.
+            var request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(endpoint + "/minio/health/cluster"))
+                    .GET().build();
             var response = client.send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
             String status = response.statusCode() < 500 ? "UP" : "DOWN";
             sb.append(STATUS).append(status).append("\n");

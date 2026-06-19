@@ -13,6 +13,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -180,13 +182,19 @@ class TurIntegrationMonitoringToolServiceTest {
                 .contains("INDEXED");
     }
 
-    @Test
-    void formatMonitoringResponseShouldFallbackOnBadJson() throws Exception {
+    @ParameterizedTest(name = "{0} falls back on bad JSON [{1}]")
+    @CsvSource({
+            "formatMonitoringResponse, 'not json'",
+            "formatSearchResponse, 'not json'",
+            "formatStatsResponse, 'not an array'",
+            "formatValidationResponse, 'not json'"
+    })
+    void formatResponseShouldFallbackOnBadJson(String methodName, String input) throws Exception {
         Method method = TurIntegrationMonitoringToolService.class
-                .getDeclaredMethod("formatMonitoringResponse", String.class);
+                .getDeclaredMethod(methodName, String.class);
         method.setAccessible(true);
 
-        String result = (String) method.invoke(service, "not json");
+        String result = (String) method.invoke(service, input);
         assertThat(result).contains("Raw response");
     }
 
@@ -485,36 +493,6 @@ class TurIntegrationMonitoringToolServiceTest {
                 .contains("Sites: site1")
                 .contains("obj-1")
                 .contains("INDEXED");
-    }
-
-    @Test
-    void formatSearchResponseShouldFallbackOnBadJson() throws Exception {
-        Method method = TurIntegrationMonitoringToolService.class
-                .getDeclaredMethod("formatSearchResponse", String.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, "not json");
-        assertThat(result).contains("Raw response");
-    }
-
-    @Test
-    void formatStatsResponseShouldFallbackOnBadJson() throws Exception {
-        Method method = TurIntegrationMonitoringToolService.class
-                .getDeclaredMethod("formatStatsResponse", String.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, "not an array");
-        assertThat(result).contains("Raw response");
-    }
-
-    @Test
-    void formatValidationResponseShouldFallbackOnBadJson() throws Exception {
-        Method method = TurIntegrationMonitoringToolService.class
-                .getDeclaredMethod("formatValidationResponse", String.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, "not json");
-        assertThat(result).contains("Raw response");
     }
 
     @Test

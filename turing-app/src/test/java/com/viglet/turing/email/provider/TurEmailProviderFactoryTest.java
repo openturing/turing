@@ -6,6 +6,10 @@ import static org.mockito.Mockito.*;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Tests for TurEmailProviderFactory.
@@ -49,22 +53,13 @@ class TurEmailProviderFactoryTest {
         assertTrue(ex.getMessage().contains("UNKNOWN"));
     }
 
-    @Test
-    void getProviderShouldThrowForNullType() {
+    @ParameterizedTest(name = "getProvider throws for blank type [{0}]")
+    @NullSource
+    @EmptySource
+    @ValueSource(strings = "  ")
+    void getProviderShouldThrowForBlankType(String type) {
         TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
-        assertThrows(IllegalArgumentException.class, () -> factory.getProvider(null));
-    }
-
-    @Test
-    void getProviderShouldThrowForBlankType() {
-        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
-        assertThrows(IllegalArgumentException.class, () -> factory.getProvider("  "));
-    }
-
-    @Test
-    void getProviderShouldThrowForEmptyType() {
-        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
-        assertThrows(IllegalArgumentException.class, () -> factory.getProvider(""));
+        assertThrows(IllegalArgumentException.class, () -> factory.getProvider(type));
     }
 
     @Test

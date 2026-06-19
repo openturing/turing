@@ -12,6 +12,9 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -52,25 +55,13 @@ class TurGeminiLlmProviderTest {
         assertEquals("gemini", provider.getPluginType());
     }
 
-    @Test
-    void testCreateChatModel_missingApiKey_null() {
+    @ParameterizedTest(name = "apiKey=[{0}]")
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void testCreateChatModel_missingApiKey(String apiKey) {
         when(optionsParser.parse(any())).thenReturn(Map.of());
 
-        assertThrows(IllegalStateException.class, () -> provider.createChatModel(instance, null));
-    }
-
-    @Test
-    void testCreateChatModel_missingApiKey_empty() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-
-        assertThrows(IllegalStateException.class, () -> provider.createChatModel(instance, ""));
-    }
-
-    @Test
-    void testCreateChatModel_missingApiKey_blank() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-
-        assertThrows(IllegalStateException.class, () -> provider.createChatModel(instance, "   "));
+        assertThrows(IllegalStateException.class, () -> provider.createChatModel(instance, apiKey));
     }
 
     @Test

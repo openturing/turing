@@ -14,10 +14,14 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -59,78 +63,35 @@ class TurPgVectorStoreProviderTest {
         assertEquals("pgvector", provider.getPluginType());
     }
 
-    @Test
-    void testCreateVectorStore_defaultOptions() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("jdbcUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("username"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("password"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tableName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("dimensions"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("distanceType"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(null);
-
-        try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
-            var store = provider.createVectorStore(instance, embeddingModel, null);
-            assertNotNull(store);
-        }
+    static Stream<Arguments> createVectorStoreOptionVariants() {
+        return Stream.of(
+                // jdbcUrl, username, password, tableName, schemaName, initSchema, dimensions, distanceType, indexType, credential
+                Arguments.of(null, null, null, null, null, null, null, null, null, null), // default options
+                Arguments.of(null, null, null, null, null, null, null, null, null, "user:password123"), // credential user:pass
+                Arguments.of(null, null, null, null, null, null, null, null, null, "just-a-password"), // credential password only
+                Arguments.of("jdbc:postgresql://other:5432/db", "optUser", "optPass", "my_vectors",
+                        "custom_schema", Boolean.FALSE, 1536, "COSINE_DISTANCE", "HNSW", null) // all options
+        );
     }
 
-    @Test
-    void testCreateVectorStore_withCredentialUserPass() {
+    @ParameterizedTest
+    @MethodSource("createVectorStoreOptionVariants")
+    void testCreateVectorStore_optionVariants(String jdbcUrl, String username, String password, String tableName,
+            String schemaName, Boolean initializeSchema, Integer dimensions, String distanceType, String indexType,
+            String credential) {
         when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("jdbcUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("username"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("password"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tableName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("dimensions"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("distanceType"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(null);
+        when(optionsParser.stringValue(any(), eq("jdbcUrl"))).thenReturn(jdbcUrl);
+        when(optionsParser.stringValue(any(), eq("username"))).thenReturn(username);
+        when(optionsParser.stringValue(any(), eq("password"))).thenReturn(password);
+        when(optionsParser.stringValue(any(), eq("tableName"))).thenReturn(tableName);
+        when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn(schemaName);
+        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(initializeSchema);
+        when(optionsParser.intValue(any(), eq("dimensions"))).thenReturn(dimensions);
+        when(optionsParser.stringValue(any(), eq("distanceType"))).thenReturn(distanceType);
+        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(indexType);
 
         try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
-            var store = provider.createVectorStore(instance, embeddingModel, "user:password123");
-            assertNotNull(store);
-        }
-    }
-
-    @Test
-    void testCreateVectorStore_withCredentialPasswordOnly() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("jdbcUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("username"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("password"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tableName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("dimensions"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("distanceType"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn(null);
-
-        try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
-            var store = provider.createVectorStore(instance, embeddingModel, "just-a-password");
-            assertNotNull(store);
-        }
-    }
-
-    @Test
-    void testCreateVectorStore_withAllOptions() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("jdbcUrl"))).thenReturn("jdbc:postgresql://other:5432/db");
-        when(optionsParser.stringValue(any(), eq("username"))).thenReturn("optUser");
-        when(optionsParser.stringValue(any(), eq("password"))).thenReturn("optPass");
-        when(optionsParser.stringValue(any(), eq("tableName"))).thenReturn("my_vectors");
-        when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn("custom_schema");
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(Boolean.FALSE);
-        when(optionsParser.intValue(any(), eq("dimensions"))).thenReturn(1536);
-        when(optionsParser.stringValue(any(), eq("distanceType"))).thenReturn("COSINE_DISTANCE");
-        when(optionsParser.stringValue(any(), eq("indexType"))).thenReturn("HNSW");
-
-        try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
-            var store = provider.createVectorStore(instance, embeddingModel, null);
+            var store = provider.createVectorStore(instance, embeddingModel, credential);
             assertNotNull(store);
         }
     }

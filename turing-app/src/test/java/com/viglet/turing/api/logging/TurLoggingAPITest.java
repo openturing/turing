@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -312,35 +314,14 @@ class TurLoggingAPITest {
 
     // --- Enabled API with connection failure exercising full flow ---
 
-    @Test
-    void serverLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
+    @ParameterizedTest(name = "{0} returns default on connection failure")
+    @ValueSource(strings = {"/api/logging", "/api/logging/indexing", "/api/logging/aem"})
+    void loggingEnabledShouldReturnDefaultOnConnectionFailure(String path) throws Exception {
         TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
-        enabledMockMvc.perform(get("/api/logging"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{\"page\":0,\"pageSize\":100,\"totalElements\":0,\"totalPages\":0}"));
-    }
-
-    @Test
-    void indexingLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
-                "turingLog", "server", "indexing", "aem");
-        MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
-
-        enabledMockMvc.perform(get("/api/logging/indexing"))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{\"page\":0,\"pageSize\":100,\"totalElements\":0,\"totalPages\":0}"));
-    }
-
-    @Test
-    void aemLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
-                "turingLog", "server", "indexing", "aem");
-        MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
-
-        enabledMockMvc.perform(get("/api/logging/aem"))
+        enabledMockMvc.perform(get(path))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"page\":0,\"pageSize\":100,\"totalElements\":0,\"totalPages\":0}"));
     }

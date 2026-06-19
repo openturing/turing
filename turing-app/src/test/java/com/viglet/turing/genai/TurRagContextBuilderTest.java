@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -90,33 +92,11 @@ class TurRagContextBuilderTest {
                 .hasMessageContaining("has no LLM instance");
     }
 
-    @Test
-    void resolveEmbeddingModelShouldUseModelReferenceWhenPresent() {
-        embModel.setModelReference("custom-embedding-ref");
-
-        EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
-
-        EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
-        assertThat(result).isSameAs(springEmb);
-    }
-
-    @Test
-    void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenNoReference() {
-        embModel.setModelReference(null);
-
-        EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
-
-        EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
-        assertThat(result).isSameAs(springEmb);
-    }
-
-    @Test
-    void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenReferenceIsEmpty() {
-        embModel.setModelReference("");
+    @ParameterizedTest(name = "modelReference=[{0}]")
+    @NullSource
+    @ValueSource(strings = {"custom-embedding-ref", ""})
+    void resolveEmbeddingModelShouldResolveRegardlessOfModelReference(String modelReference) {
+        embModel.setModelReference(modelReference);
 
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");

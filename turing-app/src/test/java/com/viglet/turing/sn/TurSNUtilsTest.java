@@ -9,8 +9,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.viglet.turing.commons.se.TurSEParameters;
@@ -95,38 +99,20 @@ class TurSNUtilsTest {
         assertThat(TurSNUtils.hasCorrectedText(result)).isTrue();
     }
 
-    @Test
-    void hasCorrectedTextShouldReturnFalseWhenNotCorrected() {
-        TurSESpellCheckResult result = new TurSESpellCheckResult();
-        result.setCorrected(false);
-        result.setCorrectedText("some text");
-
-        assertThat(TurSNUtils.hasCorrectedText(result)).isFalse();
+    static Stream<Arguments> hasCorrectedTextFalseCases() {
+        return Stream.of(
+                Arguments.of(false, "some text"),
+                Arguments.of(true, ""),
+                Arguments.of(true, null),
+                Arguments.of(true, "   "));
     }
 
-    @Test
-    void hasCorrectedTextShouldReturnFalseWhenCorrectedButEmptyText() {
+    @ParameterizedTest(name = "corrected={0}, text=[{1}]")
+    @MethodSource("hasCorrectedTextFalseCases")
+    void hasCorrectedTextShouldReturnFalse(boolean corrected, String correctedText) {
         TurSESpellCheckResult result = new TurSESpellCheckResult();
-        result.setCorrected(true);
-        result.setCorrectedText("");
-
-        assertThat(TurSNUtils.hasCorrectedText(result)).isFalse();
-    }
-
-    @Test
-    void hasCorrectedTextShouldReturnFalseWhenCorrectedButNullText() {
-        TurSESpellCheckResult result = new TurSESpellCheckResult();
-        result.setCorrected(true);
-        result.setCorrectedText(null);
-
-        assertThat(TurSNUtils.hasCorrectedText(result)).isFalse();
-    }
-
-    @Test
-    void hasCorrectedTextShouldReturnFalseWhenCorrectedButBlankText() {
-        TurSESpellCheckResult result = new TurSESpellCheckResult();
-        result.setCorrected(true);
-        result.setCorrectedText("   ");
+        result.setCorrected(corrected);
+        result.setCorrectedText(correctedText);
 
         assertThat(TurSNUtils.hasCorrectedText(result)).isFalse();
     }

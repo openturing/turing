@@ -43,6 +43,8 @@ import org.json.JSONArray;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -295,76 +297,37 @@ class TurSolrDocumentHandlerTest {
                 assertThat(document.getFieldValue("nullField")).isNull();
         }
 
-        @Test
-        void testCurrencyInvalidFormatIsSkipped() {
+        @ParameterizedTest(name = "{0}=[{1}] -> {2}")
+        @CsvSource(nullValues = "null", value = {
+                        "price,  invalid,      null",
+                        "amount, '99.50,USD',  '99.50,USD'",
+                        "amount, '100.00,brl', '100.00,BRL'"
+        })
+        void testCurrencyValueIsNormalizedOrSkipped(String fieldName, String input, String expected) {
                 TurSNSiteField currencyField = TurSNSiteField.builder()
-                                .name("price")
+                                .name(fieldName)
                                 .type(TurSEFieldType.CURRENCY)
                                 .multiValued(0)
                                 .build();
 
                 Map<String, TurSNSiteField> fieldMap = new HashMap<>();
-                fieldMap.put("price", currencyField);
+                fieldMap.put(fieldName, currencyField);
 
                 when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
                 when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
 
                 Map<String, Object> attributes = new HashMap<>();
-                attributes.put("price", "invalid");
+                attributes.put(fieldName, input);
 
                 turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
 
                 UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
                 SolrInputDocument document = updateRequest.getDocuments().getFirst();
-                assertThat(document.getFieldValue("price")).isNull();
-        }
-
-        @Test
-        void testCurrencyWithCommaSeparatedISOCodeIsValid() {
-                TurSNSiteField currencyField = TurSNSiteField.builder()
-                                .name("amount")
-                                .type(TurSEFieldType.CURRENCY)
-                                .multiValued(0)
-                                .build();
-
-                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
-                fieldMap.put("amount", currencyField);
-
-                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
-                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
-
-                Map<String, Object> attributes = new HashMap<>();
-                attributes.put("amount", "99.50,USD");
-
-                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
-
-                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
-                SolrInputDocument document = updateRequest.getDocuments().getFirst();
-                assertThat(document.getFieldValue("amount")).isEqualTo("99.50,USD");
-        }
-
-        @Test
-        void testCurrencyLowercaseISOCodeIsNormalized() {
-                TurSNSiteField currencyField = TurSNSiteField.builder()
-                                .name("amount")
-                                .type(TurSEFieldType.CURRENCY)
-                                .multiValued(0)
-                                .build();
-
-                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
-                fieldMap.put("amount", currencyField);
-
-                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
-                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
-
-                Map<String, Object> attributes = new HashMap<>();
-                attributes.put("amount", "100.00,brl");
-
-                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
-
-                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
-                SolrInputDocument document = updateRequest.getDocuments().getFirst();
-                assertThat(document.getFieldValue("amount")).isEqualTo("100.00,BRL");
+                if (expected == null) {
+                        assertThat(document.getFieldValue(fieldName)).isNull();
+                } else {
+                        assertThat(document.getFieldValue(fieldName)).isEqualTo(expected);
+                }
         }
 
         @Test

@@ -9,6 +9,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -50,21 +53,11 @@ class TurMinioStorageServiceTest {
 
     // --- listObjects when minioClient is null (disabled) ---
 
-    @Test
-    void listObjectsShouldReturnEmptyListWhenDisabled() {
-        List<TurAssetItem> result = service.listObjects("");
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void listObjectsShouldReturnEmptyListWithPrefix() {
-        List<TurAssetItem> result = service.listObjects("prefix/");
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void listObjectsShouldReturnEmptyListWithNull() {
-        List<TurAssetItem> result = service.listObjects(null);
+    @ParameterizedTest(name = "listObjects(prefix={0}) -> empty")
+    @NullSource
+    @ValueSource(strings = {"", "prefix/", "   "})
+    void listObjectsShouldReturnEmptyListWhenDisabled(String prefix) {
+        List<TurAssetItem> result = service.listObjects(prefix);
         assertThat(result).isEmpty();
     }
 
@@ -96,12 +89,14 @@ class TurMinioStorageServiceTest {
 
     // --- uploadObject when minioClient is null ---
 
-    @Test
-    void uploadObjectShouldThrowWhenDisabled() {
+    @ParameterizedTest(name = "uploadObject(file, prefix={0}) -> throws when disabled")
+    @NullSource
+    @ValueSource(strings = {"", "some/prefix/"})
+    void uploadObjectShouldThrowWhenDisabled(String prefix) {
         org.springframework.web.multipart.MultipartFile file =
                 new org.springframework.mock.web.MockMultipartFile("file", "test.txt",
                         "text/plain", "content".getBytes());
-        assertThatThrownBy(() -> service.uploadObject(file, ""))
+        assertThatThrownBy(() -> service.uploadObject(file, prefix))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("MinIO is not configured");
     }
@@ -168,33 +163,4 @@ class TurMinioStorageServiceTest {
         assertThat(service.isEnabled()).isTrue();
     }
 
-    // --- uploadObject prefix handling ---
-
-    @Test
-    void uploadObjectShouldThrowWhenDisabledWithPrefix() {
-        org.springframework.web.multipart.MultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.txt",
-                        "text/plain", "content".getBytes());
-        assertThatThrownBy(() -> service.uploadObject(file, "some/prefix/"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("MinIO is not configured");
-    }
-
-    @Test
-    void uploadObjectShouldThrowWhenDisabledWithNullPrefix() {
-        org.springframework.web.multipart.MultipartFile file =
-                new org.springframework.mock.web.MockMultipartFile("file", "test.txt",
-                        "text/plain", "content".getBytes());
-        assertThatThrownBy(() -> service.uploadObject(file, null))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("MinIO is not configured");
-    }
-
-    // --- listObjects with blank prefix normalization ---
-
-    @Test
-    void listObjectsShouldReturnEmptyListWithBlankPrefix() {
-        List<TurAssetItem> result = service.listObjects("   ");
-        assertThat(result).isEmpty();
-    }
 }

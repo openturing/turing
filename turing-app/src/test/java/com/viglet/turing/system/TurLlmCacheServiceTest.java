@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -44,14 +46,19 @@ class TurLlmCacheServiceTest {
         assertNull(cacheService.get("nonexistent"));
     }
 
-    @Test
-    void getShouldReturnCachedContentWhenValid() {
+    @ParameterizedTest(name = "ttl={0}ms content=[{1}]")
+    @CsvSource({
+            "3600000, cached content",
+            "60000,   fresh content",
+            "3600000, ''"
+    })
+    void getShouldReturnCachedContentWhenValid(long ttlMs, String content) {
         when(globalSettingsService.isLlmCacheEnabled()).thenReturn(true);
-        when(globalSettingsService.getLlmCacheTtlMs()).thenReturn(3_600_000L);
+        when(globalSettingsService.getLlmCacheTtlMs()).thenReturn(ttlMs);
 
-        cacheService.put("site-1", "cached content");
+        cacheService.put("site-1", content);
 
-        assertEquals("cached content", cacheService.get("site-1"));
+        assertEquals(content, cacheService.get("site-1"));
     }
 
     @Test
@@ -163,16 +170,6 @@ class TurLlmCacheServiceTest {
         when(globalSettingsService.isLlmCacheEnabled()).thenReturn(true);
 
         assertThrows(NullPointerException.class, () -> cacheService.get(null));
-    }
-
-    @Test
-    void putAndGetShouldWorkWithEmptyContent() {
-        when(globalSettingsService.isLlmCacheEnabled()).thenReturn(true);
-        when(globalSettingsService.getLlmCacheTtlMs()).thenReturn(3_600_000L);
-
-        cacheService.put("site-1", "");
-
-        assertEquals("", cacheService.get("site-1"));
     }
 
     @Test

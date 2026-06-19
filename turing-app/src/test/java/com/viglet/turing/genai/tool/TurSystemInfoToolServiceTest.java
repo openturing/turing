@@ -61,28 +61,17 @@ class TurSystemInfoToolServiceTest {
         assertThat(method.invoke(service, bytes)).isEqualTo(expected);
     }
 
-    @Test
-    void formatBytesShouldFormatKilobytes() throws Exception {
+    @ParameterizedTest(name = "formatBytes({0}) matches {1}")
+    @CsvSource({
+            "2048,           '2[.,]0 KB'",
+            "5242880,        '5[.,]0 MB'",
+            "2147483648,     '2[.,]00 GB'"
+    })
+    void formatBytesShouldFormatLargeValues(long bytes, String expectedPattern) throws Exception {
         Method method = TurSystemInfoToolService.class.getDeclaredMethod("formatBytes", long.class);
         method.setAccessible(true);
-        String result = (String) method.invoke(service, 2048L);
-        assertThat(result).matches("2[.,]0 KB");
-    }
-
-    @Test
-    void formatBytesShouldFormatMegabytes() throws Exception {
-        Method method = TurSystemInfoToolService.class.getDeclaredMethod("formatBytes", long.class);
-        method.setAccessible(true);
-        String result = (String) method.invoke(service, 5_242_880L);
-        assertThat(result).matches("5[.,]0 MB");
-    }
-
-    @Test
-    void formatBytesShouldFormatGigabytes() throws Exception {
-        Method method = TurSystemInfoToolService.class.getDeclaredMethod("formatBytes", long.class);
-        method.setAccessible(true);
-        String result = (String) method.invoke(service, 2_147_483_648L);
-        assertThat(result).matches("2[.,]00 GB");
+        String result = (String) method.invoke(service, bytes);
+        assertThat(result).matches(expectedPattern);
     }
 
     @ParameterizedTest

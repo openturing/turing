@@ -16,6 +16,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -56,8 +58,9 @@ class TurChromaStoreProviderTest {
         assertEquals("chroma", provider.getPluginType());
     }
 
-    @Test
-    void testCreateVectorStore_basicAuth() {
+    @ParameterizedTest(name = "credential={0}")
+    @ValueSource(strings = {"basic:user:pass", "token:my-token", "raw-token-value", "basic:onlyuser"})
+    void testCreateVectorStore_credentialVariants(String credential) {
         when(optionsParser.parse(any())).thenReturn(Map.of());
         when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
         when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
@@ -65,33 +68,7 @@ class TurChromaStoreProviderTest {
         when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
         when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
 
-        VectorStore store = provider.createVectorStore(instance, embeddingModel, "basic:user:pass");
-        assertNotNull(store);
-    }
-
-    @Test
-    void testCreateVectorStore_tokenAuth() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tenantName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-
-        VectorStore store = provider.createVectorStore(instance, embeddingModel, "token:my-token");
-        assertNotNull(store);
-    }
-
-    @Test
-    void testCreateVectorStore_rawTokenAuth() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tenantName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-
-        VectorStore store = provider.createVectorStore(instance, embeddingModel, "raw-token-value");
+        VectorStore store = provider.createVectorStore(instance, embeddingModel, credential);
         assertNotNull(store);
     }
 
@@ -275,20 +252,6 @@ class TurChromaStoreProviderTest {
         assertEquals("ChromaDB", info.get("store"));
         assertEquals("DOWN", info.get("status"));
         assertTrue(info.containsKey("error"));
-    }
-
-    @Test
-    void testCreateVectorStore_basicAuthWithIncompleteCredentials() {
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("collectionName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("tenantName"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("databaseName"))).thenReturn(null);
-        when(optionsParser.booleanValue(any(), eq("initializeSchema"))).thenReturn(null);
-
-        // "basic:" prefix but no colon separator for user:pass - only one part
-        VectorStore store = provider.createVectorStore(instance, embeddingModel, "basic:onlyuser");
-        assertNotNull(store);
     }
 
     @Test

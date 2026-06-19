@@ -16,6 +16,9 @@ import java.util.OptionalInt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -231,47 +234,11 @@ class TurOllamaLlmProviderTest {
         assertTrue(result.isEmpty());
     }
 
-    @Test
-    void testCreateChatModel_stopSequencesFromInstanceString() {
-        instance.setStop("stop1, stop2, stop3");
-
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("model"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("temperature"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("topK"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("topP"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("repeatPenalty"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("seed"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("numPredict"))).thenReturn(null);
-        when(optionsParser.stringListValue(any(), eq("stop"))).thenReturn(List.of());
-
-        ChatModel model = provider.createChatModel(instance, "dummy-key");
-        assertNotNull(model);
-    }
-
-    @Test
-    void testCreateChatModel_emptyStopString() {
-        instance.setStop("");
-
-        when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("model"))).thenReturn(null);
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("temperature"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("topK"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("topP"))).thenReturn(null);
-        when(optionsParser.doubleValue(any(), eq("repeatPenalty"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("seed"))).thenReturn(null);
-        when(optionsParser.intValue(any(), eq("numPredict"))).thenReturn(null);
-        when(optionsParser.stringListValue(any(), eq("stop"))).thenReturn(List.of());
-
-        ChatModel model = provider.createChatModel(instance, "dummy-key");
-        assertNotNull(model);
-    }
-
-    @Test
-    void testCreateChatModel_nullStopString() {
-        instance.setStop(null);
+    @ParameterizedTest(name = "stop=[{0}]")
+    @NullSource
+    @ValueSource(strings = {"stop1, stop2, stop3", ""})
+    void testCreateChatModel_stopStringVariants(String stop) {
+        instance.setStop(stop);
 
         when(optionsParser.parse(any())).thenReturn(Map.of());
         when(optionsParser.stringValue(any(), eq("model"))).thenReturn(null);

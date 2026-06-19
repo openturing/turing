@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -49,30 +51,21 @@ class TurMcpLoopbackFilterTest {
         assertNull(chain.getRequest(), "non-loopback request should not reach the chain");
     }
 
-    @Test
-    void loopbackOnly_allowsIpv4Loopback() throws Exception {
+    @ParameterizedTest(name = "{0} loopback should reach the chain")
+    @CsvSource({
+            "127.0.0.1,         loopback request should reach the chain",
+            "0:0:0:0:0:0:0:1,   IPv6 loopback request should reach the chain"
+    })
+    void loopbackOnly_allowsLoopback(String remoteAddr, String message) throws Exception {
         TurMcpLoopbackFilter filter = new TurMcpLoopbackFilter(true);
-        MockHttpServletRequest req = request("127.0.0.1");
+        MockHttpServletRequest req = request(remoteAddr);
         MockHttpServletResponse res = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
         filter.doFilter(req, res, chain);
 
         assertEquals(HttpServletResponse.SC_OK, res.getStatus());
-        assertNotNull(chain.getRequest(), "loopback request should reach the chain");
-    }
-
-    @Test
-    void loopbackOnly_allowsIpv6Loopback() throws Exception {
-        TurMcpLoopbackFilter filter = new TurMcpLoopbackFilter(true);
-        MockHttpServletRequest req = request("0:0:0:0:0:0:0:1");
-        MockHttpServletResponse res = new MockHttpServletResponse();
-        MockFilterChain chain = new MockFilterChain();
-
-        filter.doFilter(req, res, chain);
-
-        assertEquals(HttpServletResponse.SC_OK, res.getStatus());
-        assertNotNull(chain.getRequest(), "IPv6 loopback request should reach the chain");
+        assertNotNull(chain.getRequest(), message);
     }
 
     @Test

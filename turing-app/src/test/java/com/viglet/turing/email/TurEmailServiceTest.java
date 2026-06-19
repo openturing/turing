@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,36 +52,17 @@ class TurEmailServiceTest {
         verify(provider).sendEmail(any(TurEmailMessage.class), eq("api-key-123"));
     }
 
-    @Test
-    void sendEmailShouldSkipWhenApiKeyBlank() {
+    @ParameterizedTest(name = "skip when apiKey=[{0}] senderEmail=[{1}] recipientEmail=[{2}]")
+    @CsvSource({
+            "'', 'sender@test.com', 'recipient@test.com'",
+            "'key', '', 'recipient@test.com'",
+            "'key', 'sender@test.com', ''"
+    })
+    void sendEmailShouldSkipWhenRequiredSettingBlank(String apiKey, String senderEmail, String recipientEmail) {
         when(globalSettingsService.getEmailProvider()).thenReturn(TurEmailProviderType.BREVO);
-        when(globalSettingsService.getEmailApiKey()).thenReturn("");
-        when(globalSettingsService.getSenderEmail()).thenReturn("sender@test.com");
-        when(globalSettingsService.getRecipientEmail()).thenReturn("recipient@test.com");
-
-        emailService.sendEmail("Subject", "Content");
-
-        verifyNoInteractions(emailProviderFactory);
-    }
-
-    @Test
-    void sendEmailShouldSkipWhenSenderEmailBlank() {
-        when(globalSettingsService.getEmailProvider()).thenReturn(TurEmailProviderType.BREVO);
-        when(globalSettingsService.getEmailApiKey()).thenReturn("key");
-        when(globalSettingsService.getSenderEmail()).thenReturn("");
-        when(globalSettingsService.getRecipientEmail()).thenReturn("recipient@test.com");
-
-        emailService.sendEmail("Subject", "Content");
-
-        verifyNoInteractions(emailProviderFactory);
-    }
-
-    @Test
-    void sendEmailShouldSkipWhenRecipientEmailBlank() {
-        when(globalSettingsService.getEmailProvider()).thenReturn(TurEmailProviderType.BREVO);
-        when(globalSettingsService.getEmailApiKey()).thenReturn("key");
-        when(globalSettingsService.getSenderEmail()).thenReturn("sender@test.com");
-        when(globalSettingsService.getRecipientEmail()).thenReturn("");
+        when(globalSettingsService.getEmailApiKey()).thenReturn(apiKey);
+        when(globalSettingsService.getSenderEmail()).thenReturn(senderEmail);
+        when(globalSettingsService.getRecipientEmail()).thenReturn(recipientEmail);
 
         emailService.sendEmail("Subject", "Content");
 

@@ -7,6 +7,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -481,31 +483,18 @@ class TurGlobalSettingsServiceTest {
         assertEquals(3_600_000L, service.getLlmCacheTtlMs());
     }
 
-    @Test
-    void getLlmCacheTtlMsShouldParseConfiguredValue() {
+    @ParameterizedTest(name = "value [{0}] -> {1} ms")
+    @CsvSource({
+            "'5000',         5000",
+            "'notanumber',   3600000",
+            "'  7200000  ',  7200000"
+    })
+    void getLlmCacheTtlMsShouldResolveConfiguredValue(String configuredValue, long expected) {
         TurConfigVar configVar = new TurConfigVar();
-        configVar.setValue("5000");
+        configVar.setValue(configuredValue);
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
                 .thenReturn(Optional.of(configVar));
-        assertEquals(5000L, service.getLlmCacheTtlMs());
-    }
-
-    @Test
-    void getLlmCacheTtlMsShouldReturnDefaultForInvalidValue() {
-        TurConfigVar configVar = new TurConfigVar();
-        configVar.setValue("notanumber");
-        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
-                .thenReturn(Optional.of(configVar));
-        assertEquals(3_600_000L, service.getLlmCacheTtlMs());
-    }
-
-    @Test
-    void getLlmCacheTtlMsShouldHandleWhitespace() {
-        TurConfigVar configVar = new TurConfigVar();
-        configVar.setValue("  7200000  ");
-        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
-                .thenReturn(Optional.of(configVar));
-        assertEquals(7_200_000L, service.getLlmCacheTtlMs());
+        assertEquals(expected, service.getLlmCacheTtlMs());
     }
 
     // --- updateLlmCacheTtlMs ---
