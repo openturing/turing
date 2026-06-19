@@ -430,7 +430,7 @@ public class TurChatFlowAPI {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Recipe '" + recipeId + "' not found"));
         if (recipe.getBundle() == null || recipe.getBundle().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT,
                     "Recipe '" + recipeId + "' carries no flow bundle");
         }
         // Reuse the existing bundle-import machinery so persona / slot
@@ -581,7 +581,7 @@ public class TurChatFlowAPI {
         // publish. Default sets are non-blocking (warn-only, surfaced in the
         // Lint panel), so this never bites until an author opts in.
         if (agentEvalGateService.shouldBlockPublish(agentId)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT,
                     "Publish blocked: the agent's eval gate is failing. "
                             + "Fix the regression or re-run the gate to a green baseline.");
         }

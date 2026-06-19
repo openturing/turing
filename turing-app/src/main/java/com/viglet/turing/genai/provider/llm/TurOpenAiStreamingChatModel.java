@@ -243,8 +243,8 @@ public class TurOpenAiStreamingChatModel implements ChatModel {
             if (choices.isArray() && !choices.isEmpty()) {
                 JsonNode delta = choices.get(0).path("delta");
                 JsonNode contentNode = delta.path("content");
-                if (contentNode.isTextual()) {
-                    content = contentNode.asText();
+                if (contentNode.isString()) {
+                    content = contentNode.asString();
                 }
             }
             JsonNode usage = root.path("usage");

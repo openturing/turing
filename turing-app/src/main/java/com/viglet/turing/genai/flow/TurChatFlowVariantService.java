@@ -331,12 +331,12 @@ public class TurChatFlowVariantService {
 
     private static String textOrNull(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        return value.isTextual() ? value.asText() : null;
+        return value.isString() ? value.asString() : null;
     }
 
     private static String extractText(ObjectNode node, String field) {
         JsonNode value = node.path(field);
-        return value.isTextual() ? value.asText() : null;
+        return value.isString() ? value.asString() : null;
     }
 
     private static String safe(String s) {

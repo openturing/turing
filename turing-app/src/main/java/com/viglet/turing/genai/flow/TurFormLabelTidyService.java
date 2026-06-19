@@ -172,7 +172,7 @@ public class TurFormLabelTidyService {
 
     private static String textOrNull(JsonNode node, String field) {
         JsonNode value = node.path(field);
-        return value.isTextual() ? value.asText() : null;
+        return value.isString() ? value.asString() : null;
     }
 
     private static TurFormLabelTidyResponse fail(String message) {
