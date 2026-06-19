@@ -500,25 +500,13 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                     ? exportRecord.id()
                     : java.util.UUID.randomUUID().toString();
             String content = exportRecord.content() == null ? "" : exportRecord.content();
-            float[] embedding = exportRecord.embedding();
-            boolean wasReEmbedded = false;
-            if (embedding == null || embedding.length == 0) {
-                if (embeddingModel == null || content.isBlank()) {
-                    failed++;
-                    log.debug("[Chroma] Skipping record '{}': cannot re-embed (model={}, blank={})",
-                            id, embeddingModel != null, content.isBlank());
-                    continue;
-                }
-                try {
-                    embedding = embeddingModel.embed(content);
-                    wasReEmbedded = true;
-                } catch (Exception e) {
-                    failed++;
-                    log.warn("[Chroma] Failed to re-embed record '{}': {}", id, e.getMessage());
-                    continue;
-                }
+            ResolvedEmbedding resolved = resolveRecordEmbedding(exportRecord, id, content, embeddingModel);
+            if (resolved == null) {
+                failed++;
+                continue;
             }
-            batch.add(id, embedding, toChromaMetadata(exportRecord.metadata()), content, wasReEmbedded);
+            batch.add(id, resolved.embedding(), toChromaMetadata(exportRecord.metadata()),
+                    content, resolved.reEmbedded());
             if (batch.size() >= IMPORT_BATCH_SIZE) {
                 int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
                 preserved += outcome[0];
@@ -543,6 +531,44 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
      * transport failure the entire batch moves to {@code failed}, leaving the
      * "preserved + reEmbedded = imported" invariant intact.
      */
+    /** A record's vector plus whether it had to be (re)computed on import. */
+    private record ResolvedEmbedding(float[] embedding, boolean reEmbedded) {
+    }
+
+    /**
+     * Resolves the embedding for a record: uses the carried vector when present,
+     * otherwise re-embeds the content. Returns null when no usable embedding can
+     * be produced (the caller counts that as a failed record).
+     */
+    private ResolvedEmbedding resolveRecordEmbedding(TurStoreExportRecord exportRecord, String id,
+            String content, EmbeddingModel embeddingModel) {
+        float[] embedding = exportRecord.embedding();
+        if (embedding != null && embedding.length > 0) {
+            return new ResolvedEmbedding(embedding, false);
+        }
+        float[] reEmbedded = reEmbed(embeddingModel, content, id);
+        return reEmbedded == null ? null : new ResolvedEmbedding(reEmbedded, true);
+    }
+
+    /**
+     * Re-embeds {@code content} when the record carried no vector. Returns null
+     * (and logs) when there's no model or the content is blank, or the embedding
+     * call fails — the caller counts that as a failed record.
+     */
+    private float[] reEmbed(EmbeddingModel embeddingModel, String content, String id) {
+        if (embeddingModel == null || content.isBlank()) {
+            log.debug("[Chroma] Skipping record '{}': cannot re-embed (model={}, blank={})",
+                    id, embeddingModel != null, content.isBlank());
+            return null;
+        }
+        try {
+            return embeddingModel.embed(content);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to re-embed record '{}': {}", id, e.getMessage());
+            return null;
+        }
+    }
+
     private int[] flushImportBatch(ChromaApi chromaApi, String tenantName, String databaseName,
             String collectionId, ImportBatchAccumulator batch) {
         try {

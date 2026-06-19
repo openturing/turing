@@ -286,30 +286,41 @@ public class TurCustomToolSearchHelper {
             if (trimmed.isEmpty() || DEDUP_NONE.equalsIgnoreCase(trimmed)) {
                 return Collections.emptyList();
             }
-            // Custom key first, then fall back to defaults — keeps the helper
-            // resilient against indexes that omit the requested field.
-            List<String> ordered = new java.util.ArrayList<>();
-            ordered.add(trimmed);
-            for (String def : DEFAULT_DEDUP_KEYS) {
-                if (!def.equalsIgnoreCase(trimmed)) {
-                    ordered.add(def);
-                }
-            }
-            return ordered;
+            return dedupKeysFromString(trimmed);
         }
         if (dedupBy instanceof List<?> list) {
-            List<String> ordered = new java.util.ArrayList<>();
-            java.util.Set<String> seen = new java.util.HashSet<>();
-            for (Object o : list) {
-                if (o == null) continue;
-                String key = o.toString().trim();
-                if (!key.isEmpty() && seen.add(key.toLowerCase(Locale.ROOT))) {
-                    ordered.add(key);
-                }
-            }
-            return ordered.isEmpty() ? DEFAULT_DEDUP_KEYS : ordered;
+            return dedupKeysFromList(list);
         }
         return DEFAULT_DEDUP_KEYS;
+    }
+
+    /**
+     * Custom key first, then the defaults — keeps dedup resilient against
+     * indexes that omit the requested field.
+     */
+    private static List<String> dedupKeysFromString(String trimmed) {
+        List<String> ordered = new java.util.ArrayList<>();
+        ordered.add(trimmed);
+        for (String def : DEFAULT_DEDUP_KEYS) {
+            if (!def.equalsIgnoreCase(trimmed)) {
+                ordered.add(def);
+            }
+        }
+        return ordered;
+    }
+
+    /** De-duplicates the requested key list (case-insensitive), defaulting when empty. */
+    private static List<String> dedupKeysFromList(List<?> list) {
+        List<String> ordered = new java.util.ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (Object o : list) {
+            if (o == null) continue;
+            String key = o.toString().trim();
+            if (!key.isEmpty() && seen.add(key.toLowerCase(Locale.ROOT))) {
+                ordered.add(key);
+            }
+        }
+        return ordered.isEmpty() ? DEFAULT_DEDUP_KEYS : ordered;
     }
 
     /**
