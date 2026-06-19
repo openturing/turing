@@ -844,8 +844,8 @@ public class TurLuceneVectorStore implements VectorStore {
     public static Map<String, String> publicFieldNames() {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("id", FIELD_ID);
-        map.put("content", FIELD_CONTENT);
-        map.put("embedding", FIELD_EMBEDDING);
+        map.put(FIELD_CONTENT, FIELD_CONTENT);
+        map.put(FIELD_EMBEDDING, FIELD_EMBEDDING);
         map.put("metadata", FIELD_METADATA_JSON);
         map.put("metaPrefix", METADATA_FIELD_PREFIX);
         return Map.copyOf(map);

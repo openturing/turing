@@ -133,14 +133,14 @@ public class TurChatCohortResolver {
     }
 
     private static boolean isTablet(String ua) {
-        // iPad, or an Android device that is explicitly NOT "mobile".
+        // iPad, or an Android device that is explicitly NOT DEVICE_MOBILE.
         if (ua.contains("ipad")) return true;
-        if (ua.contains("tablet") || ua.contains("kindle") || ua.contains("playbook")) return true;
-        return ua.contains("android") && !ua.contains("mobile");
+        if (ua.contains(DEVICE_TABLET) || ua.contains("kindle") || ua.contains("playbook")) return true;
+        return ua.contains("android") && !ua.contains(DEVICE_MOBILE);
     }
 
     private static boolean isMobile(String ua) {
-        return ua.contains("mobile") || ua.contains("iphone") || ua.contains("ipod")
+        return ua.contains(DEVICE_MOBILE) || ua.contains("iphone") || ua.contains("ipod")
                 || ua.contains("android") || ua.contains("windows phone")
                 || ua.contains("blackberry") || ua.contains("opera mini");
     }

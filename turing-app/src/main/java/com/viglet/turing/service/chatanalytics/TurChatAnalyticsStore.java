@@ -41,6 +41,15 @@ import java.util.Set;
  */
 public interface TurChatAnalyticsStore {
 
+    // --- S1192: extracted duplicated literals ---
+    String PERSONA_ID = "personaId";
+    String VARIANT_LABEL = "variantLabel";
+    String EXPERIMENT_KEY = "experimentKey";
+    String LOCALE = "locale";
+    String DEVICE_TYPE = "deviceType";
+    String TIMEZONE = "timezone";
+
+
     /** Whether the store is wired up and writes will be persisted. */
     boolean isEnabled();
 
@@ -211,8 +220,8 @@ public interface TurChatAnalyticsStore {
      * for grouping.
      */
     Set<String> SCORECARD_FILTERABLE_FIELDS = Set.of(
-            "agentId", "personaId", "experimentKey", "variantLabel",
-            "locale", "timezone", "deviceType", "outcome");
+            "agentId", PERSONA_ID, EXPERIMENT_KEY, VARIANT_LABEL,
+            LOCALE, TIMEZONE, DEVICE_TYPE, "outcome");
 
     /**
      * Maps a scorecard {@code dimension} request to the stored document field
@@ -222,14 +231,14 @@ public interface TurChatAnalyticsStore {
      */
     static String scorecardDimensionField(String dimension) {
         return switch (dimension == null ? "" : dimension.trim()) {
-            case "personaId"           -> "personaId";
-            case "experimentKey"       -> "experimentKey";
-            case "variantLabel"        -> "variantLabel";
+            case PERSONA_ID           -> PERSONA_ID;
+            case EXPERIMENT_KEY       -> EXPERIMENT_KEY;
+            case VARIANT_LABEL        -> VARIANT_LABEL;
             case "parentConversationId" -> "parentConversationId";
             // T74 cohort dimensions.
-            case "locale"     -> "locale";
-            case "timezone"   -> "timezone";
-            case "deviceType" -> "deviceType";
+            case LOCALE     -> LOCALE;
+            case TIMEZONE   -> TIMEZONE;
+            case DEVICE_TYPE -> DEVICE_TYPE;
             default -> "agentId";
         };
     }

@@ -63,6 +63,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class TurElasticsearch {
+
+    // --- S1192: extracted duplicated literals ---
+    private static final String INDEX_NOT_FOUND_EXCEPTION = "index_not_found_exception";
+
     private static final String FACET_AGG_PREFIX = "facet_";
 
     private final TurSNSiteRepository turSNSiteRepository;
@@ -221,7 +225,7 @@ public class TurElasticsearch {
         try {
             return instance.getClient().count(c -> c.index(instance.getIndex())).count();
         } catch (co.elastic.clients.elasticsearch._types.ElasticsearchException e) {
-            if ("index_not_found_exception".equals(e.error().type())) {
+            if (INDEX_NOT_FOUND_EXCEPTION.equals(e.error().type())) {
                 log.debug("Index '{}' not found, returning 0 documents", instance.getIndex());
             } else {
                 log.error("Error getting document count from Elasticsearch index '{}'", instance.getIndex(), e);
@@ -243,7 +247,7 @@ public class TurElasticsearch {
             return instance.getClient().count(c -> c.index(instance.getIndex())
                     .query(q -> q.exists(e -> e.field(fieldName)))).count();
         } catch (co.elastic.clients.elasticsearch._types.ElasticsearchException e) {
-            if ("index_not_found_exception".equals(e.error().type())) {
+            if (INDEX_NOT_FOUND_EXCEPTION.equals(e.error().type())) {
                 log.debug("Index '{}' not found, returning -1 for field '{}'",
                         instance.getIndex(), fieldName);
             } else {
@@ -331,7 +335,7 @@ public class TurElasticsearch {
 
     private void handleElasticsearchException(co.elastic.clients.elasticsearch._types.ElasticsearchException e,
             String index) {
-        if ("index_not_found_exception".equals(e.error().type())) {
+        if (INDEX_NOT_FOUND_EXCEPTION.equals(e.error().type())) {
             log.debug("Index '{}' not found, returning empty results", index);
         } else {
             var err = e.error();

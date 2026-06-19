@@ -93,7 +93,7 @@ public class TurChatIntentClassifier {
             return switch (value.trim().toLowerCase(Locale.ROOT)) {
                 case "llm" -> LLM;
                 case "lucene" -> LUCENE;
-                case "search-engine-mlt", "se-mlt", "se",
+                case SEARCH_ENGINE_MLT_TYPE, "se-mlt", "se",
                         "elasticsearch-mlt", "es-mlt", "es", "solr-mlt", "solr"
                         -> SEARCH_ENGINE_MLT;
                 default -> AUTO;

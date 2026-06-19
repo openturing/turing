@@ -35,6 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String TOKEN = "token";
+    private static final String DATABASE_NAME = "databaseName";
+
+
     private static final String DEFAULT_COLLECTION = "turing";
     private static final String BASE_URL_OPTION = "baseUrl";
 
@@ -78,13 +83,13 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         if (StringUtils.hasText(decryptedCredential)) {
             connectBuilder.withToken(decryptedCredential);
         } else {
-            String token = optionsParser.stringValue(options, "token");
+            String token = optionsParser.stringValue(options, TOKEN);
             if (StringUtils.hasText(token)) {
                 connectBuilder.withToken(token);
             }
         }
 
-        String databaseName = optionsParser.stringValue(options, "databaseName");
+        String databaseName = optionsParser.stringValue(options, DATABASE_NAME);
         if (StringUtils.hasText(databaseName)) {
             connectBuilder.withDatabaseName(databaseName);
         }
@@ -141,13 +146,13 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         if (StringUtils.hasText(decryptedCredential)) {
             connectBuilder.withToken(decryptedCredential);
         } else {
-            String token = optionsParser.stringValue(options, "token");
+            String token = optionsParser.stringValue(options, TOKEN);
             if (StringUtils.hasText(token)) {
                 connectBuilder.withToken(token);
             }
         }
 
-        String databaseName = optionsParser.stringValue(options, "databaseName");
+        String databaseName = optionsParser.stringValue(options, DATABASE_NAME);
         if (StringUtils.hasText(databaseName)) {
             connectBuilder.withDatabaseName(databaseName);
         }
@@ -361,12 +366,12 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         if (StringUtils.hasText(decryptedCredential)) {
             connectBuilder.withToken(decryptedCredential);
         } else {
-            String token = optionsParser.stringValue(options, "token");
+            String token = optionsParser.stringValue(options, TOKEN);
             if (StringUtils.hasText(token)) {
                 connectBuilder.withToken(token);
             }
         }
-        String databaseName = optionsParser.stringValue(options, "databaseName");
+        String databaseName = optionsParser.stringValue(options, DATABASE_NAME);
         if (StringUtils.hasText(databaseName)) {
             connectBuilder.withDatabaseName(databaseName);
         }
@@ -398,12 +403,12 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         if (StringUtils.hasText(decryptedCredential)) {
             connectBuilder.withToken(decryptedCredential);
         } else {
-            String token = optionsParser.stringValue(options, "token");
+            String token = optionsParser.stringValue(options, TOKEN);
             if (StringUtils.hasText(token)) {
                 connectBuilder.withToken(token);
             }
         }
-        String databaseName = optionsParser.stringValue(options, "databaseName");
+        String databaseName = optionsParser.stringValue(options, DATABASE_NAME);
         if (StringUtils.hasText(databaseName)) {
             connectBuilder.withDatabaseName(databaseName);
         }

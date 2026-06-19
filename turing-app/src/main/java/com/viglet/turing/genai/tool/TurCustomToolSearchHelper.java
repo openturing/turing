@@ -77,6 +77,10 @@ import com.viglet.turing.sn.TurSNSearchProcess;
 @Service
 public class TurCustomToolSearchHelper {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String TEMPLATE_NAME = "templateName";
+
+
     private static final Logger log = LoggerFactory.getLogger(TurCustomToolSearchHelper.class);
     private static final int DEFAULT_TOP_K = 8;
     private static final int MAX_TOP_K = 200;
@@ -448,7 +452,7 @@ public class TurCustomToolSearchHelper {
         List<String> fq = asStringList(params.get("fq"));
         // templateName=<v> shorthand → fq+="templateName:<v>". Mirrors the
         // ann() helper's same-named shortcut for muscle-memory parity.
-        Object templateName = params.get("templateName");
+        Object templateName = params.get(TEMPLATE_NAME);
         if (templateName != null) {
             String tn = templateName.toString().trim();
             if (!tn.isEmpty()) {
@@ -573,9 +577,9 @@ public class TurCustomToolSearchHelper {
             }
         }
         // Shorthand: templateName=string → filters.templateName=[string]
-        Object templateName = params.get("templateName");
-        if (templateName != null && !resolved.containsKey("templateName")) {
-            resolved.put("templateName", List.of(String.valueOf(templateName)));
+        Object templateName = params.get(TEMPLATE_NAME);
+        if (templateName != null && !resolved.containsKey(TEMPLATE_NAME)) {
+            resolved.put(TEMPLATE_NAME, List.of(String.valueOf(templateName)));
         }
         return resolved;
     }

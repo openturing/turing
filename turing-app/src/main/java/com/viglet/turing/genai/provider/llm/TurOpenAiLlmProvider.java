@@ -22,6 +22,11 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 @Component
 public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String BASE_URL = "baseUrl";
+    private static final String MODEL = "model";
+
+
     private static final String DEFAULT_BASE_URL = "https://api.openai.com/v1";
     private static final String DEFAULT_CHAT_MODEL = "gpt-4o-mini";
     private static final String DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
@@ -41,7 +46,7 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String baseUrl = resolveBaseUrl(firstNonBlank(
-                optionsParser.stringValue(options, "baseUrl"),
+                optionsParser.stringValue(options, BASE_URL),
                 turLLMInstance.getUrl()));
         String apiKey = requireApiKey(decryptedApiKey, turLLMInstance);
         OpenAIClient openAiClient = OpenAIOkHttpClient.builder().baseUrl(baseUrl).apiKey(apiKey).build();
@@ -50,7 +55,7 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
                 .model(resolveChatModelName(firstNonBlank(
                         optionsParser.stringValue(options, "chatModel"),
-                        optionsParser.stringValue(options, "model"),
+                        optionsParser.stringValue(options, MODEL),
                         turLLMInstance.getModelName())));
 
         Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
@@ -88,12 +93,12 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         // they arrive from OpenAI — bubble fills in incrementally.
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String baseUrl = resolveBaseUrl(firstNonBlank(
-                optionsParser.stringValue(options, "baseUrl"),
+                optionsParser.stringValue(options, BASE_URL),
                 turLLMInstance.getUrl()));
         String apiKey = requireApiKey(decryptedApiKey, turLLMInstance);
         String modelName = resolveChatModelName(firstNonBlank(
                 optionsParser.stringValue(options, "chatModel"),
-                optionsParser.stringValue(options, "model"),
+                optionsParser.stringValue(options, MODEL),
                 turLLMInstance.getModelName()));
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder().model(modelName);
@@ -118,7 +123,7 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         OpenAIClient openAiClient = OpenAIOkHttpClient.builder()
                 .baseUrl(resolveBaseUrl(firstNonBlank(
-                        optionsParser.stringValue(options, "baseUrl"),
+                        optionsParser.stringValue(options, BASE_URL),
                         turLLMInstance.getUrl())))
                 .apiKey(requireApiKey(decryptedApiKey, turLLMInstance))
                 .build();
@@ -126,7 +131,7 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         OpenAiEmbeddingOptions embeddingOptions = OpenAiEmbeddingOptions.builder()
                 .model(resolveEmbeddingModelName(firstNonBlank(
                         optionsParser.stringValue(options, "embeddingModel"),
-                        optionsParser.stringValue(options, "model"),
+                        optionsParser.stringValue(options, MODEL),
                         turLLMInstance.getModelName())))
                 .build();
 

@@ -52,6 +52,15 @@ import java.util.stream.Collectors;
 @Component
 public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String CONTENT = "content";
+    private static final String ASSET_ID = "assetId";
+    private static final String SOURCE_FILE = "sourceFile";
+    private static final String CHUNK_INDEX = "chunkIndex";
+    private static final String LABEL = "label";
+    private static final String STATUS = "status";
+
+
     private final TurElasticsearch turElasticsearch;
     private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
@@ -348,10 +357,10 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                                 .index(indexName)
                                 .size(topK)
                                 .source(src -> src
-                                        .filter(f -> f.includes("id", "content",
-                                                "assetId", "chunkIndex", "sourceFile")))
+                                        .filter(f -> f.includes("id", CONTENT,
+                                                ASSET_ID, CHUNK_INDEX, SOURCE_FILE)))
                                 .query(q -> q
-                                        .match(m -> m.field("content").query(query))),
+                                        .match(m -> m.field(CONTENT).query(query))),
                                 mapType);
                         java.util.List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits =
                                 new java.util.ArrayList<>(resp.hits().hits().size());
@@ -361,16 +370,16 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                                 continue;
                             }
                             String id = hit.id();
-                            String content = source.get("content") == null
-                                    ? "" : source.get("content").toString();
+                            String content = source.get(CONTENT) == null
+                                    ? "" : source.get(CONTENT).toString();
                             // Extract once into a local so the IDE can prove
                             // the unbox below is null-safe.
                             Double rawScore = hit.score();
                             double score = rawScore == null ? 0.0 : rawScore.doubleValue();
                             Map<String, Object> metadata = new java.util.LinkedHashMap<>();
-                            putIfPresent(metadata, "assetId", source.get("assetId"));
-                            putIfPresent(metadata, "chunkIndex", source.get("chunkIndex"));
-                            putIfPresent(metadata, "sourceFile", source.get("sourceFile"));
+                            putIfPresent(metadata, ASSET_ID, source.get(ASSET_ID));
+                            putIfPresent(metadata, CHUNK_INDEX, source.get(CHUNK_INDEX));
+                            putIfPresent(metadata, SOURCE_FILE, source.get(SOURCE_FILE));
                             hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
                                     id, content, metadata, score));
                         }
@@ -411,7 +420,7 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                         var resp = instance.getClient().search(s -> s
                                 .index(indexName)
                                 .size(topK)
-                                .source(src -> src.filter(f -> f.includes("id", "label")))
+                                .source(src -> src.filter(f -> f.includes("id", LABEL)))
                                 .query(q -> q.moreLikeThis(m -> m
                                         .fields(field)
                                         .like(l -> l.text(text))
@@ -424,8 +433,8 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                                 new java.util.ArrayList<>(resp.hits().hits().size());
                         for (var hit : resp.hits().hits()) {
                             Map<String, Object> source = hit.source();
-                            String label = source != null && source.get("label") != null
-                                    ? source.get("label").toString()
+                            String label = source != null && source.get(LABEL) != null
+                                    ? source.get(LABEL).toString()
                                     : hit.id();
                             Double rawScore = hit.score();
                             double score = rawScore == null ? 0.0 : rawScore.doubleValue();
@@ -673,15 +682,15 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 info.put("buildType", version.path("build_type").asText(""));
             }
             info.put("clusterName", root.path("cluster_name").asText(""));
-            info.put("status", "UP");
+            info.put(STATUS, "UP");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Failed to retrieve Elasticsearch system info: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve Elasticsearch system info: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         }
         return info;

@@ -53,6 +53,10 @@ import java.io.InputStream;
 @RequestMapping("/sn")
 public class TurSNSearchController {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String INDEX_HTML = "index.html";
+
+
     private static final String PAGES_PREFIX = "public/";
     private static final ClassPathResource DEFAULT_INDEX = new ClassPathResource("/public/index.html");
 
@@ -126,20 +130,20 @@ public class TurSNSearchController {
 
     private ResponseEntity<Object> serveFromStorage(String template, String filePath) {
         if (filePath.isBlank()) {
-            filePath = "index.html";
+            filePath = INDEX_HTML;
         }
 
         // Decode URL-encoded characters (e.g. %20 -> space)
         String decodedPath = java.net.URLDecoder.decode(filePath, java.nio.charset.StandardCharsets.UTF_8);
         if (decodedPath.isBlank()) {
-            decodedPath = "index.html";
+            decodedPath = INDEX_HTML;
         }
 
         String objectName = PAGES_PREFIX + template + "/" + decodedPath;
         try {
             InputStream stream = storageService.downloadObject(objectName);
             String contentType = storageService.guessContentType(objectName);
-            String cacheControl = decodedPath.equals("index.html")
+            String cacheControl = decodedPath.equals(INDEX_HTML)
                     ? "no-cache, no-store, must-revalidate"
                     : "public, max-age=31536000, immutable";
             return ResponseEntity.ok()

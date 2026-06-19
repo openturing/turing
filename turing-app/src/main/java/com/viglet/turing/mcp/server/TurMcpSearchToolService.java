@@ -46,6 +46,11 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 public class TurMcpSearchToolService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String ERROR_SITE_PARAMETER_IS_REQUIRED = "Error: 'site' parameter is required.";
+    private static final String QUERY = "query";
+
+
     private static final int DEFAULT_ROWS = 10;
     private static final int MAX_ROWS = 50;
     private static final int DEFAULT_FACET_SIZE = 20;
@@ -78,10 +83,10 @@ public class TurMcpSearchToolService {
     @Tool(name = "search_site", description = ".")
     public String searchSite(String site, String locale, String query, Integer maxResults) {
         if (site == null || site.isBlank()) {
-            return "Error: 'site' parameter is required.";
+            return ERROR_SITE_PARAMETER_IS_REQUIRED;
         }
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("query", matchOrAll(query));
+        body.put(QUERY, matchOrAll(query));
         body.put("size", clampRows(maxResults));
         return runDsl(site, locale, body, "search_site");
     }
@@ -98,7 +103,7 @@ public class TurMcpSearchToolService {
     @Tool(name = "similar_documents", description = ".")
     public String similarDocuments(String site, String locale, String referenceText, Integer maxResults) {
         if (site == null || site.isBlank()) {
-            return "Error: 'site' parameter is required.";
+            return ERROR_SITE_PARAMETER_IS_REQUIRED;
         }
         if (referenceText == null || referenceText.isBlank()) {
             return "Error: 'referenceText' parameter is required (the text to find neighbours of).";
@@ -108,7 +113,7 @@ public class TurMcpSearchToolService {
         // a full-text more-like-this. Honest either way: it returns the most
         // similar indexed documents to the supplied text.
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("query", Map.of("match", Map.of(FULL_TEXT_FIELD, referenceText)));
+        body.put(QUERY, Map.of("match", Map.of(FULL_TEXT_FIELD, referenceText)));
         body.put("size", clampRows(maxResults));
         return runDsl(site, locale, body, "similar_documents");
     }
@@ -118,13 +123,13 @@ public class TurMcpSearchToolService {
     @Tool(name = "facet_search", description = ".")
     public String facetSearch(String site, String locale, String query, String facetField) {
         if (site == null || site.isBlank()) {
-            return "Error: 'site' parameter is required.";
+            return ERROR_SITE_PARAMETER_IS_REQUIRED;
         }
         if (facetField == null || facetField.isBlank()) {
             return "Error: 'facetField' parameter is required (the field to drill down by).";
         }
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("query", matchOrAll(query));
+        body.put(QUERY, matchOrAll(query));
         body.put("size", 0);
         body.put("aggs", Map.of("facet",
                 Map.of("terms", Map.of("field", facetField, "size", DEFAULT_FACET_SIZE))));

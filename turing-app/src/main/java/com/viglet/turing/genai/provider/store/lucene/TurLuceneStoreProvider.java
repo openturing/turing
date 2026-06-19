@@ -240,7 +240,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         try {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             Path basePath = resolveBasePath(turStoreInstance, options);
-            info.put("basePath", basePath.toAbsolutePath().toString());
+            info.put(BASE_PATH_OPTION, basePath.toAbsolutePath().toString());
             info.put("status", Files.isDirectory(basePath) || !Files.exists(basePath) ? "UP" : "DOWN");
         } catch (Exception e) {
             info.put("status", "DOWN");

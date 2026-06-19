@@ -32,6 +32,11 @@ import tools.jackson.databind.json.JsonMapper;
 @Slf4j
 public class TurRedisChatMemoryStore implements TurChatMemoryStore {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String CONTENT = "content";
+    private static final String TIMESTAMP = "timestamp";
+
+
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
     private final JedisPool pool;
@@ -108,8 +113,8 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
                     Map<String, Object> parsed = MAPPER.readValue(json, Map.class);
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("role", String.valueOf(parsed.get("role")));
-                    row.put("content", String.valueOf(parsed.getOrDefault("content", "")));
-                    row.put("timestamp", parsed.get("timestamp"));
+                    row.put(CONTENT, String.valueOf(parsed.getOrDefault(CONTENT, "")));
+                    row.put(TIMESTAMP, parsed.get(TIMESTAMP));
                     result.add(row);
                 } catch (Exception parseEx) {
                     log.debug("Skipping malformed memory entry in {}: {}", listKey, parseEx.getMessage());
@@ -126,8 +131,8 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
     private static String serialize(String role, String content, String ts) {
         Map<String, String> doc = new HashMap<>();
         doc.put("role", role);
-        doc.put("content", content == null ? "" : content);
-        doc.put("timestamp", ts);
+        doc.put(CONTENT, content == null ? "" : content);
+        doc.put(TIMESTAMP, ts);
         try {
             return MAPPER.writeValueAsString(doc);
         } catch (Exception e) {

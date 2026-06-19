@@ -45,6 +45,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurHumanApprovalService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String AUTO_APPROVE = "auto_approve";
+
+
     /** Slot the decision lands in when the node names none and has no outputVariable. */
     public static final String DEFAULT_APPROVAL_SLOT = "operator_decision";
     /** Decision written when an {@code auto_reject} timeout fires (default behavior). */
@@ -168,7 +172,7 @@ public class TurHumanApprovalService {
      */
     @Transactional
     public String markTimedOut(TurChatHumanApproval approval) {
-        String decision = "auto_approve".equals(approval.getTimeoutBehavior())
+        String decision = AUTO_APPROVE.equals(approval.getTimeoutBehavior())
                 ? DECISION_APPROVE : DECISION_REJECT;
         approval.setStatus(TurHumanApprovalStatus.TIMED_OUT);
         approval.setDecision(decision);
@@ -225,7 +229,7 @@ public class TurHumanApprovalService {
 
     private static String normalizeTimeoutBehavior(String behavior) {
         String trimmed = behavior == null ? null : behavior.trim();
-        return "auto_approve".equalsIgnoreCase(trimmed) ? "auto_approve" : "auto_reject";
+        return AUTO_APPROVE.equalsIgnoreCase(trimmed) ? AUTO_APPROVE : "auto_reject";
     }
 
     private String buildResumeUrl(String token) {

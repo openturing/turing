@@ -56,6 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurChatAnalyticsService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String PARENT_CONVERSATION_ID = "[__parentConversationId=";
+
+
     private final TurChatAnalyticsStore store;
 
     /**
@@ -161,10 +165,10 @@ public class TurChatAnalyticsService {
     static String extractParentConversationId(String firstUserMessage) {
         if (firstUserMessage == null) return null;
         String s = firstUserMessage;
-        if (!s.startsWith("[__parentConversationId=")) return null;
+        if (!s.startsWith(PARENT_CONVERSATION_ID)) return null;
         int end = s.indexOf(']');
         if (end < 0) return null;
-        String value = s.substring("[__parentConversationId=".length(), end);
+        String value = s.substring(PARENT_CONVERSATION_ID.length(), end);
         return value.isBlank() ? null : value;
     }
 
@@ -176,7 +180,7 @@ public class TurChatAnalyticsService {
      */
     static String stripParentConversationIdPrefix(String firstUserMessage) {
         if (firstUserMessage == null) return null;
-        if (!firstUserMessage.startsWith("[__parentConversationId=")) return firstUserMessage;
+        if (!firstUserMessage.startsWith(PARENT_CONVERSATION_ID)) return firstUserMessage;
         int end = firstUserMessage.indexOf(']');
         if (end < 0) return firstUserMessage;
         // Skip the closing bracket; also skip a single trailing newline

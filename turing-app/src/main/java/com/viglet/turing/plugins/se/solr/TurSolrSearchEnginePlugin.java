@@ -58,6 +58,15 @@ import org.apache.solr.client.solrj.request.SolrQuery;
 @Component
 public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String CHUNK_INDEX = "chunkIndex";
+    private static final String ASSET_ID = "assetId";
+    private static final String SCORE = "score";
+    private static final String SOURCE_FILE = "sourceFile";
+    private static final String LABEL = "label";
+    private static final String STATUS = "status";
+
+
     private static final String VERSION_KEY = "version";
 
     private final TurSolr turSolr;
@@ -373,8 +382,8 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                         // shipping the embedding vector (if anyone ever
                         // adds one to the BM25 core by mistake) and keeps
                         // the response small.
-                        solrQuery.setFields("id", "content", "assetId", "chunkIndex",
-                                "sourceFile", "score");
+                        solrQuery.setFields("id", "content", ASSET_ID, CHUNK_INDEX,
+                                SOURCE_FILE, SCORE);
 
                         var response = instance.getSolrClient().query(solrQuery);
                         org.apache.solr.common.SolrDocumentList docs = response.getResults();
@@ -387,12 +396,12 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                             String id = String.valueOf(doc.getFirstValue("id"));
                             Object contentVal = doc.getFirstValue("content");
                             String content = contentVal == null ? "" : contentVal.toString();
-                            Object scoreVal = doc.getFirstValue("score");
+                            Object scoreVal = doc.getFirstValue(SCORE);
                             double score = scoreVal instanceof Number n ? n.doubleValue() : 0.0;
                             Map<String, Object> metadata = new java.util.LinkedHashMap<>();
-                            putIfPresent(metadata, "assetId", doc.getFirstValue("assetId"));
-                            putIfPresent(metadata, "chunkIndex", doc.getFirstValue("chunkIndex"));
-                            putIfPresent(metadata, "sourceFile", doc.getFirstValue("sourceFile"));
+                            putIfPresent(metadata, ASSET_ID, doc.getFirstValue(ASSET_ID));
+                            putIfPresent(metadata, CHUNK_INDEX, doc.getFirstValue(CHUNK_INDEX));
+                            putIfPresent(metadata, SOURCE_FILE, doc.getFirstValue(SOURCE_FILE));
                             hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
                                     id, content, metadata, score));
                         }
@@ -457,7 +466,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
             solrQuery.set("mlt.mindf", "1");
             solrQuery.set("mlt.minwl", "3");
             solrQuery.set("mlt.maxqt", "40");
-            solrQuery.setFields("id", "label", "score");
+            solrQuery.setFields("id", LABEL, SCORE);
             solrQuery.setRows(topK);
             var response = instance.getSolrClient().query(solrQuery);
             return collectMltHits(response.getResults());
@@ -474,7 +483,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         try {
             SolrQuery query = new SolrQuery();
             query.setQuery(field + ":(" + escapeSolr(text) + ")");
-            query.setFields("id", "label", "score");
+            query.setFields("id", LABEL, SCORE);
             query.setRows(topK);
             var response = instance.getSolrClient().query(query);
             return collectMltHits(response.getResults());
@@ -491,9 +500,9 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         }
         List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits = new ArrayList<>(docs.size());
         for (org.apache.solr.common.SolrDocument doc : docs) {
-            Object labelVal = doc.getFirstValue("label");
+            Object labelVal = doc.getFirstValue(LABEL);
             String label = labelVal == null ? String.valueOf(doc.getFirstValue("id")) : labelVal.toString();
-            Object scoreVal = doc.getFirstValue("score");
+            Object scoreVal = doc.getFirstValue(SCORE);
             double score = scoreVal instanceof Number n ? n.doubleValue() : 0.0;
             // The classifier rendering treats the hit "id" as the label.
             // Catalog rows are one per label so this round-trip is lossless.
@@ -805,15 +814,15 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                     info.put("jvmMemory", jvm.path("memory").path("raw").path("used").asText(""));
                 }
             }
-            info.put("status", "UP");
+            info.put(STATUS, "UP");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Failed to retrieve Solr system info: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve Solr system info: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         }
         return info;

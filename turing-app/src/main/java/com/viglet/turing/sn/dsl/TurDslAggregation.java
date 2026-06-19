@@ -27,6 +27,18 @@ import java.util.Map;
 @JsonDeserialize(using = TurDslAggregation.Deserializer.class)
 public sealed interface TurDslAggregation {
 
+    // --- S1192: extracted duplicated literals ---
+    String TERMS = "terms";
+    String RANGES = "ranges";
+    String FORMAT = "format";
+    String FILTER = "filter";
+    String FILTERS = "filters";
+    String BUCKETS = "buckets";
+    String ORIGIN = "origin";
+    String SAMPLER = "sampler";
+    String SHARD_SIZE = "shard_size";
+
+
     record TermsAgg(String field, Integer size) implements TurDslAggregation {}
 
     record RangeAgg(String field, List<RangeBucket> ranges) implements TurDslAggregation {}
@@ -169,16 +181,16 @@ public sealed interface TurDslAggregation {
         }
 
         private TurDslAggregation parseAggType(JsonNode node) {
-            if (node.has("terms")) {
-                JsonNode n = node.get("terms");
+            if (node.has(TERMS)) {
+                JsonNode n = node.get(TERMS);
                 return new TermsAgg(n.get(FIELD).asString(),
                         n.has("size") ? n.get("size").asInt() : null);
             }
             if (node.has("range")) {
                 JsonNode n = node.get("range");
                 List<RangeBucket> ranges = new ArrayList<>();
-                if (n.has("ranges")) {
-                    for (JsonNode r : n.get("ranges")) {
+                if (n.has(RANGES)) {
+                    for (JsonNode r : n.get(RANGES)) {
                         ranges.add(new RangeBucket(
                                 r.has("from") ? nodeToObject(r.get("from")) : null,
                                 r.has("to") ? nodeToObject(r.get("to")) : null,
@@ -192,7 +204,7 @@ public sealed interface TurDslAggregation {
                 return new DateHistogramAgg(n.get(FIELD).asString(),
                         n.has("calendar_interval") ? n.get("calendar_interval").asString() : null,
                         n.has("fixed_interval") ? n.get("fixed_interval").asString() : null,
-                        n.has("format") ? n.get("format").asString() : null);
+                        n.has(FORMAT) ? n.get(FORMAT).asString() : null);
             }
             if (node.has("avg")) return new AvgAgg(node.get("avg").get(FIELD).asString());
             if (node.has("sum")) return new SumAgg(node.get("sum").get(FIELD).asString());
@@ -211,9 +223,9 @@ public sealed interface TurDslAggregation {
                         n.has("interval") ? n.get("interval").asDouble() : null,
                         n.has("offset") ? n.get("offset").asDouble() : null);
             }
-            if (node.has("filter")) {
+            if (node.has(FILTER)) {
                 return new FilterAgg(new TurDslQueryDeserializer()
-                        .deserializeNode(node.get("filter")));
+                        .deserializeNode(node.get(FILTER)));
             }
             if (node.has("stats")) return new StatsAgg(node.get("stats").get(FIELD).asString());
             if (node.has("extended_stats"))
@@ -252,12 +264,12 @@ public sealed interface TurDslAggregation {
                 return new CompositeAgg(sources,
                         n.has("size") ? n.get("size").asInt() : null, null);
             }
-            if (node.has("filters")) {
-                JsonNode n = node.get("filters");
-                if (n.has("filters") && n.get("filters").isObject()) {
+            if (node.has(FILTERS)) {
+                JsonNode n = node.get(FILTERS);
+                if (n.has(FILTERS) && n.get(FILTERS).isObject()) {
                     Map<String, TurDslQuery> filters = new LinkedHashMap<>();
                     var queryDeser = new TurDslQueryDeserializer();
-                    for (var prop : n.get("filters").properties()) {
+                    for (var prop : n.get(FILTERS).properties()) {
                         filters.put(prop.getKey(), queryDeser.deserializeNode(prop.getValue()));
                     }
                     return new FiltersAgg(filters);
@@ -279,14 +291,14 @@ public sealed interface TurDslAggregation {
             if (node.has("auto_date_histogram")) {
                 JsonNode n = node.get("auto_date_histogram");
                 return new AutoDateHistogramAgg(n.get(FIELD).asString(),
-                        n.has("buckets") ? n.get("buckets").asInt() : null,
-                        n.has("format") ? n.get("format").asString() : null);
+                        n.has(BUCKETS) ? n.get(BUCKETS).asInt() : null,
+                        n.has(FORMAT) ? n.get(FORMAT).asString() : null);
             }
             if (node.has("multi_terms")) {
                 JsonNode n = node.get("multi_terms");
                 List<MultiTermField> terms = new ArrayList<>();
-                if (n.has("terms")) {
-                    for (JsonNode t : n.get("terms"))
+                if (n.has(TERMS)) {
+                    for (JsonNode t : n.get(TERMS))
                         terms.add(new MultiTermField(t.get(FIELD).asString()));
                 }
                 return new MultiTermsAgg(terms,
@@ -318,13 +330,13 @@ public sealed interface TurDslAggregation {
             if (node.has("geo_distance")) {
                 JsonNode n = node.get("geo_distance");
                 GeoOrigin origin = null;
-                if (n.has("origin") && n.get("origin").isObject()) {
-                    origin = new GeoOrigin(n.get("origin").get("lat").asDouble(),
-                            n.get("origin").get("lon").asDouble());
+                if (n.has(ORIGIN) && n.get(ORIGIN).isObject()) {
+                    origin = new GeoOrigin(n.get(ORIGIN).get("lat").asDouble(),
+                            n.get(ORIGIN).get("lon").asDouble());
                 }
                 List<RangeBucket> ranges = new ArrayList<>();
-                if (n.has("ranges")) {
-                    for (JsonNode r : n.get("ranges")) {
+                if (n.has(RANGES)) {
+                    for (JsonNode r : n.get(RANGES)) {
                         ranges.add(new RangeBucket(
                                 r.has("from") ? nodeToObject(r.get("from")) : null,
                                 r.has("to") ? nodeToObject(r.get("to")) : null,
@@ -337,20 +349,20 @@ public sealed interface TurDslAggregation {
                 return new GeoBoundsAgg(node.get("geo_bounds").get(FIELD).asString());
             if (node.has("geo_centroid"))
                 return new GeoCentroidAgg(node.get("geo_centroid").get(FIELD).asString());
-            if (node.has("sampler"))
-                return new SamplerAgg(node.get("sampler").has("shard_size")
-                        ? node.get("sampler").get("shard_size").asInt() : null);
+            if (node.has(SAMPLER))
+                return new SamplerAgg(node.get(SAMPLER).has(SHARD_SIZE)
+                        ? node.get(SAMPLER).get(SHARD_SIZE).asInt() : null);
             if (node.has("diversified_sampler")) {
                 JsonNode n = node.get("diversified_sampler");
                 return new DiversifiedSamplerAgg(n.get(FIELD).asString(),
-                        n.has("shard_size") ? n.get("shard_size").asInt() : null);
+                        n.has(SHARD_SIZE) ? n.get(SHARD_SIZE).asInt() : null);
             }
             if (node.has("adjacency_matrix")) {
                 JsonNode n = node.get("adjacency_matrix");
                 Map<String, TurDslQuery> filters = new LinkedHashMap<>();
-                if (n.has("filters")) {
+                if (n.has(FILTERS)) {
                     var qd = new TurDslQueryDeserializer();
-                    for (var prop : n.get("filters").properties())
+                    for (var prop : n.get(FILTERS).properties())
                         filters.put(prop.getKey(), qd.deserializeNode(prop.getValue()));
                 }
                 return new AdjacencyMatrixAgg(filters);
@@ -385,7 +397,7 @@ public sealed interface TurDslAggregation {
             if (node.has("variable_width_histogram")) {
                 JsonNode n = node.get("variable_width_histogram");
                 return new VariableWidthHistogramAgg(n.get(FIELD).asString(),
-                        n.has("buckets") ? n.get("buckets").asInt() : null);
+                        n.has(BUCKETS) ? n.get(BUCKETS).asInt() : null);
             }
             if (node.has("rate")) {
                 JsonNode n = node.get("rate");
@@ -396,9 +408,9 @@ public sealed interface TurDslAggregation {
         }
 
         private static TTestPopulation parseTTestPop(JsonNode n) {
-            String field = n.has("field") ? n.get("field").asString() : null;
-            TurDslQuery filter = n.has("filter")
-                    ? new TurDslQueryDeserializer().deserializeNode(n.get("filter")) : null;
+            String field = n.has(FIELD) ? n.get(FIELD).asString() : null;
+            TurDslQuery filter = n.has(FILTER)
+                    ? new TurDslQueryDeserializer().deserializeNode(n.get(FILTER)) : null;
             return new TTestPopulation(field, filter);
         }
 

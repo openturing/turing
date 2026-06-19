@@ -82,6 +82,11 @@ import lombok.extern.slf4j.Slf4j;
 @ComponentScan("com.viglet.turing")
 @RequiredArgsConstructor
 public class TurSNSiteAPI {
+
+    // --- S1192: extracted duplicated literals ---
+    private static final String ERROR = "error";
+    private static final String TASK_ID = "taskId";
+
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
@@ -136,7 +141,7 @@ public class TurSNSiteAPI {
                 .filter(site -> !site.getId().equals(id));
         if (duplicate.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "A site with this name already exists."));
+                    .body(Map.of(ERROR, "A site with this name already exists."));
         }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         return ResponseEntity.ok(this.turSNSiteRepository.findByIdNoCache(id).map(turSNSiteEdit -> {
@@ -258,7 +263,7 @@ public class TurSNSiteAPI {
     public ResponseEntity<Object> turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
         if (turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "A site with this name already exists."));
+                    .body(Map.of(ERROR, "A site with this name already exists."));
         }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         if (turSNSite.getTurSNSiteGenAi() != null) {
@@ -311,7 +316,7 @@ public class TurSNSiteAPI {
                 log.error("Async export failed for site {}: {}", id, e.getMessage(), e);
             }
         });
-        return Map.of("taskId", effectiveTaskId);
+        return Map.of(TASK_ID, effectiveTaskId);
     }
 
     @GetMapping(value = "/export/download/{taskId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -333,7 +338,7 @@ public class TurSNSiteAPI {
         return contentExchangeService.findActiveReindexTask(id)
                 .flatMap(taskId -> contentExchangeService.getProgress(taskId)
                         .map(p -> ResponseEntity.ok(Map.of(
-                                "taskId", (Object) taskId,
+                                TASK_ID, (Object) taskId,
                                 "totalDocuments", p.totalDocuments(),
                                 "processedDocuments", p.processedDocuments(),
                                 "percentage", p.percentage(),
@@ -354,7 +359,7 @@ public class TurSNSiteAPI {
                     var agent = genAi == null ? null : genAi.getTurAIAgent();
                     if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                .<Map<String, String>>body(Map.of("error", "RAG is not enabled on this site"));
+                                .<Map<String, String>>body(Map.of(ERROR, "RAG is not enabled on this site"));
                     }
                     String effectiveTaskId = taskId != null
                             ? taskId
@@ -367,7 +372,7 @@ public class TurSNSiteAPI {
                             log.error("Async RAG reindex failed for site {}: {}", siteId, e.getMessage(), e);
                         }
                     });
-                    return ResponseEntity.ok(Map.of("taskId", effectiveTaskId));
+                    return ResponseEntity.ok(Map.of(TASK_ID, effectiveTaskId));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

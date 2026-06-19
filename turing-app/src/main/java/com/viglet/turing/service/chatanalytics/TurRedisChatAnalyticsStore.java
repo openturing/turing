@@ -51,6 +51,50 @@ import redis.clients.jedis.JedisPoolConfig;
 @Slf4j
 public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String AGENT_ID = "agentId";
+    private static final String PERSONA_ID = "personaId";
+    private static final String LLM_INSTANCE_ID = "llmInstanceId";
+    private static final String EMBEDDING_MODEL_ID = "embeddingModelId";
+    private static final String STORE_INSTANCE_ID = "storeInstanceId";
+    private static final String USER_ID = "userId";
+    private static final String LOCALE = "locale";
+    private static final String TIMEZONE = "timezone";
+    private static final String DEVICE_TYPE = "deviceType";
+    private static final String OUTCOME = "outcome";
+    private static final String TOTAL_TURNS = "totalTurns";
+    private static final String TOTAL_TOKENS_IN = "totalTokensIn";
+    private static final String TOTAL_TOKENS_OUT = "totalTokensOut";
+    private static final String TOTAL_TOOL_CALLS = "totalToolCalls";
+    private static final String TOTAL_TOOL_ERRORS = "totalToolErrors";
+    private static final String TOTAL_TOOL_LATENCY_MS = "totalToolLatencyMs";
+    private static final String EXPERIMENT_KEY = "experimentKey";
+    private static final String VARIANT_LABEL = "variantLabel";
+    private static final String PARENT_CONVERSATION_ID = "parentConversationId";
+    private static final String DURATION_MS = "durationMs";
+    private static final String COMPLETED_AT = "completedAt";
+    private static final String STARTED_AT = "startedAt";
+    private static final String FIRST_USER_MESSAGE = "firstUserMessage";
+    private static final String UNKNOWN = "unknown";
+    private static final String BUCKET = "bucket";
+    private static final String PROCESSED_AT = "processedAt";
+    private static final String INTENT_LABEL = "intentLabel";
+    private static final String INTENT_CONFIDENCE = "intentConfidence";
+    private static final String GOAL_SUMMARY = "goalSummary";
+    private static final String GOAL_ACHIEVED = "goalAchieved";
+    private static final String SENTIMENT = "sentiment";
+    private static final String KEY_TERMS = "keyTerms";
+    private static final String GOAL_ACHIEVEMENT_RATE = "goal_achievement_rate";
+    private static final String NEGATIVE_SENTIMENT_RATE = "negative_sentiment_rate";
+    private static final String AVG_DURATION_MS = "avg_duration_ms";
+    private static final String AVG_TOKENS_OUT = "avg_tokens_out";
+    private static final String TOOL_ERRORS_PER_SESSION = "tool_errors_per_session";
+    private static final String TOOL_CALLS_PER_SESSION = "tool_calls_per_session";
+    private static final String AVG_TOOL_LATENCY_MS = "avg_tool_latency_ms";
+    private static final String TOOL_ERROR_RATE_PCT = "tool_error_rate_pct";
+    private static final String SESSIONS = "sessions";
+
+
     private static final String FIELD_SENTIMENT_TRAJECTORY = "sentimentTrajectory";
     private static final String FIELD_TOOL_LATENCIES = "toolLatencies";
 
@@ -80,47 +124,47 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         try (Jedis jedis = pool.getResource()) {
             String hashKey = sessionKey(event.conversationId());
             Map<String, String> fields = new HashMap<>();
-            putIfNotBlank(fields, "agentId",          event.agentId());
-            putIfNotBlank(fields, "personaId",        event.personaId());
-            putIfNotBlank(fields, "llmInstanceId",    event.llmInstanceId());
-            putIfNotBlank(fields, "embeddingModelId", event.embeddingModelId());
-            putIfNotBlank(fields, "storeInstanceId",  event.storeInstanceId());
-            putIfNotBlank(fields, "userId",           event.userId());
-            putIfNotBlank(fields, "locale",           event.locale());
+            putIfNotBlank(fields, AGENT_ID,          event.agentId());
+            putIfNotBlank(fields, PERSONA_ID,        event.personaId());
+            putIfNotBlank(fields, LLM_INSTANCE_ID,    event.llmInstanceId());
+            putIfNotBlank(fields, EMBEDDING_MODEL_ID, event.embeddingModelId());
+            putIfNotBlank(fields, STORE_INSTANCE_ID,  event.storeInstanceId());
+            putIfNotBlank(fields, USER_ID,           event.userId());
+            putIfNotBlank(fields, LOCALE,           event.locale());
             // T74 — visitor cohort (timezone / device class).
-            putIfNotBlank(fields, "timezone",         event.timezone());
-            putIfNotBlank(fields, "deviceType",       event.deviceType());
-            if (event.outcome() != null) fields.put("outcome", event.outcome().name());
-            fields.put("totalTurns",         String.valueOf(event.totalTurns()));
-            fields.put("totalTokensIn",      String.valueOf(event.totalTokensIn()));
-            fields.put("totalTokensOut",     String.valueOf(event.totalTokensOut()));
-            fields.put("totalToolCalls",     String.valueOf(event.totalToolCalls()));
-            fields.put("totalToolErrors",    String.valueOf(event.totalToolErrors()));
-            fields.put("totalToolLatencyMs", String.valueOf(event.totalToolLatencyMs()));
-            putIfNotBlank(fields, "experimentKey", event.experimentKey());
-            putIfNotBlank(fields, "variantLabel",  event.variantLabel());
+            putIfNotBlank(fields, TIMEZONE,         event.timezone());
+            putIfNotBlank(fields, DEVICE_TYPE,       event.deviceType());
+            if (event.outcome() != null) fields.put(OUTCOME, event.outcome().name());
+            fields.put(TOTAL_TURNS,         String.valueOf(event.totalTurns()));
+            fields.put(TOTAL_TOKENS_IN,      String.valueOf(event.totalTokensIn()));
+            fields.put(TOTAL_TOKENS_OUT,     String.valueOf(event.totalTokensOut()));
+            fields.put(TOTAL_TOOL_CALLS,     String.valueOf(event.totalToolCalls()));
+            fields.put(TOTAL_TOOL_ERRORS,    String.valueOf(event.totalToolErrors()));
+            fields.put(TOTAL_TOOL_LATENCY_MS, String.valueOf(event.totalToolLatencyMs()));
+            putIfNotBlank(fields, EXPERIMENT_KEY, event.experimentKey());
+            putIfNotBlank(fields, VARIANT_LABEL,  event.variantLabel());
             // T110 — child-session linkage; written once on start, preserved on end.
-            putIfNotBlank(fields, "parentConversationId", event.parentConversationId());
+            putIfNotBlank(fields, PARENT_CONVERSATION_ID, event.parentConversationId());
             // T88 — raw per-tool latency samples, delimited string; only written
             // when present (end record) so the empty start record can't clobber it.
             if (event.toolLatencies() != null && !event.toolLatencies().isEmpty()) {
                 fields.put(FIELD_TOOL_LATENCIES, encodeToolLatencies(event.toolLatencies()));
             }
-            fields.put("durationMs",         String.valueOf(event.durationMs()));
+            fields.put(DURATION_MS,         String.valueOf(event.durationMs()));
             fields.put("updatedAt",      Instant.now().toString());
             if (event.completedAt() != null) {
-                fields.put("completedAt", event.completedAt().toString());
+                fields.put(COMPLETED_AT, event.completedAt().toString());
             }
             if (!fields.isEmpty()) {
                 jedis.hset(hashKey, fields);
             }
             // start-only — only set if absent
             if (event.startedAt() != null) {
-                jedis.hsetnx(hashKey, "startedAt", event.startedAt().toString());
+                jedis.hsetnx(hashKey, STARTED_AT, event.startedAt().toString());
                 jedis.zadd(byTimeKey(), event.startedAt().toEpochMilli(), event.conversationId());
             }
             if (StringUtils.isNotBlank(event.firstUserMessage())) {
-                jedis.hsetnx(hashKey, "firstUserMessage", event.firstUserMessage());
+                jedis.hsetnx(hashKey, FIRST_USER_MESSAGE, event.firstUserMessage());
             }
         } catch (Exception e) {
             log.warn("Failed to upsert chat session analytics to Redis for conversation {}: {}",
@@ -168,7 +212,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
                 String key = hash.getOrDefault(field, "");
-                if (key.isBlank()) key = "unknown";
+                if (key.isBlank()) key = UNKNOWN;
                 counts.merge(key, 1, Integer::sum);
             }
         } catch (Exception e) {
@@ -180,7 +224,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 .limit(Math.clamp(maxGroups, 1, 100))
                 .map(e -> {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("bucket", e.getKey());
+                    row.put(BUCKET, e.getKey());
                     row.put("count", e.getValue());
                     return row;
                 })
@@ -200,9 +244,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 if (rows.size() >= cap) break;
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
-                String outcome = hash.get("outcome");
+                String outcome = hash.get(OUTCOME);
                 if (outcome == null || "IN_PROGRESS".equals(outcome)) continue;
-                if (StringUtils.isNotBlank(hash.get("processedAt"))) continue;
+                if (StringUtils.isNotBlank(hash.get(PROCESSED_AT))) continue;
                 rows.add(toRow(id, hash));
             }
         } catch (Exception e) {
@@ -216,13 +260,13 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         if (conversationId == null || conversationId.isBlank() || enrichment == null) return;
         try (Jedis jedis = pool.getResource()) {
             Map<String, String> fields = new HashMap<>();
-            if (enrichment.intentLabel() != null) fields.put("intentLabel", enrichment.intentLabel().name());
-            fields.put("intentConfidence", String.valueOf(enrichment.intentConfidence()));
-            if (StringUtils.isNotBlank(enrichment.goalSummary())) fields.put("goalSummary", enrichment.goalSummary());
-            if (enrichment.goalAchieved() != null) fields.put("goalAchieved", enrichment.goalAchieved().name());
-            if (enrichment.sentiment() != null) fields.put("sentiment", enrichment.sentiment().name());
+            if (enrichment.intentLabel() != null) fields.put(INTENT_LABEL, enrichment.intentLabel().name());
+            fields.put(INTENT_CONFIDENCE, String.valueOf(enrichment.intentConfidence()));
+            if (StringUtils.isNotBlank(enrichment.goalSummary())) fields.put(GOAL_SUMMARY, enrichment.goalSummary());
+            if (enrichment.goalAchieved() != null) fields.put(GOAL_ACHIEVED, enrichment.goalAchieved().name());
+            if (enrichment.sentiment() != null) fields.put(SENTIMENT, enrichment.sentiment().name());
             if (enrichment.keyTerms() != null) {
-                fields.put("keyTerms", String.join(",", enrichment.keyTerms()));
+                fields.put(KEY_TERMS, String.join(",", enrichment.keyTerms()));
             }
             // T87 — per-turn sentiment trajectory as a CSV of enum names; absent
             // when the catalog-driven classifiers ran (empty list).
@@ -230,7 +274,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 fields.put(FIELD_SENTIMENT_TRAJECTORY, String.join(",",
                         enrichment.sentimentTrajectory().stream().map(Enum::name).toList()));
             }
-            fields.put("processedAt", (enrichment.processedAt() == null
+            fields.put(PROCESSED_AT, (enrichment.processedAt() == null
                     ? java.time.Instant.now() : enrichment.processedAt()).toString());
             if (!fields.isEmpty()) {
                 jedis.hset(sessionKey(conversationId), fields);
@@ -257,9 +301,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
-                String startedAt = hash.get("startedAt");
+                String startedAt = hash.get(STARTED_AT);
                 if (StringUtils.isBlank(startedAt)) continue;
-                if (rateMetric && StringUtils.isBlank(hash.get("processedAt"))) continue;
+                if (rateMetric && StringUtils.isBlank(hash.get(PROCESSED_AT))) continue;
                 Instant when;
                 try { when = Instant.parse(startedAt); } catch (Exception e) { continue; }
                 long bucketKey = truncate(when, dailyBuckets);
@@ -278,14 +322,14 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             double sum = entry.getValue()[1];
             double divisor = entry.getValue()[2];
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("bucket", Instant.ofEpochMilli(entry.getKey()).toString());
+            row.put(BUCKET, Instant.ofEpochMilli(entry.getKey()).toString());
             row.put("total", total);
             row.put("value", switch (validatedMetric) {
-                case "goal_achievement_rate", "negative_sentiment_rate" -> total > 0 ? sum / total : 0d;
-                case "avg_duration_ms", "avg_tokens_out",
-                     "tool_calls_per_session", "tool_errors_per_session",
-                     "avg_tool_latency_ms" -> total > 0 ? sum / total : 0d;
-                case "tool_error_rate_pct" -> divisor > 0 ? sum * 100d / divisor : 0d;
+                case GOAL_ACHIEVEMENT_RATE, NEGATIVE_SENTIMENT_RATE -> total > 0 ? sum / total : 0d;
+                case AVG_DURATION_MS, AVG_TOKENS_OUT,
+                     TOOL_CALLS_PER_SESSION, TOOL_ERRORS_PER_SESSION,
+                     AVG_TOOL_LATENCY_MS -> total > 0 ? sum / total : 0d;
+                case TOOL_ERROR_RATE_PCT -> divisor > 0 ? sum * 100d / divisor : 0d;
                 default -> total;
             });
             result.add(row);
@@ -318,19 +362,19 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 // this into a $match; the Redis store filters in-process.
                 if (!matchesScorecardFilters(hash, filters)) continue;
                 String dim = hash.get(field);
-                if (StringUtils.isBlank(dim)) dim = "unknown";
+                if (StringUtils.isBlank(dim)) dim = UNKNOWN;
                 double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
                 a[0] += 1;
-                a[1] += parseLong(hash.get("durationMs"));
-                if (StringUtils.isNotBlank(hash.get("processedAt"))) {
+                a[1] += parseLong(hash.get(DURATION_MS));
+                if (StringUtils.isNotBlank(hash.get(PROCESSED_AT))) {
                     a[2] += 1;
-                    String goal = hash.get("goalAchieved");
+                    String goal = hash.get(GOAL_ACHIEVED);
                     if ("YES".equals(goal)) a[3] += 1;
                     else if ("PARTIAL".equals(goal)) a[3] += 0.5;
-                    String s = hash.get("sentiment");
+                    String s = hash.get(SENTIMENT);
                     if ("NEGATIVE".equals(s) || "FRUSTRATED".equals(s)) a[4] += 1;
                 }
-                String intent = hash.get("intentLabel");
+                String intent = hash.get(INTENT_LABEL);
                 if (StringUtils.isNotBlank(intent)) {
                     intentCounts.computeIfAbsent(dim, k -> new HashMap<>())
                             .merge(intent, 1, Integer::sum);
@@ -349,15 +393,15 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                     int sessions = (int) a[0];
                     int processed = (int) a[2];
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("bucket", e.getKey());
-                    row.put("sessions", sessions);
+                    row.put(BUCKET, e.getKey());
+                    row.put(SESSIONS, sessions);
                     row.put("avgDurationMs", sessions > 0 ? a[1] / sessions : 0d);
                     row.put("goalAchievedRate", processed > 0 ? a[3] / processed : 0d);
                     row.put("negativeRate", processed > 0 ? a[4] / processed : 0d);
                     String topIntent = intentCounts.getOrDefault(e.getKey(), Map.of())
                             .entrySet().stream()
                             .max((x, y) -> Integer.compare(x.getValue(), y.getValue()))
-                            .map(Map.Entry::getKey).orElse("unknown");
+                            .map(Map.Entry::getKey).orElse(UNKNOWN);
                     row.put("topIntent", topIntent);
                     return row;
                 })
@@ -374,7 +418,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
-                if (StringUtils.isNotBlank(agentId) && !agentId.equals(hash.get("agentId"))) continue;
+                if (StringUtils.isNotBlank(agentId) && !agentId.equals(hash.get(AGENT_ID))) continue;
                 String encoded = hash.get(FIELD_TOOL_LATENCIES);
                 if (StringUtils.isBlank(encoded)) continue;
                 decodeToolLatenciesInto(encoded, acc);
@@ -496,47 +540,47 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
     private static boolean matches(Map<String, String> hash, String agentId, String personaId, String outcome,
             String intentLabel, String goalAchieved, String sentiment) {
-        if (StringUtils.isNotBlank(agentId)      && !agentId.equals(hash.get("agentId")))           return false;
-        if (StringUtils.isNotBlank(personaId)    && !personaId.equals(hash.get("personaId")))       return false;
-        if (StringUtils.isNotBlank(outcome)      && !outcome.equals(hash.get("outcome")))           return false;
-        if (StringUtils.isNotBlank(intentLabel)  && !intentLabel.equals(hash.get("intentLabel")))   return false;
-        if (StringUtils.isNotBlank(goalAchieved) && !goalAchieved.equals(hash.get("goalAchieved"))) return false;
-        if (StringUtils.isNotBlank(sentiment)    && !sentiment.equals(hash.get("sentiment")))       return false;
+        if (StringUtils.isNotBlank(agentId)      && !agentId.equals(hash.get(AGENT_ID)))           return false;
+        if (StringUtils.isNotBlank(personaId)    && !personaId.equals(hash.get(PERSONA_ID)))       return false;
+        if (StringUtils.isNotBlank(outcome)      && !outcome.equals(hash.get(OUTCOME)))           return false;
+        if (StringUtils.isNotBlank(intentLabel)  && !intentLabel.equals(hash.get(INTENT_LABEL)))   return false;
+        if (StringUtils.isNotBlank(goalAchieved) && !goalAchieved.equals(hash.get(GOAL_ACHIEVED))) return false;
+        if (StringUtils.isNotBlank(sentiment)    && !sentiment.equals(hash.get(SENTIMENT)))       return false;
         return true;
     }
 
     private static String sanitizeFieldName(String groupBy) {
-        if (groupBy == null) return "outcome";
+        if (groupBy == null) return OUTCOME;
         String trimmed = groupBy.trim();
         return switch (trimmed) {
-            case "agentId", "personaId", "llmInstanceId", "embeddingModelId",
-                 "storeInstanceId", "outcome", "locale", "userId",
-                 "intentLabel", "goalAchieved", "sentiment",
+            case AGENT_ID, PERSONA_ID, LLM_INSTANCE_ID, EMBEDDING_MODEL_ID,
+                 STORE_INSTANCE_ID, OUTCOME, LOCALE, USER_ID,
+                 INTENT_LABEL, GOAL_ACHIEVED, SENTIMENT,
                  // T74 cohort + experiment dimensions.
-                 "timezone", "deviceType", "experimentKey", "variantLabel" -> trimmed;
-            default -> "outcome";
+                 TIMEZONE, DEVICE_TYPE, EXPERIMENT_KEY, VARIANT_LABEL -> trimmed;
+            default -> OUTCOME;
         };
     }
 
     private static String sanitizeMetric(String metric) {
-        if (metric == null) return "sessions";
+        if (metric == null) return SESSIONS;
         return switch (metric.trim()) {
-            case "sessions",
-                 "goal_achievement_rate",
-                 "negative_sentiment_rate",
-                 "avg_duration_ms",
-                 "avg_tokens_out",
-                 "tool_calls_per_session",
-                 "tool_errors_per_session",
-                 "avg_tool_latency_ms",
-                 "tool_error_rate_pct" -> metric.trim();
-            default -> "sessions";
+            case SESSIONS,
+                 GOAL_ACHIEVEMENT_RATE,
+                 NEGATIVE_SENTIMENT_RATE,
+                 AVG_DURATION_MS,
+                 AVG_TOKENS_OUT,
+                 TOOL_CALLS_PER_SESSION,
+                 TOOL_ERRORS_PER_SESSION,
+                 AVG_TOOL_LATENCY_MS,
+                 TOOL_ERROR_RATE_PCT -> metric.trim();
+            default -> SESSIONS;
         };
     }
 
     private static boolean isRateMetric(String metric) {
-        return "goal_achievement_rate".equals(metric)
-                || "negative_sentiment_rate".equals(metric);
+        return GOAL_ACHIEVEMENT_RATE.equals(metric)
+                || NEGATIVE_SENTIMENT_RATE.equals(metric);
     }
 
     /** Truncates {@code when} to the start of its hour or day, returning epoch millis. */
@@ -554,26 +598,26 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
      */
     private static double metricContribution(Map<String, String> hash, String metric) {
         return switch (metric) {
-            case "goal_achievement_rate" -> {
-                String g = hash.get("goalAchieved");
+            case GOAL_ACHIEVEMENT_RATE -> {
+                String g = hash.get(GOAL_ACHIEVED);
                 double partialGoal = "PARTIAL".equals(g) ? 0.5d : 0d;
                 yield "YES".equals(g) ? 1d : partialGoal;
             }
-            case "negative_sentiment_rate" -> {
-                String s = hash.get("sentiment");
+            case NEGATIVE_SENTIMENT_RATE -> {
+                String s = hash.get(SENTIMENT);
                 yield ("NEGATIVE".equals(s) || "FRUSTRATED".equals(s)) ? 1d : 0d;
             }
-            case "avg_duration_ms"         -> parseLong(hash.get("durationMs"));
-            case "avg_tokens_out"          -> parseLong(hash.get("totalTokensOut"));
+            case AVG_DURATION_MS         -> parseLong(hash.get(DURATION_MS));
+            case AVG_TOKENS_OUT          -> parseLong(hash.get(TOTAL_TOKENS_OUT));
             // The next three are per-session averages — divisor is bucket
             // session count, same family as avg_tokens_out / avg_duration_ms.
             // Each session contributes its own session-total to the sum.
-            case "tool_calls_per_session"  -> parseLong(hash.get("totalToolCalls"));
-            case "tool_errors_per_session" -> parseLong(hash.get("totalToolErrors"));
-            case "avg_tool_latency_ms"     -> parseLong(hash.get("totalToolLatencyMs"));
+            case TOOL_CALLS_PER_SESSION  -> parseLong(hash.get(TOTAL_TOOL_CALLS));
+            case TOOL_ERRORS_PER_SESSION -> parseLong(hash.get(TOTAL_TOOL_ERRORS));
+            case AVG_TOOL_LATENCY_MS     -> parseLong(hash.get(TOTAL_TOOL_LATENCY_MS));
             // tool_error_rate_pct is errors / calls × 100 — numerator is the
             // session's tool errors; divisor is filled by metricDivisorContribution.
-            case "tool_error_rate_pct"     -> parseLong(hash.get("totalToolErrors"));
+            case TOOL_ERROR_RATE_PCT     -> parseLong(hash.get(TOTAL_TOOL_ERRORS));
             default -> 0d;
         };
     }
@@ -588,8 +632,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         // sessions in the bucket — so a 1-call session with 1 error rates
         // 100% while a 10-call session with 1 error rates 10%, matching
         // the "rate" semantics the dashboard expects.
-        if ("tool_error_rate_pct".equals(metric)) {
-            return parseLong(hash.get("totalToolCalls"));
+        if (TOOL_ERROR_RATE_PCT.equals(metric)) {
+            return parseLong(hash.get(TOTAL_TOOL_CALLS));
         }
         return 0d;
     }
@@ -597,45 +641,45 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     private static Map<String, Object> toRow(String id, Map<String, String> hash) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("conversationId",   id);
-        row.put("agentId",          hash.get("agentId"));
-        row.put("personaId",        hash.get("personaId"));
-        row.put("llmInstanceId",    hash.get("llmInstanceId"));
-        row.put("embeddingModelId", hash.get("embeddingModelId"));
-        row.put("storeInstanceId",  hash.get("storeInstanceId"));
-        row.put("userId",           hash.get("userId"));
-        row.put("locale",           hash.get("locale"));
+        row.put(AGENT_ID,          hash.get(AGENT_ID));
+        row.put(PERSONA_ID,        hash.get(PERSONA_ID));
+        row.put(LLM_INSTANCE_ID,    hash.get(LLM_INSTANCE_ID));
+        row.put(EMBEDDING_MODEL_ID, hash.get(EMBEDDING_MODEL_ID));
+        row.put(STORE_INSTANCE_ID,  hash.get(STORE_INSTANCE_ID));
+        row.put(USER_ID,           hash.get(USER_ID));
+        row.put(LOCALE,           hash.get(LOCALE));
         // T74 — visitor cohort dimensions.
-        row.put("timezone",         hash.get("timezone"));
-        row.put("deviceType",       hash.get("deviceType"));
-        row.put("outcome",          hash.get("outcome"));
-        row.put("startedAt",        hash.get("startedAt"));
-        row.put("completedAt",      hash.get("completedAt"));
-        row.put("totalTurns",         parseLong(hash.get("totalTurns")));
-        row.put("totalTokensIn",      parseLong(hash.get("totalTokensIn")));
-        row.put("totalTokensOut",     parseLong(hash.get("totalTokensOut")));
-        row.put("totalToolCalls",     parseLong(hash.get("totalToolCalls")));
-        row.put("totalToolErrors",    parseLong(hash.get("totalToolErrors")));
-        row.put("totalToolLatencyMs", parseLong(hash.get("totalToolLatencyMs")));
-        row.put("experimentKey",      hash.get("experimentKey"));
-        row.put("variantLabel",       hash.get("variantLabel"));
+        row.put(TIMEZONE,         hash.get(TIMEZONE));
+        row.put(DEVICE_TYPE,       hash.get(DEVICE_TYPE));
+        row.put(OUTCOME,          hash.get(OUTCOME));
+        row.put(STARTED_AT,        hash.get(STARTED_AT));
+        row.put(COMPLETED_AT,      hash.get(COMPLETED_AT));
+        row.put(TOTAL_TURNS,         parseLong(hash.get(TOTAL_TURNS)));
+        row.put(TOTAL_TOKENS_IN,      parseLong(hash.get(TOTAL_TOKENS_IN)));
+        row.put(TOTAL_TOKENS_OUT,     parseLong(hash.get(TOTAL_TOKENS_OUT)));
+        row.put(TOTAL_TOOL_CALLS,     parseLong(hash.get(TOTAL_TOOL_CALLS)));
+        row.put(TOTAL_TOOL_ERRORS,    parseLong(hash.get(TOTAL_TOOL_ERRORS)));
+        row.put(TOTAL_TOOL_LATENCY_MS, parseLong(hash.get(TOTAL_TOOL_LATENCY_MS)));
+        row.put(EXPERIMENT_KEY,      hash.get(EXPERIMENT_KEY));
+        row.put(VARIANT_LABEL,       hash.get(VARIANT_LABEL));
         // T110 — child-session linkage to parent conversation.
-        row.put("parentConversationId", hash.get("parentConversationId"));
-        row.put("durationMs",         parseLong(hash.get("durationMs")));
-        row.put("firstUserMessage", hash.get("firstUserMessage"));
+        row.put(PARENT_CONVERSATION_ID, hash.get(PARENT_CONVERSATION_ID));
+        row.put(DURATION_MS,         parseLong(hash.get(DURATION_MS)));
+        row.put(FIRST_USER_MESSAGE, hash.get(FIRST_USER_MESSAGE));
         // Enrichment columns — null until the scheduled enricher runs.
-        row.put("intentLabel",      hash.get("intentLabel"));
-        String confidence = hash.get("intentConfidence");
-        row.put("intentConfidence", StringUtils.isBlank(confidence) ? null : parseDouble(confidence));
-        row.put("goalSummary",      hash.get("goalSummary"));
-        row.put("goalAchieved",     hash.get("goalAchieved"));
-        row.put("sentiment",        hash.get("sentiment"));
-        String keyTerms = hash.get("keyTerms");
-        row.put("keyTerms",         StringUtils.isBlank(keyTerms) ? null : List.of(keyTerms.split(",")));
+        row.put(INTENT_LABEL,      hash.get(INTENT_LABEL));
+        String confidence = hash.get(INTENT_CONFIDENCE);
+        row.put(INTENT_CONFIDENCE, StringUtils.isBlank(confidence) ? null : parseDouble(confidence));
+        row.put(GOAL_SUMMARY,      hash.get(GOAL_SUMMARY));
+        row.put(GOAL_ACHIEVED,     hash.get(GOAL_ACHIEVED));
+        row.put(SENTIMENT,        hash.get(SENTIMENT));
+        String keyTerms = hash.get(KEY_TERMS);
+        row.put(KEY_TERMS,         StringUtils.isBlank(keyTerms) ? null : List.of(keyTerms.split(",")));
         // T87 — per-turn sentiment trajectory (CSV of enum names), null until enriched.
         String trajectory = hash.get(FIELD_SENTIMENT_TRAJECTORY);
         row.put(FIELD_SENTIMENT_TRAJECTORY,
                 StringUtils.isBlank(trajectory) ? null : List.of(trajectory.split(",")));
-        row.put("processedAt",      hash.get("processedAt"));
+        row.put(PROCESSED_AT,      hash.get(PROCESSED_AT));
         return row;
     }
 

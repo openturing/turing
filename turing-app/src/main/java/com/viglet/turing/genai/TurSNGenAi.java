@@ -70,6 +70,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class TurSNGenAi {
+
+    // --- S1192: extracted duplicated literals ---
+    private static final String AI_CONFIGURATION_IS_NOT_ENABLED = "AI configuration is not enabled";
+    private static final String ASSISTANT = "assistant";
+    private static final String RAG_DOCUMENT_FOR_OBJECT_ID_OF_SN_SITE_HAS_NO_INDEXABLE_TEXT_TITLE_ABSTRACT_TEXT_ATTRIBUTES_ARE_EMPTY = "RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)";
+
     /** T327 — serializes the {@code sources[]} SSE event payload. */
     private static final tools.jackson.databind.ObjectMapper SOURCES_MAPPER =
             new tools.jackson.databind.ObjectMapper();
@@ -153,7 +159,7 @@ public class TurSNGenAi {
     public TurChatMessage assistant(TurGenAiContext context, String q) {
         if (!context.isEnabled()) {
             log.warn("RAG chat (single-turn) context disabled — check LLM, embedding model and store configuration");
-            return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
+            return TurChatMessage.builder().text(AI_CONFIGURATION_IS_NOT_ENABLED).enabled(false).build();
         }
         int tokenCounter = new StringTokenizer(q).countTokens();
         log.debug("RAG chat (single-turn) assistant query='{}' tokenCount={}", q, tokenCounter);
@@ -222,7 +228,7 @@ public class TurSNGenAi {
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(
-                    new TurAgentChatExecutor.ChatResponse("assistant", "AI configuration is not enabled"));
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, AI_CONFIGURATION_IS_NOT_ENABLED));
         }
         if (history == null || history.isEmpty()) {
             log.debug("RAG chat streaming called with empty history");
@@ -254,7 +260,7 @@ public class TurSNGenAi {
             log.debug("RAG chat streaming: 0 documents passed the relevance gate — "
                     + "returning deterministic refusal (locale={})", locale);
             return reactor.core.publisher.Flux.just(
-                    new TurAgentChatExecutor.ChatResponse("assistant", localizedRefusal(locale)));
+                    new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
         }
 
         String information = relevantDocuments.stream()
@@ -306,7 +312,7 @@ public class TurSNGenAi {
                                 return null; // empty → no caveat
                             }
                             return new TurAgentChatExecutor.ChatResponse(
-                                    "assistant", "\n\n" + groundednessCaveat(locale), "token");
+                                    ASSISTANT, "\n\n" + groundednessCaveat(locale), "token");
                         })
                         .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                         .flux());
@@ -379,7 +385,7 @@ public class TurSNGenAi {
                         return null; // Mono treats null as empty → no event emitted
                     }
                     return new TurAgentChatExecutor.ChatResponse(
-                            "assistant", SOURCES_MAPPER.writeValueAsString(questions), "options");
+                            ASSISTANT, SOURCES_MAPPER.writeValueAsString(questions), "options");
                 })
                 .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                 .flux();
@@ -463,7 +469,7 @@ public class TurSNGenAi {
             String json = SOURCES_MAPPER.writeValueAsString(sources);
             return reactor.core.publisher.Flux.concat(
                     reactor.core.publisher.Flux.just(
-                            new TurAgentChatExecutor.ChatResponse("assistant", json, "sources")),
+                            new TurAgentChatExecutor.ChatResponse(ASSISTANT, json, "sources")),
                     answer);
         } catch (tools.jackson.core.JacksonException e) {
             log.warn("RAG chat could not serialize {} source(s): {}", sources.size(), e.getMessage());
@@ -553,7 +559,7 @@ public class TurSNGenAi {
             java.util.Map<String, List<String>> filters) {
         if (!context.isEnabled()) {
             log.warn("RAG chat context disabled — check LLM, embedding model and store configuration");
-            return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
+            return TurChatMessage.builder().text(AI_CONFIGURATION_IS_NOT_ENABLED).enabled(false).build();
         }
         if (history == null || history.isEmpty()) {
             log.debug("RAG chat called with empty history — nothing to answer");
@@ -596,7 +602,7 @@ public class TurSNGenAi {
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(systemContent));
         for (ConversationMessage m : history) {
-            if ("assistant".equals(m.role())) {
+            if (ASSISTANT.equals(m.role())) {
                 messages.add(new AssistantMessage(m.content() == null ? "" : m.content()));
             } else {
                 messages.add(new UserMessage(m.content() == null ? "" : m.content()));
@@ -758,7 +764,7 @@ public class TurSNGenAi {
         }
         RagFields fields = partitionFields(doc);
         if (fields.isEmpty()) {
-            log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+            log.warn(RAG_DOCUMENT_FOR_OBJECT_ID_OF_SN_SITE_HAS_NO_INDEXABLE_TEXT_TITLE_ABSTRACT_TEXT_ATTRIBUTES_ARE_EMPTY,
                     sourceId, turSNSite.getName());
         }
         Map<String, Object> metadata = buildMetadata(turSNSite, locale, doc, fields);
@@ -787,7 +793,7 @@ public class TurSNGenAi {
         Object sourceId = doc.get(ID);
         RagFields fields = partitionFields(doc);
         if (fields.isEmpty()) {
-            log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+            log.warn(RAG_DOCUMENT_FOR_OBJECT_ID_OF_SN_SITE_HAS_NO_INDEXABLE_TEXT_TITLE_ABSTRACT_TEXT_ATTRIBUTES_ARE_EMPTY,
                     sourceId, turSNSite.getName());
         }
         Map<String, Object> metadata = buildMetadata(turSNSite, locale, doc, fields);
@@ -960,7 +966,7 @@ public class TurSNGenAi {
                     }
                     RagFields fields = partitionFields(jobItem.getAttributes());
                     if (fields.isEmpty()) {
-                        log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+                        log.warn(RAG_DOCUMENT_FOR_OBJECT_ID_OF_SN_SITE_HAS_NO_INDEXABLE_TEXT_TITLE_ABSTRACT_TEXT_ATTRIBUTES_ARE_EMPTY,
                                 jobItem.getId(), siteName);
                     }
                     addDocument(context, fields.header(), fields.body(), buildMetadataFromJob(jobItem, fields));

@@ -50,6 +50,10 @@ import tools.jackson.databind.ObjectMapper;
 @Slf4j
 public final class ChatFlowOps {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String SWITCH = "switch";
+
+
     /**
      * Synthetic node id stamped onto state when the user abandons a flow
      * that has no real end node. Surfaced by the History page as
@@ -349,7 +353,7 @@ public final class ChatFlowOps {
             appendConditionalNextSteps(sb, graph, target);
             return;
         }
-        if ("switch".equals(type)) {
+        if (SWITCH.equals(type)) {
             appendSwitchNextSteps(sb, graph, target);
             return;
         }
@@ -1314,7 +1318,7 @@ public final class ChatFlowOps {
             return List.of();
         }
         ChatFlowNode downstream = graph.nodeById(outgoing.get(0).target()).orElse(null);
-        if (downstream == null || !"switch".equals(downstream.type())) {
+        if (downstream == null || !SWITCH.equals(downstream.type())) {
             return List.of();
         }
         List<String> labels = new java.util.ArrayList<>();
@@ -1359,7 +1363,7 @@ public final class ChatFlowOps {
                 return;
             }
             ChatFlowNode current = currentOpt.get();
-            if (!"switch".equals(current.type())) {
+            if (!SWITCH.equals(current.type())) {
                 return;
             }
             Map<String, String> variables = readVariables(state);

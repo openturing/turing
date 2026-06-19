@@ -112,6 +112,12 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class TurChatFlowEngineService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String HUMAN_APPROVAL = "humanApproval";
+    private static final String SCHEDULE_AGENT = "scheduleAgent";
+    private static final String FLOW = "flow '";
+
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
@@ -273,7 +279,7 @@ public class TurChatFlowEngineService {
      * {@link #resumeSuspendedFlow} and surfaced on the parked-conversations
      * dashboard.
      */
-    static final Set<String> PARKED_NODE_TYPES = Set.of("suspend", "humanApproval");
+    static final Set<String> PARKED_NODE_TYPES = Set.of("suspend", HUMAN_APPROVAL);
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
             TurChatFlowRepository chatFlowRepository,
@@ -674,7 +680,7 @@ public class TurChatFlowEngineService {
             // T119 — when force-advancing past a humanApproval node, cancel any
             // still-PENDING record (the decide/timeout paths already moved it to
             // DECIDED/TIMED_OUT, so this is a no-op except on an admin unblock).
-            if ("humanApproval".equals(parkedNode.type())) {
+            if (HUMAN_APPROVAL.equals(parkedNode.type())) {
                 humanApprovalNodeExecutor.cancelPending(conversationId, parkedNode.id());
             }
             ChatFlowOps.advanceToFirstEdge(state, graph, parkedNode);
@@ -791,7 +797,7 @@ public class TurChatFlowEngineService {
                 if (label != null && !label.isBlank()) {
                     return Optional.of(label);
                 }
-                return Optional.of("humanApproval".equals(current.type())
+                return Optional.of(HUMAN_APPROVAL.equals(current.type())
                         ? "awaiting approval" : "suspended");
             }
         }
@@ -821,7 +827,7 @@ public class TurChatFlowEngineService {
             if (graph == null) continue;
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) continue;
-            if (!"scheduleAgent".equals(currentOpt.get().type())) continue;
+            if (!SCHEDULE_AGENT.equals(currentOpt.get().type())) continue;
             log.info("[FlowEngine] auto-resume: conv='{}' re-walking parked state '{}'",
                     conversationId, state.getId());
             TurChatFlowState leaf = walkTransparentNodes(state, null);
@@ -919,7 +925,7 @@ public class TurChatFlowEngineService {
                     if (label != null && !label.isBlank()) {
                         suspendedReason = label;
                     } else {
-                        suspendedReason = "humanApproval".equals(currentOpt.get().type())
+                        suspendedReason = HUMAN_APPROVAL.equals(currentOpt.get().type())
                                 ? "awaiting approval" : "suspended";
                     }
                 }
@@ -1240,20 +1246,20 @@ public class TurChatFlowEngineService {
         }
         TurChatFlow flow = resolveFlowOnAgent(agent.getId(), flowSelector);
         if (flow == null) {
-            return PinResult.error("flow '" + flowSelector + "' not found on agent "
+            return PinResult.error(FLOW + flowSelector + "' not found on agent "
                     + agent.getId());
         }
         if (flow.getEnabled() != 1) {
-            return PinResult.error("flow '" + flow.getId() + "' is disabled");
+            return PinResult.error(FLOW + flow.getId() + "' is disabled");
         }
         Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
         if (graphOpt.isEmpty()) {
-            return PinResult.error("flow '" + flow.getId() + "' has no parseable graph");
+            return PinResult.error(FLOW + flow.getId() + "' has no parseable graph");
         }
         ChatFlowGraph graph = graphOpt.get();
         Optional<ChatFlowNode> startNode = graph.startNode();
         if (startNode.isEmpty()) {
-            return PinResult.error("flow '" + flow.getId() + "' has no start node");
+            return PinResult.error(FLOW + flow.getId() + "' has no start node");
         }
 
         // Snapshot slots BEFORE the reset so the receiving flow can resume
@@ -2724,7 +2730,7 @@ public class TurChatFlowEngineService {
             // once as the walk executes the node (mirrors the interactive-node
             // trace emitted in advance()). Only when the node carries an
             // experiment, so plain transparent nodes incur a single null-check.
-            if ("functionCall".equals(current.type()) || "scheduleAgent".equals(current.type())) {
+            if ("functionCall".equals(current.type()) || SCHEDULE_AGENT.equals(current.type())) {
                 ChatFlowNode.formatNodeVariantTrace(current, state.getConversationId())
                         .ifPresent(tr -> log.info("[A/B Node Trace] {}", tr));
             }
@@ -2929,7 +2935,7 @@ public class TurChatFlowEngineService {
             // chat turn returns; COMPLETED advances normally; TIMEOUT routes
             // via the optional 'timeout' sourceHandle; FAILED logs + advances
             // like functionCall does on resolution errors.
-            if ("scheduleAgent".equals(current.type())) {
+            if (SCHEDULE_AGENT.equals(current.type())) {
                 TurScheduleAgentNodeExecutor.Outcome outcome =
                         scheduleAgentExecutor.execute(state, current);
                 switch (outcome) {
@@ -2993,7 +2999,7 @@ public class TurChatFlowEngineService {
             // timeout sweep) — then the engine advances on the first edge.
             // Until then it parks; the notification fires exactly once thanks to
             // the idempotent PENDING-record guard in the service.
-            if ("humanApproval".equals(current.type())) {
+            if (HUMAN_APPROVAL.equals(current.type())) {
                 if (humanApprovalNodeExecutor.onEnter(state, current)) {
                     ChatFlowOps.advanceToFirstEdge(state, graph, current);
                     state = stateRepository.save(state);

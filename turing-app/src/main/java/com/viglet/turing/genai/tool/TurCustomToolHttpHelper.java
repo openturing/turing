@@ -61,6 +61,10 @@ import org.springframework.web.client.RestClient;
  */
 public class TurCustomToolHttpHelper {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String AUTHORIZATION = "Authorization";
+
+
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
     /**
@@ -214,8 +218,8 @@ public class TurCustomToolHttpHelper {
     public Object getJson(String url, Map<String, String> headers) {
         var spec = restClient.get().uri(url);
         String auth = resolveAuthorizationHeader();
-        if (auth != null && !hasHeader(headers, "Authorization")) {
-            spec = spec.header("Authorization", auth);
+        if (auth != null && !hasHeader(headers, AUTHORIZATION)) {
+            spec = spec.header(AUTHORIZATION, auth);
         }
         if (headers != null) {
             for (Map.Entry<String, String> h : headers.entrySet()) {
@@ -241,8 +245,8 @@ public class TurCustomToolHttpHelper {
                 .uri(url)
                 .header("Content-Type", "application/json");
         String auth = resolveAuthorizationHeader();
-        if (auth != null && !hasHeader(headers, "Authorization")) {
-            spec = spec.header("Authorization", auth);
+        if (auth != null && !hasHeader(headers, AUTHORIZATION)) {
+            spec = spec.header(AUTHORIZATION, auth);
         }
         if (headers != null) {
             for (Map.Entry<String, String> h : headers.entrySet()) {

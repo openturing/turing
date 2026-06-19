@@ -65,6 +65,11 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 @EnableMethodSecurity(securedEnabled = true)
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction {
+
+    // --- S1192: extracted duplicated literals ---
+    private static final String MCP = "/mcp/**";
+    private static final String API_SIGNUP = "/api/signup";
+
         private static final String LOGIN_PATH = "/api/login";
         private static final String LOGOUT_PATH = "/logout";
         private static final String SETUP_PATH = "/api/setup";
@@ -147,14 +152,14 @@ public class TurSecurityConfigProduction {
                                                 // enforced by TurMcpLoopbackFilter today and the
                                                 // T246 OAuth 2.1 resource-server gate next.
                                                 mvc.matcher("/mcp"),
-                                                mvc.matcher("/mcp/**"),
+                                                mvc.matcher(MCP),
                                                 mvc.matcher("/api/v2/guest/**"),
                                                 mvc.matcher("/h2/**"),
                                                 mvc.matcher("/git/**"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH),
                                                 mvc.matcher("/api/v2/user/register"),
-                                                mvc.matcher("/api/signup"),
+                                                mvc.matcher(API_SIGNUP),
                                                 mvc.matcher("/login/oauth2/**"),
                                                 mvc.matcher("/oauth2/**")))
                                 .addFilterAfter(new VigletCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -210,8 +215,8 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/pages/**"),
                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
                                                 mvc.matcher("/mcp"),
-                                                mvc.matcher("/mcp/**"),
-                                                mvc.matcher("/api/signup"),
+                                                mvc.matcher(MCP),
+                                                mvc.matcher(API_SIGNUP),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                 authorizeRequests.anyRequest().authenticated();
@@ -278,7 +283,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/pages/**"),
                                                                 // T245 — MCP server endpoint (loopback-gated, see CSRF note above).
                                                                 mvc.matcher("/mcp"),
-                                                                mvc.matcher("/mcp/**"),
+                                                                mvc.matcher(MCP),
                                                                 mvc.matcher("/favicon.ico"),
                                                                 mvc.matcher("/*.png"),
                                                                 mvc.matcher("/manifest.json"),
@@ -286,7 +291,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/console/**"),
                                                                 mvc.matcher("/api/v2/guest/**"),
                                                                 mvc.matcher("/api/v2/user/register"),
-                                                                mvc.matcher("/api/signup"),
+                                                                mvc.matcher(API_SIGNUP),
                                                                 mvc.matcher(LOGIN_PATH),
                                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                                 authorizeRequests.anyRequest().authenticated();

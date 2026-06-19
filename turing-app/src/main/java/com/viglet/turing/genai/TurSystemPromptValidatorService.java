@@ -59,6 +59,16 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class TurSystemPromptValidatorService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String AGENT = "AGENT";
+    private static final String PERSONA = "PERSONA";
+    private static final String ENGLISH = "English";
+    private static final String PORTUGUESE = "Portuguese";
+    private static final String SPANISH = "Spanish";
+    private static final String FRENCH = "French";
+    private static final String GERMAN = "German";
+
+
     /** Above this assembled-prompt length we warn about token bloat. */
     static final int LONG_PROMPT_THRESHOLD = 8000;
 
@@ -110,7 +120,7 @@ public class TurSystemPromptValidatorService {
             issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "empty_system_prompt",
                     "This agent has no system prompt; it falls back to a generic default.",
                     "Write a system prompt that defines the agent's scope, tone, and boundaries.",
-                    "AGENT"));
+                    AGENT));
         }
     }
 
@@ -120,7 +130,7 @@ public class TurSystemPromptValidatorService {
                     "The assembled system prompt is " + assembled.length()
                             + " characters — large prompts inflate token cost and dilute the model's attention.",
                     "Trim redundant guidance, or move stable reference material into a tool or RAG store.",
-                    "AGENT"));
+                    AGENT));
         }
     }
 
@@ -131,7 +141,7 @@ public class TurSystemPromptValidatorService {
         Set<String> all = new LinkedHashSet<>(baseLangs);
         all.addAll(personaLangs);
         if (all.size() > 1) {
-            String singleSource = baseLangs.size() > 1 ? "AGENT" : "PERSONA";
+            String singleSource = baseLangs.size() > 1 ? AGENT : PERSONA;
             String source = !baseLangs.isEmpty() && !personaLangs.isEmpty()
                     ? "AGENT + PERSONA"
                     : singleSource;
@@ -158,7 +168,7 @@ public class TurSystemPromptValidatorService {
                 issues.add(new TurSystemPromptIssueDto(SEV_ERROR, "persona_vocab_contradiction",
                         "The persona lists \"" + term + "\" as both required and forbidden vocabulary.",
                         "Remove the term from one of the two lists.",
-                        "PERSONA"));
+                        PERSONA));
             }
         }
         // A forbidden term used verbatim in the agent prompt undercuts the ban.
@@ -169,7 +179,7 @@ public class TurSystemPromptValidatorService {
                             "The agent prompt uses \"" + term
                                     + "\", which the default persona forbids — the persona will be told to rephrase its own instructions.",
                             "Rephrase the agent prompt to avoid the forbidden term, or drop it from the persona's forbidden list.",
-                            "AGENT"));
+                            AGENT));
                 }
             }
         }
@@ -190,7 +200,7 @@ public class TurSystemPromptValidatorService {
             issues.add(new TurSystemPromptIssueDto(SEV_INFO, "redundant_persona_instruction",
                     "The default persona's instruction largely duplicates the agent system prompt.",
                     "Keep each layer focused — the agent prompt for scope/behavior, the persona for voice — to avoid sending the same text twice.",
-                    "PERSONA"));
+                    PERSONA));
         }
     }
 
@@ -348,22 +358,22 @@ public class TurSystemPromptValidatorService {
 
     private static Map<String, String> buildLanguageCodes() {
         Map<String, String> m = new LinkedHashMap<>();
-        m.put("english", "English");
-        m.put("inglês", "English");
-        m.put("ingles", "English");
-        m.put("portuguese", "Portuguese");
-        m.put("português", "Portuguese");
-        m.put("portugues", "Portuguese");
-        m.put("spanish", "Spanish");
-        m.put("español", "Spanish");
-        m.put("espanhol", "Spanish");
-        m.put("french", "French");
-        m.put("français", "French");
-        m.put("francês", "French");
-        m.put("frances", "French");
-        m.put("german", "German");
-        m.put("alemão", "German");
-        m.put("alemao", "German");
+        m.put("english", ENGLISH);
+        m.put("inglês", ENGLISH);
+        m.put("ingles", ENGLISH);
+        m.put("portuguese", PORTUGUESE);
+        m.put("português", PORTUGUESE);
+        m.put("portugues", PORTUGUESE);
+        m.put("spanish", SPANISH);
+        m.put("español", SPANISH);
+        m.put("espanhol", SPANISH);
+        m.put("french", FRENCH);
+        m.put("français", FRENCH);
+        m.put("francês", FRENCH);
+        m.put("frances", FRENCH);
+        m.put("german", GERMAN);
+        m.put("alemão", GERMAN);
+        m.put("alemao", GERMAN);
         m.put("italian", "Italian");
         m.put("italiano", "Italian");
         return m;

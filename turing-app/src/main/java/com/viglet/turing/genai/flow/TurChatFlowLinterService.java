@@ -68,6 +68,12 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 @Service
 public class TurChatFlowLinterService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String ERROR = "ERROR";
+    private static final String WARNING = "WARNING";
+    private static final String ITERATE_PLAN = "iteratePlan";
+
+
     /**
      * Soft cap on {@code aiInstruction} length. Above this the addendum
      * starts to dominate the system prompt and the LLM begins to ignore
@@ -139,8 +145,8 @@ public class TurChatFlowLinterService {
     }
 
     private static int priority(String severity) {
-        if ("ERROR".equals(severity)) return 0;
-        if ("WARNING".equals(severity)) return 1;
+        if (ERROR.equals(severity)) return 0;
+        if (WARNING.equals(severity)) return 1;
         return 2;
     }
 
@@ -150,7 +156,7 @@ public class TurChatFlowLinterService {
             String instr = node.aiInstruction();
             if (instr != null && instr.length() > AI_INSTRUCTION_LIMIT) {
                 out.add(new TurChatFlowLintIssueDto(
-                        node.id(), null, "WARNING", "ai_instruction_too_long",
+                        node.id(), null, WARNING, "ai_instruction_too_long",
                         "aiInstruction is " + instr.length() + " chars (soft limit "
                                 + AI_INSTRUCTION_LIMIT + ")",
                         "Tighten the instruction or split the node — verbose addenda inflate"
@@ -175,7 +181,7 @@ public class TurChatFlowLinterService {
             if (slot == null || slot.isBlank()) continue;
             if (referenced.contains(slot)) continue;
             out.add(new TurChatFlowLintIssueDto(
-                    node.id(), null, "WARNING", "unused_output_variable",
+                    node.id(), null, WARNING, "unused_output_variable",
                     "Slot '" + slot + "' is captured here but never read downstream",
                     "Either consume it (use {{" + slot + "}} in another node, drive a switch on it,"
                             + " or declare it as an inheritance source on another flow) or remove the"
@@ -252,7 +258,7 @@ public class TurChatFlowLinterService {
             if ("end".equals(node.type())) continue;
             if (sources.contains(node.id())) continue;
             out.add(new TurChatFlowLintIssueDto(
-                    node.id(), null, "ERROR", "dead_end_node",
+                    node.id(), null, ERROR, "dead_end_node",
                     "Node has no outgoing edge — the conversation stalls when it reaches here",
                     "Wire an edge to the next node, or change the type to 'end' if this is a"
                             + " legitimate terminal."));
@@ -279,7 +285,7 @@ public class TurChatFlowLinterService {
             boolean missingLabel = edge.label() == null || edge.label().isBlank();
             if (missingHandle && missingLabel) {
                 out.add(new TurChatFlowLintIssueDto(
-                        edge.source(), edge.id(), "WARNING", "edge_without_label",
+                        edge.source(), edge.id(), WARNING, "edge_without_label",
                         "Edge from " + type + " node has no sourceHandle and no label",
                         "Pick which branch this edge represents ('yes'/'no' for condition, an option"
                                 + " id for switch) — the runtime cannot disambiguate without one."));
@@ -327,7 +333,7 @@ public class TurChatFlowLinterService {
             for (ChatFlowNode.FormField field : node.formFields()) {
                 String name = field == null ? null : field.name();
                 if (name == null || name.isBlank()) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "ERROR",
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, ERROR,
                             "form_field_blank_name",
                             "A form field has no slot name — its value cannot be captured",
                             "Pick a declared slot for every field on the form."));
@@ -335,14 +341,14 @@ public class TurChatFlowLinterService {
                 }
                 String trimmed = name.trim();
                 if (!seen.add(trimmed)) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "WARNING",
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
                             "form_field_duplicate_name",
                             "Two form fields write the same slot '" + trimmed
                                     + "' — the later value wins",
                             "Give each field its own slot, or remove the duplicate field."));
                 }
                 if (declaredSlots != null && !declaredSlots.contains(trimmed)) {
-                    out.add(new TurChatFlowLintIssueDto(node.id(), null, "WARNING",
+                    out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
                             "form_field_unknown_slot",
                             "Form field writes slot '" + trimmed
                                     + "' which is not declared on the agent",
@@ -372,7 +378,7 @@ public class TurChatFlowLinterService {
             List<TurChatFlowLintIssueDto> out) {
         boolean hasPlanningNodes = false;
         for (ChatFlowNode node : graph.nodes()) {
-            if ("planningStep".equals(node.type()) || "iteratePlan".equals(node.type())) {
+            if ("planningStep".equals(node.type()) || ITERATE_PLAN.equals(node.type())) {
                 hasPlanningNodes = true;
                 break;
             }
@@ -385,7 +391,7 @@ public class TurChatFlowLinterService {
         // plan an author renders via {{__plan}} counts as consumed too).
         Set<String> consumed = new HashSet<>();
         for (ChatFlowNode node : graph.nodes()) {
-            if ("iteratePlan".equals(node.type())) {
+            if (ITERATE_PLAN.equals(node.type())) {
                 consumed.add(planSlotName(node));
             }
             collectInterpolated(consumed, node.aiInstruction());
@@ -397,16 +403,16 @@ public class TurChatFlowLinterService {
         for (ChatFlowNode node : graph.nodes()) {
             if ("planningStep".equals(node.type()) && !consumed.contains(planSlotName(node))) {
                 out.add(new TurChatFlowLintIssueDto(
-                        node.id(), null, "WARNING", "planning_step_unused_plan",
+                        node.id(), null, WARNING, "planning_step_unused_plan",
                         "Plan slot '" + planSlotName(node) + "' is generated here but never iterated"
                                 + " or read downstream",
                         "Add an iteratePlan node reading this slot, or render it with {{"
                                 + planSlotName(node) + "}} — otherwise the planning LLM call is wasted."));
             }
-            if ("iteratePlan".equals(node.type())
+            if (ITERATE_PLAN.equals(node.type())
                     && (node.subFlowId() == null || node.subFlowId().isBlank())) {
                 out.add(new TurChatFlowLintIssueDto(
-                        node.id(), null, "WARNING", "iterate_plan_no_body",
+                        node.id(), null, WARNING, "iterate_plan_no_body",
                         "iteratePlan has no body sub-flow — it will mark every plan item done"
                                 + " without executing anything",
                         "Set the node's sub-flow (subFlowId) to the flow that should run once per"
@@ -429,7 +435,7 @@ public class TurChatFlowLinterService {
                     && (flow.getId().equals(c.flowAId()) || flow.getId().equals(c.flowBId()));
             if (!involvesThisFlow) continue;
             String other = flow.getId().equals(c.flowAId()) ? c.flowBName() : c.flowAName();
-            String severity = "HIGH".equals(c.severity()) ? "ERROR" : "WARNING";
+            String severity = "HIGH".equals(c.severity()) ? ERROR : WARNING;
             out.add(new TurChatFlowLintIssueDto(
                     null, null, severity, "trigger_conflict",
                     "Trigger description overlaps with flow '" + other + "' ("

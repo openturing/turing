@@ -64,6 +64,10 @@ import tools.jackson.databind.node.ObjectNode;
 @Service
 public class TurChatFlowVariantService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String NODES = "nodes";
+
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /** Field names on a node's {@code data} object that the LLM is allowed to rewrite. */
@@ -148,7 +152,7 @@ public class TurChatFlowVariantService {
     /* ─────────────────────── Extraction & apply ─────────────────────── */
 
     private List<Map<String, Object>> extractCopyTable(JsonNode root) {
-        JsonNode nodes = root.path("nodes");
+        JsonNode nodes = root.path(NODES);
         if (!nodes.isArray()) {
             return List.of();
         }
@@ -182,14 +186,14 @@ public class TurChatFlowVariantService {
     }
 
     private List<String> applyRewrite(JsonNode root, ObjectNode rewrite) {
-        JsonNode rewrittenNodes = rewrite.path("nodes");
+        JsonNode rewrittenNodes = rewrite.path(NODES);
         if (!rewrittenNodes.isArray()) {
             return List.of();
         }
 
         // Index source nodes by id so we don't pay O(N²) walking the array per LLM patch.
         Map<String, ObjectNode> sourceNodeById = new LinkedHashMap<>();
-        for (JsonNode node : root.path("nodes")) {
+        for (JsonNode node : root.path(NODES)) {
             String id = textOrNull(node, "id");
             if (id != null && node instanceof ObjectNode objectNode) {
                 sourceNodeById.put(id, objectNode);
@@ -339,7 +343,7 @@ public class TurChatFlowVariantService {
             - Schema:
               {
                 "summary": "one short sentence (<=200 chars) describing what you changed",
-                "nodes": [
+                NODES: [
                   { "id": "<existing-id>",
                     "label": "...",                  // optional, only if changed
                     "aiInstruction": "...",          // optional, only if changed
@@ -354,8 +358,8 @@ public class TurChatFlowVariantService {
               functionName, mcpServerId, slotName, slotOperation, switchOptions,
               edges) MUST be left untouched — omit those fields from your
               response entirely.
-            - Omit a node from the "nodes" array if its copy did not need to
-              change. An empty "nodes" array is acceptable when the
+            - Omit a node from the NODES array if its copy did not need to
+              change. An empty NODES array is acceptable when the
               instruction was a no-op.
 
             ════════════ WHAT EACH FIELD IS ════════════

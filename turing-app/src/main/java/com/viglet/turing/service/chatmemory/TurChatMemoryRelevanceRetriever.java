@@ -229,7 +229,7 @@ public class TurChatMemoryRelevanceRetriever {
         for (int i = 0; i < olderCount; i++) {
             Map<String, Object> raw = persisted.get(i);
             String role = asString(raw.get("role"));
-            String content = asString(raw.get("content"));
+            String content = asString(raw.get(FIELD_CONTENT));
             String timestamp = asString(raw.get("timestamp"));
             if (role == null || role.isBlank() || content == null || content.isBlank()) {
                 continue;

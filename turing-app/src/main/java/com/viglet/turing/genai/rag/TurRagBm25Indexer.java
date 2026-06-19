@@ -225,7 +225,7 @@ public class TurRagBm25Indexer {
         if (assetId != null) {
             doc.put(FIELD_ASSET_ID, assetId.toString());
         }
-        Object chunkIndex = metadata.get("chunkIndex");
+        Object chunkIndex = metadata.get(FIELD_CHUNK_INDEX);
         if (chunkIndex != null) {
             doc.put(FIELD_CHUNK_INDEX, chunkIndex);
         }

@@ -62,6 +62,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurSNSiteContentExchangeService {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String COMPLETED = "completed";
+    private static final String INDEXING = "indexing";
+    private static final String UNKNOWN = "unknown";
+
+
     private static final int EXPORT_PAGE_SIZE = 500;
     public static final int IMPORT_CHUNK_SIZE = 100;
 
@@ -156,7 +162,7 @@ public class TurSNSiteContentExchangeService {
         String prefix = "rag-reindex-" + siteId + "-";
         return progressMap.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(prefix))
-                .filter(e -> !"completed".equals(e.getValue().phase()))
+                .filter(e -> !COMPLETED.equals(e.getValue().phase()))
                 .map(Map.Entry::getKey)
                 .max(java.util.Comparator.naturalOrder());
     }
@@ -243,7 +249,7 @@ public class TurSNSiteContentExchangeService {
             int processedSoFar = 0;
 
             progressMap.put(taskId, new ContentExchangeProgress(
-                    totalDocs, 0, "", "indexing", startTime));
+                    totalDocs, 0, "", INDEXING, startTime));
 
             TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
 
@@ -252,7 +258,7 @@ public class TurSNSiteContentExchangeService {
                 List<Map<String, Object>> documents = localeEntry.getValue();
 
                 progressMap.put(taskId, new ContentExchangeProgress(
-                        totalDocs, processedSoFar, localeEntry.getKey(), "indexing", startTime));
+                        totalDocs, processedSoFar, localeEntry.getKey(), INDEXING, startTime));
 
                 for (int i = 0; i < documents.size(); i += IMPORT_CHUNK_SIZE) {
                     int end = Math.min(i + IMPORT_CHUNK_SIZE, documents.size());
@@ -275,7 +281,7 @@ public class TurSNSiteContentExchangeService {
                                 }
                             } catch (Exception perDocFailure) {
                                 log.warn("Failed to index document '{}' (fallback): {}",
-                                        doc.getOrDefault("id", "unknown"), perDocFailure.getMessage());
+                                        doc.getOrDefault("id", UNKNOWN), perDocFailure.getMessage());
                             }
                         }
                     }
@@ -288,19 +294,19 @@ public class TurSNSiteContentExchangeService {
                             turSNGenAi.addDocument(turSNSite, locale, doc);
                         } catch (Exception e) {
                             log.warn("Failed to index document '{}' into vector store: {}",
-                                    doc.getOrDefault("id", "unknown"), e.getMessage());
+                                    doc.getOrDefault("id", UNKNOWN), e.getMessage());
                         }
                         processedSoFar++;
                     }
                     plugin.commit(turSNSite, locale);
 
                     progressMap.put(taskId, new ContentExchangeProgress(
-                            totalDocs, processedSoFar, localeEntry.getKey(), "indexing", startTime));
+                            totalDocs, processedSoFar, localeEntry.getKey(), INDEXING, startTime));
                 }
             }
 
             progressMap.put(taskId, new ContentExchangeProgress(
-                    totalDocs, processedSoFar, "", "completed", startTime));
+                    totalDocs, processedSoFar, "", COMPLETED, startTime));
         }
         return totalIndexed;
     }
@@ -331,7 +337,7 @@ public class TurSNSiteContentExchangeService {
         if (turSNSite == null) {
             log.warn("RAG reindex skipped: site '{}' not found", siteId);
             progressMap.put(taskId, new ContentExchangeProgress(
-                    0, 0, "", "completed", System.currentTimeMillis()));
+                    0, 0, "", COMPLETED, System.currentTimeMillis()));
             return 0;
         }
         var genAi = turSNSite.getTurSNSiteGenAi();
@@ -339,7 +345,7 @@ public class TurSNSiteContentExchangeService {
         if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
             log.warn("RAG reindex skipped for site '{}': agent not configured for RAG", turSNSite.getName());
             progressMap.put(taskId, new ContentExchangeProgress(
-                    0, 0, "", "completed", System.currentTimeMillis()));
+                    0, 0, "", COMPLETED, System.currentTimeMillis()));
             return 0;
         }
 
@@ -409,7 +415,7 @@ public class TurSNSiteContentExchangeService {
                                 reindexedCounter.incrementAndGet();
                             } catch (Exception e) {
                                 log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
-                                        doc.getOrDefault("id", "unknown"), localeKey, e.getMessage());
+                                        doc.getOrDefault("id", UNKNOWN), localeKey, e.getMessage());
                             } finally {
                                 int p = processedCounter.incrementAndGet();
                                 progressMap.put(taskId, new ContentExchangeProgress(
@@ -442,7 +448,7 @@ public class TurSNSiteContentExchangeService {
 
         int reindexed = reindexedCounter.get();
         progressMap.put(taskId, new ContentExchangeProgress(
-                (int) totalDocs, processedCounter.get(), "", "completed", startTime));
+                (int) totalDocs, processedCounter.get(), "", COMPLETED, startTime));
         log.debug("RAG reindex finished for site '{}': {}/{} documents re-embedded (parallelism={})",
                 turSNSite.getName(), reindexed, totalDocs, parallelism);
         return reindexed;

@@ -81,6 +81,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TurRagBm25CoreAPI {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String LANGUAGE = "language";
+
+
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurRagBm25CoreRepository ragBm25CoreRepository;
@@ -119,7 +123,7 @@ public class TurRagBm25CoreAPI {
         }
 
         List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(
-                Sort.by(Sort.Direction.ASC, "language"), site);
+                Sort.by(Sort.Direction.ASC, LANGUAGE), site);
         List<CoreStatusDto> rows = new ArrayList<>(locales.size());
         for (TurSNSiteLocale loc : locales) {
             String tag = loc.getLanguage().toLanguageTag();
@@ -173,7 +177,7 @@ public class TurRagBm25CoreAPI {
         }
 
         List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(
-                Sort.by(Sort.Direction.ASC, "language"), site);
+                Sort.by(Sort.Direction.ASC, LANGUAGE), site);
         for (TurSNSiteLocale loc : locales) {
             try {
                 // Idempotent — already-PROVISIONED rows return without
@@ -210,7 +214,7 @@ public class TurRagBm25CoreAPI {
             return ResponseEntity.noContent().build();
         }
         List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(
-                Sort.by(Sort.Direction.ASC, "language"), site);
+                Sort.by(Sort.Direction.ASC, LANGUAGE), site);
         for (TurSNSiteLocale loc : locales) {
             try {
                 provisioner.deprovision(storeInstance, loc.getLanguage());

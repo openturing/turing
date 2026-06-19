@@ -56,6 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurKeycloakServiceAccountIdentityProvider implements TurTenantOwnerIdentityProvider {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String REALMS = "/realms/";
+
+
     /** Refresh the cached token this far before it actually expires. */
     private static final Duration EXPIRY_MARGIN = Duration.ofSeconds(30);
 
@@ -151,7 +155,7 @@ public class TurKeycloakServiceAccountIdentityProvider implements TurTenantOwner
     private String adminBaseUrl() {
         URI uri = URI.create(issuerUri);
         String path = uri.getPath() == null ? "" : uri.getPath();
-        int realmsIdx = path.indexOf("/realms/");
+        int realmsIdx = path.indexOf(REALMS);
         String basePath = path.substring(0, realmsIdx);
         return uri.getScheme() + "://" + uri.getAuthority() + basePath + "/admin/realms/" + realmName();
     }
@@ -167,8 +171,8 @@ public class TurKeycloakServiceAccountIdentityProvider implements TurTenantOwner
     private String realmName() {
         URI uri = URI.create(issuerUri);
         String path = uri.getPath() == null ? "" : uri.getPath();
-        int realmsIdx = path.indexOf("/realms/");
-        String realm = path.substring(realmsIdx + "/realms/".length());
+        int realmsIdx = path.indexOf(REALMS);
+        String realm = path.substring(realmsIdx + REALMS.length());
         return realm.endsWith("/") ? realm.substring(0, realm.length() - 1) : realm;
     }
 }

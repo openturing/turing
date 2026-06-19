@@ -80,6 +80,11 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/api/sn/{siteName}/chat")
 @Tag(name = "Semantic Navigation with Generative AI", description = "Semantic Navigation with Generative AI API")
 public class TurSNSiteGenAiAPI {
+
+    // --- S1192: extracted duplicated literals ---
+    private static final String SITE = "site '";
+    private static final String HEARTBEAT = "heartbeat";
+
 	private static final String NOT_ENABLED_MESSAGE = "Language Model is not enabled for this site.";
 	private static final String ASSISTANT_ROLE = "assistant";
 
@@ -521,12 +526,12 @@ public class TurSNSiteGenAiAPI {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
 					if (genAi == null) {
 						return new ChatFlowSelectResponse(false, null, null,
-								"site '" + siteName + "' has no GenAI agent configured");
+								SITE + siteName + "' has no GenAI agent configured");
 					}
 					TurAIAgent agent = genAi.getTurAIAgent();
 					if (agent == null) {
 						return new ChatFlowSelectResponse(false, null, null,
-								"site '" + siteName + "' has no GenAI agent configured");
+								SITE + siteName + "' has no GenAI agent configured");
 					}
 					TurChatFlowEngineService.PinResult pin = chatFlowEngineService
 							.pinFlowForConversation(agent, body.conversationId(), body.flow());
@@ -534,7 +539,7 @@ public class TurSNSiteGenAiAPI {
 							pin.pinnedFlowName(), pin.reason());
 				})
 				.orElseGet(() -> new ChatFlowSelectResponse(false, null, null,
-						"site '" + siteName + "' not found"));
+						SITE + siteName + "' not found"));
 	}
 
 	/**
@@ -591,7 +596,7 @@ public class TurSNSiteGenAiAPI {
 		Flux<org.springframework.http.codec.ServerSentEvent<TurChatSessionSlotsDto>> heartbeats =
 				Flux.interval(java.time.Duration.ofSeconds(25))
 						.map(tick -> org.springframework.http.codec.ServerSentEvent
-								.<TurChatSessionSlotsDto>builder().comment("heartbeat").build());
+								.<TurChatSessionSlotsDto>builder().comment(HEARTBEAT).build());
 		// T90 — refcount this connection on the SSE channel registry so the
 		// admin debug surface can report open channels. doFinally fires on
 		// complete / error / cancel (cancel being the usual SSE disconnect).
@@ -633,7 +638,7 @@ public class TurSNSiteGenAiAPI {
 		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>> heartbeats =
 				Flux.interval(java.time.Duration.ofSeconds(25))
 						.map(tick -> org.springframework.http.codec.ServerSentEvent
-								.<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>builder().comment("heartbeat").build());
+								.<com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDeltaDto>builder().comment(HEARTBEAT).build());
 		// T90 — same refcounting as the snapshot stream, on the DELTA channel.
 		return Flux.merge(data, heartbeats)
 				.doOnSubscribe(s -> slotSseRegistry.acquire(conversationId,
@@ -687,7 +692,7 @@ public class TurSNSiteGenAiAPI {
 		Flux<org.springframework.http.codec.ServerSentEvent<TurWorkspaceEvent>> heartbeats =
 				Flux.interval(java.time.Duration.ofSeconds(25))
 						.map(tick -> org.springframework.http.codec.ServerSentEvent
-								.<TurWorkspaceEvent>builder().comment("heartbeat").build());
+								.<TurWorkspaceEvent>builder().comment(HEARTBEAT).build());
 		// T90 — refcount this connection on the WORKSPACE channel so the admin
 		// debug surface reports it alongside the slot channels.
 		return Flux.merge(data, heartbeats)

@@ -77,6 +77,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TurSNSiteManifestAPI {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String ERROR = "error";
+
+
     private final TurSNSiteManifestService manifestService;
     private final VigletManifestDeriver manifestDeriver;
 
@@ -89,10 +93,10 @@ public class TurSNSiteManifestAPI {
             return ResponseEntity.ok(result);
         } catch (TurSNManifestMigrationRequiredException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage(), "breakingChanges", e.getChanges()));
+                    .body(Map.of(ERROR, e.getMessage(), "breakingChanges", e.getChanges()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of(ERROR, e.getMessage()));
         }
     }
 
@@ -105,7 +109,7 @@ public class TurSNSiteManifestAPI {
             return ResponseEntity.ok(diff);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of(ERROR, e.getMessage()));
         }
     }
 
@@ -118,7 +122,7 @@ public class TurSNSiteManifestAPI {
             return ResponseEntity.ok(draft);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of(ERROR, e.getMessage()));
         }
     }
 

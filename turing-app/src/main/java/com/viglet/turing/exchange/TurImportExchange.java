@@ -50,6 +50,10 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class TurImportExchange {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String CLEANUP_FAILED = "Cleanup failed: {}";
+
+
 	private final TurSNSiteImport turSNSiteImport;
 	private final TurSNSiteContentExchangeService contentExchangeService;
 	private final TurSNSiteRepository turSNSiteRepository;
@@ -314,7 +318,7 @@ public class TurImportExchange {
 		try {
 			cleanupDirectories(extractFolder, null);
 		} catch (IOException e) {
-			log.warn("Cleanup failed: {}", e.getMessage(), e);
+			log.warn(CLEANUP_FAILED, e.getMessage(), e);
 		}
 		Map<String, Object> result = new java.util.HashMap<>();
 		result.put("hasContent", hasContent);
@@ -447,7 +451,7 @@ public class TurImportExchange {
 		try {
 			cleanupDirectories(extractFolder, null);
 		} catch (IOException e) {
-			log.warn("Cleanup failed: {}", e.getMessage(), e);
+			log.warn(CLEANUP_FAILED, e.getMessage(), e);
 		}
 		return found;
 	}
@@ -558,7 +562,7 @@ public class TurImportExchange {
 		try {
 			cleanupDirectories(extractFolder, parentExtractFolder);
 		} catch (IOException e) {
-			log.warn("Cleanup failed: {}", e.getMessage(), e);
+			log.warn(CLEANUP_FAILED, e.getMessage(), e);
 		}
 	}
 
@@ -621,7 +625,7 @@ public class TurImportExchange {
 			try {
 				cleanupDirectories(extractFolder, parentExtractFolder);
 			} catch (IOException e) {
-				log.warn("Cleanup failed: {}", e.getMessage(), e);
+				log.warn(CLEANUP_FAILED, e.getMessage(), e);
 			}
 		}
 	}

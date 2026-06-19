@@ -59,6 +59,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         description = "Read API over the chat analytics store; consumed by Grafana via Infinity datasource.")
 public class TurChatAnalyticsAPI {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String AGENT_ID = "agentId";
+    private static final String PERSONA_ID = "personaId";
+    private static final String BUCKET = "bucket";
+
+
     private final TurChatAnalyticsService analyticsService;
     private final TurChatMemoryStore chatMemoryStore;
     private final TurAIAgentRepository agentRepository;
@@ -99,8 +105,8 @@ public class TurChatAnalyticsAPI {
         Set<String> agentIds = new HashSet<>();
         Set<String> personaIds = new HashSet<>();
         for (Map<String, Object> row : rows) {
-            collectId(row, "agentId", agentIds);
-            collectId(row, "personaId", personaIds);
+            collectId(row, AGENT_ID, agentIds);
+            collectId(row, PERSONA_ID, personaIds);
         }
         Map<String, String> agentNames = new HashMap<>();
         for (String id : agentIds) {
@@ -111,8 +117,8 @@ public class TurChatAnalyticsAPI {
             personaRepository.findById(id).ifPresent(p -> personaNames.put(id, p.getName()));
         }
         for (Map<String, Object> row : rows) {
-            String agentId = stringValue(row.get("agentId"));
-            String personaId = stringValue(row.get("personaId"));
+            String agentId = stringValue(row.get(AGENT_ID));
+            String personaId = stringValue(row.get(PERSONA_ID));
             row.put("agentTitle",  agentId   == null ? null : agentNames.get(agentId));
             row.put("personaName", personaId == null ? null : personaNames.get(personaId));
         }
@@ -132,17 +138,17 @@ public class TurChatAnalyticsAPI {
      */
     private void enrichBucketLabels(List<Map<String, Object>> rows, String dimension) {
         if (rows == null || rows.isEmpty()) return;
-        boolean isAgent   = "agentId".equals(dimension);
-        boolean isPersona = "personaId".equals(dimension);
+        boolean isAgent   = AGENT_ID.equals(dimension);
+        boolean isPersona = PERSONA_ID.equals(dimension);
         if (!isAgent && !isPersona) {
             for (Map<String, Object> row : rows) {
-                Object bucket = row.get("bucket");
+                Object bucket = row.get(BUCKET);
                 row.put("bucketLabel", bucket == null ? "unknown" : bucket.toString());
             }
             return;
         }
         Set<String> ids = new HashSet<>();
-        for (Map<String, Object> row : rows) collectId(row, "bucket", ids);
+        for (Map<String, Object> row : rows) collectId(row, BUCKET, ids);
         Map<String, String> names = new HashMap<>();
         if (isAgent) {
             for (String id : ids) {
@@ -154,7 +160,7 @@ public class TurChatAnalyticsAPI {
             }
         }
         for (Map<String, Object> row : rows) {
-            String id = stringValue(row.get("bucket"));
+            String id = stringValue(row.get(BUCKET));
             String name = id == null ? null : names.get(id);
             String fallbackLabel = id == null ? "unknown" : id;
             row.put("bucketLabel", name != null ? name : fallbackLabel);
@@ -344,7 +350,7 @@ public class TurChatAnalyticsAPI {
     public List<Map<String, Object>> scorecard(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
-            @RequestParam(defaultValue = "agentId") String dimension,
+            @RequestParam(defaultValue = AGENT_ID) String dimension,
             @RequestParam(required = false) String deviceType,
             @RequestParam(required = false) String locale,
             @RequestParam(required = false) String timezone,

@@ -43,6 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurChatShareOgService {
 
+    /** Closes an HTML attribute value and self-closes the tag, with a trailing newline. */
+    private static final String META_ATTR_CLOSE = "\"/>\n";
+
     /**
      * Builds the OG card HTML. {@code params} carries the URL query
      * parameters (already decoded by Spring) — common keys: {@code name},
@@ -95,7 +98,7 @@ public class TurChatShareOgService {
         // the SPA after 800ms. Fallback link below in case JS is off.
         if (!dest.isBlank()) {
             html.append("<meta http-equiv=\"refresh\" content=\"0;url=")
-                    .append(escapeAttr(dest)).append("\"/>\n");
+                    .append(escapeAttr(dest)).append(META_ATTR_CLOSE);
         }
         html.append("</head><body style=\"font-family:system-ui;margin:40px;color:#1f2937;\">\n");
         html.append("<p>").append(escapeHtml(title)).append("</p>\n");
@@ -144,12 +147,12 @@ public class TurChatShareOgService {
 
     private static String metaName(String name, String content) {
         return "<meta name=\"" + escapeAttr(name) + "\" content=\""
-                + escapeAttr(content) + "\"/>\n";
+                + escapeAttr(content) + META_ATTR_CLOSE;
     }
 
     private static String metaProperty(String property, String content) {
         return "<meta property=\"" + escapeAttr(property) + "\" content=\""
-                + escapeAttr(content) + "\"/>\n";
+                + escapeAttr(content) + META_ATTR_CLOSE;
     }
 
     /** HTML body escape — text nodes. */

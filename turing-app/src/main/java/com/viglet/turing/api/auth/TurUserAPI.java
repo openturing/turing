@@ -69,6 +69,10 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "User", description = "User API")
 public class TurUserAPI {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String ERROR = "error";
+
+
     private static final String ADMIN = "admin";
     private static final String ADMINISTRATOR = "Administrator";
     private static final String PREFERRED_USERNAME = "preferred_username";
@@ -321,13 +325,13 @@ public class TurUserAPI {
     public ResponseEntity<Object> turUserRegister(@RequestBody RegisterRequest request) {
         if (turConfigProperties.getAuthentication() == null
                 || !turConfigProperties.getAuthentication().isNewUser()) {
-            return ResponseEntity.status(403).body(java.util.Map.of("error", "Self-registration is disabled"));
+            return ResponseEntity.status(403).body(java.util.Map.of(ERROR, "Self-registration is disabled"));
         }
         if (!StringUtils.hasText(request.username()) || !StringUtils.hasText(request.password())) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username and password are required"));
+            return ResponseEntity.badRequest().body(java.util.Map.of(ERROR, "Username and password are required"));
         }
         if (turUserRepository.findByUsername(request.username()) != null) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username already exists"));
+            return ResponseEntity.badRequest().body(java.util.Map.of(ERROR, "Username already exists"));
         }
         TurUser turUser = TurUser.builder()
                 .username(request.username())

@@ -37,6 +37,11 @@ import java.util.stream.Collectors;
 @Component
 public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, TopDocs> {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String TEXT = "_text_";
+    private static final String S = "\\\"%s\\\"";
+
+
     private final TurLuceneInstanceProcess turLuceneInstanceProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldService turSNSiteFieldService;
@@ -177,7 +182,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.MultiMatch(var queryText, var fields, var type) -> {
                 if (fields == null || fields.isEmpty()) {
                     try {
-                        yield new QueryParser("_text_", new StandardAnalyzer()).parse(queryText);
+                        yield new QueryParser(TEXT, new StandardAnalyzer()).parse(queryText);
                     } catch (Exception e) {
                         yield new MatchAllDocsQuery();
                     }
@@ -227,7 +232,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             case TurDslQuery.QueryString(var queryText, var defaultField, var defaultOperator) -> {
                 try {
-                    String df = defaultField != null ? defaultField : "_text_";
+                    String df = defaultField != null ? defaultField : TEXT;
                     QueryParser parser = new QueryParser(df, new StandardAnalyzer());
                     if ("AND".equalsIgnoreCase(defaultOperator)) {
                         parser.setDefaultOperator(QueryParser.Operator.AND);
@@ -254,7 +259,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.MatchPhrase(var field, var queryText, var slop) -> {
                 try {
                     QueryParser parser = new QueryParser(field, new StandardAnalyzer());
-                    yield parser.parse("\"%s\"".formatted(queryText));
+                    yield parser.parse(S.formatted(queryText));
                 } catch (Exception e) {
                     yield new TermQuery(new Term(field, queryText.toLowerCase()));
                 }
@@ -263,7 +268,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.MatchPhrasePrefix(var field, var queryText, var maxExp) -> {
                 try {
                     QueryParser parser = new QueryParser(field, new StandardAnalyzer());
-                    yield parser.parse("\"%s\"".formatted(queryText));
+                    yield parser.parse(S.formatted(queryText));
                 } catch (Exception e) {
                     yield new PrefixQuery(new Term(field, queryText.toLowerCase()));
                 }
@@ -272,7 +277,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.SimpleQueryString(var queryText, var fields, var defOp) -> {
                 try {
                     String[] f = (fields != null && !fields.isEmpty())
-                            ? fields.toArray(String[]::new) : new String[]{"_text_"};
+                            ? fields.toArray(String[]::new) : new String[]{TEXT};
                     MultiFieldQueryParser parser = new MultiFieldQueryParser(f, new StandardAnalyzer());
                     if ("AND".equalsIgnoreCase(defOp))
                         parser.setDefaultOperator(QueryParser.Operator.AND);
@@ -356,7 +361,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.CombinedFields(var queryText, var fields, var operator) -> {
                 if (fields == null || fields.isEmpty()) {
                     try {
-                        yield new QueryParser("_text_", new StandardAnalyzer()).parse(queryText);
+                        yield new QueryParser(TEXT, new StandardAnalyzer()).parse(queryText);
                     } catch (Exception e) { yield new MatchAllDocsQuery(); }
                 }
                 try {
@@ -420,7 +425,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                 if (rule != null && rule.query() != null) {
                     try {
                         yield new QueryParser(field, new StandardAnalyzer())
-                                .parse("\"%s\"".formatted(rule.query()));
+                                .parse(S.formatted(rule.query()));
                     } catch (Exception e) { yield new MatchAllDocsQuery(); }
                 }
                 yield new MatchAllDocsQuery();

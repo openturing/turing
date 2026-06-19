@@ -78,6 +78,10 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class TurChatStreamingDispatcher {
 
+    // --- S1192: extracted duplicated literals ---
+    private static final String ASSISTANT = "assistant";
+
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurLlmModelFactory llmModelFactory;
@@ -247,7 +251,7 @@ public class TurChatStreamingDispatcher {
                     if (!chunk.isEmpty()) {
                         accumulated.append(chunk);
                     }
-                    return new ChatResponse("assistant", chunk);
+                    return new ChatResponse(ASSISTANT, chunk);
                 })
                 .filter(r -> !r.content().isEmpty())
                 .doOnNext(r -> {
@@ -503,7 +507,7 @@ public class TurChatStreamingDispatcher {
     private static Flux<ChatResponse> emitTurn(AssistantTurn turn) {
         Flux<ChatResponse> events = turn.text() == null || turn.text().isEmpty()
                 ? Flux.empty()
-                : Flux.just(new ChatResponse("assistant", turn.text()));
+                : Flux.just(new ChatResponse(ASSISTANT, turn.text()));
         // T292 — provenance chips render directly under the answer bubble, so
         // emit the `sources` event right after the text token and before the
         // chip/form events.
@@ -511,7 +515,7 @@ public class TurChatStreamingDispatcher {
             try {
                 String sourcesJson = OBJECT_MAPPER.writeValueAsString(turn.sources());
                 events = events.concatWith(
-                        Flux.just(new ChatResponse("assistant", sourcesJson, "sources")));
+                        Flux.just(new ChatResponse(ASSISTANT, sourcesJson, "sources")));
             } catch (JacksonException e) {
                 log.warn("[AgentExec] could not serialize {} RAG source(s): {}",
                         turn.sources().size(), e.getMessage());
@@ -521,7 +525,7 @@ public class TurChatStreamingDispatcher {
             try {
                 String optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());
                 events = events.concatWith(
-                        Flux.just(new ChatResponse("assistant", optionsJson, "options")));
+                        Flux.just(new ChatResponse(ASSISTANT, optionsJson, "options")));
             } catch (JacksonException e) {
                 log.warn("[AgentExec] could not serialize {} suggested option(s): {}",
                         turn.options().size(), e.getMessage());
@@ -529,7 +533,7 @@ public class TurChatStreamingDispatcher {
         }
         if (turn.formJson() != null && !turn.formJson().isBlank()) {
             events = events.concatWith(
-                    Flux.just(new ChatResponse("assistant", turn.formJson(), "form")));
+                    Flux.just(new ChatResponse(ASSISTANT, turn.formJson(), "form")));
         }
         return events;
     }
