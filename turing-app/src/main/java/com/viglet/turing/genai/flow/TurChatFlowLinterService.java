@@ -119,7 +119,7 @@ public class TurChatFlowLinterService {
                     ? List.of(flow)
                     : chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agentId);
             checkAiInstructionLength(graph, issues);
-            checkUnusedOutputVariables(flow, graph, agentFlows, issues);
+            checkUnusedOutputVariables(graph, agentFlows, issues);
             checkDeadEndNodes(graph, issues);
             checkBranchingEdgeLabels(graph, issues);
             checkFormFields(graph, agentId, issues);
@@ -159,7 +159,7 @@ public class TurChatFlowLinterService {
         }
     }
 
-    private static void checkUnusedOutputVariables(TurChatFlow currentFlow, ChatFlowGraph graph,
+    private static void checkUnusedOutputVariables(ChatFlowGraph graph,
             List<TurChatFlow> agentFlows, List<TurChatFlowLintIssueDto> out) {
         // Build the set of every slot name referenced anywhere on the agent
         // — by any flow's interpolation tokens, switch variables, slot
@@ -181,7 +181,6 @@ public class TurChatFlowLinterService {
                             + " or declare it as an inheritance source on another flow) or remove the"
                             + " outputVariable."));
         }
-        if (currentFlow == null) return; // Defensive — never null in practice but the test exercises this.
     }
 
     private static Set<String> collectReferencedSlots(List<TurChatFlow> flows) {
