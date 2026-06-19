@@ -90,72 +90,110 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
             case "geo_distance" -> deserializeGeoDistance(body);
             case "geo_bounding_box" -> deserializeGeoBoundingBox(body);
             case "terms_set" -> deserializeTermsSet(body);
-            case "has_child" -> new TurDslQuery.HasChild(
-                    body.get("type").asString(),
-                    body.has(QUERY) ? deserializeNode(body.get(QUERY)) : new TurDslQuery.MatchAll(),
-                    body.has(SCORE_MODE) ? body.get(SCORE_MODE).asString() : null,
-                    body.has("min_children") ? body.get("min_children").asInt() : null,
-                    body.has("max_children") ? body.get("max_children").asInt() : null);
-            case "has_parent" -> new TurDslQuery.HasParent(
-                    body.get("parent_type").asString(),
-                    body.has(QUERY) ? deserializeNode(body.get(QUERY)) : new TurDslQuery.MatchAll(),
-                    body.has("score") ? body.get("score").asBoolean() : null);
-            case INTERVALS -> {
-                var entry = body.properties().iterator().next();
-                yield new TurDslQuery.Intervals(entry.getKey(),
-                        deserializeIntervalsRule(entry.getValue()));
-            }
-            case "span_term" -> {
-                var entry = body.properties().iterator().next();
-                yield new TurDslQuery.SpanTerm(entry.getKey(),
-                        entry.getValue().isObject()
-                                ? entry.getValue().get(VALUE).asString()
-                                : entry.getValue().asString());
-            }
-            case "span_near" -> new TurDslQuery.SpanNear(
-                    deserializeQueryList(body.get("clauses")),
-                    body.has("slop") ? body.get("slop").asInt() : null,
-                    body.has("in_order") ? body.get("in_order").asBoolean() : null);
+            case "has_child" -> deserializeHasChild(body);
+            case "has_parent" -> deserializeHasParent(body);
+            case INTERVALS -> deserializeIntervals(body);
+            case "span_term" -> deserializeSpanTerm(body);
+            case "span_near" -> deserializeSpanNear(body);
             case "span_or" -> new TurDslQuery.SpanOr(
                     deserializeQueryList(body.get("clauses")));
-            case "span_not" -> new TurDslQuery.SpanNot(
-                    body.has("include") ? deserializeNode(body.get("include")) : new TurDslQuery.MatchAll(),
-                    body.has("exclude") ? deserializeNode(body.get("exclude")) : new TurDslQuery.MatchAll());
-            case "span_first" -> new TurDslQuery.SpanFirst(
-                    body.has(MATCH) ? deserializeNode(body.get(MATCH)) : new TurDslQuery.MatchAll(),
-                    body.has("end") ? body.get("end").asInt() : null);
-            case "rank_feature" -> new TurDslQuery.RankFeature(
-                    body.get(FIELD).asString(),
-                    body.has(BOOST) ? body.get(BOOST).asDouble() : null,
-                    null, null, null);
-            case "distance_feature" -> new TurDslQuery.DistanceFeature(
-                    body.get(FIELD).asString(),
-                    body.has(ORIGIN) ? body.get(ORIGIN).asString() : null,
-                    body.has("pivot") ? body.get("pivot").asString() : null);
+            case "span_not" -> deserializeSpanNot(body);
+            case "span_first" -> deserializeSpanFirst(body);
+            case "rank_feature" -> deserializeRankFeature(body);
+            case "distance_feature" -> deserializeDistanceFeature(body);
             case "wrapper" -> new TurDslQuery.Wrapper(body.get(QUERY).asString());
-            case "geo_shape" -> {
-                var entry = body.properties().iterator().next();
-                JsonNode spec = entry.getValue();
-                java.util.Map<String, Object> shape = null;
-                if (spec.has(SHAPE) && spec.get(SHAPE).isObject()) {
-                    shape = new java.util.LinkedHashMap<>();
-                    for (var p : spec.get(SHAPE).properties())
-                        shape.put(p.getKey(), nodeToObject(p.getValue()));
-                }
-                yield new TurDslQuery.GeoShape(entry.getKey(), shape,
-                        spec.has("relation") ? spec.get("relation").asString() : null);
-            }
-            case "percolate" -> {
-                java.util.Map<String, Object> doc = new java.util.LinkedHashMap<>();
-                if (body.has(DOCUMENT) && body.get(DOCUMENT).isObject()) {
-                    for (var p : body.get(DOCUMENT).properties())
-                        doc.put(p.getKey(), nodeToObject(p.getValue()));
-                }
-                yield new TurDslQuery.Percolate(
-                        body.has(FIELD) ? body.get(FIELD).asString() : null, doc);
-            }
+            case "geo_shape" -> deserializeGeoShape(body);
+            case "percolate" -> deserializePercolate(body);
             default -> throw new IllegalArgumentException("Unknown query type: " + type);
         };
+    }
+
+    private TurDslQuery.HasChild deserializeHasChild(JsonNode body) {
+        return new TurDslQuery.HasChild(
+                body.get("type").asString(),
+                body.has(QUERY) ? deserializeNode(body.get(QUERY)) : new TurDslQuery.MatchAll(),
+                body.has(SCORE_MODE) ? body.get(SCORE_MODE).asString() : null,
+                body.has("min_children") ? body.get("min_children").asInt() : null,
+                body.has("max_children") ? body.get("max_children").asInt() : null);
+    }
+
+    private TurDslQuery.HasParent deserializeHasParent(JsonNode body) {
+        return new TurDslQuery.HasParent(
+                body.get("parent_type").asString(),
+                body.has(QUERY) ? deserializeNode(body.get(QUERY)) : new TurDslQuery.MatchAll(),
+                body.has("score") ? body.get("score").asBoolean() : null);
+    }
+
+    private TurDslQuery.Intervals deserializeIntervals(JsonNode body) {
+        var entry = body.properties().iterator().next();
+        return new TurDslQuery.Intervals(entry.getKey(),
+                deserializeIntervalsRule(entry.getValue()));
+    }
+
+    private TurDslQuery.SpanTerm deserializeSpanTerm(JsonNode body) {
+        var entry = body.properties().iterator().next();
+        return new TurDslQuery.SpanTerm(entry.getKey(),
+                entry.getValue().isObject()
+                        ? entry.getValue().get(VALUE).asString()
+                        : entry.getValue().asString());
+    }
+
+    private TurDslQuery.SpanNear deserializeSpanNear(JsonNode body) {
+        return new TurDslQuery.SpanNear(
+                deserializeQueryList(body.get("clauses")),
+                body.has("slop") ? body.get("slop").asInt() : null,
+                body.has("in_order") ? body.get("in_order").asBoolean() : null);
+    }
+
+    private TurDslQuery.SpanNot deserializeSpanNot(JsonNode body) {
+        return new TurDslQuery.SpanNot(
+                body.has("include") ? deserializeNode(body.get("include")) : new TurDslQuery.MatchAll(),
+                body.has("exclude") ? deserializeNode(body.get("exclude")) : new TurDslQuery.MatchAll());
+    }
+
+    private TurDslQuery.SpanFirst deserializeSpanFirst(JsonNode body) {
+        return new TurDslQuery.SpanFirst(
+                body.has(MATCH) ? deserializeNode(body.get(MATCH)) : new TurDslQuery.MatchAll(),
+                body.has("end") ? body.get("end").asInt() : null);
+    }
+
+    private TurDslQuery.RankFeature deserializeRankFeature(JsonNode body) {
+        return new TurDslQuery.RankFeature(
+                body.get(FIELD).asString(),
+                body.has(BOOST) ? body.get(BOOST).asDouble() : null,
+                null, null, null);
+    }
+
+    private TurDslQuery.DistanceFeature deserializeDistanceFeature(JsonNode body) {
+        return new TurDslQuery.DistanceFeature(
+                body.get(FIELD).asString(),
+                body.has(ORIGIN) ? body.get(ORIGIN).asString() : null,
+                body.has("pivot") ? body.get("pivot").asString() : null);
+    }
+
+    private TurDslQuery.GeoShape deserializeGeoShape(JsonNode body) {
+        var entry = body.properties().iterator().next();
+        JsonNode spec = entry.getValue();
+        java.util.Map<String, Object> shape = null;
+        if (spec.has(SHAPE) && spec.get(SHAPE).isObject()) {
+            shape = new java.util.LinkedHashMap<>();
+            for (var p : spec.get(SHAPE).properties()) {
+                shape.put(p.getKey(), nodeToObject(p.getValue()));
+            }
+        }
+        return new TurDslQuery.GeoShape(entry.getKey(), shape,
+                spec.has("relation") ? spec.get("relation").asString() : null);
+    }
+
+    private TurDslQuery.Percolate deserializePercolate(JsonNode body) {
+        java.util.Map<String, Object> doc = new java.util.LinkedHashMap<>();
+        if (body.has(DOCUMENT) && body.get(DOCUMENT).isObject()) {
+            for (var p : body.get(DOCUMENT).properties()) {
+                doc.put(p.getKey(), nodeToObject(p.getValue()));
+            }
+        }
+        return new TurDslQuery.Percolate(
+                body.has(FIELD) ? body.get(FIELD).asString() : null, doc);
     }
 
     private TurDslQuery.Match deserializeMatch(JsonNode body) {
