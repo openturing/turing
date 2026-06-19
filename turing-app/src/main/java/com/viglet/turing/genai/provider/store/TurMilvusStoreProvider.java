@@ -389,16 +389,12 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         }
     }
 
-    @Override
-    public TurStoreChunkPage listChunks(TurStoreInstance turStoreInstance,
-            String decryptedCredential,
-            String collectionName,
-            int page,
-            int pageSize,
-            Map<String, List<String>> filters) {
-        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-        String baseUri = firstNonBlank(optionsParser.stringValue(options, BASE_URL_OPTION),
-                turStoreInstance.getUrl());
+    /**
+     * Builds the Milvus {@link ConnectParam}: the URI plus an optional token (the decrypted
+     * credential takes precedence over a token in provider options) and optional database name.
+     */
+    private ConnectParam buildConnectParam(Map<String, Object> options, String baseUri,
+            String decryptedCredential) {
         ConnectParam.Builder connectBuilder = ConnectParam.newBuilder().withUri(baseUri);
         if (StringUtils.hasText(decryptedCredential)) {
             connectBuilder.withToken(decryptedCredential);
@@ -412,6 +408,20 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         if (StringUtils.hasText(databaseName)) {
             connectBuilder.withDatabaseName(databaseName);
         }
+        return connectBuilder.build();
+    }
+
+    @Override
+    public TurStoreChunkPage listChunks(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            int page,
+            int pageSize,
+            Map<String, List<String>> filters) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        String baseUri = firstNonBlank(optionsParser.stringValue(options, BASE_URL_OPTION),
+                turStoreInstance.getUrl());
+        ConnectParam connectParam = buildConnectParam(options, baseUri, decryptedCredential);
 
         int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
@@ -421,7 +431,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
 
         MilvusServiceClient client = null;
         try {
-            client = new MilvusServiceClient(connectBuilder.build());
+            client = new MilvusServiceClient(connectParam);
 
             QueryParam pageParam = QueryParam.newBuilder()
                     .withCollectionName(collectionName)

@@ -376,30 +376,13 @@ public class TurChatFlowLinterService {
      */
     private static void checkPlanningNodes(ChatFlowGraph graph,
             List<TurChatFlowLintIssueDto> out) {
-        boolean hasPlanningNodes = false;
-        for (ChatFlowNode node : graph.nodes()) {
-            if ("planningStep".equals(node.type()) || ITERATE_PLAN.equals(node.type())) {
-                hasPlanningNodes = true;
-                break;
-            }
-        }
-        if (!hasPlanningNodes) {
+        if (!hasPlanningNodes(graph)) {
             return;
         }
         // Slots consumed as a plan: every iteratePlan's plan slot, plus any
         // {{slot}} interpolation anywhere in the graph (a planningStep whose
         // plan an author renders via {{__plan}} counts as consumed too).
-        Set<String> consumed = new HashSet<>();
-        for (ChatFlowNode node : graph.nodes()) {
-            if (ITERATE_PLAN.equals(node.type())) {
-                consumed.add(planSlotName(node));
-            }
-            collectInterpolated(consumed, node.aiInstruction());
-            collectInterpolated(consumed, node.slotValue());
-            collectInterpolated(consumed, node.label());
-            collectInterpolated(consumed, node.validationRule());
-            collectInterpolated(consumed, node.conditionExpression());
-        }
+        Set<String> consumed = collectConsumedPlanSlots(graph);
         for (ChatFlowNode node : graph.nodes()) {
             if ("planningStep".equals(node.type()) && !consumed.contains(planSlotName(node))) {
                 out.add(new TurChatFlowLintIssueDto(
@@ -419,6 +402,32 @@ public class TurChatFlowLinterService {
                                 + " plan item."));
             }
         }
+    }
+
+    /** True when the graph contains at least one planningStep or iteratePlan node. */
+    private static boolean hasPlanningNodes(ChatFlowGraph graph) {
+        for (ChatFlowNode node : graph.nodes()) {
+            if ("planningStep".equals(node.type()) || ITERATE_PLAN.equals(node.type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Plan slots treated as consumed: every iteratePlan's slot plus any {@code {{slot}}} interpolation. */
+    private static Set<String> collectConsumedPlanSlots(ChatFlowGraph graph) {
+        Set<String> consumed = new HashSet<>();
+        for (ChatFlowNode node : graph.nodes()) {
+            if (ITERATE_PLAN.equals(node.type())) {
+                consumed.add(planSlotName(node));
+            }
+            collectInterpolated(consumed, node.aiInstruction());
+            collectInterpolated(consumed, node.slotValue());
+            collectInterpolated(consumed, node.label());
+            collectInterpolated(consumed, node.validationRule());
+            collectInterpolated(consumed, node.conditionExpression());
+        }
+        return consumed;
     }
 
     /** Plan slot an iteratePlan/planningStep node operates on (outputVariable, default {@code __plan}). */

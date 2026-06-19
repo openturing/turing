@@ -121,14 +121,7 @@ public class TurDslToolService {
                     Map<String, Object> properties = new LinkedHashMap<>();
 
                     for (TurSNSiteFieldExt field : fields) {
-                        Map<String, Object> fieldMapping = new LinkedHashMap<>();
-                        fieldMapping.put("type", field.getType() != null
-                                ? field.getType().toString().toLowerCase() : "text");
-                        if (field.getFacet() == 1) fieldMapping.put("facet", true);
-                        if (field.getMultiValued() == 1) fieldMapping.put("multi_valued", true);
-                        if (field.getDescription() != null)
-                            fieldMapping.put("description", field.getDescription());
-                        properties.put(field.getName(), fieldMapping);
+                        properties.put(field.getName(), buildFieldMapping(field));
                     }
 
                     mappings.put(site.getName(), Map.of("mappings",
@@ -142,6 +135,19 @@ public class TurDslToolService {
                     }
                 })
                 .orElse("Index not found: " + index);
+    }
+
+    /** Builds the mapping entry (type + optional facet/multi_valued/description) for one field. */
+    private Map<String, Object> buildFieldMapping(TurSNSiteFieldExt field) {
+        Map<String, Object> fieldMapping = new LinkedHashMap<>();
+        fieldMapping.put("type", field.getType() != null
+                ? field.getType().toString().toLowerCase() : "text");
+        if (field.getFacet() == 1) fieldMapping.put("facet", true);
+        if (field.getMultiValued() == 1) fieldMapping.put("multi_valued", true);
+        if (field.getDescription() != null) {
+            fieldMapping.put("description", field.getDescription());
+        }
+        return fieldMapping;
     }
 
     // ==================== Tool 3: DSL Search ====================
