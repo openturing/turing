@@ -833,7 +833,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                 } else if (agg instanceof TurDslAggregation.PercentilesAgg pAgg) {
                     result.put(entry.getKey(), buildLucenePercentilesAgg(allDocs, searcher, pAgg));
                 } else if (agg instanceof TurDslAggregation.FiltersAgg fAgg) {
-                    result.put(entry.getKey(), buildLuceneFiltersAgg(allDocs, searcher, fAgg));
+                    result.put(entry.getKey(), buildLuceneFiltersAgg(searcher, fAgg));
                 } else if (agg instanceof TurDslAggregation.SignificantTermsAgg stAgg) {
                     result.put(entry.getKey(), buildLuceneTermsAgg(allDocs, searcher,
                             new TurDslAggregation.TermsAgg(stAgg.field(), stAgg.size())));
@@ -960,7 +960,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
     }
 
     private TurDslSearchResponse.AggregationResult buildLuceneFiltersAgg(
-            TopDocs allDocs, IndexSearcher searcher, TurDslAggregation.FiltersAgg fAgg)
+            IndexSearcher searcher, TurDslAggregation.FiltersAgg fAgg)
             throws IOException {
         List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
         for (var fe : fAgg.filters().entrySet()) {

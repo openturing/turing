@@ -198,21 +198,6 @@ public class TurSNHybridRankingService {
         }
     }
 
-    /**
-     * Runs the T389 {@code retrieve → fuse → rerank} pipeline over a lexical
-     * result page: fuses the BM25 ranking with a vector ranking of the same
-     * documents via RRF and, for {@link TurSNRankingMode#HYBRID_RRF_RERANK},
-     * re-orders the fused page through the {@link TurRagReranker} strategy seam.
-     * Each surviving result gets a per-result ranking explanation attached.
-     * Returns the input unchanged on any failure or when there is nothing
-     * meaningful to fuse.
-     *
-     * @param turSNSite the (snapshot) site — must be a hybrid mode
-     * @param locale    request locale (unused for filtering today; the collection is per-site)
-     * @param query     the user query text
-     * @param page      the BM25-ordered result page
-     * @return a new list with the page reordered by the pipeline, or {@code page} as-is
-     */
     /** Stage 1: index the BM25 page by id into {@code byId}, capturing 1-based lexical rank + hit docs. */
     private void indexBm25Page(List<TurSEResult> page, Map<String, TurSEResult> byId,
             Map<String, Integer> lexicalRank, List<Document> bm25Hits) {

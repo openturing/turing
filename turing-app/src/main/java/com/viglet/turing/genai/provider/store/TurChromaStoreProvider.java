@@ -234,14 +234,6 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         return countDistinctDocuments(chromaApi, tenantName, databaseName, collection, chunkCount);
     }
 
-    /**
-     * Counts distinct logical documents in a Chroma collection by paginating
-     * through chunk metadata and accumulating unique values for the first
-     * present key in {@link #DOCUMENT_IDENTIFIER_KEYS}. Falls back to
-     * {@code chunkCount} when no chunk has any of the identifier keys (e.g.,
-     * legacy chunks indexed before the metadata convention existed) — same
-     * semantics as the Lucene provider.
-     */
     /** Adds the first non-blank document-identifier value from each metadata row to {@code identifiers}. */
     private void collectIdentifiers(List<Map<String, String>> metadatas, Set<String> identifiers) {
         for (Map<String, String> meta : metadatas) {
@@ -529,13 +521,6 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         return new TurStoreImportResult(total, preserved + reEmbedded, preserved, reEmbedded, failed);
     }
 
-    /**
-     * Flushes the accumulated batch via {@link ChromaApi#upsertEmbeddings}.
-     * Returns {@code [preservedCount, reEmbeddedCount, failedCount]} so the
-     * caller can fold per-batch outcomes into running totals exactly — on a
-     * transport failure the entire batch moves to {@code failed}, leaving the
-     * "preserved + reEmbedded = imported" invariant intact.
-     */
     /** A record's vector plus whether it had to be (re)computed on import. */
     private record ResolvedEmbedding(float[] embedding, boolean reEmbedded) {
     }

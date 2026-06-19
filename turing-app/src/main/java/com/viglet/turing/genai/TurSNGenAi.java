@@ -478,20 +478,6 @@ public class TurSNGenAi {
     }
 
     /**
-     * Shared SN RAG retrieval: auto-extracts filters when none are given, picks
-     * {@code topK}/threshold based on whether filtering narrows the universe,
-     * runs the similarity search, then (T328) applies the config-driven
-     * relevance gate on the filtered path and an optional LLM reranker before
-     * returning the chunks. Used by both the streaming tool-calling flow and
-     * the legacy single-shot flow so the gate/rerank behavior is identical.
-     *
-     * <p>Returns the retrieved {@link Document}s with their metadata intact —
-     * the provenance the {@code sources[]} SSE event (T327) needs — instead of
-     * collapsing them to text at the call site.
-     *
-     * @since 2026.3.1 (T328)
-     */
-    /**
      * Attempts to derive facet filters from the user query when the caller
      * supplied none. Returns an empty map when no facets are available, none
      * are extracted, or extraction fails (fail-open to plain similarity).
@@ -612,13 +598,6 @@ public class TurSNGenAi {
         return TurChatMessage.builder().text(answer).enabled(true).build();
     }
 
-    /**
-     * Composes the system message for RAG chat.
-     * <p>
-     * The custom prompt is treated as pure behavior guidance. The retrieved RAG
-     * context is appended automatically; the user question is carried by the
-     * {@code UserMessage} turn, not injected into the system prompt.
-     */
     /** Warns when retrieval came back empty, else dumps each doc at debug. */
     private void logRetrievedDocuments(List<Document> relevantDocuments, String vectorStoreType) {
         if (relevantDocuments.isEmpty()) {

@@ -151,7 +151,7 @@ public class TurRagBm25CoreAPI {
                 rows.add(new CoreStatusDto(
                         tag,
                         turTenantCoreNaming.scoped(TurRagBm25CoreProvisioner.coreNameFor(
-                                resolveStoreInstance(storeInstanceId), loc.getLanguage())),
+                                resolveStoreInstance(), loc.getLanguage())),
                         TurRagBm25Core.Status.NOT_PROVISIONED.name(),
                         0L,
                         null,
@@ -180,7 +180,7 @@ public class TurRagBm25CoreAPI {
         if (storeInstanceId == null || storeInstanceId.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(List.of());
         }
-        var storeInstance = resolveStoreInstance(storeInstanceId);
+        var storeInstance = resolveStoreInstance();
         if (storeInstance == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(List.of());
         }
@@ -218,7 +218,7 @@ public class TurRagBm25CoreAPI {
         if (storeInstanceId == null || storeInstanceId.isBlank()) {
             return ResponseEntity.noContent().build();
         }
-        var storeInstance = resolveStoreInstance(storeInstanceId);
+        var storeInstance = resolveStoreInstance();
         if (storeInstance == null) {
             return ResponseEntity.noContent().build();
         }
@@ -243,7 +243,7 @@ public class TurRagBm25CoreAPI {
      * callers translate to a 400. Routed through {@link TurRagContextBuilder}
      * so the GenAI infra resolution path stays in one place.
      */
-    private com.viglet.turing.persistence.model.store.TurStoreInstance resolveStoreInstance(String storeInstanceId) {
+    private com.viglet.turing.persistence.model.store.TurStoreInstance resolveStoreInstance() {
         return ragContextBuilder.buildFromGlobalSettings()
                 .map(TurRagContextBuilder.RagInfrastructure::storeInstance)
                 .orElse(null);

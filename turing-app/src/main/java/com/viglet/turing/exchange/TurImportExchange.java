@@ -227,12 +227,6 @@ public class TurImportExchange {
 				agentSummary, List.of());
 	}
 
-	/**
-	 * Reads {@code export.json} for an {@code agents[]} block and delegates to
-	 * {@link TurAIAgentImportService}. Returns {@code null} when the bundle
-	 * carries no agents — the import endpoint can then ignore the agent half
-	 * of the response without inspecting an empty record.
-	 */
 	/** The resolved export root and (optional) wrapper directory above it. */
 	private record ExtractRoots(File extractFolder, File parentExtractFolder) {
 	}

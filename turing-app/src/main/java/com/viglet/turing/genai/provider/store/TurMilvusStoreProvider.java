@@ -291,14 +291,6 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         }
     }
 
-    /**
-     * Counts distinct logical documents in a Milvus collection by paginating
-     * the {@code metadata} JSON field via {@link MilvusServiceClient#query} and
-     * accumulating unique values from the first present
-     * {@link #DOCUMENT_IDENTIFIER_KEYS}. Falls back to {@code chunkCount}
-     * (returned as 0 here, then promoted by the caller) when no chunk has any
-     * of the identifier keys — same convention as Chroma / Lucene / PGVector.
-     */
     /** Adds the first non-blank document-identifier value found in {@code metadata} to {@code identifiers}. */
     private void addFirstIdentifier(Map<String, Object> metadata, java.util.Set<String> identifiers) {
         for (String key : DOCUMENT_IDENTIFIER_KEYS) {

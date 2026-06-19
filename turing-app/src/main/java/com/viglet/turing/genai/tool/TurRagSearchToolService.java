@@ -122,7 +122,7 @@ public class TurRagSearchToolService {
             if (retrieval.results().isEmpty()) {
                 return "No relevant documents found in the knowledge base for: " + query;
             }
-            return formatResults(query, retrieval.results(), retrieval.fellBackToBm25(), toolContext);
+            return formatResults(retrieval.results(), retrieval.fellBackToBm25(), toolContext);
         } catch (Exception e) {
             log.error("[RAG] Search failed for query: {}", query, e);
             return "Error searching knowledge base: " + e.getMessage();
@@ -259,7 +259,7 @@ public class TurRagSearchToolService {
      *
      * @since 2026.3.1
      */
-    private String formatResults(String query, List<Document> results, boolean fellBackToBm25,
+    private String formatResults(List<Document> results, boolean fellBackToBm25,
             ToolContext toolContext) {
         StringBuilder sb = new StringBuilder();
         if (fellBackToBm25) {

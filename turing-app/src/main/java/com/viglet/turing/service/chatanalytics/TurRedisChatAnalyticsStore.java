@@ -612,7 +612,6 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 || NEGATIVE_SENTIMENT_RATE.equals(metric);
     }
 
-    /** Truncates {@code when} to the start of its hour or day, returning epoch millis. */
     /** Parses an ISO-8601 instant, or returns {@code null} when the value is unparseable. */
     private static Instant parseInstantOrNull(String value) {
         try {

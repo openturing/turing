@@ -365,12 +365,6 @@ public final class ChatFlowOps {
                 .append("\n");
     }
 
-    /**
-     * For switch targets, expands each option's downstream so the bot knows what to ask after the
-     * user's answer routes the flow. Handles are option ids (semantically opaque), so we look up
-     * each edge's matching {@code SwitchOption} on the source node and surface the human-readable
-     * label instead — that's what the model can sensibly reason about when chaining.
-     */
     /** Maps each switch option's handle id to its display label. */
     private static Map<String, String> buildSwitchLabels(ChatFlowNode switchNode) {
         Map<String, String> labelByHandle = new LinkedHashMap<>();
@@ -692,19 +686,6 @@ public final class ChatFlowOps {
      */
     private static final int QUESTION_SKIP_WALK_MAX = 16;
 
-    /**
-     * Walks the state past consecutive {@code aiQuestion} nodes whose
-     * {@code outputVariable} slot is already filled with a non-blank value
-     * in the flow's variables map — provided the node does NOT have
-     * {@code overrideExistingValue = true}.
-     *
-     * <p>The skip is a transparent transition: no LLM round-trip, no
-     * persisted advance signal. Used so a flow that re-enters a previously
-     * answered question (loop back from a condition, re-trigger, …) doesn't
-     * re-ask the user for data they already provided.
-     *
-     * @since 2026.2.7
-     */
     /**
      * True when {@code current} is a question-like node whose answer is already
      * captured (so the walker may skip it): not author-forced, and either a
@@ -1579,11 +1560,6 @@ public final class ChatFlowOps {
         return Optional.empty();
     }
 
-    /**
-     * Asks {@code auxModel} to classify {@code value} into one of the supplied option ids. Returns
-     * the chosen id (when valid) or {@code null} when the model can't decide, returns a malformed
-     * answer, or replies with the sentinel {@code NONE}.
-     */
     /**
      * Builds the {@code id → option} index and appends a human-readable
      * "  - id: label" line per valid option to {@code optionList}. Options with

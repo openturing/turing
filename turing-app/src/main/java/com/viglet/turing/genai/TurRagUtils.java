@@ -305,12 +305,6 @@ public final class TurRagUtils {
     }
 
     /**
-     * Splits a too-long single sentence into chunks <= {@code chunkSize} by
-     * walking word boundaries. Falls back to a hard split only for tokens
-     * that are themselves longer than the chunk size (very rare — long URLs,
-     * base64 blobs).
-     */
-    /**
      * Flushes any buffered text, then emits {@code word} (which is itself longer than
      * {@code chunkSize}) as hard-split, chunk-sized pieces.
      */

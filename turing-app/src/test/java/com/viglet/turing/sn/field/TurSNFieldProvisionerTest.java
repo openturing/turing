@@ -52,7 +52,7 @@ class TurSNFieldProvisionerTest {
     @InjectMocks
     private TurSNFieldProvisioner provisioner;
 
-    private TurSNSite site(String coreName) {
+    private TurSNSite site() {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setId("se1");
         TurSNSite site = new TurSNSite();
@@ -63,7 +63,7 @@ class TurSNFieldProvisionerTest {
 
     @Test
     void ensureFieldCreatesSchemaAndSearchEngineFieldWhenAbsent() {
-        TurSNSite site = site("core_en");
+        TurSNSite site = site();
         TurSNSiteLocale locale = new TurSNSiteLocale();
         locale.setCore("core_en");
         locale.setTurSNSite(site);
@@ -113,7 +113,7 @@ class TurSNFieldProvisionerTest {
 
     @Test
     void ensureFieldIsNoOpWhenFieldAlreadyDeclared() {
-        TurSNSite site = site("core_en");
+        TurSNSite site = site();
         TurSNJobAttributeSpec spec = TurSNJobAttributeSpec.builder()
                 .name("existing").type(TurSEFieldType.STRING).build();
 

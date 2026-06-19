@@ -931,7 +931,6 @@ public class TurChatFlowEngineService {
      *
      * @since 2026.2.7
      */
-    /** Picks the leaf state (no descendant), newest-updated first, falling back to the first row. */
     private TurChatFlowState findLeafState(List<TurChatFlowState> states) {
         Set<String> hasDescendant = states.stream()
                 .map(TurChatFlowState::getParentStateId)
