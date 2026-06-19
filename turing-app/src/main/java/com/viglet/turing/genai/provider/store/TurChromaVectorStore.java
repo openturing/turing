@@ -246,25 +246,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
                 return Map.of(markerKey(key, value.toString()), MARKER_VALUE);
             }
             case IN -> {
-                String key = extractKey(expression.left());
-                List<Object> values = extractValueList(expression.right());
-                if (key == null || values.isEmpty()) {
-                    return null;
-                }
-                List<Map<String, Object>> ors = new ArrayList<>(values.size());
-                for (Object v : values) {
-                    if (v == null) {
-                        continue;
-                    }
-                    ors.add(Map.of(markerKey(key, v.toString()), MARKER_VALUE));
-                }
-                if (ors.isEmpty()) {
-                    return null;
-                }
-                if (ors.size() == 1) {
-                    return ors.get(0);
-                }
-                return Map.of("$or", ors);
+                return translateInFilter(expression);
             }
             case AND -> {
                 return combine("$and", expression);
@@ -276,6 +258,29 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
                 throw new UnsupportedOperationException("Operator not supported: " + type);
             default -> throw new UnsupportedOperationException("Operator not supported: " + type);
         }
+    }
+
+    /** Translates an {@code IN} filter into a single marker map, an {@code $or} of markers, or null. */
+    private Map<String, Object> translateInFilter(Filter.Expression expression) {
+        String key = extractKey(expression.left());
+        List<Object> values = extractValueList(expression.right());
+        if (key == null || values.isEmpty()) {
+            return null;
+        }
+        List<Map<String, Object>> ors = new ArrayList<>(values.size());
+        for (Object v : values) {
+            if (v == null) {
+                continue;
+            }
+            ors.add(Map.of(markerKey(key, v.toString()), MARKER_VALUE));
+        }
+        if (ors.isEmpty()) {
+            return null;
+        }
+        if (ors.size() == 1) {
+            return ors.get(0);
+        }
+        return Map.of("$or", ors);
     }
 
     private Map<String, Object> combine(String op, Filter.Expression expression) {

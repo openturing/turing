@@ -297,29 +297,37 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         BooleanQuery.Builder andBuilder = new BooleanQuery.Builder();
         boolean anyClause = false;
         for (Map.Entry<String, List<String>> e : filters.entrySet()) {
-            String key = e.getKey();
-            List<String> values = e.getValue();
-            if (key == null || key.isBlank() || values == null || values.isEmpty()) {
-                continue;
+            Query clause = buildFieldClause(e.getKey(), e.getValue());
+            if (clause != null) {
+                andBuilder.add(clause, BooleanClause.Occur.MUST);
+                anyClause = true;
             }
-            List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
-            if (nonBlank.isEmpty()) {
-                continue;
-            }
-            String field = TurLuceneVectorStore.METADATA_FIELD_PREFIX + key;
-            if (nonBlank.size() == 1) {
-                andBuilder.add(new TermQuery(new Term(field, nonBlank.get(0))), BooleanClause.Occur.MUST);
-            } else {
-                BooleanQuery.Builder orBuilder = new BooleanQuery.Builder();
-                for (String v : nonBlank) {
-                    orBuilder.add(new TermQuery(new Term(field, v)), BooleanClause.Occur.SHOULD);
-                }
-                orBuilder.setMinimumNumberShouldMatch(1);
-                andBuilder.add(orBuilder.build(), BooleanClause.Occur.MUST);
-            }
-            anyClause = true;
         }
         return anyClause ? andBuilder.build() : null;
+    }
+
+    /**
+     * Builds the clause for a single filter field — a {@link TermQuery} for one value or a
+     * minimum-should-match-1 OR group for many — or {@code null} when the key/values are blank.
+     */
+    private Query buildFieldClause(String key, List<String> values) {
+        if (key == null || key.isBlank() || values == null || values.isEmpty()) {
+            return null;
+        }
+        List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
+        if (nonBlank.isEmpty()) {
+            return null;
+        }
+        String field = TurLuceneVectorStore.METADATA_FIELD_PREFIX + key;
+        if (nonBlank.size() == 1) {
+            return new TermQuery(new Term(field, nonBlank.get(0)));
+        }
+        BooleanQuery.Builder orBuilder = new BooleanQuery.Builder();
+        for (String v : nonBlank) {
+            orBuilder.add(new TermQuery(new Term(field, v)), BooleanClause.Occur.SHOULD);
+        }
+        orBuilder.setMinimumNumberShouldMatch(1);
+        return orBuilder.build();
     }
 
     private TurLuceneVectorIndex openIndex(Path basePath, String collectionName) {

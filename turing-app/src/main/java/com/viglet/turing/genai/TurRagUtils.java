@@ -310,6 +310,20 @@ public final class TurRagUtils {
      * that are themselves longer than the chunk size (very rare — long URLs,
      * base64 blobs).
      */
+    /**
+     * Flushes any buffered text, then emits {@code word} (which is itself longer than
+     * {@code chunkSize}) as hard-split, chunk-sized pieces.
+     */
+    private static void appendOversizedWord(List<String> parts, StringBuilder buf, String word, int chunkSize) {
+        if (!buf.isEmpty()) {
+            parts.add(buf.toString().trim());
+            buf.setLength(0);
+        }
+        for (int i = 0; i < word.length(); i += chunkSize) {
+            parts.add(word.substring(i, Math.min(word.length(), i + chunkSize)));
+        }
+    }
+
     private static List<String> wordAwareSplit(String sentence, int chunkSize) {
         List<String> parts = new ArrayList<>();
         StringBuilder buf = new StringBuilder();
@@ -318,13 +332,7 @@ public final class TurRagUtils {
                 continue;
             }
             if (word.length() > chunkSize) {
-                if (!buf.isEmpty()) {
-                    parts.add(buf.toString().trim());
-                    buf.setLength(0);
-                }
-                for (int i = 0; i < word.length(); i += chunkSize) {
-                    parts.add(word.substring(i, Math.min(word.length(), i + chunkSize)));
-                }
+                appendOversizedWord(parts, buf, word, chunkSize);
                 continue;
             }
             if (buf.isEmpty()) {
