@@ -128,6 +128,18 @@ public class TurTriggerConflictService {
         }
         // Group by analyzer so PT/EN pairs do not get compared — the
         // procedural router never scores them together either.
+        Map<Analyzer, List<EligibleFlow>> byAnalyzer = groupEligibleFlows(flows);
+
+        List<TurChatFlowTriggerConflictDto> conflicts = findConflicts(byAnalyzer);
+        conflicts.sort(Comparator
+                .comparingDouble(TurChatFlowTriggerConflictDto::similarity).reversed()
+                .thenComparing(TurChatFlowTriggerConflictDto::flowAId)
+                .thenComparing(TurChatFlowTriggerConflictDto::flowBId));
+        return conflicts;
+    }
+
+    /** Buckets the enabled flows with non-empty trigger tokens by their analyzer. */
+    private Map<Analyzer, List<EligibleFlow>> groupEligibleFlows(List<TurChatFlow> flows) {
         Map<Analyzer, List<EligibleFlow>> byAnalyzer = HashMap.newHashMap(2);
         for (TurChatFlow flow : flows) {
             if (flow.getEnabled() != 1) {
@@ -146,7 +158,12 @@ public class TurTriggerConflictService {
             byAnalyzer.computeIfAbsent(analyzer, ignored -> new ArrayList<>())
                     .add(new EligibleFlow(flow, tokens, analyzer));
         }
+        return byAnalyzer;
+    }
 
+    /** Scores every same-analyzer flow pair, collecting the ones that conflict. */
+    private List<TurChatFlowTriggerConflictDto> findConflicts(
+            Map<Analyzer, List<EligibleFlow>> byAnalyzer) {
         List<TurChatFlowTriggerConflictDto> conflicts = new ArrayList<>();
         for (List<EligibleFlow> bucket : byAnalyzer.values()) {
             if (bucket.size() < 2) {
@@ -161,10 +178,6 @@ public class TurTriggerConflictService {
                 }
             }
         }
-        conflicts.sort(Comparator
-                .comparingDouble(TurChatFlowTriggerConflictDto::similarity).reversed()
-                .thenComparing(TurChatFlowTriggerConflictDto::flowAId)
-                .thenComparing(TurChatFlowTriggerConflictDto::flowBId));
         return conflicts;
     }
 

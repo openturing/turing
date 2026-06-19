@@ -435,22 +435,35 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
     private TurDslQuery.MoreLikeThis deserializeMoreLikeThis(JsonNode body) {
         List<String> fields = new ArrayList<>();
         if (body.has(FIELDS)) for (JsonNode f : body.get(FIELDS)) fields.add(f.asString());
-        String likeText = null;
         List<String> likeIds = new ArrayList<>();
-        if (body.has("like")) {
-            JsonNode like = body.get("like");
-            if (like.isString()) likeText = like.asString();
-            else if (like.isArray()) {
-                for (JsonNode l : like) {
-                    if (l.isString()) { if (likeText == null) likeText = l.asString(); }
-                    else if (l.isObject() && l.has("_id")) likeIds.add(l.get("_id").asString());
-                }
-            }
-        }
+        String likeText = body.has("like") ? parseLikeField(body.get("like"), likeIds) : null;
         return new TurDslQuery.MoreLikeThis(fields, likeText, likeIds,
                 body.has("min_term_freq") ? body.get("min_term_freq").asInt() : null,
                 body.has("min_doc_freq") ? body.get("min_doc_freq").asInt() : null,
                 body.has("max_query_terms") ? body.get("max_query_terms").asInt() : null);
+    }
+
+    /**
+     * Parses the MoreLikeThis {@code like} clause: a bare string, or an array of
+     * strings (first wins as the like text) and {@code {"_id": …}} objects
+     * (collected into {@code likeIds}). Returns the like text, or null.
+     */
+    private String parseLikeField(JsonNode like, List<String> likeIds) {
+        if (like.isString()) {
+            return like.asString();
+        }
+        if (like.isArray()) {
+            String likeText = null;
+            for (JsonNode l : like) {
+                if (l.isString()) {
+                    if (likeText == null) likeText = l.asString();
+                } else if (l.isObject() && l.has("_id")) {
+                    likeIds.add(l.get("_id").asString());
+                }
+            }
+            return likeText;
+        }
+        return null;
     }
 
     private TurDslQuery.CombinedFields deserializeCombinedFields(JsonNode body) {

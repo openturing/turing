@@ -371,19 +371,24 @@ public final class ChatFlowOps {
      * each edge's matching {@code SwitchOption} on the source node and surface the human-readable
      * label instead — that's what the model can sensibly reason about when chaining.
      */
-    private static void appendSwitchNextSteps(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode switchNode) {
-        List<ChatFlowEdge> branches = graph.outgoingEdges(switchNode.id());
-        if (branches.isEmpty()) {
-            return;
-        }
+    /** Maps each switch option's handle id to its display label. */
+    private static Map<String, String> buildSwitchLabels(ChatFlowNode switchNode) {
         Map<String, String> labelByHandle = new LinkedHashMap<>();
         for (ChatFlowNode.SwitchOption option : switchNode.switchOptions()) {
             if (option != null && option.id() != null && option.label() != null) {
                 labelByHandle.put(option.id(), option.label());
             }
         }
+        return labelByHandle;
+    }
+
+    /**
+     * Builds the per-branch "if X branch: <instruction>" hint lines for a switch
+     * node, skipping end/empty-instruction branches. Returns "" when none apply.
+     */
+    private static String buildSwitchBranchHints(List<ChatFlowEdge> branches, ChatFlowGraph graph,
+            Map<String, String> labelByHandle) {
         StringBuilder hint = new StringBuilder();
-        boolean any = false;
         for (ChatFlowEdge edge : branches) {
             Optional<ChatFlowNode> branchOpt = graph.nodeById(edge.target());
             if (branchOpt.isEmpty()) {
@@ -405,9 +410,18 @@ public final class ChatFlowOps {
                     : fallbackBranch;
             hint.append("  - If '").append(displayBranch).append("' branch: ")
                     .append(instruction.trim()).append("\n");
-            any = true;
         }
-        if (!any) {
+        return hint.toString();
+    }
+
+    private static void appendSwitchNextSteps(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode switchNode) {
+        List<ChatFlowEdge> branches = graph.outgoingEdges(switchNode.id());
+        if (branches.isEmpty()) {
+            return;
+        }
+        Map<String, String> labelByHandle = buildSwitchLabels(switchNode);
+        String hint = buildSwitchBranchHints(branches, graph, labelByHandle);
+        if (hint.isEmpty()) {
             return;
         }
         String varName = switchNode.switchVariable() == null || switchNode.switchVariable().isBlank()

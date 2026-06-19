@@ -124,32 +124,7 @@ public class TurAiAuthoringService {
                 + "\n\n"
                 + converter.getFormat();
 
-        List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage(fullSystem));
-        if (request != null && request.messages() != null) {
-            for (AiAuthoringMessage m : request.messages()) {
-                if (m == null || m.content() == null) continue;
-                String role = m.role() == null ? "user" : m.role();
-                if ("assistant".equalsIgnoreCase(role)) {
-                    messages.add(new AssistantMessage(m.content()));
-                } else if ("system".equalsIgnoreCase(role)) {
-                    // System role from history is ignored — the entity-specific
-                    // system prompt is the single source of truth and is rebuilt
-                    // each turn with the latest form snapshot.
-                    log.debug("[AiAuthoring] Skipping inline system message from history");
-                } else {
-                    messages.add(new UserMessage(m.content()));
-                }
-            }
-        }
-        if (messages.size() == 1) {
-            // No user message yet — seed an introductory request so the LLM
-            // returns the first state snapshot + greeting.
-            messages.add(new UserMessage(
-                    "Greet the user briefly (in their language when known, "
-                            + "otherwise English) and offer to start. "
-                            + "Also return the current form state unchanged."));
-        }
+        List<Message> messages = buildAuthoringMessages(fullSystem, request);
 
         // Authoring responses bundle a conversational reply with the FULL
         // updated state — easily 4-6k tokens for non-trivial flows. Ceil
@@ -189,6 +164,50 @@ public class TurAiAuthoringService {
                     truncateForLog(text),
                     e);
             throw new IllegalStateException("AI authoring chat failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Builds the prompt message list: the system message, then the prior
+     * conversation turns (history system messages are dropped — the rebuilt
+     * system prompt is the single source of truth), seeding an introductory
+     * user turn when there's no user message yet.
+     */
+    private List<Message> buildAuthoringMessages(String fullSystem, AiAuthoringRequest<?> request) {
+        List<Message> messages = new ArrayList<>();
+        messages.add(new SystemMessage(fullSystem));
+        if (request != null && request.messages() != null) {
+            for (AiAuthoringMessage m : request.messages()) {
+                appendHistoryMessage(messages, m);
+            }
+        }
+        if (messages.size() == 1) {
+            // No user message yet — seed an introductory request so the LLM
+            // returns the first state snapshot + greeting.
+            messages.add(new UserMessage(
+                    "Greet the user briefly (in their language when known, "
+                            + "otherwise English) and offer to start. "
+                            + "Also return the current form state unchanged."));
+        }
+        return messages;
+    }
+
+    /**
+     * Appends one history turn to {@code messages}, mapping the role. History
+     * system messages are dropped (the rebuilt system prompt wins); null/empty
+     * turns are ignored.
+     */
+    private void appendHistoryMessage(List<Message> messages, AiAuthoringMessage m) {
+        if (m == null || m.content() == null) {
+            return;
+        }
+        String role = m.role() == null ? "user" : m.role();
+        if ("assistant".equalsIgnoreCase(role)) {
+            messages.add(new AssistantMessage(m.content()));
+        } else if ("system".equalsIgnoreCase(role)) {
+            log.debug("[AiAuthoring] Skipping inline system message from history");
+        } else {
+            messages.add(new UserMessage(m.content()));
         }
     }
 
