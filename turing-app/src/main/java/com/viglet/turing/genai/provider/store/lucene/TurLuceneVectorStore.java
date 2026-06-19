@@ -632,7 +632,7 @@ public class TurLuceneVectorStore implements VectorStore {
      */
     Query toLuceneFilterQuery(Filter.Expression expression) {
         if (expression == null) {
-            return new MatchAllDocsQuery();
+            return MatchAllDocsQuery.INSTANCE;
         }
         Filter.ExpressionType type = expression.type();
         switch (type) {
@@ -645,7 +645,7 @@ public class TurLuceneVectorStore implements VectorStore {
                     return null;
                 }
                 BooleanQuery.Builder not = new BooleanQuery.Builder();
-                not.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+                not.add(MatchAllDocsQuery.INSTANCE, BooleanClause.Occur.MUST);
                 not.add(termQuery, BooleanClause.Occur.MUST_NOT);
                 return not.build();
             }
@@ -688,7 +688,7 @@ public class TurLuceneVectorStore implements VectorStore {
                     return null;
                 }
                 BooleanQuery.Builder not = new BooleanQuery.Builder();
-                not.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+                not.add(MatchAllDocsQuery.INSTANCE, BooleanClause.Occur.MUST);
                 not.add(innerQuery, BooleanClause.Occur.MUST_NOT);
                 return not.build();
             }
@@ -789,7 +789,7 @@ public class TurLuceneVectorStore implements VectorStore {
             return exists;
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
-        builder.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+        builder.add(MatchAllDocsQuery.INSTANCE, BooleanClause.Occur.MUST);
         builder.add(exists, BooleanClause.Occur.MUST_NOT);
         return builder.build();
     }
@@ -825,7 +825,7 @@ public class TurLuceneVectorStore implements VectorStore {
             return inQuery;
         }
         BooleanQuery.Builder not = new BooleanQuery.Builder();
-        not.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+        not.add(MatchAllDocsQuery.INSTANCE, BooleanClause.Occur.MUST);
         not.add(inQuery, BooleanClause.Occur.MUST_NOT);
         return not.build();
     }

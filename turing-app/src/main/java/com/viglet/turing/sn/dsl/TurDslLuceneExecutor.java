@@ -189,7 +189,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
     Query translateQuery(TurDslQuery query, Map<String, TurSEFieldType> fieldTypes) {
         return switch (query) {
-            case TurDslQuery.MatchAll() -> new MatchAllDocsQuery();
+            case TurDslQuery.MatchAll() -> MatchAllDocsQuery.INSTANCE;
 
             case TurDslQuery.Match q -> translateMatch(q);
 
@@ -256,11 +256,11 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             case TurDslQuery.GeoDistance(var field, var distance, var location) ->
                     // Lucene: LatLonPoint.newDistanceQuery requires LatLonPoint indexed field
-                    new MatchAllDocsQuery();
+                    MatchAllDocsQuery.INSTANCE;
 
             case TurDslQuery.GeoBoundingBox(var field, var topLeft, var bottomRight) ->
                     // Lucene: LatLonPoint.newBoxQuery requires LatLonPoint indexed field
-                    new MatchAllDocsQuery();
+                    MatchAllDocsQuery.INSTANCE;
 
             case TurDslQuery.TermsSet q -> translateTermsSet(q);
 
@@ -279,11 +279,11 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.RankFeature(var field, var boost, var s1, var s2, var s3) ->
                     new FieldExistsQuery(field);
             case TurDslQuery.DistanceFeature(var field, var origin, var pivot) ->
-                    new MatchAllDocsQuery();
-            case TurDslQuery.Wrapper(var encodedQuery) -> new MatchAllDocsQuery();
+                    MatchAllDocsQuery.INSTANCE;
+            case TurDslQuery.Wrapper(var encodedQuery) -> MatchAllDocsQuery.INSTANCE;
             case TurDslQuery.GeoShape(var field, var shape, var relation) ->
-                    new MatchAllDocsQuery();
-            case TurDslQuery.Percolate(var field, var document) -> new MatchAllDocsQuery();
+                    MatchAllDocsQuery.INSTANCE;
+            case TurDslQuery.Percolate(var field, var document) -> MatchAllDocsQuery.INSTANCE;
         };
     }
 
@@ -309,7 +309,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             try {
                 return new QueryParser(TEXT, new StandardAnalyzer()).parse(q.query());
             } catch (Exception e) {
-                return new MatchAllDocsQuery();
+                return MatchAllDocsQuery.INSTANCE;
             }
         }
         try {
@@ -318,7 +318,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             parser.setDefaultOperator(QueryParser.Operator.OR);
             return parser.parse(q.query());
         } catch (Exception e) {
-            return new MatchAllDocsQuery();
+            return MatchAllDocsQuery.INSTANCE;
         }
     }
 
@@ -350,7 +350,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             }
             return parser.parse(q.query());
         } catch (Exception e) {
-            return new MatchAllDocsQuery();
+            return MatchAllDocsQuery.INSTANCE;
         }
     }
 
@@ -395,7 +395,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             }
             return parser.parse(q.query());
         } catch (Exception e) {
-            return new MatchAllDocsQuery();
+            return MatchAllDocsQuery.INSTANCE;
         }
     }
 
@@ -449,10 +449,10 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         q.fields().toArray(String[]::new), new StandardAnalyzer());
                 return parser.parse(q.likeText());
             } catch (Exception e) {
-                return new MatchAllDocsQuery();
+                return MatchAllDocsQuery.INSTANCE;
             }
         }
-        return new MatchAllDocsQuery();
+        return MatchAllDocsQuery.INSTANCE;
     }
 
     private Query translateCombinedFields(TurDslQuery.CombinedFields q) {
@@ -460,7 +460,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             try {
                 return new QueryParser(TEXT, new StandardAnalyzer()).parse(q.query());
             } catch (Exception e) {
-                return new MatchAllDocsQuery();
+                return MatchAllDocsQuery.INSTANCE;
             }
         }
         try {
@@ -471,7 +471,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             }
             return parser.parse(q.query());
         } catch (Exception e) {
-            return new MatchAllDocsQuery();
+            return MatchAllDocsQuery.INSTANCE;
         }
     }
 
@@ -516,10 +516,10 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                 return new QueryParser(q.field(), new StandardAnalyzer())
                         .parse(S.formatted(q.rule().query()));
             } catch (Exception e) {
-                return new MatchAllDocsQuery();
+                return MatchAllDocsQuery.INSTANCE;
             }
         }
-        return new MatchAllDocsQuery();
+        return MatchAllDocsQuery.INSTANCE;
     }
 
     private Query translateSpanNear(TurDslQuery.SpanNear q, Map<String, TurSEFieldType> fieldTypes) {

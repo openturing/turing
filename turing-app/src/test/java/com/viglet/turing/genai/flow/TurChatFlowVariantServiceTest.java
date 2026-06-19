@@ -114,20 +114,20 @@ class TurChatFlowVariantServiceTest {
         // Rewrite landed on the right fields; everything else round-trips.
         JsonNode root = MAPPER.readTree(result.candidate().getDefinitionJson());
         JsonNode askName = nodeById(root, "ask-name").path("data");
-        assertThat(askName.path("label").asText()).isEqualTo("NAME");
-        assertThat(askName.path("aiInstruction").asText()).isEqualTo("Ask their name.");
+        assertThat(askName.path("label").asString()).isEqualTo("NAME");
+        assertThat(askName.path("aiInstruction").asString()).isEqualTo("Ask their name.");
         // Structural fields untouched.
-        assertThat(askName.path("outputVariable").asText()).isEqualTo("name");
-        assertThat(askName.path("validationRule").asText()).isEqualTo("none");
+        assertThat(askName.path("outputVariable").asString()).isEqualTo("name");
+        assertThat(askName.path("validationRule").asString()).isEqualTo("none");
 
         JsonNode decideVip = nodeById(root, "decide-vip").path("data");
-        assertThat(decideVip.path("conditionExpression").asText()).isEqualTo("is VIP");
+        assertThat(decideVip.path("conditionExpression").asString()).isEqualTo("is VIP");
 
         // Edges (including condition sourceHandles) round-trip verbatim.
         JsonNode edges = root.path("edges");
         assertThat(edges.size()).isEqualTo(4);
-        assertThat(edges.get(2).path("sourceHandle").asText()).isEqualTo("yes");
-        assertThat(edges.get(3).path("sourceHandle").asText()).isEqualTo("no");
+        assertThat(edges.get(2).path("sourceHandle").asString()).isEqualTo("yes");
+        assertThat(edges.get(3).path("sourceHandle").asString()).isEqualTo("no");
     }
 
     @Test
@@ -272,7 +272,7 @@ class TurChatFlowVariantServiceTest {
 
     private static JsonNode nodeById(JsonNode root, String id) {
         for (JsonNode node : root.path("nodes")) {
-            if (id.equals(node.path("id").asText())) {
+            if (id.equals(node.path("id").asString())) {
                 return node;
             }
         }

@@ -159,7 +159,7 @@ public class TurLuceneVectorIndex {
         if (offset < 0 || limit < 1) {
             return new ChunkPage(List.of(), 0L);
         }
-        Query query = filter != null ? filter : new MatchAllDocsQuery();
+        Query query = filter != null ? filter : MatchAllDocsQuery.INSTANCE;
         DirectoryReader reader = refreshReader();
         if (reader.numDocs() == 0) {
             return new ChunkPage(List.of(), 0L);
