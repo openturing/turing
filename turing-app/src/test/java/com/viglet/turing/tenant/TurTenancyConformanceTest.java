@@ -504,7 +504,7 @@ class TurTenancyConformanceTest {
 
     /** Run {@code action}, returning the HTTP status of the thrown {@link ResponseStatusException}. */
     private static HttpStatus httpStatusOf(Runnable action) {
-        ResponseStatusException ex = catchThrowableOfType(action::run, ResponseStatusException.class);
+        ResponseStatusException ex = catchThrowableOfType(ResponseStatusException.class, action::run);
         assertThat(ex).as("expected a ResponseStatusException").isNotNull();
         return HttpStatus.valueOf(ex.getStatusCode().value());
     }

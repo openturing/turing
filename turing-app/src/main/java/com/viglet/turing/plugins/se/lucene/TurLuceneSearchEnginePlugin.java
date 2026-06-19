@@ -237,7 +237,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                             return List.<Map<String, Object>>of();
                         }
                         var topDocs = searcher.search(
-                                new org.apache.lucene.search.MatchAllDocsQuery(),
+                                org.apache.lucene.search.MatchAllDocsQuery.INSTANCE,
                                 start + rows);
                         var scoreDocs = topDocs.scoreDocs;
                         log.info("[Lucene] Search returned {} scoreDocs (requested start={} rows={})",

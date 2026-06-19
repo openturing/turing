@@ -419,7 +419,7 @@ class TurLuceneResultProcessorTest {
                 org.mockito.Mockito.mock(com.viglet.turing.persistence.model.sn.TurSNSite.class);
         org.mockito.Mockito.when(site.getRowsPerPage()).thenReturn(10);
 
-        org.apache.lucene.search.Query query = new org.apache.lucene.search.MatchAllDocsQuery();
+        org.apache.lucene.search.Query query = org.apache.lucene.search.MatchAllDocsQuery.INSTANCE;
 
         try {
             com.viglet.turing.se.result.TurSEResults page1 = processor.getResults(instance, site,
