@@ -1603,11 +1603,11 @@ public final class ChatFlowOps {
             return true;
         }
         String varsJsonForLog = serializeVariables(variables);
-        Boolean spelResult = trySpel(expression, variables);
-        if (spelResult != null) {
+        Optional<Boolean> spelResult = trySpel(expression, variables);
+        if (spelResult.isPresent()) {
             log.info("[FlowOps] Condition (SpEL): expr='{}' vars={} result={}",
-                    expression, varsJsonForLog, spelResult);
-            return spelResult;
+                    expression, varsJsonForLog, spelResult.get());
+            return spelResult.get();
         }
         log.info("[FlowOps] Condition fell back to LLM judge: expr='{}' vars={}",
                 expression, varsJsonForLog);
@@ -1671,9 +1671,9 @@ public final class ChatFlowOps {
      * plain identifiers like {@code stuffedCrust} resolve to map entries —
      * no need for the {@code #var} prefix).
      * <p>
-     * Returns the boolean result on success, or {@code null} when SpEL
-     * cannot parse / evaluate / coerce-to-boolean — that signals the caller
-     * to fall back to the LLM judge. Common reasons to return {@code null}:
+     * Returns the boolean result on success, or {@link Optional#empty()} when
+     * SpEL cannot parse / evaluate / coerce-to-boolean — that signals the
+     * caller to fall back to the LLM judge. Common reasons to return empty:
      * <ul>
      *   <li>The expression is plain language (no operators).</li>
      *   <li>A referenced variable is missing from the map.</li>
@@ -1681,16 +1681,16 @@ public final class ChatFlowOps {
      *       (e.g. a string or number).</li>
      * </ul>
      */
-    private static Boolean trySpel(String expression, Map<String, String> variables) {
+    private static Optional<Boolean> trySpel(String expression, Map<String, String> variables) {
         try {
             Map<String, String> root = variables == null ? Map.of() : variables;
             StandardEvaluationContext ctx = new StandardEvaluationContext(root);
             ctx.addPropertyAccessor(new MapAccessor());
             Object result = SPEL_PARSER.parseExpression(expression).getValue(ctx);
-            return result instanceof Boolean b ? b : null;
+            return result instanceof Boolean b ? Optional.of(b) : Optional.empty();
         } catch (RuntimeException e) {
             log.debug("[FlowOps] SpEL could not evaluate '{}': {}", expression, e.getMessage());
-            return null;
+            return Optional.empty();
         }
     }
 
