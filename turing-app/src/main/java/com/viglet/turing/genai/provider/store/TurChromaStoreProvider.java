@@ -694,47 +694,86 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
         int offset = 0;
         while (true) {
-            ChromaApi.GetEmbeddingsRequest request = new ChromaApi.GetEmbeddingsRequest(
-                    null,
-                    null,
-                    EXPORT_PAGE_SIZE,
-                    offset,
-                    List.of(ChromaApi.QueryRequest.Include.METADATAS,
-                            ChromaApi.QueryRequest.Include.DOCUMENTS,
-                            ChromaApi.QueryRequest.Include.EMBEDDINGS));
-            ChromaApi.GetEmbeddingResponse response;
-            try {
-                response = chromaApi.getEmbeddings(tenantName, databaseName, collection.id(), request);
-            } catch (Exception e) {
-                log.warn("[Chroma] Failed to fetch export page (offset={}) for '{}': {}",
-                        offset, collectionName, e.getMessage());
+            ChromaApi.GetEmbeddingResponse response =
+                    fetchExportPage(chromaApi, tenantName, databaseName, collection.id(), offset, collectionName);
+            if (response == null) {
                 return;
             }
-            if (response == null || response.ids() == null || response.ids().isEmpty()) {
+            int pageSize = emitExportPage(response, consumer);
+            if (pageSize < EXPORT_PAGE_SIZE) {
                 return;
             }
-            List<String> ids = response.ids();
-            List<String> documents = response.documents() != null ? response.documents() : List.of();
-            List<Map<String, String>> metadatas = response.metadata() != null ? response.metadata() : List.of();
-            List<float[]> embeddings = response.embeddings() != null ? response.embeddings() : List.of();
-            for (int i = 0; i < ids.size(); i++) {
-                String content = i < documents.size() ? documents.get(i) : "";
-                Map<String, String> rawMeta = i < metadatas.size() ? metadatas.get(i) : Map.of();
-                Map<String, Object> metadata = rawMeta == null
-                        ? Map.of()
-                        : new java.util.LinkedHashMap<>(rawMeta);
-                float[] embedding = i < embeddings.size() ? embeddings.get(i) : null;
-                consumer.accept(new TurStoreExportRecord(
-                        ids.get(i),
-                        content == null ? "" : content,
-                        embedding,
-                        metadata));
-            }
-            if (ids.size() < EXPORT_PAGE_SIZE) {
-                return;
-            }
-            offset += ids.size();
+            offset += pageSize;
         }
+    }
+
+    /**
+     * Fetches a single export page from Chroma's {@code /get} endpoint. Returns
+     * {@code null} to signal "stop paging" — either a per-page failure (logged)
+     * or an empty/exhausted result set.
+     *
+     * @since 2026.3.1
+     */
+    private ChromaApi.GetEmbeddingResponse fetchExportPage(ChromaApi chromaApi, String tenantName,
+            String databaseName, String collectionId, int offset, String collectionName) {
+        ChromaApi.GetEmbeddingsRequest request = new ChromaApi.GetEmbeddingsRequest(
+                null,
+                null,
+                EXPORT_PAGE_SIZE,
+                offset,
+                List.of(ChromaApi.QueryRequest.Include.METADATAS,
+                        ChromaApi.QueryRequest.Include.DOCUMENTS,
+                        ChromaApi.QueryRequest.Include.EMBEDDINGS));
+        ChromaApi.GetEmbeddingResponse response;
+        try {
+            response = chromaApi.getEmbeddings(tenantName, databaseName, collectionId, request);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to fetch export page (offset={}) for '{}': {}",
+                    offset, collectionName, e.getMessage());
+            return null;
+        }
+        if (response == null || response.ids() == null || response.ids().isEmpty()) {
+            return null;
+        }
+        return response;
+    }
+
+    /**
+     * Emits one {@link TurStoreExportRecord} per id in the page and returns the
+     * number of ids emitted (used by the caller to detect the final short page).
+     *
+     * @since 2026.3.1
+     */
+    private int emitExportPage(ChromaApi.GetEmbeddingResponse response, Consumer<TurStoreExportRecord> consumer) {
+        List<String> ids = response.ids();
+        List<String> documents = response.documents() != null ? response.documents() : List.of();
+        List<Map<String, String>> metadatas = response.metadata() != null ? response.metadata() : List.of();
+        List<float[]> embeddings = response.embeddings() != null ? response.embeddings() : List.of();
+        for (int i = 0; i < ids.size(); i++) {
+            consumer.accept(toExportRecord(i, ids, documents, metadatas, embeddings));
+        }
+        return ids.size();
+    }
+
+    /**
+     * Builds the export record for index {@code i}, tolerating ragged
+     * parallel lists (missing documents/metadata/embeddings).
+     *
+     * @since 2026.3.1
+     */
+    private TurStoreExportRecord toExportRecord(int i, List<String> ids, List<String> documents,
+            List<Map<String, String>> metadatas, List<float[]> embeddings) {
+        String content = i < documents.size() ? documents.get(i) : "";
+        Map<String, String> rawMeta = i < metadatas.size() ? metadatas.get(i) : Map.of();
+        Map<String, Object> metadata = rawMeta == null
+                ? Map.of()
+                : new java.util.LinkedHashMap<>(rawMeta);
+        float[] embedding = i < embeddings.size() ? embeddings.get(i) : null;
+        return new TurStoreExportRecord(
+                ids.get(i),
+                content == null ? "" : content,
+                embedding,
+                metadata);
     }
 
     /**

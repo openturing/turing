@@ -243,11 +243,7 @@ public class TurChatStreamingDispatcher {
                 })
                 .map(resp -> {
                     lastRaw.set(resp);
-                    String chunk = (resp.getResult() != null
-                            && resp.getResult().getOutput() != null
-                            && resp.getResult().getOutput().getText() != null)
-                                    ? resp.getResult().getOutput().getText()
-                                    : "";
+                    String chunk = extractChunkText(resp);
                     if (!chunk.isEmpty()) {
                         accumulated.append(chunk);
                     }
@@ -260,38 +256,67 @@ public class TurChatStreamingDispatcher {
                         firstChunkAt.compareAndSet(null, System.currentTimeMillis());
                     }
                 })
-                .doOnComplete(() -> {
-                    long tLlmEnd = System.currentTimeMillis();
-                    long tTotal = tLlmEnd - tStart;
-                    Long firstAt = firstChunkAt.get();
-                    long firstTokenMs = firstAt == null ? -1 : (firstAt - tLlmStart);
-                    chatPipelineObservation.recordMillis(
-                            TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
-                    chatPipelineObservation.recordMillis(
-                            TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
-                    var lastResp = lastRaw.get();
-                    if (lastResp != null) {
-                        double turnCost = tokenUsageService.recordUsage(llmInstance, lastResp, username,
-                                agent == null ? null : agent.getId(),
-                                TurMeterNames.STAGE_CHAT_LIVE);
-                        costBudgetGate.warnIfTurnOverCap(agent, turnCost);
-                    }
-                    recordTurnTelemetry(agent, conversationId, lastUserMessage,
-                            accumulated.toString(), lastResp);
-                    int chunks = chunkCount.get();
-                    int raws = rawCount.get();
-                    int avgChunkChars = chunks > 0 ? accumulated.length() / chunks : 0;
-                    Long firstRaw = firstRawAt.get();
-                    long firstRawMs = firstRaw == null ? -1 : (firstRaw - tLlmStart);
-                    log.info("[AgentExec][timing] STREAM total_ms={} setup_ms={} llm_ms={} "
-                            + "first_raw_ms={} first_token_ms={} raws={} chunks={} chars={} avg_chunk_chars={}",
-                            tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart,
-                            firstRawMs, firstTokenMs, raws, chunks, accumulated.length(), avgChunkChars);
-                })
+                .doOnComplete(() -> recordStreamCompletion(agent, llmInstance, conversationId, lastUserMessage,
+                        username, tStart, tSetupEnd, tLlmStart, accumulated, lastRaw,
+                        chunkCount, rawCount, firstChunkAt, firstRawAt))
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error(
                         "[AgentExec] STREAM agent '{}' error: {}",
                         agent.getTitle(), err.getMessage(), err));
+    }
+
+    /**
+     * Extracts the text payload of a streaming chunk, tolerating the nullable
+     * result/output/text chain Spring AI exposes on partial responses.
+     *
+     * @since 2026.3.1
+     */
+    private static String extractChunkText(org.springframework.ai.chat.model.ChatResponse resp) {
+        return (resp.getResult() != null
+                && resp.getResult().getOutput() != null
+                && resp.getResult().getOutput().getText() != null)
+                        ? resp.getResult().getOutput().getText()
+                        : "";
+    }
+
+    /**
+     * Records cost, turn telemetry, and timing diagnostics when the streaming
+     * Flux completes. Extracted from the {@code doOnComplete} lambda so the
+     * reactive assembly in {@link #dispatchStream} stays readable.
+     *
+     * @since 2026.3.1
+     */
+    private void recordStreamCompletion(TurAIAgent agent, TurLLMInstance llmInstance, String conversationId,
+            String lastUserMessage, String username, long tStart, long tSetupEnd, long tLlmStart,
+            StringBuilder accumulated, AtomicReference<org.springframework.ai.chat.model.ChatResponse> lastRaw,
+            AtomicInteger chunkCount, AtomicInteger rawCount,
+            AtomicReference<Long> firstChunkAt, AtomicReference<Long> firstRawAt) {
+        long tLlmEnd = System.currentTimeMillis();
+        long tTotal = tLlmEnd - tStart;
+        Long firstAt = firstChunkAt.get();
+        long firstTokenMs = firstAt == null ? -1 : (firstAt - tLlmStart);
+        chatPipelineObservation.recordMillis(
+                TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
+        chatPipelineObservation.recordMillis(
+                TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
+        var lastResp = lastRaw.get();
+        if (lastResp != null) {
+            double turnCost = tokenUsageService.recordUsage(llmInstance, lastResp, username,
+                    agent == null ? null : agent.getId(),
+                    TurMeterNames.STAGE_CHAT_LIVE);
+            costBudgetGate.warnIfTurnOverCap(agent, turnCost);
+        }
+        recordTurnTelemetry(agent, conversationId, lastUserMessage,
+                accumulated.toString(), lastResp);
+        int chunks = chunkCount.get();
+        int raws = rawCount.get();
+        int avgChunkChars = chunks > 0 ? accumulated.length() / chunks : 0;
+        Long firstRaw = firstRawAt.get();
+        long firstRawMs = firstRaw == null ? -1 : (firstRaw - tLlmStart);
+        log.info("[AgentExec][timing] STREAM total_ms={} setup_ms={} llm_ms={} "
+                + "first_raw_ms={} first_token_ms={} raws={} chunks={} chars={} avg_chunk_chars={}",
+                tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart,
+                firstRawMs, firstTokenMs, raws, chunks, accumulated.length(), avgChunkChars);
     }
 
     private Flux<ChatResponse> dispatchCall(TurAIAgent agent,

@@ -2010,6 +2010,32 @@ public class TurChatFlowEngineService {
         if (!hasSubstantiveToken(userMessage)) {
             return Optional.empty();
         }
+        Map<Analyzer, List<RouterCandidate>> byAnalyzer = groupCandidatesByAnalyzer(candidates);
+        if (byAnalyzer.isEmpty()) {
+            return Optional.empty();
+        }
+        ScoredRoute aggregate = aggregateBucketScores(byAnalyzer, userMessage);
+        if (aggregate.bestId() == null || aggregate.bestScore() <= 0f) {
+            return Optional.empty();
+        }
+        if (aggregate.secondScore() > 0f
+                && aggregate.bestScore() < aggregate.secondScore() * PROCEDURAL_DOMINANCE_RATIO) {
+            log.debug("[FlowEngine] Procedural router undecided "
+                    + "(best={}, second={}, ratio<{}) — falling back to LLM",
+                    aggregate.bestScore(), aggregate.secondScore(), PROCEDURAL_DOMINANCE_RATIO);
+            return Optional.empty();
+        }
+        return Optional.ofNullable(aggregate.bestId());
+    }
+
+    /**
+     * Buckets candidates by the analyzer selected from each flow's trigger
+     * language (T25/T26), skipping flows with a blank trigger description.
+     *
+     * @since 2026.3.1
+     */
+    private static Map<Analyzer, List<RouterCandidate>> groupCandidatesByAnalyzer(
+            List<RouterCandidate> candidates) {
         Map<Analyzer, List<RouterCandidate>> byAnalyzer = HashMap.newHashMap(2);
         for (RouterCandidate c : candidates) {
             String description = c.flow().getTriggerDescription();
@@ -2018,9 +2044,18 @@ public class TurChatFlowEngineService {
                 byAnalyzer.computeIfAbsent(analyzer, ignored -> new ArrayList<>()).add(c);
             }
         }
-        if (byAnalyzer.isEmpty()) {
-            return Optional.empty();
-        }
+        return byAnalyzer;
+    }
+
+    /**
+     * Runs the MoreLikeThis pass per analyzer bucket and folds the per-bucket
+     * results into a single best / second-best score pair (with the winning
+     * flow id) so the caller can apply the dominance gate.
+     *
+     * @since 2026.3.1
+     */
+    private static ScoredRoute aggregateBucketScores(Map<Analyzer, List<RouterCandidate>> byAnalyzer,
+            String userMessage) {
         float bestScore = 0f;
         float secondScore = 0f;
         String bestId = null;
@@ -2043,17 +2078,7 @@ public class TurChatFlowEngineService {
                 secondScore = scoredRoute.secondScore();
             }
         }
-        if (bestId == null || bestScore <= 0f) {
-            return Optional.empty();
-        }
-        if (secondScore > 0f
-                && bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
-            log.debug("[FlowEngine] Procedural router undecided "
-                    + "(best={}, second={}, ratio<{}) — falling back to LLM",
-                    bestScore, secondScore, PROCEDURAL_DOMINANCE_RATIO);
-            return Optional.empty();
-        }
-        return Optional.ofNullable(bestId);
+        return new ScoredRoute(bestId, bestScore, secondScore);
     }
 
     private record ScoredRoute(String bestId, float bestScore, float secondScore) {

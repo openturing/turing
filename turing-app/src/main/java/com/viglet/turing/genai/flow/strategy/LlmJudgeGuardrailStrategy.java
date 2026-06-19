@@ -437,6 +437,19 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         // ── 3. Refine: prefer the judge's cleaner extraction over the raw reply ──
         refineCapture(node, slot, mayWrite, verdict, variables);
 
+        return gradeAndAdvanceCaptureFirst(ctx, node, state, variables, slot, mode, verdict);
+    }
+
+    /**
+     * Phases 4–5 of {@link #advanceCaptureFirst}: grades confidence into the
+     * parallel {@code <slot>__confidence} slot and applies the mode-specific
+     * advance/stay decision. Returns the reply to surface (a re-prompt redirect
+     * when gated) or {@code null} when the flow advanced.
+     *
+     * @since 2026.3.1
+     */
+    private String gradeAndAdvanceCaptureFirst(AdvanceContext ctx, ChatFlowNode node, TurChatFlowState state,
+            Map<String, String> variables, String slot, TurChatFlowCaptureMode mode, JudgeVerdict verdict) {
         // ── 4. Grade confidence into the parallel slot ──
         String finalValue = slot == null ? null : variables.get(slot);
         boolean valid = slot == null

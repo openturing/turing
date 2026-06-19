@@ -117,134 +117,199 @@ public class TurRagSearchToolService {
         try {
             TurRagContextBuilder.RagInfrastructure infra = ragContextBuilder.buildFromGlobalSettings()
                     .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."));
-            VectorStore vectorStore = infra.vectorStore();
-
-            // Pick the retrieval mode based on the per-agent flags:
-            //   HYBRID (SE)   — bm25Enabled && hybridEnabled && source=SE_INSTANCE
-            //                   && seInstance bound: vector + per-locale Solr/ES
-            //                   core, fused via RRF (T24b production path).
-            //   HYBRID (EMB.) — bm25Enabled && hybridEnabled, embedded Lucene:
-            //                   single in-process index hybrid (T24 base).
-            //   FALLBACK      — bm25Enabled && !hybridEnabled (legacy T19):
-            //                   vector first, BM25 only if vector top-1 < MIN.
-            //   VECTOR        — !bm25Enabled: strict vector, BM25 never runs.
-            boolean useHybrid = bm25Enabled && hybridEnabled;
-            boolean useSeHybrid = useHybrid
-                    && flags.source() == TurRagBm25Source.SE_INSTANCE
-                    && flags.seInstance() != null
-                    && infra.storeInstance() != null;
-            boolean useEmbeddedHybrid = useHybrid
-                    && !useSeHybrid
-                    && vectorStore instanceof TurLuceneVectorStore;
-            List<Document> results;
-            boolean allKeywordOnly = false;
-            if (useSeHybrid) {
-                Locale locale = resolveLocale(toolContext);
-                results = seHybridSearch(query, topK, vectorStore,
-                        infra.storeInstance().getId(), flags.seInstance(), locale);
-                allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
-                        Boolean.TRUE.equals(d.getMetadata()
-                                .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
-                if (log.isDebugEnabled()) {
-                    log.debug("[RAG] SE hybrid search '{}' (locale={}, seInstance={}) returned {} fused result(s); allKeywordOnly={}",
-                            query, locale.toLanguageTag(), flags.seInstance().getId(),
-                            results.size(), allKeywordOnly);
-                }
-            } else if (useEmbeddedHybrid) {
-                TurLuceneVectorStore lucene = (TurLuceneVectorStore) vectorStore;
-                results = lucene.hybridSearch(query, topK, 0.0);
-                allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
-                        Boolean.TRUE.equals(d.getMetadata()
-                                .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
-                log.debug("[RAG] Embedded hybrid search '{}' returned {} fused result(s); allKeywordOnly={}",
-                        query, results.size(), allKeywordOnly);
-            } else {
-                // T19 / §III.3: vector pass first with similarityThreshold=0
-                // so we receive ALL topK hits regardless of score; the
-                // confidence gate moves into application code below.
-                SearchRequest searchRequest = SearchRequest.builder()
-                        .query(query)
-                        .topK(topK)
-                        .similarityThreshold(0.0)
-                        .build();
-                results = vectorStore.similaritySearch(searchRequest);
-                log.debug("[RAG] Vector search '{}' returned {} result(s)", query, results.size());
-
-                if (bm25Enabled && shouldFallbackToBm25(results)
-                        && vectorStore instanceof TurLuceneVectorStore lucene) {
-                    List<Document> bm25Hits = lucene.bm25Fallback(query, topK);
-                    if (!bm25Hits.isEmpty()) {
-                        log.info("[RAG] Vector top-1 < {} for '{}'; BM25 fallback returned {} hit(s)",
-                                MIN_VECTOR_CONFIDENCE, query, bm25Hits.size());
-                        results = bm25Hits;
-                        allKeywordOnly = true;
-                    }
-                } else if (!bm25Enabled && shouldFallbackToBm25(results)) {
-                    log.info("[RAG] Vector top-1 < {} for '{}' but agent has ragBm25Fallback=false "
-                                    + "— returning vector hits as-is",
-                            MIN_VECTOR_CONFIDENCE, query);
-                }
-            }
-            boolean fellBackToBm25 = allKeywordOnly;
-
-            if (results.isEmpty()) {
+            RetrievalResult retrieval =
+                    retrieveDocuments(query, topK, bm25Enabled, hybridEnabled, flags, infra, toolContext);
+            if (retrieval.results().isEmpty()) {
                 return "No relevant documents found in the knowledge base for: " + query;
             }
-
-            StringBuilder sb = new StringBuilder();
-            if (fellBackToBm25) {
-                // The "keyword-only" header is verbatim what the LLM uses to
-                // decide whether to soften its answer ("Based on a keyword
-                // match in the knowledge base..."). Don't paraphrase or
-                // localize without checking the agent's system prompt
-                // language; default English is what the existing prompts
-                // expect.
-                sb.append("⚠️ KEYWORD-ONLY MATCH: the embedding model did not recognize this query; ");
-                sb.append("the documents below were matched by keyword (BM25) instead. ");
-                sb.append("Treat the relevance as approximate and verify against the cited content before quoting.\n\n");
-            }
-            sb.append("Found ").append(results.size()).append(" relevant document(s):\n\n");
-
-            java.util.LinkedHashMap<String, String> fileLinks = new java.util.LinkedHashMap<>();
-
-            // T292 — capture per-chunk provenance into the per-turn collector
-            // (when the chat executor published one). Drained by the streaming
-            // dispatcher into the `sources[]` SSE event after the tool loop.
-            TurRagSourceCollector sourceCollector = resolveSourceCollector(toolContext);
-
-            for (int i = 0; i < results.size(); i++) {
-                Document doc = results.get(i);
-                String objectName = doc.getMetadata().getOrDefault(OBJECT_NAME_FIELD, "").toString();
-                String contentType = doc.getMetadata().getOrDefault("contentType", "").toString();
-
-                String downloadUrl = "/api/asset/download?objectName="
-                        + URLEncoder.encode(objectName, StandardCharsets.UTF_8);
-
-                fileLinks.putIfAbsent(objectName, downloadUrl);
-
-                if (sourceCollector != null) {
-                    sourceCollector.add(TurRagSource.fromDocument(doc));
-                }
-
-                sb.append("--- Document ").append(i + 1).append(" ---\n");
-                sb.append("File: ").append(objectName).append("\n");
-                if (!contentType.isBlank()) {
-                    sb.append("Type: ").append(contentType).append("\n");
-                }
-                sb.append("Content:\n").append(doc.getText()).append("\n\n");
-            }
-
-            sb.append("REFERENCES (copy these markdown links verbatim to your response):\n");
-            for (var entry : fileLinks.entrySet()) {
-                sb.append("- [").append(entry.getKey()).append("](").append(entry.getValue()).append(")\n");
-            }
-
-            return sb.toString();
-
+            return formatResults(query, retrieval.results(), retrieval.fellBackToBm25(), toolContext);
         } catch (Exception e) {
             log.error("[RAG] Search failed for query: {}", query, e);
             return "Error searching knowledge base: " + e.getMessage();
         }
+    }
+
+    /**
+     * Outcome of a retrieval pass: the matched documents and whether the result
+     * set came from a BM25 keyword fallback (which flips the "keyword-only"
+     * header in {@link #formatResults}).
+     *
+     * @since 2026.3.1
+     */
+    private record RetrievalResult(List<Document> results, boolean fellBackToBm25) {
+    }
+
+    /**
+     * Picks the retrieval mode based on the per-agent flags and runs it:
+     * <ul>
+     *   <li>HYBRID (SE) — bm25 + hybrid + source=SE_INSTANCE with a bound
+     *       seInstance and store: vector + per-locale Solr/ES core, fused via RRF.</li>
+     *   <li>HYBRID (EMB.) — bm25 + hybrid over an embedded Lucene index.</li>
+     *   <li>FALLBACK — bm25 + !hybrid (legacy T19): vector first, BM25 only when
+     *       vector top-1 < MIN.</li>
+     *   <li>VECTOR — !bm25: strict vector, BM25 never runs.</li>
+     * </ul>
+     *
+     * @since 2026.3.1
+     */
+    private RetrievalResult retrieveDocuments(String query, int topK, boolean bm25Enabled, boolean hybridEnabled,
+            AgentRagFlags flags, TurRagContextBuilder.RagInfrastructure infra, ToolContext toolContext) {
+        VectorStore vectorStore = infra.vectorStore();
+        boolean useHybrid = bm25Enabled && hybridEnabled;
+        boolean useSeHybrid = useHybrid
+                && flags.source() == TurRagBm25Source.SE_INSTANCE
+                && flags.seInstance() != null
+                && infra.storeInstance() != null;
+        boolean useEmbeddedHybrid = useHybrid
+                && !useSeHybrid
+                && vectorStore instanceof TurLuceneVectorStore;
+        if (useSeHybrid) {
+            return seHybridRetrieval(query, topK, vectorStore, infra, flags, toolContext);
+        }
+        if (useEmbeddedHybrid) {
+            return embeddedHybridRetrieval(query, topK, vectorStore);
+        }
+        return vectorRetrieval(query, topK, bm25Enabled, vectorStore);
+    }
+
+    /**
+     * SE-backed hybrid retrieval (T24b production path).
+     *
+     * @since 2026.3.1
+     */
+    private RetrievalResult seHybridRetrieval(String query, int topK, VectorStore vectorStore,
+            TurRagContextBuilder.RagInfrastructure infra, AgentRagFlags flags, ToolContext toolContext) {
+        Locale locale = resolveLocale(toolContext);
+        List<Document> results = seHybridSearch(query, topK, vectorStore,
+                infra.storeInstance().getId(), flags.seInstance(), locale);
+        boolean allKeywordOnly = isAllKeywordOnly(results);
+        if (log.isDebugEnabled()) {
+            log.debug("[RAG] SE hybrid search '{}' (locale={}, seInstance={}) returned {} fused result(s); allKeywordOnly={}",
+                    query, locale.toLanguageTag(), flags.seInstance().getId(),
+                    results.size(), allKeywordOnly);
+        }
+        return new RetrievalResult(results, allKeywordOnly);
+    }
+
+    /**
+     * Embedded-Lucene hybrid retrieval (T24 base).
+     *
+     * @since 2026.3.1
+     */
+    private RetrievalResult embeddedHybridRetrieval(String query, int topK, VectorStore vectorStore) {
+        TurLuceneVectorStore lucene = (TurLuceneVectorStore) vectorStore;
+        List<Document> results = lucene.hybridSearch(query, topK, 0.0);
+        boolean allKeywordOnly = isAllKeywordOnly(results);
+        log.debug("[RAG] Embedded hybrid search '{}' returned {} fused result(s); allKeywordOnly={}",
+                query, results.size(), allKeywordOnly);
+        return new RetrievalResult(results, allKeywordOnly);
+    }
+
+    /**
+     * Strict vector pass with optional legacy (T19) BM25 fallback when the
+     * vector top-1 score is below {@link #MIN_VECTOR_CONFIDENCE}.
+     *
+     * @since 2026.3.1
+     */
+    private RetrievalResult vectorRetrieval(String query, int topK, boolean bm25Enabled, VectorStore vectorStore) {
+        // T19 / §III.3: vector pass first with similarityThreshold=0 so we
+        // receive ALL topK hits regardless of score; the confidence gate
+        // moves into application code below.
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .similarityThreshold(0.0)
+                .build();
+        List<Document> results = vectorStore.similaritySearch(searchRequest);
+        log.debug("[RAG] Vector search '{}' returned {} result(s)", query, results.size());
+
+        if (bm25Enabled && shouldFallbackToBm25(results)
+                && vectorStore instanceof TurLuceneVectorStore lucene) {
+            List<Document> bm25Hits = lucene.bm25Fallback(query, topK);
+            if (!bm25Hits.isEmpty()) {
+                log.info("[RAG] Vector top-1 < {} for '{}'; BM25 fallback returned {} hit(s)",
+                        MIN_VECTOR_CONFIDENCE, query, bm25Hits.size());
+                return new RetrievalResult(bm25Hits, true);
+            }
+        } else if (!bm25Enabled && shouldFallbackToBm25(results)) {
+            log.info("[RAG] Vector top-1 < {} for '{}' but agent has ragBm25Fallback=false "
+                            + "— returning vector hits as-is",
+                    MIN_VECTOR_CONFIDENCE, query);
+        }
+        return new RetrievalResult(results, false);
+    }
+
+    /**
+     * True when every hit carries the keyword-only fallback marker (an empty
+     * list is not "all keyword-only").
+     *
+     * @since 2026.3.1
+     */
+    private static boolean isAllKeywordOnly(List<Document> results) {
+        return !results.isEmpty() && results.stream().allMatch(d ->
+                Boolean.TRUE.equals(d.getMetadata()
+                        .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
+    }
+
+    /**
+     * Renders the matched documents into the tool-result text the LLM reads,
+     * including the keyword-only header (when applicable), per-document blocks,
+     * and the verbatim REFERENCES link list. Side-effect: drains each hit into
+     * the per-turn {@link TurRagSourceCollector} when one is published.
+     *
+     * @since 2026.3.1
+     */
+    private String formatResults(String query, List<Document> results, boolean fellBackToBm25,
+            ToolContext toolContext) {
+        StringBuilder sb = new StringBuilder();
+        if (fellBackToBm25) {
+            // The "keyword-only" header is verbatim what the LLM uses to
+            // decide whether to soften its answer ("Based on a keyword
+            // match in the knowledge base..."). Don't paraphrase or
+            // localize without checking the agent's system prompt
+            // language; default English is what the existing prompts
+            // expect.
+            sb.append("⚠️ KEYWORD-ONLY MATCH: the embedding model did not recognize this query; ");
+            sb.append("the documents below were matched by keyword (BM25) instead. ");
+            sb.append("Treat the relevance as approximate and verify against the cited content before quoting.\n\n");
+        }
+        sb.append("Found ").append(results.size()).append(" relevant document(s):\n\n");
+
+        java.util.LinkedHashMap<String, String> fileLinks = new java.util.LinkedHashMap<>();
+
+        // T292 — capture per-chunk provenance into the per-turn collector
+        // (when the chat executor published one). Drained by the streaming
+        // dispatcher into the `sources[]` SSE event after the tool loop.
+        TurRagSourceCollector sourceCollector = resolveSourceCollector(toolContext);
+
+        for (int i = 0; i < results.size(); i++) {
+            Document doc = results.get(i);
+            String objectName = doc.getMetadata().getOrDefault(OBJECT_NAME_FIELD, "").toString();
+            String contentType = doc.getMetadata().getOrDefault("contentType", "").toString();
+
+            String downloadUrl = "/api/asset/download?objectName="
+                    + URLEncoder.encode(objectName, StandardCharsets.UTF_8);
+
+            fileLinks.putIfAbsent(objectName, downloadUrl);
+
+            if (sourceCollector != null) {
+                sourceCollector.add(TurRagSource.fromDocument(doc));
+            }
+
+            sb.append("--- Document ").append(i + 1).append(" ---\n");
+            sb.append("File: ").append(objectName).append("\n");
+            if (!contentType.isBlank()) {
+                sb.append("Type: ").append(contentType).append("\n");
+            }
+            sb.append("Content:\n").append(doc.getText()).append("\n\n");
+        }
+
+        sb.append("REFERENCES (copy these markdown links verbatim to your response):\n");
+        for (var entry : fileLinks.entrySet()) {
+            sb.append("- [").append(entry.getKey()).append("](").append(entry.getValue()).append(")\n");
+        }
+
+        return sb.toString();
     }
 
     /**
