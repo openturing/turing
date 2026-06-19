@@ -94,35 +94,10 @@ public class TurGitBrowseService {
                 treeWalk.setRecursive(false);
 
                 // Navigate to subdirectory if path specified
-                if (treePath != null && !treePath.isEmpty()) {
-                    treeWalk.setRecursive(false);
-                    boolean found = false;
-                    // Walk to the target path
-                    String[] parts = treePath.split("/");
-                    for (String part : parts) {
-                        while (treeWalk.next()) {
-                            if (treeWalk.getNameString().equals(part)
-                                    && treeWalk.isSubtree()) {
-                                treeWalk.enterSubtree();
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) return entries;
-                        found = false;
-                    }
+                if (!navigateToSubtree(treeWalk, treePath)) {
+                    return entries;
                 }
-
-                while (treeWalk.next()) {
-                    String name = treeWalk.getNameString();
-                    String entryPath = treeWalk.getPathString();
-                    if (treeWalk.isSubtree()) {
-                        entries.add(new GitTreeEntry(name, entryPath, "tree", 0));
-                    } else {
-                        ObjectLoader loader = repo.open(treeWalk.getObjectId(0));
-                        entries.add(new GitTreeEntry(name, entryPath, "blob", loader.getSize()));
-                    }
-                }
+                entries = collectTreeEntries(treeWalk, repo);
             }
         } catch (IOException e) {
             log.error("Failed to list tree for repo '{}' ref '{}' path '{}'", repoName, ref, treePath, e);
@@ -132,6 +107,48 @@ public class TurGitBrowseService {
             if (a.type().equals(b.type())) return a.name().compareToIgnoreCase(b.name());
             return "tree".equals(a.type()) ? -1 : 1;
         });
+        return entries;
+    }
+
+    /**
+     * Advances {@code treeWalk} into the subtree named by {@code treePath}
+     * (slash-separated). Returns true when reached (or the path is empty), false
+     * when any segment is missing.
+     */
+    private boolean navigateToSubtree(TreeWalk treeWalk, String treePath) throws IOException {
+        if (treePath == null || treePath.isEmpty()) {
+            return true;
+        }
+        for (String part : treePath.split("/")) {
+            boolean found = false;
+            while (treeWalk.next()) {
+                if (treeWalk.getNameString().equals(part) && treeWalk.isSubtree()) {
+                    treeWalk.enterSubtree();
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Collects the entries at the tree walk's current level (subtrees + blobs). */
+    private List<GitTreeEntry> collectTreeEntries(TreeWalk treeWalk, Repository repo)
+            throws IOException {
+        List<GitTreeEntry> entries = new ArrayList<>();
+        while (treeWalk.next()) {
+            String name = treeWalk.getNameString();
+            String entryPath = treeWalk.getPathString();
+            if (treeWalk.isSubtree()) {
+                entries.add(new GitTreeEntry(name, entryPath, "tree", 0));
+            } else {
+                ObjectLoader loader = repo.open(treeWalk.getObjectId(0));
+                entries.add(new GitTreeEntry(name, entryPath, "blob", loader.getSize()));
+            }
+        }
         return entries;
     }
 

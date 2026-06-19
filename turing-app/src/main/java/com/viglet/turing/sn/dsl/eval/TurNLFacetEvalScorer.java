@@ -72,18 +72,43 @@ public class TurNLFacetEvalScorer {
         }
 
         Collected collected = collect(actual);
+        Set<String> declared = declaredFieldNames(schema);
+
+        List<String> findings = new ArrayList<>();
+        int[] tally = scoreExpectations(expectation, collected, findings);
+        int expectedCount = tally[0];
+        int matchedCount = tally[1];
+
+        List<String> ungrounded = findUngroundedFields(collected, declared);
+        if (!ungrounded.isEmpty()) {
+            findings.add("ungrounded fields (not in schema): " + ungrounded);
+        }
+
+        double score = expectedCount == 0 ? 1d : (double) matchedCount / expectedCount;
+        boolean passed = matchedCount == expectedCount && ungrounded.isEmpty();
+        return new CaseResult(caseName, passed, score, findings, ungrounded, null);
+    }
+
+    /** Lower-cased set of the schema's declared field names. */
+    private Set<String> declaredFieldNames(List<TurNLFacetField> schema) {
         Set<String> declared = new LinkedHashSet<>();
         for (TurNLFacetField f : schema) {
             if (f != null && f.name() != null) {
                 declared.add(f.name().toLowerCase(Locale.ROOT));
             }
         }
+        return declared;
+    }
 
-        List<String> findings = new ArrayList<>();
+    /**
+     * Scores the expected filters, ranges and sort against {@code collected},
+     * appending a finding per miss. Returns {@code [expectedCount, matchedCount]}.
+     */
+    private int[] scoreExpectations(TurNLFacetExpectation expectation, Collected collected,
+            List<String> findings) {
         int expectedCount = 0;
         int matchedCount = 0;
 
-        // ── Filters ─────────────────────────────────────────────
         for (ExpectedFilter ef : expectation.filters()) {
             expectedCount++;
             if (filterMatches(ef, collected)) {
@@ -93,7 +118,6 @@ public class TurNLFacetEvalScorer {
             }
         }
 
-        // ── Ranges ──────────────────────────────────────────────
         for (ExpectedRange er : expectation.ranges()) {
             expectedCount++;
             if (rangeMatches(er, collected)) {
@@ -103,7 +127,6 @@ public class TurNLFacetEvalScorer {
             }
         }
 
-        // ── Sort ────────────────────────────────────────────────
         ExpectedSort es = expectation.sort();
         if (es != null && es.field() != null) {
             expectedCount++;
@@ -113,8 +136,11 @@ public class TurNLFacetEvalScorer {
                 findings.add("missing sort %s %s".formatted(es.field(), es.order()));
             }
         }
+        return new int[] { expectedCount, matchedCount };
+    }
 
-        // ── Grounding: any referenced field outside the schema ──
+    /** Referenced fields that are neither special nor declared in the schema. */
+    private List<String> findUngroundedFields(Collected collected, Set<String> declared) {
         List<String> ungrounded = new ArrayList<>();
         for (String field : collected.referencedFields) {
             String lower = field.toLowerCase(Locale.ROOT);
@@ -122,13 +148,7 @@ public class TurNLFacetEvalScorer {
                 ungrounded.add(field);
             }
         }
-        if (!ungrounded.isEmpty()) {
-            findings.add("ungrounded fields (not in schema): " + ungrounded);
-        }
-
-        double score = expectedCount == 0 ? 1d : (double) matchedCount / expectedCount;
-        boolean passed = matchedCount == expectedCount && ungrounded.isEmpty();
-        return new CaseResult(caseName, passed, score, findings, ungrounded, null);
+        return ungrounded;
     }
 
     // ─────────────────────────── Matching ───────────────────────────
