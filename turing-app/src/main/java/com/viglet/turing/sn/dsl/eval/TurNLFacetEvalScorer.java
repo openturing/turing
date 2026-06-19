@@ -224,7 +224,7 @@ public class TurNLFacetEvalScorer {
             return;
         }
         switch (q) {
-            case TurDslQuery.Term t -> addTerm(c, t.field(), String.valueOf(t.value()));
+            case TurDslQuery.Term(String field, Object value) -> addTerm(c, field, String.valueOf(value));
             case TurDslQuery.Terms t when t.values() != null -> {
                 for (Object v : t.values()) {
                     addTerm(c, t.field(), String.valueOf(v));
@@ -237,13 +237,13 @@ public class TurNLFacetEvalScorer {
             case TurDslQuery.Match m -> addMatch(c, m.field(), m.query());
             case TurDslQuery.MatchPhrase m -> addMatch(c, m.field(), m.query());
             case TurDslQuery.MatchPhrasePrefix m -> addMatch(c, m.field(), m.query());
-            case TurDslQuery.MatchBoolPrefix m -> addMatch(c, m.field(), m.query());
-            case TurDslQuery.Wildcard w -> addMatch(c, w.field(), w.value());
-            case TurDslQuery.Prefix p -> addMatch(c, p.field(), p.value());
+            case TurDslQuery.MatchBoolPrefix(String field, String query) -> addMatch(c, field, query);
+            case TurDslQuery.Wildcard(String field, String value) -> addMatch(c, field, value);
+            case TurDslQuery.Prefix(String field, String value) -> addMatch(c, field, value);
             case TurDslQuery.Fuzzy f -> addMatch(c, f.field(), f.value());
             case TurDslQuery.MultiMatch m when m.fields() != null ->
                 m.fields().forEach(f -> addMatch(c, stripBoost(f), m.query()));
-            case TurDslQuery.Exists e -> c.referencedFields.add(e.field());
+            case TurDslQuery.Exists(String field) -> c.referencedFields.add(field);
             case TurDslQuery.Bool b -> {
                 walkAll(b.must(), c);
                 walkAll(b.should(), c);

@@ -826,10 +826,10 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                     result.put(entry.getKey(), buildLuceneTermsAgg(allDocs, searcher, termsAgg));
                 } else if (isNumericAgg(agg)) {
                     result.put(entry.getKey(), buildLuceneNumericAgg(allDocs, searcher, agg));
-                } else if (agg instanceof TurDslAggregation.StatsAgg statsAgg) {
-                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, statsAgg.field()));
-                } else if (agg instanceof TurDslAggregation.ExtendedStatsAgg esAgg) {
-                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, esAgg.field()));
+                } else if (agg instanceof TurDslAggregation.StatsAgg(String field)) {
+                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, field));
+                } else if (agg instanceof TurDslAggregation.ExtendedStatsAgg(String field)) {
+                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, field));
                 } else if (agg instanceof TurDslAggregation.PercentilesAgg pAgg) {
                     result.put(entry.getKey(), buildLucenePercentilesAgg(allDocs, searcher, pAgg));
                 } else if (agg instanceof TurDslAggregation.FiltersAgg fAgg) {
@@ -884,11 +884,11 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
     private TurDslSearchResponse.AggregationResult buildLuceneNumericAgg(
             TopDocs allDocs, IndexSearcher searcher, TurDslAggregation agg) throws IOException {
         String field = switch (agg) {
-            case TurDslAggregation.AvgAgg a -> a.field();
-            case TurDslAggregation.SumAgg a -> a.field();
-            case TurDslAggregation.MinAgg a -> a.field();
-            case TurDslAggregation.MaxAgg a -> a.field();
-            case TurDslAggregation.ValueCountAgg a -> a.field();
+            case TurDslAggregation.AvgAgg(String avgField) -> avgField;
+            case TurDslAggregation.SumAgg(String sumField) -> sumField;
+            case TurDslAggregation.MinAgg(String minField) -> minField;
+            case TurDslAggregation.MaxAgg(String maxField) -> maxField;
+            case TurDslAggregation.ValueCountAgg(String vcField) -> vcField;
             case TurDslAggregation.CardinalityAgg a -> a.field();
             default -> null;
         };

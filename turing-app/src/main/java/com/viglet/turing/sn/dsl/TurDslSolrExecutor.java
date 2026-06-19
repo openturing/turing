@@ -367,7 +367,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             case TurDslQuery.SpanTerm(var field, var value) ->
                     S_S_2.formatted(field, escapeQuotes(value));
             case TurDslQuery.SpanNear q -> clauseSpanJoin(q.clauses(), " AND ");
-            case TurDslQuery.SpanOr q -> clauseSpanJoin(q.clauses(), " OR ");
+            case TurDslQuery.SpanOr(var clauses) -> clauseSpanJoin(clauses, " OR ");
             case TurDslQuery.SpanNot(var include, var exclude) ->
                     "+(%s) -(%s)".formatted(translateClause(include), translateClause(exclude));
             case TurDslQuery.SpanFirst(var match, var end) -> translateClause(match);
@@ -593,32 +593,32 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 case TurDslAggregation.RangeAgg agg -> applyRangeFacet(agg, solrQuery);
                 case TurDslAggregation.DateHistogramAgg dh ->
                         log.warn("date_histogram aggregation is not yet supported in Solr DSL translator");
-                case TurDslAggregation.AvgAgg a ->
+                case TurDslAggregation.AvgAgg(String field) ->
                         solrQuery.setParam(JSON_FACET,
-                                "{%s:{type:func,func:\"avg(%s)\"}}".formatted(entry.getKey(), a.field()));
-                case TurDslAggregation.SumAgg a ->
+                                "{%s:{type:func,func:\"avg(%s)\"}}".formatted(entry.getKey(), field));
+                case TurDslAggregation.SumAgg(String field) ->
                         solrQuery.setParam(JSON_FACET,
-                                "{%s:{type:func,func:\"sum(%s)\"}}".formatted(entry.getKey(), a.field()));
-                case TurDslAggregation.MinAgg a ->
+                                "{%s:{type:func,func:\"sum(%s)\"}}".formatted(entry.getKey(), field));
+                case TurDslAggregation.MinAgg(String field) ->
                         solrQuery.setParam(JSON_FACET,
-                                "{%s:{type:func,func:\"min(%s)\"}}".formatted(entry.getKey(), a.field()));
-                case TurDslAggregation.MaxAgg a ->
+                                "{%s:{type:func,func:\"min(%s)\"}}".formatted(entry.getKey(), field));
+                case TurDslAggregation.MaxAgg(String field) ->
                         solrQuery.setParam(JSON_FACET,
-                                "{%s:{type:func,func:\"max(%s)\"}}".formatted(entry.getKey(), a.field()));
+                                "{%s:{type:func,func:\"max(%s)\"}}".formatted(entry.getKey(), field));
                 case TurDslAggregation.CardinalityAgg a ->
                         solrQuery.setParam(JSON_FACET,
                                 "{%s:{type:func,func:\"unique(%s)\"}}".formatted(entry.getKey(), a.field()));
-                case TurDslAggregation.ValueCountAgg a ->
-                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.ValueCountAgg(String field) ->
+                        solrQuery.addGetFieldStatistics(field);
                 case TurDslAggregation.HistogramAgg h ->
                         log.warn("histogram aggregation requires Solr JSON facet API — not yet implemented");
-                case TurDslAggregation.FilterAgg f ->
-                        solrQuery.addFacetQuery(translateClause(f.filter()));
+                case TurDslAggregation.FilterAgg(var filter) ->
+                        solrQuery.addFacetQuery(translateClause(filter));
                 // (single-clause FilterAgg above; multi-clause FiltersAgg below)
-                case TurDslAggregation.StatsAgg a ->
-                        solrQuery.addGetFieldStatistics(a.field());
-                case TurDslAggregation.ExtendedStatsAgg a ->
-                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.StatsAgg(String field) ->
+                        solrQuery.addGetFieldStatistics(field);
+                case TurDslAggregation.ExtendedStatsAgg(String field) ->
+                        solrQuery.addGetFieldStatistics(field);
                 case TurDslAggregation.PercentilesAgg a ->
                         solrQuery.addGetFieldStatistics(a.field());
                 case TurDslAggregation.TopHitsAgg th ->

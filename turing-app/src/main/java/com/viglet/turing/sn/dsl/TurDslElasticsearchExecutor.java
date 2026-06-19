@@ -1298,17 +1298,17 @@ public class TurDslElasticsearchExecutor
     }
 
     private void applyParentAggType(Aggregation.Builder a, TurDslAggregation parent) {
-        if (parent instanceof TurDslAggregation.TermsAgg ta) {
-            a.terms(t -> { t.field(ta.field()); if (ta.size() != null) { t.size(ta.size()); } return t; });
+        if (parent instanceof TurDslAggregation.TermsAgg(String field, Integer size)) {
+            a.terms(t -> { t.field(field); if (size != null) { t.size(size); } return t; });
         } else if (parent instanceof TurDslAggregation.DateHistogramAgg dha) {
             a.dateHistogram(dh -> { dh.field(dha.field()); return dh; });
         } else if (parent instanceof TurDslAggregation.HistogramAgg ha) {
             a.histogram(h -> { h.field(ha.field()); if (ha.interval() != null) { h.interval(ha.interval()); } return h; });
-        } else if (parent instanceof TurDslAggregation.FilterAgg fa) {
-            a.filter(translateQuery(fa.filter()));
-        } else if (parent instanceof TurDslAggregation.FiltersAgg fla) {
+        } else if (parent instanceof TurDslAggregation.FilterAgg(var filter)) {
+            a.filter(translateQuery(filter));
+        } else if (parent instanceof TurDslAggregation.FiltersAgg(var filters)) {
             Map<String, Query> ef = new LinkedHashMap<>();
-            fla.filters().forEach((k, v) -> ef.put(k, translateQuery(v)));
+            filters.forEach((k, v) -> ef.put(k, translateQuery(v)));
             a.filters(f -> { f.filters(fb -> fb.keyed(ef)); return f; });
         } else if (parent instanceof TurDslAggregation.RangeAgg ra) {
             a.range(r -> { r.field(ra.field()); return r; });

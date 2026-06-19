@@ -720,8 +720,8 @@ public class TurLuceneVectorStore implements VectorStore {
         if (operand instanceof Filter.Expression expr) {
             return expr;
         }
-        if (operand instanceof Filter.Group group) {
-            return group.content();
+        if (operand instanceof Filter.Group(var content)) {
+            return content;
         }
         return null;
     }
@@ -831,15 +831,15 @@ public class TurLuceneVectorStore implements VectorStore {
     }
 
     private String extractKey(Filter.Operand operand) {
-        if (operand instanceof Filter.Key key) {
-            return key.key();
+        if (operand instanceof Filter.Key(var key)) {
+            return key;
         }
         return null;
     }
 
     private Object extractValue(Filter.Operand operand) {
-        if (operand instanceof Filter.Value value) {
-            return value.value();
+        if (operand instanceof Filter.Value(var value)) {
+            return value;
         }
         return null;
     }

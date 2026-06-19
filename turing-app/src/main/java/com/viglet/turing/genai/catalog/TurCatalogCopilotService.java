@@ -404,8 +404,8 @@ public class TurCatalogCopilotService {
                 appendAll(b.filter(), parts);
                 appendAll(b.must(), parts);
             }
-            case TurDslQuery.Term t -> parts.add(t.field() + "=" + t.value());
-            case TurDslQuery.Terms t -> parts.add(t.field() + " in " + t.values());
+            case TurDslQuery.Term(String field, Object value) -> parts.add(field + "=" + value);
+            case TurDslQuery.Terms(String field, var values) -> parts.add(field + " in " + values);
             case TurDslQuery.Range r -> parts.add(renderRange(r));
             case TurDslQuery.Match m when !TurSNFieldName.DEFAULT.equals(m.field()) ->
                 parts.add(m.field() + "~\"" + m.query() + "\"");
