@@ -749,12 +749,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
                 if (agg instanceof TurDslAggregation.TermsAgg termsAgg) {
                     result.put(entry.getKey(), buildLuceneTermsAgg(allDocs, searcher, termsAgg));
-                } else if (agg instanceof TurDslAggregation.AvgAgg
-                        || agg instanceof TurDslAggregation.SumAgg
-                        || agg instanceof TurDslAggregation.MinAgg
-                        || agg instanceof TurDslAggregation.MaxAgg
-                        || agg instanceof TurDslAggregation.ValueCountAgg
-                        || agg instanceof TurDslAggregation.CardinalityAgg) {
+                } else if (isNumericAgg(agg)) {
                     result.put(entry.getKey(), buildLuceneNumericAgg(allDocs, searcher, agg));
                 } else if (agg instanceof TurDslAggregation.StatsAgg statsAgg) {
                     result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, statsAgg.field()));
@@ -780,6 +775,16 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             log.warn("Error building Lucene aggregations: {}", e.getMessage());
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /** True when {@code agg} is one of the single-value numeric aggregations. */
+    private static boolean isNumericAgg(TurDslAggregation agg) {
+        return agg instanceof TurDslAggregation.AvgAgg
+                || agg instanceof TurDslAggregation.SumAgg
+                || agg instanceof TurDslAggregation.MinAgg
+                || agg instanceof TurDslAggregation.MaxAgg
+                || agg instanceof TurDslAggregation.ValueCountAgg
+                || agg instanceof TurDslAggregation.CardinalityAgg;
     }
 
     private TurDslSearchResponse.AggregationResult buildLuceneTermsAgg(

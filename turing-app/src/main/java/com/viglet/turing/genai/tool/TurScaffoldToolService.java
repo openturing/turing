@@ -10,6 +10,8 @@
 package com.viglet.turing.genai.tool;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,22 +92,23 @@ public class TurScaffoldToolService {
         int min = minLength <= 0 ? DEFAULT_QUOTE_MIN_LENGTH : minLength;
         String needle = term == null ? "" : term.strip().toLowerCase();
 
-        String bestWithTerm = null;
-        String longestOverall = null;
-        for (String raw : text.split("(?<=[.!?])\\s+")) {
-            String sentence = raw.strip();
-            if (sentence.isEmpty()) {
-                continue;
-            }
-            if (longestOverall == null || sentence.length() > longestOverall.length()) {
-                longestOverall = sentence;
-            }
-            boolean hasTerm = !needle.isEmpty() && sentence.toLowerCase().contains(needle);
-            if (hasTerm && sentence.length() >= min
-                    && (bestWithTerm == null || sentence.length() > bestWithTerm.length())) {
-                bestWithTerm = sentence;
-            }
-        }
+        // Two passes over the sentences: the longest overall (fallback) and the
+        // longest that mentions the term and clears the min-length bar.
+        // Comparator.maxBy keeps the earliest of equal-length sentences, matching
+        // the original strict-greater-than loop's tie-break.
+        List<String> sentences = Arrays.stream(text.split("(?<=[.!?])\\s+"))
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        Comparator<String> byLength = Comparator.comparingInt(String::length);
+        String longestOverall = sentences.stream().max(byLength).orElse(null);
+        String bestWithTerm = needle.isEmpty() ? null
+                : sentences.stream()
+                        .filter(s -> s.length() >= min && s.toLowerCase().contains(needle))
+                        .max(byLength)
+                        .orElse(null);
+
         String longestFallback = longestOverall == null ? "" : longestOverall;
         return bestWithTerm != null ? bestWithTerm : longestFallback;
     }
