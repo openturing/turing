@@ -197,12 +197,7 @@ public class TurToolPreFilterService {
 
         // Map names → original callbacks so we can rebuild the result in
         // the requested order without scanning the array N times.
-        Map<String, ToolCallback> byName = new LinkedHashMap<>();
-        for (ToolCallback cb : callbacks) {
-            String name = safeName(cb);
-            if (name == null) continue;
-            byName.putIfAbsent(name, cb);
-        }
+        Map<String, ToolCallback> byName = indexByName(callbacks);
         if (byName.size() <= topK) {
             recordObservation(callbacks.length, callbacks.length, start,
                     TurMeterNames.REASON_CAP_COVERS_POOL);
@@ -212,6 +207,35 @@ public class TurToolPreFilterService {
         List<String> rankedSurvivors = rankByBm25(byName, protectedNames, userMessage,
                 quotaForRanked);
 
+        List<ToolCallback> result = buildOrderedResult(callbacks, byName, rankedSurvivors,
+                protectedNames, topK);
+        if (log.isDebugEnabled()) {
+            log.debug("[ToolPreFilter] {} → {} tools (protected={}, ranked={}) for msg=\"{}\"",
+                    callbacks.length, result.size(), protectedNames.size(),
+                    rankedSurvivors.size(), truncate(userMessage, 60));
+        } else {
+            log.info("[ToolPreFilter] {} → {} tools (top-K={}, threshold={})",
+                    callbacks.length, result.size(), topK, minThreshold);
+        }
+        recordObservation(callbacks.length, result.size(), start, TurMeterNames.REASON_ENGAGED);
+        return result.toArray(new ToolCallback[0]);
+    }
+
+    /** Indexes callbacks by tool name (first wins), skipping nameless ones. */
+    private Map<String, ToolCallback> indexByName(ToolCallback[] callbacks) {
+        Map<String, ToolCallback> byName = new LinkedHashMap<>();
+        for (ToolCallback cb : callbacks) {
+            String name = safeName(cb);
+            if (name == null) continue;
+            byName.putIfAbsent(name, cb);
+        }
+        return byName;
+    }
+
+    /** Assembles the survivor list: protected tools (original order) then ranked survivors (score order). */
+    private List<ToolCallback> buildOrderedResult(ToolCallback[] callbacks,
+            Map<String, ToolCallback> byName, List<String> rankedSurvivors,
+            Set<String> protectedNames, int topK) {
         List<ToolCallback> result = new ArrayList<>(topK + protectedNames.size());
         Set<String> emitted = new HashSet<>();
         // 1) protected, in original order
@@ -228,16 +252,7 @@ public class TurToolPreFilterService {
                 if (cb != null) result.add(cb);
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("[ToolPreFilter] {} → {} tools (protected={}, ranked={}) for msg=\"{}\"",
-                    callbacks.length, result.size(), protectedNames.size(),
-                    rankedSurvivors.size(), truncate(userMessage, 60));
-        } else {
-            log.info("[ToolPreFilter] {} → {} tools (top-K={}, threshold={})",
-                    callbacks.length, result.size(), topK, minThreshold);
-        }
-        recordObservation(callbacks.length, result.size(), start, TurMeterNames.REASON_ENGAGED);
-        return result.toArray(new ToolCallback[0]);
+        return result;
     }
 
     private void recordObservation(int input, int output, long startMillis, String reason) {

@@ -159,15 +159,7 @@ public class TurCustomToolAgentHelper {
 
         TurLLMInstance llm = resolveLlm(target, opts);
         if (llm == null) {
-            if (target.getLlmInstances() == null || target.getLlmInstances().isEmpty()) {
-                return "[agent.invoke: agent has no LLM configured]";
-            }
-            // The opts.llmInstanceId either didn't resolve or wasn't allowed.
-            Object requested = opts == null ? null : opts.get("llmInstanceId");
-            if (requested != null) {
-                return "[agent.invoke: llm not allowed for agent: " + requested + "]";
-            }
-            return "[agent.invoke: llm not found]";
+            return llmNotResolvedMessage(target, opts);
         }
 
         long timeoutMs = resolveTimeoutMs(opts);
@@ -181,6 +173,25 @@ public class TurCustomToolAgentHelper {
                 ? message
                 : "[__parentConversationId=" + parentConversationId + "]\n" + message;
 
+        return runChildAgent(target, llm, wireMessage, childConversationId, timeoutMs, agentId);
+    }
+
+    /** Diagnostic message for why {@code resolveLlm} returned null (no LLM, or a disallowed one). */
+    private String llmNotResolvedMessage(TurAIAgent target, Map<String, ?> opts) {
+        if (target.getLlmInstances() == null || target.getLlmInstances().isEmpty()) {
+            return "[agent.invoke: agent has no LLM configured]";
+        }
+        // The opts.llmInstanceId either didn't resolve or wasn't allowed.
+        Object requested = opts == null ? null : opts.get("llmInstanceId");
+        if (requested != null) {
+            return "[agent.invoke: llm not allowed for agent: " + requested + "]";
+        }
+        return "[agent.invoke: llm not found]";
+    }
+
+    /** Runs the child agent's chat to completion (bounded by {@code timeoutMs}) and returns its text. */
+    private String runChildAgent(TurAIAgent target, TurLLMInstance llm, String wireMessage,
+            String childConversationId, long timeoutMs, String agentId) {
         var history = List.of(new TurAgentChatExecutor.ChatMessageItem("user", wireMessage));
 
         log.info("[agent.invoke] depth={} target={} llm={} childConv={} parentConv={}",
