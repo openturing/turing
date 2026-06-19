@@ -510,7 +510,7 @@ public class TurSNSiteContentExchangeService {
                 f.get();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(ie);
+                throw new IllegalStateException("Interrupted while draining RAG reindex futures", ie);
             } catch (ExecutionException ee) {
                 log.warn("RAG reindex worker error: {}", ee.getCause() == null
                         ? ee.getMessage() : ee.getCause().getMessage());

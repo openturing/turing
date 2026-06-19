@@ -16,6 +16,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -232,7 +233,7 @@ public class TurMarketplaceAPI {
         }
     }
 
-    private byte[] downloadUrl(String url) throws Exception {
+    private byte[] downloadUrl(String url) throws IOException, InterruptedException {
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -241,13 +242,13 @@ public class TurMarketplaceAPI {
                     .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() != 200) {
-                throw new RuntimeException("HTTP " + response.statusCode());
+                throw new IOException("HTTP " + response.statusCode());
             }
             return response.body();
         }
     }
 
-    private byte[] downloadZip(String url) throws Exception {
+    private byte[] downloadZip(String url) throws IOException, InterruptedException {
         return downloadUrl(url);
     }
 }
