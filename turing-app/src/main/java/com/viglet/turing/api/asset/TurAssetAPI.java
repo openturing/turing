@@ -87,7 +87,7 @@ public class TurAssetAPI {
 				objectName,
 				stat.size(),
 				stat.contentType(),
-				stat.lastModified() != null ? stat.lastModified().toString() : "",
+				stat.lastModified() != null ? stat.lastModified() : "",
 				false);
 	}
 
