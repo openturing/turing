@@ -145,7 +145,7 @@ public class TurLlmManifestDeriver implements VigletManifestDeriver {
         try {
             ChatModel chatModel = createChatModel(llm);
             List<Message> messages = List.of(
-                    new SystemMessage(systemPrompt()),
+                    new SystemMessage(SYSTEM_PROMPT),
                     new UserMessage(userPrompt(observations, request.documents())));
             String reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
             return merge(baseline, parseReply(reply));
@@ -202,8 +202,7 @@ public class TurLlmManifestDeriver implements VigletManifestDeriver {
 
     // ─────────────────────────── Prompt ───────────────────────────
 
-    private String systemPrompt() {
-        return """
+    private static final String SYSTEM_PROMPT = """
                 You design a search index schema (a "manifest") for a structured \
                 catalog source. You are given OBSERVATIONS computed from a sample of \
                 the source's documents and a few RAW example documents. Propose a \
@@ -231,7 +230,6 @@ public class TurLlmManifestDeriver implements VigletManifestDeriver {
                   document (high coverage).
                 - Keep "description" short and factual; omit it if unsure.
                 """;
-    }
 
     private String userPrompt(List<VigletManifestFieldObservation> observations,
             List<Map<String, Object>> documents) {
