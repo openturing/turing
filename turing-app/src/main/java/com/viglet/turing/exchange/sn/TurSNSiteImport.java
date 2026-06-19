@@ -645,22 +645,34 @@ public class TurSNSiteImport {
 		if (turSNSiteExchange.getTurSNSiteFieldExts() != null) {
 			for (TurSNSiteFieldExt fieldExt : turSNSiteExchange.getTurSNSiteFieldExts()) {
 				fieldExt.setTurSNSite(turSNSite);
-				if (fieldExt.getFacetLocales() != null) {
-					for (TurSNSiteFieldExtFacet facet : fieldExt.getFacetLocales()) {
-						facet.setTurSNSiteFieldExt(fieldExt);
-					}
-				}
-				if (fieldExt.getCustomFacets() != null) {
-					for (TurSNSiteCustomFacet customFacet : fieldExt.getCustomFacets()) {
-						customFacet.setTurSNSiteFieldExt(fieldExt);
-						if (customFacet.getItems() != null) {
-							for (TurSNSiteCustomFacetItem item : customFacet.getItems()) {
-								item.setTurSNSiteCustomFacet(customFacet);
-							}
-						}
-					}
-				}
+				linkFacetLocales(fieldExt);
+				linkCustomFacets(fieldExt);
 				turSNSiteFieldExtRepository.save(fieldExt);
+			}
+		}
+	}
+
+	/** Back-links each facet-locale row to its owning field ext. */
+	private void linkFacetLocales(TurSNSiteFieldExt fieldExt) {
+		if (fieldExt.getFacetLocales() == null) {
+			return;
+		}
+		for (TurSNSiteFieldExtFacet facet : fieldExt.getFacetLocales()) {
+			facet.setTurSNSiteFieldExt(fieldExt);
+		}
+	}
+
+	/** Back-links each custom facet (and its items) to its owning field ext. */
+	private void linkCustomFacets(TurSNSiteFieldExt fieldExt) {
+		if (fieldExt.getCustomFacets() == null) {
+			return;
+		}
+		for (TurSNSiteCustomFacet customFacet : fieldExt.getCustomFacets()) {
+			customFacet.setTurSNSiteFieldExt(fieldExt);
+			if (customFacet.getItems() != null) {
+				for (TurSNSiteCustomFacetItem item : customFacet.getItems()) {
+					item.setTurSNSiteCustomFacet(customFacet);
+				}
 			}
 		}
 	}

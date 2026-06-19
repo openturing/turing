@@ -697,6 +697,34 @@ public final class ChatFlowOps {
      *
      * @since 2026.2.7
      */
+    /**
+     * True when {@code current} is a question-like node whose answer is already
+     * captured (so the walker may skip it): not author-forced, and either a
+     * satisfied native form or a non-blank output slot.
+     */
+    private static boolean isSkippableSatisfiedQuestion(ChatFlowNode current,
+            Map<String, String> variables) {
+        if (!isQuestionLike(current)) {
+            return false;
+        }
+        // Author opted in to always asking — never skip.
+        if (Boolean.TRUE.equals(current.overrideExistingValue())) {
+            return false;
+        }
+        // T107 — a native multi-field formCapture is satisfied (and thus
+        // skippable) when every required field's slot is filled; its own
+        // outputVariable is not what advances it.
+        if (isNativeForm(current)) {
+            return isNativeFormSatisfied(current, variables);
+        }
+        String outVar = current.outputVariable();
+        if (outVar == null || outVar.isBlank()) {
+            return false;
+        }
+        String existing = variables.get(outVar.trim());
+        return existing != null && !existing.isBlank();
+    }
+
     public static void walkThroughSatisfiedQuestions(TurChatFlowState state, ChatFlowGraph graph) {
         if (state == null || graph == null) {
             return;
@@ -707,30 +735,8 @@ public final class ChatFlowOps {
                 return;
             }
             ChatFlowNode current = currentOpt.get();
-            if (!isQuestionLike(current)) {
+            if (!isSkippableSatisfiedQuestion(current, readVariables(state))) {
                 return;
-            }
-            // Author opted in to always asking — never skip.
-            if (Boolean.TRUE.equals(current.overrideExistingValue())) {
-                return;
-            }
-            Map<String, String> variables = readVariables(state);
-            // T107 — a native multi-field formCapture is satisfied (and thus
-            // skippable) when every required field's slot is filled; its own
-            // outputVariable is not what advances it.
-            if (isNativeForm(current)) {
-                if (!isNativeFormSatisfied(current, variables)) {
-                    return;
-                }
-            } else {
-                String outVar = current.outputVariable();
-                if (outVar == null || outVar.isBlank()) {
-                    return;
-                }
-                String existing = variables.get(outVar.trim());
-                if (existing == null || existing.isBlank()) {
-                    return;
-                }
             }
             List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
             if (outgoing.isEmpty()) {
