@@ -126,9 +126,10 @@ public class TurChatSlotExtractionService {
      */
     public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
             String conversationId, List<String> requestedSlotNames) {
-        if (file == null || file.isEmpty()) return SlotExtractionResult.empty();
-        if (agent == null) return SlotExtractionResult.empty();
-        if (conversationId == null || conversationId.isBlank()) return SlotExtractionResult.empty();
+        if (file == null || file.isEmpty() || agent == null
+                || conversationId == null || conversationId.isBlank()) {
+            return SlotExtractionResult.empty();
+        }
 
         TurFileAttributes parsed = TurFileUtils.documentToText(file);
         String text = parsed == null ? null : parsed.getContent();
@@ -171,8 +172,19 @@ public class TurChatSlotExtractionService {
         }
         Map<String, String> extracted = parseJsonReply(reply, targetSlots);
 
+        int written = writeExtractedSlots(extracted, conversationId, "agent=" + agent.getId());
+        log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",
+                conversationId, extracted.size(), written, trimmedText.length());
+        return new SlotExtractionResult(extracted, written, trimmedText.length());
+    }
+
+    /**
+     * Writes each non-blank extracted value to its slot, returning the number
+     * of slots actually touched.
+     */
+    private int writeExtractedSlots(Map<String, String> extracted, String conversationId,
+            String originDetail) {
         int written = 0;
-        String originDetail = "agent=" + agent.getId();
         for (Map.Entry<String, String> entry : extracted.entrySet()) {
             String value = entry.getValue();
             if (value == null || value.isBlank()) continue;
@@ -180,9 +192,7 @@ public class TurChatSlotExtractionService {
                     TurChatSlotAuditSource.EXTRACT, originDetail);
             if (touched > 0) written++;
         }
-        log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",
-                conversationId, extracted.size(), written, trimmedText.length());
-        return new SlotExtractionResult(extracted, written, trimmedText.length());
+        return written;
     }
 
     /**

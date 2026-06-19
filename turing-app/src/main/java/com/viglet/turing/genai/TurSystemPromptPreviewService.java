@@ -246,32 +246,47 @@ public class TurSystemPromptPreviewService {
 
     private List<TurSystemPromptToolDto> buildTools(TurAIAgent agent) {
         List<TurSystemPromptToolDto> tools = new ArrayList<>();
-        if (agent.getCustomTools() != null) {
-            for (TurCustomTool tool : agent.getCustomTools()) {
-                tools.add(new TurSystemPromptToolDto(tool.getTitle(),
-                        tool.getLlmDescription(), "CUSTOM"));
-            }
-        }
-        if (agent.getMcpServers() != null) {
-            for (TurMcpServer server : agent.getMcpServers()) {
-                if (server.getEnabled() != 1) {
-                    continue;
-                }
-                String note = "Tool schemas are discovered from the live MCP server at runtime."
-                        + (StringUtils.hasText(server.getLlmInstructions())
-                                ? " Its LLM instructions are injected into the prompt above."
-                                : "");
-                tools.add(new TurSystemPromptToolDto(server.getTitle(), note, "MCP"));
-            }
-        }
-        if (StringUtils.hasText(agent.getNativeTools())) {
-            for (String raw : agent.getNativeTools().split(",")) {
-                String name = raw.trim();
-                if (!name.isEmpty()) {
-                    tools.add(new TurSystemPromptToolDto(name, null, "NATIVE"));
-                }
-            }
-        }
+        addCustomTools(agent, tools);
+        addMcpTools(agent, tools);
+        addNativeTools(agent, tools);
         return tools;
+    }
+
+    private void addCustomTools(TurAIAgent agent, List<TurSystemPromptToolDto> tools) {
+        if (agent.getCustomTools() == null) {
+            return;
+        }
+        for (TurCustomTool tool : agent.getCustomTools()) {
+            tools.add(new TurSystemPromptToolDto(tool.getTitle(),
+                    tool.getLlmDescription(), "CUSTOM"));
+        }
+    }
+
+    private void addMcpTools(TurAIAgent agent, List<TurSystemPromptToolDto> tools) {
+        if (agent.getMcpServers() == null) {
+            return;
+        }
+        for (TurMcpServer server : agent.getMcpServers()) {
+            if (server.getEnabled() != 1) {
+                continue;
+            }
+            String note = "Tool schemas are discovered from the live MCP server at runtime."
+                    + (StringUtils.hasText(server.getLlmInstructions())
+                            ? " Its LLM instructions are injected into the prompt above."
+                            : "");
+            tools.add(new TurSystemPromptToolDto(server.getTitle(), note, "MCP"));
+        }
+    }
+
+    private void addNativeTools(TurAIAgent agent, List<TurSystemPromptToolDto> tools) {
+        if (!StringUtils.hasText(agent.getNativeTools())) {
+            return;
+        }
+        for (String raw : agent.getNativeTools().split(",")) {
+            String name = raw.trim();
+            if (!name.isEmpty()) {
+                tools.add(new TurSystemPromptToolDto(name, null, "NATIVE"));
+            }
+        }
     }
 }

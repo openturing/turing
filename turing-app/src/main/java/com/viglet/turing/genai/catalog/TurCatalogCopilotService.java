@@ -285,6 +285,20 @@ public class TurCatalogCopilotService {
             return hits;
         }
         Map<String, TurDslSearchResponse.Hit> byId = new LinkedHashMap<>();
+        List<TurSEResult> page = buildRankingPage(hits, byId);
+        Locale parsedLocale = safeLocale(locale);
+        List<TurSEResult> reordered = hybridRankingService.fuse(site, parsedLocale, query, page);
+        List<TurDslSearchResponse.Hit> result = reorderByFusion(reordered, byId, hits.size());
+        result.addAll(byId.values()); // anything the pipeline didn't cover keeps tail order
+        return result.isEmpty() ? hits : result;
+    }
+
+    /**
+     * Projects the (de-duplicated) hits into {@link TurSEResult} page entries for
+     * the ranking pipeline, populating {@code byId} with the source hit per id.
+     */
+    private List<TurSEResult> buildRankingPage(List<TurDslSearchResponse.Hit> hits,
+            Map<String, TurDslSearchResponse.Hit> byId) {
         List<TurSEResult> page = new ArrayList<>(hits.size());
         for (TurDslSearchResponse.Hit hit : hits) {
             if (hit.id() == null || byId.containsKey(hit.id())) {
@@ -298,9 +312,17 @@ public class TurCatalogCopilotService {
             fields.put(TurSNFieldName.ID, hit.id());
             page.add(TurSEResult.builder().fields(fields).build());
         }
-        Locale parsedLocale = safeLocale(locale);
-        List<TurSEResult> reordered = hybridRankingService.fuse(site, parsedLocale, query, page);
-        List<TurDslSearchResponse.Hit> result = new ArrayList<>(hits.size());
+        return page;
+    }
+
+    /**
+     * Rebuilds the hit list in the pipeline's fused order, removing each matched
+     * id from {@code byId} (the remainder is appended by the caller as tail) and
+     * carrying any ranking explanation back onto the hit.
+     */
+    private List<TurDslSearchResponse.Hit> reorderByFusion(List<TurSEResult> reordered,
+            Map<String, TurDslSearchResponse.Hit> byId, int capacity) {
+        List<TurDslSearchResponse.Hit> result = new ArrayList<>(capacity);
         for (TurSEResult res : reordered) {
             Object id = res.getFields() != null ? res.getFields().get(TurSNFieldName.ID) : null;
             TurDslSearchResponse.Hit hit = id != null ? byId.remove(id.toString()) : null;
@@ -312,8 +334,7 @@ public class TurCatalogCopilotService {
                 result.add(hit);
             }
         }
-        result.addAll(byId.values()); // anything the pipeline didn't cover keeps tail order
-        return result.isEmpty() ? hits : result;
+        return result;
     }
 
     private static TurDslSearchResponse.Hit withExplanation(TurDslSearchResponse.Hit hit,
