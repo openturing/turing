@@ -751,7 +751,7 @@ public class TurDslElasticsearchExecutor
 
     private void applySourceToRequest(Object source, SearchRequest.Builder reqBuilder) {
         if (source == null) return;
-        if (source instanceof Boolean b && !b) {
+        if (Boolean.FALSE.equals(source)) {
             reqBuilder.source(s -> s.fetch(false));
             return;
         }

@@ -446,7 +446,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
 
     private void translateSource(Object source, SolrQuery solrQuery) {
         if (source == null) return;
-        if (source instanceof Boolean b && !b) {
+        if (Boolean.FALSE.equals(source)) {
             solrQuery.setFields("id");
             return;
         }
