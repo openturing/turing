@@ -594,17 +594,7 @@ public class TurSNGenAi {
         // config-driven relevance gate on the filtered path, and runs the
         // optional reranker. Returns chunks with metadata intact.
         List<Document> relevantDocuments = retrieveDocuments(context, latestUserQuery, filters);
-        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        if (relevantDocuments.isEmpty()) {
-            log.warn("RAG chat retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
-                    vectorStoreType);
-        } else if (log.isInfoEnabled()) {
-            for (int i = 0; i < relevantDocuments.size(); i++) {
-                Document d = relevantDocuments.get(i);
-                String text = d.getText() == null ? "" : d.getText();
-                log.debug("  RAG chat doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
-            }
-        }
+        logRetrievedDocuments(relevantDocuments, context.getVectorStore().getClass().getSimpleName());
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
@@ -613,25 +603,10 @@ public class TurSNGenAi {
         String systemContent = buildSystemPrompt(context.getSystemPrompt(), information);
         log.debug("RAG chat final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
 
-        List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage(systemContent));
-        for (ConversationMessage m : history) {
-            if (ASSISTANT.equals(m.role())) {
-                messages.add(new AssistantMessage(m.content() == null ? "" : m.content()));
-            } else {
-                messages.add(new UserMessage(m.content() == null ? "" : m.content()));
-            }
-        }
+        List<Message> messages = buildConversationMessages(systemContent, history);
 
         Prompt prompt = new Prompt(messages);
-        if (log.isInfoEnabled()) {
-            StringBuilder dump = new StringBuilder();
-            for (Message m : messages) {
-                dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
-                        .append(m.getText() == null ? "" : m.getText());
-            }
-            log.debug("RAG chat full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
-        }
+        dumpPromptIfEnabled(messages);
         String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
         log.debug("RAG chat LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder().text(answer).enabled(true).build();
@@ -644,6 +619,47 @@ public class TurSNGenAi {
      * context is appended automatically; the user question is carried by the
      * {@code UserMessage} turn, not injected into the system prompt.
      */
+    /** Warns when retrieval came back empty, else dumps each doc at debug. */
+    private void logRetrievedDocuments(List<Document> relevantDocuments, String vectorStoreType) {
+        if (relevantDocuments.isEmpty()) {
+            log.warn("RAG chat retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
+                    vectorStoreType);
+        } else if (log.isInfoEnabled()) {
+            for (int i = 0; i < relevantDocuments.size(); i++) {
+                Document d = relevantDocuments.get(i);
+                String text = d.getText() == null ? "" : d.getText();
+                log.debug("  RAG chat doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
+            }
+        }
+    }
+
+    /** Builds the prompt message list: system content followed by the conversation turns. */
+    private List<Message> buildConversationMessages(String systemContent,
+            List<ConversationMessage> history) {
+        List<Message> messages = new ArrayList<>();
+        messages.add(new SystemMessage(systemContent));
+        for (ConversationMessage m : history) {
+            if (ASSISTANT.equals(m.role())) {
+                messages.add(new AssistantMessage(m.content() == null ? "" : m.content()));
+            } else {
+                messages.add(new UserMessage(m.content() == null ? "" : m.content()));
+            }
+        }
+        return messages;
+    }
+
+    /** Dumps the full prompt (system + turns) at debug when info logging is on. */
+    private void dumpPromptIfEnabled(List<Message> messages) {
+        if (log.isInfoEnabled()) {
+            StringBuilder dump = new StringBuilder();
+            for (Message m : messages) {
+                dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
+                        .append(m.getText() == null ? "" : m.getText());
+            }
+            log.debug("RAG chat full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
+        }
+    }
+
     private String buildSystemPrompt(String configuredPrompt, String information) {
         String behavior = (configuredPrompt == null || configuredPrompt.isBlank())
                 ? DEFAULT_BEHAVIOR_PROMPT
