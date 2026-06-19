@@ -385,20 +385,12 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         }
 
         Map<String, Object> where = buildWhereClause(filters);
-        long total;
-        if (where == null) {
-            try {
-                Long c = chromaApi.countEmbeddings(tenantName, databaseName, collection.id());
-                total = c != null ? c : -1L;
-            } catch (Exception e) {
-                log.warn("[Chroma] Failed to count embeddings for '{}': {}", collectionName, e.getMessage());
-                total = -1L;
-            }
-        } else {
-            // Chroma has no "count where". Skip the total — frontend uses
-            // "page returned full pageSize?" as a "has next" heuristic.
-            total = -1L;
-        }
+        // Chroma has no "count where". When a filter is present skip the total —
+        // the frontend uses "page returned full pageSize?" as a "has next" heuristic.
+        long total = where == null
+                ? countEmbeddingsOrUnknown(chromaApi, tenantName, databaseName,
+                        collection.id(), collectionName)
+                : -1L;
 
         int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
@@ -420,21 +412,39 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             List<String> ids = response.ids();
             List<String> documents = response.documents() != null ? response.documents() : List.of();
             List<Map<String, String>> metadatas = response.metadata() != null ? response.metadata() : List.of();
-            List<TurStoreChunkPage.Chunk> chunks = new ArrayList<>(ids.size());
-            for (int i = 0; i < ids.size(); i++) {
-                String content = i < documents.size() ? documents.get(i) : "";
-                Map<String, String> raw = i < metadatas.size() ? metadatas.get(i) : Map.of();
-                Map<String, Object> metadata = raw == null
-                        ? Map.of()
-                        : new java.util.LinkedHashMap<>(raw);
-                chunks.add(new TurStoreChunkPage.Chunk(ids.get(i), content == null ? "" : content, metadata));
-            }
-            return new TurStoreChunkPage(chunks, total);
+            return new TurStoreChunkPage(toChunks(ids, documents, metadatas), total);
         } catch (Exception e) {
             log.warn("[Chroma] Failed to list chunks for collection '{}' (page={}, pageSize={}): {}",
                     collectionName, page, pageSize, e.getMessage());
             return new TurStoreChunkPage(List.of(), total);
         }
+    }
+
+    /** Counts a collection's embeddings, returning -1 when Chroma can't answer. */
+    private long countEmbeddingsOrUnknown(ChromaApi chromaApi, String tenantName,
+            String databaseName, String collectionId, String collectionName) {
+        try {
+            Long c = chromaApi.countEmbeddings(tenantName, databaseName, collectionId);
+            return c != null ? c : -1L;
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to count embeddings for '{}': {}", collectionName, e.getMessage());
+            return -1L;
+        }
+    }
+
+    /** Zips parallel id/document/metadata lists into chunk DTOs (missing entries default). */
+    private List<TurStoreChunkPage.Chunk> toChunks(List<String> ids, List<String> documents,
+            List<Map<String, String>> metadatas) {
+        List<TurStoreChunkPage.Chunk> chunks = new ArrayList<>(ids.size());
+        for (int i = 0; i < ids.size(); i++) {
+            String content = i < documents.size() ? documents.get(i) : "";
+            Map<String, String> raw = i < metadatas.size() ? metadatas.get(i) : Map.of();
+            Map<String, Object> metadata = raw == null
+                    ? Map.of()
+                    : new java.util.LinkedHashMap<>(raw);
+            chunks.add(new TurStoreChunkPage.Chunk(ids.get(i), content == null ? "" : content, metadata));
+        }
+        return chunks;
     }
 
     /**

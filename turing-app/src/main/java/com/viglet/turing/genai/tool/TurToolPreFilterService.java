@@ -260,19 +260,9 @@ public class TurToolPreFilterService {
         try (Directory directory = new ByteBuffersDirectory()) {
             IndexWriterConfig cfg = new IndexWriterConfig(ANALYZER)
                     .setSimilarity(new BM25Similarity());
-            int docs = 0;
+            int docs;
             try (IndexWriter writer = new IndexWriter(directory, cfg)) {
-                for (Map.Entry<String, ToolCallback> entry : byName.entrySet()) {
-                    String name = entry.getKey();
-                    if (protectedNames.contains(name)) continue;
-                    String description = resolveDescription(name, entry.getValue());
-                    if (description == null || description.isBlank()) continue;
-                    Document doc = new Document();
-                    doc.add(new StringField(FIELD_NAME, name, Field.Store.YES));
-                    doc.add(new TextField(FIELD_DESCRIPTION, description, Field.Store.NO));
-                    writer.addDocument(doc);
-                    docs++;
-                }
+                docs = indexToolDescriptions(writer, byName, protectedNames);
                 writer.commit();
             }
             if (docs == 0) {
@@ -297,27 +287,56 @@ public class TurToolPreFilterService {
                     // agent could be left with zero tools.
                     return fallbackInsertionOrder(byName, protectedNames, quota);
                 }
-                StoredFields stored = searcher.storedFields();
-                List<String> survivors = new ArrayList<>(hits.scoreDocs.length);
-                for (ScoreDoc sd : hits.scoreDocs) {
-                    String name = stored.document(sd.doc).get(FIELD_NAME);
-                    if (name != null) survivors.add(name);
-                }
-                if (survivors.size() < quota) {
-                    // Fill leftover quota deterministically so the agent
-                    // never returns fewer tools than top-K allows.
-                    for (String name : fallbackInsertionOrder(byName, protectedNames, quota)) {
-                        if (survivors.size() >= quota) break;
-                        if (!survivors.contains(name)) survivors.add(name);
-                    }
-                }
-                return survivors;
+                return collectRankedSurvivors(hits, searcher.storedFields(),
+                        byName, protectedNames, quota);
             }
         } catch (IOException e) {
             log.warn("[ToolPreFilter] BM25 ranking failed, falling back to all tools: {}",
                     e.getMessage());
             return new ArrayList<>(byName.keySet());
         }
+    }
+
+    /**
+     * Indexes one BM25 document per non-protected tool that has a usable
+     * description. Returns the number of documents written.
+     */
+    private int indexToolDescriptions(IndexWriter writer, Map<String, ToolCallback> byName,
+            Set<String> protectedNames) throws IOException {
+        int docs = 0;
+        for (Map.Entry<String, ToolCallback> entry : byName.entrySet()) {
+            String name = entry.getKey();
+            if (protectedNames.contains(name)) continue;
+            String description = resolveDescription(name, entry.getValue());
+            if (description == null || description.isBlank()) continue;
+            Document doc = new Document();
+            doc.add(new StringField(FIELD_NAME, name, Field.Store.YES));
+            doc.add(new TextField(FIELD_DESCRIPTION, description, Field.Store.NO));
+            writer.addDocument(doc);
+            docs++;
+        }
+        return docs;
+    }
+
+    /**
+     * Collects the ranked hit names, then deterministically fills any remaining
+     * quota from insertion order so the agent never gets fewer tools than top-K.
+     */
+    private List<String> collectRankedSurvivors(TopDocs hits, StoredFields stored,
+            Map<String, ToolCallback> byName, Set<String> protectedNames, int quota)
+            throws IOException {
+        List<String> survivors = new ArrayList<>(hits.scoreDocs.length);
+        for (ScoreDoc sd : hits.scoreDocs) {
+            String name = stored.document(sd.doc).get(FIELD_NAME);
+            if (name != null) survivors.add(name);
+        }
+        if (survivors.size() < quota) {
+            for (String name : fallbackInsertionOrder(byName, protectedNames, quota)) {
+                if (survivors.size() >= quota) break;
+                if (!survivors.contains(name)) survivors.add(name);
+            }
+        }
+        return survivors;
     }
 
     private static List<String> fallbackInsertionOrder(Map<String, ToolCallback> byName,
