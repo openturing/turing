@@ -309,12 +309,12 @@ class AulaRelampagoDspaceIT {
             if (two.totalHits() > 0) return two;
         }
         if (words.size() > 1) {
-            StringBuilder or_ = new StringBuilder();
+            StringBuilder orBag = new StringBuilder();
             for (int i = 0; i < words.size(); i++) {
-                if (i > 0) or_.append(" OR ");
-                or_.append('"').append(words.get(i)).append('"');
+                if (i > 0) orBag.append(" OR ");
+                orBag.append('"').append(words.get(i)).append('"');
             }
-            FallbackResult fallback = searchOnce(or_.toString());
+            FallbackResult fallback = searchOnce(orBag.toString());
             return new FallbackResult(fallback.json(), fallback.totalHits(), "OR-bag");
         }
         return new FallbackResult(exact.json(), 0, "exhausted");
