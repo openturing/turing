@@ -125,6 +125,7 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
      * Parses one stored memory entry into a row, or returns {@code null} when the
      * JSON is malformed (logged and skipped by the caller).
      */
+    @SuppressWarnings("java:S1168") // null is a skip-this-entry sentinel; the caller drops nulls, an empty map would add a blank row.
     private Map<String, Object> parseMemoryEntry(String json, String listKey) {
         try {
             @SuppressWarnings("unchecked")

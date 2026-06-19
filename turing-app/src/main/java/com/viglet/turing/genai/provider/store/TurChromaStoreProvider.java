@@ -560,6 +560,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
      * (and logs) when there's no model or the content is blank, or the embedding
      * call fails — the caller counts that as a failed record.
      */
+    @SuppressWarnings("java:S1168") // null is a failed-record sentinel; an empty float[] would be mistaken for a valid zero-dim vector.
     private float[] reEmbed(EmbeddingModel embeddingModel, String content, String id) {
         if (embeddingModel == null || content.isBlank()) {
             log.debug("[Chroma] Skipping record '{}': cannot re-embed (model={}, blank={})",

@@ -590,8 +590,8 @@ public class TurCustomToolSearchHelper {
         }
         // Shorthand: templateName=string → filters.templateName=[string]
         Object templateName = params.get(TEMPLATE_NAME);
-        if (templateName != null && !resolved.containsKey(TEMPLATE_NAME)) {
-            resolved.put(TEMPLATE_NAME, List.of(String.valueOf(templateName)));
+        if (templateName != null) {
+            resolved.computeIfAbsent(TEMPLATE_NAME, k -> List.of(String.valueOf(templateName)));
         }
         return resolved;
     }

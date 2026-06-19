@@ -269,6 +269,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
     }
 
     /** Translates an {@code IN} filter into a single marker map, an {@code $or} of markers, or null. */
+    @SuppressWarnings("java:S1168") // null is the same no-op-filter sentinel as translateFilter; an empty map cannot express "no clause".
     private Map<String, Object> translateInFilter(Filter.Expression expression) {
         String key = extractKey(expression.left());
         List<Object> values = extractValueList(expression.right());

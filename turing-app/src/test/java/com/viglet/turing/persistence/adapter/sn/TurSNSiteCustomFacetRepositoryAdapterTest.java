@@ -114,7 +114,7 @@ class TurSNSiteCustomFacetRepositoryAdapterTest {
         TurSNSiteCustomFacetDomain domain = adapter.findById("cf-1").orElseThrow();
 
         var items = domain.items();
-        assertThatThrownBy(() -> items.clear())
+        assertThatThrownBy(items::clear)
                 .isInstanceOf(UnsupportedOperationException.class);
         var label = domain.label();
         assertThatThrownBy(() -> label.put("xx", "smuggled"))

@@ -218,8 +218,7 @@ public class TurSNHybridRankingService {
             Map<String, Integer> lexicalRank, List<Document> bm25Hits) {
         for (TurSEResult result : page) {
             String id = asString(result.getFields().get(TurSNFieldName.ID));
-            if (StringUtils.hasText(id) && !byId.containsKey(id)) {
-                byId.put(id, result);
+            if (StringUtils.hasText(id) && byId.putIfAbsent(id, result) == null) {
                 lexicalRank.put(id, lexicalRank.size() + 1);
                 bm25Hits.add(Document.builder().id(id).text("").build());
             }
