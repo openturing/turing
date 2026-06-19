@@ -1494,19 +1494,44 @@ public final class ChatFlowOps {
         String lowerValue = value.toLowerCase();
 
         // 1) Exact label match.
+        Optional<ChatFlowNode.SwitchOption> exact = exactLabelMatch(options, value);
+        if (exact.isPresent()) {
+            log.info("[FlowOps] Switch '{}' exact match: '{}' → option '{}'",
+                    switchNode.id(), value, exact.get().id());
+            return exact;
+        }
+
+        // 2) Substring match — prefer the longest option label that fits, so multi-word labels
+        //    take precedence over their own prefixes ("Beach Getaway" > "Beach").
+        ChatFlowNode.SwitchOption best = substringLabelMatch(options, lowerValue);
+        if (best != null) {
+            log.info("[FlowOps] Switch '{}' substring match: '{}' → option '{}' (label='{}')",
+                    switchNode.id(), value, best.id(), best.label());
+            return Optional.of(best);
+        }
+
+        // 3) LLM classifier — the user phrased their answer in a way the cheap matches missed
+        //    ("I want to climb something" vs "Mountain Expedition"). Ask the aux model to pick.
+        return llmClassifyMatch(auxModel, switchNode, options, variableName, value);
+    }
+
+    /** Tier 1: the option whose label equals {@code value} (case-insensitive), or empty. */
+    private static Optional<ChatFlowNode.SwitchOption> exactLabelMatch(
+            List<ChatFlowNode.SwitchOption> options, String value) {
         for (ChatFlowNode.SwitchOption option : options) {
             if (option == null || option.label() == null) {
                 continue;
             }
             if (option.label().trim().equalsIgnoreCase(value)) {
-                log.info("[FlowOps] Switch '{}' exact match: '{}' → option '{}'",
-                        switchNode.id(), value, option.id());
                 return Optional.of(option);
             }
         }
+        return Optional.empty();
+    }
 
-        // 2) Substring match — prefer the longest option label that fits, so multi-word labels
-        //    take precedence over their own prefixes ("Beach Getaway" > "Beach").
+    /** Tier 2: the longest option label that contains (or is contained by) {@code lowerValue}, or null. */
+    private static ChatFlowNode.SwitchOption substringLabelMatch(
+            List<ChatFlowNode.SwitchOption> options, String lowerValue) {
         ChatFlowNode.SwitchOption best = null;
         int bestLen = 0;
         for (ChatFlowNode.SwitchOption option : options) {
@@ -1522,14 +1547,13 @@ public final class ChatFlowOps {
                 }
             }
         }
-        if (best != null) {
-            log.info("[FlowOps] Switch '{}' substring match: '{}' → option '{}' (label='{}')",
-                    switchNode.id(), value, best.id(), best.label());
-            return Optional.of(best);
-        }
+        return best;
+    }
 
-        // 3) LLM classifier — the user phrased their answer in a way the cheap matches missed
-        //    ("I want to climb something" vs "Mountain Expedition"). Ask the aux model to pick.
+    /** Tier 3: delegate to the aux model classifier, mapping its id back to an option. */
+    private static Optional<ChatFlowNode.SwitchOption> llmClassifyMatch(ChatModel auxModel,
+            ChatFlowNode switchNode, List<ChatFlowNode.SwitchOption> options,
+            String variableName, String value) {
         if (auxModel == null) {
             log.info("[FlowOps] Switch '{}' has no aux model for classification — falling back to wildcard",
                     switchNode.id());

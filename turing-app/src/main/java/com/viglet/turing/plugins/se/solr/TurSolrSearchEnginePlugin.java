@@ -623,34 +623,49 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         SolrQuery query = new SolrQuery().setQuery(q).setRows(ids.size());
         query.setFields(SIMILAR_FIELDS.toArray(new String[0]));
         return TurSolr.executeSolrQuery(instance, query)
-                .map(response -> {
-                    Map<String, Map<String, Object>> byId = new HashMap<>();
-                    for (org.apache.solr.common.SolrDocument doc : response.getResults()) {
-                        Map<String, Object> fields = new java.util.LinkedHashMap<>();
-                        for (String field : SIMILAR_FIELDS) {
-                            Object value = doc.getFieldValue(field);
-                            if (value instanceof java.util.Collection<?> col) {
-                                value = col.isEmpty() ? null : col.iterator().next();
-                            }
-                            if (value != null) {
-                                fields.put(field, value);
-                            }
-                        }
-                        Object docId = fields.get(TurSNFieldName.ID);
-                        if (docId != null) {
-                            byId.put(docId.toString(), fields);
-                        }
-                    }
-                    List<Map<String, Object>> ordered = new ArrayList<>();
-                    for (String wanted : ids) {
-                        Map<String, Object> fields = byId.get(wanted);
-                        if (fields != null) {
-                            ordered.add(fields);
-                        }
-                    }
-                    return ordered;
-                })
+                .map(response -> orderByIds(indexSimilarDocs(response), ids))
                 .orElse(List.of());
+    }
+
+    /** Indexes the response docs by id, projecting only the SIMILAR_FIELDS (first value of multis). */
+    private Map<String, Map<String, Object>> indexSimilarDocs(
+            org.apache.solr.client.solrj.response.QueryResponse response) {
+        Map<String, Map<String, Object>> byId = new HashMap<>();
+        for (org.apache.solr.common.SolrDocument doc : response.getResults()) {
+            Map<String, Object> fields = extractSimilarFields(doc);
+            Object docId = fields.get(TurSNFieldName.ID);
+            if (docId != null) {
+                byId.put(docId.toString(), fields);
+            }
+        }
+        return byId;
+    }
+
+    private Map<String, Object> extractSimilarFields(org.apache.solr.common.SolrDocument doc) {
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        for (String field : SIMILAR_FIELDS) {
+            Object value = doc.getFieldValue(field);
+            if (value instanceof java.util.Collection<?> col) {
+                value = col.isEmpty() ? null : col.iterator().next();
+            }
+            if (value != null) {
+                fields.put(field, value);
+            }
+        }
+        return fields;
+    }
+
+    /** Re-orders the indexed docs to match the requested id order, dropping misses. */
+    private List<Map<String, Object>> orderByIds(Map<String, Map<String, Object>> byId,
+            List<String> ids) {
+        List<Map<String, Object>> ordered = new ArrayList<>();
+        for (String wanted : ids) {
+            Map<String, Object> fields = byId.get(wanted);
+            if (fields != null) {
+                ordered.add(fields);
+            }
+        }
+        return ordered;
     }
 
     /** Builds the seed text (title + abstract + text) used by the BM25 fallback / vector path. */
