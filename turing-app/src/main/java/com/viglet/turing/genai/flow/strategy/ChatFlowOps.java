@@ -390,28 +390,36 @@ public final class ChatFlowOps {
             Map<String, String> labelByHandle) {
         StringBuilder hint = new StringBuilder();
         for (ChatFlowEdge edge : branches) {
-            Optional<ChatFlowNode> branchOpt = graph.nodeById(edge.target());
-            if (branchOpt.isEmpty()) {
-                continue;
+            String line = branchHintLine(edge, graph, labelByHandle);
+            if (line != null) {
+                hint.append(line);
             }
-            ChatFlowNode branch = branchOpt.get();
-            if ("end".equals(branch.type())) {
-                continue;
-            }
-            String instruction = branch.aiInstruction();
-            if (instruction == null || instruction.isBlank()) {
-                continue;
-            }
-            String handle = edge.sourceHandle();
-            String label = handle == null ? null : labelByHandle.get(handle);
-            String fallbackBranch = handle == null || handle.isBlank() ? "default" : handle;
-            String displayBranch = label != null && !label.isBlank()
-                    ? label
-                    : fallbackBranch;
-            hint.append("  - If '").append(displayBranch).append("' branch: ")
-                    .append(instruction.trim()).append("\n");
         }
         return hint.toString();
+    }
+
+    /** One "  - If 'X' branch: <instruction>" line, or null when the edge target is end/blank/missing. */
+    private static String branchHintLine(ChatFlowEdge edge, ChatFlowGraph graph,
+            Map<String, String> labelByHandle) {
+        Optional<ChatFlowNode> branchOpt = graph.nodeById(edge.target());
+        if (branchOpt.isEmpty()) {
+            return null;
+        }
+        ChatFlowNode branch = branchOpt.get();
+        if ("end".equals(branch.type())) {
+            return null;
+        }
+        String instruction = branch.aiInstruction();
+        if (instruction == null || instruction.isBlank()) {
+            return null;
+        }
+        String handle = edge.sourceHandle();
+        String label = handle == null ? null : labelByHandle.get(handle);
+        String fallbackBranch = handle == null || handle.isBlank() ? "default" : handle;
+        String displayBranch = label != null && !label.isBlank()
+                ? label
+                : fallbackBranch;
+        return "  - If '" + displayBranch + "' branch: " + instruction.trim() + "\n";
     }
 
     private static void appendSwitchNextSteps(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode switchNode) {

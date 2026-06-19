@@ -357,24 +357,36 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
                 : List.of();
         List<Document> result = new ArrayList<>(ids.size());
         for (int i = 0; i < ids.size(); i++) {
-            double distance = i < dists.size() && dists.get(i) != null ? dists.get(i) : 0.0;
-            // Spring AI's convention: similarity = 1 - distance (cosine).
-            double similarity = 1.0 - distance;
-            if (similarity < similarityThreshold) {
-                continue;
+            Document doc = toDocument(i, ids, docs, metas, dists, similarityThreshold);
+            if (doc != null) {
+                result.add(doc);
             }
-            String content = i < docs.size() ? docs.get(i) : "";
-            Map<String, Object> metadata = i < metas.size() && metas.get(i) != null
-                    ? metas.get(i)
-                    : Map.of();
-            result.add(Document.builder()
-                    .id(ids.get(i))
-                    .text(content == null ? "" : content)
-                    .metadata(stripMarkers(metadata))
-                    .score(similarity)
-                    .build());
         }
         return result;
+    }
+
+    /**
+     * Builds the {@code i}-th result {@link Document} (similarity = 1 − cosine
+     * distance), or null when it falls below {@code similarityThreshold}.
+     */
+    private Document toDocument(int i, List<String> ids, List<String> docs,
+            List<Map<String, Object>> metas, List<Double> dists, double similarityThreshold) {
+        double distance = i < dists.size() && dists.get(i) != null ? dists.get(i) : 0.0;
+        // Spring AI's convention: similarity = 1 - distance (cosine).
+        double similarity = 1.0 - distance;
+        if (similarity < similarityThreshold) {
+            return null;
+        }
+        String content = i < docs.size() ? docs.get(i) : "";
+        Map<String, Object> metadata = i < metas.size() && metas.get(i) != null
+                ? metas.get(i)
+                : Map.of();
+        return Document.builder()
+                .id(ids.get(i))
+                .text(content == null ? "" : content)
+                .metadata(stripMarkers(metadata))
+                .score(similarity)
+                .build();
     }
 
     /**
