@@ -325,17 +325,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
             Set<String> seen = new java.util.LinkedHashSet<>();
             for (var scoreDoc : topDocs.scoreDocs) {
                 var doc = searcher.storedFields().document(scoreDoc.doc);
-                for (var field : doc.getFields()) {
-                    String value = field.stringValue();
-                    if (value == null) continue;
-                    // Tokenize stored value and find words matching the prefix
-                    for (String word : value.split("\\s+")) {
-                        String clean = word.replaceAll("[^\\p{L}\\p{N}]", "").toLowerCase();
-                        if (clean.length() >= prefix.length() && clean.startsWith(prefix)) {
-                            seen.add(leadingContext + clean);
-                        }
-                    }
-                }
+                collectPrefixMatches(doc, prefix, leadingContext, seen);
                 if (seen.size() >= maxHits * 2) break;
             }
 
@@ -343,6 +333,26 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         } catch (Exception e) {
             log.warn("[Lucene] Autocomplete error: {}", e.getMessage());
             return List.of();
+        }
+    }
+
+    /**
+     * Adds every stored-field word that starts with {@code prefix} (case- and
+     * punctuation-insensitive) to {@code seen}, prepended with the already-typed
+     * {@code leadingContext}.
+     */
+    private void collectPrefixMatches(org.apache.lucene.document.Document doc, String prefix,
+            String leadingContext, Set<String> seen) {
+        for (var field : doc.getFields()) {
+            String value = field.stringValue();
+            if (value == null) continue;
+            // Tokenize stored value and find words matching the prefix
+            for (String word : value.split("\\s+")) {
+                String clean = word.replaceAll("[^\\p{L}\\p{N}]", "").toLowerCase();
+                if (clean.length() >= prefix.length() && clean.startsWith(prefix)) {
+                    seen.add(leadingContext + clean);
+                }
+            }
         }
     }
 

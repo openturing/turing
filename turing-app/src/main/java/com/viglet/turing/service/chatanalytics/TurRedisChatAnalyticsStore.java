@@ -298,24 +298,36 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             List<String> ids = jedis.zrangeByScore(byTimeKey(),
                     String.valueOf(from.toEpochMilli()),
                     String.valueOf(to.toEpochMilli()));
-            for (String id : ids) {
-                Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-                if (hash.isEmpty()) continue;
-                String startedAt = hash.get(STARTED_AT);
-                if (StringUtils.isBlank(startedAt)) continue;
-                if (rateMetric && StringUtils.isBlank(hash.get(PROCESSED_AT))) continue;
-                Instant when = parseInstantOrNull(startedAt);
-                if (when == null) continue;
-                long bucketKey = truncate(when, dailyBuckets);
-                double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
-                acc[0] += 1; // total (sessions)
-                acc[1] += metricContribution(hash, validatedMetric);
-                acc[2] += metricDivisorContribution(hash, validatedMetric);
-            }
+            accumulateTimeseries(jedis, ids, buckets, rateMetric, dailyBuckets, validatedMetric);
         } catch (Exception e) {
             log.warn("Chat analytics timeseries(Redis) failed: {}", e.getMessage());
             return List.of();
         }
+        return buildTimeseriesRows(buckets, validatedMetric);
+    }
+
+    /** Folds each in-range session into its time bucket's [total, primarySum, divisorSum]. */
+    private void accumulateTimeseries(Jedis jedis, List<String> ids, Map<Long, double[]> buckets,
+            boolean rateMetric, boolean dailyBuckets, String validatedMetric) {
+        for (String id : ids) {
+            Map<String, String> hash = jedis.hgetAll(sessionKey(id));
+            if (hash.isEmpty()) continue;
+            String startedAt = hash.get(STARTED_AT);
+            if (StringUtils.isBlank(startedAt)) continue;
+            if (rateMetric && StringUtils.isBlank(hash.get(PROCESSED_AT))) continue;
+            Instant when = parseInstantOrNull(startedAt);
+            if (when == null) continue;
+            long bucketKey = truncate(when, dailyBuckets);
+            double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
+            acc[0] += 1; // total (sessions)
+            acc[1] += metricContribution(hash, validatedMetric);
+            acc[2] += metricDivisorContribution(hash, validatedMetric);
+        }
+    }
+
+    /** Renders the accumulated buckets into result rows, applying the per-metric formula. */
+    private List<Map<String, Object>> buildTimeseriesRows(Map<Long, double[]> buckets,
+            String validatedMetric) {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map.Entry<Long, double[]> entry : buckets.entrySet()) {
             int total = (int) entry.getValue()[0];

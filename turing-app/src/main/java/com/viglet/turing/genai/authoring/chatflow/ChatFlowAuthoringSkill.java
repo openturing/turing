@@ -105,25 +105,8 @@ public class ChatFlowAuthoringSkill {
         List<ChatFlowNodeGeneration> nodes = state.nodes() == null ? List.of() : new ArrayList<>(state.nodes());
         List<ChatFlowEdgeGeneration> edges = state.edges() == null ? List.of() : new ArrayList<>(state.edges());
 
-        Set<String> nodeIds = new HashSet<>();
-        for (ChatFlowNodeGeneration n : nodes) {
-            if (n == null || n.id() == null || n.id().isBlank()) continue;
-            if (!nodeIds.add(n.id())) {
-                log.warn("[ChatFlowSkill] Duplicate node id '{}' — skipping", n.id());
-            }
-        }
-
-        // Drop edges referencing nodes that don't exist (LLMs sometimes hallucinate)
-        List<ChatFlowEdgeGeneration> cleanEdges = new ArrayList<>(edges.size());
-        for (ChatFlowEdgeGeneration e : edges) {
-            if (e == null) continue;
-            if (e.source() == null || e.target() == null) continue;
-            if (!nodeIds.contains(e.source()) || !nodeIds.contains(e.target())) {
-                log.warn("[ChatFlowSkill] Dropping edge {} → {} (unknown endpoint)", e.source(), e.target());
-                continue;
-            }
-            cleanEdges.add(e);
-        }
+        Set<String> nodeIds = collectNodeIds(nodes);
+        List<ChatFlowEdgeGeneration> cleanEdges = dropDanglingEdges(edges, nodeIds);
 
         return new ChatFlowGeneration(
                 state.name(),
@@ -134,6 +117,34 @@ public class ChatFlowAuthoringSkill {
                 state.enabled(),
                 nodes,
                 cleanEdges);
+    }
+
+    /** Collects the distinct, non-blank node ids, warning on duplicates. */
+    private Set<String> collectNodeIds(List<ChatFlowNodeGeneration> nodes) {
+        Set<String> nodeIds = new HashSet<>();
+        for (ChatFlowNodeGeneration n : nodes) {
+            if (n == null || n.id() == null || n.id().isBlank()) continue;
+            if (!nodeIds.add(n.id())) {
+                log.warn("[ChatFlowSkill] Duplicate node id '{}' — skipping", n.id());
+            }
+        }
+        return nodeIds;
+    }
+
+    /** Drops edges referencing nodes that don't exist (LLMs sometimes hallucinate). */
+    private List<ChatFlowEdgeGeneration> dropDanglingEdges(List<ChatFlowEdgeGeneration> edges,
+            Set<String> nodeIds) {
+        List<ChatFlowEdgeGeneration> cleanEdges = new ArrayList<>(edges.size());
+        for (ChatFlowEdgeGeneration e : edges) {
+            if (e == null) continue;
+            if (e.source() == null || e.target() == null) continue;
+            if (!nodeIds.contains(e.source()) || !nodeIds.contains(e.target())) {
+                log.warn("[ChatFlowSkill] Dropping edge {} → {} (unknown endpoint)", e.source(), e.target());
+                continue;
+            }
+            cleanEdges.add(e);
+        }
+        return cleanEdges;
     }
 
     /** Public so the API can call layout BEFORE building the React Flow position field. */
