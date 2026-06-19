@@ -500,23 +500,31 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         ? SortField.FIELD_SCORE
                         : sortFieldFor(field, true, fieldTypes.get(field)));
             } else if (entry instanceof Map<?, ?> map) {
-                map.forEach((key, val) -> {
-                    String field = key.toString();
-                    if ("_score".equals(field)) {
-                        sortFields.add(SortField.FIELD_SCORE);
-                        return;
-                    }
-                    boolean reverse = true;
-                    if (val instanceof String s) reverse = "desc".equalsIgnoreCase(s);
-                    else if (val instanceof Map<?, ?> opts) {
-                        Object order = opts.get("order");
-                        reverse = order == null || "desc".equalsIgnoreCase(order.toString());
-                    }
-                    sortFields.add(sortFieldFor(field, reverse, fieldTypes.get(field)));
-                });
+                map.forEach((key, val) ->
+                        addMapSortField(key.toString(), val, sortFields, fieldTypes));
             }
         }
         return sortFields.isEmpty() ? null : new Sort(sortFields.toArray(SortField[]::new));
+    }
+
+    /**
+     * Appends the {@link SortField} for one {@code {field: order}} sort entry,
+     * honouring {@code _score}, a {@code "asc"/"desc"} string, or a
+     * {@code {"order": …}} options map (default descending).
+     */
+    private void addMapSortField(String field, Object val, List<SortField> sortFields,
+            Map<String, TurSEFieldType> fieldTypes) {
+        if ("_score".equals(field)) {
+            sortFields.add(SortField.FIELD_SCORE);
+            return;
+        }
+        boolean reverse = true;
+        if (val instanceof String s) reverse = "desc".equalsIgnoreCase(s);
+        else if (val instanceof Map<?, ?> opts) {
+            Object order = opts.get("order");
+            reverse = order == null || "desc".equalsIgnoreCase(order.toString());
+        }
+        sortFields.add(sortFieldFor(field, reverse, fieldTypes.get(field)));
     }
 
     /**

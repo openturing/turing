@@ -189,19 +189,30 @@ public class TurChatHandoffService {
             List<String> requested) {
         if (allSlots == null || allSlots.isEmpty()) return Map.of();
         if (requested == null || requested.isEmpty()) {
-            // Default safe set: skip internal-flag slots whose values are
-            // meaningless to a human consultant (cta_visible, color, …).
-            // Keep human-readable values; if the caller wants those they
-            // can pass an explicit slot list.
-            Map<String, String> defaults = new LinkedHashMap<>();
-            for (Map.Entry<String, String> entry : allSlots.entrySet()) {
-                String name = entry.getKey();
-                if (isInternalFlag(name)) continue;
-                String value = entry.getValue();
-                if (value != null && !value.isBlank()) defaults.put(name, value);
-            }
-            return defaults;
+            return defaultSlots(allSlots);
         }
+        return requestedSlots(allSlots, requested);
+    }
+
+    /**
+     * Default safe set: skip internal-flag slots whose values are meaningless to
+     * a human consultant (cta_visible, color, …). Keeps human-readable values; if
+     * the caller wants the rest they can pass an explicit slot list.
+     */
+    private static Map<String, String> defaultSlots(Map<String, String> allSlots) {
+        Map<String, String> defaults = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : allSlots.entrySet()) {
+            String name = entry.getKey();
+            if (isInternalFlag(name)) continue;
+            String value = entry.getValue();
+            if (value != null && !value.isBlank()) defaults.put(name, value);
+        }
+        return defaults;
+    }
+
+    /** Keeps only the requested slots that carry a non-blank value. */
+    private static Map<String, String> requestedSlots(Map<String, String> allSlots,
+            List<String> requested) {
         Map<String, String> result = new LinkedHashMap<>();
         for (String name : requested) {
             if (name == null || name.isBlank()) continue;
