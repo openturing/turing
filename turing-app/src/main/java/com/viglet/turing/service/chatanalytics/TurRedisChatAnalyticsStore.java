@@ -367,31 +367,7 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             List<String> ids = jedis.zrangeByScore(byTimeKey(),
                     String.valueOf(from.toEpochMilli()),
                     String.valueOf(to.toEpochMilli()));
-            for (String id : ids) {
-                Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-                if (hash.isEmpty()) continue;
-                // T74 — narrow the population before grouping. Mongo pushes
-                // this into a $match; the Redis store filters in-process.
-                if (!matchesScorecardFilters(hash, filters)) continue;
-                String dim = hash.get(field);
-                if (StringUtils.isBlank(dim)) dim = UNKNOWN;
-                double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
-                a[0] += 1;
-                a[1] += parseLong(hash.get(DURATION_MS));
-                if (StringUtils.isNotBlank(hash.get(PROCESSED_AT))) {
-                    a[2] += 1;
-                    String goal = hash.get(GOAL_ACHIEVED);
-                    if ("YES".equals(goal)) a[3] += 1;
-                    else if ("PARTIAL".equals(goal)) a[3] += 0.5;
-                    String s = hash.get(SENTIMENT);
-                    if ("NEGATIVE".equals(s) || "FRUSTRATED".equals(s)) a[4] += 1;
-                }
-                String intent = hash.get(INTENT_LABEL);
-                if (StringUtils.isNotBlank(intent)) {
-                    intentCounts.computeIfAbsent(dim, k -> new HashMap<>())
-                            .merge(intent, 1, Integer::sum);
-                }
-            }
+            accumulateScorecard(jedis, ids, field, filters, agg, intentCounts);
         } catch (Exception e) {
             log.warn("Chat analytics scorecard(Redis) failed: {}", e.getMessage());
             return List.of();
@@ -400,24 +376,65 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         return agg.entrySet().stream()
                 .sorted((l, r) -> Double.compare(r.getValue()[0], l.getValue()[0]))
                 .limit(cap)
-                .map(e -> {
-                    double[] a = e.getValue();
-                    int sessions = (int) a[0];
-                    int processed = (int) a[2];
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put(BUCKET, e.getKey());
-                    row.put(SESSIONS, sessions);
-                    row.put("avgDurationMs", sessions > 0 ? a[1] / sessions : 0d);
-                    row.put("goalAchievedRate", processed > 0 ? a[3] / processed : 0d);
-                    row.put("negativeRate", processed > 0 ? a[4] / processed : 0d);
-                    String topIntent = intentCounts.getOrDefault(e.getKey(), Map.of())
-                            .entrySet().stream()
-                            .max((x, y) -> Integer.compare(x.getValue(), y.getValue()))
-                            .map(Map.Entry::getKey).orElse(UNKNOWN);
-                    row.put("topIntent", topIntent);
-                    return row;
-                })
+                .map(e -> scorecardRow(e, intentCounts))
                 .toList();
+    }
+
+    /** Folds each in-range, filter-matching session into its dimension's aggregate + intent counts. */
+    private void accumulateScorecard(Jedis jedis, List<String> ids, String field,
+            Map<String, String> filters, Map<String, double[]> agg,
+            Map<String, Map<String, Integer>> intentCounts) {
+        for (String id : ids) {
+            Map<String, String> hash = jedis.hgetAll(sessionKey(id));
+            if (hash.isEmpty()) continue;
+            // T74 — narrow the population before grouping. Mongo pushes this
+            // into a $match; the Redis store filters in-process.
+            if (!matchesScorecardFilters(hash, filters)) continue;
+            String dim = hash.get(field);
+            if (StringUtils.isBlank(dim)) dim = UNKNOWN;
+            double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
+            a[0] += 1;
+            a[1] += parseLong(hash.get(DURATION_MS));
+            accumulateProcessed(hash, a);
+            String intent = hash.get(INTENT_LABEL);
+            if (StringUtils.isNotBlank(intent)) {
+                intentCounts.computeIfAbsent(dim, k -> new HashMap<>())
+                        .merge(intent, 1, Integer::sum);
+            }
+        }
+    }
+
+    /** Folds the goal/sentiment outcomes of a processed session into its aggregate slots. */
+    private void accumulateProcessed(Map<String, String> hash, double[] a) {
+        if (StringUtils.isBlank(hash.get(PROCESSED_AT))) {
+            return;
+        }
+        a[2] += 1;
+        String goal = hash.get(GOAL_ACHIEVED);
+        if ("YES".equals(goal)) a[3] += 1;
+        else if ("PARTIAL".equals(goal)) a[3] += 0.5;
+        String s = hash.get(SENTIMENT);
+        if ("NEGATIVE".equals(s) || "FRUSTRATED".equals(s)) a[4] += 1;
+    }
+
+    /** Renders one dimension's aggregates into a scorecard row (rates + top intent). */
+    private Map<String, Object> scorecardRow(Map.Entry<String, double[]> e,
+            Map<String, Map<String, Integer>> intentCounts) {
+        double[] a = e.getValue();
+        int sessions = (int) a[0];
+        int processed = (int) a[2];
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put(BUCKET, e.getKey());
+        row.put(SESSIONS, sessions);
+        row.put("avgDurationMs", sessions > 0 ? a[1] / sessions : 0d);
+        row.put("goalAchievedRate", processed > 0 ? a[3] / processed : 0d);
+        row.put("negativeRate", processed > 0 ? a[4] / processed : 0d);
+        String topIntent = intentCounts.getOrDefault(e.getKey(), Map.of())
+                .entrySet().stream()
+                .max((x, y) -> Integer.compare(x.getValue(), y.getValue()))
+                .map(Map.Entry::getKey).orElse(UNKNOWN);
+        row.put("topIntent", topIntent);
+        return row;
     }
 
     @Override

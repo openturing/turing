@@ -245,30 +245,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         List<Map<String, Object>> docs = new java.util.ArrayList<>();
                         for (int i = start; i < scoreDocs.length && i < start + rows; i++) {
                             var doc = searcher.storedFields().document(scoreDocs[i].doc);
-                            Map<String, Object> fields = new java.util.LinkedHashMap<>();
-                            for (var field : doc.getFields()) {
-                                String name = field.name();
-                                if (!siteFieldMap.containsKey(name) && !"id".equals(name) && !"type".equals(name)) {
-                                    continue;
-                                }
-                                Object existing = fields.get(name);
-                                if (existing != null) {
-                                    // Multi-valued: collect into list
-                                    if (existing instanceof List<?> list) {
-                                        @SuppressWarnings("unchecked")
-                                        var mutableList = (List<Object>) list;
-                                        mutableList.add(field.stringValue());
-                                    } else {
-                                        var list = new java.util.ArrayList<>();
-                                        list.add(existing);
-                                        list.add(field.stringValue());
-                                        fields.put(name, list);
-                                    }
-                                } else {
-                                    fields.put(name, field.stringValue());
-                                }
-                            }
-                            docs.add(fields);
+                            docs.add(extractDocFields(doc, siteFieldMap));
                         }
                         return docs;
                     } catch (Exception e) {
@@ -276,6 +253,37 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         return List.<Map<String, Object>>of();
                     }
                 }).orElse(List.of());
+    }
+
+    /** Projects a stored doc into the requested site fields (plus id/type), folding multi-values into lists. */
+    private Map<String, Object> extractDocFields(org.apache.lucene.document.Document doc,
+            Map<String, ?> siteFieldMap) {
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        for (var field : doc.getFields()) {
+            String name = field.name();
+            if (!siteFieldMap.containsKey(name) && !"id".equals(name) && !"type".equals(name)) {
+                continue;
+            }
+            mergeDocField(fields, name, field.stringValue());
+        }
+        return fields;
+    }
+
+    private void mergeDocField(Map<String, Object> fields, String name, String value) {
+        Object existing = fields.get(name);
+        if (existing == null) {
+            fields.put(name, value);
+        } else if (existing instanceof List<?> list) {
+            // Multi-valued: collect into the existing list.
+            @SuppressWarnings("unchecked")
+            var mutableList = (List<Object>) list;
+            mutableList.add(value);
+        } else {
+            var newList = new java.util.ArrayList<>();
+            newList.add(existing);
+            newList.add(value);
+            fields.put(name, newList);
+        }
     }
 
     // ---- Autocomplete -----------------------------------------------------
