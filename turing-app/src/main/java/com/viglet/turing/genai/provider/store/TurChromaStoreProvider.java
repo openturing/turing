@@ -173,21 +173,25 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             List<ChromaApi.Collection> collections = chromaApi.listCollections(tenantName, databaseName);
             List<TurStoreCollectionInfo> result = new ArrayList<>();
             for (ChromaApi.Collection col : collections) {
-                long chunkCount = 0;
-                try {
-                    Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
-                    if (c != null) {
-                        chunkCount = c;
-                    }
-                } catch (Exception e) {
-                    log.warn("Failed to count embeddings for collection: {}", col.name(), e);
-                }
+                long chunkCount = countEmbeddingsOrZero(chromaApi, tenantName, databaseName, col);
                 result.add(new TurStoreCollectionInfo(col.name(), col.id(), -1L, chunkCount));
             }
             return result;
         } catch (Exception e) {
             log.error("Failed to list Chroma collections", e);
             return List.of();
+        }
+    }
+
+    /** Embedding count for a collection, or {@code 0} when the count call fails. */
+    private long countEmbeddingsOrZero(ChromaApi chromaApi, String tenantName, String databaseName,
+            ChromaApi.Collection col) {
+        try {
+            Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
+            return c != null ? c : 0L;
+        } catch (Exception e) {
+            log.warn("Failed to count embeddings for collection: {}", col.name(), e);
+            return 0L;
         }
     }
 

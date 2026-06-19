@@ -304,8 +304,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 String startedAt = hash.get(STARTED_AT);
                 if (StringUtils.isBlank(startedAt)) continue;
                 if (rateMetric && StringUtils.isBlank(hash.get(PROCESSED_AT))) continue;
-                Instant when;
-                try { when = Instant.parse(startedAt); } catch (Exception e) { continue; }
+                Instant when = parseInstantOrNull(startedAt);
+                if (when == null) continue;
                 long bucketKey = truncate(when, dailyBuckets);
                 double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
                 acc[0] += 1; // total (sessions)
@@ -584,6 +584,15 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     }
 
     /** Truncates {@code when} to the start of its hour or day, returning epoch millis. */
+    /** Parses an ISO-8601 instant, or returns {@code null} when the value is unparseable. */
+    private static Instant parseInstantOrNull(String value) {
+        try {
+            return Instant.parse(value);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static long truncate(Instant when, boolean dailyBuckets) {
         java.time.temporal.ChronoUnit unit = dailyBuckets
                 ? java.time.temporal.ChronoUnit.DAYS

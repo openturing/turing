@@ -313,12 +313,7 @@ public class TurSkillRunnerService {
             ChatResponse response = toolExecutionLoop.call(chatModel,
                     new Prompt(messages, optionsBuilder.build()));
 
-            try {
-                tokenUsageService.recordUsage(llmInstance, response, resolveUsername(),
-                        null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_SKILL);
-            } catch (RuntimeException usageError) {
-                log.debug("[run_skill] token usage record failed: {}", usageError.getMessage());
-            }
+            recordUsageSafely(llmInstance, response);
 
             String text = response == null || response.getResult() == null
                     ? null
@@ -331,6 +326,16 @@ public class TurSkillRunnerService {
             log.warn("[run_skill] skill='{}' conv={} failed: {}",
                     skill.getName(), conversationId, e.getMessage());
             return "Failed to run skill '" + skill.getName() + "': " + e.getMessage();
+        }
+    }
+
+    /** Records token usage, swallowing (and logging) any failure so it never breaks the skill run. */
+    private void recordUsageSafely(TurLLMInstance llmInstance, ChatResponse response) {
+        try {
+            tokenUsageService.recordUsage(llmInstance, response, resolveUsername(),
+                    null, com.viglet.turing.observability.TurMeterNames.STAGE_CHAT_SKILL);
+        } catch (RuntimeException usageError) {
+            log.debug("[run_skill] token usage record failed: {}", usageError.getMessage());
         }
     }
 

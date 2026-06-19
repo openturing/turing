@@ -442,13 +442,8 @@ public class TurLuceneVectorStore implements VectorStore {
             // term doesn't appear, which is the exact failure mode we are
             // trying to avoid.
             parser.setDefaultOperator(QueryParser.Operator.OR);
-            Query parsedQuery;
-            try {
-                parsedQuery = parser.parse(escaped);
-            } catch (ParseException pe) {
-                log.warn("[LuceneVectorStore] BM25 fallback failed to parse query '{}' "
-                                + "(escaped='{}'): {}",
-                        query, escaped, pe.getMessage());
+            Query parsedQuery = parseBm25OrNull(parser, escaped, query);
+            if (parsedQuery == null) {
                 return List.of();
             }
             TopDocs topDocs = searcher.search(parsedQuery, topK);
@@ -478,6 +473,18 @@ public class TurLuceneVectorStore implements VectorStore {
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to run BM25 fallback on Lucene vector store '" + collectionName + "'", e);
+        }
+    }
+
+    /** Parses the escaped BM25 query, or returns {@code null} (logged) when it can't be parsed. */
+    private Query parseBm25OrNull(QueryParser parser, String escaped, String query) {
+        try {
+            return parser.parse(escaped);
+        } catch (ParseException pe) {
+            log.warn("[LuceneVectorStore] BM25 fallback failed to parse query '{}' "
+                            + "(escaped='{}'): {}",
+                    query, escaped, pe.getMessage());
+            return null;
         }
     }
 

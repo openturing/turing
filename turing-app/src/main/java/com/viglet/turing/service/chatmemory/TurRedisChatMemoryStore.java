@@ -108,16 +108,9 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
             if (raw == null || raw.isEmpty()) return List.of();
             List<Map<String, Object>> result = new ArrayList<>(raw.size());
             for (String json : raw) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> parsed = MAPPER.readValue(json, Map.class);
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("role", String.valueOf(parsed.get("role")));
-                    row.put(CONTENT, String.valueOf(parsed.getOrDefault(CONTENT, "")));
-                    row.put(TIMESTAMP, parsed.get(TIMESTAMP));
+                Map<String, Object> row = parseMemoryEntry(json, listKey);
+                if (row != null) {
                     result.add(row);
-                } catch (Exception parseEx) {
-                    log.debug("Skipping malformed memory entry in {}: {}", listKey, parseEx.getMessage());
                 }
             }
             return result;
@@ -125,6 +118,25 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
             log.warn("Failed to read chat memory messages for conversation {}: {}",
                     conversationId, e.getMessage());
             return List.of();
+        }
+    }
+
+    /**
+     * Parses one stored memory entry into a row, or returns {@code null} when the
+     * JSON is malformed (logged and skipped by the caller).
+     */
+    private Map<String, Object> parseMemoryEntry(String json, String listKey) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsed = MAPPER.readValue(json, Map.class);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("role", String.valueOf(parsed.get("role")));
+            row.put(CONTENT, String.valueOf(parsed.getOrDefault(CONTENT, "")));
+            row.put(TIMESTAMP, parsed.get(TIMESTAMP));
+            return row;
+        } catch (Exception parseEx) {
+            log.debug("Skipping malformed memory entry in {}: {}", listKey, parseEx.getMessage());
+            return null;
         }
     }
 

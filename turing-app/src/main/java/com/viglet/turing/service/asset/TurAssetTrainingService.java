@@ -141,11 +141,8 @@ public class TurAssetTrainingService {
             log.info("[AssetTraining] Starting training with {} files", total);
 
             for (TurAssetItem file : allFiles) {
-                try {
-                    processFile(file, infra);
-                } catch (Exception e) {
+                if (!tryProcessFile(file, infra)) {
                     errors++;
-                    log.warn("[AssetTraining] Failed to process file: {}", file.name(), e);
                 }
                 processed++;
                 status.set(new TurAssetTrainingStatus(TurAssetTrainingState.RUNNING, total, processed, errors, startedAt, "", ""));
@@ -159,6 +156,17 @@ public class TurAssetTrainingService {
             log.error("[AssetTraining] Training failed", e);
             status.set(new TurAssetTrainingStatus(TurAssetTrainingState.FAILED, 0, 0, 0,
                     startedAt, Instant.now().toString(), e.getMessage()));
+        }
+    }
+
+    /** Processes one file, returning {@code false} (and logging) when it fails. */
+    private boolean tryProcessFile(TurAssetItem file, RagInfrastructure infra) {
+        try {
+            processFile(file, infra);
+            return true;
+        } catch (Exception e) {
+            log.warn("[AssetTraining] Failed to process file: {}", file.name(), e);
+            return false;
         }
     }
 

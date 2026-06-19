@@ -175,14 +175,7 @@ public class TurElasticsearchUtils {
             for (IndicesRecord indicesRecord : catResponse.indices()) {
                 String indexName = indicesRecord.index();
                 if (indexName != null && !indexName.startsWith(".")) {
-                    long docCount = 0;
-                    if (indicesRecord.docsCount() != null) {
-                        try {
-                            docCount = Long.parseLong(indicesRecord.docsCount());
-                        } catch (NumberFormatException ignored) {
-                            // keep 0
-                        }
-                    }
+                    long docCount = parseLongOrZero(indicesRecord.docsCount());
                     result.add(new TurSECoreInfo(indexName, docCount, List.of()));
                 }
             }
@@ -190,6 +183,18 @@ public class TurElasticsearchUtils {
             log.error("Failed to list Elasticsearch indices at {}: {}", endpointUrl, e.getMessage(), e);
         }
         return result;
+    }
+
+    /** Parses a doc-count string, treating {@code null} or non-numeric values as zero. */
+    private static long parseLongOrZero(String value) {
+        if (value == null) {
+            return 0;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     private static RestClient buildRestClient(String endpointUrl) {

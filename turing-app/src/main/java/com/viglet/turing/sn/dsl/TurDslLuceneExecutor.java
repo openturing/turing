@@ -121,16 +121,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         // search time. Rather than failing the whole query (and losing
                         // the results), fall back to relevance order — the query is more
                         // valuable than the requested ordering.
-                        TopDocs topDocs;
-                        try {
-                            topDocs = sort != null
-                                    ? searcher.search(luceneQuery, hitsNeeded, sort)
-                                    : searcher.search(luceneQuery, hitsNeeded);
-                        } catch (IllegalStateException sortFailure) {
-                            log.warn("DSL Lucene sort failed ({}). Falling back to relevance order.",
-                                    sortFailure.getMessage());
-                            topDocs = searcher.search(luceneQuery, hitsNeeded);
-                        }
+                        TopDocs topDocs = searchWithSortFallback(searcher, luceneQuery, hitsNeeded, sort);
 
                         // Build response using template methods
                         TurDslSearchResponse response = buildResponse(topDocs, request,
@@ -152,6 +143,23 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         return Optional.empty();
                     }
                 });
+    }
+
+    /**
+     * Runs the search with the requested sort, falling back to relevance order when a sort over a
+     * field lacking matching doc values throws — the query results matter more than the ordering.
+     */
+    private TopDocs searchWithSortFallback(IndexSearcher searcher, Query luceneQuery, int hitsNeeded,
+            Sort sort) throws IOException {
+        try {
+            return sort != null
+                    ? searcher.search(luceneQuery, hitsNeeded, sort)
+                    : searcher.search(luceneQuery, hitsNeeded);
+        } catch (IllegalStateException sortFailure) {
+            log.warn("DSL Lucene sort failed ({}). Falling back to relevance order.",
+                    sortFailure.getMessage());
+            return searcher.search(luceneQuery, hitsNeeded);
+        }
     }
 
     // ==================== Interface Methods ====================

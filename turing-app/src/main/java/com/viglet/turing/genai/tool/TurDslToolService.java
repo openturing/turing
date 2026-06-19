@@ -183,39 +183,28 @@ public class TurDslToolService {
 
             // Hits
             if (response.hits() != null && response.hits().hits() != null) {
-                try {
-                    sb.append(objectMapper.writeValueAsString(
-                            response.hits().hits().stream()
-                                    .map(hit -> {
-                                        Map<String, Object> doc = new LinkedHashMap<>();
-                                        doc.put("_id", hit.id());
-                                        doc.put("_score", hit.score());
-                                        if (hit.source() != null) doc.putAll(hit.source());
-                                        return doc;
-                                    }).toList()));
-                } catch (Exception e) {
-                    sb.append("[Error serializing hits]");
-                }
+                sb.append(toJsonOrError(
+                        response.hits().hits().stream()
+                                .map(hit -> {
+                                    Map<String, Object> doc = new LinkedHashMap<>();
+                                    doc.put("_id", hit.id());
+                                    doc.put("_score", hit.score());
+                                    if (hit.source() != null) doc.putAll(hit.source());
+                                    return doc;
+                                }).toList(),
+                        "[Error serializing hits]"));
             }
 
             // Aggregations
             if (response.aggregations() != null && !response.aggregations().isEmpty()) {
                 sb.append("\n\nAggregations:\n");
-                try {
-                    sb.append(objectMapper.writeValueAsString(response.aggregations()));
-                } catch (Exception e) {
-                    sb.append("[Error serializing aggregations]");
-                }
+                sb.append(toJsonOrError(response.aggregations(), "[Error serializing aggregations]"));
             }
 
             // Suggest
             if (response.suggest() != null && !response.suggest().isEmpty()) {
                 sb.append("\n\nSuggestions:\n");
-                try {
-                    sb.append(objectMapper.writeValueAsString(response.suggest()));
-                } catch (Exception e) {
-                    sb.append("[Error serializing suggestions]");
-                }
+                sb.append(toJsonOrError(response.suggest(), "[Error serializing suggestions]"));
             }
 
             return sb.toString();
@@ -223,6 +212,15 @@ public class TurDslToolService {
             log.error("[DSL Tool] dsl_search failed", e);
             return "Error executing DSL search: " + e.getMessage()
                     + "\nEnsure the query_body is valid Elasticsearch Query DSL JSON.";
+        }
+    }
+
+    /** Serializes {@code value} to JSON, or returns {@code errorPlaceholder} on failure. */
+    private String toJsonOrError(Object value, String errorPlaceholder) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            return errorPlaceholder;
         }
     }
 

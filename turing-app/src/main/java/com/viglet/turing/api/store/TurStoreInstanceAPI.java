@@ -371,15 +371,8 @@ public class TurStoreInstanceAPI {
                         if (line.isBlank()) {
                             continue;
                         }
-                        try {
-                            next = objectMapper.readValue(line, recordType);
-                            return;
-                        } catch (Exception parseError) {
-                            log.warn("[Store] Skipping malformed JSONL line: {}",
-                                    parseError.getMessage());
-                            next = null;
-                            return;
-                        }
+                        next = parseRecordOrNull(line, recordType);
+                        return;
                     }
                 } catch (IOException ioError) {
                     log.warn("[Store] JSONL read failed: {}", ioError.getMessage());
@@ -404,6 +397,20 @@ public class TurStoreInstanceAPI {
                 return out;
             }
         };
+    }
+
+    /**
+     * Parses one JSONL line into a record, or returns {@code null} (logged at WARN) when the line
+     * is malformed — the provider counts {@code null} records as failed.
+     */
+    private TurStoreExportRecord parseRecordOrNull(String line,
+            TypeReference<TurStoreExportRecord> recordType) {
+        try {
+            return objectMapper.readValue(line, recordType);
+        } catch (Exception parseError) {
+            log.warn("[Store] Skipping malformed JSONL line: {}", parseError.getMessage());
+            return null;
+        }
     }
 
     /**
