@@ -188,16 +188,12 @@ public class TurUserAPI {
         return turCurrentUser;
     }
 
-    private TurCurrentUser oauth2User() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        OAuth2User user = ((OAuth2User) authentication.getPrincipal());
-        String realm = (authentication instanceof OAuth2AuthenticationToken oauthToken)
-                ? oauthToken.getAuthorizedClientRegistrationId()
-                : "oauth2";
-        String username = firstNonNull(user, PREFERRED_USERNAME, "login", EMAIL);
-        String email = firstNonNull(user, EMAIL);
-        String picture = firstNonNull(user, "picture", "avatar_url");
+    /** First/last name resolved from an OAuth2 principal. */
+    private record OauthNames(String firstName, String lastName) {
+    }
 
+    /** Resolves given/family name, falling back to splitting a single "name" attribute. */
+    private OauthNames resolveNames(OAuth2User user) {
         String firstName = user.getAttribute(GIVEN_NAME);
         String lastName = user.getAttribute(FAMILY_NAME);
         if (firstName == null && lastName == null) {
@@ -208,47 +204,70 @@ public class TurUserAPI {
                 lastName = space > 0 ? fullName.substring(space + 1) : null;
             }
         }
+        return new OauthNames(firstName, lastName);
+    }
 
+    /** Creates or updates the local {@link TurUser} mirror from the OAuth2 attributes. */
+    private TurUser upsertOauthUser(String username, OauthNames names, String email,
+            String picture, String realm) {
         TurUser turUser = turUserRepository.findByUsername(username);
         if (turUser == null) {
             turUser = TurUser.builder()
                     .username(username)
-                    .firstName(firstName)
-                    .lastName(lastName)
+                    .firstName(names.firstName())
+                    .lastName(names.lastName())
                     .email(email)
                     .avatarUrl(picture)
                     .realm(realm)
                     .enabled(1)
                     .build();
-            turUserRepository.save(turUser);
         } else {
-            turUser.setFirstName(firstName);
-            turUser.setLastName(lastName);
+            turUser.setFirstName(names.firstName());
+            turUser.setLastName(names.lastName());
             turUser.setEmail(email);
             turUser.setRealm(realm);
             if (picture != null && turUser.getAvatarUrl() == null) {
                 turUser.setAvatarUrl(picture);
             }
-            turUserRepository.save(turUser);
         }
+        turUserRepository.save(turUser);
+        return turUser;
+    }
 
-        boolean isAdmin = !turConfigProperties.isPermissions();
-        if (!isAdmin) {
-            var groups = turGroupRepository.findByTurUsersContaining(turUser);
-            if (groups != null) {
-                for (TurGroup turGroup : groups) {
-                    if (ADMINISTRATOR.equals(turGroup.getName())) {
-                        isAdmin = true;
-                        break;
-                    }
+    /** Admin when permissions are disabled, or the user belongs to the ADMINISTRATOR group. */
+    private boolean resolveIsAdmin(TurUser turUser) {
+        if (!turConfigProperties.isPermissions()) {
+            return true;
+        }
+        var groups = turGroupRepository.findByTurUsersContaining(turUser);
+        if (groups != null) {
+            for (TurGroup turGroup : groups) {
+                if (ADMINISTRATOR.equals(turGroup.getName())) {
+                    return true;
                 }
             }
         }
+        return false;
+    }
+
+    private TurCurrentUser oauth2User() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        OAuth2User user = ((OAuth2User) authentication.getPrincipal());
+        String realm = (authentication instanceof OAuth2AuthenticationToken oauthToken)
+                ? oauthToken.getAuthorizedClientRegistrationId()
+                : "oauth2";
+        String username = firstNonNull(user, PREFERRED_USERNAME, "login", EMAIL);
+        String email = firstNonNull(user, EMAIL);
+        String picture = firstNonNull(user, "picture", "avatar_url");
+
+        OauthNames names = resolveNames(user);
+        TurUser turUser = upsertOauthUser(username, names, email, picture, realm);
+        boolean isAdmin = resolveIsAdmin(turUser);
 
         TurCurrentUser turCurrentUser = new TurCurrentUser();
         turCurrentUser.setUsername(username);
-        turCurrentUser.setFirstName(firstName);
-        turCurrentUser.setLastName(lastName);
+        turCurrentUser.setFirstName(names.firstName());
+        turCurrentUser.setLastName(names.lastName());
         turCurrentUser.setEmail(email);
         turCurrentUser.setAdmin(isAdmin);
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());

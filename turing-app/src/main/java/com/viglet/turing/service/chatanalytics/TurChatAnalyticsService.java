@@ -326,38 +326,18 @@ public class TurChatAnalyticsService {
         if (!store.isEnabled()) return;
         InFlight inflight = inFlight.remove(conversationId);
         Instant now = Instant.now();
-        Instant startedAt = inflight != null ? inflight.startedAt : null;
-        long durationMs = startedAt != null
-                ? Math.max(0, Duration.between(startedAt, now).toMillis())
-                : 0L;
         try {
-            store.upsertSession(new TurChatSessionEvent(
-                    conversationId,
-                    inflight == null ? null : inflight.agentId,
-                    inflight == null ? null : inflight.personaId,
-                    inflight == null ? null : inflight.llmInstanceId,
-                    inflight == null ? null : inflight.embeddingModelId,
-                    inflight == null ? null : inflight.storeInstanceId,
-                    inflight == null ? null : inflight.userId,
-                    inflight == null ? null : inflight.locale,
-                    null,           // firstUserMessage is start-only and preserved by store
-                    startedAt,
-                    now,
-                    outcome,
-                    inflight == null ? 0  : inflight.turns,
-                    inflight == null ? 0L : inflight.tokensIn,
-                    inflight == null ? 0L : inflight.tokensOut,
-                    durationMs,
-                    inflight == null ? 0  : inflight.toolCalls,
-                    inflight == null ? 0  : inflight.toolErrors,
-                    inflight == null ? 0L : inflight.totalToolLatencyMs,
-                    inflight == null ? null : inflight.experimentKey,
-                    inflight == null ? null : inflight.variantLabel,
-                    inflight == null ? null : inflight.parentConversationId,
-                    inflight == null ? null : inflight.timezone,
-                    inflight == null ? null : inflight.deviceType,
-                    inflight == null ? List.of() : List.copyOf(inflight.toolSamples)));
-            if (inflight != null && inflight.toolCalls > 0) {
+            if (inflight == null) {
+                // No in-flight bag (e.g. server restarted mid-session) — persist a
+                // minimal end event so the conversation isn't lost.
+                store.upsertSession(minimalSessionEvent(conversationId, now, outcome));
+                return;
+            }
+            long durationMs = inflight.startedAt != null
+                    ? Math.max(0, Duration.between(inflight.startedAt, now).toMillis())
+                    : 0L;
+            store.upsertSession(fullSessionEvent(conversationId, inflight, now, outcome, durationMs));
+            if (inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
                         inflight.totalToolLatencyMs);
@@ -366,6 +346,32 @@ public class TurChatAnalyticsService {
             log.warn("Chat analytics recordSessionEnd failed for {}: {}",
                     conversationId, e.getMessage());
         }
+    }
+
+    /** End event for a session with no surviving in-flight bag — all aggregates default. */
+    private TurChatSessionEvent minimalSessionEvent(String conversationId, Instant now,
+            TurChatSessionOutcome outcome) {
+        return new TurChatSessionEvent(conversationId,
+                null, null, null, null, null, null, null,
+                null,           // firstUserMessage is start-only and preserved by store
+                null,           // startedAt unknown
+                now, outcome,
+                0, 0L, 0L, 0L, 0, 0, 0L,
+                null, null, null, null, null, List.of());
+    }
+
+    /** End event built from the live in-flight aggregates. */
+    private TurChatSessionEvent fullSessionEvent(String conversationId, InFlight inflight,
+            Instant now, TurChatSessionOutcome outcome, long durationMs) {
+        return new TurChatSessionEvent(conversationId,
+                inflight.agentId, inflight.personaId, inflight.llmInstanceId,
+                inflight.embeddingModelId, inflight.storeInstanceId, inflight.userId, inflight.locale,
+                null,           // firstUserMessage is start-only and preserved by store
+                inflight.startedAt, now, outcome,
+                inflight.turns, inflight.tokensIn, inflight.tokensOut, durationMs,
+                inflight.toolCalls, inflight.toolErrors, inflight.totalToolLatencyMs,
+                inflight.experimentKey, inflight.variantLabel, inflight.parentConversationId,
+                inflight.timezone, inflight.deviceType, List.copyOf(inflight.toolSamples));
     }
 
     /** Pass-through to the store — used by the REST analytics endpoints. */
