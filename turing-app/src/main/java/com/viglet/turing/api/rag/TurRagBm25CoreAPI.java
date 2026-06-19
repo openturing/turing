@@ -112,6 +112,15 @@ public class TurRagBm25CoreAPI {
     @Transactional(readOnly = true)
     @Secured({ "ROLE_ADMIN", "SN_VIEW" })
     public ResponseEntity<List<CoreStatusDto>> listCores(@PathVariable String siteId) {
+        return buildCoreStatus(siteId);
+    }
+
+    /**
+     * Builds the per-locale core status table. Extracted so the transactional
+     * {@code provisionCores} endpoint can reuse it without a {@code this}-call to
+     * another {@code @Transactional} method (which would bypass the proxy).
+     */
+    private ResponseEntity<List<CoreStatusDto>> buildCoreStatus(String siteId) {
         Optional<TurSNSite> siteOpt = turSNSiteRepository.findByIdNoCache(siteId);
         if (siteOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -192,7 +201,7 @@ public class TurRagBm25CoreAPI {
         }
         // Return the updated status table so the UI can refresh in one
         // round-trip without a follow-up GET.
-        return listCores(siteId);
+        return buildCoreStatus(siteId);
     }
 
     @Operation(summary = "Deprovision every BM25 core registered for this SN site's store")

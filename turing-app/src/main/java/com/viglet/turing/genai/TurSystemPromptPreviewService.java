@@ -99,7 +99,7 @@ public class TurSystemPromptPreviewService {
     /** Convenience overload — previews the default flow (first enabled). */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent) {
-        return buildPreview(agent, null);
+        return buildPreviewInternal(agent, null);
     }
 
     /**
@@ -110,6 +110,10 @@ public class TurSystemPromptPreviewService {
      */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent, String flowId) {
+        return buildPreviewInternal(agent, flowId);
+    }
+
+    private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId) {
         boolean usesDefault = !StringUtils.hasText(agent.getSystemPrompt());
         String base = usesDefault ? DEFAULT_SYSTEM_PROMPT.strip() : agent.getSystemPrompt();
         String mcp = mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
