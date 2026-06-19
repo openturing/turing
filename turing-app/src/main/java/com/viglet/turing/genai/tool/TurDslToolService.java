@@ -225,6 +225,46 @@ public class TurDslToolService {
         return sb.toString();
     }
 
+    /** Builds the cat-shards style row for one site+locale (doc count + store size via the SE plugin). */
+    private Map<String, Object> buildShardRow(TurSNSite site, TurSNSiteLocale locale) {
+        var plugin = pluginFactory.getPluginForSite(site);
+        var seInstance = site.getTurSEInstance();
+        String coreName = locale.getCore();
+
+        // Get document count via plugin
+        long docCount;
+        try {
+            docCount = plugin.getDocumentTotal(locale);
+        } catch (Exception e) {
+            docCount = -1;
+        }
+
+        // List indexes/cores for store info
+        String storeSize = "N/A";
+        try {
+            for (var info : plugin.listIndexes(seInstance)) {
+                if (coreName.equalsIgnoreCase(info.name())) {
+                    storeSize = info.numDocs() + " docs";
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        Map<String, Object> shard = new LinkedHashMap<>();
+        shard.put("index", site.getName());
+        shard.put("shard", coreName);
+        shard.put("prirep", "p");
+        shard.put("state", "STARTED");
+        shard.put("docs", docCount >= 0 ? docCount : "unknown");
+        shard.put("store", storeSize);
+        shard.put("engine", plugin.getPluginType());
+        shard.put("node", seInstance != null ? seInstance.getEndpointUrl() : "embedded");
+        shard.put("locale", locale.getLanguage().toString());
+        return shard;
+    }
+
     /** Serializes {@code value} to JSON, or returns {@code errorPlaceholder} on failure. */
     private String toJsonOrError(Object value, String errorPlaceholder) {
         try {
@@ -363,47 +403,8 @@ public class TurDslToolService {
 
         List<Map<String, Object>> shards = new ArrayList<>();
         for (TurSNSite site : sites) {
-            var plugin = pluginFactory.getPluginForSite(site);
-            String engineType = plugin.getPluginType();
-            var seInstance = site.getTurSEInstance();
-
-            List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(site);
-            for (TurSNSiteLocale locale : locales) {
-                String coreName = locale.getCore();
-
-                // Get document count via plugin
-                long docCount;
-                try {
-                    docCount = plugin.getDocumentTotal(locale);
-                } catch (Exception e) {
-                    docCount = -1;
-                }
-
-                // List indexes/cores for store info
-                String storeSize = "N/A";
-                try {
-                    var coreInfos = plugin.listIndexes(seInstance);
-                    for (var info : coreInfos) {
-                        if (coreName.equalsIgnoreCase(info.name())) {
-                            storeSize = String.valueOf(info.numDocs()) + " docs";
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    // ignore
-                }
-
-                Map<String, Object> shard = new LinkedHashMap<>();
-                shard.put("index", site.getName());
-                shard.put("shard", coreName);
-                shard.put("prirep", "p");
-                shard.put("state", "STARTED");
-                shard.put("docs", docCount >= 0 ? docCount : "unknown");
-                shard.put("store", storeSize);
-                shard.put("engine", engineType);
-                shard.put("node", seInstance != null ? seInstance.getEndpointUrl() : "embedded");
-                shard.put("locale", locale.getLanguage().toString());
-                shards.add(shard);
+            for (TurSNSiteLocale locale : turSNSiteLocaleRepository.findByTurSNSite(site)) {
+                shards.add(buildShardRow(site, locale));
             }
         }
 
