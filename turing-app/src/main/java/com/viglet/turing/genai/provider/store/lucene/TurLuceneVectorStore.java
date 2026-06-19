@@ -19,6 +19,7 @@ package com.viglet.turing.genai.provider.store.lucene;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -796,9 +797,7 @@ public class TurLuceneVectorStore implements VectorStore {
         if (rawValue instanceof Collection<?> collection) {
             values.addAll(collection);
         } else if (rawValue.getClass().isArray()) {
-            for (Object v : (Object[]) rawValue) {
-                values.add(v);
-            }
+            Collections.addAll(values, (Object[]) rawValue);
         } else {
             values.add(rawValue);
         }
