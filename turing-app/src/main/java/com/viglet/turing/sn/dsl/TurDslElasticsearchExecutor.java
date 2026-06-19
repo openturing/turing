@@ -585,28 +585,36 @@ public class TurDslElasticsearchExecutor
             if (fn.weight() != null) f.weight(fn.weight());
             if (fn.fieldValueFactor() != null) {
                 var fvf = fn.fieldValueFactor();
-                f.fieldValueFactor(v -> {
-                    v.field(fvf.field());
-                    if (fvf.factor() != null) v.factor(fvf.factor());
-                    if (fvf.missing() != null) v.missing(fvf.missing());
-                    if (fvf.modifier() != null) {
-                        v.modifier(co.elastic.clients.elasticsearch._types.query_dsl
-                                .FieldValueFactorModifier.valueOf(
-                                fvf.modifier().substring(0, 1).toUpperCase()
-                                        + fvf.modifier().substring(1).toLowerCase()));
-                    }
-                    return v;
-                });
+                f.fieldValueFactor(v -> buildFieldValueFactor(v, fvf));
             }
             if (fn.scriptScore() != null) {
-                f.scriptScore(ss -> ss.script(s -> {
-                    s.source(src -> src.scriptString(fn.scriptScore().source()));
-                    if (fn.scriptScore().lang() != null) s.lang(fn.scriptScore().lang());
-                    return s;
-                }));
+                f.scriptScore(ss -> ss.script(s -> buildScoreFunctionScript(s, fn)));
             }
             return f;
         });
+    }
+
+    private co.elastic.clients.elasticsearch._types.query_dsl.FieldValueFactorScoreFunction.Builder
+    buildFieldValueFactor(
+            co.elastic.clients.elasticsearch._types.query_dsl.FieldValueFactorScoreFunction.Builder v,
+            TurDslQuery.FieldValueFactor fvf) {
+        v.field(fvf.field());
+        if (fvf.factor() != null) v.factor(fvf.factor());
+        if (fvf.missing() != null) v.missing(fvf.missing());
+        if (fvf.modifier() != null) {
+            v.modifier(co.elastic.clients.elasticsearch._types.query_dsl
+                    .FieldValueFactorModifier.valueOf(
+                    fvf.modifier().substring(0, 1).toUpperCase()
+                            + fvf.modifier().substring(1).toLowerCase()));
+        }
+        return v;
+    }
+
+    private co.elastic.clients.elasticsearch._types.Script.Builder buildScoreFunctionScript(
+            co.elastic.clients.elasticsearch._types.Script.Builder s, TurDslQuery.ScoreFunction fn) {
+        s.source(src -> src.scriptString(fn.scriptScore().source()));
+        if (fn.scriptScore().lang() != null) s.lang(fn.scriptScore().lang());
+        return s;
     }
 
     @Override
@@ -658,50 +666,92 @@ public class TurDslElasticsearchExecutor
         for (var entry : aggs.entrySet()) {
             String aggName = entry.getKey();
             var esAgg = response.aggregations().get(aggName);
-            if (esAgg == null) continue;
-
-            if (entry.getValue() instanceof TurDslAggregation.TermsAgg) {
-                try {
-                    List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
-                    for (StringTermsBucket bucket : esAgg.sterms().buckets().array()) {
-                        buckets.add(new TurDslSearchResponse.Bucket(
-                                bucket.key().stringValue(), bucket.docCount()));
-                    }
-                    result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));
-                } catch (Exception e) {
-                    log.debug("Could not parse terms aggregation '{}': {}", aggName, e.getMessage());
-                }
-            } else if (entry.getValue() instanceof TurDslAggregation.RangeAgg) {
-                try {
-                    List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
-                    for (var bucket : esAgg.range().buckets().array()) {
-                        String from = bucket.fromAsString() != null ? bucket.fromAsString() : "*";
-                        String to = bucket.toAsString() != null ? bucket.toAsString() : "*";
-                        String key = bucket.key() != null ? bucket.key()
-                                : "%s-%s".formatted(from, to);
-                        buckets.add(new TurDslSearchResponse.Bucket(key, bucket.docCount()));
-                    }
-                    result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));
-                } catch (Exception e) {
-                    log.debug("Could not parse range aggregation '{}': {}", aggName, e.getMessage());
-                }
-            } else if (entry.getValue() instanceof TurDslAggregation.AvgAgg
-                    || entry.getValue() instanceof TurDslAggregation.SumAgg
-                    || entry.getValue() instanceof TurDslAggregation.MinAgg
-                    || entry.getValue() instanceof TurDslAggregation.MaxAgg
-                    || entry.getValue() instanceof TurDslAggregation.ValueCountAgg
-                    || entry.getValue() instanceof TurDslAggregation.CardinalityAgg) {
-                try {
-                    double value = esAgg._get()instanceof
-                            co.elastic.clients.elasticsearch._types.aggregations.SingleMetricAggregateBase sm
-                            ? sm.value() : 0.0;
-                    result.put(aggName, new TurDslSearchResponse.AggregationResult(value));
-                } catch (Exception e) {
-                    log.debug("Could not parse metric aggregation '{}': {}", aggName, e.getMessage());
-                }
+            if (esAgg == null) {
+                continue;
+            }
+            TurDslSearchResponse.AggregationResult aggResult =
+                    parseAggregateResult(entry.getValue(), aggName, esAgg);
+            if (aggResult != null) {
+                result.put(aggName, aggResult);
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Maps one ES {@link co.elastic.clients.elasticsearch._types.aggregations.Aggregate}
+     * to the DSL result for its declared agg type, or {@code null} when the type is
+     * unsupported / unparseable.
+     *
+     * @since 2026.3.1
+     */
+    private TurDslSearchResponse.AggregationResult parseAggregateResult(TurDslAggregation agg,
+            String aggName, co.elastic.clients.elasticsearch._types.aggregations.Aggregate esAgg) {
+        if (agg instanceof TurDslAggregation.TermsAgg) {
+            return parseTermsAggResult(aggName, esAgg);
+        }
+        if (agg instanceof TurDslAggregation.RangeAgg) {
+            return parseRangeAggResult(aggName, esAgg);
+        }
+        if (isSingleMetricAgg(agg)) {
+            return parseMetricAggResult(aggName, esAgg);
+        }
+        return null;
+    }
+
+    private static boolean isSingleMetricAgg(TurDslAggregation agg) {
+        return agg instanceof TurDslAggregation.AvgAgg
+                || agg instanceof TurDslAggregation.SumAgg
+                || agg instanceof TurDslAggregation.MinAgg
+                || agg instanceof TurDslAggregation.MaxAgg
+                || agg instanceof TurDslAggregation.ValueCountAgg
+                || agg instanceof TurDslAggregation.CardinalityAgg;
+    }
+
+    private TurDslSearchResponse.AggregationResult parseTermsAggResult(String aggName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate esAgg) {
+        try {
+            List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
+            for (StringTermsBucket bucket : esAgg.sterms().buckets().array()) {
+                buckets.add(new TurDslSearchResponse.Bucket(
+                        bucket.key().stringValue(), bucket.docCount()));
+            }
+            return new TurDslSearchResponse.AggregationResult(buckets);
+        } catch (Exception e) {
+            log.debug("Could not parse terms aggregation '{}': {}", aggName, e.getMessage());
+            return null;
+        }
+    }
+
+    private TurDslSearchResponse.AggregationResult parseRangeAggResult(String aggName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate esAgg) {
+        try {
+            List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
+            for (var bucket : esAgg.range().buckets().array()) {
+                String from = bucket.fromAsString() != null ? bucket.fromAsString() : "*";
+                String to = bucket.toAsString() != null ? bucket.toAsString() : "*";
+                String key = bucket.key() != null ? bucket.key()
+                        : "%s-%s".formatted(from, to);
+                buckets.add(new TurDslSearchResponse.Bucket(key, bucket.docCount()));
+            }
+            return new TurDslSearchResponse.AggregationResult(buckets);
+        } catch (Exception e) {
+            log.debug("Could not parse range aggregation '{}': {}", aggName, e.getMessage());
+            return null;
+        }
+    }
+
+    private TurDslSearchResponse.AggregationResult parseMetricAggResult(String aggName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate esAgg) {
+        try {
+            double value = esAgg._get() instanceof
+                    co.elastic.clients.elasticsearch._types.aggregations.SingleMetricAggregateBase sm
+                    ? sm.value() : 0.0;
+            return new TurDslSearchResponse.AggregationResult(value);
+        } catch (Exception e) {
+            log.debug("Could not parse metric aggregation '{}': {}", aggName, e.getMessage());
+            return null;
+        }
     }
 
     // ==================== Request Builders ====================
@@ -1081,44 +1131,50 @@ public class TurDslElasticsearchExecutor
     private void applySuggestToRequest(Map<String, TurDslQueryRequest.TurDslSuggest> suggests,
                                         SearchRequest.Builder reqBuilder) {
         reqBuilder.suggest(s -> {
-            for (var entry : suggests.entrySet()) {
-                String name = entry.getKey();
-                var suggest = entry.getValue();
-                s.suggesters(name, sg -> {
-                    if (suggest.text() != null) sg.text(suggest.text());
-                    if (suggest.term() != null) {
-                        sg.term(t -> {
-                            t.field(suggest.term().field());
-                            if (suggest.term().size() != null) t.size(suggest.term().size());
-                            return t;
-                        });
-                    } else if (suggest.phrase() != null) {
-                        sg.phrase(p -> {
-                            p.field(suggest.phrase().field());
-                            if (suggest.phrase().size() != null) p.size(suggest.phrase().size());
-                            return p;
-                        });
-                    } else if (suggest.completion() != null) {
-                        sg.completion(comp -> {
-                            comp.field(suggest.completion().field());
-                            if (suggest.completion().size() != null)
-                                comp.size(suggest.completion().size());
-                            if (suggest.completion().skipDuplicates() != null)
-                                comp.skipDuplicates(suggest.completion().skipDuplicates());
-                            if (suggest.completion().fuzzy() != null) {
-                                comp.fuzzy(fz -> fz.fuzziness(
-                                        suggest.completion().fuzzy().fuzziness() != null
-                                                ? suggest.completion().fuzzy().fuzziness().toString()
-                                                : "AUTO"));
-                            }
-                            return comp;
-                        });
-                    }
-                    return sg;
-                });
-            }
+            suggests.forEach((name, suggest) -> s.suggesters(name, sg -> buildSuggester(sg, suggest)));
             return s;
         });
+    }
+
+    private co.elastic.clients.elasticsearch.core.search.FieldSuggester.Builder buildSuggester(
+            co.elastic.clients.elasticsearch.core.search.FieldSuggester.Builder sg,
+            TurDslQueryRequest.TurDslSuggest suggest) {
+        if (suggest.text() != null) sg.text(suggest.text());
+        if (suggest.term() != null) {
+            sg.term(t -> {
+                t.field(suggest.term().field());
+                if (suggest.term().size() != null) t.size(suggest.term().size());
+                return t;
+            });
+        } else if (suggest.phrase() != null) {
+            sg.phrase(p -> {
+                p.field(suggest.phrase().field());
+                if (suggest.phrase().size() != null) p.size(suggest.phrase().size());
+                return p;
+            });
+        } else if (suggest.completion() != null) {
+            sg.completion(comp -> buildCompletionSuggester(comp, suggest));
+        }
+        return sg;
+    }
+
+    private co.elastic.clients.elasticsearch.core.search.CompletionSuggester.Builder buildCompletionSuggester(
+            co.elastic.clients.elasticsearch.core.search.CompletionSuggester.Builder comp,
+            TurDslQueryRequest.TurDslSuggest suggest) {
+        comp.field(suggest.completion().field());
+        if (suggest.completion().size() != null) {
+            comp.size(suggest.completion().size());
+        }
+        if (suggest.completion().skipDuplicates() != null) {
+            comp.skipDuplicates(suggest.completion().skipDuplicates());
+        }
+        if (suggest.completion().fuzzy() != null) {
+            comp.fuzzy(fz -> fz.fuzziness(
+                    suggest.completion().fuzzy().fuzziness() != null
+                            ? suggest.completion().fuzzy().fuzziness().toString()
+                            : "AUTO"));
+        }
+        return comp;
     }
 
     @SuppressWarnings("unchecked")
@@ -1155,22 +1211,26 @@ public class TurDslElasticsearchExecutor
             reqBuilder.rescore(r -> {
                 if (rescore.windowSize() != null) r.windowSize(rescore.windowSize());
                 if (rescore.query() != null) {
-                    r.query(rq -> {
-                        if (rescore.query().rescoreQuery() != null) {
-                            rq.query(translateQuery(rescore.query().rescoreQuery()));
-                        }
-                        if (rescore.query().queryWeight() != null) {
-                            rq.queryWeight(rescore.query().queryWeight());
-                        }
-                        if (rescore.query().rescoreQueryWeight() != null) {
-                            rq.rescoreQueryWeight(rescore.query().rescoreQueryWeight());
-                        }
-                        return rq;
-                    });
+                    r.query(rq -> buildRescoreQuery(rq, rescore));
                 }
                 return r;
             });
         }
+    }
+
+    private co.elastic.clients.elasticsearch.core.search.RescoreQuery.Builder buildRescoreQuery(
+            co.elastic.clients.elasticsearch.core.search.RescoreQuery.Builder rq,
+            TurDslQueryRequest.TurDslRescore rescore) {
+        if (rescore.query().rescoreQuery() != null) {
+            rq.query(translateQuery(rescore.query().rescoreQuery()));
+        }
+        if (rescore.query().queryWeight() != null) {
+            rq.queryWeight(rescore.query().queryWeight());
+        }
+        if (rescore.query().rescoreQueryWeight() != null) {
+            rq.rescoreQueryWeight(rescore.query().rescoreQueryWeight());
+        }
+        return rq;
     }
 
     // ==================== Script Fields ====================
@@ -1182,20 +1242,24 @@ public class TurDslElasticsearchExecutor
         scriptFields.forEach((name, sf) -> {
             if (sf.script() != null && sf.script().source() != null) {
                 esFields.put(name, co.elastic.clients.elasticsearch._types.ScriptField.of(f ->
-                        f.script(s -> {
-                            s.source(src -> src.scriptString(sf.script().source()));
-                            if (sf.script().lang() != null) s.lang(sf.script().lang());
-                            if (sf.script().params() != null) {
-                                Map<String, co.elastic.clients.json.JsonData> p = new LinkedHashMap<>();
-                                sf.script().params().forEach((k, v) ->
-                                        p.put(k, co.elastic.clients.json.JsonData.of(v)));
-                                s.params(p);
-                            }
-                            return s;
-                        })));
+                        f.script(s -> buildScriptFieldScript(s, sf))));
             }
         });
         reqBuilder.scriptFields(esFields);
+    }
+
+    private co.elastic.clients.elasticsearch._types.Script.Builder buildScriptFieldScript(
+            co.elastic.clients.elasticsearch._types.Script.Builder s,
+            TurDslQueryRequest.TurDslScriptField sf) {
+        s.source(src -> src.scriptString(sf.script().source()));
+        if (sf.script().lang() != null) s.lang(sf.script().lang());
+        if (sf.script().params() != null) {
+            Map<String, co.elastic.clients.json.JsonData> p = new LinkedHashMap<>();
+            sf.script().params().forEach((k, v) ->
+                    p.put(k, co.elastic.clients.json.JsonData.of(v)));
+            s.params(p);
+        }
+        return s;
     }
 
     // ==================== Helpers ====================
