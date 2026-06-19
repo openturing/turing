@@ -183,34 +183,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
         }
         Map<String, Object> rewritten = LinkedHashMap.newLinkedHashMap(original.size());
         for (Map.Entry<String, Object> entry : original.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-            if (value instanceof Collection<?> col) {
-                List<String> stringValues = new ArrayList<>(col.size());
-                for (Object v : col) {
-                    if (v == null) {
-                        continue;
-                    }
-                    stringValues.add(v.toString());
-                }
-                if (stringValues.isEmpty()) {
-                    continue;
-                }
-                rewritten.put(key, String.join(", ", stringValues));
-                for (String s : stringValues) {
-                    rewritten.put(markerKey(key, s), MARKER_VALUE);
-                }
-            } else if (value instanceof CharSequence || value instanceof Number || value instanceof Boolean) {
-                rewritten.put(key, value);
-                rewritten.put(markerKey(key, value.toString()), MARKER_VALUE);
-            } else {
-                // Complex / unknown type → leave as-is and let Spring AI / Chroma
-                // decide. No marker generated since we can't filter on it anyway.
-                rewritten.put(key, value);
-            }
+            rewriteMetadataEntry(entry.getKey(), entry.getValue(), rewritten);
         }
         return Document.builder()
                 .id(doc.getId())
@@ -218,6 +191,41 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
                 .metadata(rewritten)
                 .score(doc.getScore())
                 .build();
+    }
+
+    /**
+     * Rewrites one metadata entry into {@code rewritten}: collections are joined
+     * to a CSV string plus a marker key per element; scalars (string/number/bool)
+     * get a value + marker key; other types are copied verbatim. Null values and
+     * empty collections are dropped.
+     */
+    private void rewriteMetadataEntry(String key, Object value, Map<String, Object> rewritten) {
+        if (value == null) {
+            return;
+        }
+        if (value instanceof Collection<?> col) {
+            List<String> stringValues = new ArrayList<>(col.size());
+            for (Object v : col) {
+                if (v == null) {
+                    continue;
+                }
+                stringValues.add(v.toString());
+            }
+            if (stringValues.isEmpty()) {
+                return;
+            }
+            rewritten.put(key, String.join(", ", stringValues));
+            for (String s : stringValues) {
+                rewritten.put(markerKey(key, s), MARKER_VALUE);
+            }
+        } else if (value instanceof CharSequence || value instanceof Number || value instanceof Boolean) {
+            rewritten.put(key, value);
+            rewritten.put(markerKey(key, value.toString()), MARKER_VALUE);
+        } else {
+            // Complex / unknown type → leave as-is and let Spring AI / Chroma
+            // decide. No marker generated since we can't filter on it anyway.
+            rewritten.put(key, value);
+        }
     }
 
     /**

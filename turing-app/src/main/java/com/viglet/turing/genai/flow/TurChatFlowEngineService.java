@@ -745,18 +745,7 @@ public class TurChatFlowEngineService {
         if (conversationId == null || conversationId.isBlank()) {
             return new FormSubmitResult(0, 0, null);
         }
-        int fieldsWritten = 0;
-        if (values != null) {
-            for (Map.Entry<String, String> e : values.entrySet()) {
-                if (e.getKey() == null || e.getKey().isBlank()) {
-                    continue;
-                }
-                writeSlot(conversationId, e.getKey(), e.getValue(),
-                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.NODE,
-                        "formCapture");
-                fieldsWritten++;
-            }
-        }
+        int fieldsWritten = writeFormFields(conversationId, values);
         // Re-read after the writes so readVariables() sees the fresh slots.
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         int advanced = 0;
@@ -777,17 +766,38 @@ public class TurChatFlowEngineService {
                     && ChatFlowOps.isNativeFormSatisfied(current, vars)) {
                 log.info("[FlowEngine] form-submit: conv='{}' walking past satisfied form node '{}'",
                         conversationId, state.getCurrentNodeId());
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                TurChatFlowState leaf = walkTransparentNodes(state, null);
-                if (leaf != state) {
-                    state = stateRepository.save(leaf);
-                }
+                state = advanceAndWalk(state, graph, current);
                 advanced++;
             }
             currentNodeId = state.getCurrentNodeId();
         }
         return new FormSubmitResult(fieldsWritten, advanced, currentNodeId);
+    }
+
+    /** Writes each non-blank form field to its slot (audit NODE/formCapture); returns the count written. */
+    private int writeFormFields(String conversationId, Map<String, String> values) {
+        int fieldsWritten = 0;
+        if (values != null) {
+            for (Map.Entry<String, String> e : values.entrySet()) {
+                if (e.getKey() == null || e.getKey().isBlank()) {
+                    continue;
+                }
+                writeSlot(conversationId, e.getKey(), e.getValue(),
+                        com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.NODE,
+                        "formCapture");
+                fieldsWritten++;
+            }
+        }
+        return fieldsWritten;
+    }
+
+    /** Advances {@code state} past {@code current}, walks transparent nodes, and returns the saved leaf. */
+    private TurChatFlowState advanceAndWalk(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current) {
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        TurChatFlowState saved = stateRepository.save(state);
+        TurChatFlowState leaf = walkTransparentNodes(saved, null);
+        return leaf != saved ? stateRepository.save(leaf) : saved;
     }
 
     /**
