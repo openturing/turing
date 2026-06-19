@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -75,6 +76,7 @@ public class TurCustomToolDraftRegistry {
     /** Monotonic counter for cleanup observability — tested via {@link #getEvictedCount()}. */
     private final AtomicInteger evictedCount = new AtomicInteger();
 
+    @Autowired
     public TurCustomToolDraftRegistry() {
         this(Clock.systemUTC());
     }
