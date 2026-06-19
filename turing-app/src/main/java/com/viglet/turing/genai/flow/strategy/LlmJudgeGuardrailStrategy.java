@@ -171,43 +171,12 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         TurChatFlowState state = ctx.state();
         Map<String, String> variables = ChatFlowOps.readVariables(state);
 
-        if (REJECT_ADVANCE_WITH_LITERAL.equals(resolveRejectPolicy(node))
-                && !verdict.abandoned()
-                && !verdict.readyToAdvance()
-                && (verdict.collectedValue() == null || verdict.collectedValue().isBlank())
-                && node.outputVariable() != null && !node.outputVariable().isBlank()
-                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
-            // Defense-in-depth: when the slot is ALREADY populated (e.g. CV
-            // extraction wrote `name` out-of-band while the cursor was parked
-            // on `ai-name`) and the node didn't request override, the safe
-            // thing is to advance WITHOUT overwriting the existing value.
-            // Otherwise we'd clobber a good value (e.g. "Maria" from the CV)
-            // with whatever short message the user happened to send (e.g.
-            // "oi" — a no-op trigger from the front-end after CV upload).
-            String existingValue = variables.get(node.outputVariable().trim());
-            boolean slotAlreadyFilled = existingValue != null && !existingValue.isBlank();
-            boolean overrideExisting = Boolean.TRUE.equals(node.overrideExistingValue());
-            if (slotAlreadyFilled && !overrideExisting) {
-                log.info("[LlmJudge] onJudgeReject=advance_with_literal on node '{}': slot '{}' "
-                        + "already filled out-of-band with '{}' AND overrideExistingValue!=true "
-                        + "— advancing without overwriting (user message '{}' dropped as no-op)",
-                        node.id(), node.outputVariable(), existingValue, ctx.userMessage());
-                verdict = new JudgeVerdict(verdict.onTopic(),
-                        existingValue,
-                        /* readyToAdvance */ true,
-                        verdict.redirectMessage(),
-                        /* abandoned */ false);
-            } else {
-                log.info("[LlmJudge] onJudgeReject=advance_with_literal — force-capturing "
-                        + "short reply '{}' on node '{}' (judge rejected, retry path skipped due to length)",
-                        ctx.userMessage(), node.id());
-                verdict = new JudgeVerdict(verdict.onTopic(),
-                        ctx.userMessage().trim(),
-                        /* readyToAdvance */ true,
-                        verdict.redirectMessage(),
-                        /* abandoned */ false);
-            }
-        }
+        // T16/#22 — soft-fail policy: when the node declares
+        // onJudgeReject=advance_with_literal and the judge rejected a SHORT
+        // reply (below the length-gated retry), force-capture the literal so
+        // the flow advances instead of stalling.
+        verdict = applyAdvanceWithLiteralPolicy(ctx, node, variables, verdict);
+
         log.info("[LlmJudge] Verdict on node '{}': onTopic={} ready={} abandoned={} collected='{}'",
                 node.id(),
                 verdict.onTopic(),
@@ -226,13 +195,81 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             return farewell;
         }
 
-        // ─── Capture + advance evaluation runs FIRST ─────────────────
-        // The on_topic flag describes whether the BOT'S reply was on-goal.
-        // It must NOT gate state transitions: when the user supplied a
-        // valid value but the bot improvised an off-goal reply (e.g. a
-        // premature wrap-up summary at ask-flavor), we still need to
-        // capture the value and move to the next step. on_topic only
-        // decides what TEXT we display back.
+        CaptureOutcome capture = captureValue(ctx, node, verdict, variables);
+        return evaluateAndAdvance(ctx, node, state, variables, verdict, capture);
+    }
+
+    /**
+     * Honors {@code onJudgeReject=advance_with_literal} OUTSIDE the length-gated
+     * retry: when the policy declares "advance with literal" and the judge
+     * rejected with no collected value on a slot-collecting node, rebuilds the
+     * verdict to advance with a captured literal. {@code block} / {@code reprompt}
+     * (and any non-matching condition) return the verdict unchanged.
+     *
+     * <p>Defense-in-depth: when the slot is ALREADY populated out-of-band (e.g.
+     * CV extraction wrote {@code name} while the cursor was parked on
+     * {@code ai-name}) and the node didn't request override, advances WITHOUT
+     * overwriting — otherwise a short no-op trigger ("oi") would clobber a good
+     * value.
+     *
+     * @since 2026.3.1
+     */
+    private JudgeVerdict applyAdvanceWithLiteralPolicy(AdvanceContext ctx, ChatFlowNode node,
+            Map<String, String> variables, JudgeVerdict verdict) {
+        if (!(REJECT_ADVANCE_WITH_LITERAL.equals(resolveRejectPolicy(node))
+                && !verdict.abandoned()
+                && !verdict.readyToAdvance()
+                && (verdict.collectedValue() == null || verdict.collectedValue().isBlank())
+                && node.outputVariable() != null && !node.outputVariable().isBlank()
+                && ctx.userMessage() != null && !ctx.userMessage().isBlank())) {
+            return verdict;
+        }
+        String existingValue = variables.get(node.outputVariable().trim());
+        boolean slotAlreadyFilled = existingValue != null && !existingValue.isBlank();
+        boolean overrideExisting = Boolean.TRUE.equals(node.overrideExistingValue());
+        if (slotAlreadyFilled && !overrideExisting) {
+            log.info("[LlmJudge] onJudgeReject=advance_with_literal on node '{}': slot '{}' "
+                    + "already filled out-of-band with '{}' AND overrideExistingValue!=true "
+                    + "— advancing without overwriting (user message '{}' dropped as no-op)",
+                    node.id(), node.outputVariable(), existingValue, ctx.userMessage());
+            return new JudgeVerdict(verdict.onTopic(),
+                    existingValue,
+                    /* readyToAdvance */ true,
+                    verdict.redirectMessage(),
+                    /* abandoned */ false);
+        }
+        log.info("[LlmJudge] onJudgeReject=advance_with_literal — force-capturing "
+                + "short reply '{}' on node '{}' (judge rejected, retry path skipped due to length)",
+                ctx.userMessage(), node.id());
+        return new JudgeVerdict(verdict.onTopic(),
+                ctx.userMessage().trim(),
+                /* readyToAdvance */ true,
+                verdict.redirectMessage(),
+                /* abandoned */ false);
+    }
+
+    /**
+     * The captured-value outcome of a turn: the (normalized + canonicalized)
+     * collected value, whether anything was collected, and whether the node has
+     * an output variable.
+     *
+     * @since 2026.3.1
+     */
+    private record CaptureOutcome(String collected, boolean hasCollected, boolean hasOutputVar) {
+    }
+
+    /**
+     * Extracts and writes the slot value for the turn. The {@code on_topic} flag
+     * is deliberately NOT consulted — a valid value is captured even when the
+     * bot's reply was off-goal (on_topic only decides displayed text). Falls back
+     * to the raw user message when the judge advanced but skipped extraction;
+     * normalizes yes/no tokens and canonicalizes against the node's inlineOptions
+     * (T23 / §IV.6) before persisting.
+     *
+     * @since 2026.3.1
+     */
+    private CaptureOutcome captureValue(AdvanceContext ctx, ChatFlowNode node, JudgeVerdict verdict,
+            Map<String, String> variables) {
         boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
         String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
         boolean hasCollected = collected != null && !collected.isBlank();
@@ -248,25 +285,33 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                     collected, node.outputVariable());
         }
 
-        // Normalize yes/no tokens to lowercase for stable SpEL conditions.
         if (hasCollected) {
+            // Normalize yes/no tokens to lowercase for stable SpEL conditions,
+            // then canonicalize against inlineOptions so downstream switch /
+            // SpEL sees the EXACT chip text the admin configured.
             collected = ChatFlowOps.normalizeYesNo(collected);
-        }
-        // T23 / §IV.6 — when the node carries inlineOptions, canonicalize
-        // the captured value against them via Lucene LevenshteinAutomata
-        // (exact → substring → edit distance 1 → edit distance 2). The
-        // judge already canonicalizes most of the time, but diacritic
-        // variants ("Gerente Senior" vs "Gerente Sênior") and prefix
-        // noise ("Sr Comprador" vs "Comprador") slip through. Storing
-        // the canonical label means downstream switch nodes / SpEL
-        // conditions see the EXACT chip text the admin configured.
-        if (hasCollected) {
             collected = ChatFlowOps.canonicalizeAgainstInlineOptions(collected, node.inlineOptions());
         }
         if (hasCollected && hasOutputVar) {
             variables.put(node.outputVariable().trim(), collected);
             log.info("[LlmJudge] Captured '{}' = '{}'", node.outputVariable(), collected);
         }
+        return new CaptureOutcome(collected, hasCollected, hasOutputVar);
+    }
+
+    /**
+     * Re-validates the captured value, enforces the judge's STRICT RULE (a
+     * captured + valid value advances regardless of a spurious
+     * {@code ready_to_advance=false}), and either advances on the first edge or
+     * stays on the node. Returns the reply text to surface (or {@code null}).
+     *
+     * @since 2026.3.1
+     */
+    private String evaluateAndAdvance(AdvanceContext ctx, ChatFlowNode node, TurChatFlowState state,
+            Map<String, String> variables, JudgeVerdict verdict, CaptureOutcome capture) {
+        boolean hasOutputVar = capture.hasOutputVar();
+        boolean hasCollected = capture.hasCollected();
+        String collected = capture.collected();
 
         // Re-check the validation rule so a single permissive verdict cannot
         // push the flow past a required field (e.g. "pizza" as a phone).
@@ -274,16 +319,6 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                 || (hasCollected
                         && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
 
-        // The judge's system prompt has an explicit STRICT RULE: "if you set
-        // collected_value to a non-null string AND no validation rule fails
-        // for it, you MUST set ready_to_advance to true". gpt-4o-mini
-        // occasionally violates this — captures a perfectly valid value but
-        // returns ready_to_advance=false (anecdotally because it disliked the
-        // bot's reply and tried to "punish" by holding the flow). Enforce
-        // the rule on our side: a captured + valid value advances the flow
-        // regardless of what the verdict claimed. The on_topic flag still
-        // controls the displayed text (judge redirect when off-topic, even
-        // though we advance the state).
         boolean enforcedReady = verdict.readyToAdvance() || (hasCollected && valid);
         if (!verdict.readyToAdvance() && enforcedReady) {
             log.info("[LlmJudge] Judge violated its own STRICT RULE on node '{}' "
@@ -293,21 +328,7 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         boolean shouldAdvance = enforcedReady && valid;
 
         if (!shouldAdvance) {
-            // Not advancing: write current variables back and decide reply.
-            ChatFlowOps.writeVariables(state, variables);
-            log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={}, onTopic={})",
-                    node.id(), verdict.readyToAdvance(), valid, verdict.onTopic());
-            // Bot reply was off-goal: replace with the judge's redirect when present.
-            if (!verdict.onTopic()) {
-                String redirect = verdict.redirectMessage();
-                if (redirect != null && !redirect.isBlank()) {
-                    log.info("[LlmJudge] Off-topic on node '{}' — using judge redirect", node.id());
-                    return redirect.trim();
-                }
-                log.info("[LlmJudge] Off-topic on node '{}' — no redirect, keeping LLM reply",
-                        node.id());
-            }
-            return null;
+            return resolveStayReply(node, state, variables, verdict, valid);
         }
 
         // ─── We ARE advancing ────────────────────────────────────────
@@ -318,15 +339,36 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                     previous, next, state.getConversationId());
         }
         ChatFlowOps.writeVariables(state, variables);
-        // If the bot's reply was off-goal (e.g. it improvised a wrap-up
-        // summary instead of asking the next question), the user would see a
-        // misleading message even though we correctly advanced. Don't replace
-        // with the judge's redirect — that targets the OLD goal which is now
-        // satisfied. Logging is enough; the next turn will produce the right
-        // question for the new node.
+        // Off-goal bot reply: don't replace with the judge's redirect — it
+        // targets the OLD goal which is now satisfied. The next turn produces
+        // the right question for the new node.
         if (!verdict.onTopic()) {
             log.info("[LlmJudge] Advanced past off-goal bot reply on node '{}' — "
                     + "next turn will land on the new node's goal", previous);
+        }
+        return null;
+    }
+
+    /**
+     * Stay-on-node path: writes variables back and chooses the reply — the
+     * judge's redirect when the bot reply was off-goal and a redirect is
+     * present, otherwise {@code null} (keep the LLM reply).
+     *
+     * @since 2026.3.1
+     */
+    private String resolveStayReply(ChatFlowNode node, TurChatFlowState state,
+            Map<String, String> variables, JudgeVerdict verdict, boolean valid) {
+        ChatFlowOps.writeVariables(state, variables);
+        log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={}, onTopic={})",
+                node.id(), verdict.readyToAdvance(), valid, verdict.onTopic());
+        if (!verdict.onTopic()) {
+            String redirect = verdict.redirectMessage();
+            if (redirect != null && !redirect.isBlank()) {
+                log.info("[LlmJudge] Off-topic on node '{}' — using judge redirect", node.id());
+                return redirect.trim();
+            }
+            log.info("[LlmJudge] Off-topic on node '{}' — no redirect, keeping LLM reply",
+                    node.id());
         }
         return null;
     }

@@ -1567,108 +1567,29 @@ public class TurChatFlowEngineService {
         // 1) Continuation. Any non-terminal LEAF state for this conversation
         // wins — the user is in the middle of a flow and we must keep them
         // there until they reach an `end` node (or hit the abandon path).
-        // With Sub Flow nodes a conversation may have multiple state rows in
-        // a parent→child chain; the leaf (the row no other row points at as
-        // a parent) is the one currently driving the chat.
-        Set<String> hasDescendant = existingStates.stream()
-                .map(TurChatFlowState::getParentStateId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        for (TurChatFlowState state : existingStates) {
-            if (hasDescendant.contains(state.getId())) {
-                continue;
-            }
-            Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
-            if (graphOpt.isEmpty()) {
-                continue;
-            }
-            Optional<ChatFlowNode> currentOpt = graphOpt.get().nodeById(state.getCurrentNodeId());
-            if (currentOpt.isEmpty() || "end".equals(currentOpt.get().type())) {
-                continue;
-            }
-            log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
-                    state.getFlow().getId(), conversationId);
-            // Continuation: user msg should be processed as input to the
-            // current node by the LlmJudge advance pass.
-            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state, false));
+        Optional<FlowSelection> continuation = findContinuationFlow(existingStates, conversationId);
+        if (continuation.isPresent()) {
+            return continuation;
         }
 
         // 2) Build candidate list. A flow counts as "completed" only when its
         // ROOT row has reached an end node — child sub-flow rows are popped
         // (deleted) on completion, so any lingering child end node is a stale
         // artifact and should not gate the parent flow's eligibility.
-        Set<String> completedFlowIds = new HashSet<>();
-        for (TurChatFlowState state : existingStates) {
-            if (state.getParentStateId() != null) {
-                continue;
-            }
-            Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
-            graphOpt.flatMap(g -> g.nodeById(state.getCurrentNodeId()))
-                    .filter(n -> "end".equals(n.type()))
-                    .ifPresent(n -> completedFlowIds.add(state.getFlow().getId()));
-        }
-
-        List<RouterCandidate> candidates = new ArrayList<>();
-        for (TurChatFlow flow : chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId())) {
-            if (flow.getEnabled() != 1) {
-                continue;
-            }
-            if (flow.getTriggerDescription() == null || flow.getTriggerDescription().isBlank()) {
-                continue;
-            }
-            TurChatFlowTriggerMode mode = flow.getTriggerMode() != null
-                    ? flow.getTriggerMode()
-                    : TurChatFlowTriggerMode.ONCE;
-            if (mode == TurChatFlowTriggerMode.ONCE && completedFlowIds.contains(flow.getId())) {
-                continue;
-            }
-            Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
-            if (graphOpt.isEmpty()) {
-                continue;
-            }
-            candidates.add(new RouterCandidate(flow, graphOpt.get()));
-        }
+        Set<String> completedFlowIds = collectCompletedRootFlowIds(existingStates);
+        List<RouterCandidate> candidates = buildRouterCandidates(agent, completedFlowIds);
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
 
-        // 3a) Procedural pre-route — fast, deterministic, no LLM. Requires
-        //     ≥2 candidates AND a user message with at least one
-        //     PROCEDURAL_MIN_TOKEN_LENGTH-char content token (procedural
-        //     routing is a disambiguation fast-path: a single candidate
-        //     has nothing to disambiguate, and a bare 2-char greeting
-        //     ("oi", "ok") cannot be reliably distinguished from a
-        //     legitimate single-rare-term hit via BM25 alone — we defer
-        //     to the LLM router instead). When the top flow dominates
-        //     the runner-up by 1.5×, commit straight to it. Cuts ~1-3s
-        //     of LLM latency from freshly-triggered turns where the
-        //     trigger is obvious. Falls back to the LLM router otherwise.
-        Optional<ProceduralOutcome> proceduralOutcome =
-                proceduralRouteExplained(agent.getId(), candidates, lastUserMessage);
-        final String pickedId;
-        final TurChatFlowRouterMethod routerMethod;
-        if (proceduralOutcome.map(ProceduralOutcome::decided).orElse(false)) {
-            pickedId = proceduralOutcome.get().pickedId();
-            routerMethod = TurChatFlowRouterMethod.PROCEDURAL;
-            log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", pickedId);
-        } else {
-            // 3b) Cached LLM router. Same {agentId, userMessage} pair returns
-            //     a cached decision on repeated calls (e.g. canned UI prompts,
-            //     test runs, retries) so the LLM round-trip pays off once per
-            //     unique message per agent. Cache is wiped on any
-            //     TurChatFlow.save/delete so admin edits propagate.
-            RouterCacheResult llm = askRouterCached(agent.getId(), routerModel, candidates,
-                    lastUserMessage);
-            pickedId = llm.pickedId();
-            TurChatFlowRouterMethod llmMethod = llm.cacheHit()
-                    ? TurChatFlowRouterMethod.LLM_CACHE
-                    : TurChatFlowRouterMethod.LLM;
-            routerMethod = pickedId == null ? TurChatFlowRouterMethod.NONE : llmMethod;
-        }
+        // 3) Route: procedural pre-route (fast, deterministic) then the cached
+        //    LLM router fallback. See routeToFlow for the gate semantics.
+        RouterPick pick = routeToFlow(agent, candidates, lastUserMessage, routerModel);
         // T89 / §VII.10.f — structured router-decision log (candidate flows +
         // scores + winner + method). Best-effort; never breaks the turn.
         recordRouterDecision(agent, conversationId, lastUserMessage, candidates,
-                pickedId, routerMethod, proceduralOutcome.orElse(null));
+                pick.pickedId(), pick.routerMethod(), pick.outcome());
+        String pickedId = pick.pickedId();
         if (pickedId == null) {
             return Optional.empty();
         }
@@ -1733,6 +1654,133 @@ public class TurChatFlowEngineService {
             // force-captured as the first slot value.
             return new FlowSelection(activeFlow, activeGraph, s, true);
         });
+    }
+
+    /**
+     * Phase 1 of {@link #selectActiveFlow}: returns the in-progress non-terminal
+     * leaf flow for this conversation, if any. With Sub Flow nodes a conversation
+     * may have multiple state rows in a parent→child chain; the leaf (a row no
+     * other row points at as a parent) is the one currently driving the chat.
+     *
+     * @since 2026.3.1
+     */
+    private Optional<FlowSelection> findContinuationFlow(List<TurChatFlowState> existingStates,
+            String conversationId) {
+        Set<String> hasDescendant = existingStates.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        for (TurChatFlowState state : existingStates) {
+            if (hasDescendant.contains(state.getId())) {
+                continue;
+            }
+            Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
+            if (graphOpt.isEmpty()) {
+                continue;
+            }
+            Optional<ChatFlowNode> currentOpt = graphOpt.get().nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty() || "end".equals(currentOpt.get().type())) {
+                continue;
+            }
+            log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
+                    state.getFlow().getId(), conversationId);
+            // Continuation: user msg should be processed as input to the
+            // current node by the LlmJudge advance pass.
+            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state, false));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Phase 2a of {@link #selectActiveFlow}: collects the ids of flows whose
+     * ROOT state row has reached an {@code end} node. Child sub-flow rows are
+     * popped on completion, so a lingering child end node is a stale artifact
+     * and must not gate the parent flow's eligibility.
+     *
+     * @since 2026.3.1
+     */
+    private Set<String> collectCompletedRootFlowIds(List<TurChatFlowState> existingStates) {
+        Set<String> completedFlowIds = new HashSet<>();
+        for (TurChatFlowState state : existingStates) {
+            if (state.getParentStateId() != null) {
+                continue;
+            }
+            Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
+            graphOpt.flatMap(g -> g.nodeById(state.getCurrentNodeId()))
+                    .filter(n -> "end".equals(n.type()))
+                    .ifPresent(n -> completedFlowIds.add(state.getFlow().getId()));
+        }
+        return completedFlowIds;
+    }
+
+    /**
+     * Phase 2b of {@link #selectActiveFlow}: builds the eligible router-candidate
+     * list — enabled flows with a non-blank trigger description and a parseable
+     * graph, excluding ONCE-mode flows already completed on this conversation.
+     *
+     * @since 2026.3.1
+     */
+    private List<RouterCandidate> buildRouterCandidates(TurAIAgent agent, Set<String> completedFlowIds) {
+        List<RouterCandidate> candidates = new ArrayList<>();
+        for (TurChatFlow flow : chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId())) {
+            if (flow.getEnabled() != 1) {
+                continue;
+            }
+            if (flow.getTriggerDescription() == null || flow.getTriggerDescription().isBlank()) {
+                continue;
+            }
+            TurChatFlowTriggerMode mode = flow.getTriggerMode() != null
+                    ? flow.getTriggerMode()
+                    : TurChatFlowTriggerMode.ONCE;
+            if (mode == TurChatFlowTriggerMode.ONCE && completedFlowIds.contains(flow.getId())) {
+                continue;
+            }
+            Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
+            if (graphOpt.isEmpty()) {
+                continue;
+            }
+            candidates.add(new RouterCandidate(flow, graphOpt.get()));
+        }
+        return candidates;
+    }
+
+    /**
+     * The router's decision for {@link #selectActiveFlow}: the picked flow id
+     * (nullable when nothing matched), the method that produced it, and the
+     * procedural-routing diagnostics (nullable) for the structured decision log.
+     *
+     * @since 2026.3.1
+     */
+    private record RouterPick(String pickedId, TurChatFlowRouterMethod routerMethod, ProceduralOutcome outcome) {
+    }
+
+    /**
+     * Phase 3 of {@link #selectActiveFlow}: tries the procedural pre-route first
+     * (fast, deterministic, no LLM — commits when one flow dominates the
+     * runner-up), then falls back to the cached LLM router. A {@code null}
+     * {@code pickedId} means no flow matched.
+     *
+     * @since 2026.3.1
+     */
+    private RouterPick routeToFlow(TurAIAgent agent, List<RouterCandidate> candidates,
+            String lastUserMessage, ChatModel routerModel) {
+        Optional<ProceduralOutcome> proceduralOutcome =
+                proceduralRouteExplained(agent.getId(), candidates, lastUserMessage);
+        if (proceduralOutcome.map(ProceduralOutcome::decided).orElse(false)) {
+            String pickedId = proceduralOutcome.get().pickedId();
+            log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", pickedId);
+            return new RouterPick(pickedId, TurChatFlowRouterMethod.PROCEDURAL, proceduralOutcome.orElse(null));
+        }
+        // Cached LLM router. Same {agentId, userMessage} pair returns a cached
+        // decision on repeated calls so the LLM round-trip pays off once per
+        // unique message per agent. Cache is wiped on any TurChatFlow.save/delete.
+        RouterCacheResult llm = askRouterCached(agent.getId(), routerModel, candidates, lastUserMessage);
+        String pickedId = llm.pickedId();
+        TurChatFlowRouterMethod llmMethod = llm.cacheHit()
+                ? TurChatFlowRouterMethod.LLM_CACHE
+                : TurChatFlowRouterMethod.LLM;
+        TurChatFlowRouterMethod routerMethod = pickedId == null ? TurChatFlowRouterMethod.NONE : llmMethod;
+        return new RouterPick(pickedId, routerMethod, proceduralOutcome.orElse(null));
     }
 
     /**

@@ -340,36 +340,8 @@ public class TurDslToolService {
 
             if (responseOpt.isPresent()) {
                 TurDslSearchResponse response = responseOpt.get();
-
-                // Search results as suggestions
-                if (response.hits() != null && response.hits().hits() != null
-                        && !response.hits().hits().isEmpty()) {
-                    sb.append("Search results for '%s':\n".formatted(text));
-                    for (var hit : response.hits().hits()) {
-                        if (hit.source() != null) {
-                            sb.append("  - ");
-                            if (hit.source().containsKey("title"))
-                                sb.append(hit.source().get("title"));
-                            sb.append(" (id: ").append(hit.id()).append(")\n");
-                        }
-                    }
-                }
-
-                // Suggest results
-                if (response.suggest() != null && !response.suggest().isEmpty()) {
-                    sb.append("\nSuggestions:\n");
-                    for (var entry : response.suggest().entrySet()) {
-                        for (var suggestion : entry.getValue()) {
-                            if (suggestion.options() != null) {
-                                for (var option : suggestion.options()) {
-                                    sb.append("  - ").append(option.text())
-                                            .append(" (score: ").append(option.score())
-                                            .append(")\n");
-                                }
-                            }
-                        }
-                    }
-                }
+                appendSearchResults(sb, response, text);
+                appendSuggestions(sb, response);
             }
 
             if (sb.isEmpty()) {
@@ -380,6 +352,52 @@ public class TurDslToolService {
         } catch (Exception e) {
             log.error("[DSL Tool] dsl_suggest failed", e);
             return "Error getting suggestions: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Appends the hit list (title + id per hit) of a suggest response, if any.
+     *
+     * @since 2026.3.1
+     */
+    private static void appendSearchResults(StringBuilder sb, TurDslSearchResponse response, String text) {
+        if (response.hits() == null || response.hits().hits() == null
+                || response.hits().hits().isEmpty()) {
+            return;
+        }
+        sb.append("Search results for '%s':\n".formatted(text));
+        for (var hit : response.hits().hits()) {
+            if (hit.source() != null) {
+                sb.append("  - ");
+                if (hit.source().containsKey("title")) {
+                    sb.append(hit.source().get("title"));
+                }
+                sb.append(" (id: ").append(hit.id()).append(")\n");
+            }
+        }
+    }
+
+    /**
+     * Appends the term-suggester options (text + score) of a suggest response,
+     * if any.
+     *
+     * @since 2026.3.1
+     */
+    private static void appendSuggestions(StringBuilder sb, TurDslSearchResponse response) {
+        if (response.suggest() == null || response.suggest().isEmpty()) {
+            return;
+        }
+        sb.append("\nSuggestions:\n");
+        for (var entry : response.suggest().entrySet()) {
+            for (var suggestion : entry.getValue()) {
+                if (suggestion.options() != null) {
+                    for (var option : suggestion.options()) {
+                        sb.append("  - ").append(option.text())
+                                .append(" (score: ").append(option.score())
+                                .append(")\n");
+                    }
+                }
+            }
         }
     }
 
