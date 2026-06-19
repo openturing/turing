@@ -411,6 +411,45 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         }
     }
 
+    /**
+     * Builds the {@code $match} doc: the time range plus each whitelisted,
+     * non-blank cohort/identity filter (T74 — narrows before grouping).
+     */
+    private Document buildScorecardMatch(Instant from, Instant to, Map<String, String> filters) {
+        Document match = new Document()
+                .append(STARTED_AT, new Document()
+                        .append("$gte", Date.from(from))
+                        .append("$lte", Date.from(to)));
+        if (filters != null) {
+            for (Map.Entry<String, String> e : filters.entrySet()) {
+                if (TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())
+                        && StringUtils.isNotBlank(e.getValue())) {
+                    match.append(e.getKey(), e.getValue());
+                }
+            }
+        }
+        return match;
+    }
+
+    /** Renders one aggregated dimension doc into a scorecard row (rates + top intent). */
+    private Map<String, Object> toScorecardRow(Document doc) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        Object dim = doc.get("_id");
+        row.put(BUCKET, dim == null ? UNKNOWN : String.valueOf(dim));
+        int sessions = doc.getInteger(SESSIONS, 0);
+        long durationSum = numberAsLong(doc.get(DURATION_SUM));
+        int processed = doc.getInteger(PROCESSED_COUNT, 0);
+        double achieved = numberAsDouble(doc.get(ACHIEVED_SCORE));
+        int negative = doc.getInteger(NEGATIVE_COUNT, 0);
+        row.put(SESSIONS, sessions);
+        row.put("avgDurationMs", sessions > 0 ? durationSum / (double) sessions : 0d);
+        row.put("goalAchievedRate", processed > 0 ? achieved / processed : 0d);
+        row.put("negativeRate",     processed > 0 ? negative / (double) processed : 0d);
+        String topIntent = doc.getString(TOP_INTENT);
+        row.put(TOP_INTENT, topIntent == null ? UNKNOWN : topIntent);
+        return row;
+    }
+
     @Override
     public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension,
             Map<String, String> filters, int maxRows) {
@@ -425,18 +464,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             // time-range with each whitelisted cohort/identity filter so
             // "variant X on mobile" is one server-side aggregation, not a
             // client-side post-filter.
-            Document match = new Document()
-                    .append(STARTED_AT, new Document()
-                            .append("$gte", Date.from(from))
-                            .append("$lte", Date.from(to)));
-            if (filters != null) {
-                for (Map.Entry<String, String> e : filters.entrySet()) {
-                    if (TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())
-                            && StringUtils.isNotBlank(e.getValue())) {
-                        match.append(e.getKey(), e.getValue());
-                    }
-                }
-            }
+            Document match = buildScorecardMatch(from, to, filters);
 
             List<Bson> pipeline = new ArrayList<>();
             pipeline.add(new Document(DOLLAR_MATCH, match));
@@ -489,21 +517,7 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             AggregateIterable<Document> cursor = collection().aggregate(pipeline);
             List<Map<String, Object>> result = new ArrayList<>();
             for (Document doc : cursor) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                Object dim = doc.get("_id");
-                row.put(BUCKET, dim == null ? UNKNOWN : String.valueOf(dim));
-                int sessions = doc.getInteger(SESSIONS, 0);
-                long durationSum = numberAsLong(doc.get(DURATION_SUM));
-                int processed = doc.getInteger(PROCESSED_COUNT, 0);
-                double achieved = numberAsDouble(doc.get(ACHIEVED_SCORE));
-                int negative = doc.getInteger(NEGATIVE_COUNT, 0);
-                row.put(SESSIONS, sessions);
-                row.put("avgDurationMs", sessions > 0 ? durationSum / (double) sessions : 0d);
-                row.put("goalAchievedRate", processed > 0 ? achieved / processed : 0d);
-                row.put("negativeRate",     processed > 0 ? negative / (double) processed : 0d);
-                String topIntent = doc.getString(TOP_INTENT);
-                row.put(TOP_INTENT, topIntent == null ? UNKNOWN : topIntent);
-                result.add(row);
+                result.add(toScorecardRow(doc));
             }
             return result;
         } catch (Exception e) {
