@@ -1520,12 +1520,13 @@ public final class ChatFlowOps {
      * the chosen id (when valid) or {@code null} when the model can't decide, returns a malformed
      * answer, or replies with the sentinel {@code NONE}.
      */
-    private static String classifySwitchWithLlm(ChatModel auxModel,
-            ChatFlowNode switchNode,
-            List<ChatFlowNode.SwitchOption> options,
-            String variableName,
-            String value) {
-        StringBuilder optionList = new StringBuilder();
+    /**
+     * Builds the {@code id → option} index and appends a human-readable
+     * "  - id: label" line per valid option to {@code optionList}. Options with
+     * a null/blank id are skipped.
+     */
+    private static Map<String, ChatFlowNode.SwitchOption> buildSwitchOptionIndex(
+            List<ChatFlowNode.SwitchOption> options, StringBuilder optionList) {
         Map<String, ChatFlowNode.SwitchOption> byId = new LinkedHashMap<>();
         for (ChatFlowNode.SwitchOption option : options) {
             if (option == null || option.id() == null || option.id().isBlank()) {
@@ -1538,6 +1539,16 @@ public final class ChatFlowOps {
             }
             optionList.append('\n');
         }
+        return byId;
+    }
+
+    private static String classifySwitchWithLlm(ChatModel auxModel,
+            ChatFlowNode switchNode,
+            List<ChatFlowNode.SwitchOption> options,
+            String variableName,
+            String value) {
+        StringBuilder optionList = new StringBuilder();
+        Map<String, ChatFlowNode.SwitchOption> byId = buildSwitchOptionIndex(options, optionList);
         if (byId.isEmpty()) {
             return null;
         }

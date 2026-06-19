@@ -787,21 +787,33 @@ public class TurChatFlowEngineService {
         if (conversationId == null || conversationId.isBlank()) return Optional.empty();
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         for (TurChatFlowState state : states) {
-            ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
-            if (graph == null) continue;
-            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
-            if (currentOpt.isEmpty()) continue;
-            ChatFlowNode current = currentOpt.get();
-            if (PARKED_NODE_TYPES.contains(current.type())) {
-                String label = current.label();
-                if (label != null && !label.isBlank()) {
-                    return Optional.of(label);
-                }
-                return Optional.of(HUMAN_APPROVAL.equals(current.type())
-                        ? "awaiting approval" : "suspended");
+            Optional<String> reason = suspendedReasonForState(state);
+            if (reason.isPresent()) {
+                return reason;
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Returns the suspended-reason label when {@code state}'s cursor sits on a
+     * parked node, otherwise empty.
+     */
+    private Optional<String> suspendedReasonForState(TurChatFlowState state) {
+        ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
+        if (graph == null) return Optional.empty();
+        Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+        if (currentOpt.isEmpty()) return Optional.empty();
+        ChatFlowNode current = currentOpt.get();
+        if (!PARKED_NODE_TYPES.contains(current.type())) {
+            return Optional.empty();
+        }
+        String label = current.label();
+        if (label != null && !label.isBlank()) {
+            return Optional.of(label);
+        }
+        return Optional.of(HUMAN_APPROVAL.equals(current.type())
+                ? "awaiting approval" : "suspended");
     }
 
     /**

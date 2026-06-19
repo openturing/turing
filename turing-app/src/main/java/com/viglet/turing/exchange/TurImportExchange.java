@@ -492,19 +492,7 @@ public class TurImportExchange {
 				Map<String, Map<String, List<Map<String, Object>>>> contentMap =
 						mapper.readValue(fis, new TypeReference<>() {});
 				for (var siteEntry : contentMap.entrySet()) {
-					var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey());
-					if (siteOpt.isEmpty()) {
-						log.warn("Content references site '{}' but no matching SN Site found in database.",
-								siteEntry.getKey());
-						continue;
-					}
-					TurSNSite turSNSite = siteOpt.get();
-					String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
-					int indexed = contentExchangeService.importContent(
-							turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()),
-							effectiveTaskId);
-					totalDocuments += indexed;
-					log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
+					totalDocuments += importSiteContent(siteEntry, taskId);
 				}
 			} catch (CallNotPermittedException e) {
 				searchEngineAvailable = false;
@@ -521,6 +509,26 @@ public class TurImportExchange {
 			}
 		}
 		return new ContentImportResult(contentFiles.length, totalDocuments, searchEngineAvailable);
+	}
+
+	/**
+	 * Imports the content for a single site entry. Returns the number of
+	 * documents indexed, or 0 when the referenced site is not found.
+	 */
+	private int importSiteContent(
+			Map.Entry<String, Map<String, List<Map<String, Object>>>> siteEntry, String taskId) {
+		var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey());
+		if (siteOpt.isEmpty()) {
+			log.warn("Content references site '{}' but no matching SN Site found in database.",
+					siteEntry.getKey());
+			return 0;
+		}
+		TurSNSite turSNSite = siteOpt.get();
+		String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
+		int indexed = contentExchangeService.importContent(
+				turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()), effectiveTaskId);
+		log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
+		return indexed;
 	}
 
 	/**

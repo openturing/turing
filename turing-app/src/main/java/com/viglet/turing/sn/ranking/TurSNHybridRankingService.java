@@ -438,29 +438,38 @@ public class TurSNHybridRankingService {
             if (hits == null || hits.isEmpty()) {
                 return List.of();
             }
-            List<TurSNScoredNeighbor> neighbors = new ArrayList<>(Math.min(topK, hits.size()));
-            List<String> seen = new ArrayList<>(neighbors.size());
-            for (Document d : hits) {
-                String id = d.getId();
-                if (!StringUtils.hasText(id) || id.equals(seedId) || seen.contains(id)) {
-                    continue;
-                }
-                Double score = d.getScore();
-                if (minSimilarity > 0.0 && (score == null || score < minSimilarity)) {
-                    continue;
-                }
-                seen.add(id);
-                neighbors.add(new TurSNScoredNeighbor(id, score));
-                if (neighbors.size() >= topK) {
-                    break;
-                }
-            }
-            return neighbors;
+            return collectNeighbors(hits, seedId, topK, minSimilarity);
         } catch (RuntimeException e) {
             log.warn("[SN-HYBRID] neighbors of doc '{}' on site '{}' failed: {} — degrading to lexical",
                     seedId, turSNSite.getName(), e.getMessage());
             return List.of();
         }
+    }
+
+    /**
+     * Reduces raw vector hits to scored neighbors: skips the seed itself,
+     * duplicates, and sub-threshold scores, capped at {@code topK}.
+     */
+    private List<TurSNScoredNeighbor> collectNeighbors(List<Document> hits, String seedId,
+            int topK, double minSimilarity) {
+        List<TurSNScoredNeighbor> neighbors = new ArrayList<>(Math.min(topK, hits.size()));
+        List<String> seen = new ArrayList<>(neighbors.size());
+        for (Document d : hits) {
+            String id = d.getId();
+            if (!StringUtils.hasText(id) || id.equals(seedId) || seen.contains(id)) {
+                continue;
+            }
+            Double score = d.getScore();
+            if (minSimilarity > 0.0 && (score == null || score < minSimilarity)) {
+                continue;
+            }
+            seen.add(id);
+            neighbors.add(new TurSNScoredNeighbor(id, score));
+            if (neighbors.size() >= topK) {
+                break;
+            }
+        }
+        return neighbors;
     }
 
     /** Drops the cached infrastructure for a site (e.g. after deleting it). */
