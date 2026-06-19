@@ -2900,294 +2900,302 @@ public class TurChatFlowEngineService {
                         .ifPresent(tr -> log.info("[A/B Node Trace] {}", tr));
             }
 
-            if ("subFlow".equals(current.type())) {
-                Optional<TurChatFlowState> child = enterSubFlow(state, current);
-                if (child.isPresent()) {
-                    state = child.get();
-                    continue;
-                }
-                // Sub-flow not configured / not found / would be recursive:
-                // skip the node like a no-op so the parent flow doesn't stall.
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                continue;
-            }
-
-            // subFlowSwitch node (T47): like a `switch` for routing edges,
-            // but each matched option carries a `subFlowId` and descent runs
-            // the corresponding sub-flow. Composes reusable mini-flows by
-            // slot value (e.g. lead-capture B2B vs B2C, pricing tier flows).
-            // Falls back to first outgoing edge on no match / missing subFlowId
-            // (matches the switch wildcard contract — authors should always
-            // keep one such edge wired).
-            if ("subFlowSwitch".equals(current.type())) {
-                Map<String, String> variables = ChatFlowOps.readVariables(state);
-                Optional<ChatFlowNode.SwitchOption> matched =
-                        ChatFlowOps.resolveSwitchOption(auxModel, current, variables);
-                String matchedSubFlowId = matched
-                        .map(ChatFlowNode.SwitchOption::subFlowId)
-                        .filter(s -> s != null && !s.isBlank())
-                        .orElse(null);
-                Optional<TurChatFlowState> child = matchedSubFlowId == null
-                        ? Optional.empty()
-                        : enterSubFlowById(state, matchedSubFlowId, current);
-                if (child.isPresent()) {
-                    log.info("[FlowEngine] subFlowSwitch '{}' → option '{}' → subFlow '{}'",
-                            current.id(),
-                            matched.map(ChatFlowNode.SwitchOption::id).orElse("(none)"),
-                            matchedSubFlowId);
-                    state = child.get();
-                    continue;
-                }
-                log.info("[FlowEngine] subFlowSwitch '{}' no descent — advancing on outgoing edge",
-                        current.id());
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                continue;
-            }
-
-            // Persona node: write the active-persona override into the state's
-            // variables and immediately advance — no LLM round-trip. The
-            // resolver (TurAgentPersonaResolver) reads __activePersonaId from
-            // the most recent flow state for the conversation, so the next
-            // turn already speaks in the new voice.
-            if ("persona".equals(current.type())) {
-                String personaId = current.personaId();
-                if (personaId != null && !personaId.isBlank()) {
-                    setActivePersonaVariable(state, personaId);
-                }
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                continue;
-            }
-
-            // Slot node: SET writes a literal value into the conversation state
-            // (honoring overrideExistingValue when the slot already has a value);
-            // DELETE removes the slot entirely. Either way the node is
-            // transparent — no LLM round-trip — and the flow advances on the
-            // single outgoing edge.
-            if ("slot".equals(current.type())) {
-                ChatFlowOps.applySlotNode(state, current);
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                // SSE notification: a flow slot write is functionally
-                // identical to slots.set / writeSlot — emit the full merged
-                // map so subscribers don't have to special-case the source.
-                slotEventBus.publish(state.getConversationId(),
-                        listSlotsForConversation(state.getConversationId()).slots());
-                continue;
-            }
-
-            // writeSlot node: like slot SET but expands {{varName}} template
-            // references in the value at write time, so the persisted slot
-            // is fully resolved (consumers do not have to interpolate).
-            if ("writeSlot".equals(current.type())) {
-                ChatFlowOps.applyWriteSlotNode(state, current);
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                slotEventBus.publish(state.getConversationId(),
-                        listSlotsForConversation(state.getConversationId()).slots());
-                continue;
-            }
-
-            // planningStep node (T108): the LLM decomposes the user's goal
-            // into a typed TODO list and the engine writes the JSON plan into
-            // the node's plan slot (outputVariable, default __plan). Transparent
-            // — no user round-trip — and the flow advances on its single
-            // outgoing edge. The plan IS a slot value, so the SSE bus surfaces
-            // it to subscribers exactly like slot / writeSlot writes do; an
-            // iteratePlan node (T108-2) downstream consumes it item by item.
-            if ("planningStep".equals(current.type())) {
-                ChatFlowOps.applyPlanningStepNode(state, current, auxModel);
-                ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
-                slotEventBus.publish(state.getConversationId(),
-                        listSlotsForConversation(state.getConversationId()).slots());
-                continue;
-            }
-
-            // iteratePlan node (T108-2): walks the plan produced by an upstream
-            // planningStep one item at a time. On each entry it picks the first
-            // PENDING item, exposes it to the body sub-flow via the reserved
-            // __planItemId / __planItemTitle slots, and descends into the body
-            // sub-flow (subFlowId) to execute it. On ascent the engine marks (or
-            // removes, per completionMode) the in-flight item and stays on this
-            // node so the next walk picks the next pending item. When nothing is
-            // pending, the markers are cleared and the flow advances on the
-            // single outgoing edge. The body-less case (no subFlowId, or a
-            // descent that can't happen) completes the item in place so the loop
-            // always terminates instead of re-picking the same item forever.
-            if ("iteratePlan".equals(current.type())) {
-                String planSlot = planSlotKeyOf(current);
-                Map<String, String> variables = ChatFlowOps.readVariables(state);
-                List<ChatFlowOps.PlanItem> plan = ChatFlowOps.parsePlan(variables.get(planSlot));
-                Optional<ChatFlowOps.PlanItem> next = ChatFlowOps.firstPendingItem(plan);
-                if (next.isEmpty()) {
-                    ChatFlowOps.clearPlanIterationMarkers(state);
-                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                    state = stateRepository.save(state);
-                    slotEventBus.publish(state.getConversationId(),
-                            listSlotsForConversation(state.getConversationId()).slots());
-                    continue;
-                }
-                ChatFlowOps.PlanItem item = next.get();
-                ChatFlowOps.setPlanIterationMarkers(state, item);
-                state = stateRepository.save(state);
-                Optional<TurChatFlowState> child = enterSubFlowById(state, current.subFlowId(), current);
-                if (child.isPresent()) {
-                    log.info("[FlowEngine] iteratePlan '{}' → item '{}' ('{}') → body subFlow '{}'",
-                            current.id(), item.id(), truncate(item.title(), 60), current.subFlowId());
-                    state = child.get();
-                    continue;
-                }
-                // No body sub-flow to descend into — complete the item in place
-                // (mark_done / remove) so the iteration advances instead of
-                // looping on the same pending item.
-                log.info("[FlowEngine] iteratePlan '{}' has no usable body subFlow — completing item '{}' in place",
-                        current.id(), item.id());
-                ChatFlowOps.completePlanItem(state, planSlot, item.id(), current.completionMode());
-                state = stateRepository.save(state);
-                slotEventBus.publish(state.getConversationId(),
-                        listSlotsForConversation(state.getConversationId()).slots());
-                continue;
-            }
-
-            // functionCall node (T46): deterministic tool invocation from the
-            // flow — NATIVE @Tool methods (incl. Custom Tools registered as
-            // such) executed with aiInstruction as the JSON input template
-            // ({{slot}} interpolated) and the result written to outputVariable.
-            // T49: when the node opts in via continueOnFailure=true, a failed
-            // invocation routes the flow along the 'failure' outgoing edge for
-            // graceful recovery; otherwise the engine advances to the first
-            // edge as before (legacy lenient default).
-            if ("functionCall".equals(current.type())) {
-                TurFunctionCallNodeExecutor.ExecutionResult fnResult =
-                        functionCallExecutor.execute(state, current);
-                if (!fnResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
-                    ChatFlowOps.advanceOnFailure(state, graph, current);
-                } else {
-                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                }
-                state = stateRepository.save(state);
-                slotEventBus.publish(state.getConversationId(),
-                        listSlotsForConversation(state.getConversationId()).slots());
-                continue;
-            }
-
-            // webhook node (T62): deterministic outbound webhook POST from the
-            // flow — fires a named admin-declared webhook (CRM push) at a
-            // precise step, independent of slot-write triggers or handoff.
-            // Same failure-edge contract as functionCall: continueOnFailure
-            // routes a delivery failure along the 'failure' edge; otherwise
-            // the engine logs + advances to the first edge.
-            if ("webhook".equals(current.type())) {
-                TurChatWebhookNodeExecutor.ExecutionResult whResult =
-                        webhookNodeExecutor.execute(state, current);
-                if (!whResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
-                    ChatFlowOps.advanceOnFailure(state, graph, current);
-                } else {
-                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                }
-                state = stateRepository.save(state);
-                continue;
-            }
-
-            // scheduleAgent node (T48): asynchronous routine dispatch. First
-            // entry enqueues a JMS message and parks the flow on this node;
-            // subsequent re-entries (driven by slot-bus auto-resume on
-            // completion, or the user's next turn) poll for the output slot
-            // or expiry. WAITING bails out of the transparent walk so the
-            // chat turn returns; COMPLETED advances normally; TIMEOUT routes
-            // via the optional 'timeout' sourceHandle; FAILED logs + advances
-            // like functionCall does on resolution errors.
-            if (SCHEDULE_AGENT.equals(current.type())) {
-                TurScheduleAgentNodeExecutor.Outcome outcome =
-                        scheduleAgentExecutor.execute(state, current);
-                switch (outcome) {
-                    case WAITING_FIRED -> {
-                        state = stateRepository.save(state);
-                        // Fresh enqueue → publish so SSE subscribers (chat
-                        // UI's waiting indicator, slot inspector) see the
-                        // __scheduleAgent_pending_<nodeId> marker the
-                        // executor just wrote.
-                        slotEventBus.publish(state.getConversationId(),
-                                listSlotsForConversation(state.getConversationId()).slots());
-                        return state;
-                    }
-                    case WAITING_POLL -> {
-                        // Markers already set on a previous turn — no slot
-                        // changed, so do NOT republish. Re-publishing would
-                        // feed the auto-resume listener, which would call
-                        // resumeParkedScheduleAgents → re-enter here →
-                        // WAITING_POLL again → publish again, looping
-                        // forever.
-                        return state;
-                    }
-                    case COMPLETED -> {
-                        ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                        state = stateRepository.save(state);
-                        slotEventBus.publish(state.getConversationId(),
-                                listSlotsForConversation(state.getConversationId()).slots());
-                    }
-                    case TIMEOUT -> {
-                        TurScheduleAgentNodeExecutor.advanceOnTimeout(state, graph, current);
-                        state = stateRepository.save(state);
-                        slotEventBus.publish(state.getConversationId(),
-                                listSlotsForConversation(state.getConversationId()).slots());
-                    }
-                    case FAILED -> {
-                        if (Boolean.TRUE.equals(current.continueOnFailure())) {
-                            ChatFlowOps.advanceOnFailure(state, graph, current);
-                        } else {
-                            ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                        }
-                        state = stateRepository.save(state);
-                    }
-                }
-                continue;
-            }
-
-            if ("end".equals(current.type()) && state.getParentStateId() != null) {
-                TurChatFlowState parent = ascendFromSubFlow(state);
-                if (parent == null) {
-                    return state;
-                }
-                state = parent;
-                continue;
-            }
-
-            // T119 — `humanApproval` node parks the cursor like `suspend`,
-            // but on first entry it raises a pending-approval record and fires
-            // a notification (Slack/Email/webhook). The executor returns true
-            // only once the operator's decision has landed in the approval slot
-            // (written by resumeSuspendedFlow from the approval endpoint or the
-            // timeout sweep) — then the engine advances on the first edge.
-            // Until then it parks; the notification fires exactly once thanks to
-            // the idempotent PENDING-record guard in the service.
-            if (HUMAN_APPROVAL.equals(current.type())) {
-                if (humanApprovalNodeExecutor.onEnter(state, current)) {
-                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                    state = stateRepository.save(state);
-                    continue;
-                }
+            WalkStep step = dispatchTransparentNode(state, graph, current, auxModel);
+            state = step.state();
+            if (step.done()) {
                 return state;
             }
-
-            // T121 — `suspend` node parks the cursor indefinitely. The
-            // walker stops here; the chat path replies with a "parked"
-            // override (handled by the executor branch) and the cursor
-            // doesn't move until POST /api/chat/resume/{conversationId}
-            // is invoked by an external system / human approval click /
-            // scheduled job.
-            if ("suspend".equals(current.type())) {
-                return state;
-            }
-
-            return state;
         }
         log.warn("[FlowEngine] walkTransparentNodes hit the {}-hop safety cap on conversation '{}'",
                 TRANSPARENT_WALK_MAX, state.getConversationId());
         return state;
+    }
+
+    /**
+     * One step of {@link #walkTransparentNodes}: the (possibly advanced/descended/
+     * ascended) state and whether the walk should stop here ({@code done=true}
+     * mirrors the old {@code return state}; {@code false} mirrors {@code continue}).
+     *
+     * @since 2026.3.1
+     */
+    private record WalkStep(TurChatFlowState state, boolean done) {
+    }
+
+    /**
+     * Dispatches one transparent node to its handler. A non-transparent
+     * (interactive / unknown) node matches nothing and stops the walk.
+     *
+     * @since 2026.3.1
+     */
+    private WalkStep dispatchTransparentNode(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current, ChatModel auxModel) {
+        WalkStep step = dispatchStructuralNode(state, graph, current, auxModel);
+        if (step == null) {
+            step = dispatchExecutorNode(state, graph, current);
+        }
+        return step != null ? step : new WalkStep(state, true);
+    }
+
+    /**
+     * Structural transparent nodes (sub-flow descent, switches, slot writes,
+     * planning). Returns {@code null} when {@code current} isn't one of these.
+     *
+     * @since 2026.3.1
+     */
+    private WalkStep dispatchStructuralNode(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current, ChatModel auxModel) {
+        if ("subFlow".equals(current.type())) {
+            return handleSubFlowNode(state, graph, current);
+        }
+        if ("subFlowSwitch".equals(current.type())) {
+            return handleSubFlowSwitchNode(state, graph, current, auxModel);
+        }
+        if ("persona".equals(current.type())) {
+            return handlePersonaNode(state, graph, current);
+        }
+        if ("slot".equals(current.type())) {
+            return handleSlotNode(state, graph, current);
+        }
+        if ("writeSlot".equals(current.type())) {
+            return handleWriteSlotNode(state, graph, current);
+        }
+        if ("planningStep".equals(current.type())) {
+            return handlePlanningStepNode(state, graph, current, auxModel);
+        }
+        if ("iteratePlan".equals(current.type())) {
+            return handleIteratePlanNode(state, graph, current);
+        }
+        return null;
+    }
+
+    /**
+     * Executor / control transparent nodes (function call, webhook, scheduled
+     * agent, sub-flow ascent, human approval, suspend). Returns {@code null}
+     * when {@code current} isn't one of these.
+     *
+     * @since 2026.3.1
+     */
+    private WalkStep dispatchExecutorNode(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current) {
+        if ("functionCall".equals(current.type())) {
+            return handleFunctionCallNode(state, graph, current);
+        }
+        if ("webhook".equals(current.type())) {
+            return handleWebhookNode(state, graph, current);
+        }
+        if (SCHEDULE_AGENT.equals(current.type())) {
+            return handleScheduleAgentNode(state, graph, current);
+        }
+        if ("end".equals(current.type()) && state.getParentStateId() != null) {
+            return handleSubFlowAscent(state);
+        }
+        if (HUMAN_APPROVAL.equals(current.type())) {
+            return handleHumanApprovalNode(state, graph, current);
+        }
+        if ("suspend".equals(current.type())) {
+            // T121 — `suspend` parks the cursor indefinitely; the walker stops
+            // here and the cursor doesn't move until POST /api/chat/resume.
+            return new WalkStep(state, true);
+        }
+        return null;
+    }
+
+    private WalkStep handleSubFlowNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        Optional<TurChatFlowState> child = enterSubFlow(state, current);
+        if (child.isPresent()) {
+            return new WalkStep(child.get(), false);
+        }
+        // Sub-flow not configured / not found / would be recursive:
+        // skip the node like a no-op so the parent flow doesn't stall.
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        return new WalkStep(stateRepository.save(state), false);
+    }
+
+    private WalkStep handleSubFlowSwitchNode(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current, ChatModel auxModel) {
+        Map<String, String> variables = ChatFlowOps.readVariables(state);
+        Optional<ChatFlowNode.SwitchOption> matched =
+                ChatFlowOps.resolveSwitchOption(auxModel, current, variables);
+        String matchedSubFlowId = matched
+                .map(ChatFlowNode.SwitchOption::subFlowId)
+                .filter(s -> s != null && !s.isBlank())
+                .orElse(null);
+        Optional<TurChatFlowState> child = matchedSubFlowId == null
+                ? Optional.empty()
+                : enterSubFlowById(state, matchedSubFlowId, current);
+        if (child.isPresent()) {
+            log.info("[FlowEngine] subFlowSwitch '{}' → option '{}' → subFlow '{}'",
+                    current.id(),
+                    matched.map(ChatFlowNode.SwitchOption::id).orElse("(none)"),
+                    matchedSubFlowId);
+            return new WalkStep(child.get(), false);
+        }
+        log.info("[FlowEngine] subFlowSwitch '{}' no descent — advancing on outgoing edge",
+                current.id());
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        return new WalkStep(stateRepository.save(state), false);
+    }
+
+    private WalkStep handlePersonaNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        String personaId = current.personaId();
+        if (personaId != null && !personaId.isBlank()) {
+            setActivePersonaVariable(state, personaId);
+        }
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        return new WalkStep(stateRepository.save(state), false);
+    }
+
+    private WalkStep handleSlotNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        ChatFlowOps.applySlotNode(state, current);
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        state = stateRepository.save(state);
+        // SSE notification: a flow slot write is functionally identical to
+        // slots.set / writeSlot — emit the full merged map so subscribers
+        // don't have to special-case the source.
+        slotEventBus.publish(state.getConversationId(),
+                listSlotsForConversation(state.getConversationId()).slots());
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handleWriteSlotNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        ChatFlowOps.applyWriteSlotNode(state, current);
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        state = stateRepository.save(state);
+        slotEventBus.publish(state.getConversationId(),
+                listSlotsForConversation(state.getConversationId()).slots());
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handlePlanningStepNode(TurChatFlowState state, ChatFlowGraph graph,
+            ChatFlowNode current, ChatModel auxModel) {
+        ChatFlowOps.applyPlanningStepNode(state, current, auxModel);
+        ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        state = stateRepository.save(state);
+        slotEventBus.publish(state.getConversationId(),
+                listSlotsForConversation(state.getConversationId()).slots());
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handleIteratePlanNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        String planSlot = planSlotKeyOf(current);
+        Map<String, String> variables = ChatFlowOps.readVariables(state);
+        List<ChatFlowOps.PlanItem> plan = ChatFlowOps.parsePlan(variables.get(planSlot));
+        Optional<ChatFlowOps.PlanItem> next = ChatFlowOps.firstPendingItem(plan);
+        if (next.isEmpty()) {
+            ChatFlowOps.clearPlanIterationMarkers(state);
+            ChatFlowOps.advanceToFirstEdge(state, graph, current);
+            state = stateRepository.save(state);
+            slotEventBus.publish(state.getConversationId(),
+                    listSlotsForConversation(state.getConversationId()).slots());
+            return new WalkStep(state, false);
+        }
+        ChatFlowOps.PlanItem item = next.get();
+        ChatFlowOps.setPlanIterationMarkers(state, item);
+        state = stateRepository.save(state);
+        Optional<TurChatFlowState> child = enterSubFlowById(state, current.subFlowId(), current);
+        if (child.isPresent()) {
+            log.info("[FlowEngine] iteratePlan '{}' → item '{}' ('{}') → body subFlow '{}'",
+                    current.id(), item.id(), truncate(item.title(), 60), current.subFlowId());
+            return new WalkStep(child.get(), false);
+        }
+        // No body sub-flow to descend into — complete the item in place
+        // (mark_done / remove) so the iteration advances instead of looping
+        // on the same pending item.
+        log.info("[FlowEngine] iteratePlan '{}' has no usable body subFlow — completing item '{}' in place",
+                current.id(), item.id());
+        ChatFlowOps.completePlanItem(state, planSlot, item.id(), current.completionMode());
+        state = stateRepository.save(state);
+        slotEventBus.publish(state.getConversationId(),
+                listSlotsForConversation(state.getConversationId()).slots());
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handleFunctionCallNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        TurFunctionCallNodeExecutor.ExecutionResult fnResult =
+                functionCallExecutor.execute(state, current);
+        if (!fnResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
+            ChatFlowOps.advanceOnFailure(state, graph, current);
+        } else {
+            ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        }
+        state = stateRepository.save(state);
+        slotEventBus.publish(state.getConversationId(),
+                listSlotsForConversation(state.getConversationId()).slots());
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handleWebhookNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        TurChatWebhookNodeExecutor.ExecutionResult whResult =
+                webhookNodeExecutor.execute(state, current);
+        if (!whResult.ok() && Boolean.TRUE.equals(current.continueOnFailure())) {
+            ChatFlowOps.advanceOnFailure(state, graph, current);
+        } else {
+            ChatFlowOps.advanceToFirstEdge(state, graph, current);
+        }
+        return new WalkStep(stateRepository.save(state), false);
+    }
+
+    private WalkStep handleScheduleAgentNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        TurScheduleAgentNodeExecutor.Outcome outcome =
+                scheduleAgentExecutor.execute(state, current);
+        switch (outcome) {
+            case WAITING_FIRED -> {
+                state = stateRepository.save(state);
+                // Fresh enqueue → publish so SSE subscribers (chat UI's waiting
+                // indicator, slot inspector) see the
+                // __scheduleAgent_pending_<nodeId> marker the executor wrote.
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                return new WalkStep(state, true);
+            }
+            case WAITING_POLL -> {
+                // Markers already set on a previous turn — no slot changed, so
+                // do NOT republish. Re-publishing would feed the auto-resume
+                // listener → resumeParkedScheduleAgents → re-enter here →
+                // WAITING_POLL again → publish again, looping forever.
+                return new WalkStep(state, true);
+            }
+            case COMPLETED -> {
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+            }
+            case TIMEOUT -> {
+                TurScheduleAgentNodeExecutor.advanceOnTimeout(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+            }
+            case FAILED -> {
+                if (Boolean.TRUE.equals(current.continueOnFailure())) {
+                    ChatFlowOps.advanceOnFailure(state, graph, current);
+                } else {
+                    ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                }
+                state = stateRepository.save(state);
+            }
+        }
+        return new WalkStep(state, false);
+    }
+
+    private WalkStep handleSubFlowAscent(TurChatFlowState state) {
+        TurChatFlowState parent = ascendFromSubFlow(state);
+        if (parent == null) {
+            return new WalkStep(state, true);
+        }
+        return new WalkStep(parent, false);
+    }
+
+    private WalkStep handleHumanApprovalNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
+        // T119 — first entry raises a pending-approval record + fires a
+        // notification; onEnter returns true only once the operator's decision
+        // has landed in the approval slot, then the engine advances.
+        if (humanApprovalNodeExecutor.onEnter(state, current)) {
+            ChatFlowOps.advanceToFirstEdge(state, graph, current);
+            return new WalkStep(stateRepository.save(state), false);
+        }
+        return new WalkStep(state, true);
     }
 
     /**
