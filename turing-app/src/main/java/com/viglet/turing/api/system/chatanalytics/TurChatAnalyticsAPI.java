@@ -141,14 +141,25 @@ public class TurChatAnalyticsAPI {
         boolean isAgent   = AGENT_ID.equals(dimension);
         boolean isPersona = PERSONA_ID.equals(dimension);
         if (!isAgent && !isPersona) {
-            for (Map<String, Object> row : rows) {
-                Object bucket = row.get(BUCKET);
-                row.put("bucketLabel", bucket == null ? "unknown" : bucket.toString());
-            }
+            applyRawBucketLabels(rows);
             return;
         }
         Set<String> ids = new HashSet<>();
         for (Map<String, Object> row : rows) collectId(row, BUCKET, ids);
+        Map<String, String> names = resolveBucketNames(ids, isAgent);
+        applyResolvedBucketLabels(rows, names);
+    }
+
+    /** Labels each row with its raw bucket value (non agent/persona dimensions). */
+    private void applyRawBucketLabels(List<Map<String, Object>> rows) {
+        for (Map<String, Object> row : rows) {
+            Object bucket = row.get(BUCKET);
+            row.put("bucketLabel", bucket == null ? "unknown" : bucket.toString());
+        }
+    }
+
+    /** Resolves agent titles / persona names for the bucket ids. */
+    private Map<String, String> resolveBucketNames(Set<String> ids, boolean isAgent) {
         Map<String, String> names = new HashMap<>();
         if (isAgent) {
             for (String id : ids) {
@@ -159,6 +170,11 @@ public class TurChatAnalyticsAPI {
                 personaRepository.findById(id).ifPresent(p -> names.put(id, p.getName()));
             }
         }
+        return names;
+    }
+
+    /** Labels each row with the resolved name, falling back to the id (or "unknown"). */
+    private void applyResolvedBucketLabels(List<Map<String, Object>> rows, Map<String, String> names) {
         for (Map<String, Object> row : rows) {
             String id = stringValue(row.get(BUCKET));
             String name = id == null ? null : names.get(id);

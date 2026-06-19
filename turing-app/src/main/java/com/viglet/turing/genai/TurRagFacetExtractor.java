@@ -264,32 +264,42 @@ public class TurRagFacetExtractor {
             if (!(filtersObj instanceof Map<?, ?> map)) {
                 return Map.of();
             }
-            Map<String, List<String>> result = new LinkedHashMap<>();
-            for (var entry : map.entrySet()) {
-                String key = entry.getKey() == null ? null : entry.getKey().toString();
-                if (key == null || key.isBlank()) {
-                    continue;
-                }
-                Object value = entry.getValue();
-                List<String> values = new ArrayList<>();
-                if (value instanceof Collection<?> col) {
-                    for (Object o : col) {
-                        if (o != null) {
-                            values.add(o.toString());
-                        }
-                    }
-                } else if (value != null) {
-                    values.add(value.toString());
-                }
-                if (!values.isEmpty()) {
-                    result.put(key, values);
-                }
-            }
-            return result;
+            return collectFilterEntries(map);
         } catch (Exception e) {
             log.debug("Could not parse facet-extraction LLM response: {}", response);
             return Map.of();
         }
+    }
+
+    /** Builds the {@code key → values} filter map from the raw {@code filters} object. */
+    private static Map<String, List<String>> collectFilterEntries(Map<?, ?> map) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (var entry : map.entrySet()) {
+            String key = entry.getKey() == null ? null : entry.getKey().toString();
+            if (key == null || key.isBlank()) {
+                continue;
+            }
+            List<String> values = toStringValues(entry.getValue());
+            if (!values.isEmpty()) {
+                result.put(key, values);
+            }
+        }
+        return result;
+    }
+
+    /** Coerces a scalar or collection filter value into a list of non-null strings. */
+    private static List<String> toStringValues(Object value) {
+        List<String> values = new ArrayList<>();
+        if (value instanceof Collection<?> col) {
+            for (Object o : col) {
+                if (o != null) {
+                    values.add(o.toString());
+                }
+            }
+        } else if (value != null) {
+            values.add(value.toString());
+        }
+        return values;
     }
 
     /**
