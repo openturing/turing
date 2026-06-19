@@ -181,170 +181,205 @@ public sealed interface TurDslAggregation {
         }
 
         private TurDslAggregation parseAggType(JsonNode node) {
-            if (node.has(TERMS)) {
-                JsonNode n = node.get(TERMS);
-                return new TermsAgg(n.get(FIELD).asString(),
-                        n.has("size") ? n.get("size").asInt() : null);
+            TurDslAggregation termsOrMetric = parseTermsRangeHistoAgg(node);
+            if (termsOrMetric == null) {
+                termsOrMetric = parseCoreMetricAgg(node);
             }
-            if (node.has("range")) {
-                JsonNode n = node.get("range");
-                List<RangeBucket> ranges = new ArrayList<>();
-                if (n.has(RANGES)) {
-                    for (JsonNode r : n.get(RANGES)) {
-                        ranges.add(new RangeBucket(
-                                r.has("from") ? nodeToObject(r.get("from")) : null,
-                                r.has("to") ? nodeToObject(r.get("to")) : null,
-                                r.has("key") ? r.get("key").asString() : null));
-                    }
-                }
-                return new RangeAgg(n.get(FIELD).asString(), ranges);
+            if (termsOrMetric != null) {
+                return termsOrMetric;
             }
-            if (node.has("date_histogram")) {
-                JsonNode n = node.get("date_histogram");
-                return new DateHistogramAgg(n.get(FIELD).asString(),
-                        n.has("calendar_interval") ? n.get("calendar_interval").asString() : null,
-                        n.has("fixed_interval") ? n.get("fixed_interval").asString() : null,
-                        n.has(FORMAT) ? n.get(FORMAT).asString() : null);
+            TurDslAggregation extras = parseBucketExtrasAgg(node);
+            if (extras != null) {
+                return extras;
             }
+            // --- Low-priority aggregations ---
+            TurDslAggregation advanced = parseAdvancedAgg(node);
+            if (advanced != null) {
+                return advanced;
+            }
+            throw new IllegalArgumentException("Unknown aggregation type in: " + node);
+        }
+
+        private TurDslAggregation parseTermsRangeHistoAgg(JsonNode node) {
+            if (node.has(TERMS)) return parseTermsAgg(node.get(TERMS));
+            if (node.has("range")) return parseRangeAgg(node.get("range"));
+            if (node.has("date_histogram")) return parseDateHistogramAgg(node.get("date_histogram"));
+            if (node.has("histogram")) return parseHistogramAgg(node.get("histogram"));
+            return null;
+        }
+
+        private TurDslAggregation parseCoreMetricAgg(JsonNode node) {
             if (node.has("avg")) return new AvgAgg(node.get("avg").get(FIELD).asString());
             if (node.has("sum")) return new SumAgg(node.get("sum").get(FIELD).asString());
             if (node.has("min")) return new MinAgg(node.get("min").get(FIELD).asString());
             if (node.has("max")) return new MaxAgg(node.get("max").get(FIELD).asString());
-            if (node.has("cardinality")) {
-                JsonNode n = node.get("cardinality");
-                return new CardinalityAgg(n.get(FIELD).asString(),
-                        n.has("precision_threshold") ? n.get("precision_threshold").asInt() : null);
-            }
+            if (node.has("cardinality")) return parseCardinalityAgg(node.get("cardinality"));
             if (node.has("value_count"))
                 return new ValueCountAgg(node.get("value_count").get(FIELD).asString());
-            if (node.has("histogram")) {
-                JsonNode n = node.get("histogram");
-                return new HistogramAgg(n.get(FIELD).asString(),
-                        n.has("interval") ? n.get("interval").asDouble() : null,
-                        n.has("offset") ? n.get("offset").asDouble() : null);
-            }
-            if (node.has(FILTER)) {
-                return new FilterAgg(new TurDslQueryDeserializer()
-                        .deserializeNode(node.get(FILTER)));
-            }
+            if (node.has(FILTER))
+                return new FilterAgg(new TurDslQueryDeserializer().deserializeNode(node.get(FILTER)));
             if (node.has("stats")) return new StatsAgg(node.get("stats").get(FIELD).asString());
             if (node.has("extended_stats"))
                 return new ExtendedStatsAgg(node.get("extended_stats").get(FIELD).asString());
-            if (node.has("percentiles")) {
-                JsonNode n = node.get("percentiles");
-                List<Double> percents = new ArrayList<>();
-                if (n.has("percents")) {
-                    for (JsonNode pv : n.get("percents")) percents.add(pv.asDouble());
-                }
-                return new PercentilesAgg(n.get(FIELD).asString(),
-                        percents.isEmpty() ? null : percents);
-            }
-            if (node.has("top_hits")) {
-                JsonNode n = node.get("top_hits");
-                return new TopHitsAgg(
-                        n.has("size") ? n.get("size").asInt() : null, null, null);
-            }
-            if (node.has("composite")) {
-                JsonNode n = node.get("composite");
-                List<Map<String, CompositeSource>> sources = new ArrayList<>();
-                if (n.has("sources")) {
-                    for (JsonNode srcEntry : n.get("sources")) {
-                        Map<String, CompositeSource> srcMap = new LinkedHashMap<>();
-                        for (var prop : srcEntry.properties()) {
-                            JsonNode inner = prop.getValue();
-                            String type = inner.propertyNames().iterator().next();
-                            JsonNode spec = inner.get(type);
-                            srcMap.put(prop.getKey(), new CompositeSource(type,
-                                    spec.get(FIELD).asString(),
-                                    spec.has("order") ? spec.get("order").asString() : null));
-                        }
-                        sources.add(srcMap);
-                    }
-                }
-                return new CompositeAgg(sources,
-                        n.has("size") ? n.get("size").asInt() : null, null);
-            }
+            if (node.has("percentiles")) return parsePercentilesAgg(node.get("percentiles"));
+            if (node.has("top_hits")) return parseTopHitsAgg(node.get("top_hits"));
+            return null;
+        }
+
+        private TurDslAggregation parseBucketExtrasAgg(JsonNode node) {
+            if (node.has("composite")) return parseCompositeAgg(node.get("composite"));
             if (node.has(FILTERS)) {
-                JsonNode n = node.get(FILTERS);
-                if (n.has(FILTERS) && n.get(FILTERS).isObject()) {
-                    Map<String, TurDslQuery> filters = new LinkedHashMap<>();
-                    var queryDeser = new TurDslQueryDeserializer();
-                    for (var prop : n.get(FILTERS).properties()) {
-                        filters.put(prop.getKey(), queryDeser.deserializeNode(prop.getValue()));
-                    }
-                    return new FiltersAgg(filters);
+                TurDslAggregation filters = parseFiltersAgg(node.get(FILTERS));
+                if (filters != null) {
+                    return filters;
                 }
             }
-            if (node.has("significant_terms")) {
-                JsonNode n = node.get("significant_terms");
-                return new SignificantTermsAgg(n.get(FIELD).asString(),
-                        n.has("size") ? n.get("size").asInt() : null,
-                        n.has("min_doc_count") ? n.get("min_doc_count").asInt() : null);
-            }
-            if (node.has("nested"))
-                return new NestedAgg(node.get("nested").get("path").asString());
+            if (node.has("significant_terms")) return parseSignificantTermsAgg(node.get("significant_terms"));
+            if (node.has("nested")) return new NestedAgg(node.get("nested").get("path").asString());
             if (node.has("reverse_nested")) {
                 JsonNode rn = node.get("reverse_nested");
-                return new ReverseNestedAgg(
-                        rn.has("path") ? rn.get("path").asString() : null);
+                return new ReverseNestedAgg(rn.has("path") ? rn.get("path").asString() : null);
             }
-            if (node.has("auto_date_histogram")) {
-                JsonNode n = node.get("auto_date_histogram");
-                return new AutoDateHistogramAgg(n.get(FIELD).asString(),
-                        n.has(BUCKETS) ? n.get(BUCKETS).asInt() : null,
-                        n.has(FORMAT) ? n.get(FORMAT).asString() : null);
-            }
-            if (node.has("multi_terms")) {
-                JsonNode n = node.get("multi_terms");
-                List<MultiTermField> terms = new ArrayList<>();
-                if (n.has(TERMS)) {
-                    for (JsonNode t : n.get(TERMS))
-                        terms.add(new MultiTermField(t.get(FIELD).asString()));
+            if (node.has("auto_date_histogram")) return parseAutoDateHistogramAgg(node.get("auto_date_histogram"));
+            if (node.has("multi_terms")) return parseMultiTermsAgg(node.get("multi_terms"));
+            if (node.has("rare_terms")) return parseRareTermsAgg(node.get("rare_terms"));
+            if (node.has("top_metrics")) return parseTopMetricsAgg(node.get("top_metrics"));
+            if (node.has("percentile_ranks")) return parsePercentileRanksAgg(node.get("percentile_ranks"));
+            return null;
+        }
+
+        private TermsAgg parseTermsAgg(JsonNode n) {
+            return new TermsAgg(n.get(FIELD).asString(),
+                    n.has("size") ? n.get("size").asInt() : null);
+        }
+
+        private RangeAgg parseRangeAgg(JsonNode n) {
+            List<RangeBucket> ranges = new ArrayList<>();
+            if (n.has(RANGES)) {
+                for (JsonNode r : n.get(RANGES)) {
+                    ranges.add(new RangeBucket(
+                            r.has("from") ? nodeToObject(r.get("from")) : null,
+                            r.has("to") ? nodeToObject(r.get("to")) : null,
+                            r.has("key") ? r.get("key").asString() : null));
                 }
-                return new MultiTermsAgg(terms,
-                        n.has("size") ? n.get("size").asInt() : null);
             }
-            if (node.has("rare_terms")) {
-                JsonNode n = node.get("rare_terms");
-                return new RareTermsAgg(n.get(FIELD).asString(),
-                        n.has("max_doc_count") ? n.get("max_doc_count").asInt() : null);
+            return new RangeAgg(n.get(FIELD).asString(), ranges);
+        }
+
+        private DateHistogramAgg parseDateHistogramAgg(JsonNode n) {
+            return new DateHistogramAgg(n.get(FIELD).asString(),
+                    n.has("calendar_interval") ? n.get("calendar_interval").asString() : null,
+                    n.has("fixed_interval") ? n.get("fixed_interval").asString() : null,
+                    n.has(FORMAT) ? n.get(FORMAT).asString() : null);
+        }
+
+        private HistogramAgg parseHistogramAgg(JsonNode n) {
+            return new HistogramAgg(n.get(FIELD).asString(),
+                    n.has("interval") ? n.get("interval").asDouble() : null,
+                    n.has("offset") ? n.get("offset").asDouble() : null);
+        }
+
+        private CardinalityAgg parseCardinalityAgg(JsonNode n) {
+            return new CardinalityAgg(n.get(FIELD).asString(),
+                    n.has("precision_threshold") ? n.get("precision_threshold").asInt() : null);
+        }
+
+        private PercentilesAgg parsePercentilesAgg(JsonNode n) {
+            List<Double> percents = new ArrayList<>();
+            if (n.has("percents")) {
+                for (JsonNode pv : n.get("percents")) percents.add(pv.asDouble());
             }
-            if (node.has("top_metrics")) {
-                JsonNode n = node.get("top_metrics");
-                List<String> metrics = new ArrayList<>();
-                if (n.has("metrics")) {
-                    for (JsonNode m : n.get("metrics"))
-                        metrics.add(m.get(FIELD).asString());
-                }
-                return new TopMetricsAgg(null, metrics);
-            }
-            if (node.has("percentile_ranks")) {
-                JsonNode n = node.get("percentile_ranks");
-                List<Double> values = new ArrayList<>();
-                if (n.has("values")) {
-                    for (JsonNode v : n.get("values")) values.add(v.asDouble());
-                }
-                return new PercentileRanksAgg(n.get(FIELD).asString(), values);
-            }
-            // --- Low-priority aggregations ---
-            if (node.has("geo_distance")) {
-                JsonNode n = node.get("geo_distance");
-                GeoOrigin origin = null;
-                if (n.has(ORIGIN) && n.get(ORIGIN).isObject()) {
-                    origin = new GeoOrigin(n.get(ORIGIN).get("lat").asDouble(),
-                            n.get(ORIGIN).get("lon").asDouble());
-                }
-                List<RangeBucket> ranges = new ArrayList<>();
-                if (n.has(RANGES)) {
-                    for (JsonNode r : n.get(RANGES)) {
-                        ranges.add(new RangeBucket(
-                                r.has("from") ? nodeToObject(r.get("from")) : null,
-                                r.has("to") ? nodeToObject(r.get("to")) : null,
-                                r.has("key") ? r.get("key").asString() : null));
+            return new PercentilesAgg(n.get(FIELD).asString(),
+                    percents.isEmpty() ? null : percents);
+        }
+
+        private TopHitsAgg parseTopHitsAgg(JsonNode n) {
+            return new TopHitsAgg(n.has("size") ? n.get("size").asInt() : null, null, null);
+        }
+
+        private CompositeAgg parseCompositeAgg(JsonNode n) {
+            List<Map<String, CompositeSource>> sources = new ArrayList<>();
+            if (n.has("sources")) {
+                for (JsonNode srcEntry : n.get("sources")) {
+                    Map<String, CompositeSource> srcMap = new LinkedHashMap<>();
+                    for (var prop : srcEntry.properties()) {
+                        JsonNode inner = prop.getValue();
+                        String type = inner.propertyNames().iterator().next();
+                        JsonNode spec = inner.get(type);
+                        srcMap.put(prop.getKey(), new CompositeSource(type,
+                                spec.get(FIELD).asString(),
+                                spec.has("order") ? spec.get("order").asString() : null));
                     }
+                    sources.add(srcMap);
                 }
-                return new GeoDistanceAgg(n.get(FIELD).asString(), origin, ranges);
             }
+            return new CompositeAgg(sources,
+                    n.has("size") ? n.get("size").asInt() : null, null);
+        }
+
+        private FiltersAgg parseFiltersAgg(JsonNode n) {
+            if (n.has(FILTERS) && n.get(FILTERS).isObject()) {
+                Map<String, TurDslQuery> filters = new LinkedHashMap<>();
+                var queryDeser = new TurDslQueryDeserializer();
+                for (var prop : n.get(FILTERS).properties()) {
+                    filters.put(prop.getKey(), queryDeser.deserializeNode(prop.getValue()));
+                }
+                return new FiltersAgg(filters);
+            }
+            return null;
+        }
+
+        private SignificantTermsAgg parseSignificantTermsAgg(JsonNode n) {
+            return new SignificantTermsAgg(n.get(FIELD).asString(),
+                    n.has("size") ? n.get("size").asInt() : null,
+                    n.has("min_doc_count") ? n.get("min_doc_count").asInt() : null);
+        }
+
+        private AutoDateHistogramAgg parseAutoDateHistogramAgg(JsonNode n) {
+            return new AutoDateHistogramAgg(n.get(FIELD).asString(),
+                    n.has(BUCKETS) ? n.get(BUCKETS).asInt() : null,
+                    n.has(FORMAT) ? n.get(FORMAT).asString() : null);
+        }
+
+        private MultiTermsAgg parseMultiTermsAgg(JsonNode n) {
+            List<MultiTermField> terms = new ArrayList<>();
+            if (n.has(TERMS)) {
+                for (JsonNode t : n.get(TERMS))
+                    terms.add(new MultiTermField(t.get(FIELD).asString()));
+            }
+            return new MultiTermsAgg(terms,
+                    n.has("size") ? n.get("size").asInt() : null);
+        }
+
+        private RareTermsAgg parseRareTermsAgg(JsonNode n) {
+            return new RareTermsAgg(n.get(FIELD).asString(),
+                    n.has("max_doc_count") ? n.get("max_doc_count").asInt() : null);
+        }
+
+        private TopMetricsAgg parseTopMetricsAgg(JsonNode n) {
+            List<String> metrics = new ArrayList<>();
+            if (n.has("metrics")) {
+                for (JsonNode m : n.get("metrics"))
+                    metrics.add(m.get(FIELD).asString());
+            }
+            return new TopMetricsAgg(null, metrics);
+        }
+
+        private PercentileRanksAgg parsePercentileRanksAgg(JsonNode n) {
+            List<Double> values = new ArrayList<>();
+            if (n.has("values")) {
+                for (JsonNode v : n.get("values")) values.add(v.asDouble());
+            }
+            return new PercentileRanksAgg(n.get(FIELD).asString(), values);
+        }
+
+        private TurDslAggregation parseAdvancedAgg(JsonNode node) {
+            TurDslAggregation agg = parseGeoSamplingAgg(node);
+            return agg != null ? agg : parseStatMiscAgg(node);
+        }
+
+        private TurDslAggregation parseGeoSamplingAgg(JsonNode node) {
+            if (node.has("geo_distance")) return parseGeoDistanceAgg(node.get("geo_distance"));
             if (node.has("geo_bounds"))
                 return new GeoBoundsAgg(node.get("geo_bounds").get(FIELD).asString());
             if (node.has("geo_centroid"))
@@ -357,43 +392,21 @@ public sealed interface TurDslAggregation {
                 return new DiversifiedSamplerAgg(n.get(FIELD).asString(),
                         n.has(SHARD_SIZE) ? n.get(SHARD_SIZE).asInt() : null);
             }
-            if (node.has("adjacency_matrix")) {
-                JsonNode n = node.get("adjacency_matrix");
-                Map<String, TurDslQuery> filters = new LinkedHashMap<>();
-                if (n.has(FILTERS)) {
-                    var qd = new TurDslQueryDeserializer();
-                    for (var prop : n.get(FILTERS).properties())
-                        filters.put(prop.getKey(), qd.deserializeNode(prop.getValue()));
-                }
-                return new AdjacencyMatrixAgg(filters);
-            }
-            if (node.has("scripted_metric")) {
-                JsonNode n = node.get("scripted_metric");
-                return new ScriptedMetricAgg(
-                        n.has("init_script") ? n.get("init_script").asString() : null,
-                        n.has("map_script") ? n.get("map_script").asString() : null,
-                        n.has("combine_script") ? n.get("combine_script").asString() : null,
-                        n.has("reduce_script") ? n.get("reduce_script").asString() : null);
-            }
+            if (node.has("adjacency_matrix")) return parseAdjacencyMatrixAgg(node.get("adjacency_matrix"));
+            return null;
+        }
+
+        private TurDslAggregation parseStatMiscAgg(JsonNode node) {
+            if (node.has("scripted_metric")) return parseScriptedMetricAgg(node.get("scripted_metric"));
             if (node.has("median_absolute_deviation"))
                 return new MedianAbsoluteDeviationAgg(
                         node.get("median_absolute_deviation").get(FIELD).asString());
-            if (node.has("matrix_stats")) {
-                JsonNode n = node.get("matrix_stats");
-                List<String> fields = new ArrayList<>();
-                if (n.has("fields")) for (JsonNode f : n.get("fields")) fields.add(f.asString());
-                return new MatrixStatsAgg(fields);
-            }
+            if (node.has("matrix_stats")) return parseMatrixStatsAgg(node.get("matrix_stats"));
             if (node.has("boxplot"))
                 return new BoxplotAgg(node.get("boxplot").get(FIELD).asString());
             if (node.has("string_stats"))
                 return new StringStatsAgg(node.get("string_stats").get(FIELD).asString());
-            if (node.has("t_test")) {
-                JsonNode n = node.get("t_test");
-                TTestPopulation a = n.has("a") ? parseTTestPop(n.get("a")) : null;
-                TTestPopulation b = n.has("b") ? parseTTestPop(n.get("b")) : null;
-                return new TTestAgg(a, b, n.has("type") ? n.get("type").asString() : null);
-            }
+            if (node.has("t_test")) return parseTTestAgg(node.get("t_test"));
             if (node.has("variable_width_histogram")) {
                 JsonNode n = node.get("variable_width_histogram");
                 return new VariableWidthHistogramAgg(n.get(FIELD).asString(),
@@ -404,7 +417,55 @@ public sealed interface TurDslAggregation {
                 return new RateAgg(n.has(FIELD) ? n.get(FIELD).asString() : null,
                         n.has("unit") ? n.get("unit").asString() : null);
             }
-            throw new IllegalArgumentException("Unknown aggregation type in: " + node);
+            return null;
+        }
+
+        private GeoDistanceAgg parseGeoDistanceAgg(JsonNode n) {
+            GeoOrigin origin = null;
+            if (n.has(ORIGIN) && n.get(ORIGIN).isObject()) {
+                origin = new GeoOrigin(n.get(ORIGIN).get("lat").asDouble(),
+                        n.get(ORIGIN).get("lon").asDouble());
+            }
+            List<RangeBucket> ranges = new ArrayList<>();
+            if (n.has(RANGES)) {
+                for (JsonNode r : n.get(RANGES)) {
+                    ranges.add(new RangeBucket(
+                            r.has("from") ? nodeToObject(r.get("from")) : null,
+                            r.has("to") ? nodeToObject(r.get("to")) : null,
+                            r.has("key") ? r.get("key").asString() : null));
+                }
+            }
+            return new GeoDistanceAgg(n.get(FIELD).asString(), origin, ranges);
+        }
+
+        private AdjacencyMatrixAgg parseAdjacencyMatrixAgg(JsonNode n) {
+            Map<String, TurDslQuery> filters = new LinkedHashMap<>();
+            if (n.has(FILTERS)) {
+                var qd = new TurDslQueryDeserializer();
+                for (var prop : n.get(FILTERS).properties())
+                    filters.put(prop.getKey(), qd.deserializeNode(prop.getValue()));
+            }
+            return new AdjacencyMatrixAgg(filters);
+        }
+
+        private ScriptedMetricAgg parseScriptedMetricAgg(JsonNode n) {
+            return new ScriptedMetricAgg(
+                    n.has("init_script") ? n.get("init_script").asString() : null,
+                    n.has("map_script") ? n.get("map_script").asString() : null,
+                    n.has("combine_script") ? n.get("combine_script").asString() : null,
+                    n.has("reduce_script") ? n.get("reduce_script").asString() : null);
+        }
+
+        private MatrixStatsAgg parseMatrixStatsAgg(JsonNode n) {
+            List<String> fields = new ArrayList<>();
+            if (n.has("fields")) for (JsonNode f : n.get("fields")) fields.add(f.asString());
+            return new MatrixStatsAgg(fields);
+        }
+
+        private TTestAgg parseTTestAgg(JsonNode n) {
+            TTestPopulation a = n.has("a") ? parseTTestPop(n.get("a")) : null;
+            TTestPopulation b = n.has("b") ? parseTTestPop(n.get("b")) : null;
+            return new TTestAgg(a, b, n.has("type") ? n.get("type").asString() : null);
         }
 
         private static TTestPopulation parseTTestPop(JsonNode n) {
