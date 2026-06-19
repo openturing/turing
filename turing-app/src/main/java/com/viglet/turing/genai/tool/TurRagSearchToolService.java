@@ -503,8 +503,7 @@ public class TurRagSearchToolService {
                 .topK(topK)
                 .similarityThreshold(0.0)
                 .build();
-        List<Document> results = vectorStore.similaritySearch(searchRequest);
-        return results;
+        return vectorStore.similaritySearch(searchRequest);
     }
 
     @Tool(name = "knowledge_base_stats", description = ".")
