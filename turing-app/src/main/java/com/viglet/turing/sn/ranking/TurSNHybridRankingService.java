@@ -231,7 +231,7 @@ public class TurSNHybridRankingService {
         List<Document> vectorHits = new ArrayList<>();
         if (vectorAll != null) {
             for (Document d : vectorAll) {
-                if (d.getId() != null && byId.containsKey(d.getId())
+                if (byId.containsKey(d.getId())
                         && !semanticRank.containsKey(d.getId())) {
                     semanticRank.put(d.getId(), vectorHits.size() + 1);
                     vectorHits.add(d);
@@ -245,7 +245,7 @@ public class TurSNHybridRankingService {
     private void rankFused(List<Document> fused, Map<String, Integer> fusedRank,
             Map<String, Double> rrfScore) {
         for (Document d : fused) {
-            if (d.getId() != null && !fusedRank.containsKey(d.getId())) {
+            if (!fusedRank.containsKey(d.getId())) {
                 fusedRank.put(d.getId(), fusedRank.size() + 1);
                 rrfScore.put(d.getId(), d.getScore());
             }

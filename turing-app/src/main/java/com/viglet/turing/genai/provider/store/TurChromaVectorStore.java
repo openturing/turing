@@ -178,7 +178,7 @@ public class TurChromaVectorStore implements VectorStore, InitializingBean {
      */
     private Document rewriteForIndex(Document doc) {
         Map<String, Object> original = doc.getMetadata();
-        if (original == null || original.isEmpty()) {
+        if (original.isEmpty()) {
             return doc;
         }
         Map<String, Object> rewritten = LinkedHashMap.newLinkedHashMap(original.size());

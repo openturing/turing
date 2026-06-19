@@ -153,8 +153,8 @@ public class TurUserAPI {
     public TurCurrentUser turUserCurrent() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
-            if (authentication.getPrincipal() instanceof OAuth2User) {
-                return oauth2User();
+            if (authentication.getPrincipal() instanceof OAuth2User oauthUser) {
+                return oauth2User(authentication, oauthUser);
             } else {
                 return regularUser(authentication.getName());
             }
@@ -250,9 +250,7 @@ public class TurUserAPI {
         return false;
     }
 
-    private TurCurrentUser oauth2User() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        OAuth2User user = ((OAuth2User) authentication.getPrincipal());
+    private TurCurrentUser oauth2User(Authentication authentication, OAuth2User user) {
         String realm = (authentication instanceof OAuth2AuthenticationToken oauthToken)
                 ? oauthToken.getAuthorizedClientRegistrationId()
                 : "oauth2";
