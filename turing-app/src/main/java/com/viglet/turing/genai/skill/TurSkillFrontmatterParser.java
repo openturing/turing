@@ -89,7 +89,7 @@ public class TurSkillFrontmatterParser {
             return null;
         }
         // Tolerate a UTF-8 BOM and leading blank lines before the opening fence.
-        String content = markdown.startsWith("﻿") ? markdown.substring(1) : markdown;
+        String content = markdown.startsWith("\uFEFF") ? markdown.substring(1) : markdown;
         String[] lines = content.split("\r\n|\r|\n", -1);
         int start = 0;
         while (start < lines.length && lines[start].isBlank()) {
