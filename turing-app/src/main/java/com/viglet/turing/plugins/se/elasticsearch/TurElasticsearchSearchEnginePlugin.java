@@ -21,6 +21,7 @@ import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.elasticsearch.TurElasticsearch;
+import com.viglet.turing.elasticsearch.TurElasticsearchInstance;
 import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
 import com.viglet.turing.elasticsearch.TurElasticsearchUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -534,54 +535,77 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
             return List.of();
         }
         return turElasticsearchInstanceProcess.initElasticsearchInstance(siteLocale)
-                .map(instance -> {
-                    try {
-                        var response = instance.getClient().search(s -> s
-                                .index(instance.getIndex())
-                                .size(wanted.size())
-                                .source(src -> src.filter(f -> f.includes(SIMILAR_FIELDS)))
-                                .query(q -> q.terms(t -> t
-                                        .field(TurSNFieldName.ID)
-                                        .terms(tt -> tt.value(wanted.stream()
-                                                .map(co.elastic.clients.elasticsearch._types.FieldValue::of)
-                                                .toList())))),
-                                (java.lang.reflect.Type) Map.class);
-                        Map<String, Map<String, Object>> byId = new java.util.HashMap<>();
-                        for (var hit : response.hits().hits()) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> source = (Map<String, Object>) hit.source();
-                            if (source == null) {
-                                continue;
-                            }
-                            Map<String, Object> fields = new LinkedHashMap<>();
-                            for (String field : SIMILAR_FIELDS) {
-                                Object value = source.get(field);
-                                if (value instanceof java.util.Collection<?> col) {
-                                    value = col.isEmpty() ? null : col.iterator().next();
-                                }
-                                if (value != null) {
-                                    fields.put(field, value);
-                                }
-                            }
-                            Object docId = fields.getOrDefault(TurSNFieldName.ID, hit.id());
-                            if (docId != null) {
-                                byId.put(docId.toString(), fields);
-                            }
-                        }
-                        List<Map<String, Object>> ordered = new java.util.ArrayList<>();
-                        for (String key : wanted) {
-                            Map<String, Object> fields = byId.get(key);
-                            if (fields != null) {
-                                ordered.add(fields);
-                            }
-                        }
-                        return ordered;
-                    } catch (Exception e) {
-                        log.warn("[Elasticsearch] getDocumentsByIds failed: {}", e.getMessage());
-                        return List.<Map<String, Object>>of();
-                    }
-                })
+                .map(instance -> collectDocumentsByIds(instance, wanted))
                 .orElse(List.of());
+    }
+
+    /**
+     * Runs the terms query for {@code wanted} ids and returns the matched
+     * documents in request order (missing ids dropped). Per-call failures are
+     * logged and yield an empty list. Extracted from the {@code .map(...)}
+     * lambda in {@link #getDocumentsByIds} to keep cognitive complexity low.
+     *
+     * @since 2026.3.1
+     */
+    private List<Map<String, Object>> collectDocumentsByIds(TurElasticsearchInstance instance,
+            List<String> wanted) {
+        try {
+            var response = instance.getClient().search(s -> s
+                    .index(instance.getIndex())
+                    .size(wanted.size())
+                    .source(src -> src.filter(f -> f.includes(SIMILAR_FIELDS)))
+                    .query(q -> q.terms(t -> t
+                            .field(TurSNFieldName.ID)
+                            .terms(tt -> tt.value(wanted.stream()
+                                    .map(co.elastic.clients.elasticsearch._types.FieldValue::of)
+                                    .toList())))),
+                    (java.lang.reflect.Type) Map.class);
+            Map<String, Map<String, Object>> byId = new java.util.HashMap<>();
+            for (var hit : response.hits().hits()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> source = (Map<String, Object>) hit.source();
+                if (source == null) {
+                    continue;
+                }
+                Map<String, Object> fields = extractSimilarFields(source);
+                Object docId = fields.getOrDefault(TurSNFieldName.ID, hit.id());
+                if (docId != null) {
+                    byId.put(docId.toString(), fields);
+                }
+            }
+            List<Map<String, Object>> ordered = new java.util.ArrayList<>();
+            for (String key : wanted) {
+                Map<String, Object> fields = byId.get(key);
+                if (fields != null) {
+                    ordered.add(fields);
+                }
+            }
+            return ordered;
+        } catch (Exception e) {
+            log.warn("[Elasticsearch] getDocumentsByIds failed: {}", e.getMessage());
+            return List.<Map<String, Object>>of();
+        }
+    }
+
+    /**
+     * Projects a raw ES {@code _source} map down to {@link #SIMILAR_FIELDS},
+     * unwrapping single-element collections to their scalar and dropping null
+     * values.
+     *
+     * @since 2026.3.1
+     */
+    private static Map<String, Object> extractSimilarFields(Map<String, Object> source) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        for (String field : SIMILAR_FIELDS) {
+            Object value = source.get(field);
+            if (value instanceof java.util.Collection<?> col) {
+                value = col.isEmpty() ? null : col.iterator().next();
+            }
+            if (value != null) {
+                fields.put(field, value);
+            }
+        }
+        return fields;
     }
 
     private static String similarityText(Map<String, Object> fields) {

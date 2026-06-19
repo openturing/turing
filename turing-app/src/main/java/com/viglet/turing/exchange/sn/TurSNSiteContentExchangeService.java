@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.TurGenAiContext;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -264,40 +265,9 @@ public class TurSNSiteContentExchangeService {
                     int end = Math.min(i + IMPORT_CHUNK_SIZE, documents.size());
                     List<Map<String, Object>> chunk = documents.subList(i, end);
 
-                    // Batch-send the whole chunk in one update request (Solr/ES
-                    // coalesce). If the batch fails after the resilience layer
-                    // retries are exhausted, fall back to per-document indexing
-                    // so a single bad/slow doc doesn't drop the whole chunk.
-                    int indexedInChunk = 0;
-                    try {
-                        indexedInChunk = plugin.indexDocuments(turSNSite, locale, chunk);
-                    } catch (Exception batchFailure) {
-                        log.warn("Batch indexing of {} document(s) failed after retries; falling back to per-document indexing: {}",
-                                chunk.size(), batchFailure.getMessage());
-                        for (Map<String, Object> doc : chunk) {
-                            try {
-                                if (plugin.indexDocument(turSNSite, locale, doc)) {
-                                    indexedInChunk++;
-                                }
-                            } catch (Exception perDocFailure) {
-                                log.warn("Failed to index document '{}' (fallback): {}",
-                                        doc.getOrDefault("id", UNKNOWN), perDocFailure.getMessage());
-                            }
-                        }
-                    }
-                    totalIndexed += indexedInChunk;
-
-                    // RAG vector store stays per-document — embedding generation is
-                    // an external API call per doc and has its own batching semantics.
-                    for (Map<String, Object> doc : chunk) {
-                        try {
-                            turSNGenAi.addDocument(turSNSite, locale, doc);
-                        } catch (Exception e) {
-                            log.warn("Failed to index document '{}' into vector store: {}",
-                                    doc.getOrDefault("id", UNKNOWN), e.getMessage());
-                        }
-                        processedSoFar++;
-                    }
+                    totalIndexed += indexChunk(plugin, turSNSite, locale, chunk);
+                    feedChunkToVectorStore(turSNSite, locale, chunk);
+                    processedSoFar += chunk.size();
                     plugin.commit(turSNSite, locale);
 
                     progressMap.put(taskId, new ContentExchangeProgress(
@@ -309,6 +279,55 @@ public class TurSNSiteContentExchangeService {
                     totalDocs, processedSoFar, "", COMPLETED, startTime));
         }
         return totalIndexed;
+    }
+
+    /**
+     * Indexes one chunk into the search engine, returning the number indexed.
+     * Batch-sends the whole chunk in one update request (Solr/ES coalesce); if
+     * the batch fails after the resilience layer's retries are exhausted, falls
+     * back to per-document indexing so a single bad/slow doc doesn't drop the
+     * whole chunk.
+     *
+     * @since 2026.3.1
+     */
+    private int indexChunk(TurSearchEnginePlugin plugin, TurSNSite turSNSite, Locale locale,
+            List<Map<String, Object>> chunk) {
+        try {
+            return plugin.indexDocuments(turSNSite, locale, chunk);
+        } catch (Exception batchFailure) {
+            log.warn("Batch indexing of {} document(s) failed after retries; falling back to per-document indexing: {}",
+                    chunk.size(), batchFailure.getMessage());
+            int indexedInChunk = 0;
+            for (Map<String, Object> doc : chunk) {
+                try {
+                    if (plugin.indexDocument(turSNSite, locale, doc)) {
+                        indexedInChunk++;
+                    }
+                } catch (Exception perDocFailure) {
+                    log.warn("Failed to index document '{}' (fallback): {}",
+                            doc.getOrDefault("id", UNKNOWN), perDocFailure.getMessage());
+                }
+            }
+            return indexedInChunk;
+        }
+    }
+
+    /**
+     * Feeds every document in the chunk into the RAG vector store one at a time
+     * — embedding generation is an external API call per doc and has its own
+     * batching semantics. Per-document failures are logged and skipped.
+     *
+     * @since 2026.3.1
+     */
+    private void feedChunkToVectorStore(TurSNSite turSNSite, Locale locale, List<Map<String, Object>> chunk) {
+        for (Map<String, Object> doc : chunk) {
+            try {
+                turSNGenAi.addDocument(turSNSite, locale, doc);
+            } catch (Exception e) {
+                log.warn("Failed to index document '{}' into vector store: {}",
+                        doc.getOrDefault("id", UNKNOWN), e.getMessage());
+            }
+        }
     }
 
     /**
@@ -382,65 +401,11 @@ public class TurSNSiteContentExchangeService {
         AtomicInteger reindexedCounter = new AtomicInteger(0);
         log.debug("RAG reindex worker pool: site='{}' parallelism={}", turSNSite.getName(), parallelism);
 
+        ReindexRun run = new ReindexRun(executor, processedCounter, reindexedCounter, taskId,
+                totalDocsForLambda, startTime, turSNSite);
         try {
             for (TurSNSiteLocale siteLocale : locales) {
-                String localeKey = siteLocale.getLanguage().toString();
-                Locale locale = siteLocale.getLanguage();
-                // Resolve the GenAI context once per locale — sharing it across
-                // every doc of this locale eliminates per-doc DB round-trips and
-                // VectorStore re-construction. The context is locale-bound (it
-                // carries the locale's vector store collection) but otherwise
-                // doc-independent.
-                String collectionName = siteLocale.getCore();
-                TurGenAiContext context = turGenAiContextFactory.build(genAi, collectionName);
-                if (!context.isEnabled() || context.getVectorStore() == null) {
-                    log.warn("RAG reindex skipping locale '{}' for site '{}': context not available",
-                            localeKey, turSNSite.getName());
-                    continue;
-                }
-
-                progressMap.put(taskId, new ContentExchangeProgress(
-                        (int) totalDocs, processedCounter.get(), localeKey, "reindexing", startTime));
-
-                int start = 0;
-                boolean hasMore = true;
-                while (hasMore) {
-                    List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
-                            start, EXPORT_PAGE_SIZE);
-                    List<Future<?>> futures = new ArrayList<>(page.size());
-                    for (Map<String, Object> doc : page) {
-                        futures.add(executor.submit(() -> {
-                            try {
-                                turSNGenAi.addDocumentToContext(turSNSite, locale, context, doc);
-                                reindexedCounter.incrementAndGet();
-                            } catch (Exception e) {
-                                log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
-                                        doc.getOrDefault("id", UNKNOWN), localeKey, e.getMessage());
-                            } finally {
-                                int p = processedCounter.incrementAndGet();
-                                progressMap.put(taskId, new ContentExchangeProgress(
-                                        totalDocsForLambda, p, localeKey, "reindexing", startTime));
-                            }
-                        }));
-                    }
-                    // Wait for the page to drain before paginating to the next
-                    // batch — keeps memory bounded (no more than one page worth
-                    // of in-flight tasks) and lets us advance the search-engine
-                    // cursor predictably.
-                    for (Future<?> f : futures) {
-                        try {
-                            f.get();
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            throw new RuntimeException(ie);
-                        } catch (ExecutionException ee) {
-                            log.warn("RAG reindex worker error: {}", ee.getCause() == null
-                                    ? ee.getMessage() : ee.getCause().getMessage());
-                        }
-                    }
-                    start += EXPORT_PAGE_SIZE;
-                    hasMore = page.size() == EXPORT_PAGE_SIZE;
-                }
+                reindexLocale(siteLocale, genAi, plugin, siteFieldMap, run);
             }
         } finally {
             executor.shutdown();
@@ -452,5 +417,104 @@ public class TurSNSiteContentExchangeService {
         log.debug("RAG reindex finished for site '{}': {}/{} documents re-embedded (parallelism={})",
                 turSNSite.getName(), reindexed, totalDocs, parallelism);
         return reindexed;
+    }
+
+    /**
+     * Per-call state shared across every locale/page of a single
+     * {@link #reindexVectorStore} run — bundled so the extracted helpers stay
+     * within a sane parameter count.
+     *
+     * @since 2026.3.1
+     */
+    private record ReindexRun(ExecutorService executor, AtomicInteger processedCounter,
+            AtomicInteger reindexedCounter, String taskId, int totalDocs, long startTime,
+            TurSNSite site) {
+    }
+
+    /**
+     * Re-feeds every indexed document of one locale into the RAG vector store,
+     * paging through the search engine and draining each page before advancing
+     * the cursor (bounds in-flight tasks to one page). Skips the locale when its
+     * GenAI context is unavailable.
+     *
+     * @since 2026.3.1
+     */
+    private void reindexLocale(TurSNSiteLocale siteLocale, TurSNSiteGenAi genAi, TurSearchEnginePlugin plugin,
+            Map<String, TurSNSiteField> siteFieldMap, ReindexRun run) {
+        String localeKey = siteLocale.getLanguage().toString();
+        Locale locale = siteLocale.getLanguage();
+        // Resolve the GenAI context once per locale — sharing it across every
+        // doc of this locale eliminates per-doc DB round-trips and VectorStore
+        // re-construction. The context is locale-bound (it carries the locale's
+        // vector store collection) but otherwise doc-independent.
+        String collectionName = siteLocale.getCore();
+        TurGenAiContext context = turGenAiContextFactory.build(genAi, collectionName);
+        if (!context.isEnabled() || context.getVectorStore() == null) {
+            log.warn("RAG reindex skipping locale '{}' for site '{}': context not available",
+                    localeKey, run.site().getName());
+            return;
+        }
+
+        progressMap.put(run.taskId(), new ContentExchangeProgress(
+                run.totalDocs(), run.processedCounter().get(), localeKey, "reindexing", run.startTime()));
+
+        int start = 0;
+        boolean hasMore = true;
+        while (hasMore) {
+            List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
+                    start, EXPORT_PAGE_SIZE);
+            List<Future<?>> futures = submitReindexPage(page, locale, context, localeKey, run);
+            drainReindexFutures(futures);
+            start += EXPORT_PAGE_SIZE;
+            hasMore = page.size() == EXPORT_PAGE_SIZE;
+        }
+    }
+
+    /**
+     * Submits every document of a page to the reindex executor, returning the
+     * futures so the caller can wait for the page to drain. Each task re-embeds
+     * one doc, counts success/processed, and publishes progress.
+     *
+     * @since 2026.3.1
+     */
+    private List<Future<?>> submitReindexPage(List<Map<String, Object>> page, Locale locale,
+            TurGenAiContext context, String localeKey, ReindexRun run) {
+        List<Future<?>> futures = new ArrayList<>(page.size());
+        for (Map<String, Object> doc : page) {
+            futures.add(run.executor().submit(() -> {
+                try {
+                    turSNGenAi.addDocumentToContext(run.site(), locale, context, doc);
+                    run.reindexedCounter().incrementAndGet();
+                } catch (Exception e) {
+                    log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
+                            doc.getOrDefault("id", UNKNOWN), localeKey, e.getMessage());
+                } finally {
+                    int p = run.processedCounter().incrementAndGet();
+                    progressMap.put(run.taskId(), new ContentExchangeProgress(
+                            run.totalDocs(), p, localeKey, "reindexing", run.startTime()));
+                }
+            }));
+        }
+        return futures;
+    }
+
+    /**
+     * Waits for every future of a page to complete, propagating interruption
+     * and logging worker errors without aborting the remaining futures.
+     *
+     * @since 2026.3.1
+     */
+    private void drainReindexFutures(List<Future<?>> futures) {
+        for (Future<?> f : futures) {
+            try {
+                f.get();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(ie);
+            } catch (ExecutionException ee) {
+                log.warn("RAG reindex worker error: {}", ee.getCause() == null
+                        ? ee.getMessage() : ee.getCause().getMessage());
+            }
+        }
     }
 }

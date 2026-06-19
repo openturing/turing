@@ -284,30 +284,7 @@ public class TurChatFlowAPI {
         //    import — we never overwrite an existing persona's settings.
         Map<String, String> personaIdRemap = new HashMap<>();
         Map<String, String> personaNameById = new HashMap<>();
-        boolean anyPersonaTouched = false;
-        for (TurChatFlowImportDto item : bundle) {
-            if (item == null || item.getPersonas() == null) {
-                continue;
-            }
-            for (TurPersonaDto incoming : item.getPersonas()) {
-                if (incoming == null || incoming.getName() == null
-                        || incoming.getName().isBlank()) {
-                    continue;
-                }
-                TurPersona resolved = turPersonaRepository
-                        .findByNameIgnoreCase(incoming.getName())
-                        .orElseGet(() -> createPersonaFromImport(incoming));
-                if (incoming.getId() != null && !incoming.getId().isBlank()) {
-                    personaIdRemap.put(incoming.getId(), resolved.getId());
-                }
-                personaNameById.put(resolved.getId(), resolved.getName());
-                agent.getPersonas().add(resolved);
-                anyPersonaTouched = true;
-            }
-        }
-        if (anyPersonaTouched) {
-            turAIAgentRepository.save(agent);
-        }
+        attachBundlePersonas(agent, bundle, personaIdRemap, personaNameById);
 
         // 1b) Slots — de-duplicate by name across every item in the bundle and auto-create any
         //     missing entry on the target agent. Existing slots are left untouched.
@@ -322,6 +299,70 @@ public class TurChatFlowAPI {
         //    save each entity exactly once with its final, rewritten graph.
         Map<String, String> subFlowIdRemap = new HashMap<>();
         Map<String, String> subFlowNameById = new HashMap<>();
+        List<TurChatFlow> entities = assignBundleFlowEntities(agent, bundle, subFlowIdRemap, subFlowNameById);
+
+        // 3) Rewrite each flow's graph with the now-complete persona + sub-flow remaps, then save.
+        return rewriteAndSaveBundleFlows(entities, personaIdRemap, personaNameById,
+                subFlowIdRemap, subFlowNameById);
+    }
+
+    /**
+     * Phase 1 of {@link #turChatFlowImportBundle}: de-duplicates personas across the bundle
+     * (by name, case-insensitive), attaches each resolved persona to the agent, and fills the
+     * id / name remap maps in place. Saves the agent once if any persona was attached.
+     *
+     * @since 2026.3.1
+     */
+    private void attachBundlePersonas(TurAIAgent agent, List<TurChatFlowImportDto> bundle,
+            Map<String, String> personaIdRemap, Map<String, String> personaNameById) {
+        boolean anyPersonaTouched = false;
+        for (TurChatFlowImportDto item : bundle) {
+            if (item == null || item.getPersonas() == null) {
+                continue;
+            }
+            for (TurPersonaDto incoming : item.getPersonas()) {
+                if (resolveAndAttachPersona(incoming, agent, personaIdRemap, personaNameById)) {
+                    anyPersonaTouched = true;
+                }
+            }
+        }
+        if (anyPersonaTouched) {
+            turAIAgentRepository.save(agent);
+        }
+    }
+
+    /**
+     * Looks up (or creates) the persona for a single import entry and attaches it to the agent,
+     * recording the id / name remap. Returns {@code false} for a blank/unnamed entry that was
+     * skipped, {@code true} when a persona was resolved and attached.
+     *
+     * @since 2026.3.1
+     */
+    private boolean resolveAndAttachPersona(TurPersonaDto incoming, TurAIAgent agent,
+            Map<String, String> personaIdRemap, Map<String, String> personaNameById) {
+        if (incoming == null || incoming.getName() == null || incoming.getName().isBlank()) {
+            return false;
+        }
+        TurPersona resolved = turPersonaRepository
+                .findByNameIgnoreCase(incoming.getName())
+                .orElseGet(() -> createPersonaFromImport(incoming));
+        if (incoming.getId() != null && !incoming.getId().isBlank()) {
+            personaIdRemap.put(incoming.getId(), resolved.getId());
+        }
+        personaNameById.put(resolved.getId(), resolved.getName());
+        agent.getPersonas().add(resolved);
+        return true;
+    }
+
+    /**
+     * Phase 2 of {@link #turChatFlowImportBundle}: maps each import item to a {@link TurChatFlow}
+     * entity with a freshly assigned UUID (preserving {@code null} placeholders for malformed
+     * items so the rewrite phase keeps positional alignment), and fills the sub-flow remap maps.
+     *
+     * @since 2026.3.1
+     */
+    private List<TurChatFlow> assignBundleFlowEntities(TurAIAgent agent, List<TurChatFlowImportDto> bundle,
+            Map<String, String> subFlowIdRemap, Map<String, String> subFlowNameById) {
         List<TurChatFlow> entities = new ArrayList<>();
         for (TurChatFlowImportDto item : bundle) {
             if (item == null || item.getChatFlow() == null) {
@@ -342,11 +383,20 @@ public class TurChatFlowAPI {
             }
             entities.add(entity);
         }
+        return entities;
+    }
 
-        // 3) Rewrite each flow's graph with the now-complete persona + sub-flow remaps, then save.
+    /**
+     * Phase 3 of {@link #turChatFlowImportBundle}: rewrites each flow's graph with the complete
+     * persona + sub-flow remaps, persists it, and returns the saved DTOs.
+     *
+     * @since 2026.3.1
+     */
+    private List<TurChatFlowDto> rewriteAndSaveBundleFlows(List<TurChatFlow> entities,
+            Map<String, String> personaIdRemap, Map<String, String> personaNameById,
+            Map<String, String> subFlowIdRemap, Map<String, String> subFlowNameById) {
         List<TurChatFlowDto> results = new ArrayList<>();
-        for (int i = 0; i < entities.size(); i++) {
-            TurChatFlow entity = entities.get(i);
+        for (TurChatFlow entity : entities) {
             if (entity == null) {
                 continue;
             }
