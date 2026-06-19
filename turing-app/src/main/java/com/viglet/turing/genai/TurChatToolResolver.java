@@ -116,51 +116,47 @@ public class TurChatToolResolver {
      *
      * @since 2026.3.1
      */
-    public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
-            String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
-        long t0 = System.currentTimeMillis();
-        Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
-        ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
-                ? new ToolCallback[0]
-                : nativeToolService.getToolCallbacks(selectedNativeTools);
-        ToolCallback[] mcpCallbacks = agent.getMcpServers() == null || agent.getMcpServers().isEmpty()
+    private ToolCallback[] mcpCallbacks(TurAIAgent agent) {
+        return agent.getMcpServers() == null || agent.getMcpServers().isEmpty()
                 ? new ToolCallback[0]
                 : mcpToolCallbackService.getToolCallbacks(agent.getMcpServers());
-        ToolCallback[] customCallbacks = agent.getCustomTools() == null || agent.getCustomTools().isEmpty()
+    }
+
+    private ToolCallback[] customCallbacks(TurAIAgent agent) {
+        return agent.getCustomTools() == null || agent.getCustomTools().isEmpty()
                 ? new ToolCallback[0]
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
-        ToolCallback[] personaBrandCallbacks =
-                personaBrandContextProvider.getToolCallbacks(activePersona);
-        // T323 / §IX.4.d — skill delegation. When the operator enabled skills on
-        // this agent AND the delegation layer is available (storage + Code
-        // Interpreter DOCKER + a Default LLM), add the single `run_skill` tool so
-        // the model can delegate a task to a skill. The skill runs on the Global
-        // Settings Default LLM, not this agent's model. Empty for default-off
-        // agents or when the layer is unavailable.
-        // T325 / §IX.4.d — honour an optional skill-mode pin: when the caller
-        // selected a single skill for this turn, offer only that one; otherwise
-        // the full enabled set is offered for progressive disclosure (legacy).
-        ToolCallback[] skillCallbacks =
-                agent.isSkillsEnabled() && skillRunnerService.isAvailable()
-                        ? skillRunnerService.buildToolCallbacks(
-                                skillRunnerService.offeredSkills(selectedSkillId))
-                        : new ToolCallback[0];
-        ToolCallback[] decorated = toolCallbackPipeline.decorate(
-                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
-                        skillCallbacks)
-                        .flatMap(Arrays::stream)
-                        .toArray(ToolCallback[]::new));
-        // Belt-and-suspenders: native tools (operator-curated) and the
-        // active flow node's requiredTools (flow-author declared) bypass
-        // the BM25 filter. Persona brand-context tool also bypasses
-        // implicitly via its name being in alwaysKeep would be nicer, but
-        // its name isn't exposed at this layer — the filter's small-pool
-        // bypass + the fact that brand tools have rich descriptions keeps
-        // them in the top-K in practice.
+    }
+
+    /**
+     * T323 / §IX.4.d — skill delegation. When the operator enabled skills on
+     * this agent AND the delegation layer is available (storage + Code
+     * Interpreter DOCKER + a Default LLM), add the single {@code run_skill} tool
+     * so the model can delegate a task to a skill. The skill runs on the Global
+     * Settings Default LLM, not this agent's model. Empty for default-off
+     * agents or when the layer is unavailable.
+     *
+     * <p>T325 / §IX.4.d — honour an optional skill-mode pin: when the caller
+     * selected a single skill for this turn, offer only that one; otherwise the
+     * full enabled set is offered for progressive disclosure (legacy).
+     */
+    private ToolCallback[] skillCallbacks(TurAIAgent agent, String selectedSkillId) {
+        return agent.isSkillsEnabled() && skillRunnerService.isAvailable()
+                ? skillRunnerService.buildToolCallbacks(
+                        skillRunnerService.offeredSkills(selectedSkillId))
+                : new ToolCallback[0];
+    }
+
+    /**
+     * Belt-and-suspenders: native tools (operator-curated) and the active flow
+     * node's requiredTools (flow-author declared) bypass the BM25 filter. The
+     * skill delegation tool is infrastructure (one per turn, not a domain tool)
+     * — kept regardless of BM25 relevance to the message.
+     */
+    private Set<String> buildAlwaysKeep(Set<String> selectedNativeTools,
+            ToolCallback[] skillCallbacks, ChatFlowNode activeNode) {
         Set<String> alwaysKeep = new HashSet<>();
         alwaysKeep.addAll(selectedNativeTools);
-        // The skill delegation tool is infrastructure (one per turn, not a
-        // domain tool) — keep it regardless of BM25 relevance to the message.
         if (skillCallbacks.length > 0) {
             alwaysKeep.add(TurRunSkillToolCallback.TOOL_NAME);
         }
@@ -171,6 +167,27 @@ public class TurChatToolResolver {
                 }
             }
         }
+        return alwaysKeep;
+    }
+
+    public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
+            String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
+        long t0 = System.currentTimeMillis();
+        Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
+        ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
+                ? new ToolCallback[0]
+                : nativeToolService.getToolCallbacks(selectedNativeTools);
+        ToolCallback[] mcpCallbacks = mcpCallbacks(agent);
+        ToolCallback[] customCallbacks = customCallbacks(agent);
+        ToolCallback[] personaBrandCallbacks =
+                personaBrandContextProvider.getToolCallbacks(activePersona);
+        ToolCallback[] skillCallbacks = skillCallbacks(agent, selectedSkillId);
+        ToolCallback[] decorated = toolCallbackPipeline.decorate(
+                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
+                        skillCallbacks)
+                        .flatMap(Arrays::stream)
+                        .toArray(ToolCallback[]::new));
+        Set<String> alwaysKeep = buildAlwaysKeep(selectedNativeTools, skillCallbacks, activeNode);
         ToolCallback[] filtered = toolPreFilterService.filter(decorated, userMessage, alwaysKeep);
         long elapsed = System.currentTimeMillis() - t0;
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_TOOLS, elapsed);

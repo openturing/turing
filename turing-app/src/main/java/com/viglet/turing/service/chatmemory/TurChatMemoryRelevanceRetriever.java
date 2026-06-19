@@ -186,19 +186,7 @@ public class TurChatMemoryRelevanceRetriever {
             // misuse, not a runtime path worth dashboarding.
             return Collections.emptyList();
         }
-        if (agent == null || !agent.isChatMemoryEnabled() || !agent.isChatMemoryRelevanceEnabled()) {
-            recordBypass(start);
-            return history;
-        }
-        if (!store.isEnabled()) {
-            recordBypass(start);
-            return history;
-        }
-        if (conversationId == null || conversationId.isBlank()) {
-            recordBypass(start);
-            return history;
-        }
-        if (latestUserMessage == null || latestUserMessage.isBlank()) {
+        if (!isRelevanceApplicable(agent, conversationId, latestUserMessage)) {
             recordBypass(start);
             return history;
         }
@@ -225,17 +213,7 @@ public class TurChatMemoryRelevanceRetriever {
         }
 
         int olderCount = persisted.size() - recentN;
-        List<PersistedMessage> older = new ArrayList<>(olderCount);
-        for (int i = 0; i < olderCount; i++) {
-            Map<String, Object> raw = persisted.get(i);
-            String role = asString(raw.get("role"));
-            String content = asString(raw.get(FIELD_CONTENT));
-            String timestamp = asString(raw.get("timestamp"));
-            if (role == null || role.isBlank() || content == null || content.isBlank()) {
-                continue;
-            }
-            older.add(new PersistedMessage(i, role, content, timestamp));
-        }
+        List<PersistedMessage> older = parseOlderMessages(persisted, olderCount);
         if (older.isEmpty()) {
             recordBypass(start);
             return history;
@@ -268,6 +246,45 @@ public class TurChatMemoryRelevanceRetriever {
         pipelineObservation.recordMemoryRetrieval(older.size(), retrieved.size(),
                 System.currentTimeMillis() - start, TurMeterNames.OUTCOME_HITS);
         return augmented;
+    }
+
+    /**
+     * True when relevance retrieval should run: the agent has it enabled, the
+     * store is up, and both the conversation id and latest user message are
+     * present.
+     */
+    private boolean isRelevanceApplicable(TurAIAgent agent, String conversationId,
+            String latestUserMessage) {
+        if (agent == null || !agent.isChatMemoryEnabled() || !agent.isChatMemoryRelevanceEnabled()) {
+            return false;
+        }
+        if (!store.isEnabled()) {
+            return false;
+        }
+        if (conversationId == null || conversationId.isBlank()) {
+            return false;
+        }
+        return latestUserMessage != null && !latestUserMessage.isBlank();
+    }
+
+    /**
+     * Parses the first {@code olderCount} persisted entries into
+     * {@link PersistedMessage}s, skipping rows missing a role or content.
+     */
+    private List<PersistedMessage> parseOlderMessages(List<Map<String, Object>> persisted,
+            int olderCount) {
+        List<PersistedMessage> older = new ArrayList<>(olderCount);
+        for (int i = 0; i < olderCount; i++) {
+            Map<String, Object> raw = persisted.get(i);
+            String role = asString(raw.get("role"));
+            String content = asString(raw.get(FIELD_CONTENT));
+            String timestamp = asString(raw.get("timestamp"));
+            if (role == null || role.isBlank() || content == null || content.isBlank()) {
+                continue;
+            }
+            older.add(new PersistedMessage(i, role, content, timestamp));
+        }
+        return older;
     }
 
     private void recordBypass(long startMillis) {

@@ -144,23 +144,8 @@ public class TurChampionChallengerService {
         }
 
         Instant now = Instant.now();
-        List<String> archived = new ArrayList<>();
-        for (TurChatFlow champion : champions) {
-            champion.setTrafficWeight(CHAMPION_WEIGHT);
-            champion.setBanditEnabled(Boolean.FALSE);
-            if (!dryRun) {
-                chatFlowRepository.save(champion);
-            }
-        }
-        for (TurChatFlow loser : losers) {
-            loser.setTrafficWeight(ARCHIVED_WEIGHT);
-            loser.setBanditEnabled(Boolean.FALSE);
-            loser.setExperimentEndsAt(now);
-            archived.add(loser.getVariantLabel());
-            if (!dryRun) {
-                chatFlowRepository.save(loser);
-            }
-        }
+        applyChampions(champions, dryRun);
+        List<String> archived = applyLosers(losers, now, dryRun);
 
         String winnerFlowId = champions.get(0).getId();
         String reason = String.format(
@@ -175,6 +160,35 @@ public class TurChampionChallengerService {
         }
         return new PromotionResult(experimentKey, m.name(), !dryRun, dryRun,
                 sig.winner(), winnerFlowId, sig.pValue(), archived, reason);
+    }
+
+    /** Sets the winning variant(s) to champion weight, persisting unless {@code dryRun}. */
+    private void applyChampions(List<TurChatFlow> champions, boolean dryRun) {
+        for (TurChatFlow champion : champions) {
+            champion.setTrafficWeight(CHAMPION_WEIGHT);
+            champion.setBanditEnabled(Boolean.FALSE);
+            if (!dryRun) {
+                chatFlowRepository.save(champion);
+            }
+        }
+    }
+
+    /**
+     * Archives the losing variant(s) (zero weight, ended now), persisting unless
+     * {@code dryRun}. Returns the archived variant labels.
+     */
+    private List<String> applyLosers(List<TurChatFlow> losers, Instant now, boolean dryRun) {
+        List<String> archived = new ArrayList<>();
+        for (TurChatFlow loser : losers) {
+            loser.setTrafficWeight(ARCHIVED_WEIGHT);
+            loser.setBanditEnabled(Boolean.FALSE);
+            loser.setExperimentEndsAt(now);
+            archived.add(loser.getVariantLabel());
+            if (!dryRun) {
+                chatFlowRepository.save(loser);
+            }
+        }
+        return archived;
     }
 
     /**
