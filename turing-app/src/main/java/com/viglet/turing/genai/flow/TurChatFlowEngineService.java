@@ -522,9 +522,7 @@ public class TurChatFlowEngineService {
         //      aiQuestion) and types the coupon, only to be redirected
         //      with "Poderia me informar se você tem um cupom?" because
         //      the engine state is still parked on switch-coupon-intent.
-        if (leaf != state) {
-            leaf = stateRepository.save(leaf);
-        } else if (!Objects.equals(preWalkNodeId, leaf.getCurrentNodeId())) {
+        if (leaf != state || !Objects.equals(preWalkNodeId, leaf.getCurrentNodeId())) {
             leaf = stateRepository.save(leaf);
         }
         // Record a submission only when the ROOT flow has just terminated —
