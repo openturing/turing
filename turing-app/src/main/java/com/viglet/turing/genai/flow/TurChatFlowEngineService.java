@@ -931,6 +931,40 @@ public class TurChatFlowEngineService {
      *
      * @since 2026.2.7
      */
+    /** Picks the leaf state (no descendant), newest-updated first, falling back to the first row. */
+    private TurChatFlowState findLeafState(List<TurChatFlowState> states) {
+        Set<String> hasDescendant = states.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return states.stream()
+                .filter(s -> !hasDescendant.contains(s.getId()))
+                .sorted(Comparator.comparing(TurChatFlowState::getUpdatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
+                .findFirst()
+                .orElse(states.get(0));
+    }
+
+    /** Suspended-reason label when the leaf cursor sits on a parked node, else null. */
+    private String resolveLeafSuspendedReason(TurChatFlow flow, TurChatFlowState leaf) {
+        if (flow == null) {
+            return null;
+        }
+        ChatFlowGraph leafGraph = parseGraph(flow).orElse(null);
+        if (leafGraph == null) {
+            return null;
+        }
+        Optional<ChatFlowNode> currentOpt = leafGraph.nodeById(leaf.getCurrentNodeId());
+        if (currentOpt.isEmpty() || !PARKED_NODE_TYPES.contains(currentOpt.get().type())) {
+            return null;
+        }
+        String label = currentOpt.get().label();
+        if (label != null && !label.isBlank()) {
+            return label;
+        }
+        return HUMAN_APPROVAL.equals(currentOpt.get().type()) ? "awaiting approval" : "suspended";
+    }
+
     public ConversationStateDto getConversationState(String conversationId) {
         if (conversationId == null || conversationId.isBlank()) {
             return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
@@ -940,35 +974,11 @@ public class TurChatFlowEngineService {
             return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
         }
         // Skip rows that point at other rows as parent — we want the leaf.
-        Set<String> hasDescendant = states.stream()
-                .map(TurChatFlowState::getParentStateId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        TurChatFlowState leaf = states.stream()
-                .filter(s -> !hasDescendant.contains(s.getId()))
-                .sorted(Comparator.comparing(TurChatFlowState::getUpdatedAt,
-                        Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
-                .findFirst()
-                .orElse(states.get(0));
+        TurChatFlowState leaf = findLeafState(states);
         TurChatFlow flow = leaf.getFlow();
         // T121 — surface the parked reason when the leaf cursor sits on a
         // suspend node. The portal renders this as a "Waiting..." banner.
-        String suspendedReason = null;
-        if (flow != null) {
-            ChatFlowGraph leafGraph = parseGraph(flow).orElse(null);
-            if (leafGraph != null) {
-                Optional<ChatFlowNode> currentOpt = leafGraph.nodeById(leaf.getCurrentNodeId());
-                if (currentOpt.isPresent() && PARKED_NODE_TYPES.contains(currentOpt.get().type())) {
-                    String label = currentOpt.get().label();
-                    if (label != null && !label.isBlank()) {
-                        suspendedReason = label;
-                    } else {
-                        suspendedReason = HUMAN_APPROVAL.equals(currentOpt.get().type())
-                                ? "awaiting approval" : "suspended";
-                    }
-                }
-            }
-        }
+        String suspendedReason = resolveLeafSuspendedReason(flow, leaf);
         return new ConversationStateDto(
                 conversationId,
                 flow == null ? null : flow.getId(),

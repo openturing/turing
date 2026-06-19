@@ -100,21 +100,29 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 String solrField = "_score".equals(field) ? SCORE : field;
                 sortClauses.add(SolrQuery.SortClause.desc(solrField));
             } else if (entry instanceof Map<?, ?> map) {
-                map.forEach((key, val) -> {
-                    String field = "_score".equals(key.toString()) ? SCORE : key.toString();
-                    String direction = "desc";
-                    if (val instanceof String s) direction = s;
-                    else if (val instanceof Map<?, ?> opts) {
-                        Object order = opts.get("order");
-                        direction = order != null ? order.toString() : "asc";
-                    }
-                    sortClauses.add("desc".equalsIgnoreCase(direction)
-                            ? SolrQuery.SortClause.desc(field)
-                            : SolrQuery.SortClause.asc(field));
-                });
+                map.forEach((key, val) -> addSolrMapSort(key, val, sortClauses));
             }
         }
         return sortClauses;
+    }
+
+    /**
+     * Appends one {@code {field: order}} sort clause, honouring {@code _score},
+     * an {@code "asc"/"desc"} string, or a {@code {"order": …}} options map
+     * (default ascending). Descending unless explicitly otherwise.
+     */
+    private void addSolrMapSort(Object key, Object val, List<SolrQuery.SortClause> sortClauses) {
+        String field = "_score".equals(key.toString()) ? SCORE : key.toString();
+        String direction = "desc";
+        if (val instanceof String s) {
+            direction = s;
+        } else if (val instanceof Map<?, ?> opts) {
+            Object order = opts.get("order");
+            direction = order != null ? order.toString() : "asc";
+        }
+        sortClauses.add("desc".equalsIgnoreCase(direction)
+                ? SolrQuery.SortClause.desc(field)
+                : SolrQuery.SortClause.asc(field));
     }
 
     @Override
