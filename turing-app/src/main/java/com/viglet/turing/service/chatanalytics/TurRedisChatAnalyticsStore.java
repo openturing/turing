@@ -196,10 +196,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             for (String id : ids) {
                 if (rows.size() >= cap) break;
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-                if (hash.isEmpty()) continue;
-                if (!matches(hash, agentId, personaId, outcome,
-                        intentLabel, goalAchieved, sentiment)) continue;
-                rows.add(toRow(id, hash));
+                if (!hash.isEmpty() && matches(hash, agentId, personaId, outcome,
+                        intentLabel, goalAchieved, sentiment)) {
+                    rows.add(toRow(id, hash));
+                }
             }
         } catch (Exception e) {
             log.warn("Chat analytics findRecentSessions(Redis) failed: {}", e.getMessage());
@@ -251,11 +251,11 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             for (String id : ids) {
                 if (rows.size() >= cap) break;
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-                if (hash.isEmpty()) continue;
                 String outcome = hash.get(OUTCOME);
-                if (outcome == null || "IN_PROGRESS".equals(outcome)) continue;
-                if (StringUtils.isNotBlank(hash.get(PROCESSED_AT))) continue;
-                rows.add(toRow(id, hash));
+                if (!hash.isEmpty() && outcome != null && !"IN_PROGRESS".equals(outcome)
+                        && StringUtils.isBlank(hash.get(PROCESSED_AT))) {
+                    rows.add(toRow(id, hash));
+                }
             }
         } catch (Exception e) {
             log.warn("Chat analytics findUnenrichedSessions(Redis) failed: {}", e.getMessage());
@@ -320,17 +320,16 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             boolean rateMetric, boolean dailyBuckets, String validatedMetric) {
         for (String id : ids) {
             Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-            if (hash.isEmpty()) continue;
             String startedAt = hash.get(STARTED_AT);
-            if (StringUtils.isBlank(startedAt)) continue;
-            if (rateMetric && StringUtils.isBlank(hash.get(PROCESSED_AT))) continue;
-            Instant when = parseInstantOrNull(startedAt);
-            if (when == null) continue;
-            long bucketKey = truncate(when, dailyBuckets);
-            double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
-            acc[0] += 1; // total (sessions)
-            acc[1] += metricContribution(hash, validatedMetric);
-            acc[2] += metricDivisorContribution(hash, validatedMetric);
+            Instant when = StringUtils.isBlank(startedAt) ? null : parseInstantOrNull(startedAt);
+            boolean rateEligible = !rateMetric || StringUtils.isNotBlank(hash.get(PROCESSED_AT));
+            if (!hash.isEmpty() && when != null && rateEligible) {
+                long bucketKey = truncate(when, dailyBuckets);
+                double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
+                acc[0] += 1; // total (sessions)
+                acc[1] += metricContribution(hash, validatedMetric);
+                acc[2] += metricDivisorContribution(hash, validatedMetric);
+            }
         }
     }
 
@@ -396,21 +395,27 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             Map<String, Map<String, Integer>> intentCounts) {
         for (String id : ids) {
             Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-            if (hash.isEmpty()) continue;
             // T74 — narrow the population before grouping. Mongo pushes this
             // into a $match; the Redis store filters in-process.
-            if (!matchesScorecardFilters(hash, filters)) continue;
-            String dim = hash.get(field);
-            if (StringUtils.isBlank(dim)) dim = UNKNOWN;
-            double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
-            a[0] += 1;
-            a[1] += parseLong(hash.get(DURATION_MS));
-            accumulateProcessed(hash, a);
-            String intent = hash.get(INTENT_LABEL);
-            if (StringUtils.isNotBlank(intent)) {
-                intentCounts.computeIfAbsent(dim, k -> new HashMap<>())
-                        .merge(intent, 1, Integer::sum);
+            if (!hash.isEmpty() && matchesScorecardFilters(hash, filters)) {
+                accumulateScorecardRow(hash, field, agg, intentCounts);
             }
+        }
+    }
+
+    /** Folds one filter-matching session into its dimension's aggregate + intent counts. */
+    private void accumulateScorecardRow(Map<String, String> hash, String field,
+            Map<String, double[]> agg, Map<String, Map<String, Integer>> intentCounts) {
+        String dim = hash.get(field);
+        if (StringUtils.isBlank(dim)) dim = UNKNOWN;
+        double[] a = agg.computeIfAbsent(dim, k -> new double[5]);
+        a[0] += 1;
+        a[1] += parseLong(hash.get(DURATION_MS));
+        accumulateProcessed(hash, a);
+        String intent = hash.get(INTENT_LABEL);
+        if (StringUtils.isNotBlank(intent)) {
+            intentCounts.computeIfAbsent(dim, k -> new HashMap<>())
+                    .merge(intent, 1, Integer::sum);
         }
     }
 
@@ -457,11 +462,12 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                             String.valueOf(to.toEpochMilli())));
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
-                if (hash.isEmpty()) continue;
-                if (StringUtils.isNotBlank(agentId) && !agentId.equals(hash.get(AGENT_ID))) continue;
                 String encoded = hash.get(FIELD_TOOL_LATENCIES);
-                if (StringUtils.isBlank(encoded)) continue;
-                decodeToolLatenciesInto(encoded, acc);
+                if (!hash.isEmpty()
+                        && (StringUtils.isBlank(agentId) || agentId.equals(hash.get(AGENT_ID)))
+                        && StringUtils.isNotBlank(encoded)) {
+                    decodeToolLatenciesInto(encoded, acc);
+                }
             }
         } catch (Exception e) {
             log.warn("Chat analytics toolLatency(Redis) failed: {}", e.getMessage());
@@ -552,13 +558,13 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
      */
     private static void decodeToolLatenciesInto(String encoded, TurToolLatencyAccumulator acc) {
         for (String token : encoded.split(";")) {
-            if (token.isBlank()) continue;
             String[] parts = token.split("\\|", 3);
-            if (parts.length != 3) continue;
-            try {
-                acc.add(parts[0], Long.parseLong(parts[1].trim()), "1".equals(parts[2].trim()));
-            } catch (NumberFormatException ignored) {
-                // skip a corrupt sample, keep the rest
+            if (!token.isBlank() && parts.length == 3) {
+                try {
+                    acc.add(parts[0], Long.parseLong(parts[1].trim()), "1".equals(parts[2].trim()));
+                } catch (NumberFormatException ignored) {
+                    // skip a corrupt sample, keep the rest
+                }
             }
         }
     }
@@ -572,9 +578,11 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             Map<String, String> filters) {
         if (filters == null || filters.isEmpty()) return true;
         for (Map.Entry<String, String> e : filters.entrySet()) {
-            if (!TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())) continue;
-            if (StringUtils.isBlank(e.getValue())) continue;
-            if (!e.getValue().equals(hash.get(e.getKey()))) return false;
+            if (TurChatAnalyticsStore.SCORECARD_FILTERABLE_FIELDS.contains(e.getKey())
+                    && StringUtils.isNotBlank(e.getValue())
+                    && !e.getValue().equals(hash.get(e.getKey()))) {
+                return false;
+            }
         }
         return true;
     }
