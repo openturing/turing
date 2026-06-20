@@ -79,7 +79,7 @@ public class TurLucene {
             var sort = turLuceneQueryBuilder.buildSort(turSNSite, params);
 
             TurSEResults results = turLuceneResultProcessor.getResults(
-                    instance, turSNSite, query, params,
+                    new TurLuceneSearch(instance, turSNSite, query, params),
                     turLuceneQueryBuilder.getFacetFields(turSNSite),
                     hlFields, sort, startTime);
 
@@ -88,7 +88,7 @@ public class TurLucene {
                     && shouldApplyWildcard(turSNSite, params.getQuery())) {
                 Query wildcardQuery = turLuceneQueryBuilder.buildWildcardQuery(turSNSite, params);
                 results = turLuceneResultProcessor.getResults(
-                        instance, turSNSite, wildcardQuery, params,
+                        new TurLuceneSearch(instance, turSNSite, wildcardQuery, params),
                         turLuceneQueryBuilder.getFacetFields(turSNSite),
                         hlFields, sort, startTime);
             }
@@ -107,7 +107,7 @@ public class TurLucene {
             TurSEParameters params = context.getTurSEParameters();
             Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);
             return turLuceneResultProcessor.getResults(
-                    instance, turSNSite, query, params,
+                    new TurLuceneSearch(instance, turSNSite, query, params),
                     turLuceneQueryBuilder.getFacetFields(turSNSite, facetName),
                     List.of(), null, startTime);
         });

@@ -422,10 +422,12 @@ class TurLuceneResultProcessorTest {
         org.apache.lucene.search.Query query = org.apache.lucene.search.MatchAllDocsQuery.INSTANCE;
 
         try {
-            com.viglet.turing.se.result.TurSEResults page1 = processor.getResults(instance, site,
-                    query, paramsForPage(1), List.of(), List.of(), null, 0L);
-            com.viglet.turing.se.result.TurSEResults page2 = processor.getResults(instance, site,
-                    query, paramsForPage(2), List.of(), List.of(), null, 0L);
+            com.viglet.turing.se.result.TurSEResults page1 = processor.getResults(
+                    new TurLuceneSearch(instance, site, query, paramsForPage(1)),
+                    List.of(), List.of(), null, 0L);
+            com.viglet.turing.se.result.TurSEResults page2 = processor.getResults(
+                    new TurLuceneSearch(instance, site, query, paramsForPage(2)),
+                    List.of(), List.of(), null, 0L);
 
             assertEquals(25, page1.getNumFound());
             assertEquals(10, page1.getResults().size());

@@ -77,10 +77,13 @@ public class TurLuceneResultProcessor {
      * index segments; facet values are then counted directly from per-field
      * {@link SortedSetDocValues} without relying on FacetsConfig internals.
      */
-    public TurSEResults getResults(TurLuceneInstance instance, TurSNSite turSNSite,
-            Query query, TurSEParameters params, List<TurSNSiteFieldExt> facetFields,
+    public TurSEResults getResults(TurLuceneSearch search, List<TurSNSiteFieldExt> facetFields,
             List<TurSNSiteFieldExt> hlFields, org.apache.lucene.search.Sort sort,
             long startTime) {
+        TurLuceneInstance instance = search.instance();
+        TurSNSite turSNSite = search.turSNSite();
+        Query query = search.query();
+        TurSEParameters params = search.params();
         TurSEResults results = TurSEResults.builder().build();
         populateResultsParameters(params, results);
 
