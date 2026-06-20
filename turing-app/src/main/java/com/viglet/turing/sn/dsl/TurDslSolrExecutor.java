@@ -351,6 +351,15 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             case TurDslQuery.MoreLikeThis q -> clauseMoreLikeThis(q);
             case TurDslQuery.CombinedFields q -> clauseCombinedFields(q);
             case TurDslQuery.MatchBoolPrefix q -> clauseMatchBoolPrefix(q);
+            // Less-common query families (pinned / geo / span / join / feature / wrapper)
+            // live in a sibling switch to keep each below the case-count limit.
+            default -> translateClauseExtended(query);
+        };
+    }
+
+    /** Second-tier dispatch for the rarer query families — see {@link #translateClause}. */
+    private String translateClauseExtended(TurDslQuery query) {
+        return switch (query) {
             case TurDslQuery.Pinned q -> clausePinned(q);
             case TurDslQuery.GeoDistance q -> clauseGeoDistance(q);
             case TurDslQuery.GeoBoundingBox q -> clauseGeoBoundingBox(q);
@@ -379,6 +388,7 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             case TurDslQuery.GeoShape(var field, var shape, var relation) ->
                     S_TO.formatted(field);
             case TurDslQuery.Percolate(var field, var document) -> "*:*";
+            default -> throw new IllegalStateException("Unexpected DSL type: " + query);
         };
     }
 
@@ -638,39 +648,49 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 case TurDslAggregation.MultiTermsAgg mt ->
                         log.warn("multi_terms aggregation is not supported in Solr DSL translator");
                 case TurDslAggregation.RareTermsAgg agg -> applyRareTermsFacet(agg, solrQuery);
-                case TurDslAggregation.TopMetricsAgg tm ->
-                        log.warn("top_metrics aggregation is not supported in Solr DSL translator");
-                case TurDslAggregation.PercentileRanksAgg pr ->
-                        solrQuery.addGetFieldStatistics(pr.field());
-                case TurDslAggregation.GeoDistanceAgg gd ->
-                        log.warn("geo_distance agg not supported in Solr DSL");
-                case TurDslAggregation.GeoBoundsAgg gb ->
-                        log.warn("geo_bounds agg not supported in Solr DSL");
-                case TurDslAggregation.GeoCentroidAgg gc ->
-                        log.warn("geo_centroid agg not supported in Solr DSL");
-                case TurDslAggregation.SamplerAgg s ->
-                        log.warn("sampler agg not supported in Solr DSL");
-                case TurDslAggregation.DiversifiedSamplerAgg ds ->
-                        log.warn("diversified_sampler agg not supported in Solr DSL");
-                case TurDslAggregation.AdjacencyMatrixAgg am ->
-                        log.warn("adjacency_matrix agg not supported in Solr DSL");
-                case TurDslAggregation.ScriptedMetricAgg sm ->
-                        log.warn("scripted_metric agg not supported in Solr DSL");
-                case TurDslAggregation.MedianAbsoluteDeviationAgg mad ->
-                        log.warn("median_absolute_deviation agg not supported in Solr DSL");
-                case TurDslAggregation.MatrixStatsAgg ms ->
-                        log.warn("matrix_stats agg not supported in Solr DSL");
-                case TurDslAggregation.BoxplotAgg bp ->
-                        log.warn("boxplot agg not supported in Solr DSL");
-                case TurDslAggregation.StringStatsAgg ss ->
-                        log.warn("string_stats agg not supported in Solr DSL");
-                case TurDslAggregation.TTestAgg tt ->
-                        log.warn("t_test agg not supported in Solr DSL");
-                case TurDslAggregation.VariableWidthHistogramAgg vwh ->
-                        log.warn("variable_width_histogram agg not supported in Solr DSL");
-                case TurDslAggregation.RateAgg r ->
-                        log.warn("rate agg not supported in Solr DSL");
+                // Less-common aggregation families live in a sibling switch to
+                // keep each below the case-count limit.
+                default -> translateAggregationParamsExtended(entry.getValue(), solrQuery);
             }
+        }
+    }
+
+    /** Second-tier dispatch for the rarer aggregation families — see {@link #translateAggregationParams}. */
+    private void translateAggregationParamsExtended(TurDslAggregation aggregation, SolrQuery solrQuery) {
+        switch (aggregation) {
+            case TurDslAggregation.TopMetricsAgg tm ->
+                    log.warn("top_metrics aggregation is not supported in Solr DSL translator");
+            case TurDslAggregation.PercentileRanksAgg pr ->
+                    solrQuery.addGetFieldStatistics(pr.field());
+            case TurDslAggregation.GeoDistanceAgg gd ->
+                    log.warn("geo_distance agg not supported in Solr DSL");
+            case TurDslAggregation.GeoBoundsAgg gb ->
+                    log.warn("geo_bounds agg not supported in Solr DSL");
+            case TurDslAggregation.GeoCentroidAgg gc ->
+                    log.warn("geo_centroid agg not supported in Solr DSL");
+            case TurDslAggregation.SamplerAgg s ->
+                    log.warn("sampler agg not supported in Solr DSL");
+            case TurDslAggregation.DiversifiedSamplerAgg ds ->
+                    log.warn("diversified_sampler agg not supported in Solr DSL");
+            case TurDslAggregation.AdjacencyMatrixAgg am ->
+                    log.warn("adjacency_matrix agg not supported in Solr DSL");
+            case TurDslAggregation.ScriptedMetricAgg sm ->
+                    log.warn("scripted_metric agg not supported in Solr DSL");
+            case TurDslAggregation.MedianAbsoluteDeviationAgg mad ->
+                    log.warn("median_absolute_deviation agg not supported in Solr DSL");
+            case TurDslAggregation.MatrixStatsAgg ms ->
+                    log.warn("matrix_stats agg not supported in Solr DSL");
+            case TurDslAggregation.BoxplotAgg bp ->
+                    log.warn("boxplot agg not supported in Solr DSL");
+            case TurDslAggregation.StringStatsAgg ss ->
+                    log.warn("string_stats agg not supported in Solr DSL");
+            case TurDslAggregation.TTestAgg tt ->
+                    log.warn("t_test agg not supported in Solr DSL");
+            case TurDslAggregation.VariableWidthHistogramAgg vwh ->
+                    log.warn("variable_width_histogram agg not supported in Solr DSL");
+            case TurDslAggregation.RateAgg r ->
+                    log.warn("rate agg not supported in Solr DSL");
+            default -> throw new IllegalStateException("Unexpected DSL type: " + aggregation);
         }
     }
 

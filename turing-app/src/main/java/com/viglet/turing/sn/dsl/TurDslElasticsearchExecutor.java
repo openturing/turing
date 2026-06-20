@@ -266,6 +266,15 @@ public class TurDslElasticsearchExecutor
             case TurDslQuery.MatchBoolPrefix(var field, var queryText) ->
                     Query.of(q -> q.matchBoolPrefix(mbp -> mbp.field(field).query(queryText)));
 
+            // Less-common query families (pinned / geo / span / join / feature / wrapper)
+            // live in a sibling switch to keep each below the case-count limit.
+            default -> translateQueryExtended(query);
+        };
+    }
+
+    /** Second-tier dispatch for the rarer query families — see {@link #translateQuery}. */
+    private Query translateQueryExtended(TurDslQuery query) {
+        return switch (query) {
             case TurDslQuery.Pinned dsl -> queryPinned(dsl);
 
             case TurDslQuery.GeoDistance dsl -> queryGeoDistance(dsl);
@@ -311,6 +320,7 @@ public class TurDslElasticsearchExecutor
                     }));
 
             case TurDslQuery.Percolate dsl -> queryPercolate(dsl);
+            default -> throw new IllegalStateException("Unexpected DSL type: " + query);
         };
     }
 
@@ -993,31 +1003,42 @@ public class TurDslElasticsearchExecutor
                 case TurDslAggregation.RareTermsAgg dsl -> esAggs.put(aggName, aggRareTerms(dsl));
                 case TurDslAggregation.TopMetricsAgg dsl -> esAggs.put(aggName, aggTopMetrics(dsl));
                 case TurDslAggregation.PercentileRanksAgg dsl -> esAggs.put(aggName, aggPercentileRanks(dsl));
-                // --- Low-priority aggregations ---
-                case TurDslAggregation.GeoDistanceAgg dsl -> esAggs.put(aggName, aggGeoDistance(dsl));
-                case TurDslAggregation.GeoBoundsAgg(var field) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.geoBounds(gb -> gb.field(field))));
-                case TurDslAggregation.GeoCentroidAgg(var field) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.geoCentroid(gc -> gc.field(field))));
-                case TurDslAggregation.SamplerAgg dsl -> esAggs.put(aggName, aggSampler(dsl));
-                case TurDslAggregation.DiversifiedSamplerAgg dsl -> esAggs.put(aggName, aggDiversifiedSampler(dsl));
-                case TurDslAggregation.AdjacencyMatrixAgg dsl -> esAggs.put(aggName, aggAdjacencyMatrix(dsl));
-                case TurDslAggregation.ScriptedMetricAgg dsl -> esAggs.put(aggName, aggScriptedMetric(dsl));
-                case TurDslAggregation.MedianAbsoluteDeviationAgg(var field) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.medianAbsoluteDeviation(
-                                mad -> mad.field(field))));
-                case TurDslAggregation.MatrixStatsAgg(var fields) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.matrixStats(ms -> ms.fields(fields))));
-                case TurDslAggregation.BoxplotAgg(var field) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.boxplot(bp -> bp.field(field))));
-                case TurDslAggregation.StringStatsAgg(var field) ->
-                        esAggs.put(aggName, Aggregation.of(a -> a.stringStats(ss -> ss.field(field))));
-                case TurDslAggregation.TTestAgg dsl -> esAggs.put(aggName, aggTTest(dsl));
-                case TurDslAggregation.VariableWidthHistogramAgg dsl ->
-                        esAggs.put(aggName, aggVariableWidthHistogram(dsl));
-                case TurDslAggregation.RateAgg dsl -> esAggs.put(aggName, aggRate(dsl));
-                case TurDslAggregation.WithSubAggs dsl -> putWithSubAggs(aggName, dsl, esAggs);
+                // Less-common aggregation families live in a sibling switch to
+                // keep each below the case-count limit.
+                default -> buildAggMapExtended(entry.getValue(), aggName, esAggs);
             }
+        }
+    }
+
+    /** Second-tier dispatch for the rarer aggregation families — see {@link #buildAggMap}. */
+    private void buildAggMapExtended(TurDslAggregation aggregation, String aggName,
+                                     Map<String, Aggregation> esAggs) {
+        switch (aggregation) {
+            // --- Low-priority aggregations ---
+            case TurDslAggregation.GeoDistanceAgg dsl -> esAggs.put(aggName, aggGeoDistance(dsl));
+            case TurDslAggregation.GeoBoundsAgg(var field) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.geoBounds(gb -> gb.field(field))));
+            case TurDslAggregation.GeoCentroidAgg(var field) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.geoCentroid(gc -> gc.field(field))));
+            case TurDslAggregation.SamplerAgg dsl -> esAggs.put(aggName, aggSampler(dsl));
+            case TurDslAggregation.DiversifiedSamplerAgg dsl -> esAggs.put(aggName, aggDiversifiedSampler(dsl));
+            case TurDslAggregation.AdjacencyMatrixAgg dsl -> esAggs.put(aggName, aggAdjacencyMatrix(dsl));
+            case TurDslAggregation.ScriptedMetricAgg dsl -> esAggs.put(aggName, aggScriptedMetric(dsl));
+            case TurDslAggregation.MedianAbsoluteDeviationAgg(var field) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.medianAbsoluteDeviation(
+                            mad -> mad.field(field))));
+            case TurDslAggregation.MatrixStatsAgg(var fields) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.matrixStats(ms -> ms.fields(fields))));
+            case TurDslAggregation.BoxplotAgg(var field) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.boxplot(bp -> bp.field(field))));
+            case TurDslAggregation.StringStatsAgg(var field) ->
+                    esAggs.put(aggName, Aggregation.of(a -> a.stringStats(ss -> ss.field(field))));
+            case TurDslAggregation.TTestAgg dsl -> esAggs.put(aggName, aggTTest(dsl));
+            case TurDslAggregation.VariableWidthHistogramAgg dsl ->
+                    esAggs.put(aggName, aggVariableWidthHistogram(dsl));
+            case TurDslAggregation.RateAgg dsl -> esAggs.put(aggName, aggRate(dsl));
+            case TurDslAggregation.WithSubAggs dsl -> putWithSubAggs(aggName, dsl, esAggs);
+            default -> throw new IllegalStateException("Unexpected DSL type: " + aggregation);
         }
     }
 

@@ -86,6 +86,15 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
             case "more_like_this" -> deserializeMoreLikeThis(body);
             case "combined_fields" -> deserializeCombinedFields(body);
             case "match_bool_prefix" -> deserializeMatchBoolPrefix(body);
+            // Less-common query families (span / geo / join / feature / wrapper)
+            // live in a sibling switch to keep each below the case-count limit.
+            default -> deserializeExtendedQuery(type, body);
+        };
+    }
+
+    /** Second-tier dispatch for the rarer query families — see {@link #deserializeNode}. */
+    private TurDslQuery deserializeExtendedQuery(String type, JsonNode body) {
+        return switch (type) {
             case "pinned" -> deserializePinned(body);
             case "geo_distance" -> deserializeGeoDistance(body);
             case "geo_bounding_box" -> deserializeGeoBoundingBox(body);

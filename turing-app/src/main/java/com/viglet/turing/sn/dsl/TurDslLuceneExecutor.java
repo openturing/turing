@@ -252,6 +252,15 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
 
             case TurDslQuery.MatchBoolPrefix q -> translateMatchBoolPrefix(q);
 
+            // Less-common query families (pinned / geo / span / join / feature / wrapper)
+            // live in a sibling switch to keep each below the case-count limit.
+            default -> translateQueryExtended(query, fieldTypes);
+        };
+    }
+
+    /** Second-tier dispatch for the rarer query families — see {@link #translateQuery}. */
+    private Query translateQueryExtended(TurDslQuery query, Map<String, TurSEFieldType> fieldTypes) {
+        return switch (query) {
             case TurDslQuery.Pinned q -> translatePinned(q, fieldTypes);
 
             case TurDslQuery.GeoDistance(var field, var distance, var location) ->
@@ -284,6 +293,7 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             case TurDslQuery.GeoShape(var field, var shape, var relation) ->
                     MatchAllDocsQuery.INSTANCE;
             case TurDslQuery.Percolate(var field, var document) -> MatchAllDocsQuery.INSTANCE;
+            default -> throw new IllegalStateException("Unexpected DSL type: " + query);
         };
     }
 
