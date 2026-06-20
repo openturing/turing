@@ -30,6 +30,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
+import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -501,6 +502,9 @@ public class TurLuceneVectorStore implements VectorStore {
     private org.apache.lucene.document.Document toLuceneDocument(Document document, float[] vector) {
         org.apache.lucene.document.Document luceneDoc = new org.apache.lucene.document.Document();
         luceneDoc.add(new StringField(FIELD_ID, document.getId(), Field.Store.YES));
+        // SortedDocValues so listChunks() can sort by id (the StringField alone
+        // has no docvalues, which made the sort — and thus chunk listing — fail).
+        luceneDoc.add(new SortedDocValuesField(FIELD_ID, new BytesRef(document.getId())));
         String text = document.getText();
         if (text != null) {
             // T19 / §III.3: TextField indexes the content for BM25 search AND
