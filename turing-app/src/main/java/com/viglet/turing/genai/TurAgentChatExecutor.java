@@ -474,9 +474,10 @@ public class TurAgentChatExecutor {
         // STAGE_CHAT_SETUP_COMPOSE internally around the personaComposer
         // call (matches the pre-T33 substage boundary).
         final long tBeforeCompose = System.currentTimeMillis();
-        List<Message> messages = promptAssembler.assemble(agent, history, conversationId,
-                flowContext, activePersona, lastUserMessageEarly, baseSystemPrompt, files,
-                selectedSkillId);
+        List<Message> messages = promptAssembler.assemble(
+                new TurChatPromptRequest(agent, history, conversationId, flowContext,
+                        activePersona, lastUserMessageEarly, baseSystemPrompt),
+                files, selectedSkillId);
         final long tAfterCompose = System.currentTimeMillis();
 
         // T123 / §IX.7 — enforceable token-budget check. Disabled when

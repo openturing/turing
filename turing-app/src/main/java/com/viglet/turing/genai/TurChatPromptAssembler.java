@@ -118,25 +118,11 @@ public class TurChatPromptAssembler {
     }
 
     /**
-     * Produce the final {@code List<Message>} for the LLM call.
-     *
-     * @param agent the chatting agent (used by T30 for relevance opt-in)
-     * @param history the persisted conversation history (untouched by the assembler)
-     * @param conversationId nullable — null means stateless turn / no T30 enrichment
-     * @param flowContext nullable — null means no chat flow governs this turn
-     * @param effectivePersona the post-walk persona (single resolution per §I.5 step 2)
-     * @param lastUserMessage the latest user message (drives T30 relevance + few-shot examples)
-     * @param baseSystemPrompt either the agent's own system prompt or a RAG override
+     * Produce the final {@code List<Message>} for the LLM call. See
+     * {@link TurChatPromptRequest} for the meaning of each bundled input.
      */
-    public List<Message> assemble(TurAIAgent agent,
-            List<ChatMessageItem> history,
-            String conversationId,
-            TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona,
-            String lastUserMessage,
-            String baseSystemPrompt) {
-        return assemble(agent, history, conversationId, flowContext, effectivePersona,
-                lastUserMessage, baseSystemPrompt, null);
+    public List<Message> assemble(TurChatPromptRequest request) {
+        return assemble(request, null);
     }
 
     /**
@@ -151,16 +137,8 @@ public class TurChatPromptAssembler {
      *              leaves the user message untouched
      * @since 2026.3.1
      */
-    public List<Message> assemble(TurAIAgent agent,
-            List<ChatMessageItem> history,
-            String conversationId,
-            TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona,
-            String lastUserMessage,
-            String baseSystemPrompt,
-            List<MultipartFile> files) {
-        return assemble(agent, history, conversationId, flowContext, effectivePersona,
-                lastUserMessage, baseSystemPrompt, files, null);
+    public List<Message> assemble(TurChatPromptRequest request, List<MultipartFile> files) {
+        return assemble(request, files, null);
     }
 
     /**
@@ -173,15 +151,15 @@ public class TurChatPromptAssembler {
      *                        skill; null/blank offers all enabled skills
      * @since 2026.3.1
      */
-    public List<Message> assemble(TurAIAgent agent,
-            List<ChatMessageItem> history,
-            String conversationId,
-            TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona,
-            String lastUserMessage,
-            String baseSystemPrompt,
-            List<MultipartFile> files,
+    public List<Message> assemble(TurChatPromptRequest request, List<MultipartFile> files,
             String selectedSkillId) {
+        TurAIAgent agent = request.agent();
+        List<ChatMessageItem> history = request.history();
+        String conversationId = request.conversationId();
+        TurAgentChatFlowContext flowContext = request.flowContext();
+        TurPersona effectivePersona = request.effectivePersona();
+        String lastUserMessage = request.lastUserMessage();
+        String baseSystemPrompt = request.baseSystemPrompt();
         long t0 = System.currentTimeMillis();
         // Append the per-agent MCP server instructions (enabled servers with
         // non-blank llmInstructions) so the model knows how/when to use the

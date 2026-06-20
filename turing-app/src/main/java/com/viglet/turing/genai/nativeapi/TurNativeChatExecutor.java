@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
+import com.viglet.turing.genai.TurChatPromptRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
@@ -127,8 +128,9 @@ public class TurNativeChatExecutor {
                 : agent.getSystemPrompt();
         TurPersona activePersona = personaResolver.resolve(agent, conversationId);
         String lastUserMessage = lastMessageOfRole(history, "user");
-        List<Message> assembled = promptAssembler.assemble(agent, history, conversationId,
-                /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt);
+        List<Message> assembled = promptAssembler.assemble(
+                new TurChatPromptRequest(agent, history, conversationId,
+                        /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
 
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "

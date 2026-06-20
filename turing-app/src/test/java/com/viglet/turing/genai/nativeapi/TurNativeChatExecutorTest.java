@@ -12,6 +12,7 @@ package com.viglet.turing.genai.nativeapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
+import com.viglet.turing.genai.TurChatPromptRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
@@ -117,8 +119,10 @@ class TurNativeChatExecutorTest {
         // T131 — the assembler now composes the system prompt + history; return
         // a persona-fused system message + the same user turn so the executor
         // splits it back into instructions + a flat input list.
-        when(promptAssembler.assemble(any(), eq(history), eq("conv-1"), any(), any(),
-                eq("hello"), eq("You are helpful.")))
+        when(promptAssembler.assemble(argThat((TurChatPromptRequest r) ->
+                r != null && history.equals(r.history()) && "conv-1".equals(r.conversationId())
+                        && "hello".equals(r.lastUserMessage())
+                        && "You are helpful.".equals(r.baseSystemPrompt()))))
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
@@ -142,8 +146,10 @@ class TurNativeChatExecutorTest {
         when(capabilityService.enabledFor("inst-1", "openai"))
                 .thenReturn(List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null)));
         when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
-        when(promptAssembler.assemble(any(), eq(history), eq("conv-1"), any(), any(),
-                eq("hello"), eq("You are helpful.")))
+        when(promptAssembler.assemble(argThat((TurChatPromptRequest r) ->
+                r != null && history.equals(r.history()) && "conv-1".equals(r.conversationId())
+                        && "hello".equals(r.lastUserMessage())
+                        && "You are helpful.".equals(r.baseSystemPrompt()))))
                 .thenReturn(List.of(new SystemMessage("FUSED PROMPT"), new UserMessage("hello")));
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
