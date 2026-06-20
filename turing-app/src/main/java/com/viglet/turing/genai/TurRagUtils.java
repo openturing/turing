@@ -111,10 +111,8 @@ public final class TurRagUtils {
             }
             if (current.isEmpty()) {
                 current.append(unit);
-                continue;
-            }
-            // +1 for the space/separator added between units
-            if (current.length() + 1 + unit.length() <= chunkSize) {
+            } else if (current.length() + 1 + unit.length() <= chunkSize) {
+                // +1 for the space/separator added between units
                 current.append(' ').append(unit);
             } else {
                 chunks.add(current.toString().trim());
@@ -287,17 +285,17 @@ public final class TurRagUtils {
             }
             if (p.length() <= chunkSize) {
                 units.add(p);
-                continue;
-            }
-            for (String sentence : SENTENCE_SPLIT.split(p)) {
-                String s = sentence.trim();
-                if (s.isEmpty()) {
-                    continue;
-                }
-                if (s.length() <= chunkSize) {
-                    units.add(s);
-                } else {
-                    units.addAll(wordAwareSplit(s, chunkSize));
+            } else {
+                for (String sentence : SENTENCE_SPLIT.split(p)) {
+                    String s = sentence.trim();
+                    if (s.isEmpty()) {
+                        continue;
+                    }
+                    if (s.length() <= chunkSize) {
+                        units.add(s);
+                    } else {
+                        units.addAll(wordAwareSplit(s, chunkSize));
+                    }
                 }
             }
         }
@@ -327,9 +325,7 @@ public final class TurRagUtils {
             }
             if (word.length() > chunkSize) {
                 appendOversizedWord(parts, buf, word, chunkSize);
-                continue;
-            }
-            if (buf.isEmpty()) {
+            } else if (buf.isEmpty()) {
                 buf.append(word);
             } else if (buf.length() + 1 + word.length() <= chunkSize) {
                 buf.append(' ').append(word);
