@@ -69,10 +69,9 @@ public class TurNativeCapabilityService {
                 continue;
             }
             Optional<TurNativeCapability> capability = TurNativeCapability.fromKey(row.getCapabilityKey());
-            if (capability.isEmpty() || !capability.get().isForPlugin(pluginType)) {
-                continue;
+            if (capability.isPresent() && capability.get().isForPlugin(pluginType)) {
+                result.add(new EnabledCapability(capability.get(), row.getConfigJson()));
             }
-            result.add(new EnabledCapability(capability.get(), row.getConfigJson()));
         }
         return result;
     }

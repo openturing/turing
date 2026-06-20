@@ -118,13 +118,13 @@ public class TurSNManifestPlanner {
             TurSNSiteFieldExt live = liveFields.get(spec.name());
             if (live == null) {
                 fieldsToAdd.add(spec.name());
-                continue;
-            }
-            VigletManifestFieldChange change = breakingChange(spec, live, migratedFields);
-            if (change != null) {
-                breaking.add(change);
             } else {
-                unchanged.add(spec.name());
+                VigletManifestFieldChange change = breakingChange(spec, live, migratedFields);
+                if (change != null) {
+                    breaking.add(change);
+                } else {
+                    unchanged.add(spec.name());
+                }
             }
         }
 

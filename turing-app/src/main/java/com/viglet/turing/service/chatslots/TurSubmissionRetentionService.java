@@ -88,20 +88,19 @@ public class TurSubmissionRetentionService {
                 continue;
             }
             Integer days = agent.getSubmissionRetentionDays();
-            if (days == null || days <= 0) {
-                // RETAIN_DAYS selected but no (or invalid) threshold — treat as
-                // disabled so a half-configured policy never silently deletes.
-                continue;
-            }
-            LocalDateTime cutoff = now.minusDays(days);
-            List<TurChatFlowSubmission> expired =
-                    submissionRepository.findByFlow_TurAIAgent_IdAndCompletedAtBefore(agent.getId(), cutoff);
-            if (!expired.isEmpty()) {
-                submissionRepository.deleteAll(expired);
-                totalDeleted += expired.size();
-                log.info("[SubmissionRetention] deleted {} submission(s) older than {} day(s) "
-                        + "(cutoff={}) for agent '{}' ({})",
-                        expired.size(), days, cutoff, agent.getTitle(), agent.getId());
+            // RETAIN_DAYS selected but no (or invalid) threshold — treat as
+            // disabled so a half-configured policy never silently deletes.
+            if (days != null && days > 0) {
+                LocalDateTime cutoff = now.minusDays(days);
+                List<TurChatFlowSubmission> expired =
+                        submissionRepository.findByFlow_TurAIAgent_IdAndCompletedAtBefore(agent.getId(), cutoff);
+                if (!expired.isEmpty()) {
+                    submissionRepository.deleteAll(expired);
+                    totalDeleted += expired.size();
+                    log.info("[SubmissionRetention] deleted {} submission(s) older than {} day(s) "
+                            + "(cutoff={}) for agent '{}' ({})",
+                            expired.size(), days, cutoff, agent.getTitle(), agent.getId());
+                }
             }
         }
         if (totalDeleted == 0) {

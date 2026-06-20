@@ -474,17 +474,15 @@ public class TurSNHybridRankingService {
         List<String> seen = new ArrayList<>(neighbors.size());
         for (Document d : hits) {
             String id = d.getId();
-            if (!StringUtils.hasText(id) || id.equals(seedId) || seen.contains(id)) {
-                continue;
-            }
             Double score = d.getScore();
-            if (minSimilarity > 0.0 && (score == null || score < minSimilarity)) {
-                continue;
-            }
-            seen.add(id);
-            neighbors.add(new TurSNScoredNeighbor(id, score));
-            if (neighbors.size() >= topK) {
-                break;
+            boolean eligible = StringUtils.hasText(id) && !id.equals(seedId) && !seen.contains(id)
+                    && !(minSimilarity > 0.0 && (score == null || score < minSimilarity));
+            if (eligible) {
+                seen.add(id);
+                neighbors.add(new TurSNScoredNeighbor(id, score));
+                if (neighbors.size() >= topK) {
+                    break;
+                }
             }
         }
         return neighbors;

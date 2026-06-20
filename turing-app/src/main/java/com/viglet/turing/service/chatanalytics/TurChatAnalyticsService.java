@@ -286,9 +286,7 @@ public class TurChatAnalyticsService {
                 // Hard ceiling — drop without flushing. Should be rare.
                 inFlight.remove(conversationId);
                 forced++;
-                continue;
-            }
-            if (lastTouched < idleCutoff) {
+            } else if (lastTouched < idleCutoff) {
                 try {
                     recordSessionEnd(conversationId, TurChatSessionOutcome.ABANDONED);
                     flushed++;

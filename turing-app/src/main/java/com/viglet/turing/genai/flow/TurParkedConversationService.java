@@ -93,18 +93,14 @@ public class TurParkedConversationService {
             // Reason text keyed by suspend node id, so the loaded states map
             // straight to their authored label without re-walking the graph.
             Map<String, String> suspendReasons = buildSuspendReasons(graph);
-            if (suspendReasons.isEmpty()) {
-                continue;
-            }
-            List<TurChatFlowState> parked = stateRepository.findByFlow_IdAndCurrentNodeIdIn(
-                    flow.getId(), suspendReasons.keySet());
-            if (parked.isEmpty()) {
-                continue;
-            }
-            String agentId = flowRepository.findAgentIdByFlowId(flow.getId()).orElse(null);
-            String agentTitle = resolveAgentTitle(agentId, agentTitleCache);
-            for (TurChatFlowState state : parked) {
-                out.add(toParkedDto(state, flow, agentId, agentTitle, suspendReasons, now));
+            if (!suspendReasons.isEmpty()) {
+                List<TurChatFlowState> parked = stateRepository.findByFlow_IdAndCurrentNodeIdIn(
+                        flow.getId(), suspendReasons.keySet());
+                String agentId = flowRepository.findAgentIdByFlowId(flow.getId()).orElse(null);
+                String agentTitle = resolveAgentTitle(agentId, agentTitleCache);
+                for (TurChatFlowState state : parked) {
+                    out.add(toParkedDto(state, flow, agentId, agentTitle, suspendReasons, now));
+                }
             }
         }
         out.sort(Comparator.comparingLong(TurParkedConversationDto::waitingSeconds).reversed());
