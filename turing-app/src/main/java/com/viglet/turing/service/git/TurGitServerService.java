@@ -188,8 +188,6 @@ public class TurGitServerService {
                 }
             }
         }
-        if (!file.delete()) {
-            throw new IOException("Could not delete: " + file);
-        }
+        Files.delete(file.toPath());
     }
 }

@@ -340,6 +340,7 @@ public class TurChatFlowLinterService {
     }
 
     /** Loads the agent's declared slot names, or null when no agent id resolves a catalog. */
+    @SuppressWarnings("java:S1168") // null is a "no catalog resolved" sentinel; the caller skips the declared-slot check on null, an empty set would flag every slot as undeclared.
     private Set<String> loadDeclaredSlots(String agentId) {
         if (agentId == null || agentId.isBlank()) {
             return null;
