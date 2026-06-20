@@ -58,13 +58,12 @@ public final class TurRagFilters {
                     .filter(StringUtils::hasText)
                     .map(Object.class::cast)
                     .toList();
-            if (nonEmpty.isEmpty()) {
-                continue;
+            if (!nonEmpty.isEmpty()) {
+                FilterExpressionBuilder.Op op = nonEmpty.size() == 1
+                        ? b.eq(key, nonEmpty.getFirst())
+                        : b.in(key, nonEmpty.toArray());
+                combined = combined == null ? op : b.and(combined, op);
             }
-            FilterExpressionBuilder.Op op = nonEmpty.size() == 1
-                    ? b.eq(key, nonEmpty.getFirst())
-                    : b.in(key, nonEmpty.toArray());
-            combined = combined == null ? op : b.and(combined, op);
         }
         return combined != null ? combined.build() : null;
     }

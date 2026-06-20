@@ -135,18 +135,19 @@ public class TurRagFacetExtractor {
         try {
             int page = 0;
             int collected = 0;
-            while (collected < FACET_SAMPLE_SIZE) {
+            boolean morePages = true;
+            while (morePages && collected < FACET_SAMPLE_SIZE) {
                 TurStoreChunkPage chunkPage = infra.storeProvider().listChunks(
                         infra.storeInstance(), infra.storeCredential(),
                         infra.collectionName(), page, FACET_PAGE_SIZE, null);
                 if (chunkPage == null || chunkPage.chunks() == null || chunkPage.chunks().isEmpty()) {
-                    break;
+                    morePages = false;
+                } else {
+                    collected = accumulatePage(chunkPage, aggregator, collected);
+                    // A short page means we've reached the end of the collection.
+                    morePages = chunkPage.chunks().size() >= FACET_PAGE_SIZE;
+                    page++;
                 }
-                collected = accumulatePage(chunkPage, aggregator, collected);
-                if (chunkPage.chunks().size() < FACET_PAGE_SIZE) {
-                    break;
-                }
-                page++;
             }
         } catch (UnsupportedOperationException e) {
             // Store provider doesn't implement listChunks (older deploys); no
@@ -168,13 +169,12 @@ public class TurRagFacetExtractor {
      */
     private int accumulatePage(TurStoreChunkPage chunkPage, Map<String, Set<String>> aggregator, int collected) {
         for (TurStoreChunkPage.Chunk chunk : chunkPage.chunks()) {
-            if (chunk.metadata() == null) {
-                continue;
-            }
-            accumulateChunkMetadata(chunk, aggregator);
-            collected++;
-            if (collected >= FACET_SAMPLE_SIZE) {
-                break;
+            if (chunk.metadata() != null) {
+                accumulateChunkMetadata(chunk, aggregator);
+                collected++;
+                if (collected >= FACET_SAMPLE_SIZE) {
+                    break;
+                }
             }
         }
         return collected;
