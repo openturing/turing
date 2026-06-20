@@ -41,6 +41,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -138,8 +139,9 @@ public class TurAIAgentChatAPI {
     public Flux<ChatResponse> chat(
             @PathVariable String agentId,
             @org.springframework.web.bind.annotation.RequestBody AgentChatRequest request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
-        return doChat(agentId, request, null, response);
+        return doChat(agentId, request, null, httpRequest, response);
     }
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE,
@@ -148,12 +150,13 @@ public class TurAIAgentChatAPI {
             @PathVariable String agentId,
             @RequestPart("request") AgentChatRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
-        return doChat(agentId, request, files, response);
+        return doChat(agentId, request, files, httpRequest, response);
     }
 
     private Flux<ChatResponse> doChat(String agentId, AgentChatRequest request,
-            List<MultipartFile> files, HttpServletResponse response) {
+            List<MultipartFile> files, HttpServletRequest httpRequest, HttpServletResponse response) {
         TurAIAgent agent = turAIAgentRepository.findById(agentId)
                 .orElseThrow(() -> new IllegalArgumentException("AI Agent not found: " + agentId));
 
@@ -203,6 +206,10 @@ public class TurAIAgentChatAPI {
             Cookie cookie = new Cookie(TurCodeInterpreterUrlSigner.CONV_COOKIE,
                     request.conversationId());
             cookie.setHttpOnly(true);
+            // Secure only when the (possibly proxy-forwarded) request arrived over
+            // HTTPS, so the cookie still works on plain-HTTP/dev deployments while
+            // being TLS-only in production.
+            cookie.setSecure(httpRequest.isSecure());
             cookie.setPath("/api/v2/code-interpreter");
             cookie.setMaxAge((int) Math.min(Integer.MAX_VALUE, urlSigner.getTtlSeconds()));
             cookie.setAttribute("SameSite", "Lax");
