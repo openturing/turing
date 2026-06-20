@@ -9,9 +9,9 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -66,6 +66,14 @@ public class TurParkedConversationService {
         this.agentRepository = agentRepository;
     }
 
+    /** Source of "now" for the waiting-time computation; tests pin it. */
+    private Clock clock = Clock.systemDefaultZone();
+
+    /** Visible for testing — pin the clock so waiting times are deterministic. */
+    void setClockForTest(Clock clock) {
+        this.clock = clock;
+    }
+
     /**
      * Every conversation parked on a {@code suspend} node across all flows,
      * sorted by waiting time descending (longest-waiting first) so the
@@ -73,7 +81,7 @@ public class TurParkedConversationService {
      */
     @Transactional(readOnly = true)
     public List<TurParkedConversationDto> listParked() {
-        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        LocalDateTime now = LocalDateTime.now(clock);
         Map<String, String> agentTitleCache = new HashMap<>();
         List<TurParkedConversationDto> out = new ArrayList<>();
 

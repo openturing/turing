@@ -16,10 +16,13 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -63,6 +66,15 @@ class TurParkedConversationServiceTest {
     @InjectMocks
     private TurParkedConversationService service;
 
+    // Pinned "now" so waiting-time computations are deterministic; the parked
+    // states are aged relative to this same instant.
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.parse("2026-06-15T12:00:00");
+
+    @BeforeEach
+    void pinClock() {
+        service.setClockForTest(Clock.fixed(FIXED_NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
+    }
+
     private static ChatFlowGraph graph(String json) {
         return MAPPER.readValue(json, ChatFlowGraph.class);
     }
@@ -99,9 +111,9 @@ class TurParkedConversationServiceTest {
 
         // Two conversations parked on the suspend node, with different wait times.
         TurChatFlowState shortWait = state("conv-short", "flow-1", "s1",
-                LocalDateTime.now().minusMinutes(2));
+                FIXED_NOW.minusMinutes(2));
         TurChatFlowState longWait = state("conv-long", "flow-1", "s1",
-                LocalDateTime.now().minusHours(3));
+                FIXED_NOW.minusHours(3));
         when(stateRepository.findByFlow_IdAndCurrentNodeIdIn(eq("flow-1"), any()))
                 .thenReturn(List.of(shortWait, longWait));
 
@@ -137,7 +149,7 @@ class TurParkedConversationServiceTest {
         when(engineService.parseGraph(flow)).thenReturn(Optional.of(graph(
                 "{\"nodes\":[{\"id\":\"s1\",\"type\":\"suspend\",\"data\":{}}],\"edges\":[]}")));
         when(stateRepository.findByFlow_IdAndCurrentNodeIdIn(eq("flow-1"), any()))
-                .thenReturn(List.of(state("conv-1", "flow-1", "s1", LocalDateTime.now())));
+                .thenReturn(List.of(state("conv-1", "flow-1", "s1", FIXED_NOW)));
         when(flowRepository.findAgentIdByFlowId("flow-1")).thenReturn(Optional.empty());
 
         List<TurParkedConversationDto> result = service.listParked();

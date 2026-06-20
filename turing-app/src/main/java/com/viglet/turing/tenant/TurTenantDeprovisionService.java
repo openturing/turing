@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.tenant;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -83,6 +84,14 @@ public class TurTenantDeprovisionService {
         this.membershipRepository = membershipRepository;
         this.identityProvider = identityProvider;
         this.teardownService = teardownService;
+    }
+
+    /** Source of "now" for the grace-period check; tests pin it for determinism. */
+    private Clock clock = Clock.systemDefaultZone();
+
+    /** Visible for testing — pin the clock so eligibility is deterministic. */
+    void setClockForTest(Clock clock) {
+        this.clock = clock;
     }
 
     /** Outcome of one reconciliation sweep. */
@@ -192,7 +201,7 @@ public class TurTenantDeprovisionService {
             // and wait for the next sweep (suspend() will stamp it on re-touch).
             return false;
         }
-        return !Instant.now().isBefore(suspendedAt.plus(Duration.ofDays(Math.max(0, deleteAfterDays))));
+        return !Instant.now(clock).isBefore(suspendedAt.plus(Duration.ofDays(Math.max(0, deleteAfterDays))));
     }
 
     /** Run {@code body} under a synthetic platform-admin security context. */

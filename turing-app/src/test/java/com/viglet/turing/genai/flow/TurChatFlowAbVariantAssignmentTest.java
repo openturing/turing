@@ -42,6 +42,10 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
  */
 class TurChatFlowAbVariantAssignmentTest {
 
+    // Fixed reference instant — the window-bound tests set starts/ends relative
+    // to it, so a literal keeps the eligibility checks deterministic.
+    private static final Instant FIXED_NOW = Instant.parse("2026-06-15T12:00:00Z");
+
     private static final String KEY = "programa-match-headline";
 
     // ─────────────────────────── Stickiness ───────────────────────────
@@ -198,7 +202,7 @@ class TurChatFlowAbVariantAssignmentTest {
     @Test
     void isInExperimentWindow_nullBoundsMeanAlwaysOpen() {
         TurChatFlow f = variant("A", "control", 50);
-        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, Instant.now()))
+        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, FIXED_NOW))
                 .as("Null window bounds → variant always eligible")
                 .isTrue();
     }
@@ -206,7 +210,7 @@ class TurChatFlowAbVariantAssignmentTest {
     @Test
     void isInExperimentWindow_beforeStart_excluded() {
         TurChatFlow f = variant("A", "control", 50);
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         f.setExperimentStartsAt(now.plus(1, ChronoUnit.HOURS));
         assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isFalse();
     }
@@ -214,7 +218,7 @@ class TurChatFlowAbVariantAssignmentTest {
     @Test
     void isInExperimentWindow_afterEnd_excluded() {
         TurChatFlow f = variant("A", "control", 50);
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         f.setExperimentEndsAt(now.minus(1, ChronoUnit.HOURS));
         assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isFalse();
     }
@@ -222,7 +226,7 @@ class TurChatFlowAbVariantAssignmentTest {
     @Test
     void isInExperimentWindow_withinWindow_included() {
         TurChatFlow f = variant("A", "control", 50);
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         f.setExperimentStartsAt(now.minus(1, ChronoUnit.HOURS));
         f.setExperimentEndsAt(now.plus(1, ChronoUnit.HOURS));
         assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isTrue();

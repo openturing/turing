@@ -16,8 +16,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -66,7 +68,12 @@ class TurTenantDeprovisionServiceTest {
         props.getTenancy().getDeprovision().setEnabled(true);
         service = new TurTenantDeprovisionService(props, tenantRepository, membershipRepository,
                 identityProvider, teardownService);
+        service.setClockForTest(Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
     }
+
+    // Pinned "now" so the grace-period eligibility checks are deterministic;
+    // the per-test suspendedAt values are offset from this same instant.
+    private static final Instant FIXED_NOW = Instant.parse("2026-06-15T12:00:00Z");
 
     @AfterEach
     void clear() {
@@ -181,7 +188,7 @@ class TurTenantDeprovisionServiceTest {
         props.getTenancy().getDeprovision().setDeleteAfterDays(30);
         when(identityProvider.isEnabled()).thenReturn(true);
         TurTenant t = tenant("t-1", TurTenantStatus.SUSPENDED);
-        t.setSuspendedAt(Instant.now().minus(Duration.ofDays(40)));
+        t.setSuspendedAt(FIXED_NOW.minus(Duration.ofDays(40)));
         when(tenantRepository.findAll()).thenReturn(List.of(t));
         when(membershipRepository.findAll()).thenReturn(List.of(member(t, "gone@x.com")));
         when(identityProvider.statusOf("gone@x.com")).thenReturn(TurIdentityStatus.ABSENT);
@@ -199,7 +206,7 @@ class TurTenantDeprovisionServiceTest {
         props.getTenancy().getDeprovision().setDeleteAfterDays(30);
         when(identityProvider.isEnabled()).thenReturn(true);
         TurTenant t = tenant("t-1", TurTenantStatus.SUSPENDED);
-        t.setSuspendedAt(Instant.now().minus(Duration.ofDays(1)));
+        t.setSuspendedAt(FIXED_NOW.minus(Duration.ofDays(1)));
         when(tenantRepository.findAll()).thenReturn(List.of(t));
         when(membershipRepository.findAll()).thenReturn(List.of(member(t, "gone@x.com")));
         when(identityProvider.statusOf("gone@x.com")).thenReturn(TurIdentityStatus.ABSENT);
@@ -215,7 +222,7 @@ class TurTenantDeprovisionServiceTest {
         props.getTenancy().getDeprovision().setMode(TurTenantDeprovisionMode.SUSPEND_ONLY);
         when(identityProvider.isEnabled()).thenReturn(true);
         TurTenant t = tenant("t-1", TurTenantStatus.SUSPENDED);
-        t.setSuspendedAt(Instant.now().minus(Duration.ofDays(999)));
+        t.setSuspendedAt(FIXED_NOW.minus(Duration.ofDays(999)));
         when(tenantRepository.findAll()).thenReturn(List.of(t));
         when(membershipRepository.findAll()).thenReturn(List.of(member(t, "gone@x.com")));
         when(identityProvider.statusOf("gone@x.com")).thenReturn(TurIdentityStatus.ABSENT);

@@ -17,7 +17,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -90,13 +92,14 @@ class TurSubmissionRetentionServiceTest {
         when(submissionRepository.findByFlow_TurAIAgent_IdAndCompletedAtBefore(eq("a1"), any()))
                 .thenReturn(List.of());
 
-        LocalDateTime before = LocalDateTime.now().minusDays(7).minusMinutes(1);
+        // Pin the clock so the cutoff is exact and deterministic.
+        LocalDateTime fixedNow = LocalDateTime.parse("2026-06-15T12:00:00");
+        service.setClockForTest(Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
         service.purgeExpiredSubmissions();
-        LocalDateTime after = LocalDateTime.now().minusDays(7).plusMinutes(1);
 
         ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(submissionRepository).findByFlow_TurAIAgent_IdAndCompletedAtBefore(eq("a1"), cutoff.capture());
-        assertThat(cutoff.getValue()).isBetween(before, after);
+        assertThat(cutoff.getValue()).isEqualTo(fixedNow.minusDays(7));
     }
 
     @Test

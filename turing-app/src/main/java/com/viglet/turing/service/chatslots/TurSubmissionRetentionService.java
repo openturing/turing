@@ -9,8 +9,8 @@
  */
 package com.viglet.turing.service.chatslots;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -63,6 +63,14 @@ public class TurSubmissionRetentionService {
         this.submissionRepository = submissionRepository;
     }
 
+    /** Source of "now" for the retention cutoff; tests pin it for determinism. */
+    private Clock clock = Clock.systemDefaultZone();
+
+    /** Visible for testing — pin the clock so the cutoff is deterministic. */
+    void setClockForTest(Clock clock) {
+        this.clock = clock;
+    }
+
     /**
      * Deletes every submission older than the configured day threshold for
      * each agent in {@code RETAIN_DAYS} mode. Agents in {@code RETAIN_FOREVER}
@@ -73,7 +81,7 @@ public class TurSubmissionRetentionService {
      */
     @Transactional
     public int purgeExpiredSubmissions() {
-        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        LocalDateTime now = LocalDateTime.now(clock);
         int totalDeleted = 0;
         for (TurAIAgent agent : agentRepository.findAll()) {
             if (agent.getSubmissionRetention() != TurSubmissionRetention.RETAIN_DAYS) {
