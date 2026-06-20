@@ -759,18 +759,18 @@ public class TurChatFlowEngineService {
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) {
                 currentNodeId = currentNodeId == null ? state.getCurrentNodeId() : currentNodeId;
-                continue;
+            } else {
+                ChatFlowNode current = currentOpt.get();
+                Map<String, String> vars = ChatFlowOps.readVariables(state);
+                if (ChatFlowOps.isNativeForm(current)
+                        && ChatFlowOps.isNativeFormSatisfied(current, vars)) {
+                    log.info("[FlowEngine] form-submit: conv='{}' walking past satisfied form node '{}'",
+                            conversationId, state.getCurrentNodeId());
+                    state = advanceAndWalk(state, graph, current);
+                    advanced++;
+                }
+                currentNodeId = state.getCurrentNodeId();
             }
-            ChatFlowNode current = currentOpt.get();
-            Map<String, String> vars = ChatFlowOps.readVariables(state);
-            if (ChatFlowOps.isNativeForm(current)
-                    && ChatFlowOps.isNativeFormSatisfied(current, vars)) {
-                log.info("[FlowEngine] form-submit: conv='{}' walking past satisfied form node '{}'",
-                        conversationId, state.getCurrentNodeId());
-                state = advanceAndWalk(state, graph, current);
-                advanced++;
-            }
-            currentNodeId = state.getCurrentNodeId();
         }
         return new FormSubmitResult(fieldsWritten, advanced, currentNodeId);
     }
@@ -863,15 +863,17 @@ public class TurChatFlowEngineService {
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         for (TurChatFlowState state : states) {
             ChatFlowGraph graph = parseGraph(state.getFlow()).orElse(null);
-            if (graph == null) continue;
+            if (graph == null) {
+                continue;
+            }
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
-            if (currentOpt.isEmpty()) continue;
-            if (!SCHEDULE_AGENT.equals(currentOpt.get().type())) continue;
-            log.info("[FlowEngine] auto-resume: conv='{}' re-walking parked state '{}'",
-                    conversationId, state.getId());
-            TurChatFlowState leaf = walkTransparentNodes(state, null);
-            if (leaf != state) {
-                stateRepository.save(leaf);
+            if (currentOpt.isPresent() && SCHEDULE_AGENT.equals(currentOpt.get().type())) {
+                log.info("[FlowEngine] auto-resume: conv='{}' re-walking parked state '{}'",
+                        conversationId, state.getId());
+                TurChatFlowState leaf = walkTransparentNodes(state, null);
+                if (leaf != state) {
+                    stateRepository.save(leaf);
+                }
             }
         }
     }
@@ -1675,18 +1677,16 @@ public class TurChatFlowEngineService {
                 continue;
             }
             Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
-            if (graphOpt.isEmpty()) {
-                continue;
+            if (graphOpt.isPresent()) {
+                Optional<ChatFlowNode> currentOpt = graphOpt.get().nodeById(state.getCurrentNodeId());
+                if (currentOpt.isPresent() && !"end".equals(currentOpt.get().type())) {
+                    log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
+                            state.getFlow().getId(), conversationId);
+                    // Continuation: user msg should be processed as input to the
+                    // current node by the LlmJudge advance pass.
+                    return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state, false));
+                }
             }
-            Optional<ChatFlowNode> currentOpt = graphOpt.get().nodeById(state.getCurrentNodeId());
-            if (currentOpt.isEmpty() || "end".equals(currentOpt.get().type())) {
-                continue;
-            }
-            log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
-                    state.getFlow().getId(), conversationId);
-            // Continuation: user msg should be processed as input to the
-            // current node by the LlmJudge advance pass.
-            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state, false));
         }
         return Optional.empty();
     }
@@ -1723,23 +1723,21 @@ public class TurChatFlowEngineService {
     private List<RouterCandidate> buildRouterCandidates(TurAIAgent agent, Set<String> completedFlowIds) {
         List<RouterCandidate> candidates = new ArrayList<>();
         for (TurChatFlow flow : chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId())) {
-            if (flow.getEnabled() != 1) {
-                continue;
-            }
-            if (flow.getTriggerDescription() == null || flow.getTriggerDescription().isBlank()) {
+            if (flow.getEnabled() != 1
+                    || flow.getTriggerDescription() == null || flow.getTriggerDescription().isBlank()) {
                 continue;
             }
             TurChatFlowTriggerMode mode = flow.getTriggerMode() != null
                     ? flow.getTriggerMode()
                     : TurChatFlowTriggerMode.ONCE;
-            if (mode == TurChatFlowTriggerMode.ONCE && completedFlowIds.contains(flow.getId())) {
-                continue;
+            boolean onceAndDone = mode == TurChatFlowTriggerMode.ONCE
+                    && completedFlowIds.contains(flow.getId());
+            if (!onceAndDone) {
+                Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
+                if (graphOpt.isPresent()) {
+                    candidates.add(new RouterCandidate(flow, graphOpt.get()));
+                }
             }
-            Optional<ChatFlowGraph> graphOpt = parseGraph(flow);
-            if (graphOpt.isEmpty()) {
-                continue;
-            }
-            candidates.add(new RouterCandidate(flow, graphOpt.get()));
         }
         return candidates;
     }
@@ -2276,11 +2274,8 @@ public class TurChatFlowEngineService {
         List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agentId);
         Map<Analyzer, List<TurChatFlow>> grouped = HashMap.newHashMap(2);
         for (TurChatFlow flow : flows) {
-            if (flow.getEnabled() != 1) {
-                continue;
-            }
             String description = flow.getTriggerDescription();
-            if (description == null || description.isBlank()) {
+            if (flow.getEnabled() != 1 || description == null || description.isBlank()) {
                 continue;
             }
             Analyzer analyzer = analyzerFor(flow.getTriggerLanguage(), description);

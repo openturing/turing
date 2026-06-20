@@ -133,36 +133,27 @@ public class TurTenantDeprovisionService {
         int skippedUnknown = 0;
 
         for (TurTenant tenant : tenantRepository.findAll()) {
-            if (TurTenant.DEFAULT_TENANT_ID.equals(tenant.getId())) {
-                continue;
-            }
             List<TurTenantMembership> memberships = byTenant.getOrDefault(tenant.getId(), List.of());
-            if (memberships.isEmpty()) {
-                continue; // no members to verify — leave it alone
+            // Skip the default tenant and any with no members to verify.
+            if (TurTenant.DEFAULT_TENANT_ID.equals(tenant.getId()) || memberships.isEmpty()) {
+                continue;
             }
             scanned++;
 
             Orphan orphan = classify(memberships);
             if (orphan == Orphan.UNKNOWN) {
                 skippedUnknown++;
-                continue;
-            }
-            if (orphan == Orphan.HAS_LIVE_MEMBER) {
+            } else if (orphan == Orphan.HAS_LIVE_MEMBER) {
                 skippedLive++;
-                continue;
-            }
-
-            // ORPHANED: every member is absent/disabled in the IdP.
-            if (tenant.getStatus() != TurTenantStatus.SUSPENDED) {
+            } else if (tenant.getStatus() != TurTenantStatus.SUSPENDED) {
+                // ORPHANED (every member absent/disabled in the IdP), not yet suspended.
                 teardownService.suspend(tenant.getId());
                 suspended++;
                 log.info("[TenantDeprovision] suspended orphaned tenant '{}' (slug '{}')",
                         tenant.getId(), tenant.getSlug());
-                continue;
-            }
-
-            if (cfg.getMode() == TurTenantDeprovisionMode.SUSPEND_THEN_DELETE
+            } else if (cfg.getMode() == TurTenantDeprovisionMode.SUSPEND_THEN_DELETE
                     && graceElapsed(tenant, cfg.getDeleteAfterDays())) {
+                // ORPHANED + already suspended past the grace window → tear down.
                 teardownService.delete(tenant.getId(), false);
                 deleted++;
                 log.warn("[TenantDeprovision] tore down orphaned tenant '{}' (slug '{}') "

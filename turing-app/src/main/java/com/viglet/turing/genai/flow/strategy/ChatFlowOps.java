@@ -146,12 +146,11 @@ public final class ChatFlowOps {
                 continue;
             }
             String name = field.name();
-            if (name == null || name.isBlank()) {
-                continue;
-            }
-            String value = vars.get(name.trim());
-            if (value == null || value.isBlank()) {
-                return false;
+            if (name != null && !name.isBlank()) {
+                String value = vars.get(name.trim());
+                if (value == null || value.isBlank()) {
+                    return false;
+                }
             }
         }
         return true;
@@ -300,18 +299,16 @@ public final class ChatFlowOps {
             String value = entry.getValue();
             if (value == null) {
                 rendered.put(entry.getKey(), "");
-                continue;
-            }
-            if (value.length() <= MAX_INLINED_VARIABLE_LENGTH) {
+            } else if (value.length() <= MAX_INLINED_VARIABLE_LENGTH) {
                 rendered.put(entry.getKey(), value);
-                continue;
+            } else {
+                String trimmed = value.trim();
+                boolean json = trimmed.startsWith("{") || trimmed.startsWith("[");
+                String marker = json
+                        ? "(json, " + value.length() + " chars — content managed by UI/tool, do not quote)"
+                        : "(text, " + value.length() + " chars — truncated, do not quote)";
+                rendered.put(entry.getKey(), marker);
             }
-            String trimmed = value.trim();
-            boolean json = trimmed.startsWith("{") || trimmed.startsWith("[");
-            String marker = json
-                    ? "(json, " + value.length() + " chars — content managed by UI/tool, do not quote)"
-                    : "(text, " + value.length() + " chars — truncated, do not quote)";
-            rendered.put(entry.getKey(), marker);
         }
         return rendered.toString();
     }
@@ -455,19 +452,15 @@ public final class ChatFlowOps {
                 continue;
             }
             ChatFlowNode branch = branchOpt.get();
-            if ("end".equals(branch.type())) {
-                continue;
-            }
             String instruction = branch.aiInstruction();
-            if (instruction == null || instruction.isBlank()) {
-                continue;
+            if (!"end".equals(branch.type()) && instruction != null && !instruction.isBlank()) {
+                String handle = edge.sourceHandle() == null || edge.sourceHandle().isBlank()
+                        ? "default"
+                        : edge.sourceHandle();
+                hint.append("  - If '").append(handle).append("' branch: ")
+                        .append(instruction.trim()).append("\n");
+                any = true;
             }
-            String handle = edge.sourceHandle() == null || edge.sourceHandle().isBlank()
-                    ? "default"
-                    : edge.sourceHandle();
-            hint.append("  - If '").append(handle).append("' branch: ")
-                    .append(instruction.trim()).append("\n");
-            any = true;
         }
         if (!any) {
             return;
@@ -1084,13 +1077,12 @@ public final class ChatFlowOps {
         int seq = 1;
         for (Map<String, Object> row : rows) {
             PlanItem item = parsePlanItem(row, seq);
-            if (item == null) {
-                continue;
-            }
-            out.add(item);
-            seq++;
-            if (out.size() >= MAX_PLAN_ITEMS) {
-                break;
+            if (item != null) {
+                out.add(item);
+                seq++;
+                if (out.size() >= MAX_PLAN_ITEMS) {
+                    break;
+                }
             }
         }
         return out;
