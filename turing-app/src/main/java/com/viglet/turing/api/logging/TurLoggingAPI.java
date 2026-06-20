@@ -83,7 +83,9 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "asc") String sort) {
-        return getGeneralDocuments(serverCollectionName, page, pageSize, level, dateFrom, dateTo, search, sort);
+        return getGeneralDocuments(
+                new TurLogQuery(serverCollectionName, page, pageSize, dateFrom, dateTo, sort),
+                level, search);
     }
 
     @Operation(summary = "Indexing Logging")
@@ -98,8 +100,9 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String resultStatus,
             @RequestParam(required = false) String url,
             @RequestParam(defaultValue = "asc") String sort) {
-        return getIndexingDocuments(indexingCollectionName, page, pageSize, dateFrom, dateTo,
-                status, contentId, resultStatus, url, sort);
+        return getIndexingDocuments(
+                new TurLogQuery(indexingCollectionName, page, pageSize, dateFrom, dateTo, sort),
+                status, contentId, resultStatus, url);
     }
 
     @Operation(summary = "AEM Logging")
@@ -112,12 +115,19 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "asc") String sort) {
-        return getGeneralDocuments(aemCollectionName, page, pageSize, level, dateFrom, dateTo, search, sort);
+        return getGeneralDocuments(
+                new TurLogQuery(aemCollectionName, page, pageSize, dateFrom, dateTo, sort),
+                level, search);
     }
 
-    private @NotNull Map<String, Object> getGeneralDocuments(String collectionName, int page, int pageSize,
-            String level, String dateFrom, String dateTo,
-            String search, String sort) {
+    private @NotNull Map<String, Object> getGeneralDocuments(TurLogQuery logQuery,
+            String level, String search) {
+        String collectionName = logQuery.collectionName();
+        int page = logQuery.page();
+        int pageSize = logQuery.pageSize();
+        String dateFrom = logQuery.dateFrom();
+        String dateTo = logQuery.dateTo();
+        String sort = logQuery.sort();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
@@ -161,10 +171,14 @@ public class TurLoggingAPI {
         return result;
     }
 
-    private @NotNull Map<String, Object> getIndexingDocuments(String collectionName, int page, int pageSize,
-            String dateFrom, String dateTo,
-            String status, String contentId,
-            String resultStatus, String url, String sort) {
+    private @NotNull Map<String, Object> getIndexingDocuments(TurLogQuery logQuery,
+            String status, String contentId, String resultStatus, String url) {
+        String collectionName = logQuery.collectionName();
+        int page = logQuery.page();
+        int pageSize = logQuery.pageSize();
+        String dateFrom = logQuery.dateFrom();
+        String dateTo = logQuery.dateTo();
+        String sort = logQuery.sort();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
