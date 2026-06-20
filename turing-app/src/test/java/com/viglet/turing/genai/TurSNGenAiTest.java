@@ -622,7 +622,9 @@ class TurSNGenAiTest {
                 List.of(new TurSNGenAi.ConversationMessage("user", "pergunta sem contexto"));
 
         List<TurAgentChatExecutor.ChatResponse> events = turSNGenAi.assistantConversationStreaming(
-                context, agent, llm, history, null, "conv-1", null, null, Locale.forLanguageTag("pt-BR"))
+                context, agent, llm,
+                new TurSNGenAiChatRequest(history, null, "conv-1", null, null,
+                        Locale.forLanguageTag("pt-BR")))
                 .collectList().block();
 
         assertNotNull(events);

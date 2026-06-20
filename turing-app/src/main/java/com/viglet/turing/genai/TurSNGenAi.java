@@ -193,38 +193,24 @@ public class TurSNGenAi {
      * prompt before the executor runs, so the agent's tools (native + MCP)
      * are also available to the LLM during the same call.
      *
+     * <p>The per-turn request inputs (history, filters, conversation/flow ids,
+     * the optional T73 forced A/B variant and the response locale) travel in a
+     * {@link TurSNGenAiChatRequest}, separate from the resolved RAG
+     * {@code context} / {@code agent} / {@code llmInstance} configuration.
+     *
      * @since 2026.2.4
      */
     public reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> assistantConversationStreaming(
             TurGenAiContext context,
             com.viglet.turing.persistence.model.agent.TurAIAgent agent,
             com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,
-            List<ConversationMessage> history,
-            java.util.Map<String, List<String>> filters,
-            String conversationId,
-            String flowId) {
-        return assistantConversationStreaming(context, agent, llmInstance, history, filters,
-                conversationId, flowId, null, Locale.ENGLISH);
-    }
-
-    /**
-     * Overload carrying a forced A/B variant label (T73 / §VII.8.d) down to
-     * the executor so an embedded widget can preview a specific experiment arm
-     * via {@code ?_ab_variant=<label>}. A blank value is the production
-     * default and behaves identically to the no-variant overload.
-     *
-     * @since 2026.3.1
-     */
-    public reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> assistantConversationStreaming(
-            TurGenAiContext context,
-            com.viglet.turing.persistence.model.agent.TurAIAgent agent,
-            com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,
-            List<ConversationMessage> history,
-            java.util.Map<String, List<String>> filters,
-            String conversationId,
-            String flowId,
-            String forcedVariant,
-            Locale locale) {
+            TurSNGenAiChatRequest request) {
+        List<ConversationMessage> history = request.history();
+        java.util.Map<String, List<String>> filters = request.filters();
+        String conversationId = request.conversationId();
+        String flowId = request.flowId();
+        String forcedVariant = request.forcedVariant();
+        Locale locale = request.locale();
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(

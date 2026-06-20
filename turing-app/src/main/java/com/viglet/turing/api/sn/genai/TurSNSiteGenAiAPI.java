@@ -42,6 +42,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurChatMessage;
 import com.viglet.turing.genai.TurSNGenAi;
+import com.viglet.turing.genai.TurSNGenAiChatRequest;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
@@ -305,8 +306,9 @@ public class TurSNSiteGenAiAPI {
 					siteName, locale, collectionName, agent.getTitle(), llmInstance.getTitle());
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(
-					context, agent, llmInstance, request.messages(), request.filters(),
-					request.conversationId(), request.flowId(), request.forcedVariant(), locale);
+					context, agent, llmInstance,
+					new TurSNGenAiChatRequest(request.messages(), request.filters(),
+							request.conversationId(), request.flowId(), request.forcedVariant(), locale));
 			// Capture the turn for chat memory: accumulate the streamed assistant
 			// chunks and enqueue once the stream finishes. The service is a no-op
 			// when the agent has chatMemoryEnabled=false or the logging engine is
