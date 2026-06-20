@@ -129,9 +129,7 @@ public class TurChatAnalyticsService {
         String parentConversationId = extractParentConversationId(firstUserMessage);
         String visibleFirstUserMessage = stripParentConversationIdPrefix(firstUserMessage);
         inFlight.computeIfAbsent(refs.conversationId(),
-                id -> new InFlight(now, refs.agentId(), refs.personaId(), refs.llmInstanceId(),
-                        refs.embeddingModelId(), refs.storeInstanceId(), refs.userId(), visitor.locale(),
-                        parentConversationId, visitor.timezone(), visitor.deviceType()));
+                id -> new InFlight(now, refs, visitor, parentConversationId));
         try {
             store.upsertSession(TurChatSessionEvent.start(refs.conversationId(), refs.agentId(),
                     refs.personaId(), refs.llmInstanceId(), refs.embeddingModelId(),
@@ -355,14 +353,15 @@ public class TurChatAnalyticsService {
     private TurChatSessionEvent fullSessionEvent(String conversationId, InFlight inflight,
             Instant now, TurChatSessionOutcome outcome, long durationMs) {
         return new TurChatSessionEvent(conversationId,
-                inflight.agentId, inflight.personaId, inflight.llmInstanceId,
-                inflight.embeddingModelId, inflight.storeInstanceId, inflight.userId, inflight.locale,
+                inflight.refs.agentId(), inflight.refs.personaId(), inflight.refs.llmInstanceId(),
+                inflight.refs.embeddingModelId(), inflight.refs.storeInstanceId(), inflight.refs.userId(),
+                inflight.visitor.locale(),
                 null,           // firstUserMessage is start-only and preserved by store
                 inflight.startedAt, now, outcome,
                 inflight.turns, inflight.tokensIn, inflight.tokensOut, durationMs,
                 inflight.toolCalls, inflight.toolErrors, inflight.totalToolLatencyMs,
                 inflight.experimentKey, inflight.variantLabel, inflight.parentConversationId,
-                inflight.timezone, inflight.deviceType, List.copyOf(inflight.toolSamples));
+                inflight.visitor.timezone(), inflight.visitor.deviceType(), List.copyOf(inflight.toolSamples));
     }
 
     /** Pass-through to the store — used by the REST analytics endpoints. */
@@ -383,19 +382,12 @@ public class TurChatAnalyticsService {
     private static final class InFlight {
         final Instant startedAt;
         volatile Instant lastTouchedAt;
-        final String agentId;
-        final String personaId;
-        final String llmInstanceId;
-        final String embeddingModelId;
-        final String storeInstanceId;
-        final String userId;
-        final String locale;
+        /** Configured session identity (agent / persona / LLM / store / user). */
+        final TurChatSessionRefs refs;
+        /** T74 visitor cohort (locale / timezone / deviceType), never null. */
+        final TurChatVisitorContext visitor;
         /** T110 — parent conversation id when spawned by {@code agent.invoke(...)}. */
         final String parentConversationId;
-        /** T74 — visitor cohort: IANA timezone (X-Timezone header), or null. */
-        final String timezone;
-        /** T74 — visitor cohort: device class from User-Agent, or null. */
-        final String deviceType;
         int turns;
         long tokensIn;
         long tokensOut;
@@ -417,21 +409,13 @@ public class TurChatAnalyticsService {
         volatile String experimentKey;
         volatile String variantLabel;
 
-        InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
-                String embeddingModelId, String storeInstanceId, String userId, String locale,
-                String parentConversationId, String timezone, String deviceType) {
+        InFlight(Instant startedAt, TurChatSessionRefs refs, TurChatVisitorContext visitor,
+                String parentConversationId) {
             this.startedAt = startedAt;
             this.lastTouchedAt = startedAt;
-            this.agentId = agentId;
-            this.personaId = personaId;
-            this.llmInstanceId = llmInstanceId;
-            this.embeddingModelId = embeddingModelId;
-            this.storeInstanceId = storeInstanceId;
-            this.userId = userId;
-            this.locale = locale;
+            this.refs = refs;
+            this.visitor = visitor == null ? TurChatVisitorContext.empty() : visitor;
             this.parentConversationId = parentConversationId;
-            this.timezone = timezone;
-            this.deviceType = deviceType;
         }
 
         synchronized void recordTurn(long in, long out) {
