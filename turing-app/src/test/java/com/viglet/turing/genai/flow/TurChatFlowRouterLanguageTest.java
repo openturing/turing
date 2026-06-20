@@ -35,14 +35,14 @@ class TurChatFlowRouterLanguageTest {
 
     @Test
     void analyzerForPtPicksPortugueseAnalyzer() {
-        Analyzer a = TurChatFlowEngineService.analyzerFor(TurChatFlowTriggerLanguage.PT,
+        Analyzer a = TurChatFlowTriggerRouter.analyzerFor(TurChatFlowTriggerLanguage.PT,
                 "qualquer descrição em qualquer idioma");
         assertThat(a).isInstanceOf(PortugueseAnalyzer.class);
     }
 
     @Test
     void analyzerForEnPicksEnglishAnalyzer() {
-        Analyzer a = TurChatFlowEngineService.analyzerFor(TurChatFlowTriggerLanguage.EN,
+        Analyzer a = TurChatFlowTriggerRouter.analyzerFor(TurChatFlowTriggerLanguage.EN,
                 "qualquer descrição em qualquer idioma");
         assertThat(a).isInstanceOf(EnglishAnalyzer.class);
     }
@@ -51,7 +51,7 @@ class TurChatFlowRouterLanguageTest {
     void analyzerForNullDefaultsToAutoBranch() {
         // Defensive: pre-T25 entities loaded from a snapshot have null lang.
         // Should not NPE — treated as AUTO. PT-only text → PT analyzer.
-        Analyzer a = TurChatFlowEngineService.analyzerFor(null,
+        Analyzer a = TurChatFlowTriggerRouter.analyzerFor(null,
                 "plano de carreira para o engenheiro");
         assertThat(a).isInstanceOf(PortugueseAnalyzer.class);
     }
@@ -62,7 +62,7 @@ class TurChatFlowRouterLanguageTest {
     void detectLanguageRecognizesEnglishTrigger() {
         // Heuristic-dominant EN: stopwords "the", "for", "with", "is".
         // PT contribution: 0.
-        var lang = TurChatFlowEngineService.detectLanguage(
+        var lang = TurChatFlowTriggerRouter.detectLanguage(
                 "Trigger this flow when the user asks for a career plan with the manager");
         assertThat(lang).isEqualTo(TurChatFlowTriggerLanguage.EN);
     }
@@ -70,7 +70,7 @@ class TurChatFlowRouterLanguageTest {
     @Test
     void detectLanguageRecognizesPortugueseTrigger() {
         // PT-dominant: "o", "para", "com", "que".
-        var lang = TurChatFlowEngineService.detectLanguage(
+        var lang = TurChatFlowTriggerRouter.detectLanguage(
                 "Dispare este fluxo quando o usuário perguntar sobre plano de carreira "
                 + "para a equipe com o gerente que coordena o time");
         assertThat(lang).isEqualTo(TurChatFlowTriggerLanguage.PT);
@@ -78,25 +78,25 @@ class TurChatFlowRouterLanguageTest {
 
     @Test
     void detectLanguageDefaultsToPtOnBlankInput() {
-        assertThat(TurChatFlowEngineService.detectLanguage(null))
+        assertThat(TurChatFlowTriggerRouter.detectLanguage(null))
                 .isEqualTo(TurChatFlowTriggerLanguage.PT);
-        assertThat(TurChatFlowEngineService.detectLanguage(""))
+        assertThat(TurChatFlowTriggerRouter.detectLanguage(""))
                 .isEqualTo(TurChatFlowTriggerLanguage.PT);
-        assertThat(TurChatFlowEngineService.detectLanguage("   "))
+        assertThat(TurChatFlowTriggerRouter.detectLanguage("   "))
                 .isEqualTo(TurChatFlowTriggerLanguage.PT);
     }
 
     @Test
     void detectLanguageDefaultsToPtOnTieOrNoHints() {
         // Pure proper nouns / domain terms → zero hits both lists → PT default.
-        var lang = TurChatFlowEngineService.detectLanguage("Turing OpenAI GPT Spring Boot");
+        var lang = TurChatFlowTriggerRouter.detectLanguage("Turing OpenAI GPT Spring Boot");
         assertThat(lang).isEqualTo(TurChatFlowTriggerLanguage.PT);
     }
 
     @Test
     void detectLanguageIsCaseAndDiacriticTolerant() {
         // Accented PT stopwords ("está") + uppercase still count.
-        var lang = TurChatFlowEngineService.detectLanguage(
+        var lang = TurChatFlowTriggerRouter.detectLanguage(
                 "O usuário ESTÁ perguntando sobre o que fazer");
         assertThat(lang).isEqualTo(TurChatFlowTriggerLanguage.PT);
     }
@@ -108,7 +108,7 @@ class TurChatFlowRouterLanguageTest {
         // PortugueseAnalyzer light-stems plural→singular ("planos"→"plano"→
         // stem "plan"). Light stemming intentionally does NOT touch verbs,
         // so "planejar" stays distinct — verify both behaviors.
-        Set<String> tokens = TurChatFlowEngineService.tokenize(
+        Set<String> tokens = TurChatFlowTriggerRouter.tokenize(
                 "planos plano", new PortugueseAnalyzer());
         assertThat(tokens).hasSize(1);
     }
@@ -119,7 +119,7 @@ class TurChatFlowRouterLanguageTest {
         // stay distinct (Porter is rule-based, not lexicon-based) —
         // doc'd here so a future stemmer swap doesn't silently change
         // routing behavior.
-        Set<String> tokens = TurChatFlowEngineService.tokenize(
+        Set<String> tokens = TurChatFlowTriggerRouter.tokenize(
                 "running runs", new EnglishAnalyzer());
         assertThat(tokens).hasSize(1);
     }
@@ -127,7 +127,7 @@ class TurChatFlowRouterLanguageTest {
     @Test
     void tokenizeEnglishAnalyzerDropsEnglishStopwords() {
         // "the", "and", "for" should be filtered; "career plan" survives as stems.
-        Set<String> tokens = TurChatFlowEngineService.tokenize(
+        Set<String> tokens = TurChatFlowTriggerRouter.tokenize(
                 "the career plan and the manager", new EnglishAnalyzer());
         assertThat(tokens)
                 .doesNotContain("the", "and", "for")
@@ -136,11 +136,11 @@ class TurChatFlowRouterLanguageTest {
 
     @Test
     void tokenizeBlankOrNullReturnsEmpty() {
-        assertThat(TurChatFlowEngineService.tokenize(null, new PortugueseAnalyzer()))
+        assertThat(TurChatFlowTriggerRouter.tokenize(null, new PortugueseAnalyzer()))
                 .isEmpty();
-        assertThat(TurChatFlowEngineService.tokenize("", new EnglishAnalyzer()))
+        assertThat(TurChatFlowTriggerRouter.tokenize("", new EnglishAnalyzer()))
                 .isEmpty();
-        assertThat(TurChatFlowEngineService.tokenize("   ", new PortugueseAnalyzer()))
+        assertThat(TurChatFlowTriggerRouter.tokenize("   ", new PortugueseAnalyzer()))
                 .isEmpty();
     }
 
@@ -151,7 +151,7 @@ class TurChatFlowRouterLanguageTest {
         // Documents T25's motivation: applying the wrong analyzer on EN text
         // breaks morphological matching. PT light stemmer leaves EN -ing /
         // -s intact → distinct stems for running/runs that should collapse.
-        Set<String> tokens = TurChatFlowEngineService.tokenize(
+        Set<String> tokens = TurChatFlowTriggerRouter.tokenize(
                 "running runs ran", new PortugueseAnalyzer());
         assertThat(tokens)
                 .as("PT analyzer fails to collapse EN run/running/ran")
@@ -162,7 +162,7 @@ class TurChatFlowRouterLanguageTest {
     void portugueseTextThroughEnAnalyzerLosesPlanosStemMatch() {
         // Reverse: EN Porter on PT text mangles or fails to collapse.
         // "planos / plano / planejar" do NOT all share a stem under Porter.
-        Set<String> tokens = TurChatFlowEngineService.tokenize(
+        Set<String> tokens = TurChatFlowTriggerRouter.tokenize(
                 "planos plano planejar", new EnglishAnalyzer());
         assertThat(tokens)
                 .as("EN analyzer fails to collapse PT plano/planos/planejar")

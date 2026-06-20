@@ -68,6 +68,9 @@ class TurChatFlowRouterIndexCacheTest {
 
     @BeforeEach
     void setUp() {
+        // Real trigger router over the same repository mock — the engine
+        // delegates the procedural-routing API to it (S6539 split).
+        TurChatFlowTriggerRouter triggerRouter = new TurChatFlowTriggerRouter(chatFlowRepository);
         engine = new TurChatFlowEngineService(stateRepository, chatFlowRepository,
                 submissionRepository, chatAnalyticsService, slotEventBus,
                 org.mockito.Mockito.mock(
@@ -80,6 +83,7 @@ class TurChatFlowRouterIndexCacheTest {
                         com.viglet.turing.genai.flow.routine.TurScheduleAgentNodeExecutor.class),
                 org.mockito.Mockito.mock(TurChatWebhookNodeExecutor.class),
                 org.mockito.Mockito.mock(TurHumanApprovalNodeExecutor.class),
+                triggerRouter,
                 List.<TurChatFlowGuardrailStrategy>of());
     }
 

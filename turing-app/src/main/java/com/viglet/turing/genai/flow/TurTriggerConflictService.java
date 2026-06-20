@@ -146,9 +146,9 @@ public class TurTriggerConflictService {
             if (flow.getEnabled() != 1 || description == null || description.isBlank()) {
                 continue;
             }
-            Analyzer analyzer = TurChatFlowEngineService.analyzerFor(
+            Analyzer analyzer = TurChatFlowTriggerRouter.analyzerFor(
                     flow.getTriggerLanguage(), description);
-            Set<String> tokens = TurChatFlowEngineService.tokenize(description, analyzer);
+            Set<String> tokens = TurChatFlowTriggerRouter.tokenize(description, analyzer);
             if (!tokens.isEmpty()) {
                 byAnalyzer.computeIfAbsent(analyzer, ignored -> new ArrayList<>())
                         .add(new EligibleFlow(flow, tokens, analyzer));
