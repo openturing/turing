@@ -16,7 +16,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Comparator;
 
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +47,12 @@ import com.viglet.turing.commons.utils.TurCommonsUtils;
  */
 class TurCodeInterpreterCleanupTaskTest {
 
+    // Fixed clock so the sweep's "today" is deterministic (noon UTC keeps the
+    // local date stable across reasonable zone offsets). The same clock is
+    // injected into the task, so test bucket dates and the production cutoff
+    // agree regardless of when the suite runs.
+    private final Clock clock = Clock.fixed(Instant.parse("2026-06-15T12:00:00Z"), ZoneId.systemDefault());
+
     private TurCodeInterpreterCleanupTask task;
     private Path sandboxRoot;
     private Path sessionsRoot;
@@ -55,6 +64,7 @@ class TurCodeInterpreterCleanupTaskTest {
         task = new TurCodeInterpreterCleanupTask();
         task.setEnabledForTest(true);
         task.setTtlHoursForTest(24);
+        task.setClockForTest(clock);
         sandboxRoot = Path.of(TurCommonsUtils.addSubDirToStoreDir(
                 TurCodeInterpreterCleanupTask.SANDBOX_DIR).getPath());
         sessionsRoot = sandboxRoot.resolve(TurCodeInterpreterCleanupTask.SESSIONS_DIR);
@@ -80,7 +90,7 @@ class TurCodeInterpreterCleanupTaskTest {
         //   sessions/<yesterday>/     keep (boundary — cutoff is yesterday)
         //   sessions/<3 days ago>/    DELETE
         //   sessions/<10 days ago>/   DELETE
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         Path keep1 = makeBucketWithFile(today, "alive.pdf");
         Path keep2 = makeBucketWithFile(today.minusDays(1), "recent.pdf");
         Path old1 = makeBucketWithFile(today.minusDays(3), "stale.pdf");
@@ -135,7 +145,7 @@ class TurCodeInterpreterCleanupTaskTest {
     @Test
     void sweep_disabled_doesNothing() throws IOException {
         task.setEnabledForTest(false);
-        Path old = makeBucketWithFile(LocalDate.now().minusDays(30), "would-delete.pdf");
+        Path old = makeBucketWithFile(LocalDate.now(clock).minusDays(30), "would-delete.pdf");
 
         task.sweep();
 
@@ -166,9 +176,9 @@ class TurCodeInterpreterCleanupTaskTest {
         // so anything below 24h rounds up to 1 day — equivalent to TTL=24h.
         // Cutoff = yesterday; keep today + yesterday, delete 2-days-old.
         task.setTtlHoursForTest(6);
-        Path today = makeBucketWithFile(LocalDate.now(), "x.pdf");
-        Path yesterday = makeBucketWithFile(LocalDate.now().minusDays(1), "y.pdf");
-        Path twoDays = makeBucketWithFile(LocalDate.now().minusDays(2), "z.pdf");
+        Path today = makeBucketWithFile(LocalDate.now(clock), "x.pdf");
+        Path yesterday = makeBucketWithFile(LocalDate.now(clock).minusDays(1), "y.pdf");
+        Path twoDays = makeBucketWithFile(LocalDate.now(clock).minusDays(2), "z.pdf");
 
         task.sweep();
 
@@ -186,10 +196,10 @@ class TurCodeInterpreterCleanupTaskTest {
         //   tenants/agent-marina/conv-A/<5 days ago>/sid-2/ DELETE
         //   tenants/agent-camila/conv-B/<today>/sid-3/      keep
         //   tenants/agent-camila/conv-B/<3 days ago>/sid-4/ DELETE
-        Path marinaToday = makeTenantBucket("agent-marina", "conv-A", LocalDate.now(), "alive.pdf");
-        Path marinaOld   = makeTenantBucket("agent-marina", "conv-A", LocalDate.now().minusDays(5), "stale.pdf");
-        Path camilaToday = makeTenantBucket("agent-camila", "conv-B", LocalDate.now(), "alive.pdf");
-        Path camilaOld   = makeTenantBucket("agent-camila", "conv-B", LocalDate.now().minusDays(3), "stale.pdf");
+        Path marinaToday = makeTenantBucket("agent-marina", "conv-A", LocalDate.now(clock), "alive.pdf");
+        Path marinaOld   = makeTenantBucket("agent-marina", "conv-A", LocalDate.now(clock).minusDays(5), "stale.pdf");
+        Path camilaToday = makeTenantBucket("agent-camila", "conv-B", LocalDate.now(clock), "alive.pdf");
+        Path camilaOld   = makeTenantBucket("agent-camila", "conv-B", LocalDate.now(clock).minusDays(3), "stale.pdf");
 
         task.sweep();
 
@@ -203,7 +213,7 @@ class TurCodeInterpreterCleanupTaskTest {
     void sweep_tenantTree_prunesEmptyConversationAndAgentDirs() throws IOException {
         // Single stale bucket under agent/conv — after sweep, both
         // conversation AND agent dirs should be empty and pruned.
-        Path stale = makeTenantBucket("agent-x", "conv-x", LocalDate.now().minusDays(10), "old.pdf");
+        Path stale = makeTenantBucket("agent-x", "conv-x", LocalDate.now(clock).minusDays(10), "old.pdf");
         Path convDir = stale.getParent();
         Path agentDir = convDir.getParent();
 
@@ -222,8 +232,8 @@ class TurCodeInterpreterCleanupTaskTest {
     void sweep_tenantTree_keepsAgentWithSurvivingBucket() throws IOException {
         // Agent has BOTH a stale and a recent bucket → only the stale
         // one is deleted; agent + conversation dirs survive.
-        Path keep = makeTenantBucket("agent-y", "conv-y", LocalDate.now(), "alive.pdf");
-        Path drop = makeTenantBucket("agent-y", "conv-y", LocalDate.now().minusDays(5), "stale.pdf");
+        Path keep = makeTenantBucket("agent-y", "conv-y", LocalDate.now(clock), "alive.pdf");
+        Path drop = makeTenantBucket("agent-y", "conv-y", LocalDate.now(clock).minusDays(5), "stale.pdf");
 
         task.sweep();
 
@@ -238,8 +248,8 @@ class TurCodeInterpreterCleanupTaskTest {
     void sweep_walksBothLayoutsInOneSweep() throws IOException {
         // Legacy layout + tenant layout coexist (mid-migration / mixed
         // traffic). Single sweep call must handle both.
-        Path legacyStale = makeBucketWithFile(LocalDate.now().minusDays(7), "legacy.pdf");
-        Path tenantStale = makeTenantBucket("agent-z", "conv-z", LocalDate.now().minusDays(7), "tenant.pdf");
+        Path legacyStale = makeBucketWithFile(LocalDate.now(clock).minusDays(7), "legacy.pdf");
+        Path tenantStale = makeTenantBucket("agent-z", "conv-z", LocalDate.now(clock).minusDays(7), "tenant.pdf");
 
         task.sweep();
 

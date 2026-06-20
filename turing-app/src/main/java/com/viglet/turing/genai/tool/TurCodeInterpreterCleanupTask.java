@@ -13,10 +13,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.time.ZoneId;
 import java.util.Comparator;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -89,6 +89,17 @@ public class TurCodeInterpreterCleanupTask {
     private int sessionTtlHours;
 
     /**
+     * Source of "today" for the date-bucket cutoff. Defaults to the system
+     * clock; tests inject a fixed clock so the sweep is deterministic.
+     */
+    private Clock clock = Clock.systemDefaultZone();
+
+    /** Visible for testing — pin the clock so bucket dates are deterministic. */
+    void setClockForTest(Clock clock) {
+        this.clock = clock;
+    }
+
+    /**
      * Sweeps date-bucketed session dirs older than the TTL. Runs on the
      * configured fixed delay; if a sweep takes longer than the delay,
      * the next run waits for it to finish (Spring's default
@@ -102,7 +113,7 @@ public class TurCodeInterpreterCleanupTask {
             return;
         }
         File sandboxRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR);
-        LocalDate cutoff = LocalDate.now(ZoneId.systemDefault()).minusDays(Math.max(1, sessionTtlHours / 24));
+        LocalDate cutoff = LocalDate.now(clock).minusDays(Math.max(1, sessionTtlHours / 24));
         Stats total = new Stats();
         // Legacy flat layout: sessions/YYYY-MM-DD/{sid}/
         sweepDateBucketedTree(new File(sandboxRoot, SESSIONS_DIR), cutoff, total);
