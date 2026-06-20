@@ -90,6 +90,10 @@ public class TurMarketplaceAPI {
             return ResponseEntity.ok()
                     .header("Content-Type", "text/markdown; charset=UTF-8")
                     .body(new String(body, java.nio.charset.StandardCharsets.UTF_8));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted fetching README from '{}': {}", url, ie.getMessage());
+            return ResponseEntity.status(502).body("Could not load README: " + ie.getMessage());
         } catch (Exception e) {
             log.warn("Could not fetch README from '{}': {}", url, e.getMessage());
             return ResponseEntity.status(502).body("Could not load README: " + e.getMessage());
@@ -132,6 +136,11 @@ public class TurMarketplaceAPI {
                 return ResponseEntity.badRequest().body(result);
             }
             return ResponseEntity.ok(result);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted importing marketplace URL '{}': {}", downloadUrl, ie.getMessage(), ie);
+            return ResponseEntity.internalServerError()
+                    .body(TurImportExchange.ImportResult.error(ie.getMessage()));
         } catch (Exception e) {
             log.error("Marketplace import failed for URL '{}': {}", downloadUrl, e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -197,6 +206,11 @@ public class TurMarketplaceAPI {
             var multipartFile = new MockMultipartFile("file", "marketplace.zip",
                     "application/zip", zipBytes);
             return ResponseEntity.ok(turImportExchange.checkZip(multipartFile));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted inspecting marketplace URL '{}': {}", downloadUrl, ie.getMessage(), ie);
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", ie.getMessage()));
         } catch (Exception e) {
             log.error("Marketplace inspect failed for URL '{}': {}", downloadUrl, e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -216,6 +230,10 @@ public class TurMarketplaceAPI {
             try {
                 byte[] body = downloadUrl(marketplace.getUrl());
                 return mapper.readValue(body, new TypeReference<>() {});
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted fetching external marketplace catalog from '{}', falling back to bundled: {}",
+                        marketplace.getUrl(), ie.getMessage());
             } catch (Exception e) {
                 log.warn("Could not fetch external marketplace catalog from '{}', falling back to bundled: {}",
                         marketplace.getUrl(), e.getMessage());
