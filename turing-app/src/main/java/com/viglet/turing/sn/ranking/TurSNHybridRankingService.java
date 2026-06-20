@@ -292,8 +292,9 @@ public class TurSNHybridRankingService {
                 if (result == null) {
                     continue;
                 }
-                attachExplanation(result, mode, lexicalRank.get(id), semanticRank.get(id),
-                        fusedRank.get(id), rrfScore.get(id), reordered.size() + 1,
+                attachExplanation(result, mode,
+                        new RankBreakdown(lexicalRank.get(id), semanticRank.get(id),
+                                fusedRank.get(id), rrfScore.get(id), reordered.size() + 1),
                         rerankApplied, rerankStrategy);
                 reordered.add(result);
             }
@@ -342,9 +343,23 @@ public class TurSNHybridRankingService {
      * Attaches the "why this result ranked here" breakdown — objective signals
      * only (ranks + the RRF score), never any commercial weight.
      */
+    /**
+     * The per-result rank signals that feed the "why this result ranked here"
+     * breakdown: the lexical / semantic / fused input ranks, the RRF score and
+     * the final position. Bundled so {@link #attachExplanation} stays below the
+     * parameter threshold.
+     */
+    private record RankBreakdown(Integer lexicalRank, Integer semanticRank, Integer fusedRank,
+            Double rrfScore, int finalRank) {
+    }
+
     private static void attachExplanation(TurSEResult result, TurSNRankingMode mode,
-            Integer lexicalRank, Integer semanticRank, Integer fusedRank, Double rrfScore,
-            int finalRank, boolean rerankApplied, TurRagRerankStrategyType rerankStrategy) {
+            RankBreakdown ranks, boolean rerankApplied, TurRagRerankStrategyType rerankStrategy) {
+        Integer lexicalRank = ranks.lexicalRank();
+        Integer semanticRank = ranks.semanticRank();
+        Integer fusedRank = ranks.fusedRank();
+        Double rrfScore = ranks.rrfScore();
+        int finalRank = ranks.finalRank();
         Map<String, Object> explain = new LinkedHashMap<>();
         explain.put("pipeline", mode.name());
         if (lexicalRank != null) {
