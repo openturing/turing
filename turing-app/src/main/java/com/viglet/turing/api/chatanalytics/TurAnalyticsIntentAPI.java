@@ -95,12 +95,16 @@ public class TurAnalyticsIntentAPI {
     @Operation(summary = "Create a new analytics intent")
     @Secured({ "ROLE_ADMIN", "AI_AGENT_WRITE" })
     public ResponseEntity<TurAnalyticsIntent> create(@PathVariable String agentId,
-            @RequestBody TurAnalyticsIntent payload) {
+            @RequestBody TurAnalyticsIntentRequest request) {
         TurAIAgent agent = agentRepository.findById(agentId).orElse(null);
         if (agent == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        payload.setId(null);
+        TurAnalyticsIntent payload = new TurAnalyticsIntent();
+        payload.setLabel(request.label());
+        payload.setSamples(request.samples());
+        payload.setDescription(request.description());
+        payload.setEnabled(request.enabledOrDefault());
         payload.setTurAIAgent(agent);
         TurAnalyticsIntent saved = intentRepository.save(payload);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -112,14 +116,14 @@ public class TurAnalyticsIntentAPI {
     @Secured({ "ROLE_ADMIN", "AI_AGENT_WRITE" })
     public ResponseEntity<TurAnalyticsIntent> update(@PathVariable String agentId,
             @PathVariable String id,
-            @RequestBody TurAnalyticsIntent payload) {
+            @RequestBody TurAnalyticsIntentRequest request) {
         return intentRepository.findById(id)
                 .filter(intent -> matchesAgent(intent, agentId))
                 .map(existing -> {
-                    existing.setLabel(payload.getLabel());
-                    existing.setSamples(payload.getSamples());
-                    existing.setDescription(payload.getDescription());
-                    existing.setEnabled(payload.getEnabled());
+                    existing.setLabel(request.label());
+                    existing.setSamples(request.samples());
+                    existing.setDescription(request.description());
+                    existing.setEnabled(request.enabledOrDefault());
                     return ResponseEntity.ok(intentRepository.save(existing));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());

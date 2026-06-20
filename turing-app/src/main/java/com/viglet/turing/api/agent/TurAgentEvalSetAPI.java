@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurAgentEvalSetRepository;
@@ -75,7 +76,7 @@ public class TurAgentEvalSetAPI {
     @PostMapping
     @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE" })
     @Transactional
-    public TurAgentEvalSet add(@PathVariable String agentId, @RequestBody TurAgentEvalSet body) {
+    public TurAgentEvalSet add(@PathVariable String agentId, @RequestBody TurAgentEvalSetRequest body) {
         TurAIAgent agent = requireAgent(agentId);
         TurAgentEvalSet set = new TurAgentEvalSet();
         set.setTurAIAgent(agent);
@@ -89,7 +90,7 @@ public class TurAgentEvalSetAPI {
     @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
     @Transactional
     public TurAgentEvalSet update(@PathVariable String agentId, @PathVariable String id,
-            @RequestBody TurAgentEvalSet body) {
+            @RequestBody TurAgentEvalSetRequest body) {
         TurAgentEvalSet set = evalSetRepository.findById(id)
                 .filter(s -> belongsToAgent(s, agentId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Eval set not found: " + id));
@@ -120,29 +121,37 @@ public class TurAgentEvalSetAPI {
         return set.getTurAIAgent() != null && agentId.equals(set.getTurAIAgent().getId());
     }
 
-    private static void applyScalars(TurAgentEvalSet set, TurAgentEvalSet body) {
-        set.setName(body.getName());
-        set.setDescription(body.getDescription());
-        set.setEnabled(body.getEnabled());
-        set.setBlocking(body.getBlocking());
+    private static void applyScalars(TurAgentEvalSet set, TurAgentEvalSetRequest body) {
+        set.setName(body.name());
+        set.setDescription(body.description());
+        set.setEnabled(body.enabled());
+        set.setBlocking(body.blocking());
     }
 
     /**
      * Replaces the set's cases with the incoming ones, wiring the back-ref and
-     * a stable sort order. orphanRemoval drops cases the client dropped.
+     * a stable sort order. orphanRemoval drops cases the client dropped. Each
+     * case is built fresh from its request DTO so JPA assigns the id on insert
+     * and the aggregate stays self-consistent on every save.
      */
-    private static void replaceCases(TurAgentEvalSet set, TurAgentEvalSet body) {
+    private static void replaceCases(TurAgentEvalSet set, TurAgentEvalSetRequest body) {
         set.getCases().clear();
-        if (body.getCases() == null) {
+        if (body.cases() == null) {
             return;
         }
         int order = 0;
-        for (TurAgentEvalCase incoming : body.getCases()) {
+        for (TurAgentEvalCaseRequest source : body.cases()) {
+            TurAgentEvalCase incoming = new TurAgentEvalCase();
+            incoming.setName(source.name());
+            incoming.setDescription(source.description());
+            incoming.setSeedTurnsJson(source.seedTurnsJson());
+            incoming.setExpectedSlotsJson(source.expectedSlotsJson());
+            incoming.setExpectedOutcome(source.expectedOutcome() == null
+                    ? TurAgentEvalExpectedOutcome.ANY : source.expectedOutcome());
+            incoming.setExpectedNodeId(source.expectedNodeId());
+            incoming.setRubric(source.rubric());
             incoming.setTurAgentEvalSet(set);
             incoming.setSortOrder(order++);
-            // Let JPA assign a fresh id on insert rather than trusting the
-            // client; keeps the aggregate self-consistent on every save.
-            incoming.setId(null);
             set.getCases().add(incoming);
         }
     }

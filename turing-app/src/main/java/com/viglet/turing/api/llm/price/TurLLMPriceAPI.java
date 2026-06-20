@@ -50,7 +50,13 @@ public class TurLLMPriceAPI {
     }
 
     @PostMapping
-    public TurLLMPrice save(@RequestBody TurLLMPrice price) {
+    public TurLLMPrice save(@RequestBody TurLLMPriceRequest request) {
+        TurLLMPrice price = new TurLLMPrice();
+        price.setVendorId(request.vendorId());
+        price.setModelName(request.modelName());
+        price.setInputPricePerMillion(request.inputPricePerMillion());
+        price.setOutputPricePerMillion(request.outputPricePerMillion());
+        price.setCurrency(request.currency());
         return priceService.save(price);
     }
 
