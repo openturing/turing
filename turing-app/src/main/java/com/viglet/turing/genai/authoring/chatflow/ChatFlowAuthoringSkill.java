@@ -136,13 +136,14 @@ public class ChatFlowAuthoringSkill {
             Set<String> nodeIds) {
         List<ChatFlowEdgeGeneration> cleanEdges = new ArrayList<>(edges.size());
         for (ChatFlowEdgeGeneration e : edges) {
-            if (e == null) continue;
-            if (e.source() == null || e.target() == null) continue;
-            if (!nodeIds.contains(e.source()) || !nodeIds.contains(e.target())) {
-                log.warn("[ChatFlowSkill] Dropping edge {} → {} (unknown endpoint)", e.source(), e.target());
+            if (e == null || e.source() == null || e.target() == null) {
                 continue;
             }
-            cleanEdges.add(e);
+            if (nodeIds.contains(e.source()) && nodeIds.contains(e.target())) {
+                cleanEdges.add(e);
+            } else {
+                log.warn("[ChatFlowSkill] Dropping edge {} → {} (unknown endpoint)", e.source(), e.target());
+            }
         }
         return cleanEdges;
     }

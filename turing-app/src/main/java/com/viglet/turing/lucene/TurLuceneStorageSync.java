@@ -242,14 +242,17 @@ public class TurLuceneStorageSync {
     private Map<String, Long> listRemoteFiles(String prefix) {
         Map<String, Long> files = new LinkedHashMap<>();
         for (TurAssetItem item : storageService.listObjects(prefix)) {
-            if (item.directory()) continue;
+            if (item.directory()) {
+                continue;
+            }
             String name = item.name();
             // Strip prefix to get just the filename
             if (name.startsWith(prefix)) {
                 name = name.substring(prefix.length());
             }
-            if (name.isEmpty() || !shouldSync(name)) continue;
-            files.put(name, item.size());
+            if (!name.isEmpty() && shouldSync(name)) {
+                files.put(name, item.size());
+            }
         }
         return files;
     }

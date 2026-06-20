@@ -162,21 +162,20 @@ public class TurCodeInterpreterWarmPool {
     void refill() {
         try {
             Callable<Process> workerFactory = factory.get();
-            while (workerFactory != null && !shuttingDown && ready.size() < targetSize()) {
+            boolean keepWarming = true;
+            while (keepWarming && workerFactory != null && !shuttingDown && ready.size() < targetSize()) {
                 Process worker = workerFactory.call();
                 if (worker == null) {
-                    break;
-                }
-                if (shuttingDown) {
+                    keepWarming = false;
+                } else if (shuttingDown || !ready.offer(worker)) {
+                    // shuttingDown may have flipped during the blocking call(), and
+                    // a rejected offer means the pool is full — either way, discard.
                     destroyQuietly(worker);
-                    break;
+                    keepWarming = false;
+                } else {
+                    log.debug("[CodeInterpreter] warm worker spawned (ready={}/{})",
+                            ready.size(), targetSize());
                 }
-                if (!ready.offer(worker)) {
-                    destroyQuietly(worker);
-                    break;
-                }
-                log.debug("[CodeInterpreter] warm worker spawned (ready={}/{})",
-                        ready.size(), targetSize());
             }
         } catch (Exception e) {
             log.warn("[CodeInterpreter] warm worker spawn failed ({}); pool stays under target",

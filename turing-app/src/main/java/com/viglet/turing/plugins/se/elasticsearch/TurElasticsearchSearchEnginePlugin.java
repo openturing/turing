@@ -502,17 +502,16 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                             @SuppressWarnings("unchecked")
                             Map<String, Object> source = (Map<String, Object>) hit.source();
                             String docId = firstString(source, TurSNFieldName.ID, hit.id());
-                            if (docId == null || docId.equals(id)) {
-                                continue;
-                            }
-                            results.add(TurSESimilarResult.builder()
-                                    .id(docId)
-                                    .title(firstString(source, TurSNFieldName.TITLE, null))
-                                    .type(firstString(source, TurSNFieldName.TYPE, null))
-                                    .url(firstString(source, TurSNFieldName.URL, null))
-                                    .build());
-                            if (results.size() >= rows) {
-                                break;
+                            if (docId != null && !docId.equals(id)) {
+                                results.add(TurSESimilarResult.builder()
+                                        .id(docId)
+                                        .title(firstString(source, TurSNFieldName.TITLE, null))
+                                        .type(firstString(source, TurSNFieldName.TYPE, null))
+                                        .url(firstString(source, TurSNFieldName.URL, null))
+                                        .build());
+                                if (results.size() >= rows) {
+                                    break;
+                                }
                             }
                         }
                         return results;

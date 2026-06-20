@@ -1094,23 +1094,25 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         Map<String, Object> source = new LinkedHashMap<>();
         for (var field : doc.getFields()) {
             String name = field.name();
-            if ("_version_".equals(name)) continue;
-            if (!sourceFields.isEmpty() && !sourceFields.contains(name) && !"id".equals(name))
+            if ("_version_".equals(name)) {
                 continue;
-            Object existing = source.get(name);
-            if (existing != null) {
-                if (existing instanceof List<?> list) {
-                    @SuppressWarnings("unchecked")
-                    var mutableList = (List<Object>) list;
-                    mutableList.add(field.stringValue());
+            }
+            if (sourceFields.isEmpty() || sourceFields.contains(name) || "id".equals(name)) {
+                Object existing = source.get(name);
+                if (existing != null) {
+                    if (existing instanceof List<?> list) {
+                        @SuppressWarnings("unchecked")
+                        var mutableList = (List<Object>) list;
+                        mutableList.add(field.stringValue());
+                    } else {
+                        var list = new ArrayList<>();
+                        list.add(existing);
+                        list.add(field.stringValue());
+                        source.put(name, list);
+                    }
                 } else {
-                    var list = new ArrayList<>();
-                    list.add(existing);
-                    list.add(field.stringValue());
-                    source.put(name, list);
+                    source.put(name, field.stringValue());
                 }
-            } else {
-                source.put(name, field.stringValue());
             }
         }
         return source;

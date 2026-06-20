@@ -181,11 +181,12 @@ public class TurCodeInterpreterCleanupTask {
             // anything from 2+ days ago is deleted. The inclusive
             // boundary is intentional — a bucket dated "yesterday"
             // could be as recent as a minute ago.
-            if (!bucketDate.isBefore(cutoff)) continue;
-            long sizeBefore = sizeOf(bucket.toPath());
-            if (deleteRecursively(bucket.toPath())) {
-                stats.deletedBuckets++;
-                stats.deletedBytes += sizeBefore;
+            if (bucketDate.isBefore(cutoff)) {
+                long sizeBefore = sizeOf(bucket.toPath());
+                if (deleteRecursively(bucket.toPath())) {
+                    stats.deletedBuckets++;
+                    stats.deletedBytes += sizeBefore;
+                }
             }
         }
     }

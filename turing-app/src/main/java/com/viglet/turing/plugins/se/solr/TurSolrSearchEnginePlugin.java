@@ -698,17 +698,16 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         List<TurSESimilarResult> results = new ArrayList<>();
         for (org.apache.solr.common.SolrDocument doc : docs) {
             String docId = firstString(doc, TurSNFieldName.ID);
-            if (docId == null || docId.equals(excludeId)) {
-                continue;
-            }
-            results.add(TurSESimilarResult.builder()
-                    .id(docId)
-                    .title(firstString(doc, TurSNFieldName.TITLE))
-                    .type(firstString(doc, TurSNFieldName.TYPE))
-                    .url(firstString(doc, TurSNFieldName.URL))
-                    .build());
-            if (results.size() >= rows) {
-                break;
+            if (docId != null && !docId.equals(excludeId)) {
+                results.add(TurSESimilarResult.builder()
+                        .id(docId)
+                        .title(firstString(doc, TurSNFieldName.TITLE))
+                        .type(firstString(doc, TurSNFieldName.TYPE))
+                        .url(firstString(doc, TurSNFieldName.URL))
+                        .build());
+                if (results.size() >= rows) {
+                    break;
+                }
             }
         }
         return results;
