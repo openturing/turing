@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,9 +27,15 @@ class TurLLMTokenUsageAPITest {
 
     private TurLLMTokenUsageAPI api;
 
+    // Pinned "today" so the default-month report is deterministic; the API is
+    // given the same clock, and the assertions derive the expected month from it.
+    private static final LocalDate FIXED_TODAY = LocalDate.parse("2026-06-15");
+
     @BeforeEach
     void setUp() {
         api = new TurLLMTokenUsageAPI(tokenUsageRepository);
+        api.setClockForTest(Clock.fixed(
+                FIXED_TODAY.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
     }
 
     // --- Record Tests ---
@@ -99,7 +107,7 @@ class TurLLMTokenUsageAPITest {
 
         TurLLMTokenUsageAPI.UsageReport report = api.getUsageReport(null);
 
-        LocalDate now = LocalDate.now();
+        LocalDate now = FIXED_TODAY;
         assertThat(report.periodStart()).isEqualTo(now.withDayOfMonth(1).toString());
     }
 
@@ -166,7 +174,7 @@ class TurLLMTokenUsageAPITest {
 
         TurLLMTokenUsageAPI.UsageReport report = api.getUsageReport("  ");
 
-        LocalDate now = LocalDate.now();
+        LocalDate now = FIXED_TODAY;
         assertThat(report.periodStart()).isEqualTo(now.withDayOfMonth(1).toString());
     }
 }
