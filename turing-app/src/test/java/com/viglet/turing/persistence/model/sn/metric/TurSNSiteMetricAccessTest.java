@@ -59,7 +59,7 @@ class TurSNSiteMetricAccessTest {
     void testGettersAndSetters() {
         String id = "metric-id-123";
         String userId = "user-123";
-        Instant accessDate = Instant.now();
+        Instant accessDate = Instant.parse("2026-06-15T12:00:00Z");
         String term = "Search Term";
         Locale language = Locale.ENGLISH;
         long numFound = 42L;
@@ -145,7 +145,7 @@ class TurSNSiteMetricAccessTest {
 
     @Test
     void testAccessDateField() {
-        Instant now = Instant.now();
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
         turSNSiteMetricAccess.setAccessDate(now);
 
         assertThat(turSNSiteMetricAccess.getAccessDate()).isEqualTo(now);

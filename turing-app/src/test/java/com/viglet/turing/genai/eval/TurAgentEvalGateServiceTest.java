@@ -158,7 +158,7 @@ class TurAgentEvalGateServiceTest {
             TurAgentEvalCaseResultDto... results) {
         TurAgentEvalReport report = new TurAgentEvalReport();
         report.setId("report-1");
-        report.setCreatedAt(LocalDateTime.now());
+        report.setCreatedAt(LocalDateTime.parse("2026-06-15T12:00:00"));
         report.setPassed(passed);
         report.setRegressed(regressed);
         report.setCaseCount(results.length);

@@ -51,7 +51,7 @@ class TurQueueMessageTest {
 
     @Test
     void testAllArgsConstructor() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.parse("2026-06-15T12:00:00");
         TurQueueMessage message = new TurQueueMessage(
                 "msg-123",
                 "Test content",
@@ -91,7 +91,7 @@ class TurQueueMessageTest {
     @Test
     void testGettersAndSetters() {
         TurQueueMessage message = new TurQueueMessage();
-        LocalDateTime timestamp = LocalDateTime.now();
+        LocalDateTime timestamp = LocalDateTime.parse("2026-06-15T12:00:00");
 
         message.setMessageId("msg-789");
         message.setContent("Test message content");

@@ -61,7 +61,7 @@ class TurSNSiteSpotlightTest {
         String id = "spotlight-id-123";
         String name = "Test Spotlight";
         String description = "Test spotlight description";
-        LocalDateTime modificationDate = LocalDateTime.now();
+        LocalDateTime modificationDate = LocalDateTime.parse("2026-06-15T12:00:00");
         int managed = 1;
         String unmanagedId = "unmanaged-123";
         String provider = "CUSTOM_PROVIDER";

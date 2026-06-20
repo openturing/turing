@@ -458,7 +458,7 @@ class TurLoggingToolServiceTest {
                 "formatServerLogs", List.class, long.class);
         method.setAccessible(true);
 
-        Date now = new Date();
+        Date now = new Date(1_750_000_000_000L);
         Document doc = new Document();
         doc.put("date", now);
         doc.put("level", "INFO");
@@ -517,7 +517,7 @@ class TurLoggingToolServiceTest {
                 "formatIndexingLogs", List.class, long.class);
         method.setAccessible(true);
 
-        Date now = new Date();
+        Date now = new Date(1_750_000_000_000L);
         Document doc = new Document();
         doc.put("date", now);
         doc.put("status", "COMPLETE");

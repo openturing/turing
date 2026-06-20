@@ -238,7 +238,7 @@ class TurRagSearchToolServiceTest {
         trainingRecord.setContentType("application/pdf");
         trainingRecord.setFileSize(2048L);
         trainingRecord.setChunkCount(10);
-        trainingRecord.setTrainedAt(java.time.Instant.now());
+        trainingRecord.setTrainedAt(java.time.Instant.parse("2026-06-15T12:00:00Z"));
 
         when(trainingRecordRepository.findAll()).thenReturn(List.of(trainingRecord));
 

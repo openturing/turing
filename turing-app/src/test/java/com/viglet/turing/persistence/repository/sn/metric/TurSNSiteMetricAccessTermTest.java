@@ -10,7 +10,7 @@ class TurSNSiteMetricAccessTermTest {
 
     @Test
     void shouldCreateUsingTermAndAccessDateConstructor() {
-        Instant now = Instant.now();
+        Instant now = Instant.parse("2026-06-15T12:00:00Z");
         TurSNSiteMetricAccessTerm metricTerm = new TurSNSiteMetricAccessTerm("ai search", now);
 
         assertThat(metricTerm.getTerm()).isEqualTo("ai search");

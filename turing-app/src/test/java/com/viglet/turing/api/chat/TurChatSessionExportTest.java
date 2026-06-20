@@ -49,6 +49,9 @@ import com.viglet.turing.system.TurLlmSummaryService;
  */
 class TurChatSessionExportTest {
 
+    // Fixed timestamp — the export tests only need a value, not the wall clock.
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.parse("2026-06-15T12:00:00");
+
     private TurChatFlowEngineService engine;
     private TurChatMemoryService memory;
     private TurChatSlotAuditService audit;
@@ -79,7 +82,7 @@ class TurChatSessionExportTest {
         e.setNewValue(newV);
         e.setSource(source);
         e.setOriginDetail(origin);
-        e.setTs(LocalDateTime.now());
+        e.setTs(FIXED_NOW);
         return e;
     }
 
@@ -88,9 +91,9 @@ class TurChatSessionExportTest {
         String conv = "conv-123";
         var flowState = new TurChatSessionExportDto.FlowState(
                 "state-1", "flow-1", "Lead Capture", "node-7", null,
-                Map.of("name", "Ada"), LocalDateTime.now());
+                Map.of("name", "Ada"), FIXED_NOW);
         var submission = new TurChatFlowSubmissionDto(
-                conv, "flow-1", LocalDateTime.now(), Map.of("email", "a@b.com"), "u1", "end");
+                conv, "flow-1", FIXED_NOW, Map.of("email", "a@b.com"), "u1", "end");
         var transcript = new TurChatSessionMessagesDto(conv, "MONGODB", true,
                 List.of(new TurChatSessionMessageDto("user", "hi", "2026-06-02T10:00:00")), null);
 

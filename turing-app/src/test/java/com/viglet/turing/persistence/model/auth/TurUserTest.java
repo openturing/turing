@@ -38,6 +38,9 @@ import static org.assertj.core.api.Assertions.*;
  */
 class TurUserTest {
 
+    // Fixed timestamp — these tests only need a value, not the wall clock.
+    private static final Instant FIXED_NOW = Instant.parse("2026-06-15T12:00:00Z");
+
     @Test
     void testNoArgsConstructor() {
         TurUser turUser = new TurUser();
@@ -56,7 +59,7 @@ class TurUserTest {
 
     @Test
     void testBuilderPattern() {
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         TurUser turUser = TurUser.builder()
                 .username("testuser")
                 .email("test@example.com")
@@ -81,7 +84,7 @@ class TurUserTest {
 
     @Test
     void testAllArgsConstructor() {
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         Collection<TurGroup> groups = new HashSet<>();
         
         TurUser turUser = new TurUser("admin", "admin@example.com", "Admin",
@@ -119,7 +122,7 @@ class TurUserTest {
     @Test
     void testGettersAndSetters() {
         TurUser turUser = new TurUser();
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         
         turUser.setUsername("user123");
         turUser.setEmail("user@test.com");

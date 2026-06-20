@@ -19,7 +19,7 @@ class TurLLMTokenUsageTest {
         entity.setInputTokens(100L);
         entity.setOutputTokens(50L);
         entity.setTotalTokens(150L);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.parse("2026-06-15T12:00:00");
         entity.setCreatedAt(now);
 
         TurLLMInstance instance = new TurLLMInstance();

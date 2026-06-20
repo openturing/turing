@@ -111,7 +111,7 @@ class TurSNSiteMetricAccessRepositoryAdapterTest {
         TurSNSiteMetricAccess entity = new TurSNSiteMetricAccess();
         entity.setId(id);
         entity.setUserId("alice");
-        entity.setAccessDate(Instant.now());
+        entity.setAccessDate(Instant.parse("2026-06-15T12:00:00Z"));
         entity.setTerm(term);
         entity.setLanguage(language);
         entity.setNumFound(numFound);

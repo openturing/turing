@@ -91,7 +91,7 @@ class TurSNSiteSpotlightAPITests {
             TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
             turSNSiteSpotlight.setDescription("Spotlight Sample Test");
             turSNSiteSpotlight.setName("Spotlight Sample Test");
-            turSNSiteSpotlight.setModificationDate(LocalDateTime.now());
+            turSNSiteSpotlight.setModificationDate(LocalDateTime.parse("2026-06-15T12:00:00"));
             turSNSiteSpotlight.setManaged(1);
             turSNSiteSpotlight.setProvider("TURING");
             turSNSiteSpotlight.setTurSNSite(turSNSite);

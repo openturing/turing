@@ -158,7 +158,7 @@ class TurSNSpotlightProcessTest {
                 TurSNJobItem jobItem = mock(TurSNJobItem.class);
                 Map<String, Object> attrs = new HashMap<>();
                 attrs.put(TurSNFieldName.ID, "sp-id");
-                attrs.put(TurSNFieldName.MODIFICATION_DATE, LocalDateTime.now().toString());
+                attrs.put(TurSNFieldName.MODIFICATION_DATE, LocalDateTime.parse("2026-06-15T12:00:00").toString());
                 when(jobItem.getAttributes()).thenReturn(attrs);
                 when(jobItem.getLocale()).thenReturn(Locale.US);
 

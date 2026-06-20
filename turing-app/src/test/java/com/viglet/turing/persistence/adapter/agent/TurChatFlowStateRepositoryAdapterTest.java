@@ -80,7 +80,7 @@ class TurChatFlowStateRepositoryAdapterTest {
         entity.setId(id);
         entity.setConversationId(conversationId);
         entity.setCurrentNodeId(currentNodeId);
-        entity.setUpdatedAt(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.parse("2026-06-15T12:00:00"));
         TurChatFlow flow = new TurChatFlow();
         flow.setId(flowId);
         entity.setFlow(flow);

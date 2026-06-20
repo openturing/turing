@@ -73,7 +73,7 @@ class TurLlmIntentClassifierTrajectoryTest {
     void enrichmentRecordNormalizesNullTrajectoryToEmpty() {
         TurChatSessionEnrichment enrichment = new TurChatSessionEnrichment(
                 TurChatIntentLabel.OTHER, 0.5, "goal", TurChatGoalAchieved.YES,
-                TurChatSentiment.POSITIVE, List.of("term"), null, java.time.Instant.now());
+                TurChatSentiment.POSITIVE, List.of("term"), null, java.time.Instant.parse("2026-06-15T12:00:00Z"));
 
         assertThat(enrichment.sentimentTrajectory()).isNotNull().isEmpty();
     }
@@ -83,7 +83,7 @@ class TurLlmIntentClassifierTrajectoryTest {
         // Catalog-driven classifiers (Lucene / SE-MLT) still use the pre-T87 shape.
         TurChatSessionEnrichment enrichment = new TurChatSessionEnrichment(
                 TurChatIntentLabel.SUPPORT, 0.9, "summary", TurChatGoalAchieved.PARTIAL,
-                TurChatSentiment.NEUTRAL, List.of("a", "b"), java.time.Instant.now());
+                TurChatSentiment.NEUTRAL, List.of("a", "b"), java.time.Instant.parse("2026-06-15T12:00:00Z"));
 
         assertThat(enrichment.sentimentTrajectory()).isEmpty();
         assertThat(enrichment.sentiment()).isEqualTo(TurChatSentiment.NEUTRAL);

@@ -124,7 +124,7 @@ class TurChatIntentClassifierOrchestratorTest {
                 TurChatGoalAchieved.UNKNOWN,
                 TurChatSentiment.UNKNOWN,
                 List.of(),
-                Instant.now());
+                Instant.parse("2026-06-15T12:00:00Z"));
     }
 
     private static final class FakeStrategy implements TurIntentClassifierStrategy {
