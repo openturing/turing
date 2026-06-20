@@ -41,6 +41,8 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 import com.viglet.turing.service.chatanalytics.TurChatCohortResolver;
+import com.viglet.turing.service.chatanalytics.TurChatSessionRefs;
+import com.viglet.turing.service.chatanalytics.TurChatVisitorContext;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -646,7 +648,7 @@ public class TurAgentChatExecutor {
             TurChatCohortResolver.Cohort cohort = chatCohortResolver == null
                     ? TurChatCohortResolver.Cohort.empty()
                     : chatCohortResolver.resolveFromCurrentRequest();
-            chatAnalyticsService.recordSessionStart(
+            TurChatSessionRefs refs = new TurChatSessionRefs(
                     conversationId,
                     agent.getId(),
                     activePersona == null ? null : activePersona.getId(),
@@ -655,11 +657,10 @@ public class TurAgentChatExecutor {
                             ? null : agent.getTurEmbeddingModelInstance().getId(),
                     agent.getTurStoreInstance() == null
                             ? null : agent.getTurStoreInstance().getId(),
-                    username,
-                    cohort.locale(),
-                    firstUserMessage,
-                    cohort.timezone(),
-                    cohort.deviceType());
+                    username);
+            chatAnalyticsService.recordSessionStart(refs,
+                    new TurChatVisitorContext(cohort.locale(), cohort.timezone(), cohort.deviceType()),
+                    firstUserMessage);
         } catch (RuntimeException e) {
             log.debug("[AgentExec] analytics start failed: {}", e.getMessage());
         }

@@ -108,28 +108,17 @@ public class TurChatAnalyticsService {
      * Idempotent — calling twice with the same {@code conversationId} only
      * upserts the start timestamp the first time (the store uses
      * {@code $setOnInsert}-style semantics).
-     */
-    public void recordSessionStart(String conversationId, String agentId, String personaId,
-            String llmInstanceId, String embeddingModelId, String storeInstanceId,
-            String userId, String locale, String firstUserMessage) {
-        recordSessionStart(conversationId, agentId, personaId, llmInstanceId, embeddingModelId,
-                storeInstanceId, userId, locale, firstUserMessage, null, null);
-    }
-
-    /**
-     * T74 overload — also seeds the visitor cohort fields ({@code timezone}
-     * from the {@code X-Timezone} header, {@code deviceType} classified from
-     * the {@code User-Agent}). The chat executor resolves these via
-     * {@link TurChatCohortResolver} on the HTTP thread and passes them in so
-     * the scorecard can slice variants by sub-population. The legacy overload
-     * delegates here with {@code null} cohort fields.
      *
-     * @since 2026.3.1
+     * <p>The session-identity fields travel as a {@link TurChatSessionRefs}
+     * bundle and the T74 cohort fields ({@code timezone} from the
+     * {@code X-Timezone} header, {@code deviceType} classified from the
+     * {@code User-Agent}) as a {@link TurChatVisitorContext}. The chat executor
+     * resolves the cohort via {@link TurChatCohortResolver} on the HTTP thread
+     * and passes it in so the scorecard can slice variants by sub-population;
+     * off-request callers pass {@link TurChatVisitorContext#empty()}.
      */
-    public void recordSessionStart(String conversationId, String agentId, String personaId,
-            String llmInstanceId, String embeddingModelId, String storeInstanceId,
-            String userId, String locale, String firstUserMessage,
-            String timezone, String deviceType) {
+    public void recordSessionStart(TurChatSessionRefs refs, TurChatVisitorContext visitor,
+            String firstUserMessage) {
         if (!store.isEnabled()) return;
         Instant now = Instant.now();
         // T110 — when a Custom Tool's agent.invoke(...) spawns this session,
@@ -139,17 +128,19 @@ public class TurChatAnalyticsService {
         // the visible firstUserMessage stays clean of the audit marker.
         String parentConversationId = extractParentConversationId(firstUserMessage);
         String visibleFirstUserMessage = stripParentConversationIdPrefix(firstUserMessage);
-        inFlight.computeIfAbsent(conversationId,
-                id -> new InFlight(now, agentId, personaId, llmInstanceId,
-                        embeddingModelId, storeInstanceId, userId, locale,
-                        parentConversationId, timezone, deviceType));
+        inFlight.computeIfAbsent(refs.conversationId(),
+                id -> new InFlight(now, refs.agentId(), refs.personaId(), refs.llmInstanceId(),
+                        refs.embeddingModelId(), refs.storeInstanceId(), refs.userId(), visitor.locale(),
+                        parentConversationId, visitor.timezone(), visitor.deviceType()));
         try {
-            store.upsertSession(TurChatSessionEvent.start(conversationId, agentId, personaId,
-                    llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
-                    visibleFirstUserMessage, now, parentConversationId, timezone, deviceType));
+            store.upsertSession(TurChatSessionEvent.start(refs.conversationId(), refs.agentId(),
+                    refs.personaId(), refs.llmInstanceId(), refs.embeddingModelId(),
+                    refs.storeInstanceId(), refs.userId(), visitor.locale(),
+                    visibleFirstUserMessage, now, parentConversationId,
+                    visitor.timezone(), visitor.deviceType()));
         } catch (RuntimeException e) {
             log.warn("Chat analytics recordSessionStart failed for {}: {}",
-                    conversationId, e.getMessage());
+                    refs.conversationId(), e.getMessage());
         }
     }
 
