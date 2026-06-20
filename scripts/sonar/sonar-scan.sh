@@ -13,12 +13,14 @@
 # Env overrides:
 #   SONAR_URL              (default http://localhost:9100)
 #   SONAR_ADMIN_PASSWORD   (default TuringSonar@2026)
-#   SONAR_GOAL             (default "compile"; use "verify" to also get coverage)
+#   SONAR_GOAL             (default "verify" — runs unit + integration tests so
+#                           JaCoCo reports coverage. Use "test" for unit-only
+#                           coverage, or "compile" to skip tests / report 0%.)
 set -euo pipefail
 
 SONAR_URL="${SONAR_URL:-http://localhost:9100}"
 ADMIN_PW="${SONAR_ADMIN_PASSWORD:-TuringSonar@2026}"
-GOAL="${SONAR_GOAL:-compile}"
+GOAL="${SONAR_GOAL:-verify}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TOKEN_FILE="$SCRIPT_DIR/.sonar-token"
@@ -62,11 +64,17 @@ echo "    Token cached in scripts/sonar/.sonar-token"
 #    sonar.organization (a SonarCloud-only concept).
 echo "==> Running Maven analysis ($GOAL sonar:sonar) ..."
 cd "$REPO_ROOT/turing-app"
+# -Dmaven.test.failure.ignore=true: a coverage scan should still publish the
+#   JaCoCo report (and Sonar analysis) even if a test fails.
+# jacoco.xmlReportPaths: the merged unit+integration report emitted at `verify`
+#   by the root pom's `coverage` profile.
 mvn $GOAL org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
   -Dskip.npm=true \
+  -Dmaven.test.failure.ignore=true \
   -Dsonar.host.url="$SONAR_URL" \
   -Dsonar.token="$TOKEN" \
-  -Dsonar.organization=
+  -Dsonar.organization= \
+  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
 echo
 echo "==> Done. Open $SONAR_URL/dashboard?id=viglet_turing"

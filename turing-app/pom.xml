@@ -728,6 +728,10 @@
                 <configuration>
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     <testFailureIgnore>true</testFailureIgnore>
+                    <!-- JaCoCo IT agent (set by jacoco prepare-agent-integration in
+                         the root pom's `coverage` profile). Late @{} resolution so
+                         it is empty/no-op when the profile is inactive. -->
+                    <argLine>@{failsafeArgLine}</argLine>
                     <!--
                         BehavioralIT classes (real-LLM ITs gated by
                         OPENAI_API_KEY) are excluded from the default run so

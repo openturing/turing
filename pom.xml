@@ -35,6 +35,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- Empty default so failsafe's argLine is a no-op unless the jacoco
+             `coverage` profile (active by default) overrides it via
+             prepare-agent-integration. -->
+        <failsafeArgLine></failsafeArgLine>
         <spring-boot.version>4.1.0</spring-boot.version>
         <!-- viglet-core is now an external project (github.com/openviglet/viglet-core),
              published to GitHub Packages and versioned independently from Turing. -->
@@ -277,18 +281,66 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <executions>
+                            <!-- Surefire (unit) agent → target/jacoco.exec -->
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
+                            <!-- Failsafe (integration) agent → target/jacoco-it.exec.
+                                 Sets the failsafeArgLine property the failsafe
+                                 plugin is wired to use (see turing-app/pom.xml). -->
                             <execution>
-                                <id>report</id>
+                                <id>prepare-agent-integration</id>
+                                <goals>
+                                    <goal>prepare-agent-integration</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- Expose the IT agent under its own property so it
+                                         doesn't clobber surefire's `argLine`; failsafe
+                                         consumes it via @{failsafeArgLine}. -->
+                                    <propertyName>failsafeArgLine</propertyName>
+                                </configuration>
+                            </execution>
+                            <!-- Unit-only report so `mvn test` alone still emits coverage. -->
+                            <execution>
+                                <id>report-unit</id>
                                 <phase>test</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                            </execution>
+                            <!-- Merge unit + integration exec data, then report at
+                                 verify so `mvn verify` coverage spans both. -->
+                            <execution>
+                                <id>merge-exec</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>merge</goal>
+                                </goals>
+                                <configuration>
+                                    <fileSets>
+                                        <fileSet>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>jacoco.exec</include>
+                                                <include>jacoco-it.exec</include>
+                                            </includes>
+                                        </fileSet>
+                                    </fileSets>
+                                    <destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
