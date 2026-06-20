@@ -74,9 +74,7 @@ public interface TurChatAnalyticsStore {
      * or Redis types to callers.
      */
     List<Map<String, Object>> findRecentSessions(Instant from, Instant to,
-            String agentId, String personaId, String outcome,
-            String intentLabel, String goalAchieved, String sentiment,
-            int limit);
+            TurChatSessionFilter filter, int limit);
 
     /**
      * Returns aggregated counts per bucket — e.g. sessions by outcome, or

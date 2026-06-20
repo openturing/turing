@@ -182,8 +182,7 @@ public class TurExperimentSignificanceService {
         Instant fromInstant = from == null ? Instant.now().minusSeconds(30L * 24 * 3600) : from;
         Instant toInstant   = to   == null ? Instant.now() : to;
         List<Map<String, Object>> rows = analyticsService.getStore()
-                .findRecentSessions(fromInstant, toInstant, null, null,
-                        null, null, null, null, 10_000);
+                .findRecentSessions(fromInstant, toInstant, TurChatSessionFilter.none(), 10_000);
 
         Map<String, long[]> byVariant = new LinkedHashMap<>();
         for (Map<String, Object> row : rows) {

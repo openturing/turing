@@ -37,6 +37,7 @@ import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsStore;
+import com.viglet.turing.service.chatanalytics.TurChatSessionFilter;
 import com.viglet.turing.service.chatmemory.TurChatMemoryStore;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -230,8 +231,9 @@ public class TurChatAnalyticsAPI {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
         List<Map<String, Object>> rows = analyticsService.getStore().findRecentSessions(
-                fromInstant, toInstant, agentId, personaId, outcome,
-                intentLabel, goalAchieved, sentiment, limit);
+                fromInstant, toInstant,
+                new TurChatSessionFilter(agentId, personaId, outcome, intentLabel, goalAchieved, sentiment),
+                limit);
         enrichWithNames(rows);
         return rows;
     }

@@ -208,9 +208,13 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
 
     @Override
     public List<Map<String, Object>> findRecentSessions(Instant from, Instant to,
-            String agentId, String personaId, String outcome,
-            String intentLabel, String goalAchieved, String sentiment,
-            int limit) {
+            TurChatSessionFilter filter, int limit) {
+        String agentId = filter.agentId();
+        String personaId = filter.personaId();
+        String outcome = filter.outcome();
+        String intentLabel = filter.intentLabel();
+        String goalAchieved = filter.goalAchieved();
+        String sentiment = filter.sentiment();
         try {
             List<Bson> filters = new ArrayList<>();
             filters.add(Filters.gte(STARTED_AT, Date.from(from)));
