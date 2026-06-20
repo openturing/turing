@@ -269,13 +269,6 @@ public class TurChatStreamingDispatcher {
     }
 
     /**
-     * Records cost, turn telemetry, and timing diagnostics when the streaming
-     * Flux completes. Extracted from the {@code doOnComplete} lambda so the
-     * reactive assembly in {@link #dispatchStream} stays readable.
-     *
-     * @since 2026.3.1
-     */
-    /**
      * The mutable accumulators a streaming turn fills in as chunks arrive, read
      * once at completion to compute cost + timing telemetry. Bundled so
      * {@link #recordStreamCompletion} stays below the parameter threshold.
@@ -289,6 +282,13 @@ public class TurChatStreamingDispatcher {
             AtomicReference<Long> firstRawAt) {
     }
 
+    /**
+     * Records cost, turn telemetry, and timing diagnostics when the streaming
+     * Flux completes. Extracted from the {@code doOnComplete} lambda so the
+     * reactive assembly in {@link #dispatchStream} stays readable.
+     *
+     * @since 2026.3.1
+     */
     private void recordStreamCompletion(TurChatTurnContext turn, long tLlmStart,
             StreamAccumulators acc) {
         TurAIAgent agent = turn.agent();

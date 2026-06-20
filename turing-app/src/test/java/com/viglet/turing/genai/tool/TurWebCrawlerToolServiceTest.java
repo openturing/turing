@@ -202,19 +202,6 @@ class TurWebCrawlerToolServiceTest {
         assertThat(result).contains("Error fetching URL");
     }
 
-    // --- isValidExtractLink with empty filter keyword ---
-
-    @Test
-    void shouldAcceptExtractLinkWithEmptyFilterKeyword() throws Exception {
-        Document doc = Jsoup.parse(
-                "<a href='https://example.com/page'>Link</a>", "https://example.com");
-        Element link = doc.select("a").first();
-
-        // null filter accepts all valid links
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, null);
-        assertThat(result).isTrue();
-    }
-
     // --- isValidLink with various hrefs ---
 
     @Test
@@ -235,25 +222,22 @@ class TurWebCrawlerToolServiceTest {
         assertThat(result).isTrue();
     }
 
-    // --- isValidExtractLink case-insensitive matching ---
+    // --- isValidExtractLink accepts valid links (blank/text/href keyword matches) ---
 
-    @Test
-    void shouldMatchExtractLinkByTextKeywordCaseInsensitive() throws Exception {
-        Document doc = Jsoup.parse(
-                "<a href='https://example.com/page'>DOCUMENTATION Guide</a>", "https://example.com");
+    @ParameterizedTest(name = "isValidExtractLink html={0} filter={1} -> true")
+    @CsvSource(nullValues = "null", value = {
+            // null filter accepts all valid links
+            "'<a href=\"https://example.com/page\">Link</a>',null",
+            // case-insensitive text keyword match
+            "'<a href=\"https://example.com/page\">DOCUMENTATION Guide</a>',documentation",
+            // case-insensitive href keyword match
+            "'<a href=\"https://example.com/API/v2\">Link</a>',api"
+    })
+    void shouldAcceptValidExtractLink(String html, String filter) throws Exception {
+        Document doc = Jsoup.parse(html, "https://example.com");
         Element link = doc.select("a").first();
 
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, "documentation");
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldMatchExtractLinkByHrefKeywordCaseInsensitive() throws Exception {
-        Document doc = Jsoup.parse(
-                "<a href='https://example.com/API/v2'>Link</a>", "https://example.com");
-        Element link = doc.select("a").first();
-
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, "api");
+        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, filter);
         assertThat(result).isTrue();
     }
 }

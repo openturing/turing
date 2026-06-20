@@ -286,17 +286,27 @@ public final class TurRagUtils {
             if (p.length() <= chunkSize) {
                 units.add(p);
             } else {
-                for (String sentence : SENTENCE_SPLIT.split(p)) {
-                    String s = sentence.trim();
-                    if (s.isEmpty()) {
-                        continue;
-                    }
-                    if (s.length() <= chunkSize) {
-                        units.add(s);
-                    } else {
-                        units.addAll(wordAwareSplit(s, chunkSize));
-                    }
-                }
+                units.addAll(splitParagraphIntoSentences(p, chunkSize));
+            }
+        }
+        return units;
+    }
+
+    /**
+     * Splits one oversized paragraph into sentence-sized units, word-aware
+     * slicing any sentence that itself exceeds {@code chunkSize}.
+     */
+    private static List<String> splitParagraphIntoSentences(String paragraph, int chunkSize) {
+        List<String> units = new ArrayList<>();
+        for (String sentence : SENTENCE_SPLIT.split(paragraph)) {
+            String s = sentence.trim();
+            if (s.isEmpty()) {
+                continue;
+            }
+            if (s.length() <= chunkSize) {
+                units.add(s);
+            } else {
+                units.addAll(wordAwareSplit(s, chunkSize));
             }
         }
         return units;

@@ -142,11 +142,8 @@ public class TurTriggerConflictService {
     private Map<Analyzer, List<EligibleFlow>> groupEligibleFlows(List<TurChatFlow> flows) {
         Map<Analyzer, List<EligibleFlow>> byAnalyzer = HashMap.newHashMap(2);
         for (TurChatFlow flow : flows) {
-            if (flow.getEnabled() != 1) {
-                continue;
-            }
             String description = flow.getTriggerDescription();
-            if (description == null || description.isBlank()) {
+            if (flow.getEnabled() != 1 || description == null || description.isBlank()) {
                 continue;
             }
             Analyzer analyzer = TurChatFlowEngineService.analyzerFor(

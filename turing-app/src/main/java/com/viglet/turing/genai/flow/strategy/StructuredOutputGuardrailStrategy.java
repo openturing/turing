@@ -275,7 +275,7 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
                     new TypeReference<Map<String, Object>>() {
                     });
             String reply = parsed.get("reply") instanceof String s ? s : null;
-            boolean onTopic = parsed.get("on_topic") instanceof Boolean b ? b : true;
+            boolean onTopic = !(parsed.get("on_topic") instanceof Boolean b) || b;
             String collected = parsed.get("collected_value") instanceof String s ? s : null;
             boolean ready = parsed.get("ready_to_advance") instanceof Boolean b && b;
             boolean abandoned = parsed.get("abandoned") instanceof Boolean b && b;

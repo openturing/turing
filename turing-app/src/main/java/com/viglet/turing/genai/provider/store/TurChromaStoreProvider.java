@@ -491,27 +491,16 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
         for (TurStoreExportRecord exportRecord : records) {
             total++;
-            if (exportRecord == null) {
+            if (!accumulateImportRecord(exportRecord, embeddingModel, batch)) {
                 failed++;
                 continue;
             }
-            String id = StringUtils.hasText(exportRecord.id())
-                    ? exportRecord.id()
-                    : java.util.UUID.randomUUID().toString();
-            String content = exportRecord.content() == null ? "" : exportRecord.content();
-            ResolvedEmbedding resolved = resolveRecordEmbedding(exportRecord, id, content, embeddingModel);
-            if (resolved == null) {
-                failed++;
-            } else {
-                batch.add(id, resolved.embedding(), toChromaMetadata(exportRecord.metadata()),
-                        content, resolved.reEmbedded());
-                if (batch.size() >= IMPORT_BATCH_SIZE) {
-                    int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
-                    preserved += outcome[0];
-                    reEmbedded += outcome[1];
-                    failed += outcome[2];
-                    batch.clear();
-                }
+            if (batch.size() >= IMPORT_BATCH_SIZE) {
+                int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
+                preserved += outcome[0];
+                reEmbedded += outcome[1];
+                failed += outcome[2];
+                batch.clear();
             }
         }
         if (batch.size() > 0) {
@@ -521,6 +510,29 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             failed += outcome[2];
         }
         return new TurStoreImportResult(total, preserved + reEmbedded, preserved, reEmbedded, failed);
+    }
+
+    /**
+     * Resolves a record's embedding and stages it into {@code batch}. Returns
+     * {@code false} when the record is null or no usable embedding can be
+     * produced (the caller tallies it as failed); {@code true} when staged.
+     */
+    private boolean accumulateImportRecord(TurStoreExportRecord exportRecord,
+            EmbeddingModel embeddingModel, ImportBatchAccumulator batch) {
+        if (exportRecord == null) {
+            return false;
+        }
+        String id = StringUtils.hasText(exportRecord.id())
+                ? exportRecord.id()
+                : java.util.UUID.randomUUID().toString();
+        String content = exportRecord.content() == null ? "" : exportRecord.content();
+        ResolvedEmbedding resolved = resolveRecordEmbedding(exportRecord, id, content, embeddingModel);
+        if (resolved == null) {
+            return false;
+        }
+        batch.add(id, resolved.embedding(), toChromaMetadata(exportRecord.metadata()),
+                content, resolved.reEmbedded());
+        return true;
     }
 
     /** A record's vector plus whether it had to be (re)computed on import. */

@@ -340,10 +340,6 @@ public class TurSNHybridRankingService {
     }
 
     /**
-     * Attaches the "why this result ranked here" breakdown — objective signals
-     * only (ranks + the RRF score), never any commercial weight.
-     */
-    /**
      * The per-result rank signals that feed the "why this result ranked here"
      * breakdown: the lexical / semantic / fused input ranks, the RRF score and
      * the final position. Bundled so {@link #attachExplanation} stays below the
@@ -353,6 +349,10 @@ public class TurSNHybridRankingService {
             Double rrfScore, int finalRank) {
     }
 
+    /**
+     * Attaches the "why this result ranked here" breakdown — objective signals
+     * only (ranks + the RRF score), never any commercial weight.
+     */
     private static void attachExplanation(TurSEResult result, TurSNRankingMode mode,
             RankBreakdown ranks, boolean rerankApplied, TurRagRerankStrategyType rerankStrategy) {
         Integer lexicalRank = ranks.lexicalRank();

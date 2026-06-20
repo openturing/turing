@@ -12,6 +12,7 @@ package com.viglet.turing.genai.flow;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -129,8 +130,9 @@ public class TurParkedConversationService {
     private TurParkedConversationDto toParkedDto(TurChatFlowState state, TurChatFlow flow,
             String agentId, String agentTitle, Map<String, String> suspendReasons, LocalDateTime now) {
         LocalDateTime since = state.getUpdatedAt();
+        ZoneId zone = clock.getZone();
         long waitingSeconds = since == null ? 0L
-                : Math.max(0L, Duration.between(since, now).getSeconds());
+                : Math.max(0L, Duration.between(since.atZone(zone), now.atZone(zone)).getSeconds());
         return new TurParkedConversationDto(
                 state.getConversationId(),
                 agentId,

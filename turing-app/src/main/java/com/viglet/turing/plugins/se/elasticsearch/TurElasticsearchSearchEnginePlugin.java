@@ -481,47 +481,51 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
             return List.of();
         }
         return turElasticsearchInstanceProcess.initElasticsearchInstance(siteLocale)
-                .map(instance -> {
-                    try {
-                        var response = instance.getClient().search(s -> s
-                                .index(instance.getIndex())
-                                .size(rows + 1)
-                                .source(src -> src.filter(f -> f.includes(TurSNFieldName.ID,
-                                        TurSNFieldName.TITLE, TurSNFieldName.TYPE, TurSNFieldName.URL)))
-                                .query(q -> q.moreLikeThis(m -> m
-                                        .fields(TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT,
-                                                TurSNFieldName.TEXT)
-                                        .like(l -> l.text(like))
-                                        .minTermFreq(1)
-                                        .minDocFreq(1)
-                                        .minWordLength(3)
-                                        .maxQueryTerms(40))),
-                                (java.lang.reflect.Type) Map.class);
-                        List<TurSESimilarResult> results = new java.util.ArrayList<>();
-                        for (var hit : response.hits().hits()) {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> source = (Map<String, Object>) hit.source();
-                            String docId = firstString(source, TurSNFieldName.ID, hit.id());
-                            if (docId != null && !docId.equals(id)) {
-                                results.add(TurSESimilarResult.builder()
-                                        .id(docId)
-                                        .title(firstString(source, TurSNFieldName.TITLE, null))
-                                        .type(firstString(source, TurSNFieldName.TYPE, null))
-                                        .url(firstString(source, TurSNFieldName.URL, null))
-                                        .build());
-                                if (results.size() >= rows) {
-                                    break;
-                                }
-                            }
-                        }
-                        return results;
-                    } catch (Exception e) {
-                        log.warn("[Elasticsearch] similar documents for id '{}' failed: {}",
-                                id, e.getMessage());
-                        return List.<TurSESimilarResult>of();
-                    }
-                })
+                .map(instance -> searchSimilarDocuments(instance, like, id, rows))
                 .orElse(List.of());
+    }
+
+    private List<TurSESimilarResult> searchSimilarDocuments(TurElasticsearchInstance instance,
+            String like, String id, int rows) {
+        try {
+            var response = instance.getClient().search(s -> s
+                    .index(instance.getIndex())
+                    .size(rows + 1)
+                    .source(src -> src.filter(f -> f.includes(TurSNFieldName.ID,
+                            TurSNFieldName.TITLE, TurSNFieldName.TYPE, TurSNFieldName.URL)))
+                    .query(q -> q.moreLikeThis(m -> m
+                            .fields(TurSNFieldName.TITLE, TurSNFieldName.ABSTRACT,
+                                    TurSNFieldName.TEXT)
+                            .like(l -> l.text(like))
+                            .minTermFreq(1)
+                            .minDocFreq(1)
+                            .minWordLength(3)
+                            .maxQueryTerms(40))),
+                    (java.lang.reflect.Type) Map.class);
+            List<TurSESimilarResult> results = new java.util.ArrayList<>();
+            for (var hit : response.hits().hits()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> source = (Map<String, Object>) hit.source();
+                String docId = firstString(source, TurSNFieldName.ID, hit.id());
+                if (docId == null || docId.equals(id)) {
+                    continue;
+                }
+                results.add(TurSESimilarResult.builder()
+                        .id(docId)
+                        .title(firstString(source, TurSNFieldName.TITLE, null))
+                        .type(firstString(source, TurSNFieldName.TYPE, null))
+                        .url(firstString(source, TurSNFieldName.URL, null))
+                        .build());
+                if (results.size() >= rows) {
+                    break;
+                }
+            }
+            return results;
+        } catch (Exception e) {
+            log.warn("[Elasticsearch] similar documents for id '{}' failed: {}",
+                    id, e.getMessage());
+            return List.of();
+        }
     }
 
     @Override

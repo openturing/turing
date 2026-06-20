@@ -158,30 +158,40 @@ public class TurChatFlowVariantService {
         }
         List<Map<String, Object>> rows = new ArrayList<>();
         for (JsonNode node : nodes) {
-            String id = textOrNull(node, "id");
-            String type = textOrNull(node, "type");
-            if (id == null || type == null || "start".equals(type) || "end".equals(type)) {
-                continue;
-            }
-            JsonNode data = node.path("data");
-            if (data.isObject()) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("id", id);
-                row.put("type", type);
-                boolean anyCopy = false;
-                for (String field : REWRITABLE_FIELDS) {
-                    String value = textOrNull(data, field);
-                    if (value != null && !value.isBlank()) {
-                        row.put(field, value);
-                        anyCopy = true;
-                    }
-                }
-                if (anyCopy) {
-                    rows.add(row);
-                }
+            Map<String, Object> row = buildCopyRow(node);
+            if (row != null) {
+                rows.add(row);
             }
         }
         return rows;
+    }
+
+    /**
+     * Builds the rewritable-copy row for one graph node, or {@code null} when the
+     * node is structural (start/end), malformed, or carries no rewritable copy.
+     */
+    private Map<String, Object> buildCopyRow(JsonNode node) {
+        String id = textOrNull(node, "id");
+        String type = textOrNull(node, "type");
+        if (id == null || type == null || "start".equals(type) || "end".equals(type)) {
+            return null;
+        }
+        JsonNode data = node.path("data");
+        if (!data.isObject()) {
+            return null;
+        }
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", id);
+        row.put("type", type);
+        boolean anyCopy = false;
+        for (String field : REWRITABLE_FIELDS) {
+            String value = textOrNull(data, field);
+            if (value != null && !value.isBlank()) {
+                row.put(field, value);
+                anyCopy = true;
+            }
+        }
+        return anyCopy ? row : null;
     }
 
     private List<String> applyRewrite(JsonNode root, ObjectNode rewrite) {
