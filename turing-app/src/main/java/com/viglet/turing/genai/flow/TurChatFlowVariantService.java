@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -158,27 +159,24 @@ public class TurChatFlowVariantService {
         }
         List<Map<String, Object>> rows = new ArrayList<>();
         for (JsonNode node : nodes) {
-            Map<String, Object> row = buildCopyRow(node);
-            if (row != null) {
-                rows.add(row);
-            }
+            buildCopyRow(node).ifPresent(rows::add);
         }
         return rows;
     }
 
     /**
-     * Builds the rewritable-copy row for one graph node, or {@code null} when the
+     * Builds the rewritable-copy row for one graph node, or empty when the
      * node is structural (start/end), malformed, or carries no rewritable copy.
      */
-    private Map<String, Object> buildCopyRow(JsonNode node) {
+    private Optional<Map<String, Object>> buildCopyRow(JsonNode node) {
         String id = textOrNull(node, "id");
         String type = textOrNull(node, "type");
         if (id == null || type == null || "start".equals(type) || "end".equals(type)) {
-            return null;
+            return Optional.empty();
         }
         JsonNode data = node.path("data");
         if (!data.isObject()) {
-            return null;
+            return Optional.empty();
         }
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", id);
@@ -191,7 +189,7 @@ public class TurChatFlowVariantService {
                 anyCopy = true;
             }
         }
-        return anyCopy ? row : null;
+        return anyCopy ? Optional.of(row) : Optional.empty();
     }
 
     private List<String> applyRewrite(JsonNode root, ObjectNode rewrite) {
