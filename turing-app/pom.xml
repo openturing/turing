@@ -409,6 +409,13 @@
             <artifactId>testcontainers-mysql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Testcontainers MongoDB — drives the Mongo-backed chat analytics /
+             memory store ITs against a real mongod. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
