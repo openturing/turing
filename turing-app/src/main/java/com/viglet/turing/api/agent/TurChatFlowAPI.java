@@ -473,15 +473,14 @@ public class TurChatFlowAPI {
             }
             if (turAIAgentSlotRepository
                     .findByTurAIAgent_IdAndName(agent.getId(), incoming.getName())
-                    .isPresent()) {
-                continue;
+                    .isEmpty()) {
+                TurAIAgentSlot entity = new TurAIAgentSlot();
+                entity.setName(incoming.getName());
+                entity.setDescription(incoming.getDescription());
+                entity.setType(incoming.getType() != null ? incoming.getType() : TurAIAgentSlotType.STRING);
+                entity.setTurAIAgent(agent);
+                turAIAgentSlotRepository.save(entity);
             }
-            TurAIAgentSlot entity = new TurAIAgentSlot();
-            entity.setName(incoming.getName());
-            entity.setDescription(incoming.getDescription());
-            entity.setType(incoming.getType() != null ? incoming.getType() : TurAIAgentSlotType.STRING);
-            entity.setTurAIAgent(agent);
-            turAIAgentSlotRepository.save(entity);
         }
     }
 
@@ -531,12 +530,11 @@ public class TurChatFlowAPI {
                         continue;
                     }
                     Object dataObj = nodeRaw.get("data");
-                    if (!(dataObj instanceof Map<?, ?> dataRaw)) {
-                        continue;
+                    if (dataObj instanceof Map<?, ?> dataRaw) {
+                        Map<String, Object> data = (Map<String, Object>) dataRaw;
+                        rewriteIdField(data, "personaId", "personaName", personaRemap, personaNameById);
+                        rewriteIdField(data, "subFlowId", "subFlowName", subFlowRemap, subFlowNameById);
                     }
-                    Map<String, Object> data = (Map<String, Object>) dataRaw;
-                    rewriteIdField(data, "personaId", "personaName", personaRemap, personaNameById);
-                    rewriteIdField(data, "subFlowId", "subFlowName", subFlowRemap, subFlowNameById);
                 }
             }
             return OBJECT_MAPPER.writeValueAsString(root);

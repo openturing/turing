@@ -164,22 +164,21 @@ public class TurChatFlowVariantService {
                 continue;
             }
             JsonNode data = node.path("data");
-            if (!data.isObject()) {
-                continue;
-            }
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("id", id);
-            row.put("type", type);
-            boolean anyCopy = false;
-            for (String field : REWRITABLE_FIELDS) {
-                String value = textOrNull(data, field);
-                if (value != null && !value.isBlank()) {
-                    row.put(field, value);
-                    anyCopy = true;
+            if (data.isObject()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("id", id);
+                row.put("type", type);
+                boolean anyCopy = false;
+                for (String field : REWRITABLE_FIELDS) {
+                    String value = textOrNull(data, field);
+                    if (value != null && !value.isBlank()) {
+                        row.put(field, value);
+                        anyCopy = true;
+                    }
                 }
-            }
-            if (anyCopy) {
-                rows.add(row);
+                if (anyCopy) {
+                    rows.add(row);
+                }
             }
         }
         return rows;
@@ -240,13 +239,12 @@ public class TurChatFlowVariantService {
                 continue;
             }
             String newValue = textOrNull(patch, field);
-            if (newValue == null) {
-                continue;
-            }
-            String oldValue = textOrNull(dataObject, field);
-            if (!newValue.equals(oldValue)) {
-                dataObject.put(field, newValue);
-                nodeChanged = true;
+            if (newValue != null) {
+                String oldValue = textOrNull(dataObject, field);
+                if (!newValue.equals(oldValue)) {
+                    dataObject.put(field, newValue);
+                    nodeChanged = true;
+                }
             }
         }
         return nodeChanged;

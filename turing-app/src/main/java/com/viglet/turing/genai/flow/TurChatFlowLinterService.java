@@ -178,14 +178,14 @@ public class TurChatFlowLinterService {
                 continue;
             }
             String slot = node.outputVariable();
-            if (slot == null || slot.isBlank()) continue;
-            if (referenced.contains(slot)) continue;
-            out.add(new TurChatFlowLintIssueDto(
-                    node.id(), null, WARNING, "unused_output_variable",
-                    "Slot '" + slot + "' is captured here but never read downstream",
-                    "Either consume it (use {{" + slot + "}} in another node, drive a switch on it,"
-                            + " or declare it as an inheritance source on another flow) or remove the"
-                            + " outputVariable."));
+            if (slot != null && !slot.isBlank() && !referenced.contains(slot)) {
+                out.add(new TurChatFlowLintIssueDto(
+                        node.id(), null, WARNING, "unused_output_variable",
+                        "Slot '" + slot + "' is captured here but never read downstream",
+                        "Either consume it (use {{" + slot + "}} in another node, drive a switch on it,"
+                                + " or declare it as an inheritance source on another flow) or remove the"
+                                + " outputVariable."));
+            }
         }
     }
 
@@ -260,8 +260,9 @@ public class TurChatFlowLinterService {
             if (edge.source() != null) sources.add(edge.source());
         }
         for (ChatFlowNode node : graph.nodes()) {
-            if ("end".equals(node.type())) continue;
-            if (sources.contains(node.id())) continue;
+            if ("end".equals(node.type()) || sources.contains(node.id())) {
+                continue;
+            }
             out.add(new TurChatFlowLintIssueDto(
                     node.id(), null, ERROR, "dead_end_node",
                     "Node has no outgoing edge — the conversation stalls when it reaches here",

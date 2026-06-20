@@ -321,14 +321,17 @@ public class TurToolPreFilterService {
         int docs = 0;
         for (Map.Entry<String, ToolCallback> entry : byName.entrySet()) {
             String name = entry.getKey();
-            if (protectedNames.contains(name)) continue;
+            if (protectedNames.contains(name)) {
+                continue;
+            }
             String description = resolveDescription(name, entry.getValue());
-            if (description == null || description.isBlank()) continue;
-            Document doc = new Document();
-            doc.add(new StringField(FIELD_NAME, name, Field.Store.YES));
-            doc.add(new TextField(FIELD_DESCRIPTION, description, Field.Store.NO));
-            writer.addDocument(doc);
-            docs++;
+            if (description != null && !description.isBlank()) {
+                Document doc = new Document();
+                doc.add(new StringField(FIELD_NAME, name, Field.Store.YES));
+                doc.add(new TextField(FIELD_DESCRIPTION, description, Field.Store.NO));
+                writer.addDocument(doc);
+                docs++;
+            }
         }
         return docs;
     }
@@ -358,9 +361,12 @@ public class TurToolPreFilterService {
             Set<String> protectedNames, int quota) {
         List<String> result = new ArrayList<>(quota);
         for (String name : byName.keySet()) {
-            if (result.size() >= quota) break;
-            if (protectedNames.contains(name)) continue;
-            result.add(name);
+            if (result.size() >= quota) {
+                break;
+            }
+            if (!protectedNames.contains(name)) {
+                result.add(name);
+            }
         }
         return result;
     }
