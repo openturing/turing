@@ -24,6 +24,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -212,8 +213,8 @@ public abstract class AbstractAgentExecutorIT extends AbstractTuringSpringIT {
             String systemPromptOverride,
             String conversationId,
             String flowId) {
-        return executor.execute(agent, llmInstance, history,
-                        systemPromptOverride, conversationId, flowId)
+        return executor.execute(new TurAgentChatRequest(agent, llmInstance, history,
+                        systemPromptOverride, conversationId, flowId, null))
                 .collectList()
                 .block(Duration.ofSeconds(5));
     }

@@ -24,6 +24,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
@@ -213,7 +214,8 @@ public class TurAgentEvalRunnerService {
     private String blockForAssistantReply(TurAIAgent agent, TurLLMInstance llmInstance,
             List<ChatMessageItem> history, String conversationId) {
         List<ChatResponse> emissions = agentChatExecutor
-                .execute(agent, llmInstance, history, null, conversationId, null)
+                .execute(new TurAgentChatRequest(agent, llmInstance, history, null,
+                        conversationId, null, null))
                 .collectList()
                 .block();
         if (emissions == null || emissions.isEmpty()) {

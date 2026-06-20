@@ -12,7 +12,7 @@ package com.viglet.turing.genai.tool;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
@@ -70,7 +71,7 @@ class TurCustomToolAgentHelperTest {
                 agentRepository, llmRepository, PARENT_CONV, 3, 3);
         String result = capped.invoke("any-agent", "hello");
         assertThat(result).isEqualTo("[agent.invoke depth cap reached]");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), any(), any(), anyInt());
+        verify(executor, never()).execute(any(TurAgentChatRequest.class), anyInt());
     }
 
     @Test
@@ -124,7 +125,10 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(eq(agent), eq(llm), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(
+                argThat((TurAgentChatRequest r) -> r != null
+                        && agent.equals(r.agent()) && llm.equals(r.llmInstance())),
+                anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "Hello ", "token"),
                         new TurAgentChatExecutor.ChatResponse("assistant", "[\"a\",\"b\"]", "options"),
@@ -141,7 +145,7 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
 
@@ -150,8 +154,7 @@ class TurCustomToolAgentHelperTest {
         depthOne.invoke("a1", "ping");
 
         ArgumentCaptor<Integer> depthCaptor = ArgumentCaptor.forClass(Integer.class);
-        verify(executor).execute(any(), any(), any(), any(), any(), any(), any(),
-                depthCaptor.capture());
+        verify(executor).execute(any(TurAgentChatRequest.class), depthCaptor.capture());
         assertThat(depthCaptor.getValue()).isEqualTo(1);
     }
 
@@ -161,18 +164,16 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
 
         helper.invoke("a1", "Find me a quote");
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<TurAgentChatExecutor.ChatMessageItem>> historyCaptor =
-                ArgumentCaptor.forClass(List.class);
-        verify(executor).execute(any(), any(), historyCaptor.capture(), any(), any(), any(),
-                any(), anyInt());
-        List<TurAgentChatExecutor.ChatMessageItem> history = historyCaptor.getValue();
+        ArgumentCaptor<TurAgentChatRequest> reqCaptor =
+                ArgumentCaptor.forClass(TurAgentChatRequest.class);
+        verify(executor).execute(reqCaptor.capture(), anyInt());
+        List<TurAgentChatExecutor.ChatMessageItem> history = reqCaptor.getValue().history();
         assertThat(history).hasSize(1);
         assertThat(history.get(0).role()).isEqualTo("user");
         assertThat(history.get(0).content())
@@ -189,18 +190,16 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
 
         noParent.invoke("a1", "Bare message");
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<TurAgentChatExecutor.ChatMessageItem>> historyCaptor =
-                ArgumentCaptor.forClass(List.class);
-        verify(executor).execute(any(), any(), historyCaptor.capture(), any(), any(), any(),
-                any(), anyInt());
-        assertThat(historyCaptor.getValue().get(0).content()).isEqualTo("Bare message");
+        ArgumentCaptor<TurAgentChatRequest> reqCaptor =
+                ArgumentCaptor.forClass(TurAgentChatRequest.class);
+        verify(executor).execute(reqCaptor.capture(), anyInt());
+        assertThat(reqCaptor.getValue().history().get(0).content()).isEqualTo("Bare message");
     }
 
     @Test
@@ -209,7 +208,7 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
 
@@ -227,7 +226,7 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
         // Way over the cap — should still succeed and not propagate the raw value.
@@ -241,7 +240,7 @@ class TurCustomToolAgentHelperTest {
         TurAIAgent agent = newAgent("a1", 1, llm);
         when(agentRepository.findById("a1")).thenReturn(Optional.of(agent));
         when(llmRepository.findById("llm-1")).thenReturn(Optional.of(llm));
-        when(executor.execute(any(), any(), any(), any(), any(), any(), any(), anyInt()))
+        when(executor.execute(any(TurAgentChatRequest.class), anyInt()))
                 .thenReturn(Flux.just(
                         new TurAgentChatExecutor.ChatResponse("assistant", "ok", "token")));
         String result = helper.invoke("a1", "hello", Map.of("timeout", "not-a-number"));

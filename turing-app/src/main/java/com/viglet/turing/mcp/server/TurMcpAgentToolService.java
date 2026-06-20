@@ -21,6 +21,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
@@ -128,7 +129,8 @@ public class TurMcpAgentToolService {
         try {
             List<ChatMessageItem> history = List.of(new ChatMessageItem("user", message));
             String answer = agentChatExecutor
-                    .execute(agent, llmInstance, history, null, conversation, null, null, null, null)
+                    .execute(new TurAgentChatRequest(agent, llmInstance, history, null,
+                            conversation, null, null), (String) null, (String) null)
                     .filter(r -> r.content() != null && !r.content().isBlank())
                     .filter(r -> !"options".equals(r.type()))
                     .map(TurAgentChatExecutor.ChatResponse::content)

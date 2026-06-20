@@ -12,8 +12,8 @@ package com.viglet.turing.mcp.server;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
@@ -102,8 +103,8 @@ class TurMcpAgentToolServiceTest {
     @Test
     void invokeAgent_missingAgentId_returnsError() {
         assertTrue(service.invokeAgent("", "hi", null).startsWith("Error"));
-        verify(agentChatExecutor, never()).execute(any(), any(), anyList(), any(),
-                anyString(), any(), any(), any(), any());
+        verify(agentChatExecutor, never()).execute(any(TurAgentChatRequest.class),
+                nullable(String.class), nullable(String.class));
     }
 
     @Test
@@ -128,8 +129,8 @@ class TurMcpAgentToolServiceTest {
     void invokeAgent_collectsAnswerSlotsAndConversation() {
         TurAIAgent agent = agent("a1", "Support Bot", 1, llm("l1"));
         when(turAIAgentRepository.findById("a1")).thenReturn(Optional.of(agent));
-        when(agentChatExecutor.execute(any(), any(), anyList(), any(),
-                anyString(), any(), any(), any(), any()))
+        when(agentChatExecutor.execute(any(TurAgentChatRequest.class),
+                nullable(String.class), nullable(String.class)))
                 .thenReturn(Flux.just(
                         new ChatResponse("assistant", "Hello ", "token"),
                         new ChatResponse("assistant", "there!", "token"),

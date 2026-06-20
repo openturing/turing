@@ -20,6 +20,7 @@ import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
 import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.nativeapi.TurNativeChatExecutor;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
@@ -233,9 +234,10 @@ public class TurAIAgentChatAPI {
             }
         }
 
-        return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
-                        request.conversationId(), request.flowId(), files, request.forcedVariant(),
-                        request.selectedSkillId())
+        return agentChatExecutor.execute(
+                        new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
+                                request.conversationId(), request.flowId(), files),
+                        request.forcedVariant(), request.selectedSkillId())
                 .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
     }
 

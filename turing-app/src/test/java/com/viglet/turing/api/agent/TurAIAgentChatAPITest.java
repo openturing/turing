@@ -23,6 +23,7 @@ import com.viglet.turing.domain.agent.TurAIAgentDomain;
 import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
 import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
@@ -227,10 +228,8 @@ class TurAIAgentChatAPITest {
         agent.setEnabled(1);
         agent.setLlmInstances(Set.of(llmA, llmB));
         when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
-        when(agentChatExecutor.execute(org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+        when(agentChatExecutor.execute(
+                org.mockito.ArgumentMatchers.any(TurAgentChatRequest.class),
                 org.mockito.ArgumentMatchers.nullable(String.class),
                 org.mockito.ArgumentMatchers.nullable(String.class)))
                 .thenReturn(reactor.core.publisher.Flux.empty());
@@ -242,15 +241,12 @@ class TurAIAgentChatAPITest {
                 org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class));
         flux.blockLast();
 
-        var captor = org.mockito.ArgumentCaptor.forClass(TurLLMInstance.class);
+        var captor = org.mockito.ArgumentCaptor.forClass(TurAgentChatRequest.class);
         org.mockito.Mockito.verify(agentChatExecutor).execute(
-                org.mockito.ArgumentMatchers.any(), captor.capture(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
+                captor.capture(),
                 org.mockito.ArgumentMatchers.nullable(String.class),
                 org.mockito.ArgumentMatchers.nullable(String.class));
-        assertThat(captor.getValue().getId()).isEqualTo("llm-a");
+        assertThat(captor.getValue().llmInstance().getId()).isEqualTo("llm-a");
         org.mockito.Mockito.verify(turLLMInstanceRepository, org.mockito.Mockito.never())
                 .findById(org.mockito.ArgumentMatchers.any());
     }

@@ -201,64 +201,23 @@ public class TurAgentChatExecutor {
     }
 
     /**
-     * Run an agent-driven chat without a chat flow attached. Convenience
-     * wrapper kept for the SN site AI Mode (RAG) flow that doesn't use the
-     * Phase B engine.
-     */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride) {
-        return execute(agent, llmInstance, history, systemPromptOverride, null, null);
-    }
-
-    /**
-     * Run an agent-driven chat. The {@code systemPromptOverride}, when
-     * provided, replaces the agent's own {@code TurAIAgent.getSystemPrompt()}.
-     * Use this from RAG flows that need to embed retrieved chunks in the
-     * system message.
+     * Run an agent-driven chat. The {@code request} bundles the agent, LLM,
+     * history, optional {@code systemPromptOverride} (RAG flows replace the
+     * agent's own prompt to embed retrieved chunks) and the optional
+     * conversation/flow ids + visitor attachments — see
+     * {@link TurAgentChatRequest}.
      *
-     * <p>When both {@code conversationId} and {@code flowId} are non-blank
-     * and the flow is reachable, the runtime engine augments the system
-     * prompt with the current node's contract and advances the persisted
-     * state BEFORE the LLM call (§I.5 step 1 / T9 — inverted harness).
+     * <p>When both {@code conversationId} and {@code flowId} are non-blank and
+     * the flow is reachable, the runtime engine augments the system prompt with
+     * the current node's contract and advances the persisted state BEFORE the
+     * LLM call (§I.5 step 1 / T9 — inverted harness).
      *
      * @return a single-emission {@link Flux} carrying the assistant response
      *         (matches Spring AI's call-not-stream model so tool calling is
      *         resolved end-to-end before the response is emitted).
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId) {
-        return execute(agent, llmInstance, history, systemPromptOverride,
-                conversationId, flowId, null);
-    }
-
-    /**
-     * Overload accepting visitor-uploaded attachments. The latest user
-     * message in {@code history} gets enriched with the attachments' image
-     * {@link org.springframework.ai.content.Media} blocks (vision-capable
-     * models can read them directly) plus Tika-extracted text for documents,
-     * via the shared {@link TurChatAttachmentService} that the plain-LLM
-     * chat endpoint already uses. All other behaviour matches the no-files
-     * overload.
-     *
-     * @param files attachments uploaded with the current turn; null/empty
-     *              behaves identically to the no-files overload
-     * @since 2026.3.1
-     */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files) {
-        return execute(agent, llmInstance, history, systemPromptOverride,
-                conversationId, flowId, files, 0);
+    public Flux<ChatResponse> execute(TurAgentChatRequest request) {
+        return execute(request, 0);
     }
 
     /**
@@ -270,16 +229,8 @@ public class TurAgentChatExecutor {
      *
      * @since 2026.3.1
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files,
-            String forcedVariant) {
-        return execute(agent, llmInstance, history, systemPromptOverride,
-                conversationId, flowId, files, 0, forcedVariant);
+    public Flux<ChatResponse> execute(TurAgentChatRequest request, String forcedVariant) {
+        return execute(request, 0, forcedVariant);
     }
 
     /**
@@ -292,17 +243,9 @@ public class TurAgentChatExecutor {
      *
      * @since 2026.3.1
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files,
-            String forcedVariant,
+    public Flux<ChatResponse> execute(TurAgentChatRequest request, String forcedVariant,
             String selectedSkillId) {
-        return execute(agent, llmInstance, history, systemPromptOverride,
-                conversationId, flowId, files, 0, forcedVariant, selectedSkillId);
+        return execute(request, 0, forcedVariant, selectedSkillId);
     }
 
     /**
@@ -317,16 +260,8 @@ public class TurAgentChatExecutor {
      *                         increments by 1 against the parent context).
      * @since 2026.3.1
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files,
-            int agentInvokeDepth) {
-        return execute(agent, llmInstance, history, systemPromptOverride,
-                conversationId, flowId, files, agentInvokeDepth, null);
+    public Flux<ChatResponse> execute(TurAgentChatRequest request, int agentInvokeDepth) {
+        return execute(request, agentInvokeDepth, null);
     }
 
     /**
@@ -341,17 +276,9 @@ public class TurAgentChatExecutor {
      *                      sticky assignment.
      * @since 2026.3.1
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files,
-            int agentInvokeDepth,
+    public Flux<ChatResponse> execute(TurAgentChatRequest request, int agentInvokeDepth,
             String forcedVariant) {
-        return execute(agent, llmInstance, history, systemPromptOverride, conversationId,
-                flowId, files, agentInvokeDepth, forcedVariant, null);
+        return execute(request, agentInvokeDepth, forcedVariant, null);
     }
 
     /**
@@ -366,16 +293,15 @@ public class TurAgentChatExecutor {
      *                        enabled skills (legacy progressive disclosure)
      * @since 2026.3.1
      */
-    public Flux<ChatResponse> execute(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            List<ChatMessageItem> history,
-            String systemPromptOverride,
-            String conversationId,
-            String flowId,
-            List<MultipartFile> files,
-            int agentInvokeDepth,
-            String forcedVariant,
-            String selectedSkillId) {
+    public Flux<ChatResponse> execute(TurAgentChatRequest request, int agentInvokeDepth,
+            String forcedVariant, String selectedSkillId) {
+        TurAIAgent agent = request.agent();
+        TurLLMInstance llmInstance = request.llmInstance();
+        List<ChatMessageItem> history = request.history();
+        String systemPromptOverride = request.systemPromptOverride();
+        String conversationId = request.conversationId();
+        String flowId = request.flowId();
+        List<MultipartFile> files = request.files();
 
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown

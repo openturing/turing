@@ -273,8 +273,10 @@ public class TurSNGenAi {
                         m.role(), m.content() == null ? "" : m.content()))
                 .toList();
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> answer =
-                agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
-                        conversationId, flowId, null, forcedVariant);
+                agentChatExecutor.execute(
+                        new TurAgentChatRequest(agent, llmInstance, mapped, augmentedSystemPrompt,
+                                conversationId, flowId, null),
+                        forcedVariant);
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> grounded =
                 appendGroundednessCaveat(answer, context, latestUserQuery, relevantDocuments, locale);
         reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> withSources =

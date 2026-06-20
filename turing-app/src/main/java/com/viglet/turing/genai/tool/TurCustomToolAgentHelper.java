@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.TurAgentChatRequest;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
@@ -199,9 +200,9 @@ public class TurCustomToolAgentHelper {
 
         try {
             List<TurAgentChatExecutor.ChatResponse> all = executor.execute(
-                            target, llm, history, null,
-                            childConversationId, /* flowId= */ null,
-                            /* files= */ null, /* agentInvokeDepth= */ currentDepth)
+                            new TurAgentChatRequest(target, llm, history, null,
+                                    childConversationId, /* flowId= */ null, /* files= */ null),
+                            /* agentInvokeDepth= */ currentDepth)
                     .collectList()
                     .block(Duration.ofMillis(timeoutMs));
 
