@@ -31,6 +31,10 @@ import org.junit.jupiter.api.Test;
  */
 class TurChatAnalyticsServiceTest {
 
+    // These record-construction tests only need *a* timestamp value; nothing
+    // asserts on it, so a fixed instant keeps them deterministic.
+    private static final Instant FIXED_NOW = Instant.parse("2026-06-15T12:00:00Z");
+
     @Test
     void extractParentConversationId_returnsValueFromPrefixedMessage() {
         String firstUserMessage = "[__parentConversationId=parent-abc]\nFind me a quote.";
@@ -101,7 +105,7 @@ class TurChatAnalyticsServiceTest {
 
     @Test
     void startFactory_threadsParentConversationIdThrough() {
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         TurChatSessionEvent event = TurChatSessionEvent.start(
                 "conv-child", "agent-1", null, "llm-1", null, null,
                 "user-1", "pt-BR", "Find me a quote.", now, "conv-parent");
@@ -114,7 +118,7 @@ class TurChatAnalyticsServiceTest {
 
     @Test
     void startFactory_legacyOverload_setsNullParentConversationId() {
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         TurChatSessionEvent event = TurChatSessionEvent.start(
                 "conv-root", "agent-1", null, "llm-1", null, null,
                 "user-1", "pt-BR", "Hello", now);
@@ -130,7 +134,7 @@ class TurChatAnalyticsServiceTest {
         // T88 — the start record never carries samples; they accrue at end.
         TurChatSessionEvent event = TurChatSessionEvent.start(
                 "conv-1", "agent-1", null, "llm-1", null, null,
-                "user-1", "pt-BR", "Hello", Instant.now());
+                "user-1", "pt-BR", "Hello", FIXED_NOW);
         assertThat(event.toolLatencies()).isNotNull().isEmpty();
     }
 
@@ -139,7 +143,7 @@ class TurChatAnalyticsServiceTest {
         // T88 — a null array (e.g. legacy callers) must not blow up consumers.
         TurChatSessionEvent event = new TurChatSessionEvent(
                 "conv-1", "agent-1", null, "llm-1", null, null, "user-1", "pt-BR",
-                null, Instant.now(), Instant.now(), TurChatSessionOutcome.COMPLETED,
+                null, FIXED_NOW, FIXED_NOW, TurChatSessionOutcome.COMPLETED,
                 3, 100L, 200L, 1500L, 2, 0, 80L, null, null, null, null, null, null);
         assertThat(event.toolLatencies()).isNotNull().isEmpty();
     }
@@ -149,7 +153,7 @@ class TurChatAnalyticsServiceTest {
         // T88 — supplied samples are preserved (defensively copied).
         TurChatSessionEvent event = new TurChatSessionEvent(
                 "conv-1", "agent-1", null, "llm-1", null, null, "user-1", "pt-BR",
-                null, Instant.now(), Instant.now(), TurChatSessionOutcome.COMPLETED,
+                null, FIXED_NOW, FIXED_NOW, TurChatSessionOutcome.COMPLETED,
                 3, 100L, 200L, 1500L, 2, 0, 80L, null, null, null, null, null,
                 java.util.List.of(
                         new TurToolLatencySample("search_site", 40, true),
@@ -161,7 +165,7 @@ class TurChatAnalyticsServiceTest {
 
     @Test
     void startFactory_cohortOverload_threadsTimezoneAndDeviceThrough() {
-        Instant now = Instant.now();
+        Instant now = FIXED_NOW;
         TurChatSessionEvent event = TurChatSessionEvent.start(
                 "conv-1", "agent-1", null, "llm-1", null, null,
                 "user-1", "pt-BR", "Hello", now, null,
