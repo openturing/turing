@@ -250,12 +250,11 @@ public class TurCustomToolSearchHelper {
         List<Map<String, Object>> out = new java.util.ArrayList<>(Math.min(hits.size(), limit));
         for (Map<String, Object> hit : hits) {
             String key = firstNonBlank(hit, dedupKeys);
-            if (key == null || !seen.add(key)) {
-                continue;
-            }
-            out.add(hit);
-            if (out.size() >= limit) {
-                break;
+            if (key != null && seen.add(key)) {
+                out.add(hit);
+                if (out.size() >= limit) {
+                    break;
+                }
             }
         }
         return out;

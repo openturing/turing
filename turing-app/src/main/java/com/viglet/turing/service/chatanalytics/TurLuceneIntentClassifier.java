@@ -213,8 +213,10 @@ public class TurLuceneIntentClassifier implements TurIntentClassifierStrategy {
         int docs = 0;
         try (IndexWriter writer = new IndexWriter(directory, cfg)) {
             for (TurAnalyticsIntent intent : catalog) {
-                if (intent.getLabel() == null || intent.getLabel().isBlank()) continue;
-                if (intent.getSamples() == null || intent.getSamples().isBlank()) continue;
+                if (intent.getLabel() == null || intent.getLabel().isBlank()
+                        || intent.getSamples() == null || intent.getSamples().isBlank()) {
+                    continue;
+                }
                 Document doc = new Document();
                 doc.add(new StringField(FIELD_LABEL, intent.getLabel(), Field.Store.YES));
                 doc.add(new TextField(FIELD_SAMPLES,

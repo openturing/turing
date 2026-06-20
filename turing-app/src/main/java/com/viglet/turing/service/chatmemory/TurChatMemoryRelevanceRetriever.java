@@ -334,11 +334,12 @@ public class TurChatMemoryRelevanceRetriever {
                 List<PersistedMessage> survivors = new ArrayList<>(hits.scoreDocs.length);
                 for (ScoreDoc sd : hits.scoreDocs) {
                     Number raw = stored.document(sd.doc).getField(FIELD_POSITION).numericValue();
-                    if (raw == null) continue;
-                    int position = raw.intValue();
-                    if (position < 0 || position >= older.size()) continue;
-                    if (!emittedPositions.add(position)) continue;
-                    survivors.add(older.get(position));
+                    if (raw != null) {
+                        int position = raw.intValue();
+                        if (position >= 0 && position < older.size() && emittedPositions.add(position)) {
+                            survivors.add(older.get(position));
+                        }
+                    }
                 }
                 return survivors;
             }

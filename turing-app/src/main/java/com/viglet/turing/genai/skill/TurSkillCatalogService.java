@@ -114,12 +114,12 @@ public class TurSkillCatalogService {
                 continue;
             }
             TurSkillFrontmatter frontmatter = frontmatterParser.parse(markdown);
-            if (!frontmatter.isValid()) {
+            if (frontmatter.isValid()) {
+                upsert(folderPath, frontmatter);
+                seenPaths.add(folderPath);
+            } else {
                 log.warn("[Skills] Folder '{}' has a SKILL.md without a valid 'name' — skipping.", folderPath);
-                continue;
             }
-            upsert(folderPath, frontmatter);
-            seenPaths.add(folderPath);
         }
         pruneMissing(prefix, seenPaths);
         log.info("[Skills] Reindexed {} skill folder(s) under '{}'.", seenPaths.size(), prefix);

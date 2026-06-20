@@ -116,14 +116,10 @@ public class TurPageAPI {
         try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) {
-                    zis.closeEntry();
-                    continue;
-                }
                 String entryName = entry.getName();
-                // Skip hidden files and __MACOSX
-                if (entryName.startsWith("__MACOSX") || entryName.contains("/.")
-                        || entryName.startsWith(".")) {
+                // Skip directories, hidden files and __MACOSX
+                if (entry.isDirectory() || entryName.startsWith("__MACOSX")
+                        || entryName.contains("/.") || entryName.startsWith(".")) {
                     zis.closeEntry();
                     continue;
                 }

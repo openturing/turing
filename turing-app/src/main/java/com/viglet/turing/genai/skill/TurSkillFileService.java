@@ -315,13 +315,12 @@ public class TurSkillFileService {
                     continue;
                 }
                 String within = root.isEmpty() ? entryPath : entryPath.substring(root.length() + 1);
-                if (within.isBlank()) {
-                    continue;
+                if (!within.isBlank()) {
+                    byte[] data = entry.getValue();
+                    String objectName = destPrefix + within;
+                    storageService.uploadStream(objectName, new ByteArrayInputStream(data), data.length,
+                            storageService.guessContentType(within));
                 }
-                byte[] data = entry.getValue();
-                String objectName = destPrefix + within;
-                storageService.uploadStream(objectName, new ByteArrayInputStream(data), data.length,
-                        storageService.guessContentType(within));
             }
             imported.add(slug);
         }

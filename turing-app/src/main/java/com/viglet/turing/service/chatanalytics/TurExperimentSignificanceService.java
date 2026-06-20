@@ -186,12 +186,14 @@ public class TurExperimentSignificanceService {
 
         Map<String, long[]> byVariant = new LinkedHashMap<>();
         for (Map<String, Object> row : rows) {
-            if (!experimentKey.equals(row.get("experimentKey"))) continue;
-            String variant = stringValue(row.get("variantLabel"));
-            if (variant == null) continue;
-            long[] counters = byVariant.computeIfAbsent(variant, k -> new long[2]);
-            counters[0]++;
-            if (isSuccess(row, metric)) counters[1]++;
+            if (experimentKey.equals(row.get("experimentKey"))) {
+                String variant = stringValue(row.get("variantLabel"));
+                if (variant != null) {
+                    long[] counters = byVariant.computeIfAbsent(variant, k -> new long[2]);
+                    counters[0]++;
+                    if (isSuccess(row, metric)) counters[1]++;
+                }
+            }
         }
         List<VariantStat> out = new ArrayList<>();
         for (Map.Entry<String, long[]> entry : byVariant.entrySet()) {

@@ -869,23 +869,20 @@ public class TurSNGenAi {
             String key = entry.getKey();
             Object value = entry.getValue();
             if (value == null || RAG_EXCLUDED_FIELDS.contains(key) || RAG_SYSTEM_FIELDS.contains(key)
-                    || TITLE.equals(key) || ABSTRACT.equals(key) || TEXT.equals(key)) {
-                continue;
-            }
-            if (!isSimpleType(value)) {
+                    || TITLE.equals(key) || ABSTRACT.equals(key) || TEXT.equals(key)
+                    || !isSimpleType(value)) {
                 continue;
             }
             String formatted = formatHeaderValue(value);
-            if (formatted.isBlank()) {
-                continue;
+            if (!formatted.isBlank()) {
+                if (formatted.length() > MAX_HEADER_VALUE_LENGTH) {
+                    // Long values fall through to the body so the header stays compact.
+                    body.append(key).append(": ").append(formatted).append("\n\n");
+                } else {
+                    header.append(key).append(": ").append(formatted).append("\n");
+                    customMetadata.put(key, value);
+                }
             }
-            // Long values fall through to the body so the header stays compact.
-            if (formatted.length() > MAX_HEADER_VALUE_LENGTH) {
-                body.append(key).append(": ").append(formatted).append("\n\n");
-                continue;
-            }
-            header.append(key).append(": ").append(formatted).append("\n");
-            customMetadata.put(key, value);
         }
     }
 
