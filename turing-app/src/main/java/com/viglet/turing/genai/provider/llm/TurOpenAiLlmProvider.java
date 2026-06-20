@@ -135,7 +135,11 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
                         turLLMInstance.getModelName())))
                 .build();
 
-        return new OpenAiEmbeddingModel(openAiClient, MetadataMode.NONE, embeddingOptions);
+        return OpenAiEmbeddingModel.builder()
+                .openAiClient(openAiClient)
+                .metadataMode(MetadataMode.NONE)
+                .options(embeddingOptions)
+                .build();
     }
 
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {
