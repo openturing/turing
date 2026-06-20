@@ -10,6 +10,7 @@
 package com.viglet.turing.service.chatslots;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class TurChatSlotAuditService {
                     .redactValue(slotName, newValue));
             entry.setSource(source);
             entry.setOriginDetail(truncate(originDetail));
-            entry.setTs(LocalDateTime.now());
+            entry.setTs(LocalDateTime.now(ZoneId.systemDefault()));
             repository.save(entry);
         } catch (RuntimeException e) {
             // Audit is best-effort: never fail a chat turn because of a

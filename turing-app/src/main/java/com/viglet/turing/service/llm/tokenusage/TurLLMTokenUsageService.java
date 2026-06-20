@@ -1,6 +1,7 @@
 package com.viglet.turing.service.llm.tokenusage;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -92,7 +93,7 @@ public class TurLLMTokenUsageService {
             turLLMTokenUsage.setInputTokens(inputTokens);
             turLLMTokenUsage.setOutputTokens(outputTokens);
             turLLMTokenUsage.setTotalTokens(totalTokens > 0 ? totalTokens : inputTokens + outputTokens);
-            turLLMTokenUsage.setCreatedAt(LocalDateTime.now());
+            turLLMTokenUsage.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
             // T276 / §XIV.5.2 — attribute the cost to the current tenant.
             turLLMTokenUsage.setTenantId(tenantContext.resolveCurrentTenant());
             // T289 / §XVI.1 — agent + stage attribution and frozen USD cost.

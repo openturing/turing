@@ -17,6 +17,7 @@
 package com.viglet.turing.domain.llm;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 /**
  * Domain event raised when an LLM instance is created or updated. Listeners
@@ -42,10 +43,10 @@ public record LlmInstanceUpdatedEvent(
     }
 
     public static LlmInstanceUpdatedEvent created(String instanceId, LlmProviderType type) {
-        return new LlmInstanceUpdatedEvent(instanceId, type, Kind.CREATED, OffsetDateTime.now());
+        return new LlmInstanceUpdatedEvent(instanceId, type, Kind.CREATED, OffsetDateTime.now(ZoneId.systemDefault()));
     }
 
     public static LlmInstanceUpdatedEvent updated(String instanceId, LlmProviderType type) {
-        return new LlmInstanceUpdatedEvent(instanceId, type, Kind.UPDATED, OffsetDateTime.now());
+        return new LlmInstanceUpdatedEvent(instanceId, type, Kind.UPDATED, OffsetDateTime.now(ZoneId.systemDefault()));
     }
 }

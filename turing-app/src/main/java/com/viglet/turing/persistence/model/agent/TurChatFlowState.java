@@ -12,6 +12,7 @@ package com.viglet.turing.persistence.model.agent;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
@@ -98,6 +99,6 @@ public class TurChatFlowState implements Serializable {
     @PrePersist
     @PreUpdate
     void touchUpdatedAt() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.systemDefault());
     }
 }

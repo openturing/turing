@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.tool;
 
 import java.io.File;
+import java.time.ZoneId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -422,7 +423,7 @@ public class TurCodeInterpreterToolService {
         // hardening (signed URLs, cookie auth) verify ownership. URLs stay
         // /api/v2/code-interpreter/{sessionId}/{file} — the file API
         // walks both layouts to resolve at serve time.
-        String dateBucket = java.time.LocalDate.now().toString();
+        String dateBucket = java.time.LocalDate.now(ZoneId.systemDefault()).toString();
         String agentId = tenantAgentId.get();
         String convId = tenantConversationId.get();
         File sessionDir;

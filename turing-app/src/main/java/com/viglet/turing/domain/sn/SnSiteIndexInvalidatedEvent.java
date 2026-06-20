@@ -17,6 +17,7 @@
 package com.viglet.turing.domain.sn;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 /**
  * Domain event raised when an SN site's configuration changes in a way that
@@ -43,10 +44,10 @@ public record SnSiteIndexInvalidatedEvent(
     }
 
     public static SnSiteIndexInvalidatedEvent created(String siteId, String siteName) {
-        return new SnSiteIndexInvalidatedEvent(siteId, siteName, Reason.CREATED, OffsetDateTime.now());
+        return new SnSiteIndexInvalidatedEvent(siteId, siteName, Reason.CREATED, OffsetDateTime.now(ZoneId.systemDefault()));
     }
 
     public static SnSiteIndexInvalidatedEvent updated(String siteId, String siteName) {
-        return new SnSiteIndexInvalidatedEvent(siteId, siteName, Reason.UPDATED, OffsetDateTime.now());
+        return new SnSiteIndexInvalidatedEvent(siteId, siteName, Reason.UPDATED, OffsetDateTime.now(ZoneId.systemDefault()));
     }
 }

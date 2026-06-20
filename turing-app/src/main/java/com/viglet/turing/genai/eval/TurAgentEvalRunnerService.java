@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.eval;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -417,7 +418,7 @@ public class TurAgentEvalRunnerService {
 
         TurAgentEvalReport report = new TurAgentEvalReport();
         report.setTurAIAgent(agent);
-        report.setCreatedAt(LocalDateTime.now());
+        report.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         report.setPassed(passed);
         report.setScore(score);
         report.setCaseCount(caseCount);

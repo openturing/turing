@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -2812,7 +2813,7 @@ public class TurChatFlowEngineService {
         submission.setFlow(flow);
         submission.setConversationId(state.getConversationId());
         submission.setVariablesJson(state.getVariablesJson());
-        submission.setCompletedAt(LocalDateTime.now());
+        submission.setCompletedAt(LocalDateTime.now(ZoneId.systemDefault()));
         submission.setUserId(resolveUsername());
         submission.setEndNodeId(currentNodeId);
         submissionRepository.save(submission);

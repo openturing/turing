@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.flow;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -126,7 +127,7 @@ public class TurHumanApprovalService {
         approval.setPromptText(prompt);
         approval.setStatus(TurHumanApprovalStatus.PENDING);
         approval.setTimeoutBehavior(normalizeTimeoutBehavior(config.timeoutBehavior()));
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         approval.setCreatedAt(now);
         approval.setExpiresAt(timeoutSeconds > 0 ? now.plusSeconds(timeoutSeconds) : null);
         repository.save(approval);
@@ -154,7 +155,7 @@ public class TurHumanApprovalService {
         }
         approval.setStatus(TurHumanApprovalStatus.DECIDED);
         approval.setDecision(decision);
-        approval.setDecidedAt(LocalDateTime.now());
+        approval.setDecidedAt(LocalDateTime.now(ZoneId.systemDefault()));
         return Optional.of(repository.save(approval));
     }
 
@@ -162,7 +163,7 @@ public class TurHumanApprovalService {
     @Transactional(readOnly = true)
     public List<TurChatHumanApproval> findExpired() {
         return repository.findByStatusAndExpiresAtBefore(
-                TurHumanApprovalStatus.PENDING, LocalDateTime.now());
+                TurHumanApprovalStatus.PENDING, LocalDateTime.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -176,7 +177,7 @@ public class TurHumanApprovalService {
                 ? DECISION_APPROVE : DECISION_REJECT;
         approval.setStatus(TurHumanApprovalStatus.TIMED_OUT);
         approval.setDecision(decision);
-        approval.setDecidedAt(LocalDateTime.now());
+        approval.setDecidedAt(LocalDateTime.now(ZoneId.systemDefault()));
         repository.save(approval);
         return decision;
     }
@@ -192,7 +193,7 @@ public class TurHumanApprovalService {
                 conversationId, nodeId, TurHumanApprovalStatus.PENDING)
                 .ifPresent(approval -> {
                     approval.setStatus(TurHumanApprovalStatus.CANCELLED);
-                    approval.setDecidedAt(LocalDateTime.now());
+                    approval.setDecidedAt(LocalDateTime.now(ZoneId.systemDefault()));
                     repository.save(approval);
                 });
     }

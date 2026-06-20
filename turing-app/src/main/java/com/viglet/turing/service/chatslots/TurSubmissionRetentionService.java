@@ -10,6 +10,7 @@
 package com.viglet.turing.service.chatslots;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -72,7 +73,7 @@ public class TurSubmissionRetentionService {
      */
     @Transactional
     public int purgeExpiredSubmissions() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         int totalDeleted = 0;
         for (TurAIAgent agent : agentRepository.findAll()) {
             if (agent.getSubmissionRetention() != TurSubmissionRetention.RETAIN_DAYS) {

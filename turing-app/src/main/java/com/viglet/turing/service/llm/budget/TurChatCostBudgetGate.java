@@ -11,6 +11,7 @@ package com.viglet.turing.service.llm.budget;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -73,7 +74,7 @@ public class TurChatCostBudgetGate {
             if (budget == null || budget <= 0) {
                 return current; // gate off
             }
-            LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+            LocalDateTime monthStart = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1).atStartOfDay();
             double spent = tokenUsageRepository.sumCostByAgentSince(agent.getId(), monthStart);
             if (spent < budget) {
                 return current; // under budget

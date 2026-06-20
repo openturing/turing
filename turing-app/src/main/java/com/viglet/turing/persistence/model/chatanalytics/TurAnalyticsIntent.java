@@ -12,6 +12,7 @@ package com.viglet.turing.persistence.model.chatanalytics;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -138,7 +139,7 @@ public class TurAnalyticsIntent implements Serializable {
 
     @PrePersist
     void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         if (this.createdAt == null) {
             this.createdAt = now;
         }
@@ -147,6 +148,6 @@ public class TurAnalyticsIntent implements Serializable {
 
     @PreUpdate
     void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.systemDefault());
     }
 }

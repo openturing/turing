@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,7 +70,7 @@ public class TurLLMTokenUsageAPI {
         if (month != null && !month.isBlank()) {
             monthDate = LocalDate.parse(month + "-01", DateTimeFormatter.ISO_LOCAL_DATE);
         } else {
-            monthDate = LocalDate.now().withDayOfMonth(1);
+            monthDate = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1);
         }
 
         LocalDateTime start = monthDate.atStartOfDay();

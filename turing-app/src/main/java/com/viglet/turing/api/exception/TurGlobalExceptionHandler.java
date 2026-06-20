@@ -18,6 +18,7 @@ package com.viglet.turing.api.exception;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -254,7 +255,7 @@ public class TurGlobalExceptionHandler {
         pd.setType(URI.create(typeUri));
         pd.setTitle(status.getReasonPhrase());
         pd.setProperty("correlationId", UUID.randomUUID().toString());
-        pd.setProperty("timestamp", OffsetDateTime.now().toString());
+        pd.setProperty("timestamp", OffsetDateTime.now(ZoneId.systemDefault()).toString());
         return pd;
     }
 

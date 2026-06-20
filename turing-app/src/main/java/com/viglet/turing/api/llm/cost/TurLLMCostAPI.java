@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -162,7 +163,7 @@ public class TurLLMCostAPI {
         if (from != null && !from.isBlank()) {
             return LocalDate.parse(from, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
         }
-        return LocalDate.now().minusDays(DEFAULT_WINDOW_DAYS).atStartOfDay();
+        return LocalDate.now(ZoneId.systemDefault()).minusDays(DEFAULT_WINDOW_DAYS).atStartOfDay();
     }
 
     private LocalDateTime parseTo(String to) {
@@ -171,7 +172,7 @@ public class TurLLMCostAPI {
         if (to != null && !to.isBlank()) {
             return LocalDate.parse(to, DateTimeFormatter.ISO_LOCAL_DATE).plusDays(1).atTime(LocalTime.MIN);
         }
-        return LocalDate.now().plusDays(1).atStartOfDay();
+        return LocalDate.now(ZoneId.systemDefault()).plusDays(1).atStartOfDay();
     }
 
     private static double num(Object o) {

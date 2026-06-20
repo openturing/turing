@@ -11,6 +11,7 @@ package com.viglet.turing.service.chatslots;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class TurPiiSlotTtlCleanupJob {
             log.debug("[PiiCleanup] disabled (ttlHours={})", ttlHours);
             return;
         }
-        LocalDateTime cutoff = LocalDateTime.now().minus(Duration.ofHours(ttlHours));
+        LocalDateTime cutoff = LocalDateTime.now(ZoneId.systemDefault()).minus(Duration.ofHours(ttlHours));
         List<TurChatFlowState> stale = stateRepository.findAll().stream()
                 .filter(s -> s.getUpdatedAt() != null && s.getUpdatedAt().isBefore(cutoff))
                 .toList();

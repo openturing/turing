@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.time.ZoneId;
 import java.util.Comparator;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -101,7 +102,7 @@ public class TurCodeInterpreterCleanupTask {
             return;
         }
         File sandboxRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR);
-        LocalDate cutoff = LocalDate.now().minusDays(Math.max(1, sessionTtlHours / 24));
+        LocalDate cutoff = LocalDate.now(ZoneId.systemDefault()).minusDays(Math.max(1, sessionTtlHours / 24));
         Stats total = new Stats();
         // Legacy flat layout: sessions/YYYY-MM-DD/{sid}/
         sweepDateBucketedTree(new File(sandboxRoot, SESSIONS_DIR), cutoff, total);

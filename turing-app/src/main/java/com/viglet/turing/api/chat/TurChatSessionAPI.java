@@ -10,6 +10,7 @@
 package com.viglet.turing.api.chat;
 
 import java.time.Duration;
+import java.time.ZoneId;
 
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.security.access.annotation.Secured;
@@ -188,7 +189,7 @@ public class TurChatSessionAPI {
         TurChatSessionMessagesDto transcript = chatMemoryService.listMessages(conversationId, transcriptLimit);
         TurChatSessionExportDto export = new TurChatSessionExportDto(
                 conversationId,
-                java.time.LocalDateTime.now(),
+                java.time.LocalDateTime.now(ZoneId.systemDefault()),
                 chatFlowEngineService.exportFlowStates(conversationId),
                 chatFlowEngineService.listSubmissionsForConversation(conversationId),
                 chatFlowEngineService.listSlotsForConversation(conversationId).slots(),

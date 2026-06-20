@@ -10,6 +10,7 @@
 package com.viglet.turing.service.llm.price;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -116,7 +117,7 @@ public class TurLLMPriceService {
         target.setOutputPricePerMillion(price.getOutputPricePerMillion());
         target.setCurrency(price.getCurrency() == null || price.getCurrency().isBlank()
                 ? "USD" : price.getCurrency());
-        target.setUpdatedAt(LocalDateTime.now());
+        target.setUpdatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         return priceRepository.save(target);
     }
 

@@ -203,7 +203,7 @@ public class TurQueueManagementService {
     private LocalDateTime convertTimestamp(Object timestamp) {
         if (timestamp instanceof Long l) return LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(l),
                 ZoneId.systemDefault());
-        return LocalDateTime.now();
+        return LocalDateTime.now(ZoneId.systemDefault());
     }
 
     private int getIntValue(Object value) {

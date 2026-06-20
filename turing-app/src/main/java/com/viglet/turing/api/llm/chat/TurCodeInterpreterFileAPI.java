@@ -1,6 +1,7 @@
 package com.viglet.turing.api.llm.chat;
 
 import java.io.File;
+import java.time.ZoneId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Locale;
@@ -165,7 +166,7 @@ public class TurCodeInterpreterFileAPI {
     /** Common helper for the {@code YYYY-MM-DD/{sessionId}/{filename}} pattern. */
     private static File resolveInDateBucketedTree(File root, String sessionId, String filename) {
         if (!root.isDirectory()) return null;
-        String today = java.time.LocalDate.now().toString();
+        String today = java.time.LocalDate.now(ZoneId.systemDefault()).toString();
         File hot = new File(new File(new File(root, today), sessionId), filename);
         if (hot.isFile()) return hot;
         File[] dateBuckets = root.listFiles(File::isDirectory);
