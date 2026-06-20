@@ -31,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.params.ZRangeParams;
 
 /**
  * Redis-backed analytics store. For each {@code conversationId} we keep:
@@ -182,10 +184,11 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         try (Jedis jedis = pool.getResource()) {
             // Sorted set is ascending by score; we walk from the highest score
             // backwards so the newest sessions come first.
-            List<String> ids = jedis.zrevrangeByScore(byTimeKey(),
-                    String.valueOf(to.toEpochMilli()),
-                    String.valueOf(from.toEpochMilli()),
-                    0, cap * 4); // overshoot to absorb filtered-out rows
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            String.valueOf(to.toEpochMilli()),
+                            String.valueOf(from.toEpochMilli()))
+                            .rev().limit(0, cap * 4)); // overshoot to absorb filtered-out rows
             for (String id : ids) {
                 if (rows.size() >= cap) break;
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
@@ -205,9 +208,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         String field = sanitizeFieldName(groupBy);
         Map<String, Integer> counts = new HashMap<>();
         try (Jedis jedis = pool.getResource()) {
-            List<String> ids = jedis.zrangeByScore(byTimeKey(),
-                    String.valueOf(from.toEpochMilli()),
-                    String.valueOf(to.toEpochMilli()));
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            String.valueOf(from.toEpochMilli()),
+                            String.valueOf(to.toEpochMilli())));
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
@@ -295,9 +299,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         // wide totals (errors / calls) — single-sum metrics leave it at 0.
         Map<Long, double[]> buckets = new java.util.TreeMap<>();
         try (Jedis jedis = pool.getResource()) {
-            List<String> ids = jedis.zrangeByScore(byTimeKey(),
-                    String.valueOf(from.toEpochMilli()),
-                    String.valueOf(to.toEpochMilli()));
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            String.valueOf(from.toEpochMilli()),
+                            String.valueOf(to.toEpochMilli())));
             accumulateTimeseries(jedis, ids, buckets, rateMetric, dailyBuckets, validatedMetric);
         } catch (Exception e) {
             log.warn("Chat analytics timeseries(Redis) failed: {}", e.getMessage());
@@ -364,9 +369,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         Map<String, Map<String, Integer>> intentCounts = new HashMap<>();
 
         try (Jedis jedis = pool.getResource()) {
-            List<String> ids = jedis.zrangeByScore(byTimeKey(),
-                    String.valueOf(from.toEpochMilli()),
-                    String.valueOf(to.toEpochMilli()));
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            String.valueOf(from.toEpochMilli()),
+                            String.valueOf(to.toEpochMilli())));
             accumulateScorecard(jedis, ids, field, filters, agg, intentCounts);
         } catch (Exception e) {
             log.warn("Chat analytics scorecard(Redis) failed: {}", e.getMessage());
@@ -441,9 +447,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
     public List<Map<String, Object>> toolLatency(Instant from, Instant to, String agentId, int maxTools) {
         TurToolLatencyAccumulator acc = new TurToolLatencyAccumulator();
         try (Jedis jedis = pool.getResource()) {
-            List<String> ids = jedis.zrangeByScore(byTimeKey(),
-                    String.valueOf(from.toEpochMilli()),
-                    String.valueOf(to.toEpochMilli()));
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            String.valueOf(from.toEpochMilli()),
+                            String.valueOf(to.toEpochMilli())));
             for (String id : ids) {
                 Map<String, String> hash = jedis.hgetAll(sessionKey(id));
                 if (hash.isEmpty()) continue;
@@ -480,9 +487,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             // ZRANGEBYSCORE returns members with score in [-∞, threshold) — i.e.
             // sessions whose startedAt is strictly older. Then delete the hash
             // and remove the index entry.
-            List<String> ids = jedis.zrangeByScore(byTimeKey(),
-                    "-inf",
-                    "(" + threshold.toEpochMilli());
+            List<String> ids = jedis.zrange(byTimeKey(),
+                    new ZRangeParams(Protocol.Keyword.BYSCORE,
+                            "-inf",
+                            "(" + threshold.toEpochMilli()));
             for (String id : ids) {
                 jedis.del(sessionKey(id));
                 jedis.zrem(byTimeKey(), id);
