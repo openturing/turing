@@ -541,9 +541,10 @@ public class TurAgentChatExecutor {
                 tAfterCompose - tBeforeCompose,
                 tSetupEnd - tAfterCompose);
 
-        return streamingDispatcher.dispatch(agent, llmInstance, decryptedApiKey, chatModel,
-                messages, initialOptions, flowContext, activePersona,
-                conversationId, lastUserMessageEarly, username, tStart, tSetupEnd);
+        return streamingDispatcher.dispatch(
+                new TurChatTurnContext(agent, llmInstance, conversationId, lastUserMessageEarly,
+                        username, tStart, tSetupEnd),
+                decryptedApiKey, chatModel, messages, initialOptions, flowContext, activePersona);
     }
 
     /**

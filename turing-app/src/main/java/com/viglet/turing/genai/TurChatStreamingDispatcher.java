@@ -135,19 +135,14 @@ public class TurChatStreamingDispatcher {
      * @param tStart turn-start millis (for total-time accounting)
      * @param tSetupEnd setup-phase end millis (for post-time accounting)
      */
-    public Flux<ChatResponse> dispatch(TurAIAgent agent,
-            TurLLMInstance llmInstance,
+    public Flux<ChatResponse> dispatch(TurChatTurnContext turn,
             String decryptedApiKey,
             ChatModel chatModel,
             List<Message> messages,
             ChatOptions initialOptions,
             TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona,
-            String conversationId,
-            String lastUserMessage,
-            String username,
-            long tStart,
-            long tSetupEnd) {
+            TurPersona effectivePersona) {
+        TurAIAgent agent = turn.agent();
 
         // STREAM mode: forward each token chunk to the SSE pipeline as it
         // arrives so the bubble fills in token-by-token. We only take this
@@ -162,23 +157,17 @@ public class TurChatStreamingDispatcher {
         boolean useStreaming = agent.getChatMode() == TurAgentChatMode.STREAM
                 && flowContext == null;
         if (useStreaming) {
-            return dispatchStream(agent, llmInstance, decryptedApiKey, messages,
-                    conversationId, lastUserMessage, username, tStart, tSetupEnd);
+            return dispatchStream(turn, decryptedApiKey, messages);
         }
-        return dispatchCall(agent, llmInstance, chatModel, messages, initialOptions,
-                flowContext, effectivePersona, conversationId, lastUserMessage,
-                username, tStart, tSetupEnd);
+        return dispatchCall(turn, chatModel, messages, initialOptions,
+                flowContext, effectivePersona);
     }
 
-    private Flux<ChatResponse> dispatchStream(TurAIAgent agent,
-            TurLLMInstance llmInstance,
+    private Flux<ChatResponse> dispatchStream(TurChatTurnContext turn,
             String decryptedApiKey,
-            List<Message> messages,
-            String conversationId,
-            String lastUserMessage,
-            String username,
-            long tStart,
-            long tSetupEnd) {
+            List<Message> messages) {
+        TurAIAgent agent = turn.agent();
+        TurLLMInstance llmInstance = turn.llmInstance();
         log.info("[AgentExec] STREAM mode for agent '{}' (no flow) — forwarding token chunks to SSE",
                 agent.getTitle());
         // T18 / §IV.1.b: swap to the provider's streaming-optimized
@@ -256,9 +245,9 @@ public class TurChatStreamingDispatcher {
                         firstChunkAt.compareAndSet(null, System.currentTimeMillis());
                     }
                 })
-                .doOnComplete(() -> recordStreamCompletion(agent, llmInstance, conversationId, lastUserMessage,
-                        username, tStart, tSetupEnd, tLlmStart, accumulated, lastRaw,
-                        chunkCount, rawCount, firstChunkAt, firstRawAt))
+                .doOnComplete(() -> recordStreamCompletion(turn, tLlmStart,
+                        new StreamAccumulators(accumulated, lastRaw,
+                                chunkCount, rawCount, firstChunkAt, firstRawAt)))
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error(
                         "[AgentExec] STREAM agent '{}' error: {}",
@@ -286,11 +275,35 @@ public class TurChatStreamingDispatcher {
      *
      * @since 2026.3.1
      */
-    private void recordStreamCompletion(TurAIAgent agent, TurLLMInstance llmInstance, String conversationId,
-            String lastUserMessage, String username, long tStart, long tSetupEnd, long tLlmStart,
-            StringBuilder accumulated, AtomicReference<org.springframework.ai.chat.model.ChatResponse> lastRaw,
-            AtomicInteger chunkCount, AtomicInteger rawCount,
-            AtomicReference<Long> firstChunkAt, AtomicReference<Long> firstRawAt) {
+    /**
+     * The mutable accumulators a streaming turn fills in as chunks arrive, read
+     * once at completion to compute cost + timing telemetry. Bundled so
+     * {@link #recordStreamCompletion} stays below the parameter threshold.
+     */
+    private record StreamAccumulators(
+            StringBuilder accumulated,
+            AtomicReference<org.springframework.ai.chat.model.ChatResponse> lastRaw,
+            AtomicInteger chunkCount,
+            AtomicInteger rawCount,
+            AtomicReference<Long> firstChunkAt,
+            AtomicReference<Long> firstRawAt) {
+    }
+
+    private void recordStreamCompletion(TurChatTurnContext turn, long tLlmStart,
+            StreamAccumulators acc) {
+        TurAIAgent agent = turn.agent();
+        TurLLMInstance llmInstance = turn.llmInstance();
+        String conversationId = turn.conversationId();
+        String lastUserMessage = turn.lastUserMessage();
+        String username = turn.username();
+        long tStart = turn.tStart();
+        long tSetupEnd = turn.tSetupEnd();
+        StringBuilder accumulated = acc.accumulated();
+        AtomicReference<org.springframework.ai.chat.model.ChatResponse> lastRaw = acc.lastRaw();
+        AtomicInteger chunkCount = acc.chunkCount();
+        AtomicInteger rawCount = acc.rawCount();
+        AtomicReference<Long> firstChunkAt = acc.firstChunkAt();
+        AtomicReference<Long> firstRawAt = acc.firstRawAt();
         long tLlmEnd = System.currentTimeMillis();
         long tTotal = tLlmEnd - tStart;
         Long firstAt = firstChunkAt.get();
@@ -319,18 +332,19 @@ public class TurChatStreamingDispatcher {
                 firstRawMs, firstTokenMs, raws, chunks, accumulated.length(), avgChunkChars);
     }
 
-    private Flux<ChatResponse> dispatchCall(TurAIAgent agent,
-            TurLLMInstance llmInstance,
+    private Flux<ChatResponse> dispatchCall(TurChatTurnContext turn,
             ChatModel chatModel,
             List<Message> messages,
             ChatOptions initialOptions,
             TurAgentChatFlowContext flowContext,
-            TurPersona effectivePersona,
-            String conversationId,
-            String lastUserMessage,
-            String username,
-            long tStart,
-            long tSetupEnd) {
+            TurPersona effectivePersona) {
+        TurAIAgent agent = turn.agent();
+        TurLLMInstance llmInstance = turn.llmInstance();
+        String conversationId = turn.conversationId();
+        String lastUserMessage = turn.lastUserMessage();
+        String username = turn.username();
+        long tStart = turn.tStart();
+        long tSetupEnd = turn.tSetupEnd();
         final Prompt prompt = new Prompt(messages, initialOptions);
         return Mono.fromCallable(() -> {
             // Post-T16: single LLM call per turn. The system prompt was
