@@ -312,35 +312,15 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         java.util.Set<String> identifiers = new java.util.HashSet<>();
         boolean sawAnyMetadata = false;
         try {
-            for (int page = 0; page < DOC_SCAN_MAX_PAGES; page++) {
+            for (int page = 0; page < DOC_SCAN_MAX_PAGES
+                    && (long) page * DOC_SCAN_PAGE_SIZE < chunkCount; page++) {
                 long offset = (long) page * DOC_SCAN_PAGE_SIZE;
-                if (offset >= chunkCount) {
-                    break;
+                int rowsFound = scanMetadataPage(client, collectionName, offset, identifiers);
+                if (rowsFound > 0) {
+                    sawAnyMetadata = true;
                 }
-                QueryParam pageParam = QueryParam.newBuilder()
-                        .withCollectionName(collectionName)
-                        .withExpr(MATCH_ALL_EXPR)
-                        .withOutFields(List.of(MilvusVectorStore.METADATA_FIELD_NAME))
-                        .withOffset(offset)
-                        .withLimit((long) DOC_SCAN_PAGE_SIZE)
-                        .build();
-                R<QueryResults> resp = client.query(pageParam);
-                if (resp.getStatus() != R.Status.Success.getCode()) {
-                    log.debug("[Milvus] metadata page query failed for '{}': {}", collectionName, resp.getMessage());
-                    break;
-                }
-                QueryResultsWrapper wrapper = new QueryResultsWrapper(resp.getData());
-                var rows = wrapper.getRowRecords();
-                if (rows.isEmpty()) {
-                    break;
-                }
-                sawAnyMetadata = true;
-                for (var row : rows) {
-                    Map<String, Object> metadata = parseMilvusMetadata(
-                            row.get(MilvusVectorStore.METADATA_FIELD_NAME));
-                    addFirstIdentifier(metadata, identifiers);
-                }
-                if (rows.size() < DOC_SCAN_PAGE_SIZE) {
+                // A failed (-1), empty (0) or short page means we're done.
+                if (rowsFound < DOC_SCAN_PAGE_SIZE) {
                     break;
                 }
             }
@@ -353,6 +333,35 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
             return chunkCount;
         }
         return identifiers.size();
+    }
+
+    /**
+     * Fetches one metadata page and folds its document identifiers into
+     * {@code identifiers}. Returns the row count, or {@code -1} when the query
+     * failed — callers treat anything below the page size as "no more pages".
+     */
+    private int scanMetadataPage(MilvusServiceClient client, String collectionName, long offset,
+            java.util.Set<String> identifiers) {
+        QueryParam pageParam = QueryParam.newBuilder()
+                .withCollectionName(collectionName)
+                .withExpr(MATCH_ALL_EXPR)
+                .withOutFields(List.of(MilvusVectorStore.METADATA_FIELD_NAME))
+                .withOffset(offset)
+                .withLimit((long) DOC_SCAN_PAGE_SIZE)
+                .build();
+        R<QueryResults> resp = client.query(pageParam);
+        if (resp.getStatus() != R.Status.Success.getCode()) {
+            log.debug("[Milvus] metadata page query failed for '{}': {}", collectionName, resp.getMessage());
+            return -1;
+        }
+        QueryResultsWrapper wrapper = new QueryResultsWrapper(resp.getData());
+        var rows = wrapper.getRowRecords();
+        for (var row : rows) {
+            Map<String, Object> metadata = parseMilvusMetadata(
+                    row.get(MilvusVectorStore.METADATA_FIELD_NAME));
+            addFirstIdentifier(metadata, identifiers);
+        }
+        return rows.size();
     }
 
     private MilvusServiceClient buildMilvusClient(TurStoreInstance turStoreInstance,
@@ -495,16 +504,15 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
                 continue;
             }
             List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
-            if (nonBlank.isEmpty()) {
-                continue;
-            }
-            String accessor = "metadata[\"" + key + "\"]";
-            if (nonBlank.size() == 1) {
-                clauses.add(accessor + " == \"" + escapeMilvusString(nonBlank.get(0)) + "\"");
-            } else {
-                String list = String.join(", ", nonBlank.stream()
-                        .map(v -> "\"" + escapeMilvusString(v) + "\"").toList());
-                clauses.add(accessor + " in [" + list + "]");
+            if (!nonBlank.isEmpty()) {
+                String accessor = "metadata[\"" + key + "\"]";
+                if (nonBlank.size() == 1) {
+                    clauses.add(accessor + " == \"" + escapeMilvusString(nonBlank.get(0)) + "\"");
+                } else {
+                    String list = String.join(", ", nonBlank.stream()
+                            .map(v -> "\"" + escapeMilvusString(v) + "\"").toList());
+                    clauses.add(accessor + " in [" + list + "]");
+                }
             }
         }
         if (clauses.isEmpty()) {

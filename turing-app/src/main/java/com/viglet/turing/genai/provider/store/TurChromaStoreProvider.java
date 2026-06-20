@@ -258,29 +258,31 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         Set<String> identifiers = new HashSet<>();
         boolean sawAnyMetadata = false;
         try {
-            for (int page = 0; page < METADATA_SCAN_MAX_PAGES; page++) {
+            boolean morePages = true;
+            for (int page = 0; morePages && page < METADATA_SCAN_MAX_PAGES; page++) {
                 int offset = page * METADATA_SCAN_PAGE_SIZE;
                 if (offset >= chunkCount) {
-                    break;
-                }
-                // Pass `null` (not Map.of()) for the `where` clause: Chroma's
-                // REST API rejects an empty object with "Invalid where clause".
-                // `null` for `ids` likewise omits the filter and matches all.
-                ChromaApi.GetEmbeddingsRequest request = new ChromaApi.GetEmbeddingsRequest(
-                        null,
-                        null,
-                        METADATA_SCAN_PAGE_SIZE,
-                        offset,
-                        List.of(ChromaApi.QueryRequest.Include.METADATAS));
-                ChromaApi.GetEmbeddingResponse response = chromaApi.getEmbeddings(
-                        tenantName, databaseName, col.id(), request);
-                if (response == null || response.metadata() == null || response.metadata().isEmpty()) {
-                    break;
-                }
-                sawAnyMetadata = true;
-                collectIdentifiers(response.metadata(), identifiers);
-                if (response.metadata().size() < METADATA_SCAN_PAGE_SIZE) {
-                    break;
+                    morePages = false;
+                } else {
+                    // Pass `null` (not Map.of()) for the `where` clause: Chroma's
+                    // REST API rejects an empty object with "Invalid where clause".
+                    // `null` for `ids` likewise omits the filter and matches all.
+                    ChromaApi.GetEmbeddingsRequest request = new ChromaApi.GetEmbeddingsRequest(
+                            null,
+                            null,
+                            METADATA_SCAN_PAGE_SIZE,
+                            offset,
+                            List.of(ChromaApi.QueryRequest.Include.METADATAS));
+                    ChromaApi.GetEmbeddingResponse response = chromaApi.getEmbeddings(
+                            tenantName, databaseName, col.id(), request);
+                    if (response == null || response.metadata() == null || response.metadata().isEmpty()) {
+                        morePages = false;
+                    } else {
+                        sawAnyMetadata = true;
+                        collectIdentifiers(response.metadata(), identifiers);
+                        // A short page means the collection is exhausted.
+                        morePages = response.metadata().size() >= METADATA_SCAN_PAGE_SIZE;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -500,16 +502,16 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             ResolvedEmbedding resolved = resolveRecordEmbedding(exportRecord, id, content, embeddingModel);
             if (resolved == null) {
                 failed++;
-                continue;
-            }
-            batch.add(id, resolved.embedding(), toChromaMetadata(exportRecord.metadata()),
-                    content, resolved.reEmbedded());
-            if (batch.size() >= IMPORT_BATCH_SIZE) {
-                int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
-                preserved += outcome[0];
-                reEmbedded += outcome[1];
-                failed += outcome[2];
-                batch.clear();
+            } else {
+                batch.add(id, resolved.embedding(), toChromaMetadata(exportRecord.metadata()),
+                        content, resolved.reEmbedded());
+                if (batch.size() >= IMPORT_BATCH_SIZE) {
+                    int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
+                    preserved += outcome[0];
+                    reEmbedded += outcome[1];
+                    failed += outcome[2];
+                    batch.clear();
+                }
             }
         }
         if (batch.size() > 0) {
@@ -792,13 +794,12 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 continue;
             }
             List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
-            if (nonBlank.isEmpty()) {
-                continue;
-            }
-            if (nonBlank.size() == 1) {
-                clauses.add(Map.of(key, nonBlank.get(0)));
-            } else {
-                clauses.add(Map.of(key, Map.of("$in", nonBlank)));
+            if (!nonBlank.isEmpty()) {
+                if (nonBlank.size() == 1) {
+                    clauses.add(Map.of(key, nonBlank.get(0)));
+                } else {
+                    clauses.add(Map.of(key, Map.of("$in", nonBlank)));
+                }
             }
         }
         if (clauses.isEmpty()) {

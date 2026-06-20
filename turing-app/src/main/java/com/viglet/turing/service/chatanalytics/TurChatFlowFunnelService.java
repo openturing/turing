@@ -131,8 +131,9 @@ public class TurChatFlowFunnelService {
         // the visitor; the funnel is about the user-facing steps.
         for (ChatFlowNode node : graph.nodes()) {
             String type = node.type();
-            if (type == null) continue;
-            if (isTransparent(type)) continue;
+            if (type == null || isTransparent(type)) {
+                continue;
+            }
             long cursor = cursorByNode.getOrDefault(node.id(), 0L);
             long completed = completedByNode.getOrDefault(node.id(), 0L);
             // Heuristic: states whose cursor has been parked at this node
@@ -154,11 +155,9 @@ public class TurChatFlowFunnelService {
         Map<String, Long> out = new HashMap<>();
         if (rows == null) return out;
         for (Object[] row : rows) {
-            if (row == null || row.length < 2) continue;
-            if (row[0] == null) continue;
-            Object countObj = row[1];
-            if (!(countObj instanceof Number n)) continue;
-            out.put(row[0].toString(), n.longValue());
+            if (row != null && row.length >= 2 && row[0] != null && row[1] instanceof Number n) {
+                out.put(row[0].toString(), n.longValue());
+            }
         }
         return out;
     }
