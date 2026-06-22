@@ -35,11 +35,11 @@ import lombok.extern.slf4j.Slf4j;
  * <ol>
  *   <li><b>Monthly budget (pre-call).</b> {@link #resolveInstance} sums the
  *       agent's month-to-date spend; once it reaches
- *       {@link TurAIAgent#getMonthlyBudgetUsd()} it either swaps the turn to the
- *       configured cheaper {@link TurAIAgent#getBudgetDowngradeLlmId() downgrade
+ *       {@link TurAIAgent#monthlyBudgetUsd} it either swaps the turn to the
+ *       configured cheaper {@link TurAIAgent#budgetDowngradeLlmId downgrade
  *       LLM} or logs a warning and proceeds on the original model.</li>
  *   <li><b>Per-turn cap (post-call).</b> {@link #warnIfTurnOverCap} logs when a
- *       completed turn's cost exceeds {@link TurAIAgent#getPerTurnSoftCapUsd()} —
+ *       completed turn's cost exceeds {@link TurAIAgent#perTurnSoftCapUsd} —
  *       an operator signal that one turn was unusually expensive.</li>
  * </ol>
  *

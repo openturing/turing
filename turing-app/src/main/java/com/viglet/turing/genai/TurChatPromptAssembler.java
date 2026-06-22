@@ -126,8 +126,8 @@ public class TurChatPromptAssembler {
     }
 
     /**
-     * Same as {@link #assemble(TurAIAgent, List, String, TurAgentChatFlowContext,
-     * TurPersona, String, String)} but additionally attaches the supplied
+     * Same as {@link #assemble(TurChatPromptRequest)} but additionally attaches
+     * the supplied
      * {@code files} as Spring AI {@link org.springframework.ai.content.Media}
      * blocks (images) plus Tika-extracted text on the LAST user message in
      * the post-enrichment history. When {@code files} is null/empty the

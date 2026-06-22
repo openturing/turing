@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -130,10 +131,17 @@ class TurChatFlowRouterDecisionLogTest {
         // fork registers this @Service via @PostConstruct and never tears it
         // down (Spring caches contexts), so getInstance() is otherwise
         // order-dependent. Restore the prior value afterwards.
+        //
+        // The static field is a final AtomicReference, so we mutate the
+        // reference's value (set/restore) rather than reassigning the final
+        // field itself — reflection cannot set a static final field.
         Field instanceField = TurChatFlowRouterDecisionLog.class.getDeclaredField("instance");
         instanceField.setAccessible(true);
-        Object previous = instanceField.get(null);
-        instanceField.set(null, null);
+        @SuppressWarnings("unchecked")
+        AtomicReference<TurChatFlowRouterDecisionLog> instance =
+                (AtomicReference<TurChatFlowRouterDecisionLog>) instanceField.get(null);
+        TurChatFlowRouterDecisionLog previous = instance.get();
+        instance.set(null);
         try {
             var log = new TurChatFlowRouterDecisionLog();
             assertThat(TurChatFlowRouterDecisionLog.getInstance()).isNull();
@@ -142,7 +150,7 @@ class TurChatFlowRouterDecisionLogTest {
                     .doesNotThrowAnyException();
             assertThat(log.recent(10)).isEmpty();
         } finally {
-            instanceField.set(null, previous);
+            instance.set(previous);
         }
     }
 

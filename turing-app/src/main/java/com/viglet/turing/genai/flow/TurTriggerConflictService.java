@@ -43,7 +43,7 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
  *   <li>Pull every enabled flow on the agent with a non-blank
  *       {@code triggerDescription}.</li>
  *   <li>Group flows by the analyzer the router would pick for each
- *       ({@link TurChatFlowEngineService#analyzerFor}) — PT and EN buckets
+ *       ({@link TurChatFlowTriggerRouter#analyzerFor}) — PT and EN buckets
  *       never compare against each other because the router never scores
  *       them in the same MLT pass.</li>
  *   <li>For each unordered pair {@code (A, B)} in a bucket, tokenize both

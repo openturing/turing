@@ -117,8 +117,12 @@ public class TurChatStreamingDispatcher {
     /**
      * Dispatch the prepared chat turn to the chat model.
      *
-     * @param agent the chatting agent
-     * @param llmInstance the underlying LLM (drives token usage + streaming model swap on STREAM)
+     * @param turn the prepared turn context — bundles the chatting agent, the
+     *             underlying LLM instance (token usage + streaming model swap on
+     *             STREAM), conversationId (nullable — null means stateless turn),
+     *             the latest user message, the resolved username (token usage
+     *             attribution), and the turn-start / setup-end millis used for
+     *             time accounting
      * @param decryptedApiKey the runtime-decrypted API key — only used to build the
      *                        provider's streaming-optimized {@code ChatModel} on the STREAM branch
      * @param chatModel the CALL-branch {@code ChatModel} (already wrapped in resilience)
@@ -129,11 +133,6 @@ public class TurChatStreamingDispatcher {
      * @param flowContext nullable — null disables flow-aware behaviors (suggested options,
      *                    STREAM gating)
      * @param effectivePersona the post-walk persona (single resolution per §I.5 step 2)
-     * @param conversationId nullable — null means stateless turn
-     * @param lastUserMessage the latest user message (telemetry)
-     * @param username resolved from the {@code SecurityContext} (token usage attribution)
-     * @param tStart turn-start millis (for total-time accounting)
-     * @param tSetupEnd setup-phase end millis (for post-time accounting)
      */
     public Flux<ChatResponse> dispatch(TurChatTurnContext turn,
             String decryptedApiKey,
