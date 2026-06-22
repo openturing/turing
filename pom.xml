@@ -262,8 +262,8 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <nodeVersion>v24.12.0</nodeVersion>
-                            <npmVersion>11.5.2</npmVersion>
+                            <nodeVersion>v26.3.1</nodeVersion>
+                            <npmVersion>11.17.0</npmVersion>
                         </configuration>
                     </plugin>
 

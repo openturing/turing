@@ -695,8 +695,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v24.15.0</nodeVersion>
-                    <pnpmVersion>10.33.0</pnpmVersion>
+                    <nodeVersion>v26.3.1</nodeVersion>
+                    <pnpmVersion>11.8.0</pnpmVersion>
                     <skip>${skip.npm}</skip>
                 </configuration>
             </plugin>

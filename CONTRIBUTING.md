@@ -30,7 +30,7 @@ PR record.
 ## Development setup
 
 Requirements: **Java 21+**, **Maven 3.6+** (the `./mvnw` wrapper is included),
-and **Node 20+ with pnpm** for the frontend.
+and **Node 26+ with pnpm** for the frontend.
 
 ```bash
 # Clone

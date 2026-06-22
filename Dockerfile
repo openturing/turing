@@ -5,7 +5,7 @@
 # self-contained and needs no externally published base image.
 
 # Stage 1 — Frontend (pnpm monorepo → SPA)
-FROM node:24-slim AS node-builder
+FROM node:26.3.1-slim AS node-builder
 ARG REPO_BRANCH=2026.3
 ARG CACHE_BUST=none
 # Node 25+ não traz mais o corepack embutido, então instalamos o pnpm via npm.

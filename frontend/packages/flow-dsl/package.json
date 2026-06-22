@@ -35,7 +35,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=26"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

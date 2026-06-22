@@ -142,7 +142,7 @@
     "directory": "frontend/packages/react-ui"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=26"
   },
   "sizeBudget": {
     "strict": true,
