@@ -166,6 +166,7 @@
 ## D.11 — Tracked follow-ups
 
 - **T242** — **CI nightly pipeline for `-Pllm-it`** — new [`nightly-llm-it.yml`](../.github/workflows/nightly-llm-it.yml) runs the real-LLM ITs excluded from every-PR CI on a nightly schedule (+ `workflow_dispatch`), as a matrix over the three gated profiles (`-Pllm-it` / `-Pagent-eval` / `-Pnl-facet-eval`) with the `OPENAI_API_KEY` secret injected; warns (not fails) when the secret is absent since the ITs self-skip, and uploads failsafe reports. (§VI.6)
+- **T244** — **Block A "cascade ascent" IT body** — implemented the last deferred Block A harness skeleton: `cascadesAscentThroughChainOfTerminatedSubFlows_landsOnTopLevelNextNode` in [`TurAgentChatExecutorContractIT`](../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorContractIT.java). A depth-3 chain A→B→C of pass-through sub-flows drives two cascade ascents in a single `loadOrInitState`, landing on A's interactive node after the SubFlow node — deterministic, no LLM, no fixture/import-util (the programmatic build replaces the originally-scoped `nested-sub-flow.chat-flow.json`). Completes removal of all Block A `@Disabled` skeletons. (§0 Block A)
 
 ## E.1 — Planning & decomposition (parity)
 

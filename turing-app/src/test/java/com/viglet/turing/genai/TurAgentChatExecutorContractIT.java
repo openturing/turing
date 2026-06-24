@@ -9,9 +9,6 @@
  */
 package com.viglet.turing.genai;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -59,6 +56,9 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
 
     @org.springframework.beans.factory.annotation.Autowired
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+
+    @Autowired
+    private TurChatFlowStateRepository stateRepository;
 
     /**
      * Patch #18 — fallback HEURISTIC quando strategy bean missing
@@ -572,12 +572,111 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   navegação, não race condition.
      */
     @Test
-    @Disabled("Skeleton — body deferred. Requires harness-it/nested-sub-flow.chat-flow.json "
-            + "(3 nested flows A→B→C) + extending ChatFlowImportTestUtil to remap subFlowId "
-            + "across the bundle the same way personaId is already remapped. ~2h infra + ~1h body. "
-            + "Indirect coverage exists in TurChatFlowSubFlowEngineIT (single-level ascent) — "
-            + "the multi-level chain case here is the gap.")
     void cascadesAscentThroughChainOfTerminatedSubFlows_landsOnTopLevelNextNode() {
-        fail("Not implemented — see @Disabled message for the deferred-work scope.");
+        // Build a depth-3 chain A → B → C where the two inner flows are
+        // "pass-through" (start → … → end with no interactive node):
+        //   C: startC → endC
+        //   B: startB → subFlow(C) → endB
+        //   A: startA → subFlow(B) → ai-confirma (aiQuestion) → endA
+        //
+        // A single loadOrInitState(A) descends A→B→C, hits C's end (parent
+        // set) → ascends to B, B's next is endB → ascends AGAIN to A, whose
+        // next node after the SubFlow node is the interactive ai-confirma,
+        // where the walk parks. Two cascade ascents in one init, zero LLM
+        // calls (the empty sub-flows need no guardrail decision). This locks
+        // the MULTI-level ascent that TurChatFlowSubFlowEngineIT only covers
+        // one level deep — the gap the original skeleton named.
+        //
+        // The skeleton originally scoped a JSON fixture + ChatFlowImportTestUtil
+        // subFlowId remapping; the programmatic build below (mirroring
+        // TurChatFlowSubFlowEngineIT's graph builders) reaches the same
+        // invariant without either, and runs in the default mock-harness
+        // suite (no OPENAI_API_KEY needed).
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent =
+                createAgent("contract-cascade-ascent", null);
+
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowC = saveCascadeFlow(agent,
+                "cascade-C — pass-through",
+                """
+                {"nodes":[
+                  {"id":"startC","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"endC","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[{"id":"eC","source":"startC","target":"endC"}]}
+                """);
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowB = saveCascadeFlow(agent,
+                "cascade-B — subFlow(C) then end",
+                """
+                {"nodes":[
+                  {"id":"startB","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"subB","type":"subFlow","data":{"label":"SUB FLOW","type":"subFlow","subFlowId":"%s","subFlowName":"C"}},
+                  {"id":"endB","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[
+                  {"id":"eB1","source":"startB","target":"subB"},
+                  {"id":"eB2","source":"subB","target":"endB"}
+                ]}
+                """.formatted(flowC.getId()));
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowA = saveCascadeFlow(agent,
+                "cascade-A — subFlow(B) then ai-confirma",
+                """
+                {"nodes":[
+                  {"id":"startA","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"subA","type":"subFlow","data":{"label":"SUB FLOW","type":"subFlow","subFlowId":"%s","subFlowName":"B"}},
+                  {"id":"ai-confirma","type":"aiQuestion","data":{"label":"CONFIRMA","type":"aiQuestion","aiInstruction":"Confirme os dados coletados.","outputVariable":"confirma"}},
+                  {"id":"endA","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[
+                  {"id":"eA1","source":"startA","target":"subA"},
+                  {"id":"eA2","source":"subA","target":"ai-confirma"},
+                  {"id":"eA3","source":"ai-confirma","target":"endA"}
+                ]}
+                """.formatted(flowB.getId()));
+
+        String conv = "conv-cascade-ascent-" + java.util.UUID.randomUUID();
+        com.viglet.turing.genai.flow.ChatFlowGraph graphA =
+                chatFlowEngineService.parseGraph(flowA).orElseThrow();
+        com.viglet.turing.persistence.model.agent.TurChatFlowState leaf =
+                chatFlowEngineService.loadOrInitState(conv, flowA, graphA).orElseThrow();
+
+        // 1. Final state landed back on the TOP-LEVEL flow A (sobe DUAS vezes).
+        org.assertj.core.api.Assertions.assertThat(leaf.getFlow().getId())
+                .as("cascade ascent must land back on the top-level flow A")
+                .isEqualTo(flowA.getId());
+        // 2. Resumed on A's node AFTER the SubFlow node — the interactive
+        //    ai-confirma, NOT an end node.
+        org.assertj.core.api.Assertions.assertThat(leaf.getCurrentNodeId())
+                .as("must resume on A's node after the SubFlow node, not on an end")
+                .isEqualTo("ai-confirma");
+        // 3. The parent chain is fully drained (chain esvaziada).
+        org.assertj.core.api.Assertions.assertThat(leaf.getParentStateId())
+                .as("parent chain must be empty after cascading all the way up")
+                .isNull();
+        // 4. Both intermediate child states (B, C) were deleted on ascent — only
+        //    the single A leaf row survives for the conversation.
+        org.assertj.core.api.Assertions.assertThat(stateRepository.findByConversationId(conv))
+                .as("both ascended sub-flow states must be deleted — one row remains")
+                .hasSize(1)
+                .first()
+                .satisfies(s -> org.assertj.core.api.Assertions.assertThat(s.getId())
+                        .isEqualTo(leaf.getId()));
+    }
+
+    /**
+     * Persists a {@link com.viglet.turing.persistence.model.agent.TurChatFlow}
+     * owned by {@code agent} with a HEURISTIC guardrail and a one-off name.
+     * The cascade-ascent test never reaches an interactive node's advance —
+     * it parks on init — so the guardrail method is immaterial; HEURISTIC
+     * just avoids needing an LLM bean.
+     */
+    private com.viglet.turing.persistence.model.agent.TurChatFlow saveCascadeFlow(
+            com.viglet.turing.persistence.model.agent.TurAIAgent agent,
+            String name, String definitionJson) {
+        com.viglet.turing.persistence.model.agent.TurChatFlow flow =
+                new com.viglet.turing.persistence.model.agent.TurChatFlow();
+        flow.setName(name + " — " + java.util.UUID.randomUUID().toString().substring(0, 6));
+        flow.setEnabled(1);
+        flow.setGuardrailMethod(
+                com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.HEURISTIC);
+        flow.setDefinitionJson(definitionJson);
+        flow.setTurAIAgent(agent);
+        return chatFlowRepository.save(flow);
     }
 }
