@@ -103,6 +103,11 @@ turing:
       cpus: "1.0"               # CPU quota per execution
       pids-limit: 128           # max PIDs (fork-bomb containment)
       probe-timeout-seconds: 8  # timeout for the "Check Docker" availability probe
+      # T239 — opt-in extra isolation (both off by default; the baseline T80
+      # hardening of --cap-drop ALL + no-new-privileges + --read-only +
+      # Docker's built-in seccomp always applies):
+      runtime: ""               # OCI runtime; "runsc" = gVisor (must be installed on the host). Empty = host default (runc).
+      seccomp-profile: ""       # host path to a tighter seccomp profile JSON. Empty = Docker's built-in default profile. Ignored under gVisor.
     native:
       # Per-execution CPU/RAM caps for the NATIVE host-subprocess path (Linux
       # only). DOCKER mode already caps via the container runtime, so these

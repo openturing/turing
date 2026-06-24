@@ -191,6 +191,26 @@ public class TurCodeInterpreterToolService {
     /** How long to wait for the `docker version` probe before giving up. */
     @Value("${turing.code-interpreter.docker.probe-timeout-seconds:8}")
     private int dockerProbeTimeoutSeconds;
+    /**
+     * T239 — optional OCI runtime for the sandbox container. Empty (default)
+     * uses the host's default runtime ({@code runc}); set to {@code runsc} to
+     * run under gVisor, which intercepts syscalls in a user-space kernel for
+     * VM-grade isolation without a VM. Requires the runtime to be installed and
+     * registered on the Docker host; an unknown runtime makes {@code docker run}
+     * fail fast (the execution surfaces the error — opt-in, admin-owned).
+     */
+    @Value("${turing.code-interpreter.docker.runtime:}")
+    private String dockerRuntime;
+    /**
+     * T239 — optional host path to a custom seccomp profile JSON. Empty
+     * (default) keeps Docker's built-in default seccomp profile applied (the
+     * T80 baseline). Set to a vetted, tighter profile to shrink the syscall
+     * surface further. Note: gVisor ({@link #dockerRuntime} = {@code runsc})
+     * does its own syscall mediation, so a custom seccomp profile is
+     * unnecessary — and ignored — under it.
+     */
+    @Value("${turing.code-interpreter.docker.seccomp-profile:}")
+    private String dockerSeccompProfile;
 
     // ───────────────── T81 NATIVE per-execution resource limits ──────────────
     // Only consulted on the NATIVE path (DOCKER already caps via the container
@@ -800,6 +820,10 @@ public class TurCodeInterpreterToolService {
      *       script can't reach other tenants' files or the host;</li>
      *   <li>deps dir (when present) bind-mounted <b>read-only</b> at
      *       {@code /deps} and put on {@code PYTHONPATH}.</li>
+     *   <li>T239 (opt-in, off by default) — {@code --runtime runsc} for gVisor
+     *       user-space-kernel isolation, and/or {@code --security-opt
+     *       seccomp=<profile>} for a tighter syscall allowlist than Docker's
+     *       built-in default. See {@link #appendExtraSandboxHardening}.</li>
      * </ul>
      *
      * <p>Generated files land in the bind-mounted session dir, so the host
@@ -824,6 +848,9 @@ public class TurCodeInterpreterToolService {
         cmd.add("ALL");
         cmd.add("--security-opt");
         cmd.add("no-new-privileges");
+        // T239 — opt-in gVisor runtime + custom seccomp profile (both no-ops
+        // when unset, leaving the T80 hardening exactly as-is).
+        appendExtraSandboxHardening(cmd, dockerRuntime, dockerSeccompProfile);
         cmd.add("--read-only");
         cmd.add("--tmpfs");
         cmd.add("/tmp:rw,size=64m");
@@ -859,6 +886,25 @@ public class TurCodeInterpreterToolService {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(false);
         return pb;
+    }
+
+    /**
+     * T239 — appends the opt-in extra-hardening {@code docker run} flags to
+     * {@code cmd}: {@code --runtime <runtime>} (e.g. gVisor's {@code runsc})
+     * and {@code --security-opt seccomp=<profile>}. Each is added only when its
+     * value is non-blank, so the default (both empty) leaves the T80 command
+     * untouched. Package-private + static so it's unit-testable without Docker
+     * or the Spring context.
+     */
+    static void appendExtraSandboxHardening(List<String> cmd, String runtime, String seccompProfile) {
+        if (runtime != null && !runtime.isBlank()) {
+            cmd.add("--runtime");
+            cmd.add(runtime.trim());
+        }
+        if (seccompProfile != null && !seccompProfile.isBlank()) {
+            cmd.add("--security-opt");
+            cmd.add("seccomp=" + seccompProfile.trim());
+        }
     }
 
     private void killDockerContainer(String containerName) {

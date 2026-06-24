@@ -24,10 +24,6 @@
 - 💭 **T102** (deps: T58) Extraction confidence per field — LLM returns `{value, confidence: 0-1}`; UI shows warning when `confidence < 0.7`. → §VII.12.d
 - 💭 **T103** (deps: T58) Anthropic Files API / OpenAI Files — pass binary PDF/DOCX directly to the LLM (preserves tables/layout) instead of Tika→text. → §VII.12.e
 
-## D.11 — Tracked follow-ups (promoted from inline notes, 2026-06-03)
-
-- 💭 **T239** (deps: T80) **Code Interpreter sandbox hardening (seccomp + gVisor)** — T80 ships Docker mode with `--cap-drop ALL --security-opt no-new-privileges` + read-only FS. → §VII.2.h / §VIII
-
 ## D.12 — Headless React UI library (`@viglet/turing-react-ui`)
 
 > New package for **design-agnostic** React chat/rich-content components shared
