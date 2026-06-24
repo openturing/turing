@@ -80,8 +80,14 @@ public class TurSNSiteExport {
 	}
 
 	public StreamingResponseBody exportAll(HttpServletResponse response) {
-		List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
-		turSNSites.forEach(this::hydrateExportCollections);
+		List<TurSNSite> turSNSites = readOnlyTransactionTemplate.execute(status -> {
+			List<TurSNSite> sites = turSNSiteRepository.findAll();
+			sites.forEach(site -> {
+				hydrateExportCollections(site);
+				initializeLazyAssociations(site);
+			});
+			return sites;
+		});
 
 		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all", null, false);
 	}
@@ -92,11 +98,19 @@ public class TurSNSiteExport {
 
 	public StreamingResponseBody exportBySiteId(String siteId, boolean includeContent,
 			boolean includeTemplate, String taskId, HttpServletResponse response) {
-		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
+		List<TurSNSite> turSNSites = readOnlyTransactionTemplate.execute(status -> {
+			// findByIdNoCache: the cached findById returns a detached entity, so
+			// lazy associations cannot be initialized even inside this transaction.
+			List<TurSNSite> sites = turSNSiteRepository.findByIdNoCache(siteId).map(List::of).orElse(List.of());
+			sites.forEach(site -> {
+				hydrateExportCollections(site);
+				initializeLazyAssociations(site);
+			});
+			return sites;
+		});
 		if (turSNSites.isEmpty()) {
 			return null;
 		}
-		turSNSites.forEach(this::hydrateExportCollections);
 
 		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
 		if (includeContent) {
