@@ -66,23 +66,15 @@ export default function ParkedConversationsPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={parked} error={error}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <IconPlayerPause className="text-blue-600" />
-            {t("parkedConversations.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("parkedConversations.description")}
-          </p>
+      <div className="space-y-6 px-4 lg:px-6">
+        <div className="flex items-center justify-end">
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <IconRefresh className="mr-2 h-4 w-4" />
+            {t("common.refresh")}
+          </Button>
         </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-          <IconRefresh className="mr-2 h-4 w-4" />
-          {t("common.refresh")}
-        </Button>
-      </div>
 
-      {parked && parked.length === 0 ? (
+        {parked && parked.length === 0 ? (
         <div className="text-center py-12 border border-dashed rounded-lg">
           <IconPlayerPause className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">{t("parkedConversations.blankTitle")}</h3>
@@ -136,7 +128,8 @@ export default function ParkedConversationsPage() {
             ))}
           </TableBody>
         </Table>
-      )}
+        )}
+      </div>
     </LoadProvider>
   );
 }

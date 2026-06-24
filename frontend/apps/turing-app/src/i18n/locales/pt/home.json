@@ -64,6 +64,10 @@
         "title": "Intenção",
         "description": "Defina categorias de prompts e ações exibidas como sugestões rápidas no chat."
       },
+      "aiAnalytics": {
+        "title": "Análise e Custos de IA",
+        "description": "Acompanhe uso de tokens, custos, qualidade das conversas e conversas pausadas em um só lugar."
+      },
       "tokenUsage": {
         "title": "Uso de Tokens",
         "description": "Monitore o consumo de tokens em todas as instâncias e modelos de LLM."

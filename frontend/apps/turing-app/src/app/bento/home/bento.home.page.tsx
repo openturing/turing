@@ -100,8 +100,8 @@ const SECTIONS: FeatureSection[] = [
     items: [
       { titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", url: ROUTES.ADMIN_ROOT,        icon: IconShieldCog,    tone: "slate",   span: SPAN_WIDE },
       { titleKey: "home.features.assets.title",         descriptionKey: "home.features.assets.description",         url: ROUTES.ASSET_ROOT,        icon: IconFolder,       tone: "amber",   span: SPAN_SQUARE },
-      { titleKey: "home.features.import.title",         descriptionKey: "home.features.import.description",         url: "/admin/exchange/import", icon: IconFileImport,   tone: "indigo",  span: SPAN_SQUARE },
-      { titleKey: "home.features.logging.title",        descriptionKey: "home.features.logging.description",        url: "/admin/logging/instance", icon: IconReceiptRupee, tone: "rose",    span: SPAN_SQUARE },
+      { titleKey: "home.features.import.title",         descriptionKey: "home.features.import.description",         url: ROUTES.EXCHANGE_IMPORT,   icon: IconFileImport,   tone: "indigo",  span: SPAN_SQUARE },
+      { titleKey: "home.features.logging.title",        descriptionKey: "home.features.logging.description",        url: ROUTES.LOGGING_INSTANCE,  icon: IconReceiptRupee, tone: "rose",    span: SPAN_SQUARE },
     ],
   },
 ];

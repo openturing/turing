@@ -19,11 +19,9 @@ import {
   PageRoutes,
   ChatRoutes,
   EmbeddingModelRoutes,
-  ExchangeRoutes,
   GraphqlRoutes,
   IntegrationRoutes,
   LLMRoutes,
-  LoggingRoutes,
   MarketplaceRoutes,
   McpServerRoutes,
   PersonaRoutes,
@@ -33,10 +31,7 @@ import {
   SERoutes,
   SNRoutes,
   StoreRoutes,
-  TokenUsageRoutes,
-  CostGovernanceRoutes,
-  ChatAnalyticsRoutes,
-  ParkedConversationsRoutes,
+  AiAnalyticsRoutes,
   ConversationRoutes,
   UserRoutes
 } from "./app/routes"
@@ -80,8 +75,6 @@ function App() {
                 {AIAgentRoutes}
                 {PersonaRoutes}
                 {IntegrationRoutes}
-                {LoggingRoutes}
-                {ExchangeRoutes}
                 {MarketplaceRoutes}
                 {GraphqlRoutes}
                 {AssetRoutes}
@@ -90,10 +83,7 @@ function App() {
                 {GitRoutes}
                 {PageRoutes}
                 {ChatRoutes}
-                {TokenUsageRoutes}
-                {CostGovernanceRoutes}
-                {ChatAnalyticsRoutes}
-                {ParkedConversationsRoutes}
+                {AiAnalyticsRoutes}
                 {ConversationRoutes}
                 {UserRoutes}
                 {AdminRoutes}

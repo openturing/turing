@@ -64,6 +64,10 @@
         "title": "Intent",
         "description": "Define prompt categories and actions shown as quick suggestions in the chat."
       },
+      "aiAnalytics": {
+        "title": "AI Analytics & Costs",
+        "description": "Track token usage, costs, conversation quality, and parked conversations in one place."
+      },
       "tokenUsage": {
         "title": "Token Usage",
         "description": "Monitor token consumption across all LLM instances and models."

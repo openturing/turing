@@ -14,6 +14,11 @@ const GlobalSettingsPage = lazy(() => import("../console/system/global-settings.
 const SystemInfoPage = lazy(() => import("../console/system/system-info.page"))
 const TokenInstanceListPage = lazy(() => import("../console/token/token.instance.list.page"))
 const TokenInstancePage = lazy(() => import("../console/token/token.instance.page"))
+const ExchangeImportSubPage = lazy(() => import("../console/exchange/exchange.import.sub.page"))
+const LoggingInstanceSubPage = lazy(() => import("../console/logging/logging.instance.sub.page"))
+const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"))
+const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"))
+const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"))
 
 export const AdminRoutes = (
     <Route path={ROUTES.ADMIN_ROOT} element={<AdminSettingsRootPage />}>
@@ -29,6 +34,11 @@ export const AdminRoutes = (
             <Route path="tokens/:id" element={<TokenInstancePage />} />
             <Route path="settings" element={<GlobalSettingsPage />} />
             <Route path="system-info" element={<SystemInfoPage />} />
+            <Route path="import" element={<ExchangeImportSubPage />} />
+            <Route path="logging" element={<LoggingInstanceSubPage />} />
+            <Route path="logging/server" element={<LoggingServerPage />} />
+            <Route path="logging/aem" element={<LoggingAemPage />} />
+            <Route path="logging/indexing" element={<LoggingIndexingPage />} />
         </Route>
     </Route>
 )
