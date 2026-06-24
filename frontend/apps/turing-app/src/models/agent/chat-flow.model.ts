@@ -200,6 +200,15 @@ export interface TurChatFlowFunnelNode {
   cursorCount: number;
   completedCount: number;
   abandonedCount: number;
+  /**
+   * T237 — path-aware counters from the opt-in per-turn node-visit log.
+   * `pathReached`: recorded paths that visited this node; `pathContinued`:
+   * of those, how many also reached a later funnel node. Drop-off is
+   * `pathReached − pathContinued` (computed client-side). Both 0 when the
+   * node-visit log is disabled.
+   */
+  pathReached: number;
+  pathContinued: number;
 }
 
 export interface TurChatFlowFunnelReport {
@@ -208,6 +217,8 @@ export interface TurChatFlowFunnelReport {
   totalStates: number;
   totalSubmissions: number;
   abandonedAtFlow: number;
+  /** T237 — terminal submissions that carried a node-visit path; 0 = log off. */
+  totalPaths: number;
   nodes: TurChatFlowFunnelNode[];
 }
 

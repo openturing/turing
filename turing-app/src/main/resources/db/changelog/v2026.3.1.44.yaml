@@ -1,0 +1,53 @@
+databaseChangeLog:
+  # T237 / §VII.10.b — per-turn node-visit log for the path-aware funnel.
+  #
+  # nodeVisitPath — JSON array of interactive node ids a conversation visited,
+  #                 in order. Live accumulator on chat_flow_state; snapshotted
+  #                 onto chat_flow_submission at flow end. Both nullable and
+  #                 only written when the opt-in flag
+  #                 turing.chat.analytics.node-visit-log.enabled is true, so
+  #                 existing rows / disabled deployments are unaffected.
+  #
+  # longtext (H2/MySQL/Postgres-portable) to match the variablesJson columns
+  # on the same tables; camelCase to match those tables; idempotent via
+  # columnExists.
+
+  - changeSet:
+      id: v2026.3.1.44-add-chat_flow_state-nodeVisitPath
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow_state
+        - not:
+            - columnExists:
+                tableName: chat_flow_state
+                columnName: nodeVisitPath
+      changes:
+        - addColumn:
+            tableName: chat_flow_state
+            columns:
+              - column:
+                  name: nodeVisitPath
+                  type: longtext
+                  remarks: "T237 live ordered JSON array of visited interactive node ids; null = node-visit log disabled."
+
+  - changeSet:
+      id: v2026.3.1.44-add-chat_flow_submission-nodeVisitPath
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow_submission
+        - not:
+            - columnExists:
+                tableName: chat_flow_submission
+                columnName: nodeVisitPath
+      changes:
+        - addColumn:
+            tableName: chat_flow_submission
+            columns:
+              - column:
+                  name: nodeVisitPath
+                  type: longtext
+                  remarks: "T237 snapshot of the conversation's ordered node-visit path at flow end; null = node-visit log disabled."

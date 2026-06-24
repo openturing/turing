@@ -93,6 +93,20 @@ public class TurChatFlowState implements Serializable {
     @Column(name = "variablesJson", columnDefinition = "longtext")
     private String variablesJson;
 
+    /**
+     * T237 / §VII.10.b — live JSON-array accumulator of the interactive node
+     * ids this conversation has visited, in order (consecutive duplicates
+     * collapsed). Appended each turn only when the per-turn node-visit log is
+     * enabled (opt-in via {@code turing.chat.analytics.node-visit-log.enabled});
+     * snapshotted onto the submission at flow end to feed the path-aware
+     * funnel. {@code null} when the feature is off.
+     *
+     * @since 2026.3.4
+     */
+    @Lob
+    @Column(name = "nodeVisitPath", columnDefinition = "longtext")
+    private String nodeVisitPath;
+
     @Column(name = "updatedAt", nullable = false)
     private LocalDateTime updatedAt;
 

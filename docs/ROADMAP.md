@@ -26,7 +26,6 @@
 
 ## D.11 — Tracked follow-ups (promoted from inline notes, 2026-06-03)
 
-- 💭 **T237** (deps: T85) **Full path-aware funnel** — T85 shipped the funnel V1 over the existing session events (the API already exposes `abandonedCount`), but a true per-node drop-off funnel needs a per-turn node-visit log. → §VII.10.b
 - 💭 **T239** (deps: T80) **Code Interpreter sandbox hardening (seccomp + gVisor)** — T80 ships Docker mode with `--cap-drop ALL --security-opt no-new-privileges` + read-only FS. → §VII.2.h / §VIII
 
 ## D.12 — Headless React UI library (`@viglet/turing-react-ui`)

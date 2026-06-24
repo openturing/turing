@@ -131,6 +131,15 @@ public class TurChatFlowEngineService {
     private final TurHumanApprovalNodeExecutor humanApprovalNodeExecutor;
     private final TurChatFlowTriggerRouter triggerRouter;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
+    /**
+     * T237 — opt-in per-turn node-visit log for the path-aware funnel.
+     * Field-injected (not a constructor param) so the unit tests that
+     * {@code new} this service directly compile unchanged and default the flag
+     * to {@code false} — the safe, behaviour-preserving default.
+     */
+    @org.springframework.beans.factory.annotation.Value(
+            "${turing.chat.analytics.node-visit-log.enabled:false}")
+    private boolean nodeVisitLogEnabled;
 
     /**
      * T119 — node types that <em>park</em> the conversation: the engine stops
@@ -393,6 +402,18 @@ public class TurChatFlowEngineService {
         //      the engine state is still parked on switch-coupon-intent.
         if (leaf != state || !Objects.equals(preWalkNodeId, leaf.getCurrentNodeId())) {
             leaf = stateRepository.save(leaf);
+        }
+        // T237 — opt-in per-turn node-visit log: append the node this turn
+        // settled on to the leaf's path, then persist. Gated so the default
+        // (feature off) path is unchanged — no extra column write, no behaviour
+        // change. The path is snapshotted onto the submission at flow end.
+        if (nodeVisitLogEnabled) {
+            String appendedPath = TurChatFlowNodeVisitPath.append(
+                    leaf.getNodeVisitPath(), leaf.getCurrentNodeId());
+            if (!Objects.equals(appendedPath, leaf.getNodeVisitPath())) {
+                leaf.setNodeVisitPath(appendedPath);
+                leaf = stateRepository.save(leaf);
+            }
         }
         // Record a submission only when the ROOT flow has just terminated —
         // sub-flow ends pop instead of recording.
@@ -2140,6 +2161,10 @@ public class TurChatFlowEngineService {
         submission.setCompletedAt(LocalDateTime.now(ZoneId.systemDefault()));
         submission.setUserId(resolveUsername());
         submission.setEndNodeId(currentNodeId);
+        // T237 — snapshot the accumulated per-turn node-visit path (null when
+        // the opt-in log is off) so the path-aware funnel can compute per-node
+        // reached / drop-off from terminal submissions.
+        submission.setNodeVisitPath(state.getNodeVisitPath());
         submissionRepository.save(submission);
         log.info("[FlowEngine] Submission recorded for flow '{}', conversation '{}', endNode '{}'",
                 flow.getId(), state.getConversationId(), currentNodeId);

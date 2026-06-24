@@ -51,7 +51,12 @@ export function ChatFlowFunnelPanel({
       <SectionCard.Content>
         <ul className="space-y-2">
           {report.nodes.map((node) => (
-            <FunnelRow key={node.nodeId} node={node} maxCount={maxCount} />
+            <FunnelRow
+              key={node.nodeId}
+              node={node}
+              maxCount={maxCount}
+              showPath={report.totalPaths > 0}
+            />
           ))}
         </ul>
       </SectionCard.Content>
@@ -62,9 +67,14 @@ export function ChatFlowFunnelPanel({
 function FunnelRow({
   node,
   maxCount,
-}: Readonly<{ node: TurChatFlowFunnelNode; maxCount: number }>) {
+  showPath,
+}: Readonly<{ node: TurChatFlowFunnelNode; maxCount: number; showPath: boolean }>) {
   const total = node.cursorCount + node.completedCount;
   const widthPct = Math.round((total / maxCount) * 100);
+  // T237 — path-aware drop-off: of the conversations that reached this node,
+  // what share never progressed to a later step.
+  const dropOff = Math.max(0, node.pathReached - node.pathContinued);
+  const dropOffPct = node.pathReached > 0 ? Math.round((dropOff / node.pathReached) * 100) : 0;
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1">
       <div className="flex items-center gap-2 flex-wrap">
@@ -94,6 +104,33 @@ function FunnelRow({
           style={{ width: `${widthPct}%` }}
         />
       </div>
+      {showPath && node.pathReached > 0 && (
+        <div className="flex items-center gap-2 pt-0.5">
+          <span
+            className="text-muted-foreground shrink-0 font-mono text-[10px]"
+            title="reached this node → continued past it"
+          >
+            {node.pathReached}→{node.pathContinued}
+          </span>
+          <div
+            className="h-1 flex-1 overflow-hidden rounded-full bg-muted/40"
+            title="drop-off at this node"
+          >
+            <div
+              className="h-full bg-gradient-to-r from-rose-500 to-red-600"
+              style={{ width: `${dropOffPct}%` }}
+            />
+          </div>
+          <span
+            className={`shrink-0 font-mono text-[10px] ${
+              dropOffPct >= 50 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+            }`}
+            title="drop-off %"
+          >
+            {dropOffPct}%
+          </span>
+        </div>
+      )}
     </li>
   );
 }
