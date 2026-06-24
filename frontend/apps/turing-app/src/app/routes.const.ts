@@ -29,7 +29,6 @@ export const ROUTES = {
   GRAPHQL_ROOT: `${consolePath}/graphql`,
   USER_ACCOUNT: `${consolePath}/user/account`,
   AI_ANALYTICS_ROOT: `${consolePath}/ai-analytics`,
-  TOKEN_USAGE: `${consolePath}/ai-analytics/token-usage`,
   COST_GOVERNANCE: `${consolePath}/ai-analytics/cost-governance`,
   CHAT_ANALYTICS: `${consolePath}/ai-analytics/chat-analytics`,
   PARKED_CONVERSATIONS: `${consolePath}/ai-analytics/parked-conversations`,

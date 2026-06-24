@@ -1,6 +1,6 @@
 import {
   IconBrandGraphql,
-  IconChartBar,
+  IconCoin,
   IconCompass,
   IconCpu2,
   IconDatabase,
@@ -27,7 +27,7 @@ const QUICK_LINKS: QuickLink[] = [
   { titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, gradient: "from-blue-600 to-indigo-600" },
   { titleKey: "home.features.semanticNavigation.title", url: ROUTES.SN_ROOT, icon: IconCompass, gradient: "from-emerald-600 to-teal-600" },
   { titleKey: "home.features.languageModel.title", url: ROUTES.LLM_ROOT, icon: IconCpu2, gradient: "from-blue-600 to-indigo-600" },
-  { titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, gradient: "from-amber-500 to-orange-500" },
+  { titleKey: "home.features.costGovernance.title", url: ROUTES.COST_GOVERNANCE, icon: IconCoin, gradient: "from-amber-500 to-orange-500" },
   { titleKey: "home.features.searchEngine.title", url: ROUTES.SE_ROOT, icon: IconZoomCode, gradient: "from-emerald-600 to-teal-600" },
   { titleKey: "home.features.embeddingStore.title", url: ROUTES.STORE_ROOT, icon: IconDatabase, gradient: "from-purple-600 to-pink-600" },
   { titleKey: "home.features.import.title", url: ROUTES.EXCHANGE_IMPORT, icon: IconFileImport, gradient: "from-slate-600 to-slate-700" },

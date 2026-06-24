@@ -1,0 +1,57 @@
+{
+  "costGovernance": {
+    "dateFrom": "From",
+    "dateTo": "To",
+    "loading": "Loading spend…",
+    "loadFailed": "Failed to load spend.",
+    "cards": {
+      "totalCost": "Total cost",
+      "avgPerRequest": "Avg / request",
+      "requests": "Requests",
+      "inputTokens": "Input tokens",
+      "outputTokens": "Output tokens",
+      "totalTokens": "Total tokens"
+    },
+    "dailySpend": "Daily spend",
+    "dailySpendDesc": "USD cost per day across all providers (local / unpriced = $0).",
+    "noSpend": "No spend in this period.",
+    "costTooltip": "Cost",
+    "byAgent": "Spend by agent",
+    "byModel": "Spend by model",
+    "byStage": "Spend by stage",
+    "byStageDesc": "Live vs. background vs. skill.",
+    "noData": "No data.",
+    "untagged": "(untagged)",
+    "columns": {
+      "agent": "Agent",
+      "model": "Model",
+      "stage": "Stage",
+      "cost": "Cost",
+      "tokens": "Tokens",
+      "input": "Input",
+      "output": "Output",
+      "requests": "Requests"
+    },
+    "priceTable": {
+      "title": "Model price table",
+      "description": "USD per 1M tokens. Edits apply to the next chat turn; local / embedded models cost $0.",
+      "vendor": "Vendor",
+      "model": "Model",
+      "inputPrice": "Input $/1M",
+      "outputPrice": "Output $/1M",
+      "actions": "Actions",
+      "save": "Save",
+      "delete": "Delete",
+      "add": "Add",
+      "vendorPlaceholder": "openai",
+      "modelPlaceholder": "gpt-4o",
+      "saved": "Saved price for {{model}}",
+      "saveFailed": "Failed to save price",
+      "required": "Vendor and model are required",
+      "added": "Added price for {{model}}",
+      "addFailed": "Failed to add price",
+      "removed": "Removed price for {{model}}",
+      "removeFailed": "Failed to remove price"
+    }
+  }
+}

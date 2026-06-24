@@ -9,7 +9,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import {
   IconBrandGraphql,
-  IconChartBar,
+  IconCoin,
   IconCompass,
   IconCpu2,
   IconCube,
@@ -76,7 +76,7 @@ const SECTIONS: FeatureSection[] = [
       // Personas are voice profiles applied to AI agents — sit alongside the
       // other agent-adjacent configs (MCP, tokens) in the same row.
       { titleKey: "home.features.persona.title",       descriptionKey: "home.features.persona.description",       url: ROUTES.PERSONA_INSTANCE,        icon: IconUserCircle,      tone: "rose",    span: SPAN_SQUARE },
-      { titleKey: "home.features.tokenUsage.title",    descriptionKey: "home.features.tokenUsage.description",    url: ROUTES.TOKEN_USAGE,             icon: IconChartBar,        tone: "emerald", span: SPAN_SQUARE },
+      { titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", url: ROUTES.COST_GOVERNANCE,         icon: IconCoin,            tone: "emerald", span: SPAN_SQUARE },
       // Chat lives at the top of the page already (QuickChat tile), so the
       // grid entry stays as a 1x1 navigation shortcut rather than a 2x1 hero.
       { titleKey: "home.features.chat.title",          descriptionKey: "home.features.chat.description",          url: ROUTES.CHAT_ROOT,               icon: IconMessageChatbot,  tone: "indigo",  span: SPAN_SQUARE },

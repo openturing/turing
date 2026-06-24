@@ -17,6 +17,8 @@ export interface TurModelCostRow {
   costUsd: number;
   totalTokens: number;
   requestCount: number;
+  inputTokens: number;
+  outputTokens: number;
 }
 
 export interface TurStageCostRow {
@@ -38,6 +40,8 @@ export interface TurCostReport {
   periodEnd: string;
   totalCostUsd: number;
   totalTokens: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
   totalRequests: number;
   byAgent: TurAgentCostRow[];
   byModel: TurModelCostRow[];

@@ -1,0 +1,57 @@
+{
+  "costGovernance": {
+    "dateFrom": "De",
+    "dateTo": "Até",
+    "loading": "Carregando gastos…",
+    "loadFailed": "Falha ao carregar gastos.",
+    "cards": {
+      "totalCost": "Custo total",
+      "avgPerRequest": "Custo médio / req",
+      "requests": "Requisições",
+      "inputTokens": "Tokens de entrada",
+      "outputTokens": "Tokens de saída",
+      "totalTokens": "Tokens totais"
+    },
+    "dailySpend": "Gasto diário",
+    "dailySpendDesc": "Custo em USD por dia em todos os provedores (local / sem preço = $0).",
+    "noSpend": "Sem gastos neste período.",
+    "costTooltip": "Custo",
+    "byAgent": "Gasto por agente",
+    "byModel": "Gasto por modelo",
+    "byStage": "Gasto por etapa",
+    "byStageDesc": "Ao vivo vs. segundo plano vs. skill.",
+    "noData": "Sem dados.",
+    "untagged": "(sem etiqueta)",
+    "columns": {
+      "agent": "Agente",
+      "model": "Modelo",
+      "stage": "Etapa",
+      "cost": "Custo",
+      "tokens": "Tokens",
+      "input": "Entrada",
+      "output": "Saída",
+      "requests": "Requisições"
+    },
+    "priceTable": {
+      "title": "Tabela de preços por modelo",
+      "description": "USD por 1M de tokens. Edições valem a partir do próximo turno do chat; modelos locais / embarcados custam $0.",
+      "vendor": "Fornecedor",
+      "model": "Modelo",
+      "inputPrice": "Entrada $/1M",
+      "outputPrice": "Saída $/1M",
+      "actions": "Ações",
+      "save": "Salvar",
+      "delete": "Excluir",
+      "add": "Adicionar",
+      "vendorPlaceholder": "openai",
+      "modelPlaceholder": "gpt-4o",
+      "saved": "Preço salvo para {{model}}",
+      "saveFailed": "Falha ao salvar preço",
+      "required": "Fornecedor e modelo são obrigatórios",
+      "added": "Preço adicionado para {{model}}",
+      "addFailed": "Falha ao adicionar preço",
+      "removed": "Preço removido para {{model}}",
+      "removeFailed": "Falha ao remover preço"
+    }
+  }
+}

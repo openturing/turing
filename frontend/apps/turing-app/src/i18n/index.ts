@@ -12,6 +12,7 @@ import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
 import enChatFlow from "./locales/en/chatFlow.json";
 import enCommon from "./locales/en/common.json";
+import enCostGovernance from "./locales/en/costGovernance.json";
 import enCustomTool from "./locales/en/customTool.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enDialog from "./locales/en/dialog.json";
@@ -56,6 +57,7 @@ import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
 import ptChatFlow from "./locales/pt/chatFlow.json";
 import ptCommon from "./locales/pt/common.json";
+import ptCostGovernance from "./locales/pt/costGovernance.json";
 import ptCustomTool from "./locales/pt/customTool.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptDialog from "./locales/pt/dialog.json";
@@ -96,7 +98,7 @@ const en = {
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
-  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations,
+  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
 };
@@ -106,7 +108,7 @@ const pt = {
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
-  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations,
+  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
 };

@@ -2,7 +2,6 @@ import { useCurrentUser } from "@/contexts/user.context";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import type { Icon } from "@tabler/icons-react";
 import {
-  IconChartBar,
   IconCoin,
   IconMessageCircle2,
   IconPlayerPause,
@@ -48,7 +47,6 @@ export function useAiAnalyticsNav(): { items: AiAnalyticsNavItem[]; loaded: bool
     const hasPrivilege = (required?: string) =>
       isAdmin || !required || privileges.has(required);
     return [
-      { title: t("home.features.tokenUsage.title"), url: "/token-usage", icon: IconChartBar, visible: hasEnabledLlm },
       { title: t("home.features.costGovernance.title"), url: "/cost-governance", icon: IconCoin, visible: hasEnabledLlm },
       { title: t("home.features.chatAnalytics.title"), url: "/chat-analytics", icon: IconMessageCircle2, visible: true },
       { title: t("home.features.parkedConversations.title"), url: "/parked-conversations", icon: IconPlayerPause, visible: hasPrivilege("AI_AGENT_VIEW") },
