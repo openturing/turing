@@ -17,7 +17,6 @@ import {
   IconBolt,
   IconDeviceFloppy,
   IconDownload,
-  IconEye,
   IconSitemap,
   IconSparkles,
   IconUpload,
@@ -111,7 +110,6 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(initialGraph.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialGraph.edges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
   // T97 — chat-flow variant generator. Holds the source flow so the dialog
   // remounts cleanly per open; `null` keeps the dialog closed. Disabled on
@@ -395,11 +393,6 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           disabled={saving}
         />
         <SubPageHeader.Action
-          label={t("chatFlow.actions.preview")}
-          icon={IconEye}
-          onClick={() => setPreviewOpen((openPreview) => !openPreview)}
-        />
-        <SubPageHeader.Action
           label={t("chatFlow.actions.livePreview", {
             defaultValue: "Live preview",
           })}
@@ -491,7 +484,6 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           edges={edges}
           zoomPercent={zoomPercent}
           selectedNode={selectedNode}
-          previewOpen={previewOpen}
           livePreviewOpen={livePreviewOpen}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -504,7 +496,6 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           updateNodeData={updateNodeData}
           applyGraph={applyGraph}
           setSelectedNodeId={setSelectedNodeId}
-          setPreviewOpen={setPreviewOpen}
           setLivePreviewOpen={setLivePreviewOpen}
         />
       </Tabs>

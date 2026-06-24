@@ -108,9 +108,13 @@
     "actions": {
       "save": "Salvar",
       "saving": "Salvando…",
-      "preview": "Pré-visualizar",
+      "livePreview": "Pré-visualização ao vivo",
       "exportJson": "Exportar JSON",
       "importJson": "Importar JSON"
+    },
+    "livePreview": {
+      "viewNode": "Nó",
+      "viewFlow": "Fluxo"
     },
     "selector": {
       "label": "Chat Flow",
