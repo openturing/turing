@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T241 / §D.11 — per-experiment success metric.
+  #
+  # experimentSuccessMetric — the SuccessMetric name (GOAL_ACHIEVED |
+  #                           HANDOFF_WHATSAPP | LEAD_EMAIL_CAPTURED) the
+  #                           bandit optimises for and the significance test
+  #                           defaults to, per experimentKey. Nullable; a null
+  #                           value means GOAL_ACHIEVED, so existing
+  #                           experiments are unaffected.
+  #
+  # camelCase to match the chat_flow table's other A/B columns (experimentKey,
+  # variantLabel, banditEnabled, autoPromote); idempotent via columnExists.
+
+  - changeSet:
+      id: v2026.3.1.43-add-chat_flow-experimentSuccessMetric
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: experimentSuccessMetric
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: experimentSuccessMetric
+                  type: varchar(32)
+                  remarks: "T241 per-experiment success metric (GOAL_ACHIEVED | HANDOFF_WHATSAPP | LEAD_EMAIL_CAPTURED); null = GOAL_ACHIEVED."

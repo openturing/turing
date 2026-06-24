@@ -138,6 +138,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [trafficWeight, setTrafficWeight] = useState<number | null>(flow.trafficWeight ?? null);
   const [banditEnabled, setBanditEnabled] = useState<boolean>(flow.banditEnabled ?? false);
   const [autoPromote, setAutoPromote] = useState<boolean>(flow.autoPromote ?? false);
+  const [experimentSuccessMetric, setExperimentSuccessMetric] = useState<string>(
+    flow.experimentSuccessMetric ?? "GOAL_ACHIEVED",
+  );
   const [slotInheritanceJson, setSlotInheritanceJson] = useState(flow.slotInheritanceJson ?? "");
   const [open, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -250,6 +253,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       trafficWeight: trimmedKey ? trafficWeight : null,
       banditEnabled: trimmedKey ? banditEnabled : null,
       autoPromote: trimmedKey ? autoPromote : null,
+      experimentSuccessMetric: trimmedKey ? (experimentSuccessMetric || null) : null,
       slotInheritanceJson: slotInheritanceJson.trim() || null,
     };
     try {
@@ -268,7 +272,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       setSaving(false);
     }
   }, [name, description, guardrailMethod, captureMode, abandonHandoffMessage, triggerDescription, triggerMode, triggerLanguage,
-      experimentKey, variantLabel, trafficWeight, banditEnabled, autoPromote, slotInheritanceJson,
+      experimentKey, variantLabel, trafficWeight, banditEnabled, autoPromote, experimentSuccessMetric,
+      slotInheritanceJson,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
   const onExport = useCallback(() => {
@@ -472,6 +477,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setBanditEnabled={setBanditEnabled}
           autoPromote={autoPromote}
           setAutoPromote={setAutoPromote}
+          experimentSuccessMetric={experimentSuccessMetric}
+          setExperimentSuccessMetric={setExperimentSuccessMetric}
           slotInheritanceJson={slotInheritanceJson}
           setSlotInheritanceJson={setSlotInheritanceJson}
         />

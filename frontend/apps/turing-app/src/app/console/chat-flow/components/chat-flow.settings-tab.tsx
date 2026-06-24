@@ -95,6 +95,8 @@ interface SettingsTabProps {
   setBanditEnabled: (value: boolean) => void;
   autoPromote: boolean;
   setAutoPromote: (value: boolean) => void;
+  experimentSuccessMetric: string;
+  setExperimentSuccessMetric: (value: string) => void;
   slotInheritanceJson: string;
   setSlotInheritanceJson: (value: string) => void;
 }
@@ -128,6 +130,8 @@ export function ChatFlowSettingsTab({
   setBanditEnabled,
   autoPromote,
   setAutoPromote,
+  experimentSuccessMetric,
+  setExperimentSuccessMetric,
   slotInheritanceJson,
   setSlotInheritanceJson,
 }: Readonly<SettingsTabProps>) {
@@ -454,6 +458,41 @@ export function ChatFlowSettingsTab({
                   onCheckedChange={setBanditEnabled}
                   disabled={!experimentKey.trim()}
                 />
+              </FormRow>
+
+              {/* T241 / §D.11 — per-experiment success metric. The bandit
+                  optimises for this conversion and the significance test
+                  defaults to it. Disabled until the flow is inside an
+                  experimentKey; declare it on any arm to score the whole
+                  experiment on it. */}
+              <FormRow
+                htmlFor="chat-flow-success-metric"
+                label={t("chatFlow.fields.successMetric", { defaultValue: "Success metric" })}
+                description={t("chatFlow.fields.successMetricHint", {
+                  defaultValue:
+                    "Which conversion the bandit optimises for and the significance test scores. Goal achieved is the default; the others activate once the analytics store persists those signals.",
+                })}
+              >
+                <Select
+                  value={experimentSuccessMetric || "GOAL_ACHIEVED"}
+                  onValueChange={setExperimentSuccessMetric}
+                  disabled={!experimentKey.trim()}
+                >
+                  <SelectTrigger id="chat-flow-success-metric" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GOAL_ACHIEVED">
+                      {t("chatFlow.fields.successMetricGoalAchieved", { defaultValue: "Goal achieved" })}
+                    </SelectItem>
+                    <SelectItem value="HANDOFF_WHATSAPP">
+                      {t("chatFlow.fields.successMetricHandoff", { defaultValue: "Handoff requested" })}
+                    </SelectItem>
+                    <SelectItem value="LEAD_EMAIL_CAPTURED">
+                      {t("chatFlow.fields.successMetricLead", { defaultValue: "Lead email captured" })}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </FormRow>
 
               {/* T71 / §VII.8.b — Champion-challenger auto-promotion. When ANY

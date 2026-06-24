@@ -165,6 +165,15 @@ export interface TurChatFlow {
    */
   autoPromote?: boolean | null;
   /**
+   * T241 / §D.11 — per-experiment success metric the bandit optimises for and
+   * the significance test defaults to. One of `GOAL_ACHIEVED`,
+   * `HANDOFF_WHATSAPP`, `LEAD_EMAIL_CAPTURED`. Null/absent means
+   * `GOAL_ACHIEVED`. Only meaningful when {@link experimentKey} is set.
+   *
+   * @since 2026.3.4
+   */
+  experimentSuccessMetric?: string | null;
+  /**
    * T93 / §VII.11.c — JSON mapping {@code {receivingSlot: sourceSlot}} of
    * slots this flow inherits from earlier flows on the same conversation.
    * {@code {"*":"*"}} = pass every captured slot through. Null/blank
