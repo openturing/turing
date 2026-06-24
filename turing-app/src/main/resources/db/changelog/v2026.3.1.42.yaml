@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T294 / §D.11 — per-server outbound MCP transport choice.
+  #
+  # transport_type — wire transport for HTTP MCP servers: SSE (legacy
+  #                  two-endpoint HTTP+SSE) or STREAMABLE_HTTP (single /mcp
+  #                  endpoint). Nullable; a null value is treated as SSE at
+  #                  runtime, so existing servers are unaffected. Ignored for
+  #                  COMMAND (stdio) servers.
+  #
+  # snake_case to match the mcp_server table's connection_type column;
+  # idempotent via columnExists.
+
+  - changeSet:
+      id: v2026.3.1.42-add-mcp_server-transport_type
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: mcp_server
+        - not:
+            - columnExists:
+                tableName: mcp_server
+                columnName: transport_type
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: transport_type
+                  type: varchar(20)
+                  remarks: "T294 outbound MCP wire transport for HTTP servers (SSE | STREAMABLE_HTTP); null = SSE."

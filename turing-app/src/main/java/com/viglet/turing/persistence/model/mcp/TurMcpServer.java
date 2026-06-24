@@ -85,6 +85,18 @@ public class TurMcpServer implements Serializable, VigletTenantOwnedInfra {
     @Column(name = "connection_type", nullable = false, length = 10)
     private TurMcpServerConnectionType connectionType;
 
+    /**
+     * T294 — wire transport for {@code HTTP} servers (SSE vs Streamable HTTP).
+     * Nullable: a {@code null} value (legacy rows, {@code COMMAND} servers)
+     * is treated as {@link TurMcpServerTransportType#SSE} at runtime, so the
+     * column is purely opt-in and existing servers are unaffected.
+     *
+     * @since 2026.3.4
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transport_type", length = 20)
+    private TurMcpServerTransportType transportType;
+
     @Column(nullable = false)
     private int enabled;
 }
