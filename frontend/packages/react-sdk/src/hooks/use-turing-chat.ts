@@ -18,10 +18,18 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
-  TurChatSource,
 } from "../core/types";
+import {
+  newId,
+  useStreamingChatCore,
+  type ChatMessage,
+  type ChatStatus,
+} from "./streaming-chat-core";
 
-export type ChatStatus = "idle" | "loading" | "success" | "error";
+// Re-exported for backwards compatibility — `ChatMessage` and `ChatStatus`
+// moved to `streaming-chat-core.ts` in T243 (shared with `useTuringLlmChat`)
+// but were, and stay, part of this hook's public surface.
+export type { ChatMessage, ChatStatus } from "./streaming-chat-core";
 
 /** Query-param name carrying the forced A/B variant (T73). */
 const AB_VARIANT_PARAM = "_ab_variant";
@@ -42,39 +50,6 @@ function readAbVariantFromLocation(): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-export interface ChatMessage extends TurChatConversationMessage {
-  /** Stable id for React keys (auto-generated) */
-  id: string;
-  /** Unix ms when the message was created */
-  timestamp: number;
-  /**
-   * Suggested chip labels for the next user turn (only present on assistant
-   * messages, only when the chat-flow engine emitted an `"options"` event
-   * for the turn). The host renders them as buttons below the bubble;
-   * picking one is equivalent to sending that label as the next user
-   * message. Empty array (or missing) means free text only.
-   *
-   * @since 2026.2.17
-   */
-  options?: string[];
-  /**
-   * Native multi-field form attached to this assistant message (T107). The
-   * host renders it as a form and calls {@link UseTuringChatReturn#submitForm}
-   * with the collected values. Cleared once submitted.
-   *
-   * @since 2026.3.1
-   */
-  form?: TurChatForm;
-  /**
-   * RAG provenance behind this assistant answer (T292), emitted by the chat
-   * pipeline as a `"sources"` SSE event. The host renders source chips below
-   * the bubble; each entry maps to a retrieved chunk.
-   *
-   * @since 2026.3.1
-   */
-  sources?: TurChatSource[];
 }
 
 /**
@@ -286,42 +261,6 @@ export interface UseTuringChatReturn {
 
 const DEFAULT_MAX_MESSAGES = 50;
 
-function newId(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-/**
- * Pure update over an immutable message list: locates the message by id and
- * replaces it with the result of {@code mutator}. Returns the same array
- * reference when no match (so React's setState bails on the update).
- *
- * <p>Extracted out of the {@code send} callback so the streaming patch path
- * doesn't nest functions past Sonar's 4-level threshold — inlining
- * {@code findIndex} + the mutator inside a {@code setMessages} closure inside
- * an {@code async} arrow inside {@code useCallback} crosses the line.
- */
-/**
- * `fetch` reports an aborted request as a {@link DOMException} with
- * {@code name === "AbortError"}. Some runtimes (older Node test envs) raise
- * a plain {@code Error}, so we also accept that name as a fallback.
- */
-function isAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === "AbortError") return true;
-  return err instanceof Error && err.name === "AbortError";
-}
-
-function patchMessage(
-  messages: ChatMessage[],
-  id: string,
-  mutator: (msg: ChatMessage) => ChatMessage,
-): ChatMessage[] {
-  const idx = messages.findIndex((m) => m.id === id);
-  if (idx === -1) return messages;
-  const updated = [...messages];
-  updated[idx] = mutator(updated[idx]);
-  return updated;
-}
-
 function storageKey(site: string, suffix: string | true): string {
   const tag = typeof suffix === "string" ? suffix : "default";
   return `turing.chat.${site}.${tag}`;
@@ -443,14 +382,35 @@ export function useTuringChat(
     ? loadPersisted(persistKey)
     : { conversationId: controlledConversationId ?? null, messages: initialMessages ?? [] };
 
+  // Shared streaming/bubble/abort state machine (T243) — owns `messages`,
+  // `status`, `error`, the request counter, the aborted flag, the per-send
+  // AbortController, and the synchronous `messagesRef`.
+  const core = useStreamingChatCore({
+    maxMessages,
+    initialMessages: initialPersisted.messages,
+  });
+  const {
+    messages,
+    status,
+    error,
+    setMessages,
+    setStatus,
+    setError,
+    messagesRef,
+    isStale,
+    handleSendError,
+    beginSend,
+    commitMessages,
+    openAssistantBubble,
+    appendToken,
+    patchAssistant,
+  } = core;
+
   // In agent mode the site's RAG flag doesn't gate access — the consumer
   // already chose an agent — so default to enabled and skip the fetch.
   const [enabled, setEnabled] = useState<boolean | null>(isAgentMode ? true : null);
   const [disabledReason, setDisabledReason] = useState<ChatDisabledReason | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialPersisted.messages);
   const [conversationId, setConversationId] = useState<string | null>(initialPersisted.conversationId);
-  const [status, setStatus] = useState<ChatStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
   // T107 — the native multi-field form awaiting submission, if any.
   const [activeForm, setActiveForm] = useState<TurChatForm | null>(null);
   // Server-driven cookie config (`turing.chat.session.*`). Default values are
@@ -459,20 +419,9 @@ export function useTuringChat(
   const sessionCookieNameRef = useRef<string>(TUR_SESSION_DEFAULT_COOKIE_NAME);
   const sessionTtlSecondsRef = useRef<number>(TUR_SESSION_DEFAULT_TTL_SECONDS);
 
-  const requestRef = useRef(0);
-  const abortedRef = useRef(false);
-  // Per-send AbortController so `stop()` actually cancels the in-flight
-  // fetch (and stops the backend from generating tokens we throw away)
-  // instead of just gating state mutations on a counter. Replaced on every
-  // `send`; `stop()`/`reset()` call `.abort()` on the latest.
-  const abortControllerRef = useRef<AbortController | null>(null);
-  // Keep a synchronous mirror of the latest messages so `send` can read the
-  // newest history without depending on `messages` (which would re-create the
-  // callback on every turn) and without relying on the setState updater fn
-  // (which is queued, not synchronous).
-  const messagesRef = useRef<ChatMessage[]>(messages);
-  // Same reasoning for `conversationId`: minted lazily inside `send`, the ref
-  // lets us read the value back synchronously without a re-render.
+  // Same reasoning as the core's `messagesRef`, for `conversationId`: minted
+  // lazily inside `send`, the ref lets us read the value back synchronously
+  // without a re-render.
   const conversationIdRef = useRef<string | null>(conversationId);
 
   // Resolve enabled flag once per site (skipped in agent mode). Also captures
@@ -524,24 +473,12 @@ export function useTuringChat(
     }
   }, [controlledConversationId]);
 
-  // Extracted out of `send`'s try/catch so the streaming path stays under
-  // the cognitive-complexity threshold. Drops the result when a newer send
-  // is in flight, swallows AbortError as an intentional stop, and surfaces
-  // everything else as an error.
-  const handleSendError = useCallback((err: unknown, requestId: number) => {
-    if (requestId !== requestRef.current || abortedRef.current) return;
-    if (isAbortError(err)) {
-      setStatus("idle");
-      return;
-    }
-    setError(err instanceof Error ? err.message : "Chat request failed");
-    setStatus("error");
-  }, []);
-
   // Shared streaming body for `send` and `submitForm`: opens an empty
   // assistant bubble, streams tokens, then patches in the final text, chip
   // options, and any native form (T107). Assumes `messagesRef.current`
-  // already reflects the turn's input history.
+  // already reflects the turn's input history. The bubble/token/abort
+  // mechanics live in `useStreamingChatCore` (T243); this only adds the
+  // site/agent transport split and the form/options/sources final patch.
   const runAssistantTurn = useCallback(
     async (
       wire: TurChatConversationMessage[],
@@ -551,26 +488,8 @@ export function useTuringChat(
       effectiveLlmInstanceId: string | undefined,
     ) => {
       try {
-        const assistantId = newId();
-        const assistantMsgInitial: ChatMessage = {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-          timestamp: Date.now(),
-        };
-        const streamingHistory = [...messagesRef.current, assistantMsgInitial];
-        const initialWithReply =
-          streamingHistory.length > maxMessages
-            ? streamingHistory.slice(-maxMessages)
-            : streamingHistory;
-        messagesRef.current = initialWithReply;
-        setMessages(initialWithReply);
-
-        const onToken = (token: string) => {
-          if (requestId !== requestRef.current || abortedRef.current) return;
-          setMessages((prev) => patchMessage(prev, assistantId,
-              (m) => ({ ...m, content: m.content + token })));
-        };
+        const assistantId = openAssistantBubble();
+        const onToken = (token: string) => appendToken(assistantId, requestId, token);
 
         const res = agentId && effectiveLlmInstanceId
           ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
@@ -589,26 +508,26 @@ export function useTuringChat(
               signal: controller.signal,
             });
 
-        if (requestId !== requestRef.current || abortedRef.current) return;
+        if (isStale(requestId)) return;
 
         const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
         const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
-        setMessages((prev) => patchMessage(prev, assistantId, (m) => ({
+        patchAssistant(assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
-        })));
+        }));
         setActiveForm(finalForm ?? null);
         setStatus("success");
       } catch (err) {
         handleSendError(err, requestId);
       }
     },
-    [siteName, effectiveLocale, maxMessages, flowId, selectedSkillId, forcedVariant, agentId,
-      handleSendError],
+    [siteName, effectiveLocale, flowId, selectedSkillId, forcedVariant, agentId,
+      openAssistantBubble, appendToken, patchAssistant, isStale, handleSendError, setStatus],
   );
 
   const send = useCallback(
@@ -632,24 +551,11 @@ export function useTuringChat(
         timestamp: Date.now(),
       };
 
-      const requestId = ++requestRef.current;
-      abortedRef.current = false;
-      // Drop any prior in-flight request — `stop()`/`reset()` should have
-      // already aborted, but a fast caller can chain `send → send` without
-      // touching either. Mint a fresh controller per send.
-      abortControllerRef.current?.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      setError(null);
-      setStatus("loading");
+      const { requestId, controller } = beginSend();
 
       // Build next history synchronously from the ref (always up-to-date),
       // commit it to state and the ref, then send the same array on the wire.
-      const all = [...messagesRef.current, userMsg];
-      const nextMessages =
-        all.length > maxMessages ? all.slice(-maxMessages) : all;
-      messagesRef.current = nextMessages;
-      setMessages(nextMessages);
+      const nextMessages = commitMessages([...messagesRef.current, userMsg]);
 
       // The conversation id is the cross-domain TUR_SESSION cookie minted
       // by the SDK — same value across reloads, ties future personalization
@@ -686,7 +592,8 @@ export function useTuringChat(
         effectiveLlmInstanceId,
       );
     },
-    [maxMessages, agentId, agentLlmInstanceId, controlledConversationId, runAssistantTurn],
+    [agentId, agentLlmInstanceId, controlledConversationId, beginSend, commitMessages,
+      messagesRef, runAssistantTurn],
   );
 
   const submitForm = useCallback(
@@ -703,13 +610,7 @@ export function useTuringChat(
       if (!cid) return null;
 
       const pendingForm = activeForm;
-      const requestId = ++requestRef.current;
-      abortedRef.current = false;
-      abortControllerRef.current?.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      setError(null);
-      setStatus("loading");
+      const { requestId, controller } = beginSend();
 
       // Consume the pending form: clear it from state and from the assistant
       // message that carried it so the inputs disappear immediately.
@@ -723,7 +624,7 @@ export function useTuringChat(
         handleSendError(err, requestId);
         return null;
       }
-      if (requestId !== requestRef.current || abortedRef.current) return result;
+      if (isStale(requestId)) return result;
 
       const effectiveLlmInstanceId =
         overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
@@ -734,31 +635,19 @@ export function useTuringChat(
       await runAssistantTurn(wire, requestId, controller, cid, effectiveLlmInstanceId);
       return result;
     },
-    [siteName, agentId, agentLlmInstanceId, activeForm, handleSendError, runAssistantTurn],
+    [siteName, agentId, agentLlmInstanceId, activeForm, beginSend, setMessages, isStale,
+      handleSendError, runAssistantTurn],
   );
 
-  const stop = useCallback(() => {
-    abortedRef.current = true;
-    requestRef.current++;
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    setStatus("idle");
-  }, []);
+  const stop = core.stop;
 
+  // Reset clears local history but never touches TUR_SESSION — the cookie
+  // identifies the visitor across reloads, so the conversationId stays the
+  // same. Server-side flow state should be cleared via `resetFlow()`. The
+  // extra cleanup drops any pending native form (T107).
   const reset = useCallback(() => {
-    abortedRef.current = true;
-    requestRef.current++;
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    messagesRef.current = [];
-    setMessages([]);
-    setError(null);
-    setStatus("idle");
-    setActiveForm(null);
-    // Reset clears local history but never touches TUR_SESSION — the cookie
-    // identifies the visitor across reloads, so the conversationId stays the
-    // same. Server-side flow state should be cleared via `resetFlow()`.
-  }, []);
+    core.reset(() => setActiveForm(null));
+  }, [core]);
 
   // Drop server-side flow state. Site mode clears every flow attached to
   // the conversation under the site's agent (the auto-router may have

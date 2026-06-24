@@ -1827,8 +1827,8 @@ customer value — there is no monolithic "Block F is done" gate.
 > Block H (T219–T232) is complete: SDK gained LLM listing/context-info, per-turn
 > LLM override, real `AbortController`, multipart agent chat, plain-LLM hook, and
 > the admin `chat.page.tsx` was migrated onto the SDK with a vitest smoke suite.
-> See [CHANGELOG.md](CHANGELOG.md). Active follow-up: T243 (shared
-> `useStreamingChatCore`) — see [ROADMAP.md](ROADMAP.md).
+> T243 (shared `useStreamingChatCore`) has since shipped — see
+> [CHANGELOG.md](CHANGELOG.md).
 
 ### XII.2 Headless UI library — `@viglet/turing-react-ui` (the what/why)
 
