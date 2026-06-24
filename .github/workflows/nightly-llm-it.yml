@@ -1,0 +1,84 @@
+# Nightly real-LLM integration tests (T242).
+#
+# The default PR/validate pipeline excludes the real-LLM ITs (*BehavioralIT,
+# *AgentEvalIT, *NLFacetEvalIT) so every-PR CI doesn't burn API credits. This
+# workflow runs them on a nightly schedule by activating their Maven profiles
+# (-Pllm-it / -Pagent-eval / -Pnl-facet-eval) with the OPENAI_API_KEY secret
+# injected, so LLM-path regressions surface without gating every PR.
+#
+# Each IT class gates on @EnabledIfEnvironmentVariable("OPENAI_API_KEY"); if the
+# secret is missing the classes short-circuit to "skipped" (no API calls, no
+# cost), so the job stays green but does no useful work — keep the secret set.
+
+name: Nightly real-LLM ITs
+
+on:
+  schedule:
+    # 03:17 UTC daily — off the top of the hour to dodge cron congestion.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Run a single profile (blank = all three)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - llm-it
+          - agent-eval
+          - nl-facet-eval
+
+jobs:
+  llm-it:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [llm-it, agent-eval, nl-facet-eval]
+    name: ${{ matrix.profile }}
+    steps:
+      - name: Skip unselected profiles on manual dispatch
+        id: gate
+        run: |
+          selected='${{ github.event.inputs.profile }}'
+          if [ -n "$selected" ] && [ "$selected" != '${{ matrix.profile }}' ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping ${{ matrix.profile }} (manual dispatch selected '$selected')."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v6
+        if: steps.gate.outputs.run == 'true'
+      - name: Set up JDK 21
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-java@v5
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+      - name: Cache Maven packages
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Warn when OPENAI_API_KEY is absent
+        if: steps.gate.outputs.run == 'true' && env.OPENAI_API_KEY == ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "::warning title=OPENAI_API_KEY missing::Real-LLM ITs will self-skip; this run verifies nothing. Set the OPENAI_API_KEY repository secret."
+      - name: Run -P${{ matrix.profile }}
+        if: steps.gate.outputs.run == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: mvn -B verify -P${{ matrix.profile }} -pl turing-app -Dskip.npm=true -Dgpg.skip=true -Dturing.open-browser=false
+      - name: Upload failsafe reports
+        if: steps.gate.outputs.run == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failsafe-reports-${{ matrix.profile }}
+          path: turing-app/target/failsafe-reports/
+          if-no-files-found: ignore
+          retention-days: 14

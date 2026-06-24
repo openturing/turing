@@ -507,8 +507,9 @@ structurally with the critical patches: #1, #3, #7, #10, #12, #13.
   base class (`AbstractAgentExecutorIT`) shared, both package-private
   outside `customers/education/flow/`
 - `llm-it` profile in `turing-app/pom.xml` works locally
-- (Follow-up, out of scope) CI nightly pipeline for `-Pllm-it` with the
-  `OPENAI_API_KEY` secret
+- CI nightly pipeline for `-Pllm-it` (+ `-Pagent-eval` / `-Pnl-facet-eval`)
+  with the `OPENAI_API_KEY` secret — shipped, see
+  `.github/workflows/nightly-llm-it.yml` (T242)
 
 ---
 
