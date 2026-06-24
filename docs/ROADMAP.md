@@ -29,7 +29,6 @@
 - 💭 **T237** (deps: T85) **Full path-aware funnel** — T85 shipped the funnel V1 over the existing session events (the API already exposes `abandonedCount`), but a true per-node drop-off funnel needs a per-turn node-visit log. → §VII.10.b
 - 💭 **T238** (deps: T86) **Conversation replay scrubber** — T86 shipped a chronological replay (render + scroll). → §VII.10.c
 - 💭 **T239** (deps: T80) **Code Interpreter sandbox hardening (seccomp + gVisor)** — T80 ships Docker mode with `--cap-drop ALL --security-opt no-new-privileges` + read-only FS. → §VII.2.h / §VIII
-- 💭 **T240** (deps: T110) **Sub-agent session-detail surfaces** — T110 captures `parentConversationId` + the scorecard dimension; the presentation glue is deferred. → §IX.2.c
 
 ## D.12 — Headless React UI library (`@viglet/turing-react-ui`)
 

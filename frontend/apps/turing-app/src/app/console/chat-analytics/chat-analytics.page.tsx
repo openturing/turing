@@ -247,9 +247,13 @@ function RouterDecisionsCard({
 interface DetailPanelProps {
   conversationId: string | null;
   onClose: () => void;
+  /** Loaded session window — used to resolve sub-agent children (T240). */
+  sessions: TurChatAnalyticsSession[];
+  /** Drill into another conversation in-place (parent / child link, T240). */
+  onOpenConversation: (id: string) => void;
 }
 
-function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
+function DetailPanel({ conversationId, onClose, sessions, onOpenConversation }: Readonly<DetailPanelProps>) {
   const { data, isLoading, isError } = useChatAnalyticsTranscript(conversationId);
   // T86 — overlay the T60 slot audit trail so each transcript message
   // sits next to the slot writes that happened around that turn. Polling
@@ -259,6 +263,13 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
   // T89 — the router decisions for this conversation (candidates + scores +
   // winner + method). The complaint-triage view: "why did it send me here?"
   const { data: routerDecisions } = useChatAnalyticsRouterDecisions(conversationId);
+
+  // T240 — sub-agent children: sessions spawned by this conversation
+  // (parentConversationId === this id). Resolved from the loaded window;
+  // the parent link below comes straight off the transcript session record.
+  const childSessions = conversationId
+    ? sessions.filter((s) => s.parentConversationId === conversationId)
+    : [];
 
   return (
     <Sheet open={Boolean(conversationId)} onOpenChange={(open) => !open && onClose()}>
@@ -308,6 +319,71 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 />
               </CardContent>
             </Card>
+
+            {/* T240 / §IX.2.c — sub-agent orchestration links. Renders only
+                when this conversation is a child (has a parent orchestrator)
+                or a parent (spawned sub-agent invocations). Each id drills
+                into that conversation in-place. */}
+            {(data.session.parentConversationId || childSessions.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Sub-agent orchestration</CardTitle>
+                  <CardDescription>
+                    {data.session.parentConversationId
+                      ? "Spawned by an orchestrator agent via agent.invoke (T110)."
+                      : `Orchestrator — spawned ${childSessions.length} sub-agent invocation${
+                          childSessions.length === 1 ? "" : "s"
+                        } (T110).`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {data.session.parentConversationId && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Invoked by orchestrator</p>
+                      <button
+                        type="button"
+                        className="text-primary font-mono text-xs underline underline-offset-2 hover:opacity-80"
+                        onClick={() => onOpenConversation(data.session.parentConversationId!)}
+                      >
+                        {data.session.parentConversationId}
+                      </button>
+                    </div>
+                  )}
+                  {childSessions.length > 0 && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">
+                        Sub-agent invocations ({childSessions.length})
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {childSessions.map((child) => (
+                          <li
+                            key={child.conversationId}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <button
+                              type="button"
+                              title={child.conversationId}
+                              className="text-primary truncate font-mono text-xs underline underline-offset-2 hover:opacity-80"
+                              onClick={() => onOpenConversation(child.conversationId)}
+                            >
+                              {child.agentTitle ?? child.agentId ?? child.conversationId}
+                            </button>
+                            {child.outcome && (
+                              <span className="text-muted-foreground shrink-0 text-xs">
+                                {child.outcome}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-muted-foreground/70 mt-1 text-[11px]">
+                        Resolved from the loaded session window.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -1299,7 +1375,12 @@ export default function ChatAnalyticsPage() {
         </CardContent>
       </Card>
 
-      <DetailPanel conversationId={selectedId} onClose={() => setSelectedId(null)} />
+      <DetailPanel
+        conversationId={selectedId}
+        onClose={() => setSelectedId(null)}
+        sessions={sessions ?? []}
+        onOpenConversation={setSelectedId}
+      />
     </div>
   );
 }
