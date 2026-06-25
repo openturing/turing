@@ -14,6 +14,14 @@
       "trigger": {
         "title": "Disparo automático",
         "description": "Quando e com que frequência o roteador LLM deve ativar este fluxo."
+      },
+      "experiment": {
+        "title": "Experimento A/B",
+        "description": "Agrupe este fluxo com fluxos irmãos sob a mesma chave de experimento — o roteador reatribuirá conversas entre as variantes pelo peso de tráfego. Deixe a chave vazia para desativar o roteamento A/B."
+      },
+      "slotInheritance": {
+        "title": "Herança de slots",
+        "description": "Quando o motor roteia um visitante para este fluxo a partir de um fluxo diferente na mesma conversa, decida quais slots já capturados são transferidos. Vazio = sem herança."
       }
     },
     "newInstance": "Novo Chat Flow",
@@ -48,7 +56,26 @@
       "helpWriteTriggerHint": "Dica: descreva também o que NÃO deve ativar este fluxo, não só o que deve.",
       "helpWriteTriggerGenerate": "Gerar condição",
       "triggerMode": "Modo de Disparo",
-      "triggerLanguage": "Idioma da condição"
+      "triggerLanguage": "Idioma da condição",
+      "autoPromote": "Promover vencedor automaticamente (campeão-desafiante)",
+      "autoPromoteHint": "Quando ativado, um job diário verifica a significância estatística e, assim que um vencedor é declarado, fixa-o em 100% do tráfego e arquiva as variantes perdedoras. Deixe desativado para manter o controle manual — você ainda pode promover sob demanda a partir do relatório de significância.",
+      "banditEnabled": "Bandit (amostragem de Thompson)",
+      "banditEnabledHint": "Quando ativado, o motor ignora o peso de tráfego e se adapta à conversão observada usando amostragem de Thompson sobre a taxa de meta atingida. Ative em pelo menos uma variante sob a mesma chave de experimento para habilitar o modo bandit.",
+      "experimentKey": "Chave do experimento",
+      "experimentKeyHint": "Identificador compartilhado entre todas as variantes de um teste A/B (ex.: 'pricing-page-tone'). Estável: alterá-lo encerra o experimento e inicia um novo.",
+      "preserveAllSlots": "Preservar todos os slots da sessão",
+      "preserveAllSlotsHint": "Traz para este fluxo todos os slots capturados em fluxos anteriores desta conversa. Grava o mapeamento curinga {\"*\":\"*\"}. Desative para definir um mapa de slots específico abaixo.",
+      "slotInheritanceJson": "Mapeamento personalizado (avançado)",
+      "slotInheritanceJsonHint": "Objeto JSON {\"receivingSlot\":\"sourceSlot\"}. Use o mesmo nome nos dois lados para um repasse direto; use nomes diferentes para renomear, ex.: {\"position\":\"cargo_atual\"}. Slots que não estiverem no mapa NÃO são herdados.",
+      "successMetric": "Métrica de sucesso",
+      "successMetricGoalAchieved": "Meta atingida",
+      "successMetricHandoff": "Transferência solicitada",
+      "successMetricHint": "Qual conversão o bandit otimiza e o teste de significância avalia. Meta atingida é o padrão; as demais são ativadas quando o repositório de analytics persiste esses sinais.",
+      "successMetricLead": "E-mail de lead capturado",
+      "trafficWeight": "Peso de tráfego",
+      "trafficWeightHint": "Peso relativo (0-100) entre as variantes. (50, 50) divide igualmente; (90, 10) direciona 90% para a primeira. As somas não precisam totalizar 100 — apenas as proporções importam. 0 pausa este braço sem excluí-lo.",
+      "variantLabel": "Rótulo da variante",
+      "variantLabelHint": "O braço deste fluxo dentro do experimento ('control', 'treatment_v2', 'warmer_tone'). Aparece como dimensão de agrupamento no painel de analytics."
     },
     "triggerModes": {
       "ONCE": {
@@ -110,11 +137,35 @@
       "saving": "Salvando…",
       "livePreview": "Pré-visualização ao vivo",
       "exportJson": "Exportar JSON",
-      "importJson": "Importar JSON"
+      "importJson": "Importar JSON",
+      "generateVariant": "Gerar variante"
     },
     "livePreview": {
       "viewNode": "Nó",
-      "viewFlow": "Fluxo"
+      "viewFlow": "Fluxo",
+      "captureInto": "(resposta do visitante capturada em ",
+      "captureOnly": "(resposta do visitante, não capturada)",
+      "clearMocks": "Limpar",
+      "close": "Fechar",
+      "conditionEvaluates": "Avalia: ",
+      "empty": "Selecione um nó no canvas para visualizar o que o visitante vê nele.",
+      "endHint": "A conversa termina aqui. Os slots são registrados como uma submissão.",
+      "form": "formulário nativo",
+      "formInput": "entrada {{type}}",
+      "functionCall": "Chama a ferramenta ",
+      "mocksLabel": "Slots simulados (um por linha: chave=valor)",
+      "nextHint": "Próximo: {{id}} ({{type}})",
+      "persona": "Muda a voz para ",
+      "slotOp": "Interno: ",
+      "startHint": "A conversa começa aqui.",
+      "subFlow": "Transfere para o subfluxo ",
+      "subFlowSwitch": "Roteia por ",
+      "switchOn": "Alterna pelo slot ",
+      "switchUnmocked": " (slot não simulado — a pré-visualização não consegue resolver o ramo)",
+      "title": "Pré-visualização ao vivo",
+      "user": "usuário",
+      "validation": "Validação: ",
+      "writeSlot": "Interno: grava "
     },
     "selector": {
       "label": "Chat Flow",
@@ -283,7 +334,41 @@
       "slotValue": "Valor",
       "slotValuePlaceholder": "Valor literal a ser gravado",
       "slotValueHint": "Armazenado literalmente no estado da conversa; nós Switch ou AI Question posteriores podem lê-lo.",
-      "slotOverrideHint": "Quando marcado, sobrescreve o slot mesmo que ele já tenha um valor; caso contrário o nó não faz nada para preservar o valor existente."
+      "slotOverrideHint": "Quando marcado, sobrescreve o slot mesmo que ele já tenha um valor; caso contrário o nó não faz nada para preservar o valor existente.",
+      "completionMode": "Ao concluir o item",
+      "completionModeHint": "Depois que o subfluxo do corpo conclui um item: marcá-lo como concluído (mantém um plano auditável) ou removê-lo (drenagem de fila). Ambos encerram o laço.",
+      "convertToForm": "Converter {{count}} perguntas em um formulário",
+      "convertToFormConfirm": "Converter",
+      "convertToFormDescription": "Estas {{count}} perguntas consecutivas tornam-se um único formulário de múltiplos campos. O agrupamento para porque {{reason}}.",
+      "convertToFormTitle": "Converter em formulário nativo",
+      "formFieldAdd": "Adicionar campo",
+      "formFieldLabelPlaceholder": "Rótulo",
+      "formFieldRemove": "Remover campo",
+      "formFieldRequired": "Obrigatório",
+      "formFieldSlotPlaceholder": "Escolha um slot…",
+      "formFieldUndeclared": "não declarado",
+      "formFields": "Campos do formulário (formulário nativo)",
+      "formFieldsEmpty": "Nenhum campo ainda — este formCapture comporta-se como uma captura de campo único. Adicione campos para renderizar um formulário nativo de múltiplos campos.",
+      "inlineOptions": "Chips sugeridos (um por linha)",
+      "inlineOptionsHint": "Renderizados como chips clicáveis abaixo da mensagem do assistente. Clicar envia o rótulo como resposta do usuário — não ramifica o fluxo.",
+      "iteratePlanBody": "Subfluxo do corpo",
+      "iteratePlanBodyHint": "Executa uma vez por item pendente. O item atual é exposto ao subfluxo como {{__planItemTitle}} / {{__planItemId}}.",
+      "iteratePlanSlotHint": "Slot de onde ler o plano — deve corresponder à Etapa de Planejamento que o produziu (padrão __plan).",
+      "planRegenerate": "Sempre regenerar o plano",
+      "planRegenerateHint": "Quando desativado (padrão), um plano já presente no slot é mantido entre reentradas. Quando ativado, a etapa regenera o plano toda vez que é executada.",
+      "planSchema": "Esquema do item (opcional)",
+      "planSchemaHint": "Dica livre que orienta o formato JSON do item. O backend normaliza a saída do modelo para {id, title, status} de qualquer forma — deixe em branco para o padrão.",
+      "planSlot": "Slot do plano",
+      "planSlotHint": "Slot da conversa que recebe o plano JSON (padrão __plan). Aponte um nó Iterar Plano subsequente para o mesmo slot.",
+      "planningGoal": "Objetivo de planejamento",
+      "planningGoalHint": "A LLM decompõe este objetivo em uma lista de tarefas tipada (id, title, status) gravada no slot de plano abaixo.",
+      "planningGoalPlaceholder": "Divida o objetivo do usuário em 3-6 etapas concretas e ordenadas.",
+      "tidyLabels": "Organizar rótulos com IA",
+      "tidyLabelsBusy": "Organizando rótulos…",
+      "tidyLabelsDone": "Rótulos organizados — revise abaixo.",
+      "tidyLabelsError": "Não foi possível organizar os rótulos.",
+      "writeSlotValueHint": "Suporta referências de template {{slotName}} — resolvidas no momento da gravação usando o mapa de variáveis atual da conversa. Slots desconhecidos resolvem para string vazia.",
+      "writeSlotValuePlaceholder": "Olá {{name}}! Bem-vindo(a) a {{area_label}}."
     },
     "preview": {
       "title": "Pré-visualização",
@@ -319,6 +404,84 @@
       "saveFailed": "Não foi possível salvar o chat flow.",
       "saving": "Salvando…",
       "saveAndOpen": "Salvar e abrir no editor"
+    },
+    "bundleImported": "{{count}} fluxo(s) de chat importado(s).",
+    "funnel": {
+      "title": "Funil — abandono e conclusão",
+      "description": "{{parked}} estacionada(s) · {{completed}} concluída(s) · {{abandoned}} abandonada(s)",
+      "parked": "estacionada",
+      "completed": "concluída",
+      "reachedContinued": "alcançaram este nó → continuaram além dele",
+      "dropOffAt": "abandono neste nó",
+      "dropOffPct": "abandono %"
+    },
+    "lint": {
+      "title": "Avisos de autoria",
+      "description": "{{count}} problema(s) detectado(s) neste fluxo. Corrija os de ERRO antes de salvar — o runtime travará neles.",
+      "node": "nó",
+      "edge": "aresta",
+      "codes": {
+        "ai_instruction_too_long": {
+          "message": "aiInstruction tem {{length}} caracteres (limite recomendado {{limit}})",
+          "hint": "Reduza a instrução ou divida o nó — adendos verbosos aumentam o custo de tokens e diluem a atenção do modelo."
+        },
+        "unused_output_variable": {
+          "message": "O slot '{{slot}}' é capturado aqui mas nunca é lido adiante",
+          "hint": "Consuma-o (use {{slotRef}} em outro nó, baseie um switch nele ou declare-o como origem de herança em outro fluxo) ou remova o outputVariable."
+        },
+        "dead_end_node": {
+          "message": "O nó não tem aresta de saída — a conversa trava ao chegar aqui",
+          "hint": "Conecte uma aresta ao próximo nó, ou altere o tipo para 'end' se este for um terminal legítimo."
+        },
+        "edge_without_label": {
+          "message": "A aresta do nó {{type}} não tem sourceHandle nem rótulo",
+          "hint": "Escolha qual ramo esta aresta representa ('yes'/'no' para condition, um id de opção para switch) — o runtime não consegue desambiguar sem isso."
+        },
+        "form_field_blank_name": {
+          "message": "Um campo do formulário não tem nome de slot — seu valor não pode ser capturado",
+          "hint": "Escolha um slot declarado para cada campo do formulário."
+        },
+        "form_field_duplicate_name": {
+          "message": "Dois campos do formulário gravam o mesmo slot '{{slot}}' — o último valor prevalece",
+          "hint": "Dê a cada campo seu próprio slot, ou remova o campo duplicado."
+        },
+        "form_field_unknown_slot": {
+          "message": "O campo do formulário grava o slot '{{slot}}' que não está declarado no agente",
+          "hint": "Declare o slot no catálogo de slots do agente para que o valor entre no esquema tipado e seja legível adiante."
+        },
+        "planning_step_unused_plan": {
+          "message": "O slot de plano '{{slot}}' é gerado aqui mas nunca é iterado ou lido adiante",
+          "hint": "Adicione um nó iteratePlan que leia este slot, ou renderize-o com {{slotRef}} — caso contrário a chamada de planejamento da LLM é desperdiçada."
+        },
+        "iterate_plan_no_body": {
+          "message": "iteratePlan não tem subfluxo de corpo — ele marcará cada item do plano como concluído sem executar nada",
+          "hint": "Defina o subfluxo do nó (subFlowId) para o fluxo que deve rodar uma vez por item do plano."
+        },
+        "trigger_conflict": {
+          "message": "A descrição de gatilho se sobrepõe ao fluxo '{{other}}' ({{pct}}% Jaccard)"
+        }
+      }
+    },
+    "triggerConflicts": {
+      "title": "Ambiguidade na descrição de gatilho",
+      "description": "O roteador procedural não consegue separar de forma confiável estes fluxos em mensagens de usuário sobrepostas — ele recai para o roteador LLM toda vez. Adicione vocabulário distintivo ou uma cláusula de lista negativa a um dos lados."
+    },
+    "variant": {
+      "title": "Gerar variante de '{{name}}'",
+      "description": "Descreva a mudança de tom, tamanho ou público que você deseja. A LLM reescreve apenas o texto voltado ao usuário — ids de nós, arestas, slots e chamadas de ferramentas permanecem os mesmos.",
+      "generate": "Gerar",
+      "generateFailed": "Falha ao gerar a variante.",
+      "instructionsLabel": "Instruções",
+      "instructionsPlaceholder": "ex.: 'tom mais casual, 30% mais curto, público Gen Z' ou 'traduzir para o português'",
+      "nameLabel": "Nome do novo fluxo (opcional)",
+      "namePlaceholder": "{{name}} (variante)",
+      "ready": "Variante pronta",
+      "regenerate": "Regenerar",
+      "rewrittenCount": "{{count}} nó(s) reescrito(s).",
+      "saveAndOpen": "Salvar e abrir",
+      "saveFailed": "Falha ao salvar a variante.",
+      "saved": "Variante '{{name}}' criada (desativada — revise e ative).",
+      "savedDisabledHint": "Variantes salvas chegam desativadas para que você possa revisar a reescrita no editor antes de ativar."
     }
   }
 }

@@ -233,8 +233,12 @@ export interface TurChatFlowLintIssue {
   edgeId: string | null;
   severity: "ERROR" | "WARNING" | "INFO";
   code: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   message: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   hint: string;
+  /** Interpolation values for the `code`-keyed i18n template (length, slot, type, …). */
+  params?: Record<string, string>;
 }
 
 /**

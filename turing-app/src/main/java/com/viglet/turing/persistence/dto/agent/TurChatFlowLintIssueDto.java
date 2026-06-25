@@ -25,8 +25,16 @@ package com.viglet.turing.persistence.dto.agent;
  * @param code      stable machine-readable identifier so the frontend can
  *                  filter / theme issues consistently
  *                  (e.g. {@code ai_instruction_too_long}).
- * @param message   one-line human description of what's wrong.
- * @param hint      one-line actionable suggestion the author can act on.
+ * @param message   one-line human description of what's wrong (English; the
+ *                  frontend prefers a {@code code}-keyed translation and only
+ *                  falls back to this).
+ * @param hint      one-line actionable suggestion the author can act on
+ *                  (English fallback, same as {@code message}).
+ * @param params    interpolation values the frontend feeds into the
+ *                  {@code code}-keyed i18n template (e.g. {@code length},
+ *                  {@code limit}, {@code slot}, {@code type}, {@code other},
+ *                  {@code pct}). Never {@code null} — empty when the message
+ *                  is fully static.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -37,5 +45,12 @@ public record TurChatFlowLintIssueDto(
         String severity,
         String code,
         String message,
-        String hint) {
+        String hint,
+        java.util.Map<String, String> params) {
+
+    /** Convenience overload for findings whose message carries no dynamic values. */
+    public TurChatFlowLintIssueDto(String nodeId, String edgeId, String severity,
+            String code, String message, String hint) {
+        this(nodeId, edgeId, severity, code, message, hint, java.util.Map.of());
+    }
 }

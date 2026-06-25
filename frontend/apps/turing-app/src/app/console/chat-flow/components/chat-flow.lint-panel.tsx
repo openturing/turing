@@ -53,6 +53,7 @@ export function ChatFlowLintPanel({
             <LintRow
               key={`${issue.code}-${issue.nodeId ?? ""}-${issue.edgeId ?? ""}`}
               issue={issue}
+              t={t}
             />
           ))}
         </ul>
@@ -61,8 +62,30 @@ export function ChatFlowLintPanel({
   );
 }
 
-function LintRow({ issue }: Readonly<{ issue: TurChatFlowLintIssue }>) {
+function LintRow({
+  issue,
+  t,
+}: Readonly<{
+  issue: TurChatFlowLintIssue;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}>) {
   const isError = issue.severity === "ERROR";
+  // Prefer a code-keyed translation (with the backend's interpolation params);
+  // fall back to the English message/hint the linter already produced.
+  // `slotRef` renders the slot wrapped in {{ }} so a hint can teach the
+  // interpolation syntax literally (i18next does not re-scan substituted values).
+  const params: Record<string, string> = {
+    ...issue.params,
+    ...(issue.params?.slot ? { slotRef: `{{${issue.params.slot}}}` } : {}),
+  };
+  const message = t(`chatFlow.lint.codes.${issue.code}.message`, {
+    ...params,
+    defaultValue: issue.message,
+  });
+  const hint = t(`chatFlow.lint.codes.${issue.code}.hint`, {
+    ...params,
+    defaultValue: issue.hint,
+  });
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -77,19 +100,19 @@ function LintRow({ issue }: Readonly<{ issue: TurChatFlowLintIssue }>) {
         </Badge>
         {issue.nodeId && (
           <span className="text-xs text-muted-foreground">
-            node{" "}
+            {t("chatFlow.lint.node", { defaultValue: "node" })}{" "}
             <code className="font-mono text-foreground">{issue.nodeId}</code>
           </span>
         )}
         {issue.edgeId && (
           <span className="text-xs text-muted-foreground">
-            edge{" "}
+            {t("chatFlow.lint.edge", { defaultValue: "edge" })}{" "}
             <code className="font-mono text-foreground">{issue.edgeId}</code>
           </span>
         )}
       </div>
-      <div className="text-sm">{issue.message}</div>
-      <p className="text-xs text-muted-foreground">{issue.hint}</p>
+      <div className="text-sm">{message}</div>
+      <p className="text-xs text-muted-foreground">{hint}</p>
     </li>
   );
 }
