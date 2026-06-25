@@ -318,7 +318,7 @@
 - ✅ **T418** — `mcp-servers.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - ✅ **T419** — `agent-eval.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - ✅ **T420** — `tool-calling.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- 📋 **T421** (deps: T413) **`ai-agents.md` expand** — submission retention (T66), OpenAI Responses native tools + capability matrix (T130–T138/T132), agent budget fields, cross-links to new pages. → §3.11
+- ✅ **T421** — `ai-agents.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 5 — reference reconciliation:**
 - 📋 **T422** (deps: T413) **`configuration-reference.md` expand** — newer Global Settings/config keys: cost/budget, `RAG_SN_*`/`GLOBAL_RAG_SN_RERANK_*` (T328/T337–T341), analytics node-visit-log (T237), routine queue concurrency, code-interpreter mode/limits. → §3.12
