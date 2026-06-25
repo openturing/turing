@@ -315,7 +315,7 @@
 - ✅ **T417** — `human-in-the-loop.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 4 — remaining gaps:**
-- 📋 **T418** (deps: —) **`mcp-servers.md` expand** — add "Turing as an MCP Server" (Block I, T245–T256): `/mcp` endpoint, OAuth scoping, published tools/resources/prompts, one-click client config. → §3.8
+- ✅ **T418** — `mcp-servers.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - 📋 **T419** (deps: —) **`agent-eval.md` (NEW)** — Block K (T285–T288): golden-set cases, eval runner + LLM judge, pre-publish gate (422 block), `-Pagent-eval` CI. → §3.9
 - 📋 **T420** (deps: —) **`tool-calling.md` expand** — Code Interpreter NATIVE vs DOCKER (T80), resource limits (T81), warm pool (T82), structured output + `sandbox:` URLs (T83); multimodal slots (T64). → §3.10
 - 📋 **T421** (deps: T413) **`ai-agents.md` expand** — submission retention (T66), OpenAI Responses native tools + capability matrix (T130–T138/T132), agent budget fields, cross-links to new pages. → §3.11
