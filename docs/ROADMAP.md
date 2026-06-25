@@ -311,7 +311,7 @@
 - 📋 **T415** (deps: T411, T412, T416, T417) **`chat-flow.md` expand** — full node catalog (writeSlot/formCapture/functionCall/subFlowSwitch/scheduleAgent/webhook/humanApproval/suspend) + error edges (T49/T50) + capture-first/onJudgeReject (T45/T51) + slots primer (T54–T64) + trigger conflicts (T91) + flow chooser (T92); move A/B to T416. → §3.5
 
 **Phase 3 — split-outs:**
-- 📋 **T416** (deps: —) **`experiments.md` (NEW)** — A/B suite split from chat-flow (T67–T75): assignment, z-test significance, Thompson bandit, champion-challenger promotion, per-node A/B, forced variant, cohort filters, variant trace. → §3.6
+- ✅ **T416** — `experiments.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - 📋 **T417** (deps: —) **`human-in-the-loop.md` (NEW)** — `humanApproval` node (T119) + spectator/co-pilot (T120): channels/timeout, 3 SSE buses, "take the wheel", parked-conversations. → §3.7
 
 **Phase 4 — remaining gaps:**
