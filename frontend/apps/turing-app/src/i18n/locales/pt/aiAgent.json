@@ -21,7 +21,8 @@
       "analyticsIntent": "Intent de Analytics",
       "history": "Histórico",
       "livePreview": "Prévia ao vivo",
-      "analysis": "Análise"
+      "analysis": "Análise",
+      "triggerConflicts": "Ambiguidade de gatilho"
     },
     "persona": {
       "title": "Personas",

@@ -2,7 +2,6 @@ import { TabsContent } from "@/components/ui/tabs";
 
 import { ChatFlowFunnelPanel } from "./chat-flow.funnel-panel";
 import { ChatFlowLintPanel } from "./chat-flow.lint-panel";
-import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
 
 interface AnalysisTabProps {
   agentId: string;
@@ -10,13 +9,14 @@ interface AnalysisTabProps {
 }
 
 /**
- * "Analysis" tab — groups the read-only authoring-insight panels that used to
- * sit at the top of the Settings tab: lint warnings ({@link ChatFlowLintPanel}),
- * the per-node funnel ({@link ChatFlowFunnelPanel}), and cross-flow trigger
- * ambiguity ({@link ChatFlowTriggerConflictsPanel}). Each panel still
- * self-hides when it has nothing to show, so the tab is empty on a clean,
- * brand-new flow. Keeping the diagnostics on their own tab declutters the
- * editing form.
+ * "Analysis" tab — the flow-scoped read-only authoring-insight panels: lint
+ * warnings ({@link ChatFlowLintPanel}) and the per-node funnel
+ * ({@link ChatFlowFunnelPanel}). Each panel self-hides when it has nothing to
+ * show, so the tab is empty on a clean, brand-new flow.
+ *
+ * <p>Cross-flow trigger ambiguity is agent-scoped (not tied to the flow being
+ * edited), so it lives on its own "Trigger ambiguity" page under the agent's
+ * "Analysis" sidebar group rather than here.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -33,10 +33,6 @@ export function ChatFlowAnalysisTab({ agentId, flowId }: Readonly<AnalysisTabPro
             spots where conversations stall. Hidden on a brand-new (id-less)
             flow and on flows without any captured states/submissions yet. */}
         {flowId && <ChatFlowFunnelPanel agentId={agentId} flowId={flowId} />}
-
-        {/* T91 — cross-flow trigger ambiguity. Renders nothing until the
-            agent has ≥ 2 conflicting trigger descriptions. */}
-        <ChatFlowTriggerConflictsPanel agentId={agentId} flowId={flowId} />
       </div>
     </TabsContent>
   );

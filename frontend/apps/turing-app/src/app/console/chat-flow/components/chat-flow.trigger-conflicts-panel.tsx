@@ -87,6 +87,7 @@ function ConflictRow({
   flowId?: string;
   conflict: TurChatFlowTriggerConflict;
 }>) {
+  const { t } = useTranslation();
   const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
   // Surface the "other" flow first when we are inside the editor of one of
   // the two — the author already knows what they're editing, the actionable
@@ -108,13 +109,17 @@ function ConflictRow({
           {conflict.severity}
         </Badge>
         <span className="text-xs text-muted-foreground">
-          {percent}% overlap · {conflict.intersectionSize} shared stems
+          {t("chatFlow.triggerConflicts.overlapStats", {
+            percent,
+            count: conflict.intersectionSize,
+            defaultValue: "{{percent}}% overlap · {{count}} shared stems",
+          })}
         </span>
       </div>
       <div className="text-sm">
         {flowId ? (
           <>
-            Collides with{" "}
+            {t("chatFlow.triggerConflicts.collidesWith", { defaultValue: "Collides with" })}{" "}
             <Link
               to={`${baseUrl}/${primary.id}`}
               className="font-medium text-blue-600 hover:underline dark:text-blue-400"

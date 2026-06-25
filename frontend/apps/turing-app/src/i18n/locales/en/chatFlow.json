@@ -466,7 +466,11 @@
     },
     "triggerConflicts": {
       "description": "The procedural router cannot reliably separate these flows on overlapping user messages — it falls back to the LLM router each time. Add distinguishing vocabulary or a negative-list clause to one side.",
-      "title": "Trigger description ambiguity"
+      "title": "Trigger description ambiguity",
+      "emptyTitle": "No trigger ambiguity detected",
+      "emptyDescription": "The procedural router can separate this agent's chat flows on their trigger descriptions. New overlaps will surface here.",
+      "overlapStats": "{{percent}}% overlap · {{count}} shared stems",
+      "collidesWith": "Collides with"
     },
     "variant": {
       "description": "Describe the tone, length, or audience change you want. The LLM rewrites only the user-facing copy — node ids, edges, slots, and tool calls stay the same.",

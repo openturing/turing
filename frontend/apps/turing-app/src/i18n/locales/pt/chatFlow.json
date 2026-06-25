@@ -466,7 +466,11 @@
     },
     "triggerConflicts": {
       "title": "Ambiguidade na descrição de gatilho",
-      "description": "O roteador procedural não consegue separar de forma confiável estes fluxos em mensagens de usuário sobrepostas — ele recai para o roteador LLM toda vez. Adicione vocabulário distintivo ou uma cláusula de lista negativa a um dos lados."
+      "description": "O roteador procedural não consegue separar de forma confiável estes fluxos em mensagens de usuário sobrepostas — ele recai para o roteador LLM toda vez. Adicione vocabulário distintivo ou uma cláusula de lista negativa a um dos lados.",
+      "emptyTitle": "Nenhuma ambiguidade de gatilho detectada",
+      "emptyDescription": "O roteador procedural consegue separar os chat flows deste agente pelas descrições de gatilho. Novas sobreposições aparecerão aqui.",
+      "overlapStats": "{{percent}}% de sobreposição · {{count}} radicais em comum",
+      "collidesWith": "Colide com"
     },
     "variant": {
       "title": "Gerar variante de '{{name}}'",
