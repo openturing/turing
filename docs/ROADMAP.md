@@ -321,7 +321,7 @@
 - ✅ **T421** — `ai-agents.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 5 — reference reconciliation:**
-- 📋 **T422** (deps: T413) **`configuration-reference.md` expand** — newer Global Settings/config keys: cost/budget, `RAG_SN_*`/`GLOBAL_RAG_SN_RERANK_*` (T328/T337–T341), analytics node-visit-log (T237), routine queue concurrency, code-interpreter mode/limits. → §3.12
+- ✅ **T422** — `configuration-reference.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - 📋 **T423** (deps: T413, T414) **`token-usage.md` + `observability.md` reconcile** — token-usage = counts (point to cost-governance for USD); observability lists all 9 analytics metrics + cost hints + per-node caveat; wire `sidebars-turing.ts`. → §3.13
 
 ## Non-goals (do NOT add as tasks)
