@@ -13,16 +13,20 @@ import {
   type TurSystemPromptOrigin,
   type TurSystemPromptPreview,
   type TurSystemPromptSegment,
+  type TurSystemPromptTool,
 } from "@/models/agent/system-prompt.model";
 import { cn } from "@/lib/utils";
-import { IconClock, IconEye, IconSitemap } from "@tabler/icons-react";
+import { IconClipboard, IconClock, IconEye, IconSitemap, IconTool } from "@tabler/icons-react";
+import { toast } from "@viglet/viglet-design-system";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
  * "Live Preview" breakdown — each fragment of the assembled system prompt with
  * a color-coded origin badge, plus a chat-flow selector so the operator can
- * see how the prompt changes per flow. The verbatim final prompt lives in a
- * separate {@code SystemPromptFinalPrompt} card (rendered last on the page).
+ * see how the prompt changes per flow. Also lists the tool/function schemas the
+ * model receives alongside the prompt and offers a copy-the-full-prompt button
+ * (the verbatim "what the model sees", tools included).
  *
  * @since 2026.3.1
  */
@@ -54,6 +58,32 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
 
   const flowValue = flowId ?? preview?.selectedFlowId ?? SYSTEM_PROMPT_FLOW_NONE;
 
+  const toolsHeading = t("aiAgent.systemPrompt.preview.toolsHeading", {
+    defaultValue: "Tools available to the model",
+  });
+  const toolsNote = t("aiAgent.systemPrompt.preview.toolsNote", {
+    defaultValue: "Provided to the model as function/tool schemas (not literal prompt text).",
+  });
+
+  // The verbatim system message the model receives for the previewed turn:
+  // the assembled prompt plus the tool definitions sent alongside it. Used by
+  // the copy button so the operator can grab the bottom-line "what the model
+  // sees" in one click.
+  const fullText = useMemo(() => {
+    if (!preview) return "";
+    return preview.assembledText + buildToolsMarkdown(preview.tools, toolsHeading, toolsNote);
+  }, [preview, toolsHeading, toolsNote]);
+
+  async function copyFull() {
+    if (!fullText) return;
+    try {
+      await navigator.clipboard.writeText(fullText);
+      toast.success(t("aiAgent.systemPrompt.preview.copied", { defaultValue: "Copied to clipboard" }));
+    } catch {
+      toast.error(t("aiAgent.systemPrompt.preview.copyFailed", { defaultValue: "Could not copy" }));
+    }
+  }
+
   return (
     <SectionCard variant="blue">
       <SectionCard.Header
@@ -65,31 +95,45 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
         })}
       />
       <SectionCard.Content>
-        {/* Chat-flow selector */}
-        {preview && preview.flows.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <IconSitemap className="size-4 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {t("aiAgent.systemPrompt.preview.flowLabel", { defaultValue: "Preview with chat flow" })}
-            </span>
-            <Select value={flowValue} onValueChange={onFlowChange}>
-              <SelectTrigger className="w-full sm:w-72">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SYSTEM_PROMPT_FLOW_NONE}>
-                  {t("aiAgent.systemPrompt.preview.flowNone", { defaultValue: "No flow (plain turn)" })}
-                </SelectItem>
-                {preview.flows.map((flow) => (
-                  <SelectItem key={flow.id} value={flow.id}>
-                    {flow.name}
-                    {!flow.enabled && ` (${t("aiAgent.systemPrompt.preview.flowDisabled", { defaultValue: "disabled" })})`}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          {/* Chat-flow selector */}
+          {preview && preview.flows.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <IconSitemap className="size-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {t("aiAgent.systemPrompt.preview.flowLabel", { defaultValue: "Preview with chat flow" })}
+              </span>
+              <Select value={flowValue} onValueChange={onFlowChange}>
+                <SelectTrigger className="w-full sm:w-72">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SYSTEM_PROMPT_FLOW_NONE}>
+                    {t("aiAgent.systemPrompt.preview.flowNone", { defaultValue: "No flow (plain turn)" })}
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+                  {preview.flows.map((flow) => (
+                    <SelectItem key={flow.id} value={flow.id}>
+                      {flow.name}
+                      {!flow.enabled && ` (${t("aiAgent.systemPrompt.preview.flowDisabled", { defaultValue: "disabled" })})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <span />
+          )}
+          {!isLoading && preview && fullText && (
+            <button
+              type="button"
+              onClick={copyFull}
+              className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            >
+              <IconClipboard className="size-3.5" />
+              {t("aiAgent.systemPrompt.preview.copy", { defaultValue: "Copy full prompt" })}
+            </button>
+          )}
+        </div>
 
         {isLoading && (
           <p className="text-sm text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</p>
@@ -110,9 +154,48 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
             ))}
           </ol>
         )}
+
+        {/* Tool definitions the model receives alongside the prompt. Not part
+            of the literal system text, so they render as their own block below
+            the segments (mirrors what the model is actually handed). */}
+        {!isLoading && preview && preview.tools.length > 0 && (
+          <div className="mt-4 rounded-md border border-l-4 border-l-cyan-500 bg-background/60 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <IconTool className="size-4 text-cyan-600 dark:text-cyan-300" />
+              <span className="text-xs font-medium text-foreground">{toolsHeading}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{toolsNote}</p>
+            <ul className="space-y-1">
+              {preview.tools.map((tool, idx) => (
+                <li key={`${tool.name}-${idx}`} className="text-xs">
+                  <code className="font-mono text-foreground">{tool.name}</code>
+                  <span className="text-muted-foreground"> ({tool.source})</span>
+                  {tool.description && (
+                    <span className="text-muted-foreground">: {tool.description}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </SectionCard.Content>
     </SectionCard>
   );
+}
+
+/** Appends the tool definitions as a Markdown section to the copied prompt. */
+function buildToolsMarkdown(
+  tools: TurSystemPromptTool[],
+  heading: string,
+  note: string,
+): string {
+  if (!tools || tools.length === 0) {
+    return "";
+  }
+  const lines = tools.map(
+    (tool) => `- **${tool.name}** _(${tool.source})_${tool.description ? `: ${tool.description}` : ""}`,
+  );
+  return `\n\n---\n\n## ${heading}\n\n_${note}_\n\n${lines.join("\n")}`;
 }
 
 function SegmentRow({

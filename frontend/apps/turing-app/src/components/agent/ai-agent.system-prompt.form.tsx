@@ -23,7 +23,6 @@ import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
-import { SystemPromptFinalPrompt } from "./system-prompt-final-prompt"
 import { SystemPromptLivePreview } from "./system-prompt-live-preview"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
@@ -185,13 +184,12 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
               </SectionCard>
             </TabsContent>
 
-            {/* Live Preview (segment breakdown), conflict validation, and the
-                final assembled prompt reflect the SAVED configuration — they
+            {/* Live Preview (segment breakdown + tool list + copy-all) and
+                conflict validation reflect the SAVED configuration — they
                 refetch automatically after a save (the update mutation
-                invalidates the ai-agents query tree). The final prompt is
-                intentionally last: it's the bottom-line "this is what the model
-                sees". All buttons inside these panels are type="button", so
-                living inside the <form> never triggers an accidental submit. */}
+                invalidates the ai-agents query tree). All buttons inside these
+                panels are type="button", so living inside the <form> never
+                triggers an accidental submit. */}
             <TabsContent value="preview" className="space-y-4">
               <SystemPromptLivePreview
                 preview={preview}
@@ -200,7 +198,6 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
                 onFlowChange={setFlowId}
               />
               <SystemPromptWarningsPanel agentId={value.id} />
-              <SystemPromptFinalPrompt preview={preview} isLoading={previewLoading} />
             </TabsContent>
           </Tabs>
         </form>

@@ -107,7 +107,12 @@
         "noFixedText": "No fixed text — depends on the live conversation.",
         "flowLabel": "Preview with chat flow",
         "flowNone": "No flow (plain turn)",
-        "flowDisabled": "disabled"
+        "flowDisabled": "disabled",
+        "copy": "Copy full prompt",
+        "copied": "Copied to clipboard",
+        "copyFailed": "Could not copy",
+        "toolsHeading": "Tools available to the model",
+        "toolsNote": "Provided to the model as function/tool schemas (not literal prompt text)."
       },
       "warnings": {
         "title": "Conflict check",
@@ -151,17 +156,6 @@
             "hint": "This is the raw model analysis (it wasn't structured)."
           }
         }
-      },
-      "finalPrompt": {
-        "title": "Final prompt",
-        "description": "The complete system message the model receives for the previewed turn, including the tool definitions sent alongside it.",
-        "preview": "Preview",
-        "raw": "Raw",
-        "copy": "Copy",
-        "copied": "Copied to clipboard",
-        "copyFailed": "Could not copy",
-        "toolsHeading": "Tools available to the model",
-        "toolsNote": "_Provided to the model as function/tool schemas (not literal prompt text)._"
       },
       "tabs": {
         "editor": "Editor",

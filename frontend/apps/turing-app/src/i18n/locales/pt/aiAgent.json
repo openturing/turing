@@ -107,7 +107,12 @@
         "noFixedText": "Sem texto fixo — depende da conversa ao vivo.",
         "flowLabel": "Pré-visualizar com chat flow",
         "flowNone": "Sem flow (turno simples)",
-        "flowDisabled": "desabilitado"
+        "flowDisabled": "desabilitado",
+        "copy": "Copiar prompt completo",
+        "copied": "Copiado para a área de transferência",
+        "copyFailed": "Não foi possível copiar",
+        "toolsHeading": "Ferramentas disponíveis para o modelo",
+        "toolsNote": "Fornecidas ao modelo como esquemas de função/ferramenta (não como texto literal do prompt)."
       },
       "warnings": {
         "title": "Checagem de conflitos",
@@ -151,17 +156,6 @@
             "hint": "Esta é a análise bruta do modelo (não veio estruturada)."
           }
         }
-      },
-      "finalPrompt": {
-        "title": "Prompt final",
-        "description": "A mensagem de sistema completa que o modelo recebe no turno pré-visualizado, incluindo as definições de ferramentas enviadas junto.",
-        "preview": "Prévia",
-        "raw": "Texto",
-        "copy": "Copiar",
-        "copied": "Copiado para a área de transferência",
-        "copyFailed": "Não foi possível copiar",
-        "toolsHeading": "Ferramentas disponíveis ao modelo",
-        "toolsNote": "_Fornecidas ao modelo como schemas de função/ferramenta (não como texto literal do prompt)._"
       },
       "tabs": {
         "editor": "Editor",
