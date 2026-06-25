@@ -1,6 +1,6 @@
 {
   "name": "@viglet/turing-react-ui",
-  "version": "2026.3.3",
+  "version": "2026.3.4",
   "description": "Headless React UI primitives for Viglet Turing ES — design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
   "type": "module",
   "main": "dist/index.js",
