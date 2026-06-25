@@ -303,7 +303,7 @@
 
 **Phase 1 — new pages, zero doc-home (highest value):**
 - ✅ **T411** — `webhooks.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- 📋 **T412** (deps: —) **`routines.md` (NEW)** — `TurRoutine` + `scheduleAgent` node (T48): NATIVE routines, async JMS lifecycle + slot-bus resume, `__scheduleAgent_pending_` SSE, timeout/IO binding, REST. → §3.2
+- ✅ **T412** — `routines.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - 📋 **T413** (deps: —) **`cost-governance.md` (NEW)** — Block L (T289–T291): price table + frozen per-turn `cost_usd` (stages), cost dashboard `/console/cost-governance`, per-agent soft budget gate (monthly/per-turn/downgrade). → §3.3
 
 **Phase 2 — stale rewrites:**
