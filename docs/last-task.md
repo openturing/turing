@@ -1,7 +1,7 @@
-# Last task number — `T410`
+# Last task number — `T423`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T411`; after assigning it, bump the number above and the log line below.
+> `T424`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T411–T423** — Block U: documentation refresh for `docs-turing` (webhooks, routines, cost-governance new pages; chat-flow/chat-analytics rewrites; experiments + human-in-the-loop split-outs; agent-eval/mcp-server/tool-calling/ai-agents/config-reference/token-usage updates). Plan: `docs-turing/_documentation-update-plan.md` — 2026-06-25
 - **T410** — Chaotic chatflow HITL coverage: `humanApproval` node type in `flow-dsl` + dedicated approval sub-flow in the chaotic fixture + park/decision-resume IT (also fixed a leaking test cache-manager that broke every full-context test) — 2026-06-18
 - **T409** — Lucene DSL executor: type-aware numeric/currency range + sort (Block R) — 2026-06-17
 - **T407** — End-to-end NL→facet eval integration test (Block R) — 2026-06-16

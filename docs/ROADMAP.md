@@ -289,6 +289,41 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
+## Block U — Documentation refresh (`docs-turing`)
+
+> Bring the public docs (`vigletdocs.github.io/docs-turing`) up to parity with
+> what shipped through T410. Whole subsystems have **no page**; `chat-flow.md` and
+> `chat-analytics.md` document an early slice and drifted stale. Not engineering —
+> these are docs tasks in a sibling repo. Full per-page plan, outlines, and source
+> references live in `docs-turing/_documentation-update-plan.md` (the `→` pointers
+> below are its section numbers). Verify every class/endpoint/config-key name
+> against source before publishing. Sequence: Phase 1 (new pages, zero-home) →
+> Phase 2 (stale rewrites) → Phase 3 (split-outs) → Phase 4 (remaining gaps) →
+> Phase 5 (reference reconciliation + sidebar wiring).
+
+**Phase 1 — new pages, zero doc-home (highest value):**
+- ✅ **T411** — `webhooks.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
+- 📋 **T412** (deps: —) **`routines.md` (NEW)** — `TurRoutine` + `scheduleAgent` node (T48): NATIVE routines, async JMS lifecycle + slot-bus resume, `__scheduleAgent_pending_` SSE, timeout/IO binding, REST. → §3.2
+- 📋 **T413** (deps: —) **`cost-governance.md` (NEW)** — Block L (T289–T291): price table + frozen per-turn `cost_usd` (stages), cost dashboard `/console/cost-governance`, per-agent soft budget gate (monthly/per-turn/downgrade). → §3.3
+
+**Phase 2 — stale rewrites:**
+- 📋 **T414** (deps: —) **`chat-analytics.md` expand** — fix metric list (9 not 5) + add funnel (T85), replay (T86), sentiment trajectory (T87), tool-latency p95 (T88), router decisions (T89), SSE debug (T90), cohort filters (T74). → §3.4
+- 📋 **T415** (deps: T411, T412, T416, T417) **`chat-flow.md` expand** — full node catalog (writeSlot/formCapture/functionCall/subFlowSwitch/scheduleAgent/webhook/humanApproval/suspend) + error edges (T49/T50) + capture-first/onJudgeReject (T45/T51) + slots primer (T54–T64) + trigger conflicts (T91) + flow chooser (T92); move A/B to T416. → §3.5
+
+**Phase 3 — split-outs:**
+- 📋 **T416** (deps: —) **`experiments.md` (NEW)** — A/B suite split from chat-flow (T67–T75): assignment, z-test significance, Thompson bandit, champion-challenger promotion, per-node A/B, forced variant, cohort filters, variant trace. → §3.6
+- 📋 **T417** (deps: —) **`human-in-the-loop.md` (NEW)** — `humanApproval` node (T119) + spectator/co-pilot (T120): channels/timeout, 3 SSE buses, "take the wheel", parked-conversations. → §3.7
+
+**Phase 4 — remaining gaps:**
+- 📋 **T418** (deps: —) **`mcp-servers.md` expand** — add "Turing as an MCP Server" (Block I, T245–T256): `/mcp` endpoint, OAuth scoping, published tools/resources/prompts, one-click client config. → §3.8
+- 📋 **T419** (deps: —) **`agent-eval.md` (NEW)** — Block K (T285–T288): golden-set cases, eval runner + LLM judge, pre-publish gate (422 block), `-Pagent-eval` CI. → §3.9
+- 📋 **T420** (deps: —) **`tool-calling.md` expand** — Code Interpreter NATIVE vs DOCKER (T80), resource limits (T81), warm pool (T82), structured output + `sandbox:` URLs (T83); multimodal slots (T64). → §3.10
+- 📋 **T421** (deps: T413) **`ai-agents.md` expand** — submission retention (T66), OpenAI Responses native tools + capability matrix (T130–T138/T132), agent budget fields, cross-links to new pages. → §3.11
+
+**Phase 5 — reference reconciliation:**
+- 📋 **T422** (deps: T413) **`configuration-reference.md` expand** — newer Global Settings/config keys: cost/budget, `RAG_SN_*`/`GLOBAL_RAG_SN_RERANK_*` (T328/T337–T341), analytics node-visit-log (T237), routine queue concurrency, code-interpreter mode/limits. → §3.12
+- 📋 **T423** (deps: T413, T414) **`token-usage.md` + `observability.md` reconcile** — token-usage = counts (point to cost-governance for USD); observability lists all 9 analytics metrics + cost hints + per-node caveat; wire `sidebars-turing.ts`. → §3.13
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
