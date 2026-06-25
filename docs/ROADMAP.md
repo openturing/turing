@@ -304,7 +304,7 @@
 **Phase 1 — new pages, zero doc-home (highest value):**
 - ✅ **T411** — `webhooks.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - ✅ **T412** — `routines.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- 📋 **T413** (deps: —) **`cost-governance.md` (NEW)** — Block L (T289–T291): price table + frozen per-turn `cost_usd` (stages), cost dashboard `/console/cost-governance`, per-agent soft budget gate (monthly/per-turn/downgrade). → §3.3
+- ✅ **T413** — `cost-governance.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 2 — stale rewrites:**
 - 📋 **T414** (deps: —) **`chat-analytics.md` expand** — fix metric list (9 not 5) + add funnel (T85), replay (T86), sentiment trajectory (T87), tool-latency p95 (T88), router decisions (T89), SSE debug (T90), cohort filters (T74). → §3.4
