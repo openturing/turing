@@ -706,6 +706,47 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * True when {@code conversationId} has a chat flow IN PROGRESS — i.e. a leaf
+     * flow state (no descendant) whose cursor sits on a non-{@code end} node.
+     * Mirrors {@link #findContinuationFlow} so callers can tell whether an
+     * incoming user message is flow INPUT (an answer to the current question)
+     * rather than a free-form query.
+     *
+     * <p>The public SN RAG path uses this to skip its relevance-gate refusal
+     * (T329) when a flow governs the turn: a flow answer like
+     * {@code "Finanças & Investimentos"} retrieves zero site documents and would
+     * otherwise be short-circuited to "...não disponível na base de dados..."
+     * BEFORE the flow ever sees it, derailing the conversation.
+     *
+     * @since 2026.3.4
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveFlow(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return false;
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        if (states.isEmpty()) {
+            return false;
+        }
+        Set<String> hasDescendant = states.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        for (TurChatFlowState state : states) {
+            if (hasDescendant.contains(state.getId())) {
+                continue;
+            }
+            Optional<ChatFlowNode> currentOpt = parseGraph(state.getFlow())
+                    .flatMap(g -> g.nodeById(state.getCurrentNodeId()));
+            if (currentOpt.isPresent() && !"end".equals(currentOpt.get().type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns the suspended-reason label when {@code state}'s cursor sits on a
      * parked node, otherwise empty.
      */

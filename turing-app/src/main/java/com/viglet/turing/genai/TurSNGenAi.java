@@ -137,6 +137,7 @@ public class TurSNGenAi {
     private final TurAgentChatExecutor agentChatExecutor;
     private final com.viglet.turing.system.TurGlobalSettingsService globalSettingsService;
     private final com.viglet.turing.genai.rag.TurRagReranker ragReranker;
+    private final com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
@@ -145,7 +146,8 @@ public class TurSNGenAi {
             TurRagFacetExtractor facetExtractor,
             TurAgentChatExecutor agentChatExecutor,
             com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
-            com.viglet.turing.genai.rag.TurRagReranker ragReranker) {
+            com.viglet.turing.genai.rag.TurRagReranker ragReranker,
+            com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -154,6 +156,7 @@ public class TurSNGenAi {
         this.agentChatExecutor = agentChatExecutor;
         this.globalSettingsService = globalSettingsService;
         this.ragReranker = ragReranker;
+        this.chatFlowEngineService = chatFlowEngineService;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -242,9 +245,17 @@ public class TurSNGenAi {
         // impossible to hallucinate around (vs. relying on the model obeying the
         // refusal instruction in DEFAULT_BEHAVIOR_PROMPT). No `sources[]` event —
         // there is no provenance to report.
-        if (relevantDocuments.isEmpty()) {
-            log.debug("RAG chat streaming: 0 documents passed the relevance gate — "
-                    + "returning deterministic refusal (locale={})", locale);
+        // T329 relevance-gate refusal — but NEVER when a chat flow is governing
+        // this conversation. A flow answer (e.g. a switch-option chip like
+        // "Finanças & Investimentos") retrieves zero site documents, so the gate
+        // would short-circuit to the refusal BEFORE the executor runs the flow
+        // advance — the answer is dropped and the flow stalls on its question.
+        // With an active flow, the message is flow INPUT: hand it to the
+        // executor (which captures it via the LlmJudge and routes the switch),
+        // grounding the turn on whatever docs exist (here: none).
+        if (relevantDocuments.isEmpty() && !chatFlowEngineService.hasActiveFlow(conversationId)) {
+            log.debug("RAG chat streaming: 0 documents passed the relevance gate and no active "
+                    + "flow — returning deterministic refusal (locale={})", locale);
             return reactor.core.publisher.Flux.just(
                     new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
         }

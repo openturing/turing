@@ -74,6 +74,10 @@
 - 💭 **T128** (deps: T32) **LangSmith-compatible export** — `TurChatPipelineObservation` events can be optionally mirrored to a LangSmith project via the public LangSmith API. → §IX.9.a
 - 💭 **T129** (deps: T32) **OpenTelemetry trace export** — wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP-compatible backend (Honeycomb, Datadog, Jaeger). → §IX.9.b
 
+## E.9 — Tool-selection quality (MCP / native disambiguation)
+
+- 💭 **T424** (deps: T29) **Trigger/namespace-aware tool prioritization** — when an attached MCP server's `llmInstructions` trigger words match the user message, boost that server's tools in the pre-filter (and optionally demote/skip overlapping built-in `dsl_*`/native tools for that turn) so weak models (e.g. gpt-4o-mini) reliably pick the MCP tools over competing built-ins instead of a semantically-close native one. Pure list ordering is NOT a reliable LLM priority signal — this is intent+namespace ranking on top of §IV.2's BM25 pre-filter. → §XXI.1
+
 ## F.2 — OpenAI Responses API + built-in tools
 
 - 💭 **T136** (deps: T131) **OpenAI `computer_use` built-in tool** — agentic browser. Capability key advertised in the matrix but not wired (needs the screenshot/action loop). → §X.3.d

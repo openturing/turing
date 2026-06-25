@@ -15,13 +15,17 @@ package com.viglet.turing.genai;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
 import com.viglet.turing.genai.skill.activation.TurRunSkillToolCallback;
 import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
@@ -170,6 +174,102 @@ public class TurChatToolResolver {
         return alwaysKeep;
     }
 
+    /**
+     * Matches the "trigger words" line of an MCP server's {@code llmInstructions}
+     * — {@code Palavras-gatilho: …} / {@code Trigger words: …} /
+     * {@code Keywords: …} — capturing the comma/semicolon list that follows.
+     * Single-line (the list lives on one line); locale-insensitive on the label.
+     */
+    private static final Pattern TRIGGER_LINE = Pattern.compile(
+            "(?im)(?:palavras?[ -]?gatilhos?|gatilhos?|trigger\\s*words?|keywords?)\\s*:?\\s*(.+)");
+
+    /**
+     * T424 / §XXI part (b) — names of the tools belonging to attached MCP
+     * servers whose declared trigger words (or title tokens) appear in the
+     * user message. These are unioned into the pre-filter's always-keep set so
+     * an intent-matched server's tools are never dropped, steering weak models
+     * to the right namespace instead of a semantically-close built-in.
+     *
+     * <p>Per-server so a multi-server agent only boosts the server the message
+     * actually hit. The {@code getToolCallbacks(Set.of(server))} call lists the
+     * matched server's tools (cheap on the already-open MCP client); it only
+     * fires on a trigger match, so unrelated turns pay nothing.
+     *
+     * <p>Package-private for unit testing in isolation.
+     */
+    Set<String> triggerBoostedMcpToolNames(TurAIAgent agent, String userMessage) {
+        Set<TurMcpServer> servers = agent.getMcpServers();
+        if (servers == null || servers.isEmpty() || userMessage == null || userMessage.isBlank()) {
+            return Set.of();
+        }
+        String haystack = userMessage.toLowerCase(Locale.ROOT);
+        Set<String> boosted = new HashSet<>();
+        for (TurMcpServer server : servers) {
+            if (server != null && server.getEnabled() == 1 && serverTriggersMatch(server, haystack)) {
+                addServerToolNames(server, boosted);
+                log.info("[ToolBoost] MCP server '{}' triggers matched — boosting its tools",
+                        server.getTitle());
+            }
+        }
+        return boosted;
+    }
+
+    /** Collects the (non-blank) tool names exposed by one MCP server into {@code sink}. */
+    private void addServerToolNames(TurMcpServer server, Set<String> sink) {
+        for (ToolCallback cb : mcpToolCallbackService.getToolCallbacks(Set.of(server))) {
+            try {
+                String name = cb.getToolDefinition().name();
+                if (name != null && !name.isBlank()) {
+                    sink.add(name);
+                }
+            } catch (RuntimeException e) {
+                log.debug("[ToolBoost] could not read MCP tool name: {}", e.getMessage());
+            }
+        }
+    }
+
+    /** True when any of {@code server}'s trigger phrases / title tokens occur in {@code lowerMessage}. */
+    private static boolean serverTriggersMatch(TurMcpServer server, String lowerMessage) {
+        for (String trigger : extractTriggers(server)) {
+            if (trigger.length() >= 3 && lowerMessage.contains(trigger)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Trigger phrases for a server: the comma/semicolon list from a
+     * {@link #TRIGGER_LINE} in {@code llmInstructions} (lowercased), plus the
+     * distinctive tokens (≥ 4 chars) of the server title as a fallback so a
+     * server without an explicit trigger line still boosts on its own name.
+     */
+    private static Set<String> extractTriggers(TurMcpServer server) {
+        Set<String> triggers = new HashSet<>();
+        String instructions = server.getLlmInstructions();
+        if (instructions != null && !instructions.isBlank()) {
+            Matcher m = TRIGGER_LINE.matcher(instructions);
+            if (m.find()) {
+                for (String part : m.group(1).split("[,;]")) {
+                    String t = part.trim().toLowerCase(Locale.ROOT);
+                    if (t.length() >= 3) {
+                        triggers.add(t);
+                    }
+                }
+            }
+        }
+        String title = server.getTitle();
+        if (title != null && !title.isBlank()) {
+            for (String token : title.toLowerCase(Locale.ROOT).split("\\s+")) {
+                String clean = token.replaceAll("[^\\p{L}\\p{Nd}]", "");
+                if (clean.length() >= 4) {
+                    triggers.add(clean);
+                }
+            }
+        }
+        return triggers;
+    }
+
     public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
             String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
         long t0 = System.currentTimeMillis();
@@ -188,6 +288,11 @@ public class TurChatToolResolver {
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
         Set<String> alwaysKeep = buildAlwaysKeep(selectedNativeTools, skillCallbacks, activeNode);
+        // T424 / §XXI part (b) — trigger boost: when the user message hits an
+        // attached MCP server's declared trigger words (or its title), promote
+        // that server's tools into the always-keep set so the pre-filter can
+        // never drop them and the model is steered to that namespace.
+        alwaysKeep.addAll(triggerBoostedMcpToolNames(agent, userMessage));
         ToolCallback[] filtered = toolPreFilterService.filter(decorated, userMessage, alwaysKeep);
         long elapsed = System.currentTimeMillis() - t0;
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_TOOLS, elapsed);

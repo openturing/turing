@@ -74,6 +74,21 @@ public class TurGenAiProperty {
          * bloat only becomes a problem with dozens of tools.
          */
         private int minToolsThreshold = 20;
+
+        /**
+         * T424 / §XXI — minimum number of <em>attached</em> (MCP / custom)
+         * tools that always survive the filter, even when the agent's
+         * always-keep native tools alone meet or exceed {@link #topK}.
+         *
+         * <p>Without this floor, an agent with many operator-selected native
+         * tools starved its attached MCP/custom tools to a quota of zero
+         * ({@code topK − nativeCount ≤ 0}), so the model never saw the very
+         * tools the operator attached (real incident: 24 natives, {@code topK=10}
+         * → every {@code dspace_*} MCP tool dropped). The floor guarantees the
+         * top-scoring attached tools reach the LLM regardless of native count.
+         * Set to {@code 0} to restore the pre-T424 behaviour.
+         */
+        private int reserveAttached = 8;
     }
 
     /**

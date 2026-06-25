@@ -107,6 +107,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatShareOgService shareOgService;
 	private final TurAgentWorkspace agentWorkspace;
 	private final TurWorkspaceEventBus workspaceEventBus;
+	private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -125,7 +126,8 @@ public class TurSNSiteGenAiAPI {
 			TurChatHandoffService handoffService,
 			TurChatShareOgService shareOgService,
 			TurAgentWorkspace agentWorkspace,
-			TurWorkspaceEventBus workspaceEventBus) {
+			TurWorkspaceEventBus workspaceEventBus,
+			com.viglet.turing.genai.flow.TurConversationLock conversationLock) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -144,6 +146,7 @@ public class TurSNSiteGenAiAPI {
 		this.shareOgService = shareOgService;
 		this.agentWorkspace = agentWorkspace;
 		this.workspaceEventBus = workspaceEventBus;
+		this.conversationLock = conversationLock;
 	}
 
 	/**
@@ -433,8 +436,9 @@ public class TurSNSiteGenAiAPI {
 			return new ChatResumeResponse(0, false, "conversationId is required");
 		}
 		TurChatFlowEngineService.ResumeResult result =
-				chatFlowEngineService.resumeSuspendedFlow(body.conversationId(),
-						body.slotUpdates(), body.resumeReason());
+				conversationLock.runExclusive(body.conversationId(),
+						() -> chatFlowEngineService.resumeSuspendedFlow(body.conversationId(),
+								body.slotUpdates(), body.resumeReason()));
 		return new ChatResumeResponse(result.resumed(), !result.nothingToResume(), null);
 	}
 
@@ -451,10 +455,15 @@ public class TurSNSiteGenAiAPI {
 		if (body == null) {
 			return new ChatSlotWriteResponse(0);
 		}
-		int touched = chatFlowEngineService.writeSlot(
-				body.conversationId(), body.name(), body.value(),
-				com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
-				"site=" + siteName);
+		// Serialize against the conversation's chat turn so this optimistic
+		// write cannot lost-update the cursor mid-advance (see TurConversationLock).
+		log.debug("[ConvLock] slot-write endpoint conv='{}' name='{}'",
+				body.conversationId(), body.name());
+		int touched = conversationLock.runExclusive(body.conversationId(), () ->
+				chatFlowEngineService.writeSlot(
+						body.conversationId(), body.name(), body.value(),
+						com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+						"site=" + siteName));
 		return new ChatSlotWriteResponse(touched);
 	}
 
@@ -486,7 +495,8 @@ public class TurSNSiteGenAiAPI {
 			return new ChatFormSubmitResponse(false, 0, 0, null, "conversationId is required");
 		}
 		TurChatFlowEngineService.FormSubmitResult result =
-				chatFlowEngineService.submitForm(body.conversationId(), body.values());
+				conversationLock.runExclusive(body.conversationId(),
+						() -> chatFlowEngineService.submitForm(body.conversationId(), body.values()));
 		return new ChatFormSubmitResponse(true, result.fieldsWritten(),
 				result.advancedStates(), result.currentNodeId(), null);
 	}
@@ -535,8 +545,10 @@ public class TurSNSiteGenAiAPI {
 						return new ChatFlowSelectResponse(false, null, null,
 								SITE + siteName + "' has no GenAI agent configured");
 					}
-					TurChatFlowEngineService.PinResult pin = chatFlowEngineService
-							.pinFlowForConversation(agent, body.conversationId(), body.flow());
+					TurChatFlowEngineService.PinResult pin = conversationLock.runExclusive(
+							body.conversationId(),
+							() -> chatFlowEngineService.pinFlowForConversation(
+									agent, body.conversationId(), body.flow()));
 					return new ChatFlowSelectResponse(pin.success(), pin.pinnedFlowId(),
 							pin.pinnedFlowName(), pin.reason());
 				})

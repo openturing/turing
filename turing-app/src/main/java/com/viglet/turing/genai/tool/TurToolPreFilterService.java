@@ -193,8 +193,6 @@ public class TurToolPreFilterService {
         // BM25 ranking would still help by preferring high-scoring tools
         // among the non-protected ones, but only as a tie-breaker. Keep
         // protected + fill remaining quota with top-scoring callbacks.
-        int quotaForRanked = Math.max(0, topK - countProtected(callbacks, protectedNames));
-
         // Map names → original callbacks so we can rebuild the result in
         // the requested order without scanning the array N times.
         Map<String, ToolCallback> byName = indexByName(callbacks);
@@ -202,6 +200,29 @@ public class TurToolPreFilterService {
             recordObservation(callbacks.length, callbacks.length, start,
                     TurMeterNames.REASON_CAP_COVERS_POOL);
             return callbacks;
+        }
+
+        // Normal quota for the ranked (non-protected = MCP/custom) pool.
+        int protectedCount = countProtected(callbacks, protectedNames);
+        int rankedPoolSize = Math.max(0, byName.size() - protectedCount);
+        int quotaForRanked = topK - protectedCount;
+        // T424 / §XXI — anti-starvation floor. When the always-keep native set
+        // alone meets/exceeds topK the quota goes to ≤ 0, which silently dropped
+        // EVERY operator-attached MCP/custom tool (real incident: 24 natives,
+        // topK=10 → no dspace_* tool ever reached the model). ONLY in that
+        // starved case do we reserve up to {@code reserveAttached} slots for the
+        // top-scoring attached tools — when the quota is already positive we
+        // respect topK and do not inflate it.
+        if (quotaForRanked <= 0 && rankedPoolSize > 0) {
+            quotaForRanked = Math.min(rankedPoolSize, Math.max(0, props.getReserveAttached()));
+        }
+        if (quotaForRanked <= 0) {
+            // Either no attached tools exist or the floor is disabled (=0):
+            // nothing to rank — protected set is the whole result.
+            recordObservation(callbacks.length, protectedCount, start,
+                    TurMeterNames.REASON_ENGAGED);
+            return buildOrderedResult(callbacks, byName, Collections.emptyList(),
+                    protectedNames, topK).toArray(new ToolCallback[0]);
         }
 
         List<String> rankedSurvivors = rankByBm25(byName, protectedNames, userMessage,

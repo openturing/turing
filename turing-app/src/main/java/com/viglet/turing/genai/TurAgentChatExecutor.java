@@ -105,6 +105,7 @@ public class TurAgentChatExecutor {
     private final TurTokenBudgetService tokenBudgetService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
+    private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
     private final TurAgentPersonaResolver personaResolver;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatCohortResolver chatCohortResolver;
@@ -119,6 +120,7 @@ public class TurAgentChatExecutor {
             TurTokenBudgetService tokenBudgetService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
+            com.viglet.turing.genai.flow.TurConversationLock conversationLock,
             TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatCohortResolver chatCohortResolver,
@@ -132,6 +134,7 @@ public class TurAgentChatExecutor {
         this.tokenBudgetService = tokenBudgetService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
+        this.conversationLock = conversationLock;
         this.personaResolver = personaResolver;
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatCohortResolver = chatCohortResolver;
@@ -334,22 +337,36 @@ public class TurAgentChatExecutor {
         // to ONE.
         String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
         String lastUserMessageEarly = lastMessageOfRole(history, "user");
-        TurAgentChatFlowContext initialFlowContext = resolveFlowContext(agent, conversationId,
-                flowId, lastUserMessageEarly, chatModel, forcedVariant);
-        // §I.5 step 1 inversion: when a flow is governing this turn (and the
-        // turn is NOT the freshly-triggered activation turn — that one needs
-        // the legacy skip path because the user msg is the trigger, not data
-        // the strategy can force-capture as the first slot value), run
-        // advance(...) NOW — before the LLM call — passing
-        // assistantMessage=null. The strategy decides the cursor purely from
-        // the user message; the LLM then composes ONE reply with the
-        // post-advance node already baked into the system prompt. No regen,
-        // no anchoring patches.
-        final boolean runEarlyAdvance = initialFlowContext != null
-                && !initialFlowContext.freshlyTriggered();
-        final TurAgentChatFlowContext flowContext = runEarlyAdvance
-                ? earlyAdvanceBeforeLlm(initialFlowContext, lastUserMessageEarly, chatModel)
-                : initialFlowContext;
+        // Flow detection + pre-LLM advance run as ONE per-conversation critical
+        // section so a concurrent side-channel write on the same conversation
+        // (POST /chat/slots, /form-submit, /flow-select, /chat/resume) cannot
+        // interleave and lost-update the cursor. Without this, an optimistic
+        // slot write firing alongside the chat send could revert the advance
+        // and drop the visitor's answer (the turn then fell through to RAG).
+        // The lock is released here — BEFORE the LLM call — so the long-running
+        // model stream is never serialized; only the fast state mutation is.
+        // §I.5 step 1 inversion: when a flow governs this turn (and it is NOT
+        // the freshly-triggered activation turn — that one needs the legacy
+        // skip path because the user msg is the trigger, not data the strategy
+        // can force-capture as the first slot value), run advance(...) NOW —
+        // before the LLM call — passing assistantMessage=null. The strategy
+        // decides the cursor purely from the user message; the LLM then
+        // composes ONE reply with the post-advance node already baked into the
+        // system prompt. No regen, no anchoring patches.
+        final TurAgentChatFlowContext flowContext = conversationLock.runExclusive(conversationId, () -> {
+            TurAgentChatFlowContext initial = resolveFlowContext(agent, conversationId,
+                    flowId, lastUserMessageEarly, chatModel, forcedVariant);
+            boolean runEarly = initial != null && !initial.freshlyTriggered();
+            // Diagnostic: shows whether a governing flow was resolved for this
+            // turn under the per-conversation lock. A turn that lands on plain
+            // RAG despite an in-progress flow shows flowResolved=false.
+            log.debug("[ConvLock] flow turn conv='{}' flowResolved={} freshlyTriggered={} userMsg='{}'",
+                    conversationId, initial != null && initial.flow() != null,
+                    initial != null && initial.freshlyTriggered(), lastUserMessageEarly);
+            return runEarly
+                    ? earlyAdvanceBeforeLlm(initial, lastUserMessageEarly, chatModel)
+                    : initial;
+        });
         final long tAfterFlow = System.currentTimeMillis();
 
         // §I.5 step 2 / T10: SINGLE persona resolution per turn — runs
