@@ -312,7 +312,7 @@
 
 **Phase 3 — split-outs:**
 - ✅ **T416** — `experiments.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- 📋 **T417** (deps: —) **`human-in-the-loop.md` (NEW)** — `humanApproval` node (T119) + spectator/co-pilot (T120): channels/timeout, 3 SSE buses, "take the wheel", parked-conversations. → §3.7
+- ✅ **T417** — `human-in-the-loop.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 4 — remaining gaps:**
 - 📋 **T418** (deps: —) **`mcp-servers.md` expand** — add "Turing as an MCP Server" (Block I, T245–T256): `/mcp` endpoint, OAuth scoping, published tools/resources/prompts, one-click client config. → §3.8
