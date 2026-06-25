@@ -164,6 +164,7 @@ public class TurCustomToolCallbackService {
     private final TurAIAgentRepository agentRepository;
     private final TurLLMInstanceRepository llmRepository;
     private final com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace;
+    private final TurMcpToolCallbackService mcpToolCallbackService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
@@ -181,7 +182,8 @@ public class TurCustomToolCallbackService {
             @Lazy TurAgentChatExecutor agentChatExecutor,
             TurAIAgentRepository agentRepository,
             TurLLMInstanceRepository llmRepository,
-            com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace) {
+            com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace,
+            TurMcpToolCallbackService mcpToolCallbackService) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
@@ -193,6 +195,7 @@ public class TurCustomToolCallbackService {
         this.agentRepository = agentRepository;
         this.llmRepository = llmRepository;
         this.agentWorkspace = agentWorkspace;
+        this.mcpToolCallbackService = mcpToolCallbackService;
     }
 
     /**
@@ -458,6 +461,12 @@ public class TurCustomToolCallbackService {
         // the bytes touching the prompt. No-op mode when tenant context absent.
         binding.setVariable("workspace",
                 new TurCustomToolWorkspaceHelper(agentWorkspace, tenantAgentId, tenantConversationId));
+        // T425 / §XXI.1 — `mcp`: call the tools of an MCP server attached to this
+        // agent (e.g. mcp.call("dspace_search_items", [query: term])), reusing
+        // that one integration instead of a parallel direct-REST call to the same
+        // backend. No-op when there's no agent context / no attached servers.
+        binding.setVariable("mcp",
+                new TurCustomToolMcpHelper(mcpToolCallbackService, agentRepository, tenantAgentId, objectMapper));
         Script script = scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();

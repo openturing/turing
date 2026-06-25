@@ -76,6 +76,7 @@
 
 ## E.9 — Tool-selection quality (MCP / native disambiguation)
 
+- 💭 **T425** (deps: —) **`mcp` binding for Custom Tools** — expose an `mcp` helper to the Groovy custom-tool sandbox (alongside `http`/`turingSearch`/`workspace`) so a tool can call an attached MCP server's tools — `mcp.call("dspace_search_items", [query: term])` — and reuse the agent's MCP integration instead of a parallel direct-REST call. Motivated by the Aula-Relâmpago tool hitting the Insper Akamai WAF (JDK `Java/<v>` UA → 403) while the MCP server's `python-httpx` UA is allowlisted: one DSpace integration, configured once. → §XXI
 - 💭 **T424** (deps: T29) **Trigger/namespace-aware tool prioritization** — when an attached MCP server's `llmInstructions` trigger words match the user message, boost that server's tools in the pre-filter (and optionally demote/skip overlapping built-in `dsl_*`/native tools for that turn) so weak models (e.g. gpt-4o-mini) reliably pick the MCP tools over competing built-ins instead of a semantically-close native one. Pure list ordering is NOT a reliable LLM priority signal — this is intent+namespace ranking on top of §IV.2's BM25 pre-filter. → §XXI.1
 
 ## F.2 — OpenAI Responses API + built-in tools

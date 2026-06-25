@@ -1,7 +1,7 @@
-# Last task number — `T424`
+# Last task number — `T425`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T425`; after assigning it, bump the number above and the log line below.
+> `T426`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T425** — `mcp` binding for Custom Tools (E.9): Groovy scripts can call an attached MCP server's tools via `mcp.call("dspace_search_items", [...])`, reusing the agent's MCP integration instead of a parallel direct-REST path. Motivated by the Aula-Relâmpago tool hitting the Insper Akamai WAF with the JDK `Java/<v>` UA (403) while the MCP server's `python-httpx` UA is allowlisted. → IMPROVEMENTS §XXI — 2026-06-25
 - **T424** — Trigger/namespace-aware tool prioritization (E.9): boost an attached MCP server's tools when its `llmInstructions` triggers match the message + reserve a pre-filter quota so always-keep native tools can't starve attached MCP/custom tools to zero. Surfaced by a real incident where `dspace_*` was dropped (24 natives ≥ top-K) and gpt-4o-mini looped on `get_current_time`. → IMPROVEMENTS §XXI — 2026-06-25
 - **T411–T423** — Block U: documentation refresh for `docs-turing` (webhooks, routines, cost-governance new pages; chat-flow/chat-analytics rewrites; experiments + human-in-the-loop split-outs; agent-eval/mcp-server/tool-calling/ai-agents/config-reference/token-usage updates). Plan: `docs-turing/_documentation-update-plan.md` — 2026-06-25
 - **T410** — Chaotic chatflow HITL coverage: `humanApproval` node type in `flow-dsl` + dedicated approval sub-flow in the chaotic fixture + park/decision-resume IT (also fixed a leaking test cache-manager that broke every full-context test) — 2026-06-18
