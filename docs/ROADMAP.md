@@ -289,40 +289,15 @@
 > (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
 > both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
 
-## Block U — Documentation refresh (`docs-turing`)
+## Block U — Documentation refresh (`docs-turing`) ✅ shipped 2026-06-25
 
-> Bring the public docs (`vigletdocs.github.io/docs-turing`) up to parity with
-> what shipped through T410. Whole subsystems have **no page**; `chat-flow.md` and
-> `chat-analytics.md` document an early slice and drifted stale. Not engineering —
-> these are docs tasks in a sibling repo. Full per-page plan, outlines, and source
-> references live in `docs-turing/_documentation-update-plan.md` (the `→` pointers
-> below are its section numbers). Verify every class/endpoint/config-key name
-> against source before publishing. Sequence: Phase 1 (new pages, zero-home) →
-> Phase 2 (stale rewrites) → Phase 3 (split-outs) → Phase 4 (remaining gaps) →
-> Phase 5 (reference reconciliation + sidebar wiring).
-
-**Phase 1 — new pages, zero doc-home (highest value):**
-- ✅ **T411** — `webhooks.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T412** — `routines.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T413** — `cost-governance.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-
-**Phase 2 — stale rewrites:**
-- ✅ **T414** — `chat-analytics.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T415** — `chat-flow.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-
-**Phase 3 — split-outs:**
-- ✅ **T416** — `experiments.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T417** — `human-in-the-loop.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-
-**Phase 4 — remaining gaps:**
-- ✅ **T418** — `mcp-servers.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T419** — `agent-eval.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T420** — `tool-calling.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- ✅ **T421** — `ai-agents.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-
-**Phase 5 — reference reconciliation:**
-- ✅ **T422** — `configuration-reference.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
-- 📋 **T423** (deps: T413, T414) **`token-usage.md` + `observability.md` reconcile** — token-usage = counts (point to cost-governance for USD); observability lists all 9 analytics metrics + cost hints + per-node caveat; wire `sidebars-turing.ts`. → §3.13
+> Shipped: T411–T423 — brought the public docs at `vigletdocs.github.io/docs-turing`
+> up to parity with what shipped through T410. Six new pages (webhooks, routines,
+> cost-governance, experiments, human-in-the-loop, agent-eval) + rewrites/expansions
+> of chat-flow, chat-analytics, mcp-servers, tool-calling, ai-agents,
+> configuration-reference, token-usage, observability + sidebar wiring. See
+> [CHANGELOG.md](CHANGELOG.md) → Block U. The per-page plan that drove it is
+> archived at `docs-turing/_documentation-update-plan.md`. No active backlog remains.
 
 ## Non-goals (do NOT add as tasks)
 
