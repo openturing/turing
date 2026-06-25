@@ -307,7 +307,7 @@
 - ✅ **T413** — `cost-governance.md` — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 
 **Phase 2 — stale rewrites:**
-- 📋 **T414** (deps: —) **`chat-analytics.md` expand** — fix metric list (9 not 5) + add funnel (T85), replay (T86), sentiment trajectory (T87), tool-latency p95 (T88), router decisions (T89), SSE debug (T90), cohort filters (T74). → §3.4
+- ✅ **T414** — `chat-analytics.md` expand — shipped, see [CHANGELOG.md](CHANGELOG.md) → Block U.
 - 📋 **T415** (deps: T411, T412, T416, T417) **`chat-flow.md` expand** — full node catalog (writeSlot/formCapture/functionCall/subFlowSwitch/scheduleAgent/webhook/humanApproval/suspend) + error edges (T49/T50) + capture-first/onJudgeReject (T45/T51) + slots primer (T54–T64) + trigger conflicts (T91) + flow chooser (T92); move A/B to T416. → §3.5
 
 **Phase 3 — split-outs:**
