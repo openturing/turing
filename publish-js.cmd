@@ -117,6 +117,13 @@ REM Now that deps are installed with the real ~/.npmrc, point npm/pnpm at the
 REM token-only temp config for the publish steps below.
 if not "%NPMRC_TMP%"=="" set "npm_config_userconfig=%NPMRC_TMP%"
 
+REM Publish order matters: react-sdk declares `workspace:*` on BOTH sdk and
+REM react-ui, and pnpm rewrites those to the dependency's CURRENT (bumped)
+REM version at publish time. So sdk and react-ui MUST be bumped+published BEFORE
+REM react-sdk — otherwise react-sdk pins the pre-bump version of its deps (it
+REM did once: react-sdk@2026.3.4 → react-ui@2026.3.3 instead of 2026.3.4).
+REM Therefore: sdk → react-ui → react-sdk (react-sdk always LAST).
+
 REM ── js-sdk ──────────────────────────────────────────────────────────────
 if "%WANT_JSSDK%"=="1" (
     echo.
@@ -125,16 +132,6 @@ if "%WANT_JSSDK%"=="1" (
     call "%PNPM%" -C "%FRONTEND%" run build:sdk
     if errorlevel 1 ( echo [ERROR] build:sdk failed. & exit /b 1 )
     call :publish "%FRONTEND%\packages\sdk" || exit /b 1
-)
-
-REM ── react-sdk ───────────────────────────────────────────────────────────
-if "%WANT_REACTSDK%"=="1" (
-    echo.
-    echo --- @viglet/turing-react-sdk ------------------------------------------
-    if "%DO_BUMP%"=="1" call :bump "%FRONTEND%\packages\react-sdk" || exit /b 1
-    call "%PNPM%" -C "%FRONTEND%" run build:react-sdk
-    if errorlevel 1 ( echo [ERROR] build:react-sdk failed. & exit /b 1 )
-    call :publish "%FRONTEND%\packages\react-sdk" || exit /b 1
 )
 
 REM ── react-ui ────────────────────────────────────────────────────────────
@@ -151,6 +148,16 @@ if "%WANT_REACTUI%"=="1" (
     call "%PNPM%" -C "%FRONTEND%\packages\react-ui" run test
     if errorlevel 1 ( echo [ERROR] react-ui tests failed. & exit /b 1 )
     call :publish "%FRONTEND%\packages\react-ui" || exit /b 1
+)
+
+REM ── react-sdk (LAST — depends on sdk + react-ui above) ───────────────────
+if "%WANT_REACTSDK%"=="1" (
+    echo.
+    echo --- @viglet/turing-react-sdk ------------------------------------------
+    if "%DO_BUMP%"=="1" call :bump "%FRONTEND%\packages\react-sdk" || exit /b 1
+    call "%PNPM%" -C "%FRONTEND%" run build:react-sdk
+    if errorlevel 1 ( echo [ERROR] build:react-sdk failed. & exit /b 1 )
+    call :publish "%FRONTEND%\packages\react-sdk" || exit /b 1
 )
 
 if not "%NPMRC_TMP%"=="" if exist "%NPMRC_TMP%" del /q "%NPMRC_TMP%"
