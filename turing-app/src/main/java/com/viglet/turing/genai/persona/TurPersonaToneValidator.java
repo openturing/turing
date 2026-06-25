@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -127,7 +129,17 @@ public class TurPersonaToneValidator {
         List<String> violations = new ArrayList<>();
         List<int[]> rangesToMask = new ArrayList<>();
         for (String term : terms) {
-            collectHitRanges(term, replyTokens, replyStems, violations, rangesToMask);
+            // Single-word terms keep the morphology-aware stem match (§IV.3:
+            // forbid "competitivo" → also catches "competitividade"). Multi-word
+            // terms are PHRASES and must match consecutively — otherwise the
+            // per-stem bag match masks every innocent word that happens to share
+            // a stem with any word inside the phrase (forbid "não posso ajudar"
+            // would mask every "ajudar"; "sou consultor" every "sou"; etc.).
+            if (isMultiWord(term)) {
+                collectPhraseHitRanges(term, responseText, violations, rangesToMask);
+            } else {
+                collectHitRanges(term, replyTokens, replyStems, violations, rangesToMask);
+            }
         }
 
         if (violations.isEmpty()) {
@@ -173,6 +185,50 @@ public class TurPersonaToneValidator {
             if (intersection.contains(span.stem())) {
                 rangesToMask.add(new int[] { span.start(), span.end() });
             }
+        }
+    }
+
+    /** A forbidden term is a PHRASE when it has more than one whitespace-
+     *  separated word — those match consecutively, not by loose per-stem bag. */
+    private static boolean isMultiWord(String term) {
+        return term.trim().split("\\s+").length > 1;
+    }
+
+    /**
+     * Phrase match for a multi-word forbidden {@code term}: the whole phrase
+     * must appear CONSECUTIVELY in the reply (case-insensitive, with flexible
+     * inter-word whitespace) before anything is masked. This fixes the §IV.3
+     * over-masking regression where a phrase like {@code "não posso ajudar"}
+     * was decomposed into stems and masked every standalone {@code "ajudar"}
+     * (and {@code "sou consultor"} every {@code "sou"}, etc.).
+     *
+     * <p>Matching is on the ORIGINAL text (not stems) so the masked span lines
+     * up exactly with the phrase the admin forbade. Each forbidden word is
+     * regex-quoted and joined with {@code \s+} so the phrase still matches
+     * across newlines / collapsed spacing the LLM may emit. Morphological
+     * variants are intentionally NOT expanded for phrases — phrase bans are
+     * literal by nature, and per-word stemming is what caused the regression.
+     */
+    private static void collectPhraseHitRanges(String term, String text,
+            List<String> violations, List<int[]> rangesToMask) {
+        String[] words = term.trim().split("\\s+");
+        StringBuilder pattern = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) {
+                pattern.append("\\s+");
+            }
+            pattern.append(Pattern.quote(words[i]));
+        }
+        Matcher matcher = Pattern
+                .compile(pattern.toString(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
+                .matcher(text);
+        boolean hit = false;
+        while (matcher.find()) {
+            rangesToMask.add(new int[] { matcher.start(), matcher.end() });
+            hit = true;
+        }
+        if (hit) {
+            violations.add(term);
         }
     }
 
