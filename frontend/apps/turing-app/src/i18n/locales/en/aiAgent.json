@@ -19,7 +19,8 @@
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "analyticsIntent": "Analytics Intent",
-      "history": "History"
+      "history": "History",
+      "livePreview": "Live preview"
     },
     "persona": {
       "title": "Personas",
@@ -159,7 +160,7 @@
       },
       "tabs": {
         "editor": "Editor",
-        "livePreview": "Live preview"
+        "conflictCheck": "Conflict check"
       }
     },
     "llm": {

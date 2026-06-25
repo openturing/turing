@@ -1,6 +1,5 @@
 "use client"
 import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
-import { useSystemPromptPreview } from "@/api/queries/system-prompt.queries"
 import { ROUTES } from "@/app/routes.const"
 import {
   Form,
@@ -16,14 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
-import { SystemPromptLivePreview } from "./system-prompt-live-preview"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
 const urlBase = ROUTES.AI_AGENT_INSTANCE
@@ -72,10 +70,6 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const updateMutation = useUpdateAiAgent();
-  // Which chat flow governs the preview (undefined → backend default = first
-  // enabled flow). Drives both the segment breakdown and the final prompt.
-  const [flowId, setFlowId] = useState<string | undefined>(undefined);
-  const { data: preview, isLoading: previewLoading } = useSystemPromptPreview(value.id, flowId);
 
   // Whole agent in form state (defaultValues) so a save round-trips every
   // field the update endpoint reads — we only render the systemPrompt field.
@@ -131,8 +125,8 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
               <TabsTrigger value="editor">
                 {t("aiAgent.systemPrompt.tabs.editor", { defaultValue: "Editor" })}
               </TabsTrigger>
-              <TabsTrigger value="preview">
-                {t("aiAgent.systemPrompt.tabs.livePreview", { defaultValue: "Live preview" })}
+              <TabsTrigger value="conflict">
+                {t("aiAgent.systemPrompt.tabs.conflictCheck", { defaultValue: "Conflict check" })}
               </TabsTrigger>
             </TabsList>
 
@@ -184,19 +178,13 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
               </SectionCard>
             </TabsContent>
 
-            {/* Live Preview (segment breakdown + tool list + copy-all) and
-                conflict validation reflect the SAVED configuration — they
-                refetch automatically after a save (the update mutation
-                invalidates the ai-agents query tree). All buttons inside these
-                panels are type="button", so living inside the <form> never
-                triggers an accidental submit. */}
-            <TabsContent value="preview" className="space-y-4">
-              <SystemPromptLivePreview
-                preview={preview}
-                isLoading={previewLoading}
-                flowId={flowId}
-                onFlowChange={setFlowId}
-              />
+            {/* Conflict validation reflects the SAVED configuration — it
+                refetches automatically after a save (the update mutation
+                invalidates the ai-agents query tree). Its buttons are
+                type="button", so living inside the <form> never triggers an
+                accidental submit. The segment-by-segment Live Preview moved to
+                its own page under the agent's "Chat" sidebar group. */}
+            <TabsContent value="conflict" className="space-y-4">
               <SystemPromptWarningsPanel agentId={value.id} />
             </TabsContent>
           </Tabs>
