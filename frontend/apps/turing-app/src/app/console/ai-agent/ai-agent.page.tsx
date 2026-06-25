@@ -54,6 +54,11 @@ export default function AIAgentPage() {
           title: t("aiAgent.nav.chat"),
           children: [
             { title: t("aiAgent.nav.chatFlow"), url: "/chat-flow", icon: IconSitemap },
+          ],
+        },
+        {
+          title: t("aiAgent.nav.analysis"),
+          children: [
             { title: t("aiAgent.nav.livePreview"), url: "/live-preview", icon: IconEye },
             { title: t("aiAgent.nav.analyticsIntent"), url: "/analytics-intent", icon: IconChartBar },
             { title: t("aiAgent.nav.history"), url: "/history", icon: IconHistory },

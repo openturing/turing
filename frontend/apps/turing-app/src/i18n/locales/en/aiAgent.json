@@ -20,7 +20,8 @@
       "chatFlow": "Chat Flow",
       "analyticsIntent": "Analytics Intent",
       "history": "History",
-      "livePreview": "Live preview"
+      "livePreview": "Live preview",
+      "analysis": "Analysis"
     },
     "persona": {
       "title": "Personas",
