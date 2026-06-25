@@ -100,7 +100,7 @@ export function SystemPromptWarningsPanel({ agentId }: Props) {
         {issues.length > 0 && (
           <ul className="space-y-3">
             {issues.map((issue, idx) => (
-              <IssueRow key={`${issue.code}-${issue.source}-${idx}`} issue={issue} />
+              <IssueRow key={`${issue.code}-${issue.source}-${idx}`} issue={issue} t={t} />
             ))}
           </ul>
         )}
@@ -109,9 +109,28 @@ export function SystemPromptWarningsPanel({ agentId }: Props) {
   );
 }
 
-function IssueRow({ issue }: Readonly<{ issue: TurSystemPromptIssue }>) {
+function IssueRow({
+  issue,
+  t,
+}: Readonly<{
+  issue: TurSystemPromptIssue;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}>) {
   const isError = issue.severity === "ERROR";
   const isInfo = issue.severity === "INFO";
+  // Prefer a code-keyed translation (with the backend's interpolation params);
+  // fall back to the backend message/hint. Deep-LLM findings are already in
+  // the prompt's language and have no translation key, so they fall through.
+  const message = t(`aiAgent.systemPrompt.warnings.codes.${issue.code}.message`, {
+    ...issue.params,
+    defaultValue: issue.message,
+  });
+  const hint = issue.hint
+    ? t(`aiAgent.systemPrompt.warnings.codes.${issue.code}.hint`, {
+        ...issue.params,
+        defaultValue: issue.hint,
+      })
+    : "";
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -130,8 +149,8 @@ function IssueRow({ issue }: Readonly<{ issue: TurSystemPromptIssue }>) {
           </span>
         )}
       </div>
-      <div className="text-sm whitespace-pre-wrap break-words">{issue.message}</div>
-      {issue.hint && <p className="text-xs text-muted-foreground">{issue.hint}</p>}
+      <div className="text-sm whitespace-pre-wrap break-words">{message}</div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </li>
   );
 }

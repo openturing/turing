@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { PromptEditor } from "@/components/ui/prompt-editor"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
@@ -126,67 +127,84 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
             </StickyPageHeader.Actions>
           </StickyPageHeader>
 
-          <SectionCard variant="violet">
-            <SectionCard.Header
-              icon={IconFileText}
-              title={t("forms.agentSettings.systemPrompt")}
-              description={t("forms.agentSettings.systemPromptDesc")}
-            />
-            <SectionCard.Content>
-              <FormField
-                control={form.control}
-                name="systemPrompt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
-                    <FormDescription>{t("forms.agentSettings.instructionDesc")}</FormDescription>
-                    <FormControl>
-                      <PromptEditor
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        fieldRef={field.ref}
-                        placeholder={t("forms.agentSettings.instructionPlaceholder")}
-                        hint={t("forms.agentSettings.instructionHint")}
-                        metaPrompt={{
-                          brief: form.watch("systemPromptMetaPrompt") ?? "",
-                          onBriefChange: (v) =>
-                            form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
-                          fieldInstruction: buildSystemPromptFieldInstruction({
-                            title: form.watch("title"),
-                            agentDescription: form.watch("description"),
-                          }),
-                          tone: "violet",
-                          triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
-                          title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
-                          description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
-                          placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
-                          hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
-                          generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <Tabs defaultValue="editor" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="editor">
+                {t("aiAgent.systemPrompt.tabs.editor", { defaultValue: "Editor" })}
+              </TabsTrigger>
+              <TabsTrigger value="preview">
+                {t("aiAgent.systemPrompt.tabs.livePreview", { defaultValue: "Live preview" })}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="editor" className="space-y-4">
+              <SectionCard variant="violet">
+                <SectionCard.Header
+                  icon={IconFileText}
+                  title={t("forms.agentSettings.systemPrompt")}
+                  description={t("forms.agentSettings.systemPromptDesc")}
+                />
+                <SectionCard.Content>
+                  <FormField
+                    control={form.control}
+                    name="systemPrompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
+                        <FormDescription>{t("forms.agentSettings.instructionDesc")}</FormDescription>
+                        <FormControl>
+                          <PromptEditor
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            fieldRef={field.ref}
+                            placeholder={t("forms.agentSettings.instructionPlaceholder")}
+                            hint={t("forms.agentSettings.instructionHint")}
+                            metaPrompt={{
+                              brief: form.watch("systemPromptMetaPrompt") ?? "",
+                              onBriefChange: (v) =>
+                                form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
+                              fieldInstruction: buildSystemPromptFieldInstruction({
+                                title: form.watch("title"),
+                                agentDescription: form.watch("description"),
+                              }),
+                              tone: "violet",
+                              triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
+                              title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
+                              description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
+                              placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
+                              hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
+                              generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </SectionCard.Content>
+              </SectionCard>
+            </TabsContent>
+
+            {/* Live Preview (segment breakdown), conflict validation, and the
+                final assembled prompt reflect the SAVED configuration — they
+                refetch automatically after a save (the update mutation
+                invalidates the ai-agents query tree). The final prompt is
+                intentionally last: it's the bottom-line "this is what the model
+                sees". All buttons inside these panels are type="button", so
+                living inside the <form> never triggers an accidental submit. */}
+            <TabsContent value="preview" className="space-y-4">
+              <SystemPromptLivePreview
+                preview={preview}
+                isLoading={previewLoading}
+                flowId={flowId}
+                onFlowChange={setFlowId}
               />
-            </SectionCard.Content>
-          </SectionCard>
+              <SystemPromptWarningsPanel agentId={value.id} />
+              <SystemPromptFinalPrompt preview={preview} isLoading={previewLoading} />
+            </TabsContent>
+          </Tabs>
         </form>
       </Form>
-
-      {/* Live Preview (segment breakdown), conflict validation, and the final
-          assembled prompt reflect the SAVED configuration — they refetch
-          automatically after a save (the update mutation invalidates the
-          ai-agents query tree). The final prompt is intentionally last: it's
-          the bottom-line "this is what the model sees". */}
-      <SystemPromptLivePreview
-        preview={preview}
-        isLoading={previewLoading}
-        flowId={flowId}
-        onFlowChange={setFlowId}
-      />
-      <SystemPromptWarningsPanel agentId={value.id} />
-      <SystemPromptFinalPrompt preview={preview} isLoading={previewLoading} />
     </div>
   );
 };

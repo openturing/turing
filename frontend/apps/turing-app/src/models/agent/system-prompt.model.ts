@@ -59,7 +59,11 @@ export const SYSTEM_PROMPT_FLOW_NONE = "__none__";
 export interface TurSystemPromptIssue {
   severity: "ERROR" | "WARNING" | "INFO";
   code: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   message: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   hint: string;
   source: string;
+  /** Interpolation values for the `code`-keyed i18n template (length, langs, term). */
+  params?: Record<string, string>;
 }

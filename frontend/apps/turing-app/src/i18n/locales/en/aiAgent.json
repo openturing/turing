@@ -114,7 +114,43 @@
         "description": "Heuristic checks run automatically. Run the deep check to have the LLM look for subtler contradictions that could break a reply.",
         "count": "{{count}} issue(s) found",
         "deepCheck": "Deep check (LLM)",
-        "clean": "No conflicts detected. Run the deep check for a thorough LLM review."
+        "clean": "No conflicts detected. Run the deep check for a thorough LLM review.",
+        "codes": {
+          "empty_system_prompt": {
+            "message": "This agent has no system prompt; it falls back to a generic default.",
+            "hint": "Write a system prompt that defines the agent's scope, tone, and boundaries."
+          },
+          "system_prompt_too_long": {
+            "message": "The assembled system prompt is {{length}} characters — large prompts inflate token cost and dilute the model's attention.",
+            "hint": "Trim redundant guidance, or move stable reference material into a tool or RAG store."
+          },
+          "language_directive_conflict": {
+            "message": "Conflicting response-language directives: {{langs}}. The model gets contradictory instructions about which language to answer in.",
+            "hint": "Keep a single response-language rule across the agent prompt and the persona, or scope each one to an explicit condition."
+          },
+          "persona_vocab_contradiction": {
+            "message": "The persona lists \"{{term}}\" as both required and forbidden vocabulary.",
+            "hint": "Remove the term from one of the two lists."
+          },
+          "forbidden_term_in_prompt": {
+            "message": "The agent prompt uses \"{{term}}\", which the default persona forbids — the persona will be told to rephrase its own instructions.",
+            "hint": "Rephrase the agent prompt to avoid the forbidden term, or drop it from the persona's forbidden list."
+          },
+          "redundant_persona_instruction": {
+            "message": "The default persona's instruction largely duplicates the agent system prompt.",
+            "hint": "Keep each layer focused — the agent prompt for scope/behavior, the persona for voice — to avoid sending the same text twice."
+          },
+          "deep_check_unavailable": {
+            "message": "No default LLM is configured or enabled, so the deep conflict analysis can't run.",
+            "hint": "Set a default LLM in Global Settings to enable the deep check."
+          },
+          "deep_check_failed": {
+            "hint": "Try again; if it persists, check the default LLM's status."
+          },
+          "deep_check_note": {
+            "hint": "This is the raw model analysis (it wasn't structured)."
+          }
+        }
       },
       "finalPrompt": {
         "title": "Final prompt",
@@ -126,6 +162,10 @@
         "copyFailed": "Could not copy",
         "toolsHeading": "Tools available to the model",
         "toolsNote": "_Provided to the model as function/tool schemas (not literal prompt text)._"
+      },
+      "tabs": {
+        "editor": "Editor",
+        "livePreview": "Live preview"
       }
     },
     "llm": {

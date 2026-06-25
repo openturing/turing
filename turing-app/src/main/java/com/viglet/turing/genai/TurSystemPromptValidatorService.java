@@ -130,7 +130,7 @@ public class TurSystemPromptValidatorService {
                     "The assembled system prompt is " + assembled.length()
                             + " characters — large prompts inflate token cost and dilute the model's attention.",
                     "Trim redundant guidance, or move stable reference material into a tool or RAG store.",
-                    AGENT));
+                    AGENT, Map.of("length", String.valueOf(assembled.length()))));
         }
     }
 
@@ -150,7 +150,7 @@ public class TurSystemPromptValidatorService {
                             + ". The model gets contradictory instructions about which language to answer in.",
                     "Keep a single response-language rule across the agent prompt and the persona, "
                             + "or scope each one to an explicit condition.",
-                    source));
+                    source, Map.of("langs", String.join(", ", all))));
         }
     }
 
@@ -168,7 +168,7 @@ public class TurSystemPromptValidatorService {
                 issues.add(new TurSystemPromptIssueDto(SEV_ERROR, "persona_vocab_contradiction",
                         "The persona lists \"" + term + "\" as both required and forbidden vocabulary.",
                         "Remove the term from one of the two lists.",
-                        PERSONA));
+                        PERSONA, Map.of("term", term)));
             }
         }
         // A forbidden term used verbatim in the agent prompt undercuts the ban.
@@ -179,7 +179,7 @@ public class TurSystemPromptValidatorService {
                             "The agent prompt uses \"" + term
                                     + "\", which the default persona forbids — the persona will be told to rephrase its own instructions.",
                             "Rephrase the agent prompt to avoid the forbidden term, or drop it from the persona's forbidden list.",
-                            AGENT));
+                            AGENT, Map.of("term", term)));
                 }
             }
         }

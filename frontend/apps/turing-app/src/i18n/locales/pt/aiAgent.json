@@ -114,7 +114,43 @@
         "description": "Checagens heurísticas rodam automaticamente. Rode a checagem profunda para o LLM procurar contradições mais sutis que possam quebrar uma resposta.",
         "count": "{{count}} problema(s) encontrado(s)",
         "deepCheck": "Checagem profunda (LLM)",
-        "clean": "Nenhum conflito detectado. Rode a checagem profunda para uma revisão completa pelo LLM."
+        "clean": "Nenhum conflito detectado. Rode a checagem profunda para uma revisão completa pelo LLM.",
+        "codes": {
+          "empty_system_prompt": {
+            "message": "Este agente não tem system prompt; ele recai para um padrão genérico.",
+            "hint": "Escreva um system prompt que defina o escopo, o tom e os limites do agente."
+          },
+          "system_prompt_too_long": {
+            "message": "O system prompt montado tem {{length}} caracteres — prompts grandes aumentam o custo de tokens e diluem a atenção do modelo.",
+            "hint": "Reduza orientações redundantes, ou mova material de referência estável para uma ferramenta ou store de RAG."
+          },
+          "language_directive_conflict": {
+            "message": "Diretivas de idioma de resposta conflitantes: {{langs}}. O modelo recebe instruções contraditórias sobre em qual idioma responder.",
+            "hint": "Mantenha uma única regra de idioma de resposta entre o prompt do agente e a persona, ou restrinja cada uma a uma condição explícita."
+          },
+          "persona_vocab_contradiction": {
+            "message": "A persona lista \"{{term}}\" como vocabulário obrigatório e proibido ao mesmo tempo.",
+            "hint": "Remova o termo de uma das duas listas."
+          },
+          "forbidden_term_in_prompt": {
+            "message": "O prompt do agente usa \"{{term}}\", que a persona padrão proíbe — a persona será instruída a reescrever as próprias instruções.",
+            "hint": "Reescreva o prompt do agente para evitar o termo proibido, ou remova-o da lista de proibidos da persona."
+          },
+          "redundant_persona_instruction": {
+            "message": "A instrução da persona padrão duplica em grande parte o system prompt do agente.",
+            "hint": "Mantenha cada camada focada — o prompt do agente para escopo/comportamento, a persona para a voz — para evitar enviar o mesmo texto duas vezes."
+          },
+          "deep_check_unavailable": {
+            "message": "Nenhuma LLM padrão está configurada ou habilitada, então a análise profunda de conflitos não pode ser executada.",
+            "hint": "Defina uma LLM padrão em Configurações Globais para habilitar a verificação profunda."
+          },
+          "deep_check_failed": {
+            "hint": "Tente novamente; se persistir, verifique o status da LLM padrão."
+          },
+          "deep_check_note": {
+            "hint": "Esta é a análise bruta do modelo (não veio estruturada)."
+          }
+        }
       },
       "finalPrompt": {
         "title": "Prompt final",
@@ -126,6 +162,10 @@
         "copyFailed": "Não foi possível copiar",
         "toolsHeading": "Ferramentas disponíveis ao modelo",
         "toolsNote": "_Fornecidas ao modelo como schemas de função/ferramenta (não como texto literal do prompt)._"
+      },
+      "tabs": {
+        "editor": "Editor",
+        "livePreview": "Prévia ao vivo"
       }
     },
     "llm": {
