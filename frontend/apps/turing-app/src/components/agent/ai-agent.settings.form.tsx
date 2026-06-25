@@ -881,7 +881,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           min={0}
                           max={1_000_000}
                           step={500}
-                          placeholder="0 (disabled)"
+                          placeholder={t("forms.agentSettings.zeroDisabledPlaceholder", {
+                            defaultValue: "0 (disabled)",
+                          })}
                           value={field.value ?? 0}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                           onBlur={field.onBlur}
@@ -912,20 +914,28 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>
                       <FormControl>
-                        <select
-                          aria-label={t("forms.agentSettings.overBudgetBehavior", { defaultValue: "Over-budget behaviour" })}
-                          className="border rounded-md px-3 py-2 text-sm bg-background"
+                        <Select
                           value={field.value ?? "WARN"}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          onBlur={field.onBlur}
-                          ref={field.ref}
-                          name={field.name}
-                          disabled={(form.watch("maxPromptTokens") ?? 0) === 0}
+                          onValueChange={(value: string) => field.onChange(value)}
                         >
-                          <option value="WARN">WARN</option>
-                          <option value="ERROR">ERROR</option>
-                          <option value="COMPACT">COMPACT (V1: degrades to WARN)</option>
-                        </select>
+                          <SelectTrigger
+                            className="w-full"
+                            aria-label={t("forms.agentSettings.overBudgetBehavior", {
+                              defaultValue: "Over-budget behaviour",
+                            })}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="WARN">WARN</SelectItem>
+                            <SelectItem value="ERROR">ERROR</SelectItem>
+                            <SelectItem value="COMPACT">
+                              {t("forms.agentSettings.overBudgetBehaviorCompact", {
+                                defaultValue: "COMPACT (V1: degrades to WARN)",
+                              })}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItemTwoColumns.Right>
@@ -956,7 +966,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           type="number"
                           min={0}
                           step={1}
-                          placeholder="0 (disabled)"
+                          placeholder={t("forms.agentSettings.zeroDisabledPlaceholder", {
+                            defaultValue: "0 (disabled)",
+                          })}
                           value={field.value ?? ""}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
                           onBlur={field.onBlur}
@@ -991,7 +1003,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           type="number"
                           min={0}
                           step="0.01"
-                          placeholder="0 (disabled)"
+                          placeholder={t("forms.agentSettings.zeroDisabledPlaceholder", {
+                            defaultValue: "0 (disabled)",
+                          })}
                           value={field.value ?? ""}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
                           onBlur={field.onBlur}

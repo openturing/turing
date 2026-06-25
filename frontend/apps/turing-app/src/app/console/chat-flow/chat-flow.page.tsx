@@ -49,7 +49,9 @@ import {
 import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 
 import { buildImportPayloadFromExport } from "./chat-flow.import";
+import { ChatFlowAnalysisTab } from "./components/chat-flow.analysis-tab";
 import { ChatFlowDiagramTab } from "./components/chat-flow.diagram-tab";
+import { ChatFlowExperimentTab } from "./components/chat-flow.experiment-tab";
 import { ChatFlowSettingsTab } from "./components/chat-flow.settings-tab";
 import { ChatFlowVariantDialog } from "./components/chat-flow.variant-dialog";
 import { failureEdgeOverlay } from "./components/flow-edges";
@@ -446,11 +448,16 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
         <TabsList className="mx-4 lg:mx-6 mb-3 self-start">
           <TabsTrigger value="settings">{t("chatFlow.tabs.settings")}</TabsTrigger>
           <TabsTrigger value="diagram">{t("chatFlow.tabs.diagram")}</TabsTrigger>
+          <TabsTrigger value="experiment">
+            {t("chatFlow.tabs.experiment", { defaultValue: "A/B experiment" })}
+          </TabsTrigger>
+          <TabsTrigger value="analysis">
+            {t("chatFlow.tabs.analysis", { defaultValue: "Analysis" })}
+          </TabsTrigger>
         </TabsList>
 
         <ChatFlowSettingsTab
           agentId={agentId}
-          flowId={isNew ? undefined : flow.id}
           name={name}
           setName={setName}
           description={description}
@@ -467,18 +474,6 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setTriggerMode={setTriggerMode}
           triggerLanguage={triggerLanguage}
           setTriggerLanguage={setTriggerLanguage}
-          experimentKey={experimentKey}
-          setExperimentKey={setExperimentKey}
-          variantLabel={variantLabel}
-          setVariantLabel={setVariantLabel}
-          trafficWeight={trafficWeight}
-          setTrafficWeight={setTrafficWeight}
-          banditEnabled={banditEnabled}
-          setBanditEnabled={setBanditEnabled}
-          autoPromote={autoPromote}
-          setAutoPromote={setAutoPromote}
-          experimentSuccessMetric={experimentSuccessMetric}
-          setExperimentSuccessMetric={setExperimentSuccessMetric}
           slotInheritanceJson={slotInheritanceJson}
           setSlotInheritanceJson={setSlotInheritanceJson}
         />
@@ -505,6 +500,23 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setSelectedNodeId={setSelectedNodeId}
           setLivePreviewOpen={setLivePreviewOpen}
         />
+
+        <ChatFlowExperimentTab
+          experimentKey={experimentKey}
+          setExperimentKey={setExperimentKey}
+          variantLabel={variantLabel}
+          setVariantLabel={setVariantLabel}
+          trafficWeight={trafficWeight}
+          setTrafficWeight={setTrafficWeight}
+          banditEnabled={banditEnabled}
+          setBanditEnabled={setBanditEnabled}
+          autoPromote={autoPromote}
+          setAutoPromote={setAutoPromote}
+          experimentSuccessMetric={experimentSuccessMetric}
+          setExperimentSuccessMetric={setExperimentSuccessMetric}
+        />
+
+        <ChatFlowAnalysisTab agentId={agentId} flowId={isNew ? undefined : flow.id} />
       </Tabs>
 
       <ChatFlowVariantDialog

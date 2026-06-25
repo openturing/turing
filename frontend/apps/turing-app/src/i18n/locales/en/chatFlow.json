@@ -4,7 +4,9 @@
     "description": "Design conversational flows your AI agent will follow.",
     "tabs": {
       "settings": "Settings",
-      "diagram": "Diagram"
+      "diagram": "Diagram",
+      "analysis": "Analysis",
+      "experiment": "A/B experiment"
     },
     "sections": {
       "general": {

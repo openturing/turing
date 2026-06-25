@@ -4,7 +4,9 @@
     "description": "Desenhe fluxos de conversa que o seu agente de IA deverá seguir.",
     "tabs": {
       "settings": "Configurações",
-      "diagram": "Diagrama"
+      "diagram": "Diagrama",
+      "analysis": "Análise",
+      "experiment": "Experimento A/B"
     },
     "sections": {
       "general": {
