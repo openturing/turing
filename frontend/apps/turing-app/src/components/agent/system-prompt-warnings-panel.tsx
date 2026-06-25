@@ -109,6 +109,23 @@ export function SystemPromptWarningsPanel({ agentId }: Props) {
   );
 }
 
+/**
+ * Translates an issue by its `code`, feeding the backend's interpolation
+ * params. If the result still carries an un-interpolated `{{placeholder}}`
+ * (e.g. an older backend that doesn't send `params` yet), fall back to the
+ * backend's own message — which already embeds the real values — so the user
+ * never sees a raw `{{length}}` token.
+ */
+function resolveIssueText(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  key: string,
+  params: Record<string, string> | undefined,
+  fallback: string,
+): string {
+  const out = t(key, { ...params, defaultValue: fallback });
+  return /\{\{.+?\}\}/.test(out) ? fallback : out;
+}
+
 function IssueRow({
   issue,
   t,
@@ -121,15 +138,19 @@ function IssueRow({
   // Prefer a code-keyed translation (with the backend's interpolation params);
   // fall back to the backend message/hint. Deep-LLM findings are already in
   // the prompt's language and have no translation key, so they fall through.
-  const message = t(`aiAgent.systemPrompt.warnings.codes.${issue.code}.message`, {
-    ...issue.params,
-    defaultValue: issue.message,
-  });
+  const message = resolveIssueText(
+    t,
+    `aiAgent.systemPrompt.warnings.codes.${issue.code}.message`,
+    issue.params,
+    issue.message,
+  );
   const hint = issue.hint
-    ? t(`aiAgent.systemPrompt.warnings.codes.${issue.code}.hint`, {
-        ...issue.params,
-        defaultValue: issue.hint,
-      })
+    ? resolveIssueText(
+        t,
+        `aiAgent.systemPrompt.warnings.codes.${issue.code}.hint`,
+        issue.params,
+        issue.hint,
+      )
     : "";
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-3 space-y-2">
