@@ -38,6 +38,6 @@ class TurAIAgentDomainTest {
 
     private static TurAIAgentDomain build(int enabled, Set<String> llmIds) {
         return new TurAIAgentDomain("a", "title", null, null, "prompt", null, enabled, false, null,
-                llmIds, Set.of(), Set.of(), null, null);
+                null, llmIds, Set.of(), Set.of(), null, null);
     }
 }

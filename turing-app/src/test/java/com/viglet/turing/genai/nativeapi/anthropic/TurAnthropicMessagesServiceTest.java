@@ -24,8 +24,9 @@ import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 
 class TurAnthropicMessagesServiceTest {
 
-    private final TurAnthropicMessagesService service =
-            new TurAnthropicMessagesService(new TurProviderOptionsParser());
+    private final TurProviderOptionsParser optionsParser = new TurProviderOptionsParser();
+    private final TurAnthropicMessagesService service = new TurAnthropicMessagesService(
+            optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser));
 
     private static EnabledCapability cap(TurNativeCapability capability, String configJson) {
         return new EnabledCapability(capability, configJson);
@@ -89,5 +90,32 @@ class TurAnthropicMessagesServiceTest {
     void buildToolsToleratesNullAndEmpty() {
         assertThat(service.buildTools(null)).isEmpty();
         assertThat(service.buildTools(List.of())).isEmpty();
+    }
+
+    @Test
+    void buildFunctionToolsMapsCoexistingCallbacksToCustomTools() {
+        // T433 — a coexisting Turing/MCP/custom tool becomes an Anthropic custom tool.
+        org.springframework.ai.tool.ToolCallback callback =
+                org.mockito.Mockito.mock(org.springframework.ai.tool.ToolCallback.class);
+        org.springframework.ai.tool.definition.ToolDefinition definition =
+                org.mockito.Mockito.mock(org.springframework.ai.tool.definition.ToolDefinition.class);
+        org.mockito.Mockito.when(definition.name()).thenReturn("finance_quote");
+        org.mockito.Mockito.when(definition.description()).thenReturn("Get a quote");
+        org.mockito.Mockito.when(definition.inputSchema()).thenReturn(
+                "{\"type\":\"object\",\"properties\":{\"symbol\":{\"type\":\"string\"}},"
+                        + "\"required\":[\"symbol\"]}");
+        org.mockito.Mockito.when(callback.getToolDefinition()).thenReturn(definition);
+
+        List<ToolUnion> tools = service.buildFunctionTools(
+                new org.springframework.ai.tool.ToolCallback[] {callback});
+
+        assertThat(tools).hasSize(1);
+        assertThat(tools.get(0).isTool()).isTrue();
+        assertThat(tools.get(0).asTool().name()).isEqualTo("finance_quote");
+    }
+
+    @Test
+    void buildFunctionToolsToleratesNull() {
+        assertThat(service.buildFunctionTools(null)).isEmpty();
     }
 }

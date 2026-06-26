@@ -46,6 +46,7 @@ public record TurAIAgentDomain(
         int enabled,
         boolean ragEnabled,
         String nativeTools,
+        String nativeCapabilities,
         Set<String> llmInstanceIds,
         Set<String> mcpServerIds,
         Set<String> customToolIds,

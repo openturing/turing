@@ -61,6 +61,8 @@ public class TurAIAgentExchange {
     // T309 / §IX.3.f — run compression off the hot path (default true).
     private Boolean chatMemoryCompressionAsync;
     private String nativeTools;
+    // T433 / §X.18.b — per-agent provider-native capability selection (CSV).
+    private String nativeCapabilities;
     private String pythonRequirements;
     // T66 / §VII.6.g — submission retention policy travels with the agent.
     private com.viglet.turing.persistence.model.agent.TurSubmissionRetention submissionRetention;
@@ -110,6 +112,7 @@ public class TurAIAgentExchange {
         e.chatMemoryCompressionInterval = agent.getChatMemoryCompressionInterval();
         e.chatMemoryCompressionAsync = agent.isChatMemoryCompressionAsync();
         e.nativeTools = agent.getNativeTools();
+        e.nativeCapabilities = agent.getNativeCapabilities();
         e.pythonRequirements = agent.getPythonRequirements();
         e.submissionRetention = agent.getSubmissionRetention();
         e.submissionRetentionDays = agent.getSubmissionRetentionDays();

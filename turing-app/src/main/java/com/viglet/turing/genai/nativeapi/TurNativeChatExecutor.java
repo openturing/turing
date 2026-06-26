@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -26,9 +27,12 @@ import com.anthropic.client.AnthropicClient;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurChatPromptRequest;
+import com.viglet.turing.genai.TurChatToolResolver;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver;
+import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver.NativeSelection;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
@@ -84,6 +88,8 @@ public class TurNativeChatExecutor {
     private final TurAnthropicEditorService anthropicEditorService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
+    private final TurNativeCapabilityResolver capabilityResolver;
+    private final TurChatToolResolver toolResolver;
 
     public TurNativeChatExecutor(TurGenAiLlmProviderFactory providerFactory,
             TurNativeProviderClient nativeClient,
@@ -94,7 +100,9 @@ public class TurNativeChatExecutor {
             TurAnthropicComputerUseService anthropicComputerUseService,
             TurAnthropicEditorService anthropicEditorService,
             TurChatPromptAssembler promptAssembler,
-            TurAgentPersonaResolver personaResolver) {
+            TurAgentPersonaResolver personaResolver,
+            TurNativeCapabilityResolver capabilityResolver,
+            TurChatToolResolver toolResolver) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -105,6 +113,8 @@ public class TurNativeChatExecutor {
         this.anthropicEditorService = anthropicEditorService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
+        this.capabilityResolver = capabilityResolver;
+        this.toolResolver = toolResolver;
     }
 
     /**
@@ -126,10 +136,29 @@ public class TurNativeChatExecutor {
             return Optional.empty();
         }
 
-        List<EnabledCapability> capabilities = capabilityService.enabledFor(instance.getId(), pluginType);
-        if (capabilities.isEmpty()) {
+        List<EnabledCapability> instanceCapabilities =
+                capabilityService.enabledFor(instance.getId(), pluginType);
+        if (instanceCapabilities.isEmpty()) {
             return Optional.empty();
         }
+
+        // T433 / §X.18.b — resolve the per-agent selection over what the instance
+        // is capable of. Legacy (no explicit selection) keeps the pre-T433
+        // winner-takes-all set; an explicit selection narrows to
+        // agentSelected ∩ instanceCapable and may attach coexisting Turing tools.
+        boolean legacy = capabilityResolver.isLegacy(agent.getNativeCapabilities());
+        NativeSelection selection = legacy
+                ? null
+                : capabilityResolver.resolve(agent.getNativeCapabilities(), instanceCapabilities);
+        if (selection != null && selection.isEmpty()) {
+            // The agent opted in but none of its picks are enabled on this
+            // instance — defer to the Spring AI path (which runs the agent's
+            // normal tool set) rather than a native turn with no capabilities.
+            return Optional.empty();
+        }
+        List<EnabledCapability> capabilities = selection == null
+                ? instanceCapabilities
+                : selection.nativeCapabilities();
 
         // Acquire the vendor's native client up front; a missing/unusable client
         // (e.g. no API key) means we can't handle the turn natively.
@@ -159,6 +188,15 @@ public class TurNativeChatExecutor {
                 new TurChatPromptRequest(agent, history, conversationId,
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
+
+        // T433 / §X.18.b — "capacidade é mutex, resto coexiste". For an explicit
+        // (non-legacy) selection whose picks don't own the turn, attach the
+        // agent's Turing/MCP/custom tools whose function isn't claimed by a
+        // selected provider-native capability and run them through the native
+        // tool-execution loop. Legacy turns (and owns-turn picks) attach none —
+        // identical to the pre-T433 one-shot behaviour.
+        ToolCallback[] coexistingTools =
+                resolveCoexistingTools(selection, agent, activePersona, lastUserMessage);
 
         // F.3 / §X.4 — Anthropic path.
         if (isAnthropic) {
@@ -204,7 +242,7 @@ public class TurNativeChatExecutor {
                     agent.getTitle(), instance.getId(), capabilities.size(),
                     activePersona == null ? "none" : activePersona.getName());
             return Optional.of(anthropicMessagesService.chat(anthropicClient.get(), instance,
-                    turn.history(), turn.systemPrompt(), capabilities));
+                    turn.history(), turn.systemPrompt(), capabilities, coexistingTools));
         }
 
         // T136 / §X.3.d — computer_use is not a one-shot built-in: it needs the
@@ -233,7 +271,25 @@ public class TurNativeChatExecutor {
                 agent.getTitle(), instance.getId(), capabilities.size(),
                 activePersona == null ? "none" : activePersona.getName());
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
-                turn.systemPrompt(), capabilities));
+                turn.systemPrompt(), capabilities, coexistingTools));
+    }
+
+    /**
+     * T433 / §X.18.b — the agent's Turing/MCP/custom tools that coexist with the
+     * selected provider-native picks this turn. Empty for the legacy path
+     * ({@code selection == null}) and for owns-turn picks (computer_use), so the
+     * native services run their one-shot server-tool turn unchanged. Otherwise
+     * resolves the agent's full tool set (same collaborator the Spring AI path
+     * uses, BM25 pre-filter included) and drops every callback whose abstract
+     * {@code function} is claimed by a selected provider-native capability.
+     */
+    private ToolCallback[] resolveCoexistingTools(NativeSelection selection, TurAIAgent agent,
+            TurPersona activePersona, String lastUserMessage) {
+        if (selection == null || selection.hasOwnsTurn()) {
+            return new ToolCallback[0];
+        }
+        ToolCallback[] agentTools = toolResolver.resolve(agent, activePersona, lastUserMessage, null);
+        return capabilityResolver.coexistingTools(agentTools, selection.claimedFunctions());
     }
 
     /**

@@ -62,6 +62,8 @@ class TurNativeChatExecutorTest {
     @Mock private TurAnthropicEditorService anthropicEditorService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
+    @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
+    @Mock private com.viglet.turing.genai.TurChatToolResolver toolResolver;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
@@ -69,7 +71,8 @@ class TurNativeChatExecutorTest {
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
-                anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver);
+                anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver,
+                capabilityResolver, toolResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -112,7 +115,7 @@ class TurNativeChatExecutorTest {
         when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
                 .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(),
-                any(), anyList()))
+                any(), anyList(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "claude")));
 
         Optional<Flux<ChatResponse>> result =
@@ -223,7 +226,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList()))
+                any(), anyList(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -251,7 +254,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList()))
+                promptCaptor.capture(), anyList(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()

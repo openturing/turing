@@ -409,6 +409,7 @@ public class TurAIAgentImportService {
             agent.setChatMemoryCompressionAsync(a.getChatMemoryCompressionAsync());
         }
         agent.setNativeTools(a.getNativeTools());
+        agent.setNativeCapabilities(a.getNativeCapabilities());
         agent.setPythonRequirements(a.getPythonRequirements());
         // T66 / §VII.6.g — null-guarded so pre-T66 exports keep the entity
         // default (RETAIN_FOREVER) instead of nulling a non-null column.

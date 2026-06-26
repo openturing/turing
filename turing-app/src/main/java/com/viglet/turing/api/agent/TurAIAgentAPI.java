@@ -170,6 +170,8 @@ public class TurAIAgentAPI {
             agentEdit.setSystemPromptMetaPrompt(turAIAgent.getSystemPromptMetaPrompt());
             agentEdit.setEnabled(turAIAgent.getEnabled());
             agentEdit.setNativeTools(turAIAgent.getNativeTools());
+            // T433 / §X.18.b — per-agent provider-native capability selection.
+            agentEdit.setNativeCapabilities(turAIAgent.getNativeCapabilities());
             agentEdit.setLlmInstances(resolveRelations(
                     turAIAgent.getLlmInstances(), turLLMInstanceRepository));
             agentEdit.setMcpServers(resolveRelations(

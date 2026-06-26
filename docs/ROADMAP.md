@@ -178,11 +178,65 @@
 
 > **Why now:** §X has ~40 native capabilities landing across many T-numbers, but they are *not* all "tools the agent calls" — some are agent-facing tools, some are per-call request knobs, some are platform/cron features. Today the only activation surface is the per-instance capability matrix REST API (T132) with **no UI**, and a native turn **silently bypasses every Turing/MCP/custom tool** the agent has. This block builds the taxonomy + execution + UI so the remaining §X tasks slot into a consistent home instead of each inventing its own screen. Foundation for T186 (heatmap reads the registry).
 >
-> **T432 shipped** (2026-06-26) — the registry/taxonomy foundation; see [CHANGELOG.md](CHANGELOG.md) §X.18. T433–T435 remain.
+> **T432 + T433 shipped** (2026-06-26) — the registry/taxonomy foundation and the
+> per-agent selection + union execution; see [CHANGELOG.md](CHANGELOG.md) §X.18. T434–T435 remain.
 
-- 📋 **T433** (deps: T432, T136) **Per-agent capability selection + union execution ("capacidade é mutex, resto coexiste")** — add a per-agent native-capability selection (subset of what the instance is capable of; mirrors the `nativeTools` CSV column). `TurNativeChatExecutor` resolves `agentSelected ∩ instanceCapable` and, on a native turn, **attaches the agent's Turing/MCP/custom tools whose `function` is not claimed by a selected provider-native capability**, running them through a native tool-execution loop (today the native path runs zero Turing tools). `ownsTurn` capabilities (computer_use, voice) still own the whole turn. → §X.18.b
 - 📋 **T434** (deps: T432, T433) **Agent "Tools & Capabilities" picker (frontend, new sidebar item)** — capability-first UI rendering `kind=TOOL` from the registry grouped by `function`: a function with ≥2 providers becomes a **radio (mutex)**, a single-provider function a toggle; provider-native options are disabled (with tooltip) when the agent's instance vendor doesn't match. Writes Turing-tool picks to the agent `nativeTools` and provider-native picks to the per-agent capability selection (T433). → §X.18.c
 - 📋 **T435** (deps: T432) **REQUEST_OPTION knobs as registry-driven settings** — render `kind=REQUEST_OPTION` capabilities (reasoning effort, citations, predicted/structured outputs, service tier, moderation, stored completions, safety_identifier, context editing, compaction) as grouped settings toggles/selects driven by the registry — **not** in the tool picker — giving T152/T160/T164/T167/T171/T173/T178–T182 a consistent home instead of per-task bespoke UI. → §X.18.d
+
+## Block W — Agent↔UI transparency & client tools (AG-UI parity)
+
+> **Why now:** a capability review against CopilotKit's **AG-UI** protocol found
+> Turing's JS SDK at near-parity (token streaming, bi-directional **Slots** ≈
+> state sync, native forms T107, multimodal T401, Workspace T113), with **two**
+> genuine gaps: (1) the agent's tool calls are never put on the live SSE — they
+> run server-side and the client only sees final text; (2) there is no
+> frontend-defined ("client") tool the agent can invoke. This block closes both
+> for Turing's *own* agent runtime (it is **not** a multi-runtime protocol
+> adapter — that stays a 💭 bet, T441). Rationale → §XXII.
+
+- 📋 **T436** (deps: T427) **Live tool-call events on the chat SSE** — add a `tool_call` event type to `TurChatStreamEvent` (`{callId, name, phase: start|result|end, argsSummary?, status?, durationMs?}`), emitted by wrapping the server-side `TurToolExecutionLoop` / `TurNativeChatExecutor` per-tool invocation; args summarized/redacted (never raw secrets). Opt-in per-agent (`toolCallEventsEnabled`, default off) so existing streams stay byte-identical; reuses T427's trace shaping so live event and read-only trace agree. → §XXII.1
+- 📋 **T437** (deps: T436) **SDK + headless UI consume tool-call events** — vanilla chat controller + `useTuringChat` surface `toolCalls` on the in-flight assistant message; new headless `TuringToolActivity` atom in `@viglet/turing-react-ui` (same skinning contract as `TuringThinkingDots`); admin chat + viglet.com skin it. → §XXII.2
+- 📋 **T438** (deps: T436) **Client-tool protocol (backend round-trip)** — agent emits a `client_tool_call` SSE event and the turn **parks** awaiting a result (same suspend/resume as the T119 `humanApproval` node, keyed by `(conversationId, callId)`); new `POST /chat/client-tool-result` resumes the loop. Allowed client-tool names + JSON schemas declared per-agent + validated; timeout/abort so an unanswered call can't wedge the conversation. Gated `clientToolsEnabled`. → §XXII.3
+- 📋 **T439** (deps: T438) **SDK client-tool registration** — `chatController.registerClientTool(name, handler)` + a `clientTools` option on `useTuringChat` (`{[name]: {schema, handler}}`); on `client_tool_call` the SDK runs the handler, POSTs the result, and the stream continues. Mirrors `useCopilotAction` ergonomics (thin CopilotKit migration shim); handler errors flow back to the agent as a tool error, not into the UI. → §XXII.4
+- 📋 **T440** (deps: T439, T295) **Generative UI via client tools** — a client tool whose handler renders a host-registered React component (looked up by name) with agent-provided props, optionally returning a value when the user interacts; reuses the `TuringRichContent` segment-dispatch model so generative + markdown/html/d2 segments share one render path. No backend beyond T438. → §XXII.5
+- 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
+
+## Block X — Creative experiences at the search × agent intersection
+
+> **Why now:** with Block W (live tool calls + client tools + generative UI),
+> Turing owns a combination neither side of the market has together — agent
+> frameworks have no enterprise search engine, search engines have no agent
+> runtime with generative UI. Every task here is a thin composition of shipped
+> primitives that *only pays off because Turing owns both halves*. Rationale → §XXIII.
+
+- 💭 **T442** (deps: T440, T386) **Answer-as-an-app (search-grounded generative UI)** — the agent assembles a live mini-app (comparison table / configurator / spec card) from the typed indexed result set instead of returning prose; the manifest tells it `price` is currency → renders a slider, etc. A generative-UI client tool whose props come from a real SN search. → §XXIII.1
+- 💭 **T443** (deps: T438, T439) **Co-browse the search UI** — client tools let the agent mutate the host page's *real* facets + URL (`useTuringUrlSearch`); "filter to red ones under R$50" flips the actual checkboxes. Chat becomes a remote control for the page, not a parallel box. → §XXIII.2
+- 💭 **T444** (deps: T389, T383) **Conversational glass-box ranking** — "why is this result #1?" → the agent narrates the real signals (BM25 vs vector in HYBRID_RRF, reranker score, field boosts). Trust feature for regulated procurement. → §XXIII.3
+- 💭 **T445** (deps: T63) **Ambient / proactive copilot** — user interactions (clicks, dwell, opened facets) become slots; the agent watches the slot bus and proactively offers help, throttled + opt-in. → §XXIII.4
+- 💭 **T446** (deps: T163) **Cross-conversation personal memory** — per-user long-horizon memory (preferences, role) surviving across sessions, tenant-scoped, with a user-visible "what the assistant remembers" panel + delete (GDPR posture as a feature). → §XXIII.5
+- 💭 **T447** (deps: T285, T427) **Self-tuning agent (eval as continuous improvement)** — a routine mines real conversations for failure signatures, drafts a prompt/flow change, scores it against the Block K golden set, and opens a human-approved "suggested change" in the admin only if it improves. Highest leverage-to-cost — almost pure composition. → §XXIII.6
+- 💭 **T448** (deps: T436, T286) **Agent-to-agent handoff (a visible team)** — a router agent delegates to specialists (own skills/tools); the UI shows the conversation visibly passing between them (Turing analog of AG-UI subgraphs), using the T436 tool-call events as the visibility surface. → §XXIII.7
+- 💭 **T449** (deps: T440, T323) **Skills that ship their own UI** — an Anthropic-standard skill folder embeds its own React components (a `ui/` convention + activation-harness registration); skills graduate from prompt+scripts to full vertical apps. → §XXIII.8
+- 💭 **T450** (deps: T438, T439) **Embeddable action widget (Turing as an action layer)** — the vanilla SDK widget acts on the host site (add-to-cart, fill form, navigate) via client tools; Turing stops being "a search box you embed" and becomes an action layer over any website, no browser extension. → §XXIII.9
+
+## Block Y — Reference showcase app (stress every feature)
+
+> **Why now:** one installable reference app that exercises the **maximum surface
+> of the platform** — a living demo, an SDK-vs-real-backend integration test, and
+> the canonical "this is what Turing can do" artifact for sales/docs. Domain: a
+> commerce-catalog copilot ("Atlas Store") — the most feature-dense domain, where
+> a typed catalog + compare + add-to-cart + "why #1?" + returns flow naturally
+> pull in nearly every primitive. Lives at `frontend/apps/showcase`, seeds its
+> own data. **Coverage matrix + per-task feature lists → §XXIV.**
+
+- 💭 **T451** (deps: T382, T386) **Scaffold + seed** — new `frontend/apps/showcase` Turborepo app; ~200-product typed catalog with images; SN site provisioned from a manifest (optionally demo derivation T387); import ZIP + `turing init`/`dev` clone-to-running path; branded skin of `@viglet/turing-react-ui` (T305). → §XXIV.2
+- 💭 **T452** (deps: T451) **Search surface** — faceted + URL-synced search, autocomplete, spell-check, tabs (T247), sort, similar docs (T400), click tracking, HYBRID_RRF (T383) on + selectable reranker (Block N). The search half lit end to end. → §XXIV.2
+- 💭 **T453** (deps: T451) **Chat surface** — RAG chat exercising streaming + sources/citations (T152/T292) + `TuringSourceChips` + option chips + native forms (T107) + slots read/write/delta (T63) + multimodal upload (T401) + workspace panel (T113) + rich content md/`html`/`d2` (T295–T298). → §XXIV.2
+- 💭 **T454** (deps: T453, T436, T438, T442, T323, T80) **Agent power** — a bundled returns/RMA skill, code interpreter ("compute cart total / chart price history"), live tool-call activity (T436), client tools (T438/T439), and the answer-as-app comparison widget (T442). Block W + skills surface lit. → §XXIV.2
+- 💭 **T455** (deps: T454, T443, T444, T445, T448, T450) **Creative-bets wiring** — co-browse filters (T443), glass-box "why #1" (T444), ambient proactive copilot (T445), agent→agent returns↔sales handoff (T448), and an embeddable action widget (T450) on a mock host page. → §XXIV.2
+- 💭 **T456** (deps: T454, T446, T147) **Voice, memory & ops tour** — voice agent (T147) + search-by-image; cross-conversation memory panel (T446); admin ops route surfacing analytics (T87/T88/T90), eval + self-tuning (T447), cost governance (Block L); catalog exposed over the MCP server (Block I) for the "drive it from Claude Desktop" demo. → §XXIV.2
+- 💭 **T457** (deps: T455, T456) **Guided tour, tests & docs** — in-app walkthrough narrating each capability; e2e smoke test (SDK-contract IT pattern: boot backend, import showcase ZIP, drive search/chat/SSE/client-tool round-trip); `docs-turing` page + README link. Also the **coverage audit** reconciling the app against the §XXIV.1 matrix. → §XXIV.2
 
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 

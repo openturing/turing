@@ -98,7 +98,7 @@ class TurAIAgentChatAPITest {
 
     private static TurAIAgentDomain agentDomain(String id) {
         return new TurAIAgentDomain(id, "Agent " + id, null, null, null, null, 1,
-                false, null, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(),
+                false, null, null, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(),
                 null, null);
     }
 

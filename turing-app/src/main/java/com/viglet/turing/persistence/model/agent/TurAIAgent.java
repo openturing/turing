@@ -339,6 +339,28 @@ public class TurAIAgent implements Serializable {
     private String nativeTools;
 
     /**
+     * T433 / §X.18.b — the per-agent selection of <em>provider-native</em>
+     * capabilities (a CSV of {@link com.viglet.turing.genai.nativeapi.TurNativeCapability}
+     * keys, e.g. {@code "anthropic-web-search,anthropic-code-execution"}),
+     * mirroring {@link #nativeTools}. It is a subset of what the agent's LLM
+     * instance is technically capable of (the per-instance matrix, T132); the
+     * native executor resolves {@code agentSelected ∩ instanceCapable}.
+     *
+     * <p><b>Opt-in / legacy.</b> {@code null} means the agent has made no
+     * explicit selection — the native path keeps its pre-T433 winner-takes-all
+     * behaviour (every instance-enabled native capability is used, no Turing
+     * tools attached). A non-null value (even an empty string) opts into the
+     * T433 "capacidade é mutex, resto coexiste" path: only the selected
+     * provider-native capabilities run, and the agent's Turing/MCP/custom tools
+     * whose {@code function} isn't claimed by a selected native pick are
+     * attached and run through the native tool-execution loop.
+     *
+     * @since 2026.3.4
+     */
+    @Column(length = 2000)
+    private String nativeCapabilities;
+
+    /**
      * Whether the underlying LLM round-trip uses Spring AI's blocking
      * {@code chatModel.call(prompt)} (default — the assistant text arrives
      * as one SSE event) or the reactive {@code chatModel.stream(prompt)}

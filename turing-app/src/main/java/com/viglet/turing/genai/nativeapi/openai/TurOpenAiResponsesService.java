@@ -17,14 +17,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.openai.client.OpenAIClient;
+import com.openai.core.JsonValue;
 import com.openai.models.responses.EasyInputMessage;
 import com.openai.models.responses.FileSearchTool;
+import com.openai.models.responses.FunctionTool;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
+import com.openai.models.responses.ResponseFunctionToolCall;
 import com.openai.models.responses.ResponseInputItem;
 import com.openai.models.responses.ResponseOutputItem;
 import com.openai.models.responses.ResponseOutputMessage;
@@ -34,6 +39,8 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
+import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport.ToolOutcome;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -72,31 +79,42 @@ public class TurOpenAiResponsesService {
 
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
 
-    private final TurProviderOptionsParser optionsParser;
+    /**
+     * T433 — hard ceiling on tool-execution rounds for a single turn, mirroring
+     * {@link com.viglet.turing.genai.TurToolExecutionLoop#MAX_TOOL_ITERATIONS}.
+     * A misbehaving model must not spin forever holding the request thread.
+     */
+    static final int MAX_TOOL_ITERATIONS = 10;
 
-    public TurOpenAiResponsesService(TurProviderOptionsParser optionsParser) {
+    private final TurProviderOptionsParser optionsParser;
+    private final TurNativeFunctionToolSupport toolSupport;
+
+    public TurOpenAiResponsesService(TurProviderOptionsParser optionsParser,
+            TurNativeFunctionToolSupport toolSupport) {
         this.optionsParser = optionsParser;
+        this.toolSupport = toolSupport;
     }
 
     /**
      * Execute the turn and emit the assistant text as a single SSE token event
-     * (CALL semantics — the Responses built-in-tool turn must complete before
-     * the answer is known).
+     * (CALL semantics — the Responses tool turn must complete before the answer
+     * is known).
+     *
+     * <p>T433 / §X.18.b — {@code coexistingTools} are the agent's Turing/MCP/
+     * custom tools whose abstract {@code function} isn't claimed by a selected
+     * provider-native capability. When present they are advertised as Responses
+     * {@code function} tools alongside the server-side built-ins, and the turn
+     * runs a client-side tool-execution loop: the model emits {@code function_call}
+     * items, Turing executes the matching {@link ToolCallback} and feeds the
+     * result back, until a plain-text answer comes out. When empty (the legacy
+     * native path, or an agent with no coexisting tools) the loop runs exactly
+     * once — identical to the original one-shot behaviour.
      */
     public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
-            List<EnabledCapability> capabilities) {
-        ResponseCreateParams params = buildParams(instance, history, systemPrompt, capabilities);
-        return Mono.fromCallable(() -> {
-                    long t0 = System.currentTimeMillis();
-                    Response response = client.responses().create(params);
-                    String text = extractText(response);
-                    log.info("[Native][OpenAI-Responses] instance '{}' model '{}' tools {} -> {} chars in {} ms",
-                            instance.getId(), resolveModel(instance),
-                            capabilities.stream().map(c -> c.capability().getKey()).toList(),
-                            text.length(), System.currentTimeMillis() - t0);
-                    return text;
-                })
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+        return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
+                        capabilities, coexistingTools))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
                         StringUtils.hasText(text) ? text : "")))
@@ -104,37 +122,138 @@ public class TurOpenAiResponsesService {
                         instance.getId(), err.getMessage(), err));
     }
 
+    String runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+        long t0 = System.currentTimeMillis();
+        List<Tool> serverTools = buildTools(capabilities);
+        List<Tool> functionTools = buildFunctionTools(coexistingTools);
+        Map<String, ToolCallback> toolIndex = toolSupport.indexByName(coexistingTools);
+        List<ResponseInputItem> items = seedItems(history);
+        StringBuilder text = new StringBuilder();
+        int toolCalls = 0;
+
+        for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+            ResponseCreateParams params =
+                    buildParamsFromItems(instance, items, systemPrompt, serverTools, functionTools);
+            Response response = client.responses().create(params);
+            text.append(extractText(response));
+
+            List<ResponseFunctionToolCall> calls = functionCalls(response);
+            if (calls.isEmpty()) {
+                log.info("[Native][OpenAI-Responses] instance '{}' model '{}' server-tools {} "
+                                + "function-tools {} -> {} chars, {} tool call(s) in {} ms",
+                        instance.getId(), resolveModel(instance),
+                        capabilities.stream().map(c -> c.capability().getKey()).toList(),
+                        functionTools.size(), text.length(), toolCalls,
+                        System.currentTimeMillis() - t0);
+                return text.toString();
+            }
+            for (ResponseFunctionToolCall call : calls) {
+                items.add(ResponseInputItem.ofFunctionCall(call));
+                ToolOutcome outcome = toolSupport.execute(toolIndex, call.name(), call.arguments());
+                items.add(ResponseInputItem.ofFunctionCallOutput(
+                        ResponseInputItem.FunctionCallOutput.builder()
+                                .callId(call.callId())
+                                .output(outcome.output())
+                                .build()));
+                toolCalls++;
+            }
+        }
+
+        log.warn("[Native][OpenAI-Responses] instance '{}' hit the {}-round tool-execution cap",
+                instance.getId(), MAX_TOOL_ITERATIONS);
+        return text.toString();
+    }
+
+    /** Legacy/test overload — no coexisting client tools (one-shot server-tool turn). */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities) {
+        return chat(client, instance, history, systemPrompt, capabilities, new ToolCallback[0]);
+    }
+
     ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities) {
+        return buildParamsFromItems(instance, seedItems(history), systemPrompt,
+                buildTools(capabilities), List.of());
+    }
+
+    private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
+            List<ResponseInputItem> items, String systemPrompt, List<Tool> serverTools,
+            List<Tool> functionTools) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
         if (StringUtils.hasText(systemPrompt)) {
             builder.instructions(systemPrompt);
         }
-
-        List<ResponseInputItem> items = new ArrayList<>();
-        if (history != null) {
-            for (ChatMessageItem message : history) {
-                if (message == null || !StringUtils.hasText(message.content())) {
-                    continue;
-                }
-                items.add(ResponseInputItem.ofEasyInputMessage(EasyInputMessage.builder()
-                        .role(roleFor(message.role()))
-                        .content(message.content())
-                        .build()));
-            }
-        }
         builder.inputOfResponse(items);
 
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
         }
-
-        for (Tool tool : buildTools(capabilities)) {
+        for (Tool tool : serverTools) {
+            builder.addTool(tool);
+        }
+        for (Tool tool : functionTools) {
             builder.addTool(tool);
         }
         return builder.build();
+    }
+
+    private List<ResponseInputItem> seedItems(List<ChatMessageItem> history) {
+        List<ResponseInputItem> items = new ArrayList<>();
+        if (history == null) {
+            return items;
+        }
+        for (ChatMessageItem message : history) {
+            if (message == null || !StringUtils.hasText(message.content())) {
+                continue;
+            }
+            items.add(ResponseInputItem.ofEasyInputMessage(EasyInputMessage.builder()
+                    .role(roleFor(message.role()))
+                    .content(message.content())
+                    .build()));
+        }
+        return items;
+    }
+
+    /**
+     * T433 — translate the agent's coexisting {@link ToolCallback}s into Responses
+     * {@code function} tools (client-executed). The JSON-Schema string each
+     * callback exposes becomes the function's {@code parameters}; {@code strict}
+     * is left {@code false} because Turing's tool schemas aren't authored to the
+     * strict-mode subset.
+     */
+    List<Tool> buildFunctionTools(ToolCallback[] callbacks) {
+        List<Tool> tools = new ArrayList<>();
+        if (callbacks == null) {
+            return tools;
+        }
+        for (ToolCallback callback : callbacks) {
+            ToolDefinition definition = callback.getToolDefinition();
+            FunctionTool.Parameters.Builder parameters = FunctionTool.Parameters.builder();
+            for (Map.Entry<String, Object> entry : toolSupport.parseSchema(callback).entrySet()) {
+                parameters.putAdditionalProperty(entry.getKey(), JsonValue.from(entry.getValue()));
+            }
+            tools.add(Tool.ofFunction(FunctionTool.builder()
+                    .name(definition.name())
+                    .description(definition.description() == null ? "" : definition.description())
+                    .parameters(parameters.build())
+                    .strict(false)
+                    .build()));
+        }
+        return tools;
+    }
+
+    private static List<ResponseFunctionToolCall> functionCalls(Response response) {
+        List<ResponseFunctionToolCall> calls = new ArrayList<>();
+        for (ResponseOutputItem item : response.output()) {
+            if (item.isFunctionCall()) {
+                calls.add(item.asFunctionCall());
+            }
+        }
+        return calls;
     }
 
     /**
