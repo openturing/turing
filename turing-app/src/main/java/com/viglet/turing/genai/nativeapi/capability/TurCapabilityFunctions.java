@@ -66,4 +66,9 @@ public final class TurCapabilityFunctions {
 
     /** Run shell commands via the Anthropic {@code bash} client tool. */
     public static final String BASH = "bash";
+
+    /** Real-time bidirectional speech (speech-in / speech-out). OpenAI Realtime
+     *  ({@code gpt-realtime}); an {@code ownsTurn} capability — a voice session
+     *  takes over the whole conversation transport. */
+    public static final String VOICE = "voice";
 }

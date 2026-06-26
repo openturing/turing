@@ -19,6 +19,7 @@ import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunction
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.IMAGE_GEN;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.MCP;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.TEXT_EDITOR;
+import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.VOICE;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.WEB_FETCH;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.WEB_SEARCH;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityKind.TOOL;
@@ -110,7 +111,17 @@ public enum TurNativeCapability {
      *  Anthropic analog of the OpenAI remote {@code mcp} tool ({@link #OPENAI_MCP}).
      *  Per-instance {@code configJson} carries {@code serverUrl} / {@code serverLabel}
      *  (server name) plus optional {@code authToken} and {@code allowedTools}. */
-    ANTHROPIC_MCP("anthropic-mcp", "anthropic", TOOL, MCP, "Integrations", false);
+    ANTHROPIC_MCP("anthropic-mcp", "anthropic", TOOL, MCP, "Integrations", false),
+
+    /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
+     *  the other capabilities this is <b>not</b> wired into the text-chat
+     *  {@code TurNativeChatExecutor} turn: a voice session is minted out-of-band
+     *  by {@code TurOpenAiRealtimeVoiceProvider} (server-side ephemeral token) and
+     *  the browser then holds the WebSocket transport to {@code gpt-realtime}
+     *  directly. The capability exists so the session endpoint (T148) can gate on
+     *  it and the picker can surface it. Owns the whole turn — a voice session is
+     *  the conversation. */
+    OPENAI_REALTIME_VOICE("openai-realtime-voice", "openai", TOOL, VOICE, "Voice", true);
 
     private final String key;
     private final String pluginType;
