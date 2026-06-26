@@ -11,10 +11,12 @@ package com.viglet.turing.genai.nativeapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -66,15 +68,20 @@ class TurNativeChatExecutorTest {
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
     @Mock private com.viglet.turing.genai.TurChatToolResolver toolResolver;
     @Mock private com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory mcpFederationDirectory;
+    @Mock private com.viglet.turing.genai.tool.TurRagSearchToolService ragSearchToolService;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
+
+    private final com.viglet.turing.genai.provider.TurProviderOptionsParser optionsParser =
+            new com.viglet.turing.genai.provider.TurProviderOptionsParser();
 
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver,
-                capabilityResolver, toolResolver, mcpFederationDirectory);
+                capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
+                optionsParser);
     }
 
     @BeforeEach
@@ -124,7 +131,7 @@ class TurNativeChatExecutorTest {
         when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
                 .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(),
-                any(), anyList(), any()))
+                any(), anyList(), any(), anyList()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "claude")));
 
         Optional<Flux<ChatResponse>> result =
@@ -134,6 +141,49 @@ class TurNativeChatExecutorTest {
         assertThat(result.get().blockFirst().content()).isEqualTo("claude");
         verifyNoInteractions(openAiResponsesService, openAiComputerUseService,
                 anthropicComputerUseService, anthropicEditorService);
+    }
+
+    @Test
+    void citationsRequestOptionForcesAnthropicPathWithoutNativeCapabilities() {
+        // T152 / §X.7.a — an agent with the "citations" request option takes the
+        // native Anthropic path even when no native TOOL capability is enabled on
+        // the instance; the retrieved passages flow to the Messages service.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(List.of());
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.of(anthropicClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        List<com.viglet.turing.genai.citation.TurCitationDocument> docs = List.of(
+                new com.viglet.turing.genai.citation.TurCitationDocument("doc-a", "Doc A", "/u", "text"));
+        when(ragSearchToolService.retrievePassagesForCitations(eq("hello"), anyInt())).thenReturn(docs);
+        when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(), any(),
+                anyList(), any(), eq(docs)))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "cited")));
+
+        TurAIAgent agent = agent();
+        agent.setRequestOptionsJson("{\"citations\":\"true\"}");
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent, instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("cited");
+        verify(ragSearchToolService).retrievePassagesForCitations("hello", 5);
+    }
+
+    @Test
+    void noCitationsWhenRequestOptionAbsentAndNoCapabilities() {
+        // Without the citations option and with no native capabilities, the turn
+        // falls through to the Spring AI executor (empty) — unchanged behaviour.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(List.of());
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(anthropicMessagesService, ragSearchToolService);
     }
 
     @Test

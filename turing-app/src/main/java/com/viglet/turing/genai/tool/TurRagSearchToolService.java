@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.tool;
 
 import com.viglet.turing.genai.TurRagContextBuilder;
+import com.viglet.turing.genai.citation.TurCitationDocument;
 import com.viglet.turing.genai.provider.store.lucene.TurLuceneVectorStore;
 import com.viglet.turing.genai.rag.TurRagRrf;
 import com.viglet.turing.genai.rag.TurRagSource;
@@ -126,6 +127,42 @@ public class TurRagSearchToolService {
         } catch (Exception e) {
             log.error("[RAG] Search failed for query: {}", query, e);
             return "Error searching knowledge base: " + e.getMessage();
+        }
+    }
+
+    /**
+     * T152 / §X.7.a — retrieve the top-K knowledge-base passages for a query and
+     * adapt them into {@link TurCitationDocument}s, for the citations-aware native
+     * Anthropic path (passages attached to the prompt as {@code document} content
+     * blocks). This is the same retrieval the {@code search_knowledge_base} tool
+     * runs, but invoked up-front by the executor (the native function-tool loop
+     * carries no {@link ToolContext}, so citations can't ride the tool result).
+     *
+     * <p>Uses the post-T24 default retrieval flags (BM25 + hybrid fusion over the
+     * embedded Lucene index, degrading to vector-only); returns an empty list —
+     * never throws — when RAG is disabled, unconfigured, the query is blank, or
+     * retrieval fails, so the caller simply runs an uncited turn.
+     *
+     * @since 2026.3.4
+     */
+    public List<TurCitationDocument> retrievePassagesForCitations(String query, int topK) {
+        if (!isAvailable() || query == null || query.isBlank()) {
+            return List.of();
+        }
+        int k = (topK > 0) ? Math.min(topK, 20) : 5;
+        try {
+            TurRagContextBuilder.RagInfrastructure infra = ragContextBuilder.buildFromGlobalSettings()
+                    .orElse(null);
+            if (infra == null) {
+                return List.of();
+            }
+            AgentRagFlags flags = AgentRagFlags.defaults();
+            RetrievalResult retrieval = retrieveDocuments(query, k, flags.bm25Enabled(),
+                    flags.hybridEnabled(), flags, infra, null);
+            return TurCitationDocument.fromDocuments(retrieval.results());
+        } catch (Exception e) {
+            log.warn("[RAG] Citation retrieval failed for query '{}': {}", query, e.getMessage());
+            return List.of();
         }
     }
 

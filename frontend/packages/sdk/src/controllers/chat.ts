@@ -15,6 +15,7 @@ import {
 import { postSiteFormSubmit } from "../api";
 import { createStore, type Store } from "../store";
 import type {
+  TurChatCitation,
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
@@ -64,6 +65,12 @@ export interface ChatMessage extends TurChatConversationMessage {
    * chips below the bubble; each entry maps to a retrieved chunk.
    */
   sources?: TurChatSource[];
+  /**
+   * Per-sentence Anthropic citations behind this assistant answer (T152).
+   * The citation-aware chat UI (T154) underlines the cited span and links to
+   * the source.
+   */
+  citations?: TurChatCitation[];
 }
 
 export interface ChatControllerAgent {
@@ -463,6 +470,8 @@ export function createChatController(
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
       const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
       const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
+      const finalCitations =
+        res?.citations && res.citations.length > 0 ? res.citations : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
@@ -470,6 +479,7 @@ export function createChatController(
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
+          citations: finalCitations,
         })),
         "success",
       );

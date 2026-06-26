@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {
+  TurChatCitation,
   TurChatConversationMessage,
   TurChatConversationResponse,
   TurChatForm,
@@ -242,13 +243,33 @@ function parseSourcesEvent(content: string): TurChatSource[] | null {
   return null;
 }
 
+/** Parses a `"citations"` SSE event payload (T152) into per-sentence citations, or `null`. */
+function parseCitationsEvent(content: string): TurChatCitation[] | null {
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed as TurChatCitation[];
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
   onOptions?: (options: string[]) => void,
   onForm?: (form: TurChatForm) => void,
   onSources?: (sources: TurChatSource[]) => void,
-): Promise<{ text: string; options: string[]; form?: TurChatForm; sources?: TurChatSource[] }> {
+  onCitations?: (citations: TurChatCitation[]) => void,
+): Promise<{
+  text: string;
+  options: string[];
+  form?: TurChatForm;
+  sources?: TurChatSource[];
+  citations?: TurChatCitation[];
+}> {
   if (!response.body) {
     throw new Error("Chat response has no body");
   }
@@ -259,6 +280,44 @@ async function consumeAssistantStream(
   let optionLabels: string[] = [];
   let form: TurChatForm | undefined;
   let sources: TurChatSource[] | undefined;
+  let citations: TurChatCitation[] | undefined;
+
+  /** Handle a non-token structured event; returns true when it was one. */
+  function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
+    if (parsed.type === "options") {
+      const labels = parseOptionsEvent(parsed.content);
+      if (labels) {
+        optionLabels = labels;
+        onOptions?.(labels);
+      }
+      return true;
+    }
+    if (parsed.type === "form") {
+      const parsedForm = parseFormEvent(parsed.content);
+      if (parsedForm) {
+        form = parsedForm;
+        onForm?.(parsedForm);
+      }
+      return true;
+    }
+    if (parsed.type === "sources") {
+      const parsedSources = parseSourcesEvent(parsed.content);
+      if (parsedSources) {
+        sources = parsedSources;
+        onSources?.(parsedSources);
+      }
+      return true;
+    }
+    if (parsed.type === "citations") {
+      const parsedCitations = parseCitationsEvent(parsed.content);
+      if (parsedCitations) {
+        citations = parsedCitations;
+        onCitations?.(parsedCitations);
+      }
+      return true;
+    }
+    return false;
+  }
 
   function consumeLine(line: string) {
     if (!line.startsWith("data:")) return;
@@ -271,30 +330,7 @@ async function consumeAssistantStream(
       // Skip malformed JSON chunks (e.g. heartbeat comments)
       return;
     }
-    if (parsed.type === "options") {
-      const labels = parseOptionsEvent(parsed.content);
-      if (labels) {
-        optionLabels = labels;
-        onOptions?.(labels);
-      }
-      return;
-    }
-    if (parsed.type === "form") {
-      const parsedForm = parseFormEvent(parsed.content);
-      if (parsedForm) {
-        form = parsedForm;
-        onForm?.(parsedForm);
-      }
-      return;
-    }
-    if (parsed.type === "sources") {
-      const parsedSources = parseSourcesEvent(parsed.content);
-      if (parsedSources) {
-        sources = parsedSources;
-        onSources?.(parsedSources);
-      }
-      return;
-    }
+    if (handleStructuredEvent(parsed)) return;
     // Default to text. Treat any unknown `type` as a token event.
     if (parsed.content) {
       aggregated += parsed.content;
@@ -315,7 +351,7 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return { text: aggregated, options: optionLabels, form, sources };
+  return { text: aggregated, options: optionLabels, form, sources, citations };
 }
 
 /**
@@ -379,14 +415,15 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources } = await consumeAssistantStream(
+  const { text, options: chipOptions, form, sources, citations } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
     options?.onForm,
     options?.onSources,
+    options?.onCitations,
   );
-  return { role: "assistant", content: text, options: chipOptions, form, sources };
+  return { role: "assistant", content: text, options: chipOptions, form, sources, citations };
 }
 
 /**
@@ -449,14 +486,15 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources } = await consumeAssistantStream(
+  const { text, options: chipOptions, form, sources, citations } = await consumeAssistantStream(
     response,
     options?.onToken,
     options?.onOptions,
     options?.onForm,
     options?.onSources,
+    options?.onCitations,
   );
-  return { role: "assistant", content: text, options: chipOptions, form, sources };
+  return { role: "assistant", content: text, options: chipOptions, form, sources, citations };
 }
 
 /**

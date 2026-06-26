@@ -34,6 +34,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.CodeExecutionTool20250522;
+import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolResultBlockParam;
 import com.anthropic.models.messages.ToolUnion;
@@ -42,6 +43,8 @@ import com.anthropic.models.messages.WebFetchTool20250910;
 import com.anthropic.models.messages.WebSearchTool20250305;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
+import com.viglet.turing.genai.citation.TurChatCitation;
+import com.viglet.turing.genai.citation.TurCitationDocument;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
@@ -53,6 +56,8 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * F.3 / §X.4 — runs a chat turn through the Anthropic <b>Messages API</b>
@@ -102,13 +107,18 @@ public class TurAnthropicMessagesService {
     /** {@code anthropic-beta} token gating the MCP Connector (T144 / §X.5.a). */
     private static final String BETA_MCP_CLIENT = "mcp-client-2025-11-20";
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final TurProviderOptionsParser optionsParser;
     private final TurNativeFunctionToolSupport toolSupport;
+    private final TurAnthropicCitationSupport citationSupport;
 
     public TurAnthropicMessagesService(TurProviderOptionsParser optionsParser,
-            TurNativeFunctionToolSupport toolSupport) {
+            TurNativeFunctionToolSupport toolSupport,
+            TurAnthropicCitationSupport citationSupport) {
         this.optionsParser = optionsParser;
         this.toolSupport = toolSupport;
+        this.citationSupport = citationSupport;
     }
 
     /**
@@ -129,11 +139,25 @@ public class TurAnthropicMessagesService {
     public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools, List.of());
+    }
+
+    /**
+     * T152 / §X.7.a — citations-aware overload. When {@code citationDocuments} is
+     * non-empty the retrieved RAG passages are attached to the question as
+     * Anthropic {@code document} content blocks ({@code citations: enabled}), and
+     * the per-sentence citations Claude returns are emitted as a second SSE event
+     * ({@code type = "citations"}) after the answer token. An empty list is the
+     * unchanged pre-T152 path — no document blocks, no citations event.
+     */
+    public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            List<TurCitationDocument> citationDocuments) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools))
+                        capabilities, coexistingTools, citationDocuments))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
-                        StringUtils.hasText(text) ? text : "")))
+                .flatMapMany(TurAnthropicMessagesService::emitTurn)
                 .doOnError(err -> log.error("[Native][Anthropic-Messages] instance '{}' error: {}",
                         instance.getId(), err.getMessage(), err));
     }
@@ -145,8 +169,33 @@ public class TurAnthropicMessagesService {
         return chat(client, instance, history, systemPrompt, capabilities, new ToolCallback[0]);
     }
 
-    String runLoop(AnthropicClient client, TurLLMInstance instance, List<ChatMessageItem> history,
-            String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+    /**
+     * The result of a native Anthropic turn: the assistant text and, when the
+     * {@code citations} request option is on, the per-sentence citations decoded
+     * from the response (empty otherwise).
+     */
+    record TurnResult(String text, List<TurChatCitation> citations) {
+    }
+
+    /** Fan a {@link TurnResult} into the SSE token event + an optional citations event. */
+    private static Flux<ChatResponse> emitTurn(TurnResult result) {
+        Flux<ChatResponse> events = Flux.just(new ChatResponse("assistant",
+                StringUtils.hasText(result.text()) ? result.text() : ""));
+        if (result.citations() != null && !result.citations().isEmpty()) {
+            try {
+                String citationsJson = OBJECT_MAPPER.writeValueAsString(result.citations());
+                events = events.concatWith(Flux.just(
+                        new ChatResponse("assistant", citationsJson, "citations")));
+            } catch (JacksonException e) {
+                log.warn("[Native][Anthropic-Messages] could not serialize citations: {}", e.getMessage());
+            }
+        }
+        return events;
+    }
+
+    TurnResult runLoop(AnthropicClient client, TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            List<TurCitationDocument> citationDocuments) {
         long t0 = System.currentTimeMillis();
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> serverTools = buildTools(capabilities, betas);
@@ -156,8 +205,9 @@ public class TurAnthropicMessagesService {
         List<ToolUnion> tools = new ArrayList<>(serverTools);
         tools.addAll(functionTools);
 
-        List<MessageParam> conversation = seedConversation(history);
+        List<MessageParam> conversation = seedConversation(history, citationDocuments);
         StringBuilder text = new StringBuilder();
+        List<TurChatCitation> citations = new ArrayList<>();
         int toolCalls = 0;
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
@@ -165,16 +215,17 @@ public class TurAnthropicMessagesService {
                     instance, conversation, systemPrompt, tools, betas, mcpServers);
             Message response = client.messages().create(params);
             appendText(response, text);
+            citations.addAll(citationSupport.extractCitations(response, citationDocuments));
 
             List<ToolUseBlock> calls = clientToolUseBlocks(response, toolIndex);
             if (calls.isEmpty()) {
                 log.info("[Native][Anthropic-Messages] instance '{}' model '{}' server-tools {} "
-                                + "function-tools {} -> {} chars, {} tool call(s) in {} ms",
+                                + "function-tools {} -> {} chars, {} tool call(s), {} citation(s) in {} ms",
                         instance.getId(), resolveModel(instance),
                         capabilities.stream().map(c -> c.capability().getKey()).toList(),
-                        functionTools.size(), text.length(), toolCalls,
+                        functionTools.size(), text.length(), toolCalls, citations.size(),
                         System.currentTimeMillis() - t0);
-                return text.toString();
+                return new TurnResult(text.toString(), citations);
             }
 
             conversation.add(response.toParam());
@@ -196,7 +247,7 @@ public class TurAnthropicMessagesService {
 
         log.warn("[Native][Anthropic-Messages] instance '{}' hit the {}-round tool-execution cap",
                 instance.getId(), MAX_TOOL_ITERATIONS);
-        return text.toString();
+        return new TurnResult(text.toString(), citations);
     }
 
     MessageCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
@@ -238,13 +289,40 @@ public class TurAnthropicMessagesService {
         return builder.build();
     }
 
-    private static List<MessageParam> seedConversation(List<ChatMessageItem> history) {
+    private List<MessageParam> seedConversation(List<ChatMessageItem> history) {
+        return seedConversation(history, List.of());
+    }
+
+    /**
+     * Build the conversation from history. T152 / §X.7.a — when
+     * {@code citationDocuments} is non-empty, the <b>last user turn</b> (the
+     * question) is rebuilt to carry the retrieved passages as leading
+     * {@code document} content blocks (citations enabled) followed by the
+     * question text, so Claude grounds and cites against them. All other turns
+     * are plain text, identical to the pre-T152 path.
+     */
+    private List<MessageParam> seedConversation(List<ChatMessageItem> history,
+            List<TurCitationDocument> citationDocuments) {
         List<MessageParam> conversation = new ArrayList<>();
         if (history == null) {
             return conversation;
         }
-        for (ChatMessageItem message : history) {
+        boolean withDocuments = citationDocuments != null && !citationDocuments.isEmpty();
+        int lastUserIdx = withDocuments ? lastUserIndex(history) : -1;
+        for (int i = 0; i < history.size(); i++) {
+            ChatMessageItem message = history.get(i);
             if (message == null || !StringUtils.hasText(message.content())) {
+                continue;
+            }
+            if (i == lastUserIdx) {
+                List<ContentBlockParam> blocks = new ArrayList<>(
+                        citationSupport.documentBlocks(citationDocuments));
+                blocks.add(ContentBlockParam.ofText(
+                        TextBlockParam.builder().text(message.content()).build()));
+                conversation.add(MessageParam.builder()
+                        .role(MessageParam.Role.USER)
+                        .contentOfBlockParams(blocks)
+                        .build());
                 continue;
             }
             conversation.add(MessageParam.builder()
@@ -254,6 +332,18 @@ public class TurAnthropicMessagesService {
                     .build());
         }
         return conversation;
+    }
+
+    /** Index of the last user-role message in the history, or -1 when none. */
+    private static int lastUserIndex(List<ChatMessageItem> history) {
+        for (int i = history.size() - 1; i >= 0; i--) {
+            ChatMessageItem message = history.get(i);
+            if (message != null && StringUtils.hasText(message.content())
+                    && !isAssistant(message.role())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

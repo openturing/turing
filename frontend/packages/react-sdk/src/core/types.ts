@@ -35,6 +35,7 @@ export type {
   TurChatConversationMessage,
   TurChatStreamEvent,
   TurChatSource,
+  TurChatCitation,
   TurChatConversationResponse,
   TurChatForm,
   TurChatFormField,

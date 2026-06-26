@@ -4,7 +4,7 @@ import { Providers } from "@/components/sections/providers";
 import { Pillars } from "@/components/sections/pillars";
 import { Comparison } from "@/components/sections/comparison";
 import { HowItWorks } from "@/components/sections/how-it-works";
-import { CodeShowcase } from "@/components/sections/code-showcase";
+import { LiveDemo } from "@/components/sections/live-demo";
 import { Cli } from "@/components/sections/cli";
 import { Stats } from "@/components/sections/stats";
 import { Marketplace } from "@/components/sections/marketplace";
@@ -22,7 +22,7 @@ export default function App() {
         <Pillars />
         <Comparison />
         <HowItWorks />
-        <CodeShowcase />
+        <LiveDemo />
         <Cli />
         <Stats />
         <Marketplace />

@@ -233,12 +233,14 @@ export interface TurChatConversationMessage {
  *   so the SDK can render a native multi-field form;
  * - `type === "sources"` (T292) carries a JSON-encoded {@link TurChatSource}[]
  *   array of the RAG provenance behind the answer;
+ * - `type === "citations"` (T152) carries a JSON-encoded {@link TurChatCitation}[]
+ *   of the per-sentence Anthropic citations grounding the answer;
  * - otherwise `content` is assistant text to append.
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options" | "form" | "sources";
+  type?: "token" | "options" | "form" | "sources" | "citations";
 }
 
 /**
@@ -260,6 +262,31 @@ export interface TurChatSource {
   score?: number | null;
   /** `true` when this chunk reached the answer via the keyword (BM25) fallback only. */
   keywordOnly?: boolean;
+}
+
+/**
+ * T152 / §X.7.a — one per-sentence citation returned by Anthropic Citations,
+ * carried by the `"citations"` SSE event. Mirrors the backend `TurChatCitation`
+ * record. The citation-aware chat UI (T154) underlines `citedText` in the
+ * answer and deep-links to `url`.
+ */
+export interface TurChatCitation {
+  /** Zero-based index into the document blocks sent for the turn. */
+  documentIndex: number;
+  /** Stable id of the cited source (resolved from the retrieved passage). */
+  sourceId?: string | null;
+  /** Title Claude echoed back, or the source title as a fallback. */
+  documentTitle?: string | null;
+  /** Deep link to the cited source, when available. */
+  url?: string | null;
+  /** The exact span of the source the claim was grounded on. */
+  citedText: string;
+  /** Start char offset (`char`) or start page (`page`), when present. */
+  startIndex?: number | null;
+  /** End char offset (`char`) or end page (`page`), when present. */
+  endIndex?: number | null;
+  /** `"char"` for plain-text sources, `"page"` for PDF page citations. */
+  locationType?: string;
 }
 
 /**
@@ -311,6 +338,8 @@ export interface TurChatConversationResponse {
   form?: TurChatForm;
   /** RAG provenance behind the answer (T292), if any. */
   sources?: TurChatSource[];
+  /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
+  citations?: TurChatCitation[];
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

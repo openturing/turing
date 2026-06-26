@@ -27,7 +27,8 @@ class TurAnthropicMessagesServiceTest {
 
     private final TurProviderOptionsParser optionsParser = new TurProviderOptionsParser();
     private final TurAnthropicMessagesService service = new TurAnthropicMessagesService(
-            optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser));
+            optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser),
+            new TurAnthropicCitationSupport());
 
     private static EnabledCapability cap(TurNativeCapability capability, String configJson) {
         return new EnabledCapability(capability, configJson);

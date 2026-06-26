@@ -32,6 +32,9 @@ import com.viglet.turing.genai.TurChatPromptRequest;
 import com.viglet.turing.genai.TurChatToolResolver;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
+import com.viglet.turing.genai.citation.TurCitationDocument;
+import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.genai.tool.TurRagSearchToolService;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver;
 import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver.NativeSelection;
@@ -95,6 +98,13 @@ public class TurNativeChatExecutor {
     private final TurNativeCapabilityResolver capabilityResolver;
     private final TurChatToolResolver toolResolver;
     private final TurMcpFederationDirectory mcpFederationDirectory;
+    private final TurRagSearchToolService ragSearchToolService;
+    private final TurProviderOptionsParser optionsParser;
+
+    /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
+    private static final String REQUEST_OPTION_CITATIONS = "citations";
+    /** T152 — how many passages to attach as document blocks when citations are on. */
+    private static final int CITATION_TOP_K = 5;
 
     public TurNativeChatExecutor(TurGenAiLlmProviderFactory providerFactory,
             TurNativeProviderClient nativeClient,
@@ -108,7 +118,9 @@ public class TurNativeChatExecutor {
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
             TurChatToolResolver toolResolver,
-            TurMcpFederationDirectory mcpFederationDirectory) {
+            TurMcpFederationDirectory mcpFederationDirectory,
+            TurRagSearchToolService ragSearchToolService,
+            TurProviderOptionsParser optionsParser) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -122,6 +134,8 @@ public class TurNativeChatExecutor {
         this.capabilityResolver = capabilityResolver;
         this.toolResolver = toolResolver;
         this.mcpFederationDirectory = mcpFederationDirectory;
+        this.ragSearchToolService = ragSearchToolService;
+        this.optionsParser = optionsParser;
     }
 
     /**
@@ -143,9 +157,16 @@ public class TurNativeChatExecutor {
             return Optional.empty();
         }
 
+        // T152 / §X.7.a — the per-agent "citations" request option triggers the
+        // native Anthropic path on its own: passages are attached to the prompt
+        // as document blocks and the per-sentence citations are streamed back.
+        // Gated strictly on requestOptionsJson, so it stays opt-in and never
+        // changes existing agents (null/false → unchanged).
+        boolean citationsEnabled = isAnthropic && isCitationsEnabled(agent);
+
         List<EnabledCapability> instanceCapabilities =
                 capabilityService.enabledFor(instance.getId(), pluginType);
-        if (instanceCapabilities.isEmpty()) {
+        if (instanceCapabilities.isEmpty() && !citationsEnabled) {
             return Optional.empty();
         }
 
@@ -157,10 +178,11 @@ public class TurNativeChatExecutor {
         NativeSelection selection = legacy
                 ? null
                 : capabilityResolver.resolve(agent.getNativeCapabilities(), instanceCapabilities);
-        if (selection != null && selection.isEmpty()) {
+        if (selection != null && selection.isEmpty() && !citationsEnabled) {
             // The agent opted in but none of its picks are enabled on this
             // instance — defer to the Spring AI path (which runs the agent's
             // normal tool set) rather than a native turn with no capabilities.
+            // (Citations still force the native Anthropic path — see below.)
             return Optional.empty();
         }
         List<EnabledCapability> capabilities = selection == null
@@ -257,15 +279,26 @@ public class TurNativeChatExecutor {
                         agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities));
             }
 
+            // T152 / §X.7.a — when the agent enabled the citations request option,
+            // retrieve the top-K knowledge-base passages for the question and pass
+            // them so the Messages service attaches them as document blocks and
+            // streams per-sentence citations back. Empty (RAG off / no hits) =
+            // an uncited turn, identical to the pre-T152 path.
+            List<TurCitationDocument> citationDocuments = citationsEnabled
+                    ? ragSearchToolService.retrievePassagesForCitations(lastUserMessage, CITATION_TOP_K)
+                    : List.of();
+
             // The remaining Anthropic server-side tools (web_search, web_fetch,
             // code_execution) execute inside Anthropic's infrastructure and return
             // the answer in a single turn — no per-tool branching.
             log.info("[Native] agent '{}' instance '{}' handled by Anthropic Messages path "
-                    + "({} capability/ies, persona '{}')",
+                    + "({} capability/ies, {} citation doc(s), persona '{}')",
                     agent.getTitle(), instance.getId(), capabilities.size(),
+                    citationDocuments.size(),
                     activePersona == null ? "none" : activePersona.getName());
             return Optional.of(anthropicMessagesService.chat(anthropicClient.get(), instance,
-                    turn.history(), turn.systemPrompt(), capabilities, coexistingTools));
+                    turn.history(), turn.systemPrompt(), capabilities, coexistingTools,
+                    citationDocuments));
         }
 
         // T136 / §X.3.d — computer_use is not a one-shot built-in: it needs the
@@ -357,6 +390,22 @@ public class TurNativeChatExecutor {
             }
         }
         return "";
+    }
+
+    /**
+     * T152 / §X.7.a — read the {@code citations} boolean from the agent's
+     * {@code requestOptionsJson} (e.g. {@code {"citations":"true"}}). Values are
+     * stored as strings by the registry-driven Request Options UI, so both
+     * {@code "true"} and a JSON boolean {@code true} are accepted. {@code null}
+     * options or any other value → disabled.
+     */
+    private boolean isCitationsEnabled(TurAIAgent agent) {
+        String json = agent.getRequestOptionsJson();
+        if (!StringUtils.hasText(json)) {
+            return false;
+        }
+        Object value = optionsParser.parse(json).get(REQUEST_OPTION_CITATIONS);
+        return value != null && "true".equalsIgnoreCase(value.toString().trim());
     }
 
     private String resolvePluginType(TurLLMInstance instance) {

@@ -2901,13 +2901,28 @@ GitHub Pages → no backend), so they return nothing — our biggest latent proo
 asset is dead.
 
 - **T477** — stand up a **public read-only Turing instance** with CORS + rate
-  limiting, seeded with demo content. The **Block Y "Atlas Store" showcase
-  (T451–T457)** is the natural backend — one deployment serves both the showcase
-  and the site's demos. Read-only/anonymous scope only; no write surface.
-- **T478** — point the hero `SearchDemo` and the marketplace SPAs at T477
-  (`VITE_TURING_DEMO_URL`), replacing sample data with real semantic search +
-  cited chat via the vanilla SDK (T400–T404). Keep the sample-data path as the
-  offline fallback so the page never looks broken.
+  limiting, seeded with demo content; read-only/anonymous scope only, no write
+  surface. **Realized in `viglet/cloud`** as a dedicated throwaway instance
+  (`docker compose --profile demo`): a separate `turing-demo` + isolated
+  `solr-demo`, `TURING_KEYCLOAK=false`/no-tenancy, **ephemeral tmpfs** store +
+  index (wiped on recreate), `cap_drop: ALL`/`no-new-privileges`/mem-cpu-pids
+  caps, **no `docker.sock`** (Code Interpreter DOCKER + skills off by
+  construction), behind an nginx **deny-by-default allowlist** vhost
+  (`demo.turing.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
+  admin/login/oauth/actuator/write → 404) with per-IP rate limits, plus a
+  **systemd timer that recreates + re-seeds** periodically (the self-heal). Seed
+  imports an export ZIP; `docker/DEMO.md` documents the model + host go-live steps
+  (DNS, real TLS, seed bundle + import-endpoint/auth confirmation, demo-agent
+  budget cap). The **Block Y "Atlas Store" showcase (T451–T457)** remains the
+  richest seed source. Pending = those host steps, not platform code.
+- **T478** — ⏳ the hero `SearchDemo` (real search) **and** a live cited-chat
+  assistant run on **`@viglet/turing-sdk`** (dogfooding — `createTuringClient` +
+  `fetchSearch`/`resolveDocuments` and `createChatController`), with a "built
+  with the SDK" code reveal showing the exact driving code next to the working
+  widget. Both gated on `VITE_TURING_DEMO_URL` + `VITE_TURING_DEMO_SITE` with
+  scripted/sample fallback so the page never looks broken offline; they activate
+  when pointed at the live T477 instance. Remaining: point the marketplace SPAs
+  at the instance.
 
 ### XXVII.3 Proof & deeper funnel (T479–T482)
 
@@ -2922,6 +2937,15 @@ asset is dead.
   real design partners — never fabricated.
 - **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
   LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
+- **T483** — seed the demo with **Turing's own documentation** so the live search
+  and assistant answer real questions about Turing itself — self-referential
+  proof ("the site is Turing answering about Turing"). A content/seed decision
+  (export the docs site → a `demo-seed` ZIP), not platform code.
+- **T484** — upgrade the hero search to **real facets + autocomplete +
+  spell-check** via the SDK (`createAutoComplete`, `fetchSpellCheck`, live facet
+  groups), showing production search depth instead of the sample facet chips.
+- **T485** — **"similar documents"** ("related by AI") on a result click via
+  `createSimilarController`, surfacing semantic relatedness in the demo.
 
 **Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do

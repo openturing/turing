@@ -66,7 +66,7 @@ export function Hero() {
         <div>
           <SearchDemo />
           <p className="mt-3 text-center text-xs text-[#8b94b3]">
-            Live demo with sample data — try typing above.
+            Try it — type to search.
           </p>
         </div>
       </Container>

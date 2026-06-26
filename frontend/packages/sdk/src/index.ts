@@ -199,6 +199,7 @@ export type {
   TurChatConversationResponse,
   TurChatStreamEvent,
   TurChatSource,
+  TurChatCitation,
   TurChatForm,
   TurChatFormField,
   TurChatFormSubmitResponse,
