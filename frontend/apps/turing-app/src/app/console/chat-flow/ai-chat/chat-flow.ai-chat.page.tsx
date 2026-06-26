@@ -117,6 +117,7 @@ export default function ChatFlowAiChatPage() {
             subtitle={t("chatFlow.aiChat.panelSubtitle")}
             placeholder={t("chatFlow.aiChat.placeholder")}
             emptyState={t("chatFlow.aiChat.empty")}
+            enableVoice
           />
         }
       >

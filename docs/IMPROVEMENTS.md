@@ -1475,29 +1475,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.6 Voice agents (T147–T151)
-
-OpenAI Realtime is bidirectional speech with native tool calling and
-reasoning. The hosted infrastructure handles the audio; Turing
-provides the tool callbacks (the same SN search tools the text chat
-uses) and the conversation orchestration. **T149 voice-first kiosk
-mode** is a high-impact demo for trade shows, lobby kiosks,
-accessibility deployments — Turing differentiates with "voice +
-enterprise search + persona-tone + citations" in one product.
-
-**T150 `gpt-realtime-translate`** is the asymmetric win: a single
-operator can serve multilingual customers in real time. Visitor speaks
-PT, agent answers PT, operator's spectator panel shows live EN
-translation. Cuts the "multilingual support staff" line item for
-customers with global footprints.
-
-**T151 voice authoring of chat-flows** ties Realtime to the existing
-chat-flow live preview (T95): admin says "add an `aiQuestion` for
-cargo, then route by role" → Realtime parses → emits JSON patch →
-graph updates live in the editor. **Authoring with voice is a
-demo-grade differentiator** in a market where everyone authors with
-forms.
-
 ### X.7 Citations & verifiable RAG (T152–T155)
 
 Anthropic Citations + the new Search Results content type close the
@@ -2876,3 +2853,76 @@ T426 (strict-schema authoring), T64 (AUDIO slot), F.5 (voice agents share the
 transcription seam), and Block Z (T69 A/B persona attribution). Non-goal: turning
 `TurPersona` into a second CMS — the audience facet stays a thin descriptor consumed
 only by the evaluation path; the prompt composer never reads it.
+
+## XXVII. Public site & top-of-funnel conversion (Block AB)
+
+> The marketing site (`turing.viglet.org`) as a conversion surface, not a
+> brochure. Strategy/positioning is in [STRATEGY.md](STRATEGY.md) §XIV; this is
+> the build rationale. Task status lives only in [ROADMAP.md](ROADMAP.md).
+
+### XXVII.0 The gap & the framing
+
+Benchmarking the site against Meilisearch, Supabase, Dify, PostHog, Deep Agents
+and AG-UI showed the conversion blocker is **positioning → proof →
+time-to-first-value**, not visual design (full analysis in §XIV). The build
+answers the five 10-second questions a visitor asks, and turns artifacts we
+already maintain (stars, CLI, ROADMAP/CHANGELOG) into trust signals.
+
+The home of the site is `frontend/apps/site` (React 19 + Vite + Tailwind v4 +
+shadcn, standalone, no SDK/backend dependency). Content lives in one place,
+`src/lib/site-content.ts`; sections are thin renderers in
+`src/components/sections/`. Deploy: `pnpm build:site` → `apps/site/dist/*` copied
+to the Pages root by `publish-github-pages.yml`.
+
+### XXVII.1 Repositioning & structure (shipped, T473–T476)
+
+- **Analogy hero** — *"the open-source, self-hosted alternative to Algolia — with
+  AI agents built in"* (§XIV.2). One line answers category + differentiation.
+- **Search it → Ask it → Automate it → Run it** — four outcome pillars replace a
+  flat feature grid, selling breadth as depth without diluting the message.
+- **"Why Turing" comparison** — defensible, high-level table (Turing vs hosted
+  SaaS vs DIY) with an explicit "as of 2026, verify vendor capabilities" caveat;
+  attributes chosen to be true (license, hosting, data residency, unified
+  agent+search) rather than feature trivia that ages or misleads.
+- **In-page interactive search demo** — client-side filtering of a small sample
+  corpus (`SEARCH_DOCS`) so the hero shows the product working with zero backend
+  (the Meilisearch movie-demo pattern). It is explicitly labelled "sample data."
+- **Near-free trust wins** — live GitHub-stars badge (`api.github.com`, graceful
+  fallback), copy-paste quickstart (`npx @viglet/turing-cli init`), public
+  Roadmap/Changelog links to the **canonical GitHub-rendered** markdown (not
+  duplicated into the site — founding anti-duplication rule), and the CLI
+  showcase section + the published `@viglet/turing-cli` README.
+
+### XXVII.2 The live-demo linchpin (T477–T478)
+
+The defining bet (§XIV.3): a *truly* live demo. Today the marketplace example
+sites at `/marketplace/*` are static SPA shells (`VITE_API_URL=/api` against
+GitHub Pages → no backend), so they return nothing — our biggest latent proof
+asset is dead.
+
+- **T477** — stand up a **public read-only Turing instance** with CORS + rate
+  limiting, seeded with demo content. The **Block Y "Atlas Store" showcase
+  (T451–T457)** is the natural backend — one deployment serves both the showcase
+  and the site's demos. Read-only/anonymous scope only; no write surface.
+- **T478** — point the hero `SearchDemo` and the marketplace SPAs at T477
+  (`VITE_TURING_DEMO_URL`), replacing sample data with real semantic search +
+  cited chat via the vanilla SDK (T400–T404). Keep the sample-data path as the
+  offline fallback so the page never looks broken.
+
+### XXVII.3 Proof & deeper funnel (T479–T482)
+
+- **T479** — "Switching from Algolia / Elasticsearch?" migration landing
+  (Meilisearch/Supabase pattern): mapping table + import path + "your data stays
+  in your infra" angle.
+- **T480** — hosted **"try it free"** path via Viglet Cloud (the dual-path CTA
+  Meilisearch/Supabase use: self-host docs **and** a hosted sandbox), so visitors
+  who won't install can still reach first value.
+- **T481** — real **social proof** surface: adopters/logos, testimonials, and
+  quantified case studies (the Dify model: "18,000 hours saved"). Gated on having
+  real design partners — never fabricated.
+- **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
+  LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
+
+**Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
+GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
+not over-claim in the comparison table (keep it defensible + dated).
