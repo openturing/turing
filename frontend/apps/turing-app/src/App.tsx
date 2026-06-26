@@ -33,7 +33,8 @@ import {
   StoreRoutes,
   AiAnalyticsRoutes,
   ConversationRoutes,
-  UserRoutes
+  UserRoutes,
+  VoiceKioskRoutes
 } from "./app/routes"
 import { ROUTES } from "./app/routes.const"
 import { ThemeProvider } from "./components/theme-provider"
@@ -59,6 +60,7 @@ function App() {
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
               {BentoRoutes}
+              {VoiceKioskRoutes}
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
                 <Route index element={<Navigate to={ROUTES.HOME} replace />} />
                 <Route path="home" element={<HomePage />} />

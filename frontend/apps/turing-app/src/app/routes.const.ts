@@ -43,6 +43,7 @@ export const ROUTES = {
   CHAT_WEBHOOK_INSTANCE: `${consolePath}/chat-webhook/instance`,
   AI_AGENT_ROOT: `${consolePath}/ai-agent`,
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
+  VOICE_KIOSK: `${consolePath}/voice-kiosk`,
   PERSONA_ROOT: `${consolePath}/persona`,
   PERSONA_INSTANCE: `${consolePath}/persona/instance`,
   ASSET_ROOT: `${consolePath}/asset`,

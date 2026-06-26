@@ -23,6 +23,7 @@ import enGit from "./locales/en/git.json";
 import enGlobalSettings from "./locales/en/globalSettings.json";
 import enGraphql from "./locales/en/graphql.json";
 import enHome from "./locales/en/home.json";
+import enVoiceKiosk from "./locales/en/voiceKiosk.json";
 import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
 import enSetup from "./locales/en/setup.json";
@@ -68,6 +69,7 @@ import ptGit from "./locales/pt/git.json";
 import ptGlobalSettings from "./locales/pt/globalSettings.json";
 import ptGraphql from "./locales/pt/graphql.json";
 import ptHome from "./locales/pt/home.json";
+import ptVoiceKiosk from "./locales/pt/voiceKiosk.json";
 import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
 import ptSetup from "./locales/pt/setup.json";
@@ -101,6 +103,7 @@ const en = {
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
+  ...enVoiceKiosk,
 };
 
 const pt = {
@@ -111,6 +114,7 @@ const pt = {
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
+  ...ptVoiceKiosk,
 };
 
 /**

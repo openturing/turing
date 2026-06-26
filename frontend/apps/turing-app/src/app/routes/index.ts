@@ -23,3 +23,4 @@ export { StoreRoutes } from "./store.routes";
 export { AiAnalyticsRoutes } from "./ai-analytics.routes";
 export { ConversationRoutes } from "./conversation.routes";
 export { UserRoutes } from "./user.routes";
+export { VoiceKioskRoutes } from "./voice-kiosk.routes";

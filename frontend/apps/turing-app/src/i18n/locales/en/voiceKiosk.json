@@ -1,0 +1,18 @@
+{
+  "voiceKiosk": {
+    "title": "Voice Assistant",
+    "tapToStart": "Tap to start talking",
+    "connecting": "Connecting…",
+    "listening": "Listening…",
+    "speaking": "Speaking…",
+    "you": "You",
+    "assistant": "Assistant",
+    "end": "End",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "missingAgent": "No agent specified. Add ?agent=<id> to the URL.",
+    "unavailable": "Voice is not available for this agent.",
+    "unsupported": "This browser does not support real-time voice.",
+    "error": "Something went wrong. Tap to try again."
+  }
+}
