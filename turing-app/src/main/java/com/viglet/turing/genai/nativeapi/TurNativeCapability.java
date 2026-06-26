@@ -103,7 +103,14 @@ public enum TurNativeCapability {
     ANTHROPIC_TEXT_EDITOR("anthropic-text-editor", "anthropic", TOOL, TEXT_EDITOR, "Authoring", false),
     /** T142 / §X.4.d — Anthropic {@code bash_20250124} client tool, executed via the
      *  pluggable {@code TurAgentBashExecutor} seam (no-op default). */
-    ANTHROPIC_BASH("anthropic-bash", "anthropic", TOOL, BASH, "Code", false);
+    ANTHROPIC_BASH("anthropic-bash", "anthropic", TOOL, BASH, "Code", false),
+    /** T144 / §X.5.a — Anthropic MCP Connector (beta {@code mcp-client-2025-11-20}).
+     *  Wired as the {@code mcp_servers} request parameter on the Messages API, so
+     *  Claude calls any remote MCP server with no client-side tool code — the
+     *  Anthropic analog of the OpenAI remote {@code mcp} tool ({@link #OPENAI_MCP}).
+     *  Per-instance {@code configJson} carries {@code serverUrl} / {@code serverLabel}
+     *  (server name) plus optional {@code authToken} and {@code allowedTools}. */
+    ANTHROPIC_MCP("anthropic-mcp", "anthropic", TOOL, MCP, "Integrations", false);
 
     private final String key;
     private final String pluginType;

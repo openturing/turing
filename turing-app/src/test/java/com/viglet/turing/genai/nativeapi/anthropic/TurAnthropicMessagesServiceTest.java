@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -117,5 +118,62 @@ class TurAnthropicMessagesServiceTest {
     @Test
     void buildFunctionToolsToleratesNull() {
         assertThat(service.buildFunctionTools(null)).isEmpty();
+    }
+
+    // ----- T144 / §X.5.a — Anthropic MCP Connector -----
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void mcpConnectorBuildsServerAndRequiresBetaHeader() {
+        Set<String> betas = new LinkedHashSet<>();
+        List<Object> servers = service.buildMcpServers(List.of(cap(TurNativeCapability.ANTHROPIC_MCP,
+                "{\"serverUrl\":\"https://mcp.example.com/sse\",\"serverLabel\":\"acme\"}")), betas);
+
+        assertThat(servers).hasSize(1);
+        Map<String, Object> server = (Map<String, Object>) servers.get(0);
+        assertThat(server).containsEntry("type", "url")
+                .containsEntry("url", "https://mcp.example.com/sse")
+                .containsEntry("name", "acme")
+                .doesNotContainKeys("authorization_token", "tool_configuration");
+        assertThat(betas).containsExactly("mcp-client-2025-11-20");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void mcpConnectorCarriesAuthTokenAndAllowedTools() {
+        Set<String> betas = new LinkedHashSet<>();
+        List<Object> servers = service.buildMcpServers(List.of(cap(TurNativeCapability.ANTHROPIC_MCP,
+                "{\"serverUrl\":\"https://mcp.example.com/sse\",\"serverName\":\"acme\","
+                        + "\"authToken\":\"secret\",\"allowedTools\":\"search,fetch\"}")), betas);
+
+        assertThat(servers).hasSize(1);
+        Map<String, Object> server = (Map<String, Object>) servers.get(0);
+        assertThat(server).containsEntry("authorization_token", "secret");
+        Map<String, Object> toolConfiguration = (Map<String, Object>) server.get("tool_configuration");
+        assertThat(toolConfiguration).containsEntry("enabled", true);
+        assertThat((List<String>) toolConfiguration.get("allowed_tools"))
+                .containsExactly("search", "fetch");
+    }
+
+    @Test
+    void mcpConnectorWithoutUrlOrNameIsSkippedAndAddsNoBeta() {
+        Set<String> betas = new LinkedHashSet<>();
+        assertThat(service.buildMcpServers(
+                List.of(cap(TurNativeCapability.ANTHROPIC_MCP, "{\"serverLabel\":\"acme\"}")), betas))
+                .isEmpty();
+        assertThat(betas).isEmpty();
+    }
+
+    @Test
+    void mcpConnectorIsNotEmittedAsAServerTool() {
+        // ANTHROPIC_MCP rides the mcp_servers parameter, not the tools array.
+        assertThat(service.buildTools(List.of(cap(TurNativeCapability.ANTHROPIC_MCP,
+                "{\"serverUrl\":\"https://mcp.example.com/sse\",\"serverLabel\":\"acme\"}")))).isEmpty();
+    }
+
+    @Test
+    void buildMcpServersToleratesNullAndEmpty() {
+        assertThat(service.buildMcpServers(null, new LinkedHashSet<>())).isEmpty();
+        assertThat(service.buildMcpServers(List.of(), new LinkedHashSet<>())).isEmpty();
     }
 }

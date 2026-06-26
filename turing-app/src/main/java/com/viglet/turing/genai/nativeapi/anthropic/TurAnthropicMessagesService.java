@@ -13,10 +13,12 @@
 package com.viglet.turing.genai.nativeapi.anthropic;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.ai.tool.ToolCallback;
@@ -65,12 +67,17 @@ import reactor.core.scheduler.Schedulers;
  *   <li>{@code ANTHROPIC_WEB_SEARCH} → {@code web_search_20250305} (T139)</li>
  *   <li>{@code ANTHROPIC_WEB_FETCH}  → {@code web_fetch_20250910} (T140, beta)</li>
  *   <li>{@code ANTHROPIC_CODE_EXECUTION} → {@code code_execution_20250522} (T141, beta)</li>
+ *   <li>{@code ANTHROPIC_MCP} → the {@code mcp_servers} request parameter
+ *       (T144 / §X.5.a, beta {@code mcp-client-2025-11-20}) — Claude calls any
+ *       remote MCP server with no client-side tool code, the Anthropic analog of
+ *       the OpenAI remote {@code mcp} tool. See {@link #buildMcpServers}.</li>
  * </ul>
  *
- * <p>Tools that ship as Anthropic beta features (web_fetch, code_execution)
- * also require their {@code anthropic-beta} header; {@link #buildTools} collects
- * the required beta tokens into the supplied set so {@link #buildParams} can
- * attach the header. web_search is GA and needs no beta token.
+ * <p>Tools that ship as Anthropic beta features (web_fetch, code_execution, the
+ * MCP connector) also require their {@code anthropic-beta} header;
+ * {@link #buildTools} and {@link #buildMcpServers} collect the required beta
+ * tokens into the supplied set so {@link #buildParams} can attach the header.
+ * web_search is GA and needs no beta token.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -92,6 +99,8 @@ public class TurAnthropicMessagesService {
     private static final String BETA_WEB_FETCH = "web-fetch-2025-09-10";
     /** {@code anthropic-beta} token gating the code_execution server tool (T141). */
     private static final String BETA_CODE_EXECUTION = "code-execution-2025-05-22";
+    /** {@code anthropic-beta} token gating the MCP Connector (T144 / §X.5.a). */
+    private static final String BETA_MCP_CLIENT = "mcp-client-2025-11-20";
 
     private final TurProviderOptionsParser optionsParser;
     private final TurNativeFunctionToolSupport toolSupport;
@@ -142,6 +151,7 @@ public class TurAnthropicMessagesService {
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> serverTools = buildTools(capabilities, betas);
         List<ToolUnion> functionTools = buildFunctionTools(coexistingTools);
+        List<Object> mcpServers = buildMcpServers(capabilities, betas);
         Map<String, ToolCallback> toolIndex = toolSupport.indexByName(coexistingTools);
         List<ToolUnion> tools = new ArrayList<>(serverTools);
         tools.addAll(functionTools);
@@ -151,8 +161,8 @@ public class TurAnthropicMessagesService {
         int toolCalls = 0;
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-            MessageCreateParams params =
-                    buildParamsFromConversation(instance, conversation, systemPrompt, tools, betas);
+            MessageCreateParams params = buildParamsFromConversation(
+                    instance, conversation, systemPrompt, tools, betas, mcpServers);
             Message response = client.messages().create(params);
             appendText(response, text);
 
@@ -193,12 +203,14 @@ public class TurAnthropicMessagesService {
             String systemPrompt, List<EnabledCapability> capabilities) {
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> tools = buildTools(capabilities, betas);
-        return buildParamsFromConversation(instance, seedConversation(history), systemPrompt, tools, betas);
+        List<Object> mcpServers = buildMcpServers(capabilities, betas);
+        return buildParamsFromConversation(instance, seedConversation(history), systemPrompt, tools,
+                betas, mcpServers);
     }
 
     private MessageCreateParams buildParamsFromConversation(TurLLMInstance instance,
             List<MessageParam> conversation, String systemPrompt, List<ToolUnion> tools,
-            Set<String> betas) {
+            Set<String> betas, List<Object> mcpServers) {
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(resolveModel(instance))
                 .maxTokens(resolveMaxTokens(instance))
@@ -212,6 +224,13 @@ public class TurAnthropicMessagesService {
         }
         for (ToolUnion tool : tools) {
             builder.addTool(tool);
+        }
+        // T144 / §X.5.a — the MCP Connector is the top-level mcp_servers request
+        // parameter, not an entry in tools. The non-beta Messages builder has no
+        // typed setter for it, so inject the raw JSON array; the mcp-client beta
+        // token is added by buildMcpServers when a server is produced.
+        if (mcpServers != null && !mcpServers.isEmpty()) {
+            builder.putAdditionalBodyProperty("mcp_servers", JsonValue.from(mcpServers));
         }
         if (betas != null && !betas.isEmpty()) {
             builder.putAdditionalHeader("anthropic-beta", String.join(",", betas));
@@ -342,6 +361,94 @@ public class TurAnthropicMessagesService {
                 }
                 default -> log.debug("[Native][Anthropic-Messages] capability '{}' is not wired on "
                         + "the Anthropic path — skipping", enabled.capability().getKey());
+            }
+        }
+        return tools;
+    }
+
+    /**
+     * T144 / §X.5.a — translate every enabled {@code ANTHROPIC_MCP} capability into
+     * a remote MCP server definition for the Messages API {@code mcp_servers}
+     * parameter (beta {@code mcp-client-2025-11-20}). Each server is a raw JSON
+     * object so the non-beta Messages builder can carry it via
+     * {@code putAdditionalBodyProperty} — the typed {@code mcp_servers} setter
+     * lives only on the beta builder, and switching the whole service to the beta
+     * endpoint would needlessly re-touch the shipped server-tool path.
+     *
+     * <p>Per-instance {@code configJson} keys (mirroring the OpenAI remote MCP
+     * tool, {@link com.viglet.turing.genai.nativeapi.TurNativeCapability#OPENAI_MCP}):
+     * <ul>
+     *   <li>{@code serverUrl} — Streamable-HTTP / SSE endpoint (required)</li>
+     *   <li>{@code serverLabel} / {@code serverName} — unique server name (required)</li>
+     *   <li>{@code authToken} — optional {@code authorization_token} (Bearer)</li>
+     *   <li>{@code allowedTools} — optional comma-separated allow-list → {@code tool_configuration.allowed_tools}</li>
+     * </ul>
+     * A server missing {@code serverUrl} or its name is skipped with a warning
+     * rather than producing an invalid request. The {@code mcp-client} beta token
+     * is pushed into {@code betas} only when at least one server is produced.
+     */
+    List<Object> buildMcpServers(List<EnabledCapability> capabilities, Set<String> betas) {
+        List<Object> servers = new ArrayList<>();
+        if (capabilities == null) {
+            return servers;
+        }
+        for (EnabledCapability enabled : capabilities) {
+            if (enabled.capability() == TurNativeCapability.ANTHROPIC_MCP) {
+                toMcpServer(enabled).ifPresent(servers::add);
+            }
+        }
+        if (!servers.isEmpty()) {
+            betas.add(BETA_MCP_CLIENT);
+        }
+        return servers;
+    }
+
+    /** Build one {@code mcp_servers} entry from a capability's config, empty when unconfigured. */
+    private Optional<Map<String, Object>> toMcpServer(EnabledCapability enabled) {
+        Map<String, Object> config = optionsParser.parse(enabled.configJson());
+        String serverUrl = optionsParser.stringValue(config, "serverUrl");
+        String serverName = optionsParser.stringValue(config, "serverName");
+        if (!StringUtils.hasText(serverName)) {
+            serverName = optionsParser.stringValue(config, "serverLabel");
+        }
+        if (!StringUtils.hasText(serverUrl) || !StringUtils.hasText(serverName)) {
+            log.warn("[Native][Anthropic-Messages] mcp enabled but serverUrl/serverName missing "
+                    + "— skipping server");
+            return Optional.empty();
+        }
+        Map<String, Object> server = new LinkedHashMap<>();
+        server.put("type", "url");
+        server.put("url", serverUrl);
+        server.put("name", serverName);
+        String authToken = optionsParser.stringValue(config, "authToken");
+        if (StringUtils.hasText(authToken)) {
+            server.put("authorization_token", authToken);
+        }
+        List<String> allowedTools = parseAllowedTools(config);
+        if (!allowedTools.isEmpty()) {
+            Map<String, Object> toolConfiguration = new LinkedHashMap<>();
+            toolConfiguration.put("enabled", true);
+            toolConfiguration.put("allowed_tools", allowedTools);
+            server.put("tool_configuration", toolConfiguration);
+        }
+        return Optional.of(server);
+    }
+
+    /** Parse the optional {@code allowedTools} allow-list (list or comma-separated string). */
+    private List<String> parseAllowedTools(Map<String, Object> config) {
+        List<String> fromList = optionsParser.stringListValue(config, "allowedTools");
+        if (!fromList.isEmpty()) {
+            return fromList;
+        }
+        String csv = optionsParser.stringValue(config, "allowedTools");
+        if (!StringUtils.hasText(csv)) {
+            return List.of();
+        }
+        List<String> tools = new ArrayList<>();
+        for (String token : csv.split(",")) {
+            String trimmed = token.trim();
+            if (!trimmed.isEmpty()) {
+                tools.add(trimmed);
             }
         }
         return tools;
