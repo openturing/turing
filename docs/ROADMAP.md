@@ -60,8 +60,9 @@
 
 ## E.6 — Context engineering enforcement
 
-- ⏳ **T123** (deps: T31) **Token-budget enforcement per turn (V1: WARN/ERROR; COMPACT degrades to WARN until T115 ships)**. → §IX.7.a
-- 💭 **T124** (deps: T32) **Workspace + memory + tool-offload metrics** — extend `TurChatPipelineObservation` with `turing.chat.workspace.{puts,gets,bytes_stored}` + `turing.chat.memory.compression_ratio` + `turing.chat.tools.offloaded_bytes`. → §IX.7.b
+> **Block complete.** Both tasks have shipped — enforceable per-turn token
+> budgets with a working `COMPACT` mode (T123) and the workspace / memory /
+> tool-offload context-engineering metrics (T124). See [CHANGELOG.md](CHANGELOG.md) §E.6.
 
 ## E.7 — Developer experience (CLI + eval)
 

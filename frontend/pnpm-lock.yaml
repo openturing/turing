@@ -439,8 +439,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.5.0(jiti@2.7.0))
       '@module-federation/vite':
-        specifier: 1.14.3
-        version: 1.14.3(rollup@4.60.4)(typescript@5.8.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0))
+        specifier: 1.16.11
+        version: 1.16.11(typescript@5.8.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0))
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -1318,8 +1318,8 @@ packages:
     engines: {node: '>=16.0.0'}
     hasBin: true
 
-  '@module-federation/dts-plugin@2.3.2':
-    resolution: {integrity: sha512-Egvd6TefTnKfa95u4NlLWnAEWe72NhAYSw4jkXF4WNla0ULbj65XrOIKyk7Lcx7HMCjlvEL7fa218qw8q0EL3Q==}
+  '@module-federation/dts-plugin@2.5.1':
+    resolution: {integrity: sha512-XylIL02As+VXk4DzFb8qYQs1YYoY0MZOpIqhf06LMkZBjPdOE0wJ1GOBvhFP9kM/cfuK7QV//mNdrWlZgvEkRA==}
     peerDependencies:
       typescript: ^4.9.0 || ^5.0.0
       vue-tsc: '>=1.0.24'
@@ -1327,8 +1327,8 @@ packages:
       vue-tsc:
         optional: true
 
-  '@module-federation/dts-plugin@2.5.1':
-    resolution: {integrity: sha512-XylIL02As+VXk4DzFb8qYQs1YYoY0MZOpIqhf06LMkZBjPdOE0wJ1GOBvhFP9kM/cfuK7QV//mNdrWlZgvEkRA==}
+  '@module-federation/dts-plugin@2.6.0':
+    resolution: {integrity: sha512-0dMjLhU+2HNPyX5Txu6JqA2CAYxVLRv3c/bpRk58aNVwhDO/jqp66IdFztdMZ1XiHqOW9jB3pkOSuIpcl/yXpQ==}
     peerDependencies:
       typescript: ^4.9.0 || ^5.0.0
       vue-tsc: '>=1.0.24'
@@ -1354,22 +1354,22 @@ packages:
   '@module-federation/error-codes@0.22.0':
     resolution: {integrity: sha512-xF9SjnEy7vTdx+xekjPCV5cIHOGCkdn3pIxo9vU7gEZMIw0SvAEdsy6Uh17xaCpm8V0FWvR0SZoK9Ik6jGOaug==}
 
-  '@module-federation/error-codes@2.3.2':
-    resolution: {integrity: sha512-Y8F6EG+shNY5mJ0yKcJh4t6HlMYEtqMvABDDmxWulLz/tSV859SL05I5eDR1EvK0jNhLbq8LFipFEToQLqF0AA==}
-
   '@module-federation/error-codes@2.5.1':
     resolution: {integrity: sha512-3KIR8XbEW0Y+Fn8IAnxzDWMvXQWiS40Z1TE/Fft9aTeXP9dDAM7AiVhjTh5yF2csAwHSt/1LJVZbiCmS13mE8A==}
+
+  '@module-federation/error-codes@2.6.0':
+    resolution: {integrity: sha512-J9opjWJJZ1JI/9EvNZF8Ps1VMHS9EsH/i0UjCkQQxFVYZxSDBX1CFunvc7awac4cY//LqJUfqBbfoQPhCfKKKw==}
 
   '@module-federation/inject-external-runtime-core-plugin@2.5.1':
     resolution: {integrity: sha512-cCFCQ0j0xObXwVwBq/ZiU+MMdJrE2OVwdPUR7l6NHKKwKAOmkagM+AE5wNEkzVht6m+Dh6x6/5UTqqa/vbDrjQ==}
     peerDependencies:
       '@module-federation/runtime-tools': 2.5.1
 
-  '@module-federation/managers@2.3.2':
-    resolution: {integrity: sha512-mb8NfwLDZbA08HXkEjsAXyqyIyR+FC73tZxCHlPW/3fdTB5WLKG9Qrq/uan/zq/uyTdtYT3MCaMh7uf3ezqFMQ==}
-
   '@module-federation/managers@2.5.1':
     resolution: {integrity: sha512-AWbkH/U76FJDbdwBOodQ1An40WOdrDGAgqUMc8RD62+Ec/ocPfda0NhFcJbPxlUIvSFPTvBv6DwTnygmNC7GPA==}
+
+  '@module-federation/managers@2.6.0':
+    resolution: {integrity: sha512-7Y4Ri6Lh10dCHoEJvNGFmK2Gg1JKy7oJ1TEZhuU3n3mgIpZ519fDNRvU4+tiO9C49p1xyK+mQ8ewxth83waKUA==}
 
   '@module-federation/manifest@2.5.1':
     resolution: {integrity: sha512-z44Fita44rpLufoEW71tWw+eWGMVLVQzT2OjrzOHH8JLPOX3czT0INPwVbRp9v8puzWiU6Kz5W6PqelqutpJKA==}
@@ -1389,11 +1389,11 @@ packages:
   '@module-federation/runtime-core@0.22.0':
     resolution: {integrity: sha512-GR1TcD6/s7zqItfhC87zAp30PqzvceoeDGYTgF3Vx2TXvsfDrhP6Qw9T4vudDQL3uJRne6t7CzdT29YyVxlgIA==}
 
-  '@module-federation/runtime-core@2.3.2':
-    resolution: {integrity: sha512-o4Pfi21uADHtSl3/BHu/3ph5+069pDOXL8Lck12b+rxsHessbeZkNo+MOxwP+gXf8fFsT+f9spOmx+Y5gtyc2A==}
-
   '@module-federation/runtime-core@2.5.1':
     resolution: {integrity: sha512-UMuMsWHXeMrm8Isl8YD6/s1jmTVau3SQhp9RO4Ln+eD2lrjM4hQSwOX2xPtfT1C1I4/E6hgyZQV1K1Q/3Zpr0Q==}
+
+  '@module-federation/runtime-core@2.6.0':
+    resolution: {integrity: sha512-9sL7Yj3H3COZI9JpK/J4hmJUBkIJdmowkj6phHuFiy5Hm5bHiE5U+9WBbR9KqTdyNhAVSL9FeprBW5/Io6i59A==}
 
   '@module-federation/runtime-tools@0.22.0':
     resolution: {integrity: sha512-4ScUJ/aUfEernb+4PbLdhM/c60VHl698Gn1gY21m9vyC1Ucn69fPCA1y2EwcCB7IItseRMoNhdcWQnzt/OPCNA==}
@@ -1404,22 +1404,14 @@ packages:
   '@module-federation/runtime@0.22.0':
     resolution: {integrity: sha512-38g5iPju2tPC3KHMPxRKmy4k4onNp6ypFPS1eKGsNLUkXgHsPMBFqAjDw96iEcjri91BrahG4XcdyKi97xZzlA==}
 
-  '@module-federation/runtime@2.3.2':
-    resolution: {integrity: sha512-JFSAbr0zBDmNF+wcqHw22CmZGuUZjTsa4qzm1+RUVi3blrnKeBj9Y2FppEOBwPc/FHUr4/MDijA/6GFE2cv7gQ==}
-
   '@module-federation/runtime@2.5.1':
     resolution: {integrity: sha512-Tf33FIpnQMn8FjIUAQMtSTYQgGibfh5vEvJihFO3q/hG9LiWwLMErZvOz/+wcPsE81gzHjYPxQgMKGSP3BuG8g==}
 
+  '@module-federation/runtime@2.6.0':
+    resolution: {integrity: sha512-Y8KgL70RDxD8cCtGWGlGkt+TSDleIjdGmS27gnllibQAIgG/vHhPD11r8kd92x44k4dqtMIntzreOphGICl92g==}
+
   '@module-federation/sdk@0.22.0':
     resolution: {integrity: sha512-x4aFNBKn2KVQRuNVC5A7SnrSCSqyfIWmm1DvubjbO9iKFe7ith5niw8dqSFBekYBg2Fwy+eMg4sEFNVvCAdo6g==}
-
-  '@module-federation/sdk@2.3.2':
-    resolution: {integrity: sha512-EKiZpLnD2ogy7OcnuU+vkGO5vhh3J25PHwtEzgVGIAsMis3JHYPpY7L1Ue7i0zVrdmI23dVJPBtfGV/Pg7THPA==}
-    peerDependencies:
-      node-fetch: ^3.3.2
-    peerDependenciesMeta:
-      node-fetch:
-        optional: true
 
   '@module-federation/sdk@2.5.1':
     resolution: {integrity: sha512-FDhCx81ZCxX1oT/fyt/bW+gpPt287GR156E/Thv1yhb9XyNHGNkqe8zqJOipOMfb07E22OMzSzOulCBvAOgn3g==}
@@ -1429,14 +1421,23 @@ packages:
       node-fetch:
         optional: true
 
-  '@module-federation/third-party-dts-extractor@2.3.2':
-    resolution: {integrity: sha512-aQmzd7KPkk39LuOh9us2XxXdMmaGLfTU6fJEEsvjzRIgwQtQ10BRAnuJ+GGW1BkD9tXtbuYtW4+bWT7JxX4Pyg==}
+  '@module-federation/sdk@2.6.0':
+    resolution: {integrity: sha512-Z3HT1uDciMrvz2at3sw6TJbAK9Fl7RmoC/8iqO35HDtQMQJ1qSsMIAjnsiCpAC0D4nAm6PIqgSqPWRO/WYgo0Q==}
+    peerDependencies:
+      node-fetch: ^2.7.0 || ^3.3.2
+    peerDependenciesMeta:
+      node-fetch:
+        optional: true
 
   '@module-federation/third-party-dts-extractor@2.5.1':
     resolution: {integrity: sha512-/jD/o2IivDgg6jGUgdb9NZtlJWeoz1uKcblGL2BxYVzzlKT+1YS7Y2idTl1tqp4hNdFnDlPpQv6WLdKiLoOPNw==}
 
-  '@module-federation/vite@1.14.3':
-    resolution: {integrity: sha512-hIfcrf/m23z3v1OorfxMw2O5GoiNypRUTG7q18+33Z75nOLG6wSPk6D2fCJlkQFFaHcN76DPZjyhCAU0u2tyzQ==}
+  '@module-federation/third-party-dts-extractor@2.6.0':
+    resolution: {integrity: sha512-rEC1YRC3gTafoOcFm1Htz6cAwHRoWEMQNCm1LXR1HiuayJzUkViVpK/1Pp37UZfytOyQ0qIaP6Ag81PdGvDbmw==}
+
+  '@module-federation/vite@1.16.11':
+    resolution: {integrity: sha512-tmVBSdHDDQvGPYPZgp7Hpi980reReObP1yyai3kxWeQZ8CL6zAFIgz3wb97o20J/lJjxM6DDzs31da3RXtvdxA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
@@ -2601,15 +2602,6 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
-
-  '@rollup/pluginutils@5.3.0':
-    resolution: {integrity: sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
 
   '@rollup/pluginutils@5.4.0':
     resolution: {integrity: sha512-MfPp06CjRLfXQ3wY0R8vJDYBy/MvVcc9OulEfR0B8Iv9ko+GCNaRZ+EpJYFl27LhKsZK0o420sYCRHCjfCgeUg==}
@@ -3847,9 +3839,6 @@ packages:
     resolution: {integrity: sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==}
     engines: {node: '>=12'}
 
-  defu@6.1.7:
-    resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
-
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
@@ -3920,9 +3909,6 @@ packages:
   es-errors@1.3.0:
     resolution: {integrity: sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==}
     engines: {node: '>= 0.4'}
-
-  es-module-lexer@2.0.0:
-    resolution: {integrity: sha512-5POEcUuZybH7IdmGsD8wlf0AI55wMecM9rVBTI/qEAy2c1kTOm3DjFYjrBdI2K3BaJjJYfYFeRtM0t9ssnRuxw==}
 
   es-module-lexer@2.1.0:
     resolution: {integrity: sha512-n27zTYMjYu1aj4MjCWzSP7G9r75utsaoc8m61weK+W8JMBGGQybd43GstCXZ3WNmSFtGT9wi59qQTW6mhTR5LQ==}
@@ -5423,6 +5409,10 @@ packages:
     resolution: {integrity: sha512-+t2Z/GwkZQDtu00813aP66ygViGtPHKhhoFZpQKpKrE+9jIgES+Zw+mFNaDWOVRKiuJjuqKHzD3B1sfGg8+ZOQ==}
     engines: {node: '>=20.18.1'}
 
+  undici@7.28.0:
+    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
+    engines: {node: '>=20.18.1'}
+
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
 
@@ -5694,18 +5684,6 @@ packages:
   word@0.3.0:
     resolution: {integrity: sha512-OELeY0Q61OXpdUfTp+oweA/vtLVg5VDOXh+3he3PNzLGG/y0oylSOC1xRVj0+l4vQ3tj/bB1HVHv1ocXkQceFA==}
     engines: {node: '>=0.8'}
-
-  ws@8.18.0:
-    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
 
   ws@8.21.0:
     resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
@@ -6605,24 +6583,6 @@ snapshots:
       - utf-8-validate
       - vue-tsc
 
-  '@module-federation/dts-plugin@2.3.2(typescript@5.8.3)':
-    dependencies:
-      '@module-federation/error-codes': 2.3.2
-      '@module-federation/managers': 2.3.2
-      '@module-federation/sdk': 2.3.2
-      '@module-federation/third-party-dts-extractor': 2.3.2
-      adm-zip: 0.5.10
-      ansi-colors: 4.1.3
-      isomorphic-ws: 5.0.0(ws@8.18.0)
-      node-schedule: 2.1.1
-      typescript: 5.8.3
-      undici: 7.24.7
-      ws: 8.18.0
-    transitivePeerDependencies:
-      - bufferutil
-      - node-fetch
-      - utf-8-validate
-
   '@module-federation/dts-plugin@2.5.1(typescript@5.8.3)':
     dependencies:
       '@module-federation/error-codes': 2.5.1
@@ -6635,6 +6595,24 @@ snapshots:
       node-schedule: 2.1.1
       typescript: 5.8.3
       undici: 7.24.7
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - bufferutil
+      - node-fetch
+      - utf-8-validate
+
+  '@module-federation/dts-plugin@2.6.0(typescript@5.8.3)':
+    dependencies:
+      '@module-federation/error-codes': 2.6.0
+      '@module-federation/managers': 2.6.0
+      '@module-federation/sdk': 2.6.0
+      '@module-federation/third-party-dts-extractor': 2.6.0
+      adm-zip: 0.5.10
+      ansi-colors: 4.1.3
+      isomorphic-ws: 5.0.0(ws@8.21.0)
+      node-schedule: 2.1.1
+      typescript: 5.8.3
+      undici: 7.28.0
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -6667,24 +6645,24 @@ snapshots:
 
   '@module-federation/error-codes@0.22.0': {}
 
-  '@module-federation/error-codes@2.3.2': {}
-
   '@module-federation/error-codes@2.5.1': {}
+
+  '@module-federation/error-codes@2.6.0': {}
 
   '@module-federation/inject-external-runtime-core-plugin@2.5.1(@module-federation/runtime-tools@2.5.1)':
     dependencies:
       '@module-federation/runtime-tools': 2.5.1
 
-  '@module-federation/managers@2.3.2':
+  '@module-federation/managers@2.5.1':
     dependencies:
-      '@module-federation/sdk': 2.3.2
+      '@module-federation/sdk': 2.5.1
       find-pkg: 2.0.0
     transitivePeerDependencies:
       - node-fetch
 
-  '@module-federation/managers@2.5.1':
+  '@module-federation/managers@2.6.0':
     dependencies:
-      '@module-federation/sdk': 2.5.1
+      '@module-federation/sdk': 2.6.0
       find-pkg: 2.0.0
     transitivePeerDependencies:
       - node-fetch
@@ -6724,17 +6702,17 @@ snapshots:
       '@module-federation/error-codes': 0.22.0
       '@module-federation/sdk': 0.22.0
 
-  '@module-federation/runtime-core@2.3.2':
-    dependencies:
-      '@module-federation/error-codes': 2.3.2
-      '@module-federation/sdk': 2.3.2
-    transitivePeerDependencies:
-      - node-fetch
-
   '@module-federation/runtime-core@2.5.1':
     dependencies:
       '@module-federation/error-codes': 2.5.1
       '@module-federation/sdk': 2.5.1
+    transitivePeerDependencies:
+      - node-fetch
+
+  '@module-federation/runtime-core@2.6.0':
+    dependencies:
+      '@module-federation/error-codes': 2.6.0
+      '@module-federation/sdk': 2.6.0
     transitivePeerDependencies:
       - node-fetch
 
@@ -6756,14 +6734,6 @@ snapshots:
       '@module-federation/runtime-core': 0.22.0
       '@module-federation/sdk': 0.22.0
 
-  '@module-federation/runtime@2.3.2':
-    dependencies:
-      '@module-federation/error-codes': 2.3.2
-      '@module-federation/runtime-core': 2.3.2
-      '@module-federation/sdk': 2.3.2
-    transitivePeerDependencies:
-      - node-fetch
-
   '@module-federation/runtime@2.5.1':
     dependencies:
       '@module-federation/error-codes': 2.5.1
@@ -6772,38 +6742,39 @@ snapshots:
     transitivePeerDependencies:
       - node-fetch
 
-  '@module-federation/sdk@0.22.0': {}
+  '@module-federation/runtime@2.6.0':
+    dependencies:
+      '@module-federation/error-codes': 2.6.0
+      '@module-federation/runtime-core': 2.6.0
+      '@module-federation/sdk': 2.6.0
+    transitivePeerDependencies:
+      - node-fetch
 
-  '@module-federation/sdk@2.3.2': {}
+  '@module-federation/sdk@0.22.0': {}
 
   '@module-federation/sdk@2.5.1': {}
 
-  '@module-federation/third-party-dts-extractor@2.3.2':
-    dependencies:
-      find-pkg: 2.0.0
-      resolve: 1.22.8
+  '@module-federation/sdk@2.6.0': {}
 
   '@module-federation/third-party-dts-extractor@2.5.1':
     dependencies:
       find-pkg: 2.0.0
       resolve: 1.22.8
 
-  '@module-federation/vite@1.14.3(rollup@4.60.4)(typescript@5.8.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0))':
+  '@module-federation/third-party-dts-extractor@2.6.0':
     dependencies:
-      '@module-federation/dts-plugin': 2.3.2(typescript@5.8.3)
-      '@module-federation/runtime': 2.3.2
-      '@module-federation/sdk': 2.3.2
-      '@rollup/pluginutils': 5.3.0(rollup@4.60.4)
-      defu: 6.1.7
-      es-module-lexer: 2.0.0
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-      pathe: 2.0.3
+      find-pkg: 2.0.0
+      resolve: 1.22.8
+
+  '@module-federation/vite@1.16.11(typescript@5.8.3)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0))':
+    dependencies:
+      '@module-federation/dts-plugin': 2.6.0(typescript@5.8.3)
+      '@module-federation/runtime': 2.6.0
+      '@module-federation/sdk': 2.6.0
       vite: 8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0)
     transitivePeerDependencies:
       - bufferutil
       - node-fetch
-      - rollup
       - typescript
       - utf-8-validate
       - vue-tsc
@@ -7889,14 +7860,6 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
-
-  '@rollup/pluginutils@5.3.0(rollup@4.60.4)':
-    dependencies:
-      '@types/estree': 1.0.9
-      estree-walker: 2.0.2
-      picomatch: 4.0.4
-    optionalDependencies:
-      rollup: 4.60.4
 
   '@rollup/pluginutils@5.4.0(rollup@4.60.4)':
     dependencies:
@@ -9134,8 +9097,6 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  defu@6.1.7: {}
-
   delayed-stream@1.0.0: {}
 
   dequal@2.0.3: {}
@@ -9190,8 +9151,6 @@ snapshots:
   es-define-property@1.0.1: {}
 
   es-errors@1.3.0: {}
-
-  es-module-lexer@2.0.0: {}
 
   es-module-lexer@2.1.0: {}
 
@@ -9666,10 +9625,6 @@ snapshots:
       is-inside-container: 1.0.0
 
   isexe@2.0.0: {}
-
-  isomorphic-ws@5.0.0(ws@8.18.0):
-    dependencies:
-      ws: 8.18.0
 
   isomorphic-ws@5.0.0(ws@8.21.0):
     dependencies:
@@ -11030,6 +10985,8 @@ snapshots:
 
   undici@7.27.0: {}
 
+  undici@7.28.0: {}
+
   unified@11.0.5:
     dependencies:
       '@types/unist': 3.0.3
@@ -11269,8 +11226,6 @@ snapshots:
   word-wrap@1.2.5: {}
 
   word@0.3.0: {}
-
-  ws@8.18.0: {}
 
   ws@8.21.0: {}
 

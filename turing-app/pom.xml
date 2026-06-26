@@ -23,6 +23,10 @@
         <sonar.cpd.exclusions>**/persistence/dto/**,**/persistence/model/**
         </sonar.cpd.exclusions>
         <skip.npm>false</skip.npm>
+        <!-- Skip Surefire (unit tests) only, while leaving Failsafe ITs to run.
+             Use `mvn verify -DskipUTs=true` to run integration tests without
+             re-running the full unit-test suite. -->
+        <skipUTs>false</skipUTs>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -719,6 +723,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.6</version>
+                <configuration>
+                    <!-- `-DskipUTs=true` skips unit tests (Surefire) but not
+                         integration tests (Failsafe). -->
+                    <skip>${skipUTs}</skip>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

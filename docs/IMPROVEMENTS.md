@@ -1289,24 +1289,6 @@ click) trigger the resume; flow advances from the suspend point with
 the new slot values. Deep Agents implies you build this yourself with
 generic state machines. Turing makes it a one-line authoring primitive.
 
-### IX.7 Context engineering — enforceable, not advisory
-
-Deep Agents says it compresses / offloads / isolates / caches. All four
-are advisory ("the framework helps"). Turing's competitive move:
-**enforceable token budgets** (T123).
-
-```yaml
-# Per-agent setting:
-maxPromptTokens: 16000
-overBudgetBehavior: compact     # auto-trigger T115 summarization
-# alternatives: error | warn
-```
-
-If the predicted prompt exceeds budget, engine routes through
-compression *before* calling LLM. If compression doesn't bring it
-under, the configured failure mode kicks in. **Cost is a first-class
-constraint, not a metric you discover after the fact.**
-
 ### IX.8 Developer experience — CLI + eval as table stakes
 
 #### IX.8.a `turing` CLI (T125)

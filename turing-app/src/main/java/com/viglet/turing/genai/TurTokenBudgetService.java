@@ -26,8 +26,11 @@ import lombok.extern.slf4j.Slf4j;
  * has {@code maxPromptTokens > 0} and the estimate exceeds the budget, the
  * {@link TurAgentOverBudgetBehavior} configured on the agent decides
  * whether to short-circuit the call (ERROR), log + proceed (WARN), or
- * compact (V1 degrades COMPACT to WARN with a notice — T115 will land
- * the real compression).
+ * compact ({@link Decision#COMPACT} — the executor routes through the
+ * T115-backed {@code TurPromptCompactor} before the LLM call). The
+ * service itself never compacts; it only reports the {@link Decision} so
+ * the (potentially expensive, LLM-calling) compaction stays on the
+ * executor's hot path where it can re-check the budget afterwards.
  *
  * <p>Estimator: simple {@code chars / 4} heuristic. The OpenAI {@code
  * cl100k_base} tokenizer averages ~4 chars/token across English+code;
@@ -56,7 +59,13 @@ public class TurTokenBudgetService {
         /** Over budget; logged + proceeding. */
         WARN,
         /** Over budget; caller must short-circuit (throw or surface error). */
-        ERROR
+        ERROR,
+        /**
+         * Over budget; caller must route the prompt through the T115-backed
+         * compactor before the LLM call, then proceed (best-effort — if the
+         * compaction can't bring it under budget the turn still runs).
+         */
+        COMPACT
     }
 
     /** Result envelope returned by {@link #check(TurAIAgent, List)}. */
@@ -88,12 +97,12 @@ public class TurTokenBudgetService {
                 yield new CheckResult(Decision.ERROR, estimate, budget);
             }
             case COMPACT -> {
-                // V1: T115 workspace-backed compression not shipped yet —
-                // degrade to WARN with a notice so operators know what to
-                // expect on rollout.
-                log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — COMPACT requested but T115 not yet shipped; proceeding as WARN",
+                // T115 has shipped: hand COMPACT back to the executor so it can
+                // route the prompt through TurPromptCompactor (summarize the
+                // older middle turns) and re-check the budget before the call.
+                log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — COMPACT mode, routing through compactor",
                         agent.getId(), estimate, budget);
-                yield new CheckResult(Decision.WARN, estimate, budget);
+                yield new CheckResult(Decision.COMPACT, estimate, budget);
             }
             case WARN -> {
                 log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — WARN mode, proceeding",

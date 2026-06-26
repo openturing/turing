@@ -103,6 +103,7 @@ public class TurAgentChatExecutor {
     private final TurChatPromptAssembler promptAssembler;
     private final TurChatStreamingDispatcher streamingDispatcher;
     private final TurTokenBudgetService tokenBudgetService;
+    private final TurPromptCompactor promptCompactor;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
@@ -118,6 +119,7 @@ public class TurAgentChatExecutor {
             TurChatPromptAssembler promptAssembler,
             TurChatStreamingDispatcher streamingDispatcher,
             TurTokenBudgetService tokenBudgetService,
+            TurPromptCompactor promptCompactor,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService,
             com.viglet.turing.genai.flow.TurConversationLock conversationLock,
@@ -132,6 +134,7 @@ public class TurAgentChatExecutor {
         this.promptAssembler = promptAssembler;
         this.streamingDispatcher = streamingDispatcher;
         this.tokenBudgetService = tokenBudgetService;
+        this.promptCompactor = promptCompactor;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
         this.conversationLock = conversationLock;
@@ -427,9 +430,25 @@ public class TurAgentChatExecutor {
         // agent.maxPromptTokens == 0 (the default). ERROR mode short-
         // circuits the LLM call with a single ASSISTANT_TURN error event
         // so the SSE consumer sees a structured failure rather than a
-        // dangling stream; WARN/COMPACT log + proceed.
+        // dangling stream; WARN logs + proceeds; COMPACT routes the prompt
+        // through the T115-backed compactor (summarizing the older middle
+        // turns) and proceeds best-effort even if still over budget.
         TurTokenBudgetService.CheckResult budgetCheck = tokenBudgetService.check(agent, messages);
-        if (budgetCheck.decision() == TurTokenBudgetService.Decision.ERROR) {
+        if (budgetCheck.decision() == TurTokenBudgetService.Decision.COMPACT) {
+            TurPromptCompactor.CompactionResult compaction = promptCompactor.compact(agent, messages);
+            if (compaction.compacted()) {
+                messages = compaction.messages();
+                if (compaction.afterTokens() > budgetCheck.budget()) {
+                    log.warn("[AgentExec] agent '{}' still over budget after COMPACT (est={} max={}) — "
+                            + "proceeding best-effort", agent.getId(), compaction.afterTokens(),
+                            budgetCheck.budget());
+                }
+            } else {
+                log.warn("[AgentExec] agent '{}' COMPACT requested but nothing to compact "
+                        + "(est={} max={}) — proceeding over budget",
+                        agent.getId(), budgetCheck.estimatedTokens(), budgetCheck.budget());
+            }
+        } else if (budgetCheck.decision() == TurTokenBudgetService.Decision.ERROR) {
             log.warn("[AgentExec] Token budget exceeded for agent '{}' — estimate={} max={} — aborting",
                     agent.getId(), budgetCheck.estimatedTokens(), budgetCheck.budget());
             String errMsg = String.format(

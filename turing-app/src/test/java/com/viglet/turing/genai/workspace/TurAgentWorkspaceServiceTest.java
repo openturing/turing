@@ -71,7 +71,8 @@ class TurAgentWorkspaceServiceTest {
     void setUp() {
         storage = new InMemoryStorage();
         eventBus = new TurWorkspaceEventBus();
-        workspace = new TurAgentWorkspaceService(storage, urlSigner, eventBus);
+        workspace = new TurAgentWorkspaceService(storage, urlSigner, eventBus,
+                new com.viglet.turing.observability.TurChatPipelineObservation(null));
     }
 
     @Test
@@ -222,7 +223,8 @@ class TurAgentWorkspaceServiceTest {
     @Test
     void disabledStorageGetAndListAreEmptyPutThrows() {
         TurAgentWorkspaceService disabled =
-                new TurAgentWorkspaceService(new TurNoOpStorageService(), urlSigner, eventBus);
+                new TurAgentWorkspaceService(new TurNoOpStorageService(), urlSigner, eventBus,
+                        new com.viglet.turing.observability.TurChatPipelineObservation(null));
         assertTrue(disabled.get(AGENT, CONV, "a.txt").isEmpty());
         assertTrue(disabled.list(AGENT, CONV, null).isEmpty());
         assertThrows(IllegalStateException.class,

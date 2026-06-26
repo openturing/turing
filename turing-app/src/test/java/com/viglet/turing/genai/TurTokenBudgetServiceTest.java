@@ -24,8 +24,7 @@ import com.viglet.turing.persistence.model.agent.TurAgentOverBudgetBehavior;
 /**
  * Pins the T123 token-budget contract: budget=0 disables the check,
  * estimator follows chars/4 with ceiling, the three over-budget
- * behaviours map to WITHIN_BUDGET / WARN / ERROR correctly, and the
- * COMPACT v1 mode degrades to WARN with a logged notice.
+ * behaviours map to WITHIN_BUDGET / WARN / ERROR / COMPACT correctly.
  */
 class TurTokenBudgetServiceTest {
 
@@ -90,11 +89,13 @@ class TurTokenBudgetServiceTest {
     }
 
     @Test
-    void overBudgetCompactDegradesToWarnInV1() {
+    void overBudgetCompactReturnsCompactDecision() {
         TurTokenBudgetService.CheckResult r = service.check(agent(1, TurAgentOverBudgetBehavior.COMPACT),
                 messages("this is too long"));
-        // V1: COMPACT not yet implemented — logged + behave as WARN.
-        assertThat(r.decision()).isEqualTo(TurTokenBudgetService.Decision.WARN);
+        // T115 shipped — the executor routes COMPACT through TurPromptCompactor.
+        assertThat(r.decision()).isEqualTo(TurTokenBudgetService.Decision.COMPACT);
+        assertThat(r.estimatedTokens()).isGreaterThan(1);
+        assertThat(r.budget()).isEqualTo(1);
     }
 
     @Test

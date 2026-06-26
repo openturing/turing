@@ -180,4 +180,59 @@ public class TurChatPipelineObservation {
                 .register(meterRegistry)
                 .record(outputCount);
     }
+
+    /**
+     * T124 / §IX.7.b — records one artifact write to a conversation
+     * {@link com.viglet.turing.genai.workspace.TurAgentWorkspace}: bumps the
+     * put counter and adds the payload size to the bytes-stored counter.
+     *
+     * @param bytes payload length written (a value &le; 0 only bumps the count).
+     * @since 2026.3.1
+     */
+    public void recordWorkspacePut(long bytes) {
+        meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_PUTS).increment();
+        if (bytes > 0) {
+            meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_BYTES).increment(bytes);
+        }
+    }
+
+    /**
+     * T124 / §IX.7.b — records one successful workspace read (blob present).
+     *
+     * @since 2026.3.1
+     */
+    public void recordWorkspaceGet() {
+        meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_GETS).increment();
+    }
+
+    /**
+     * T124 / §IX.7.b — records bytes the T114 decorator moved out of the
+     * prompt into the workspace on a successful large-tool-result offload.
+     *
+     * @param bytes offloaded payload length (a value &le; 0 is ignored).
+     * @since 2026.3.1
+     */
+    public void recordToolOffloadBytes(long bytes) {
+        if (bytes > 0) {
+            meterRegistry.counter(TurMeterNames.CHAT_TOOLS_OFFLOADED_BYTES).increment(bytes);
+        }
+    }
+
+    /**
+     * T124 / §IX.7.b — records the compressed/original character ratio of a
+     * memory-compression summary (T115) or budget-driven prompt compaction
+     * (T123). No sample is recorded when {@code originalChars <= 0}.
+     *
+     * @param originalChars   character count of the text fed to the summarizer.
+     * @param compressedChars character count of the resulting summary.
+     * @since 2026.3.1
+     */
+    public void recordCompressionRatio(long originalChars, long compressedChars) {
+        if (originalChars <= 0) {
+            return;
+        }
+        DistributionSummary.builder(TurMeterNames.CHAT_MEMORY_COMPRESSION_RATIO)
+                .register(meterRegistry)
+                .record((double) compressedChars / (double) originalChars);
+    }
 }
