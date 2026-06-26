@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## D.8 — Document extraction & document AI
-
-- 💭 **T103** (deps: T58) Anthropic Files API / OpenAI Files — pass binary PDF/DOCX directly to the LLM (preserves tables/layout) instead of Tika→text. → §VII.12.e
-
 ## D.12 — Headless React UI library (`@viglet/turing-react-ui`)
 
 > New package for **design-agnostic** React chat/rich-content components shared

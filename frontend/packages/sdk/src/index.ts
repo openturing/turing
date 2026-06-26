@@ -59,6 +59,7 @@ export {
   parseHrefToParams,
   createTuringApi,
   CHAT_DISABLED_HINTS,
+  LOW_CONFIDENCE_THRESHOLD,
 } from "./api";
 export type {
   SearchParams,
@@ -85,6 +86,7 @@ export type {
   FetchSimilarParams,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
+  SlotExtractOptions,
   TurChatResumeResponse,
   TurDslSearchRequest,
   TurDslSearchHit,

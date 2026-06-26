@@ -742,7 +742,8 @@ public class TurSNSiteGenAiAPI {
 			@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
 			@RequestParam("conversationId") String conversationId,
 			@RequestParam(value = "slotNames", required = false) String slotNames,
-			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence) {
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
+			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
@@ -752,7 +753,7 @@ public class TurSNSiteGenAiAPI {
 					}
 					TurAIAgent agent = genAi.getTurAIAgent();
 					SlotExtractionResult result = slotExtractionService.extract(
-							file, agent, conversationId, parseSlotNames(slotNames), confidence);
+							file, agent, conversationId, parseSlotNames(slotNames), confidence, nativeBinary);
 					return ChatSlotExtractResponse.from(result);
 				})
 				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));
@@ -802,7 +803,8 @@ public class TurSNSiteGenAiAPI {
 			@RequestParam("files") java.util.List<org.springframework.web.multipart.MultipartFile> files,
 			@RequestParam("conversationId") String conversationId,
 			@RequestParam(value = "slotNames", required = false) String slotNames,
-			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence) {
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
+			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
@@ -812,7 +814,7 @@ public class TurSNSiteGenAiAPI {
 					}
 					TurAIAgent agent = genAi.getTurAIAgent();
 					SlotExtractionResult result = slotExtractionService.extractMulti(
-							files, agent, conversationId, parseSlotNames(slotNames), confidence);
+							files, agent, conversationId, parseSlotNames(slotNames), confidence, nativeBinary);
 					return ChatSlotExtractResponse.from(result);
 				})
 				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));

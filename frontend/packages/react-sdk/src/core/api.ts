@@ -59,6 +59,7 @@ export type {
   FetchSimilarParams,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
+  SlotExtractOptions,
   TurChatResumeResponse,
   TurDslSearchRequest,
   TurDslSearchHit,
@@ -88,6 +89,7 @@ import type {
   TurSimilarResult,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
+  SlotExtractOptions,
   TurChatResumeResponse,
   TurDslSearchRequest,
   TurDslSearchResponse,
@@ -666,7 +668,7 @@ export async function postSiteSlotExtract(
   file: File,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
-  confidence?: boolean,
+  options?: SlotExtractOptions,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -674,8 +676,11 @@ export async function postSiteSlotExtract(
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
   }
-  if (confidence) {
+  if (options?.confidence) {
     form.append("confidence", "true");
+  }
+  if (options?.nativeBinary) {
+    form.append("nativeBinary", "true");
   }
   const { data } = await axios.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract`,
@@ -699,7 +704,7 @@ export async function postSiteSlotExtractMulti(
   files: ReadonlyArray<File>,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
-  confidence?: boolean,
+  options?: SlotExtractOptions,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   for (const file of files) {
@@ -709,8 +714,11 @@ export async function postSiteSlotExtractMulti(
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
   }
-  if (confidence) {
+  if (options?.confidence) {
     form.append("confidence", "true");
+  }
+  if (options?.nativeBinary) {
+    form.append("nativeBinary", "true");
   }
   const { data } = await axios.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract-multi`,

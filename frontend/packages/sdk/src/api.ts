@@ -735,6 +735,19 @@ export interface TurChatSlotExtractResponse {
  */
 export const LOW_CONFIDENCE_THRESHOLD = 0.7;
 
+/** Optional toggles for the slot-extract endpoints. */
+export interface SlotExtractOptions {
+  /** T102 — ask the model for a `{value, confidence}` per slot (populates `confidences`). */
+  readonly confidence?: boolean;
+  /**
+   * T103 — send PDF/DOCX as a raw binary to the agent's LLM (native file
+   * understanding, preserves tables/layout) instead of server-side Tika text
+   * extraction. Requires the agent's provider to support document input
+   * (Anthropic / Gemini / OpenAI); falls back to Tika on failure.
+   */
+  readonly nativeBinary?: boolean;
+}
+
 /**
  * Uploads a document (PDF / DOCX / TXT / RTF / HTML) or an image of a document
  * (PNG / JPEG / GIF / WebP — e.g. a phone-photo of a CV) and asks the server to
@@ -750,7 +763,7 @@ export async function postSiteSlotExtract(
   file: File,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
-  confidence?: boolean,
+  options?: SlotExtractOptions,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -758,8 +771,11 @@ export async function postSiteSlotExtract(
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
   }
-  if (confidence) {
+  if (options?.confidence) {
     form.append("confidence", "true");
+  }
+  if (options?.nativeBinary) {
+    form.append("nativeBinary", "true");
   }
   const data = await client.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract`,
@@ -782,7 +798,7 @@ export async function postSiteSlotExtractMulti(
   files: ReadonlyArray<File>,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
-  confidence?: boolean,
+  options?: SlotExtractOptions,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   for (const file of files) {
@@ -792,8 +808,11 @@ export async function postSiteSlotExtractMulti(
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
   }
-  if (confidence) {
+  if (options?.confidence) {
     form.append("confidence", "true");
+  }
+  if (options?.nativeBinary) {
+    form.append("nativeBinary", "true");
   }
   const data = await client.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract-multi`,

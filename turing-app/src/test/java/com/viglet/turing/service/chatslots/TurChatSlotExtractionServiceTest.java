@@ -274,6 +274,31 @@ class TurChatSlotExtractionServiceTest {
     }
 
     @Test
+    void nativeBinaryRoutesPdfThroughMediaWithoutTika() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("{\"name\":\"Alexandre\"}"));
+        wireChatModel(chatModel);
+
+        // passBinary=true sends the PDF straight to the model as media — no Tika.
+        SlotExtractionResult result = service.extract(
+                file("cv.pdf", "application/pdf", new byte[] { 1, 2 }),
+                agentWithLlm(), CONV, List.of(), false, true);
+
+        assertThat(result.extracted()).containsEntry("name", "Alexandre");
+        ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatModel).call(captor.capture());
+        List<Message> messages = captor.getValue().getInstructions();
+        UserMessage userMessage = (UserMessage) messages.get(messages.size() - 1);
+        assertThat(userMessage.getMedia()).isNotEmpty();
+        assertThat(userMessage.getMedia().get(0).getMimeType().toString())
+                .isEqualTo("application/pdf");
+    }
+
+    @Test
     void confidenceSystemPromptRequestsObjectForm() {
         String prompt = TurChatSlotExtractionService.buildSystemPrompt(List.of(slot("name")), true);
         assertThat(prompt).contains("\"confidence\"").contains("0.0 (guess) to 1.0");

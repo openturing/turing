@@ -144,7 +144,12 @@ public class TurChatSlotExtractionService {
      */
     public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
             String conversationId, List<String> requestedSlotNames) {
-        return extract(file, agent, conversationId, requestedSlotNames, false);
+        return extract(file, agent, conversationId, requestedSlotNames, false, false);
+    }
+
+    public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
+        return extract(file, agent, conversationId, requestedSlotNames, withConfidence, false);
     }
 
     /**
@@ -154,9 +159,17 @@ public class TurChatSlotExtractionService {
      *                       written slot value is still the scalar string).
      *                       When false the legacy plain-string contract is used
      *                       and {@code confidences} is empty.
+     * @param passBinary     T103 — when true, a non-image document (PDF / DOCX /
+     *                       …) is sent to the LLM as a raw binary {@code Media}
+     *                       block instead of being flattened to text by Tika, so
+     *                       providers with native file understanding (Anthropic,
+     *                       Gemini, OpenAI Files) preserve tables / layout. If
+     *                       the binary call fails it falls back to the Tika text
+     *                       path. Images always go through media regardless.
      */
     public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
-            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence,
+            boolean passBinary) {
         if (file == null || file.isEmpty() || agent == null
                 || conversationId == null || conversationId.isBlank()) {
             return SlotExtractionResult.empty();
@@ -181,10 +194,20 @@ public class TurChatSlotExtractionService {
         // nothing. Route images straight to the agent's vision LLM as a Media
         // block instead — same contract (buildSystemPrompt + parseJsonReply),
         // no Tesseract dependency, reusing the agent's already-configured model.
+        // T103 — when passBinary is on, the same media route carries a PDF/DOCX
+        // binary directly to a provider with native file understanding.
         String contentType = resolveContentType(file);
-        if (isImage(contentType)) {
-            return extractFromImage(file, contentType, targetSlots, chatModel,
-                    agent, conversationId, withConfidence);
+        if (isImage(contentType) || passBinary) {
+            SlotExtractionResult mediaResult = extractFromBinary(file, contentType, targetSlots,
+                    chatModel, agent, conversationId, withConfidence);
+            // For an image there is no text fallback; for a binary document a
+            // failed/empty native call falls through to Tika below.
+            if (isImage(contentType) || mediaResult.slotsWritten() > 0
+                    || !mediaResult.extracted().isEmpty()) {
+                return mediaResult;
+            }
+            log.info("[SlotExtraction] Binary passthrough yielded nothing for '{}' — falling back to Tika",
+                    file.getOriginalFilename());
         }
 
         TurFileAttributes parsed = TurFileUtils.documentToText(file);
@@ -225,14 +248,24 @@ public class TurChatSlotExtractionService {
      */
     public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
             String conversationId, List<String> requestedSlotNames) {
-        return extractMulti(files, agent, conversationId, requestedSlotNames, false);
+        return extractMulti(files, agent, conversationId, requestedSlotNames, false, false);
+    }
+
+    public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
+        return extractMulti(files, agent, conversationId, requestedSlotNames, withConfidence, false);
     }
 
     /**
-     * @param withConfidence T102 — see {@link #extract(MultipartFile, TurAIAgent, String, List, boolean)}.
+     * @param withConfidence T102 — see {@link #extract(MultipartFile, TurAIAgent, String, List, boolean, boolean)}.
+     * @param passBinary     T103 — when true, every non-image document is
+     *                       attached as a raw binary {@code Media} block (native
+     *                       provider file understanding) instead of being
+     *                       Tika-flattened to text.
      */
     public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
-            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence,
+            boolean passBinary) {
         if (files == null || files.isEmpty() || agent == null
                 || conversationId == null || conversationId.isBlank()) {
             return SlotExtractionResult.empty();
@@ -244,7 +277,8 @@ public class TurChatSlotExtractionService {
             return SlotExtractionResult.empty();
         }
         if (present.size() == 1) {
-            return extract(present.get(0), agent, conversationId, requestedSlotNames, withConfidence);
+            return extract(present.get(0), agent, conversationId, requestedSlotNames,
+                    withConfidence, passBinary);
         }
 
         List<TurAIAgentSlot> targetSlots = resolveTargetSlots(agent, requestedSlotNames);
@@ -272,17 +306,19 @@ public class TurChatSlotExtractionService {
             String filename = file.getOriginalFilename() == null ? "document-" + docIndex
                     : file.getOriginalFilename();
             String contentType = resolveContentType(file);
-            if (isImage(contentType)) {
+            // T99 images always go as media; T103 sends every binary as media too.
+            if (isImage(contentType) || passBinary) {
                 try {
                     mediaList.add(Media.builder()
                             .mimeType(MimeType.valueOf(contentType))
                             .data(new ByteArrayResource(file.getBytes()))
                             .name(filename)
                             .build());
+                    String kind = isImage(contentType) ? "see attached image" : "see attached file";
                     textBuf.append("=== Document ").append(docIndex).append(" (").append(filename)
-                            .append("): see attached image ===\n\n");
+                            .append("): ").append(kind).append(" ===\n\n");
                 } catch (java.io.IOException e) {
-                    log.warn("[SlotExtraction] Could not read image '{}' in multi-doc — skipped: {}",
+                    log.warn("[SlotExtraction] Could not read '{}' in multi-doc — skipped: {}",
                             filename, e.getMessage());
                 }
                 continue;
@@ -324,34 +360,44 @@ public class TurChatSlotExtractionService {
      * because no text was extracted — callers reading that field as a "did we
      * get content?" signal should also inspect {@code slotsWritten}.
      */
-    private SlotExtractionResult extractFromImage(MultipartFile file, String contentType,
+    /**
+     * Media extraction path: sends the upload to the agent's LLM as a raw
+     * Spring AI {@link Media} block (image — T99; or PDF/DOCX binary — T103)
+     * and asks it to fill the same target slots a text document would. The
+     * reply is parsed and persisted identically to the Tika path.
+     * {@code extractedTextChars} is 0 because no text was extracted — callers
+     * reading that field as a "did we get content?" signal should also inspect
+     * {@code slotsWritten}.
+     */
+    private SlotExtractionResult extractFromBinary(MultipartFile file, String contentType,
             List<TurAIAgentSlot> targetSlots, ChatModel chatModel, TurAIAgent agent,
             String conversationId, boolean withConfidence) {
         byte[] bytes;
         try {
             bytes = file.getBytes();
         } catch (java.io.IOException e) {
-            log.warn("[SlotExtraction] Could not read image upload '{}': {}",
+            log.warn("[SlotExtraction] Could not read upload '{}': {}",
                     file.getOriginalFilename(), e.getMessage());
             return SlotExtractionResult.empty();
         }
 
         String filename = file.getOriginalFilename();
         UserMessage userMessage = UserMessage.builder()
-                .text("The attached image is a document (CV, form, receipt, etc.). "
-                        + "Read it and extract the slot values defined by the system prompt.")
+                .text("The attached file is a document (CV, form, receipt, invoice, etc.). "
+                        + "Read it — preserving tables and layout — and extract the slot values "
+                        + "defined by the system prompt.")
                 .media(Media.builder()
                         .mimeType(MimeType.valueOf(contentType))
                         .data(new ByteArrayResource(bytes))
-                        .name(filename == null ? "image" : filename)
+                        .name(filename == null ? "document" : filename)
                         .build())
                 .build();
         List<Message> messages = List.of(
                 new SystemMessage(buildSystemPrompt(targetSlots, withConfidence)),
                 userMessage);
-        log.info("[SlotExtraction] (image) conv={} ({} bytes)", conversationId, bytes.length);
+        log.info("[SlotExtraction] (binary {}) conv={} ({} bytes)", contentType, conversationId, bytes.length);
         return finishExtraction(chatModel, messages, targetSlots, conversationId,
-                "vision-agent=" + agent.getId(), withConfidence, 0);
+                "media-agent=" + agent.getId(), withConfidence, 0);
     }
 
     /**
