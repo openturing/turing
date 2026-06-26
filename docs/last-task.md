@@ -1,7 +1,7 @@
-# Last task number — `T426`
+# Last task number — `T430`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T427`; after assigning it, bump the number above and the log line below.
+> `T431`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,10 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T430** — `turing eval` CI gate (E.7 follow-up): reusable GitHub composite action running `turing eval` as a PR gate + `npx @viglet/turing-cli` quickstart docs. deps: T126. → IMPROVEMENTS §IX.8.d — 2026-06-26
+- **T429** — Global chat-event tail for `turing logs` (E.7 follow-up): admin SSE firehose of recent chat events across conversations (bounded ring buffer) so `logs` works without a conversationId. deps: T125. → IMPROVEMENTS §IX.8.c — 2026-06-26
+- **T428** — `assert.outcome` in `turing eval` (E.7 follow-up): expose terminal outcome (CAPTURED/ABANDONED/HANDOFF) the TurAgentEvalRunnerService already computes so fixtures can assert end state. deps: T126. → IMPROVEMENTS §IX.8.b — 2026-06-26
+- **T427** — Per-conversation tool-call trace endpoint (E.7 follow-up): read-only GET /api/chat/sessions/{id}/tool-calls so `assert.tool_called` is exact (not inferred from slot-audit TOOL writes) + observability surface. deps: T126. → IMPROVEMENTS §IX.8.a — 2026-06-26
 - **T426** — AI Authoring on provider tool-calling/strict schema (F.10): retire `BeanOutputConverter`-over-free-text in `TurAiAuthoringService` (it 500s on prose-around-JSON / empty turns from gpt-4o-mini in the Intent authoring chat) in favor of a provider tool / strict `json_schema` so the response is validated JSON by construction. Band-aid recovery (brace-scan extract + graceful fallback) shipped first. deps: T173, T174. → IMPROVEMENTS §X.11 — 2026-06-26
 - **T425** — `mcp` binding for Custom Tools (E.9): Groovy scripts can call an attached MCP server's tools via `mcp.call("dspace_search_items", [...])`, reusing the agent's MCP integration instead of a parallel direct-REST path. Motivated by the Aula-Relâmpago tool hitting the Insper Akamai WAF with the JDK `Java/<v>` UA (403) while the MCP server's `python-httpx` UA is allowlisted. → IMPROVEMENTS §XXI — 2026-06-25
 - **T424** — Trigger/namespace-aware tool prioritization (E.9): boost an attached MCP server's tools when its `llmInstructions` triggers match the message + reserve a pre-filter quota so always-keep native tools can't starve attached MCP/custom tools to zero. Surfaced by a real incident where `dspace_*` was dropped (24 natives ≥ top-K) and gpt-4o-mini looped on `get_current_time`. → IMPROVEMENTS §XXI — 2026-06-25

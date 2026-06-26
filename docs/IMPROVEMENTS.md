@@ -1289,6 +1289,49 @@ click) trigger the resume; flow advances from the suspend point with
 the new slot values. Deep Agents implies you build this yourself with
 generic state machines. Turing makes it a one-line authoring primitive.
 
+### IX.8 Developer experience — CLI follow-ups
+
+The `turing` CLI + `turing eval` shipped (T125–T127); these close the
+honest gaps left in the first cut, all of which need a small **backend**
+surface the CLI can read — they can't be fixed in the CLI alone.
+
+#### IX.8.a Per-conversation tool-call trace (T427)
+
+`turing eval`'s `assert.tool_called` is currently *best-effort*: it
+infers a tool fired by scanning the T60 slot-audit for `source=TOOL`
+writes, so a tool that runs without writing a slot is invisible and a
+slot written by two paths is ambiguous. The fix is a read-only
+`GET /api/chat/sessions/{id}/tool-calls` returning the tools that
+actually executed per turn (name, arg digest, latency, ok/err). The data
+already flows through `TurLoggingToolCallback`; this persists/exposes it
+per conversation. Doubles as an observability surface (per-conversation
+tool timeline) independent of the eval use.
+
+#### IX.8.b `assert.outcome` terminal-state assertion (T428)
+
+The CLI can assert slots and cursor node, but not the conversation's
+*end state* (`CAPTURED` / `ABANDONED` / `HANDOFF`). That label is already
+computed inside `TurAgentEvalRunnerService`; T428 lifts it onto a session
+read endpoint (or the existing `/state` DTO) so a fixture can assert
+`assert.outcome: CAPTURED`. Without it, "did the lead-capture flow
+actually complete?" can only be approximated via slot presence.
+
+#### IX.8.c Global chat-event tail (T429)
+
+`turing logs` rides the T120 spectator SSE stream, which is
+conversation-scoped — you must already know the `conversationId`. A
+`turing logs` with no id should tail a firehose of recent chat events
+across all conversations. T429 adds an admin SSE endpoint backed by a
+bounded in-memory ring buffer (single-node caveat shared with the slot/
+message buses) that fans recent turns out to the CLI.
+
+#### IX.8.d `turing eval` CI gate (T430)
+
+A reusable composite GitHub Action wrapping `turing eval` against a
+deployed instance as a PR gate, plus an `npx @viglet/turing-cli`
+quickstart in the docs. Pure packaging/docs on top of T126 — the
+"every PR runs the eval suite" story from the original design.
+
 ### IX.9 Observability interop — don't fight LangSmith, federate
 
 Customers who already invested in LangSmith dashboards / OpenTelemetry
