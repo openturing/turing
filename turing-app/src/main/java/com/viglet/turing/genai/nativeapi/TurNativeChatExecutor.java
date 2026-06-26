@@ -30,6 +30,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
+import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -78,6 +79,7 @@ public class TurNativeChatExecutor {
     private final TurOpenAiResponsesService openAiResponsesService;
     private final TurOpenAiComputerUseService openAiComputerUseService;
     private final TurAnthropicMessagesService anthropicMessagesService;
+    private final TurAnthropicComputerUseService anthropicComputerUseService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
 
@@ -87,6 +89,7 @@ public class TurNativeChatExecutor {
             TurOpenAiResponsesService openAiResponsesService,
             TurOpenAiComputerUseService openAiComputerUseService,
             TurAnthropicMessagesService anthropicMessagesService,
+            TurAnthropicComputerUseService anthropicComputerUseService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver) {
         this.providerFactory = providerFactory;
@@ -95,6 +98,7 @@ public class TurNativeChatExecutor {
         this.openAiResponsesService = openAiResponsesService;
         this.openAiComputerUseService = openAiComputerUseService;
         this.anthropicMessagesService = anthropicMessagesService;
+        this.anthropicComputerUseService = anthropicComputerUseService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
     }
@@ -152,12 +156,31 @@ public class TurNativeChatExecutor {
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
 
-        // F.3 / §X.4 — Anthropic Messages path. All the Anthropic server-side
-        // tools (web_search, web_fetch, code_execution) execute inside
-        // Anthropic's infrastructure and return the answer in a single turn, so
-        // there's no per-tool branching here — the service maps the enabled
-        // capability set to the Messages request.
+        // F.3 / §X.4 — Anthropic path.
         if (isAnthropic) {
+            // T143 / §X.4.e — computer_use is a multi-turn screenshot/action loop,
+            // not a one-shot server tool (and uses the beta Messages API), so it
+            // owns the whole turn when enabled — exactly like the OpenAI variant.
+            Optional<EnabledCapability> computerUse = capabilities.stream()
+                    .filter(c -> c.capability() == TurNativeCapability.ANTHROPIC_COMPUTER_USE)
+                    .findFirst();
+            if (computerUse.isPresent()) {
+                if (capabilities.size() > 1) {
+                    log.info("[Native] agent '{}' instance '{}' has Anthropic computer_use enabled "
+                            + "alongside {} other native capability/ies — driving the computer-use "
+                            + "loop only this turn", agent.getTitle(), instance.getId(),
+                            capabilities.size() - 1);
+                }
+                log.info("[Native] agent '{}' instance '{}' handled by Anthropic computer-use loop "
+                        + "(persona '{}')", agent.getTitle(), instance.getId(),
+                        activePersona == null ? "none" : activePersona.getName());
+                return Optional.of(anthropicComputerUseService.chat(anthropicClient.get(), instance,
+                        turn.history(), turn.systemPrompt(), computerUse.get()));
+            }
+
+            // The remaining Anthropic server-side tools (web_search, web_fetch,
+            // code_execution) execute inside Anthropic's infrastructure and return
+            // the answer in a single turn — no per-tool branching.
             log.info("[Native] agent '{}' instance '{}' handled by Anthropic Messages path "
                     + "({} capability/ies, persona '{}')",
                     agent.getTitle(), instance.getId(), capabilities.size(),

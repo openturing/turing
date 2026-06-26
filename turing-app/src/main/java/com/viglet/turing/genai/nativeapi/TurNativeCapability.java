@@ -68,7 +68,14 @@ public enum TurNativeCapability {
     /** T141 / §X.4.c — Anthropic Messages {@code code_execution_20250522} server
      *  tool (beta {@code code-execution-2025-05-22}); free when paired with
      *  web_search / web_fetch. */
-    ANTHROPIC_CODE_EXECUTION("anthropic-code-execution", "anthropic");
+    ANTHROPIC_CODE_EXECUTION("anthropic-code-execution", "anthropic"),
+    /** T143 / §X.4.e — Anthropic Messages {@code computer_use_20251124} tool
+     *  (beta {@code computer-use-2025-01-24}). Wired via the same multi-turn
+     *  screenshot/action loop + pluggable {@code TurComputerUseDriver} seam as
+     *  the OpenAI variant (T136); runs only when a real driver bean is
+     *  configured. Anthropic ships a server-side prompt-injection classifier for
+     *  this tool. */
+    ANTHROPIC_COMPUTER_USE("anthropic-computer-use", "anthropic");
 
     private final String key;
     private final String pluginType;

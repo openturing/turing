@@ -37,6 +37,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
+import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -56,6 +57,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurOpenAiResponsesService openAiResponsesService;
     @Mock private TurOpenAiComputerUseService openAiComputerUseService;
     @Mock private TurAnthropicMessagesService anthropicMessagesService;
+    @Mock private TurAnthropicComputerUseService anthropicComputerUseService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private TurGenAiLlmProvider provider;
@@ -65,7 +67,7 @@ class TurNativeChatExecutorTest {
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
-                promptAssembler, personaResolver);
+                anthropicComputerUseService, promptAssembler, personaResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -116,7 +118,29 @@ class TurNativeChatExecutorTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().blockFirst().content()).isEqualTo("claude");
-        verifyNoInteractions(openAiResponsesService, openAiComputerUseService);
+        verifyNoInteractions(openAiResponsesService, openAiComputerUseService,
+                anthropicComputerUseService);
+    }
+
+    @Test
+    void routesToAnthropicComputerUseLoopWhenComputerUseEnabled() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        EnabledCapability cap = new EnabledCapability(TurNativeCapability.ANTHROPIC_COMPUTER_USE, null);
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(List.of(cap));
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.of(anthropicClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(anthropicComputerUseService.chat(eq(anthropicClient), eq(instance), anyList(), any(), eq(cap)))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "operated")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("operated");
+        verifyNoInteractions(anthropicMessagesService, openAiResponsesService, openAiComputerUseService);
     }
 
     @Test
