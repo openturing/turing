@@ -29,6 +29,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
+import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -73,6 +74,7 @@ public class TurNativeChatExecutor {
     private final TurNativeProviderClient nativeClient;
     private final TurNativeCapabilityService capabilityService;
     private final TurOpenAiResponsesService openAiResponsesService;
+    private final TurOpenAiComputerUseService openAiComputerUseService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
 
@@ -80,12 +82,14 @@ public class TurNativeChatExecutor {
             TurNativeProviderClient nativeClient,
             TurNativeCapabilityService capabilityService,
             TurOpenAiResponsesService openAiResponsesService,
+            TurOpenAiComputerUseService openAiComputerUseService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
         this.openAiResponsesService = openAiResponsesService;
+        this.openAiComputerUseService = openAiComputerUseService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
     }
@@ -132,6 +136,27 @@ public class TurNativeChatExecutor {
                 new TurChatPromptRequest(agent, history, conversationId,
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
+
+        // T136 / §X.3.d — computer_use is not a one-shot built-in: it needs the
+        // multi-turn screenshot/action loop. When it is enabled, the whole turn
+        // is driven by the dedicated computer-use service (the other native
+        // tools can't share its computer-use-preview model / request shape, so
+        // they're ignored for this turn — logged below).
+        Optional<EnabledCapability> computerUse = capabilities.stream()
+                .filter(c -> c.capability() == TurNativeCapability.OPENAI_COMPUTER_USE)
+                .findFirst();
+        if (computerUse.isPresent()) {
+            if (capabilities.size() > 1) {
+                log.info("[Native] agent '{}' instance '{}' has computer_use enabled alongside {} "
+                        + "other native capability/ies — driving the computer-use loop only this turn",
+                        agent.getTitle(), instance.getId(), capabilities.size() - 1);
+            }
+            log.info("[Native] agent '{}' instance '{}' handled by OpenAI computer-use loop (persona '{}')",
+                    agent.getTitle(), instance.getId(),
+                    activePersona == null ? "none" : activePersona.getName());
+            return Optional.of(openAiComputerUseService.chat(client.get(), instance, turn.history(),
+                    turn.systemPrompt(), computerUse.get()));
+        }
 
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "
                 + "({} capability/ies, persona '{}')",

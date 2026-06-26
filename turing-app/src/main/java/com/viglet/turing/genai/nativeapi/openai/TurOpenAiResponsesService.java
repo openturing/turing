@@ -59,7 +59,9 @@ import reactor.core.scheduler.Schedulers;
  *
  * <p>{@code OPENAI_COMPUTER_USE} is intentionally <em>not</em> wired here: the
  * computer-use tool needs a multi-turn screenshot/action loop, not a one-shot
- * server-side call.
+ * server-side call, so it is handled by
+ * {@link com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService}
+ * (T136). This service skips it.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -186,8 +188,8 @@ public class TurOpenAiResponsesService {
                                 + "missing — skipping tool");
                     }
                 }
-                case OPENAI_COMPUTER_USE -> log.info("[Native][OpenAI-Responses] computer_use is "
-                        + "advertised but not wired (needs the screenshot/action loop) — skipping");
+                case OPENAI_COMPUTER_USE -> log.debug("[Native][OpenAI-Responses] computer_use is "
+                        + "handled by the dedicated multi-turn loop, not as a one-shot tool — skipping here");
             }
         }
         return tools;

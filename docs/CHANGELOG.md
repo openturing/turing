@@ -346,6 +346,7 @@
 - **T135** — **OpenAI `code_interpreter` built-in tool** — Responses managed auto-container path (`openai-code-interpreter`), alongside T80's in-process sandbox. (§X.3.c)
 - **T137** — **OpenAI `image_generation` inline tool** — Responses `image_generation` (`openai-image-generation`). (§X.3.e)
 - **T138** — **OpenAI remote `mcp` tool** — Responses `mcp` connector to a remote Streamable-HTTP/SSE server (`serverLabel`/`serverUrl` from config, `requireApproval=never`; `openai-mcp`). (§X.3.f)
+- **T136** — **OpenAI `computer_use` built-in tool** — the multi-turn screenshot/action loop (`TurOpenAiComputerUseService`) driving the Responses `computer_use_preview` tool: model emits `computer_call` → execute action → feed screenshot back as `computer_call_output` via `previous_response_id`, until a final answer (capped, `truncation=auto`, safety-check acknowledgement opt-in). Action execution + screenshots go through the pluggable `TurComputerUseDriver` seam; Turing ships `TurNoOpComputerUseDriver` (replies with guidance until a real driver bean — e.g. a browser backend — is configured), so the `openai-computer-use` capability is selectable without bundling a browser dep. Config via capability JSON (`model`/`environment`/`displayWidth`/`displayHeight`/`startUrl`/`maxIterations`/`autoAcknowledgeSafetyChecks`). (§X.3.d)
 
 ## Block M — Verifiable answers (provider-agnostic provenance, §XVII)
 

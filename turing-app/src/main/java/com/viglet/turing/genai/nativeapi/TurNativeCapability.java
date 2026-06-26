@@ -32,9 +32,12 @@ import java.util.Optional;
  * and selectable per instance; whether it is <em>wired</em> into a request is
  * decided by the vendor's native chat path. The OpenAI Responses path wires
  * {@code web_search} / {@code file_search} / {@code code_interpreter} /
- * {@code image_generation} / {@code mcp}. {@code computer_use} is listed (so
- * the matrix can advertise it) but deferred — it needs a multi-turn
- * screenshot/action loop, not a one-shot server-side tool.
+ * {@code image_generation} / {@code mcp} as one-shot server-side tools.
+ * {@code computer_use} (T136) is wired separately through the multi-turn
+ * screenshot/action loop in
+ * {@link com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService},
+ * driving a pluggable
+ * {@link com.viglet.turing.genai.nativeapi.openai.computeruse.TurComputerUseDriver}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -51,8 +54,10 @@ public enum TurNativeCapability {
     OPENAI_IMAGE_GENERATION("openai-image-generation", "openai"),
     /** T138 / §X.3.f — OpenAI Responses remote {@code mcp} tool (Streamable HTTP / SSE). */
     OPENAI_MCP("openai-mcp", "openai"),
-    /** T136 / §X.3.d — OpenAI Responses {@code computer_use}. Advertised but
-     *  not yet wired (needs the screenshot/action loop). */
+    /** T136 / §X.3.d — OpenAI Responses {@code computer_use}. Wired via the
+     *  multi-turn screenshot/action loop driving a pluggable
+     *  {@code TurComputerUseDriver} (Turing ships a no-op driver, so it runs
+     *  only when a real driver bean is configured). */
     OPENAI_COMPUTER_USE("openai-computer-use", "openai");
 
     private final String key;

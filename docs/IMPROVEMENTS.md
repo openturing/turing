@@ -1459,24 +1459,6 @@ instance keeps falling through to the Spring AI executor. Block F has
 **no monolithic flag day** — features ship one at a time, each guarded
 by its own capability row.
 
-### X.3 OpenAI Responses API + built-in tools (T136 remaining)
-
-The Responses built-in tools that execute server-side — `web_search`
-(T133), `file_search` (T134), `code_interpreter` (T135),
-`image_generation` (T137), remote `mcp` (T138) — are wired through
-`TurOpenAiResponsesService`; see the CHANGELOG. The remaining one is:
-
-- **T136 `computer_use` — connector self-installation** (T190). The
-  market-changing application: "Connect my Confluence" → an agent
-  navigates the customer's Confluence admin UI, generates a token,
-  configures Turing's connector. Per integration the engineering
-  cost drops from "days" to "zero." Long-tail SaaS connector library
-  on demand. Unlike the other built-ins, this is **not** a one-shot
-  server-side tool — it needs a multi-turn screenshot/action loop, so
-  the capability key is advertised in the matrix but not yet wired.
-  **High-leverage demo material; production-grade reliability is
-  medium-term.**
-
 ### X.4 Anthropic server-side tools (T139–T143)
 
 Same shape, different vendor. Important wins specific to Anthropic:

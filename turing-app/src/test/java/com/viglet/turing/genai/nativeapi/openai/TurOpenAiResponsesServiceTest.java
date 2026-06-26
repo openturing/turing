@@ -72,7 +72,9 @@ class TurOpenAiResponsesServiceTest {
     }
 
     @Test
-    void computerUseIsAdvertisedButNotWired() {
+    void computerUseIsNotAOneShotResponsesTool() {
+        // computer_use is wired through the dedicated multi-turn loop
+        // (TurOpenAiComputerUseService), so the one-shot Responses path skips it.
         assertThat(service.buildTools(List.of(cap(TurNativeCapability.OPENAI_COMPUTER_USE, null))))
                 .isEmpty();
     }

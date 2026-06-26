@@ -77,7 +77,11 @@
 
 ## F.2 — OpenAI Responses API + built-in tools
 
-- 💭 **T136** (deps: T131) **OpenAI `computer_use` built-in tool** — agentic browser. Capability key advertised in the matrix but not wired (needs the screenshot/action loop). → §X.3.d
+> **Block complete.** All built-ins shipped — `web_search` (T133),
+> `file_search` (T134), `code_interpreter` (T135), `image_generation` (T137),
+> remote `mcp` (T138) as one-shot Responses tools, and `computer_use` (T136) as
+> the multi-turn screenshot/action loop over a pluggable `TurComputerUseDriver`.
+> See [CHANGELOG.md](CHANGELOG.md) §X.3.
 
 ## F.3 — Anthropic server-side tools
 

@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -35,6 +36,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
+import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -50,6 +52,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurNativeProviderClient nativeClient;
     @Mock private TurNativeCapabilityService capabilityService;
     @Mock private TurOpenAiResponsesService openAiResponsesService;
+    @Mock private TurOpenAiComputerUseService openAiComputerUseService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private TurGenAiLlmProvider provider;
@@ -57,7 +60,7 @@ class TurNativeChatExecutorTest {
 
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
-                openAiResponsesService, promptAssembler, personaResolver);
+                openAiResponsesService, openAiComputerUseService, promptAssembler, personaResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -163,6 +166,27 @@ class TurNativeChatExecutorTest {
         assertThat(promptCaptor.getValue()).isEqualTo("FUSED PROMPT");
         assertThat(historyCaptor.getValue())
                 .containsExactly(new ChatMessageItem("user", "hello"));
+    }
+
+    @Test
+    void routesToComputerUseLoopWhenComputerUseEnabled() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        EnabledCapability cap = new EnabledCapability(TurNativeCapability.OPENAI_COMPUTER_USE, null);
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(List.of(cap));
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(openAiComputerUseService.chat(eq(openAiClient), eq(instance), anyList(), any(), eq(cap)))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "done")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("done");
+        verifyNoInteractions(openAiResponsesService);
     }
 
     @Test
