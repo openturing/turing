@@ -415,6 +415,24 @@
 > [CHANGELOG.md](CHANGELOG.md) → Block U. The per-page plan that drove it is
 > archived at `docs-turing/_documentation-update-plan.md`. No active backlog remains.
 
+## Block AB — Public site & top-of-funnel conversion (`turing.viglet.org`)
+
+> The marketing site as a conversion surface, not a brochure. Positioning bet in
+> [STRATEGY.md](STRATEGY.md) §XIV; build rationale in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVII.
+>
+> **Phase 0 shipped (T473–T476)** — the `frontend/apps/site` app, analogy hero
+> ("open-source self-hosted alternative to Algolia + agents") + Search→Ask→Automate→Run
+> pillars + "Why Turing" comparison + sample-data live demo + GitHub-stars badge +
+> copy-paste quickstart + Roadmap/Changelog links + CLI section/README. See
+> [CHANGELOG.md](CHANGELOG.md) → Block AB. Remaining (the defining bets):
+
+- 📋 **T477** (deps: T451–T457) **Public read-only demo instance behind the site** — stand up a CORS-enabled, rate-limited anonymous Turing instance seeded with demo content; the Block Y "Atlas Store" showcase is the natural backend. The linchpin: the marketplace SPAs are dead static shells today. → §XXVII.2
+- 📋 **T478** (deps: T477, T400–T404) **Wire the hero + marketplace demos to the live instance** — replace `SearchDemo` sample data with real semantic search + cited chat via `VITE_TURING_DEMO_URL`; keep sample data as the offline fallback. → §XXVII.2
+- 📋 **T479** (deps: T474 ✅) **"Switching from Algolia / Elasticsearch?" migration landing** — mapping table + import path + "your data stays in your infra" angle (Meilisearch/Supabase pattern). → §XXVII.3
+- 💭 **T480** (deps: T477) **Hosted "try it free" path via Viglet Cloud** — dual-path CTA (self-host docs + hosted sandbox) so visitors who won't install still reach first value. → §XXVII.3
+- 💭 **T481** (deps: real design partners) **Social-proof surface** — adopters/logos, testimonials, quantified case studies (Dify model). Never fabricated. → §XXVII.3
+- 💭 **T482** (deps: T474 ✅) **Deep comparison / FAQ pages** — vs Algolia, Elastic, DIY-RAG, LangChain; proactively answer objections (Deep Agents/AG-UI pattern). → §XXVII.3
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
