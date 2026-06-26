@@ -25,6 +25,7 @@ import com.anthropic.client.AnthropicClient;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.CodeExecutionTool20250522;
 import com.anthropic.models.messages.ToolUnion;
 import com.anthropic.models.messages.WebFetchTool20250910;
 import com.anthropic.models.messages.WebSearchTool20250305;
@@ -52,6 +53,7 @@ import reactor.core.scheduler.Schedulers;
  * <ul>
  *   <li>{@code ANTHROPIC_WEB_SEARCH} → {@code web_search_20250305} (T139)</li>
  *   <li>{@code ANTHROPIC_WEB_FETCH}  → {@code web_fetch_20250910} (T140, beta)</li>
+ *   <li>{@code ANTHROPIC_CODE_EXECUTION} → {@code code_execution_20250522} (T141, beta)</li>
  * </ul>
  *
  * <p>Tools that ship as Anthropic beta features (web_fetch, code_execution)
@@ -71,6 +73,8 @@ public class TurAnthropicMessagesService {
 
     /** {@code anthropic-beta} token gating the web_fetch server tool (T140). */
     private static final String BETA_WEB_FETCH = "web-fetch-2025-09-10";
+    /** {@code anthropic-beta} token gating the code_execution server tool (T141). */
+    private static final String BETA_CODE_EXECUTION = "code-execution-2025-05-22";
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -164,6 +168,11 @@ public class TurAnthropicMessagesService {
                 case ANTHROPIC_WEB_FETCH -> {
                     tools.add(ToolUnion.ofWebFetchTool20250910(WebFetchTool20250910.builder().build()));
                     betas.add(BETA_WEB_FETCH);
+                }
+                case ANTHROPIC_CODE_EXECUTION -> {
+                    tools.add(ToolUnion.ofCodeExecutionTool20250522(
+                            CodeExecutionTool20250522.builder().build()));
+                    betas.add(BETA_CODE_EXECUTION);
                 }
                 default -> log.debug("[Native][Anthropic-Messages] capability '{}' is not wired on "
                         + "the Anthropic path — skipping", enabled.capability().getKey());

@@ -56,14 +56,26 @@ class TurAnthropicMessagesServiceTest {
     }
 
     @Test
+    void codeExecutionMapsToCodeExecutionToolAndRequiresBetaHeader() {
+        Set<String> betas = new LinkedHashSet<>();
+        List<ToolUnion> tools = service.buildTools(
+                List.of(cap(TurNativeCapability.ANTHROPIC_CODE_EXECUTION, null)), betas);
+        assertThat(tools).hasSize(1);
+        assertThat(tools.get(0).isCodeExecutionTool20250522()).isTrue();
+        assertThat(betas).containsExactly("code-execution-2025-05-22");
+    }
+
+    @Test
     void multipleToolsAccumulateOnlyTheirBetaTokens() {
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> tools = service.buildTools(List.of(
                 cap(TurNativeCapability.ANTHROPIC_WEB_SEARCH, null),
-                cap(TurNativeCapability.ANTHROPIC_WEB_FETCH, null)), betas);
-        assertThat(tools).hasSize(2);
-        // web_search is GA (no token); only web_fetch contributes one.
-        assertThat(betas).containsExactly("web-fetch-2025-09-10");
+                cap(TurNativeCapability.ANTHROPIC_WEB_FETCH, null),
+                cap(TurNativeCapability.ANTHROPIC_CODE_EXECUTION, null)), betas);
+        assertThat(tools).hasSize(3);
+        // web_search is GA (no token); web_fetch + code_execution each contribute one.
+        assertThat(betas).containsExactlyInAnyOrder(
+                "web-fetch-2025-09-10", "code-execution-2025-05-22");
     }
 
     @Test

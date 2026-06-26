@@ -64,7 +64,11 @@ public enum TurNativeCapability {
     ANTHROPIC_WEB_SEARCH("anthropic-web-search", "anthropic"),
     /** T140 / §X.4.b — Anthropic Messages {@code web_fetch_20250910} server tool
      *  (beta {@code web-fetch-2025-09-10}). */
-    ANTHROPIC_WEB_FETCH("anthropic-web-fetch", "anthropic");
+    ANTHROPIC_WEB_FETCH("anthropic-web-fetch", "anthropic"),
+    /** T141 / §X.4.c — Anthropic Messages {@code code_execution_20250522} server
+     *  tool (beta {@code code-execution-2025-05-22}); free when paired with
+     *  web_search / web_fetch. */
+    ANTHROPIC_CODE_EXECUTION("anthropic-code-execution", "anthropic");
 
     private final String key;
     private final String pluginType;
