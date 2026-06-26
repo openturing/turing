@@ -13,6 +13,7 @@
       "personas": "Personas",
       "nativeTools": "Native Tools",
       "capabilities": "Tools & Capabilities",
+      "requestOptions": "Request Options",
       "mcpServers": "MCP Servers",
       "customTools": "Custom Tools",
       "intents": "Intents",
@@ -184,6 +185,10 @@
     "capabilities": {
       "title": "Tools & Capabilities",
       "description": "Choose, per function, who provides each capability — Turing's own tools or a provider-native one. Same-function options are mutually exclusive; everything else coexists in the same turn."
+    },
+    "requestOptions": {
+      "title": "Request Options",
+      "description": "Tune how this agent's calls are made — reasoning, output, cost/tier, safety and provenance knobs. These change request shape, not the tools the model can invoke."
     },
     "mcp": {
       "title": "MCP Servers",

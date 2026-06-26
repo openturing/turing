@@ -1731,92 +1731,14 @@ customer value — there is no monolithic "Block F is done" gate.
 > Claude starts citing; OpenAI starts batching; the bill drops 50%.
 > That is the platform pitch."
 
-### X.18 Capability taxonomy & UX surfacing (T432–T435)
+### X.18 Capability taxonomy & UX surfacing (T432–T435) — shipped
 
-§X commits ~40 native capabilities across F.4–F.14. The audit that
-produced Block F treated them as one list ("the capability matrix"),
-but building the activation UX exposes that they are **three different
-kinds of thing** that must not share a screen, plus a runtime
-override that today is silent and surprising. This subsection is the
-design that makes the whole of §X *usable* by a non-engineer author.
-
-**The problem, concretely.** Today the only way to turn a native
-capability on is the per-instance REST matrix (T132,
-`/api/llm/{id}/capability`) — and **no frontend calls it**. Worse, the
-runtime semantics are winner-takes-all: when *any* native capability is
-enabled on an instance and the turn is "plain" (no attachments, no
-flow), `TurNativeChatExecutor` routes the **entire** turn through the
-vendor SDK and attaches **zero** Turing/MCP/custom tools (it has no
-equivalent of the Spring AI tool-execution loop). So an admin who
-enables Anthropic `web_search` to "add web search" silently loses
-`finance`, `weather`, code-interpreter, every MCP server, and every
-custom tool for that agent's simple turns. The overlap the operator
-worries about ("Anthropic web_search *and* Turing web search both on")
-is not two tools competing — it is an invisible engine swap.
-
-**Three kinds, three homes.** Every capability (native *and* the
-existing Turing native-tool groups) is tagged in a backend **registry**
-(T432) so both UIs render from one source:
-
-| `kind` | What it is | Examples | UI home |
-|---|---|---|---|
-| `TOOL` | The model *invokes* it mid-turn | web_search, file_search, code_interpreter, web_fetch, code_execution, bash/text_editor, memory tool (T163), MCP connector (T144); **+ Turing groups** dsl/finance/weather/imageSearch/… | Agent **"Tools & Capabilities"** picker (T434), capability-first |
-| `REQUEST_OPTION` | *How* the call is made — not invocable | service/batch tier (T156–T160), token counting (T161), predicted outputs (T171), structured outputs (T173/T174), reasoning effort/summary/logprobs (T178–T180), citations (T152), context editing/compaction (T164/T165), stored completions (T167), safety_identifier (T181), moderation (T182) | Registry-driven **settings** toggles (T435), never the tool picker |
-| `PLATFORM` | Not per-agent | usage import (T183), evals (T168), distillation (T169), nightly batch summarization (T157) | Own screens (System Info / Global Settings) |
-
-If these share one "select your native APIs" list, the operator sees
-*Predicted Outputs* next to *Web Search* with no way to tell that one
-fires mid-turn and the other silently changes request shape. The
-`kind` tag is what keeps them apart.
-
-**The `function` tag is the unifier.** Each `TOOL` carries an abstract
-`function` (`WEB_SEARCH`, `CODE_EXEC`, `DOC_SEARCH`, `FINANCE`, …) shared
-across providers *and* across the Turing/native boundary. This is what
-lets the picker group "Turing web crawler", "OpenAI web_search" and
-"Anthropic web_search" into **one row with a radio**, and is also the
-key to the chosen execution model.
-
-**Execution model — "capacidade é mutex, resto coexiste" (the decided
-option, T433).** For a given `function`, at most one provider may be
-selected (a radio, so the UI makes a same-function clash impossible by
-construction). At runtime the native path stops being winner-takes-all:
-`TurNativeChatExecutor` attaches the selected provider-native server
-tools **plus** every Turing/MCP/custom tool whose `function` is *not*
-claimed by a provider-native pick, and runs them through a native
-tool-execution loop. So "Web Search = Anthropic, Finance/Weather =
-Turing" works: `web_search` runs server-side at Anthropic while
-`finance`/`weather` run as `@Tool` callbacks in the same turn, because
-their functions don't collide. Both vendors' APIs (OpenAI Responses,
-Anthropic Messages) already accept client-side tool definitions next to
-server tools and return `tool_use` blocks for the client to execute —
-so the work is a native-path tool loop, not a protocol change. The two
-existing `ownsTurn` capabilities (computer_use, and voice when it
-lands) keep taking the whole turn — the picker shows that as a stronger
-"this capability runs the turn alone" warning, mirroring the special
-case already in the executor.
-
-**Scope: instance = capable, agent = used.** A provider capability is
-intrinsically provider-bound (Anthropic `web_search` only exists on an
-Anthropic instance), so its *technical config* (vector-store ids, MCP
-URLs, tier defaults) rightly lives on `TurLLMInstance` (T132 +
-heatmap T186). But **two agents can share one instance**, so enablement
-cannot be purely per-instance or every agent on that key inherits it.
-T433 therefore adds a **per-agent capability selection** (a subset of
-what the instance is capable of, mirroring the `nativeTools` CSV
-column); the executor resolves `agentSelected ∩ instanceCapable`. The
-agent picker writes Turing-tool picks to `nativeTools` and
-provider-native picks to that per-agent selection, while deep technical
-config stays on the instance. The instance screen answers "what can
-this key do"; the agent screen answers "what does this agent use".
-
-**Why this is the right altitude.** The registry is built once; each
-future §X task ships by adding a descriptor row (`kind` + `function` +
-`provider`), and both the agent picker and the admin heatmap absorb it
-with no new screen. That is what lets F.4–F.14 land incrementally
-without the activation UX rotting into 40 bespoke checkboxes — the
-sequencing in §X.16 stays valid, this block just gives every group a
-consistent front door. Slots into Group 1 (Foundation) as the UX
-companion to T132.
+> **Shipped (2026-06-26).** The unified capability registry/taxonomy (T432),
+> per-agent selection + union execution (T433), the capability-first agent
+> picker (T434), and the registry-driven REQUEST_OPTION settings (T435) all
+> landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
+> source both the agent UI and the future T186 (instance × capability heatmap,
+> §X.14.f) render from. Design detail is recoverable from `git log`.
 
 ---
 
@@ -2639,3 +2561,105 @@ T438/T439, vanilla SDK.
 - **T455 — creative bets wiring.** Co-browse filters (T443), glass-box "why #1" (T444), ambient proactive copilot (T445), agent→agent handoff returns↔sales (T448), and an **embeddable action widget (T450)** demonstrated on a mock host page (add-to-cart from outside the app).
 - **T456 — voice, memory & ops tour.** Voice agent (T147) + search-by-image; cross-conversation personal memory panel (T446); an admin "ops tour" route surfacing analytics (T87/T88/T90), eval + self-tuning suggestions (T447), and cost governance (Block L). Also expose the catalog over the MCP server (Block I) for the "drive it from Claude Desktop" demo.
 - **T457 — guided tour, tests & docs.** An in-app guided walkthrough that narrates each capability as it's demonstrated; an e2e smoke test (the SDK-contract IT pattern — boot backend, import the showcase ZIP, drive search/chat/SSE/client-tool round-trip); a `docs-turing` page + README link so the showcase is discoverable. This task is also the **coverage audit**: reconcile the app against §XXIV.1 and file any uncovered feature as a follow-up.
+
+## XXV. Client-side conversion analytics & the Google Analytics bridge (Block Z)
+
+### XXV.0 The gap & the architecture decision
+
+Turing already measures the funnel **server-side**: `TurChatSessionEvent` persists
+`outcome` (`CAPTURED`/`ABANDONED`/`HANDOFF`), `experimentKey`, `variantLabel`,
+`personaId`, cohort dims (T74), and the A/B stack (T67–T75) + the planned funnel
+viz/replay (T85/T86) consume it. The CTR path (`postClick`) records search clicks.
+
+What's missing is **client-side, marketing-owned** measurement. Customers run **GA4
+in the browser**, where conversion lives next to acquisition source, campaign, media
+spend and audiences. Three concrete questions the customer asks in *their* GA, not
+ours: (1) **lead conversion** in chat & semantic navigation, (2) **drop-off /
+abandonment**, (3) **which persona A/B variation was preferred**. These must be
+emitted in the browser at the right lifecycle moments — critically, **abandonment**:
+the server only infers it from a TTL, while the browser actually sees the tab close.
+
+**Decision — do NOT hard-code GA into the SDK.** That would break the zero-dep /
+framework-agnostic / EDS-friendly contract. Instead: a **canonical analytics event
+bus** (zero-dep emitter) that the chat/search/slots controllers feed, plus
+**pluggable sinks** — GA4 is the *first adapter*, not a dependency. This is the same
+adapter-over-a-canonical-stream shape as the AG-UI bet (T441) and the slot SSE sinks,
+so the infrastructure is reusable. The bus is no-op when no `analytics` option is
+passed, so every existing embed is byte-for-byte unchanged.
+
+### XXV.1 Canonical event bus (T458)
+
+`createTuringAnalytics({ sinks, context })` returns a zero-dep emitter with a fixed,
+provider-agnostic **event taxonomy** so dashboards/funnels are portable across sinks:
+
+- Chat: `turing_chat_start`, `turing_chat_message_sent`, `turing_chat_step`,
+  `turing_chat_lead_captured`, `turing_chat_abandoned`, `turing_chat_handoff`.
+- A/B: `turing_ab_variant_assigned`.
+- Search/SN: `turing_search`, `turing_search_no_results`,
+  `turing_search_result_click`, `turing_search_refined`.
+
+Controllers accept an `analytics` option and emit at their existing lifecycle points
+(`createChatController`, `createSearchController`, `createSlotsController`). Every
+event carries a common context envelope (`conversationId`, `agentId`/`site`,
+`session_id` from `TUR_SESSION`) so sinks don't re-derive it.
+
+### XXV.2 Pluggable sinks + GA4/GTM adapter (T459)
+
+- `googleAnalyticsSink({ measurementId?, transport? })` — maps each canonical event
+  to GA4 `gtag('event', name, params)` **and/or** a GTM `dataLayer.push`. It
+  **auto-detects** an existing `window.gtag` / `window.dataLayer`: on an Adobe EDS or
+  GTM-tagged host the bridge lights up with **zero extra config**.
+- `onEventSink(fn)` — generic escape hatch (Segment/Matomo/Plausible later).
+- `debugSink()` — console tracing for integration.
+
+GA4 param names are snake_cased to GA convention; reserved GA params are avoided.
+
+### XXV.3 Client-side abandonment & engagement (T460)
+
+A small lifecycle watcher: once a conversation has ≥1 user message and **no**
+conversion has fired, a `visibilitychange→hidden` / `beforeunload` / idle-timeout
+flushes `turing_chat_abandoned` via `navigator.sendBeacon` (survives unload),
+carrying `last_node_id`/`last_step`, `turns`, and elapsed time. This is the signal
+the server cannot capture reliably and is the heart of "did the lead give up, and
+where". Idle threshold and whether unload counts as abandonment are configurable.
+
+### XXV.4 Conversion, funnel steps & A/B attribution (T461)
+
+- **Funnel steps** — `turing_chat_step` per flow node reached (from the controller's
+  view of flow progression / `currentNodeId`), the client-side mirror of the T85
+  funnel so the customer builds a turn-by-turn drop-off funnel in GA4.
+- **Conversion** — `turing_chat_lead_captured` fires on any of: a configurable
+  **goal slot** being written (e.g. `email`/`phone`), a native form submit (T107),
+  or the server reporting `outcome=CAPTURED`. The goal-slot definition is shared with
+  the server funnel concept.
+- **A/B attribution** — backend addition: expose `personaId` (and active persona
+  name) on `GET /chat/state` alongside the already-present `experimentKey` /
+  `variantLabel`. The SDK emits `turing_ab_variant_assigned` once resolved and
+  **stamps `experiment_key` / `variant_label` / `persona_id` on every subsequent
+  event**. That stamping is what lets the customer answer *"which persona variation
+  was preferred"* with native GA4 comparisons/audiences — complementing the server
+  scorecard (T69) and significance test (T68) rather than duplicating them.
+
+### XXV.5 Search / semantic-navigation conversion (T462)
+
+`turing_search` (query + result count), `turing_search_no_results` (the client-side
+**content-gap** signal that also feeds T252), `turing_search_result_click` (mirrors
+the existing `postClick` CTR — one call emits both server + GA), and
+`turing_search_refined` (query reformulation). **Cross-surface stitching:** the
+shared `TUR_SESSION` cookie ties a later chat lead back to the originating search
+query, so GA shows the full *search → chat → lead* journey, not two disjoint funnels.
+
+### XXV.6 React hook, showcase/EDS wiring & docs (T463)
+
+`useTuringAnalytics()` in `@viglet/turing-react-sdk` (wires the bus into the existing
+chat/search hooks) + a react-ui passthrough. Demonstrated end-to-end in the Block Y
+showcase (T455/T456) as a GA4 search→chat→lead funnel, plus an EDS example block that
+auto-detects the host `dataLayer`. A `docs-turing` page documents the event taxonomy
+and GA4 funnel/audience recipes.
+
+**Combines with:** A/B (T67–T75, the client attribution they lacked), funnel/replay
+(T85/T86, shared step signal), content-gap (T252, the no-results event), self-tuning
+(T447, conversion/abandonment as another failure-signal source), cohort dims (T74,
+aligned GA dimensions), Block W (T436 `tool_call` SSE → a `turing_tool_call` event
+for free), and the AG-UI adapter (T441, shared sink architecture). Non-goal: shipping
+our own dashboards — GA4 (and any sink) owns visualization; we only emit clean events.

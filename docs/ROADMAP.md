@@ -176,13 +176,12 @@
 
 ## F.15 — Capability surfacing & UX (the layer that makes the whole §X usable)
 
-> **Why now:** §X has ~40 native capabilities landing across many T-numbers, but they are *not* all "tools the agent calls" — some are agent-facing tools, some are per-call request knobs, some are platform/cron features. Today the only activation surface is the per-instance capability matrix REST API (T132) with **no UI**, and a native turn **silently bypasses every Turing/MCP/custom tool** the agent has. This block builds the taxonomy + execution + UI so the remaining §X tasks slot into a consistent home instead of each inventing its own screen. Foundation for T186 (heatmap reads the registry).
->
-> **T432 + T433 + T434 shipped** (2026-06-26) — the registry/taxonomy foundation,
-> the per-agent selection + union execution, and the capability-first picker; see
-> [CHANGELOG.md](CHANGELOG.md) §X.18. T435 remains.
-
-- 📋 **T435** (deps: T432) **REQUEST_OPTION knobs as registry-driven settings** — render `kind=REQUEST_OPTION` capabilities (reasoning effort, citations, predicted/structured outputs, service tier, moderation, stored completions, safety_identifier, context editing, compaction) as grouped settings toggles/selects driven by the registry — **not** in the tool picker — giving T152/T160/T164/T167/T171/T173/T178–T182 a consistent home instead of per-task bespoke UI. → §X.18.d
+> **Block complete (2026-06-26).** All four tasks shipped — the unified
+> capability registry/taxonomy (T432), the per-agent selection + union execution
+> "capacidade é mutex, resto coexiste" (T433), the capability-first agent picker
+> (T434), and the registry-driven REQUEST_OPTION settings (T435). §X tasks now
+> slot into a consistent home; T186 (heatmap) reads the same registry. See
+> [CHANGELOG.md](CHANGELOG.md) §X.18.
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
@@ -237,6 +236,26 @@
 - 💭 **T455** (deps: T454, T443, T444, T445, T448, T450) **Creative-bets wiring** — co-browse filters (T443), glass-box "why #1" (T444), ambient proactive copilot (T445), agent→agent returns↔sales handoff (T448), and an embeddable action widget (T450) on a mock host page. → §XXIV.2
 - 💭 **T456** (deps: T454, T446, T147) **Voice, memory & ops tour** — voice agent (T147) + search-by-image; cross-conversation memory panel (T446); admin ops route surfacing analytics (T87/T88/T90), eval + self-tuning (T447), cost governance (Block L); catalog exposed over the MCP server (Block I) for the "drive it from Claude Desktop" demo. → §XXIV.2
 - 💭 **T457** (deps: T455, T456) **Guided tour, tests & docs** — in-app walkthrough narrating each capability; e2e smoke test (SDK-contract IT pattern: boot backend, import showcase ZIP, drive search/chat/SSE/client-tool round-trip); `docs-turing` page + README link. Also the **coverage audit** reconciling the app against the §XXIV.1 matrix. → §XXIV.2
+
+## Block Z — Client-side conversion analytics & the Google Analytics bridge (T458–T463)
+
+> **Why:** the platform measures conversion/abandonment/A/B **server-side**
+> (`TurChatSessionEvent` outcome + experimentKey/variantLabel/personaId, T67–T75,
+> T85/T86). But customers run **GA4 in the browser**, where they already own
+> acquisition, media and audiences. Lead conversion in chat & semantic navigation,
+> drop-off/abandonment, and *which persona A/B variation was preferred* must be
+> emitted **client-side at the right lifecycle moments** (the server can't see a
+> tab close). Architecture: a zero-dep **canonical analytics event bus** in the
+> vanilla SDK + **pluggable sinks** (GA4 is the first adapter, not a hard dep) —
+> same shape as the AG-UI adapter bet (T441). Keeps the SDK zero-dep / EDS-friendly.
+> → §XXV
+
+- 💭 **T458** (deps: T404) **SDK analytics event bus** — zero-dep `createTuringAnalytics()` emitter + canonical event taxonomy (`turing_chat_start`/`_message_sent`/`_step`/`_lead_captured`/`_abandoned`/`_handoff`, `turing_ab_variant_assigned`, `turing_search`/`_no_results`/`_result_click`); chat/search/slots controllers feed it via an injected `analytics` option. No-op when absent → existing embeds unchanged. → §XXV.1
+- 💭 **T459** (deps: T458) **Pluggable sinks + GA4/GTM adapter** — `googleAnalyticsSink()` mapping canonical events → GA4 `gtag('event', …)` **and** GTM `dataLayer.push`, auto-detecting an existing `window.gtag`/`window.dataLayer` (EDS sites light up with zero config); plus a generic `onEvent` sink (Segment/Matomo/Plausible later) and a `debug` console sink. → §XXV.2
+- 💭 **T460** (deps: T458) **Client-side abandonment & engagement detection** — `visibilitychange`/`beforeunload`/idle-timer + `navigator.sendBeacon`: a started conversation (≥1 user msg) that ends without a conversion emits `turing_chat_abandoned` carrying the **last node/step reached** and turn count — the browser truth the server only infers via TTL. → §XXV.3
+- 💭 **T461** (deps: T458, T69) **Conversion + funnel-step events & A/B attribution** — `turing_chat_step` per flow node reached (client mirror of the T85 funnel); `turing_chat_lead_captured` from configurable **goal slots** + form submit (T107) + server `outcome=CAPTURED`; **expose `personaId`** (and active persona name) on `GET /chat/state` and **stamp `experiment_key`/`variant_label`/`persona_id` on every event** → "which persona variation converted" answered natively in GA4. → §XXV.4
+- 💭 **T462** (deps: T458, T405) **Search / semantic-navigation conversion events** — `turing_search`, `turing_search_no_results` (= client-side content-gap signal, feeds T252), `turing_search_result_click` (mirrors the existing `postClick` CTR in one call), `turing_search_refined`; **cross-surface session stitching** via the `TUR_SESSION` cookie so a chat lead attributes back to the originating search query. → §XXV.5
+- 💭 **T463** (deps: T459, T461, T462) **React hook + showcase/EDS wiring + docs** — `useTuringAnalytics()` in the react-sdk + react-ui passthrough; wire the GA4 search→chat→lead funnel into the Block Y showcase (T455/T456) and an EDS example block (auto-detecting the host `dataLayer`); `docs-turing` page on the event taxonomy + GA4 funnel/audience recipes. → §XXV.6
 
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 

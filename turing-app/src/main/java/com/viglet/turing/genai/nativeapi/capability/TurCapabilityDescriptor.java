@@ -40,6 +40,13 @@ import java.util.List;
  * @param toolNames   for Turing tool groups, the {@code @Tool} names in the
  *                    group (so a group selection expands to the {@code nativeTools}
  *                    entries an agent persists); empty for provider-native rows.
+ * @param valueType   T435 / §X.18.d — for {@code REQUEST_OPTION} rows, the control
+ *                    the settings UI renders: {@code "BOOLEAN"} (toggle) or
+ *                    {@code "SELECT"} (dropdown over {@link #options()}). {@code null}
+ *                    for {@code TOOL} / {@code PLATFORM} rows.
+ * @param options     T435 / §X.18.d — for a {@code SELECT} request option, the
+ *                    allowed values (first is the conventional default); empty
+ *                    otherwise.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -53,9 +60,20 @@ public record TurCapabilityDescriptor(
         TurCapabilityProvider provider,
         String category,
         boolean ownsTurn,
-        List<String> toolNames) {
+        List<String> toolNames,
+        String valueType,
+        List<String> options) {
 
     public TurCapabilityDescriptor {
         toolNames = toolNames == null ? List.of() : List.copyOf(toolNames);
+        options = options == null ? List.of() : List.copyOf(options);
+    }
+
+    /** Convenience constructor for TOOL / PLATFORM rows (no request-option control). */
+    public TurCapabilityDescriptor(String key, String label, String description,
+            TurCapabilityKind kind, String function, TurCapabilityProvider provider,
+            String category, boolean ownsTurn, List<String> toolNames) {
+        this(key, label, description, kind, function, provider, category, ownsTurn, toolNames,
+                null, List.of());
     }
 }

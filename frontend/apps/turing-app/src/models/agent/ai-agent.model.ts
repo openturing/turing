@@ -125,6 +125,12 @@ export interface TurAIAgent {
    * Written by the Tools & Capabilities picker (T434). @since 2026.3.4
    */
   nativeCapabilities?: string | null;
+  /**
+   * T435 / §X.18.d — per-agent REQUEST_OPTION selections as a JSON object keyed by
+   * capability key (e.g. `{"reasoning-effort":"high","citations":"true"}`). Written
+   * by the registry-driven Request Options settings; `null` = none. @since 2026.3.4
+   */
+  requestOptionsJson?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
   /**

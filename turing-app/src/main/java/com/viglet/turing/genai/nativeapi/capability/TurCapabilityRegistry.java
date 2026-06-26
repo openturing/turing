@@ -78,12 +78,74 @@ public class TurCapabilityRegistry {
         this.nativeToolService = nativeToolService;
     }
 
-    /** Every capability — provider-native + Turing — in one tagged list. */
+    /** Control type for a {@code REQUEST_OPTION} row: a toggle. */
+    static final String VALUE_BOOLEAN = "BOOLEAN";
+    /** Control type for a {@code REQUEST_OPTION} row: a single-choice dropdown over {@code options}. */
+    static final String VALUE_SELECT = "SELECT";
+
+    /**
+     * T435 / §X.18.d — the curated catalogue of {@code REQUEST_OPTION} knobs:
+     * capabilities that change <em>how</em> a call is made rather than something
+     * the model invokes. They render in the agent "Request Options" settings
+     * (never the tool picker) and give the F.13 request-shape tasks
+     * (T152/T160/T164/T167/T171/T173/T178–T182) a single, registry-driven home.
+     * The descriptors are stable metadata; wiring each knob into the provider
+     * request is the respective task's job.
+     */
+    private static final List<TurCapabilityDescriptor> REQUEST_OPTIONS = List.of(
+            requestOption("reasoning-effort", "Reasoning Effort", "Compute budget for reasoning models.",
+                    TurCapabilityProvider.OPENAI, "Reasoning", VALUE_SELECT,
+                    List.of("minimal", "low", "medium", "high")),
+            requestOption("reasoning-summary", "Reasoning Summary", "Include a summary of the model's reasoning.",
+                    TurCapabilityProvider.OPENAI, "Reasoning", VALUE_SELECT,
+                    List.of("auto", "concise", "detailed")),
+            requestOption("logprobs", "Log Probabilities", "Return token log-probabilities with the answer.",
+                    TurCapabilityProvider.OPENAI, "Reasoning", VALUE_BOOLEAN, List.of()),
+            requestOption("structured-outputs", "Structured Outputs",
+                    "Constrain the reply to a JSON schema.",
+                    TurCapabilityProvider.ANY, "Output", VALUE_BOOLEAN, List.of()),
+            requestOption("predicted-outputs", "Predicted Outputs",
+                    "Speed up edits by predicting most of the output.",
+                    TurCapabilityProvider.OPENAI, "Output", VALUE_BOOLEAN, List.of()),
+            requestOption("service-tier", "Service Tier", "Latency/price tier for the request.",
+                    TurCapabilityProvider.OPENAI, "Cost & Tier", VALUE_SELECT,
+                    List.of("auto", "default", "flex", "priority")),
+            requestOption("token-counting", "Token Counting",
+                    "Pre-flight count of prompt tokens before the call.",
+                    TurCapabilityProvider.ANTHROPIC, "Cost & Tier", VALUE_BOOLEAN, List.of()),
+            requestOption("stored-completions", "Stored Completions",
+                    "Persist completions for later eval/distillation.",
+                    TurCapabilityProvider.OPENAI, "Cost & Tier", VALUE_BOOLEAN, List.of()),
+            requestOption("citations", "Citations", "Return per-sentence source citations.",
+                    TurCapabilityProvider.ANTHROPIC, "Provenance", VALUE_BOOLEAN, List.of()),
+            requestOption("context-editing", "Context Editing",
+                    "Let the provider prune stale context automatically.",
+                    TurCapabilityProvider.ANTHROPIC, "Context", VALUE_BOOLEAN, List.of()),
+            requestOption("moderation", "Moderation Pre-filter",
+                    "Screen user input before it reaches the model.",
+                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()),
+            requestOption("safety-identifier", "Safety Identifier",
+                    "Send a hashed end-user id for abuse monitoring.",
+                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()));
+
+    private static TurCapabilityDescriptor requestOption(String key, String label, String description,
+            TurCapabilityProvider provider, String category, String valueType, List<String> options) {
+        return new TurCapabilityDescriptor(key, label, description, TurCapabilityKind.REQUEST_OPTION,
+                key, provider, category, false, List.of(), valueType, options);
+    }
+
+    /** Every capability — provider-native + Turing + request options — in one tagged list. */
     public List<TurCapabilityDescriptor> all() {
         List<TurCapabilityDescriptor> result = new ArrayList<>();
         result.addAll(nativeDescriptors());
         result.addAll(turingDescriptors());
+        result.addAll(requestOptionDescriptors());
         return result;
+    }
+
+    /** T435 / §X.18.d — the {@code REQUEST_OPTION} knobs (request-shape settings). */
+    public List<TurCapabilityDescriptor> requestOptionDescriptors() {
+        return REQUEST_OPTIONS;
     }
 
     /** Provider-native capabilities, mapped from the enum taxonomy. */

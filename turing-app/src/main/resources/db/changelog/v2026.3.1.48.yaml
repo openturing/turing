@@ -1,0 +1,30 @@
+databaseChangeLog:
+  # T435 / §X.18.d — per-agent REQUEST_OPTION selections.
+  #
+  # requestOptionsJson — JSON object keyed by capability key (e.g.
+  #                      {"reasoning-effort":"high","citations":"true"}), written by
+  #                      the registry-driven "Request Options" settings. NULL = no
+  #                      options set, so existing agents are unaffected. Each F.13
+  #                      request-shape task (T152/T160/T164/…) reads its own key
+  #                      when building the provider request. longtext for H2/MySQL/
+  #                      PostgreSQL portability.
+
+  - changeSet:
+      id: v2026.3.1.48-add-ai_agent-requestOptionsJson
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: requestOptionsJson
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: requestOptionsJson
+                  type: longtext
+                  remarks: "T435 per-agent REQUEST_OPTION selections (JSON object; NULL = none)."

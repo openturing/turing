@@ -1065,6 +1065,15 @@
       "updated": "Capabilities updated",
       "updateFailed": "Failed to update capabilities"
     },
+    "agentRequestOptions": {
+      "title": "Request Options",
+      "description": "Request-shape knobs grouped by purpose. Toggle a boolean option or pick a value; options are locked when the provider's vendor isn't bound to this agent.",
+      "empty": "No request options available.",
+      "off": "Off",
+      "vendorMismatch": "Needs a {{provider}} model bound to this agent",
+      "updated": "Request options updated",
+      "updateFailed": "Failed to update request options"
+    },
     "intentSettings": {
       "generalDesc": "Name and description for this intent category.",
       "titleDesc": "The category label shown in the chat suggestions.",

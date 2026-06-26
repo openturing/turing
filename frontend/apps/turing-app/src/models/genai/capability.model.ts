@@ -25,4 +25,8 @@ export interface TurCapabilityDescriptor {
   ownsTurn: boolean;
   /** For Turing tool groups, the `@Tool` names in the group; empty for provider-native rows. */
   toolNames: string[];
+  /** T435 — for REQUEST_OPTION rows, the control to render: "BOOLEAN" (toggle) or "SELECT" (dropdown). */
+  valueType?: string | null;
+  /** T435 — for a SELECT request option, the allowed values (first is the conventional default). */
+  options?: string[];
 }

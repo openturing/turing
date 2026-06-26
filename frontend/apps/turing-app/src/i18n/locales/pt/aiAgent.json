@@ -13,6 +13,7 @@
       "personas": "Personas",
       "nativeTools": "Ferramentas Nativas",
       "capabilities": "Ferramentas e Capacidades",
+      "requestOptions": "Opções de Requisição",
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
       "intents": "Intents",
@@ -184,6 +185,10 @@
     "capabilities": {
       "title": "Ferramentas e Capacidades",
       "description": "Escolha, por função, quem fornece cada capacidade — as ferramentas do Turing ou uma nativa do provedor. Opções da mesma função são mutuamente exclusivas; o restante coexiste no mesmo turno."
+    },
+    "requestOptions": {
+      "title": "Opções de Requisição",
+      "description": "Ajuste como as chamadas deste agente são feitas — raciocínio, saída, custo/tier, segurança e proveniência. Mudam o formato da requisição, não as ferramentas que o modelo pode invocar."
     },
     "mcp": {
       "title": "Servidores MCP",

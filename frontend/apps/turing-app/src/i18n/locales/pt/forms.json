@@ -1065,6 +1065,15 @@
       "updated": "Capacidades atualizadas",
       "updateFailed": "Falha ao atualizar capacidades"
     },
+    "agentRequestOptions": {
+      "title": "Opções de Requisição",
+      "description": "Ajustes de formato da requisição agrupados por finalidade. Alterne uma opção booleana ou escolha um valor; opções ficam bloqueadas quando o fornecedor do provedor não está vinculado a este agente.",
+      "empty": "Nenhuma opção de requisição disponível.",
+      "off": "Desligado",
+      "vendorMismatch": "Requer um modelo {{provider}} vinculado a este agente",
+      "updated": "Opções de requisição atualizadas",
+      "updateFailed": "Falha ao atualizar opções de requisição"
+    },
     "intentSettings": {
       "generalDesc": "Nome e descrição para esta categoria de intenção.",
       "titleDesc": "O rótulo da categoria mostrado nas sugestões do chat.",

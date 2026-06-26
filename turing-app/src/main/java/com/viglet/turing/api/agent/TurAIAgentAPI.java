@@ -172,6 +172,8 @@ public class TurAIAgentAPI {
             agentEdit.setNativeTools(turAIAgent.getNativeTools());
             // T433 / §X.18.b — per-agent provider-native capability selection.
             agentEdit.setNativeCapabilities(turAIAgent.getNativeCapabilities());
+            // T435 / §X.18.d — per-agent REQUEST_OPTION selections.
+            agentEdit.setRequestOptionsJson(turAIAgent.getRequestOptionsJson());
             agentEdit.setLlmInstances(resolveRelations(
                     turAIAgent.getLlmInstances(), turLLMInstanceRepository));
             agentEdit.setMcpServers(resolveRelations(

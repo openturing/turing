@@ -361,6 +361,19 @@ public class TurAIAgent implements Serializable {
     private String nativeCapabilities;
 
     /**
+     * T435 / §X.18.d — per-agent {@code REQUEST_OPTION} selections as a JSON
+     * object keyed by capability key (e.g.
+     * {@code {"reasoning-effort":"high","citations":"true"}}). Rendered by the
+     * registry-driven "Request Options" settings; each F.13 request-shape task
+     * (T152/T160/T164/…) reads its own key when building the provider request.
+     * {@code null} = no options set.
+     *
+     * @since 2026.3.4
+     */
+    @Column(columnDefinition = "longtext")
+    private String requestOptionsJson;
+
+    /**
      * Whether the underlying LLM round-trip uses Spring AI's blocking
      * {@code chatModel.call(prompt)} (default — the assistant text arrives
      * as one SSE event) or the reactive {@code chatModel.stream(prompt)}

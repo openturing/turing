@@ -92,14 +92,31 @@ class TurCapabilityRegistryTest {
     }
 
     @Test
-    void allMergesNativeAndTuring() {
+    void allMergesNativeTuringAndRequestOptions() {
         when(nativeToolService.getToolGroups()).thenReturn(List.of(
                 new NativeToolGroup("finance", "Finance",
                         List.of(new NativeToolDescriptor("get_quote", "stock quote", "finance")))));
-        List<TurCapabilityDescriptor> all = registry().all();
-        assertThat(all).hasSize(TurNativeCapability.values().length + 1);
+        TurCapabilityRegistry registry = registry();
+        int requestOptions = registry.requestOptionDescriptors().size();
+        List<TurCapabilityDescriptor> all = registry.all();
+        assertThat(all).hasSize(TurNativeCapability.values().length + 1 + requestOptions);
         assertThat(all).anyMatch(d -> d.provider() == TurCapabilityProvider.TURING);
         assertThat(all).anyMatch(d -> d.provider() == TurCapabilityProvider.OPENAI);
+        assertThat(all).anyMatch(d -> d.kind() == TurCapabilityKind.REQUEST_OPTION);
+    }
+
+    @Test
+    void requestOptionsAreWellFormedAndNotTools() {
+        assertThat(registry().requestOptionDescriptors())
+                .isNotEmpty()
+                .allSatisfy(d -> {
+                    assertThat(d.kind()).isEqualTo(TurCapabilityKind.REQUEST_OPTION);
+                    assertThat(d.valueType()).isIn("BOOLEAN", "SELECT");
+                    assertThat(d.toolNames()).isEmpty();
+                    if ("SELECT".equals(d.valueType())) {
+                        assertThat(d.options()).isNotEmpty();
+                    }
+                });
     }
 
     @Test
