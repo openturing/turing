@@ -58,7 +58,7 @@
     "react-router-dom": "^7.17.0",
     "storybook": "^10.4.5",
     "typescript": "^6.0.2",
-    "vite": "^8.0.7",
+    "vite": "^8.0.16",
     "@storybook/addon-docs": "^10.4.5"
   },
   "repository": {
