@@ -35,9 +35,9 @@ import tools.jackson.databind.ObjectMapper;
  * T145 / §X.5.b — the cross-vendor MCP federation directory.
  *
  * <p>Keeps a <em>single</em> per-agent allow-list of remote MCP servers (the
- * agent's existing {@link TurAIAgent#getMcpServers() mcpServers} relation) and,
- * when the agent opts in via {@link TurAIAgent#isMcpNativeFederation()}, hands
- * the matching subset to whichever native vendor handles the turn. The
+ * agent's existing {@code mcpServers} relation on {@link TurAIAgent}) and, when
+ * the agent opts in via {@code mcpNativeFederation}, hands the matching subset to
+ * whichever native vendor handles the turn. The
  * {@link com.viglet.turing.genai.nativeapi.TurNativeChatExecutor} appends the
  * returned synthetic {@link EnabledCapability} entries to the turn's capability
  * list, so the vendor service wires each one through its already-shipped remote

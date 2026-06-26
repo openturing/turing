@@ -93,7 +93,10 @@
 
 ## F.4 — MCP Connector (both vendors)
 
-- 💭 **T146** (deps: T144) **Turing-as-MCP-Server for Claude Desktop / Cursor / OpenAI Responses** — promote the existing Turing MCP server from "internal feature" to a **public consumption surface**: API-key-gated, OAuth optional, hosted at `https://<turing-host>/mc… → §X.5.c
+> **Block complete.** All three tasks have shipped — the Anthropic MCP
+> Connector (T144), the cross-vendor MCP federation directory (T145), and the
+> public API-key-gated Turing-as-MCP-Server consumption surface (T146). See
+> [CHANGELOG.md](CHANGELOG.md) §X.5.
 
 ## F.5 — Voice agents (Realtime API)
 

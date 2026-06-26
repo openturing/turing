@@ -1459,26 +1459,21 @@ instance keeps falling through to the Spring AI executor. Block F has
 **no monolithic flag day** — features ship one at a time, each guarded
 by its own capability row.
 
-### X.5 MCP Connector — both vendors (T144–T146)
+### X.5 MCP federation directory (T192)
 
-OpenAI's remote `mcp` tool (T138) and Anthropic's MCP Connector (T144)
-both let the model call MCP servers directly. **T146 inverts the
-integration story** — Turing's MCP server, hosted at
-`https://<turing-host>/mcp`, becomes a **public consumption surface**
-for any MCP-compatible client (Claude Desktop, Cursor, OpenAI
-Responses agents, future ones). Instead of customers integrating
-Turing's API into their app, their LLM clients integrate Turing.
-
-The strategic shift: **Turing competes for being the search
-infrastructure inside other AI products**, not only for being the
-customer-facing chat UI. Both markets coexist; the MCP route adds a
-second.
+> The F.4 MCP Connector block (T144 Anthropic connector, T145 cross-vendor
+> federation, T146 public API-key-gated Turing-as-MCP-server) has shipped — see
+> [CHANGELOG.md](CHANGELOG.md) §X.5. T146 already inverts the integration story:
+> Turing's `/mcp` is a public consumption surface, so customer LLM clients
+> integrate Turing rather than the reverse — Turing competes to be the search
+> infrastructure *inside* other AI products, not only the customer-facing chat UI.
 
 **T192 inter-tenant federation directory** at `directory.turing.io`
-is the long-shot network-effect bet. Tenants opt-in publish a
-redacted MCP server (public docs, public catalog). Subscribers add
-it to their agent's allow-list. Every customer that publishes makes
-every other customer's agents more useful. Long-tail moat.
+is the long-shot network-effect bet on top of that surface. Tenants
+opt-in publish a redacted MCP server (public docs, public catalog).
+Subscribers add it to their agent's allow-list. Every customer that
+publishes makes every other customer's agents more useful. Long-tail
+moat.
 
 ### X.6 Voice agents (T147–T151)
 

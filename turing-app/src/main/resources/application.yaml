@@ -51,6 +51,12 @@ turing:
     # the token's authorities. Default false keeps the T245 loopback-only dev
     # posture. A remote deployment sets require-auth=true + loopback-only=false.
     require-auth: false
+    # T146 — public consumption surface: when true (with require-auth=true), /mcp
+    # also accepts a Turing API key (TurDevToken) in the `Key` header, so external
+    # MCP clients (Claude Desktop, Cursor, OpenAI Responses) can use a static key.
+    # API-key principals are read-only; write tools still require an OAuth
+    # mcp:write scope. Default false: OAuth is the only accepted credential.
+    api-key-enabled: false
     # T253 — gated write/ingestion tools (index_document, deindex_document,
     # reindex_site). Default false: they are not even registered. When true they
     # appear but still require the mcp:write scope per call. Read-only by default.

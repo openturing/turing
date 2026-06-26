@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
+import com.viglet.turing.persistence.repository.dev.token.TurDevTokenRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.tenant.TurTenantResolutionFilter;
 
@@ -45,9 +46,20 @@ import lombok.extern.slf4j.Slf4j;
  *       Keycloak-issued JWT bearer token, validated by the configured
  *       {@link JwtDecoder} and mapped to authorities by
  *       {@link TurMcpJwtAuthenticationConverter}. <b>Fails closed</b>: if no
- *       {@code JwtDecoder} is configured, every request is denied so a
- *       mis-provisioned deployment can never serve the catalog unauthenticated.</li>
+ *       {@code JwtDecoder} is configured (and API-key auth is off), every request
+ *       is denied so a mis-provisioned deployment can never serve the catalog
+ *       unauthenticated.</li>
  * </ul>
+ *
+ * <p>T146 / §X.5.c — the <b>public consumption surface</b>. When
+ * {@code turing.mcp-server.api-key-enabled=true} (with {@code require-auth=true}),
+ * a Turing API key ({@code TurDevToken}) in the {@code Key} header is accepted
+ * <em>alongside</em> OAuth via {@link TurMcpApiKeyAuthenticationFilter}, so an
+ * external MCP client (Claude Desktop, Cursor, an OpenAI Responses agent) can use
+ * a static key. API-key principals get read-only access; the gated write tools
+ * still require an OAuth token holding {@code write-scope}. API key and OAuth
+ * coexist because each uses its own header ({@code Key} vs
+ * {@code Authorization: Bearer}).
  *
  * <p>The chain is {@code STATELESS} (MCP is not a browser/cookie surface, so CSRF
  * is disabled) and re-runs {@link TurTenantResolutionFilter} so that — per T282 —
@@ -69,7 +81,8 @@ public class TurMcpSecurityConfig {
             TurConfigProperties configProperties,
             TurTenantResolutionFilter turTenantResolutionFilter,
             TurMcpJwtAuthenticationConverter jwtAuthenticationConverter,
-            ObjectProvider<JwtDecoder> jwtDecoderProvider) throws Exception {
+            ObjectProvider<JwtDecoder> jwtDecoderProvider,
+            TurDevTokenRepository turDevTokenRepository) throws Exception {
 
         http.securityMatcher("/mcp", "/mcp/**");
         http.cors(Customizer.withDefaults());
@@ -87,15 +100,34 @@ public class TurMcpSecurityConfig {
             return http.build();
         }
 
+        // T146 / §X.5.c — the public consumption surface. An API key (TurDevToken
+        // in the `Key` header) is accepted alongside OAuth so external MCP clients
+        // can use a static credential; the filter runs before AuthorizationFilter
+        // so a key-authenticated request satisfies anyRequest().authenticated().
+        // It grants read-only access only — write tools stay OAuth-scope-gated.
+        boolean apiKeyEnabled = configProperties.getMcpServer().isApiKeyEnabled();
+        if (apiKeyEnabled) {
+            http.addFilterBefore(new TurMcpApiKeyAuthenticationFilter(turDevTokenRepository),
+                    AuthorizationFilter.class);
+        }
+
         JwtDecoder jwtDecoder = jwtDecoderProvider.getIfAvailable();
         if (jwtDecoder == null) {
-            log.error("[MCP] /mcp security: require-auth=true but no JwtDecoder is configured "
-                    + "(set spring.security.oauth2.resourceserver.jwt.*). Failing closed — denying all /mcp requests.");
-            http.authorizeHttpRequests(authorize -> authorize.anyRequest().denyAll());
+            if (!apiKeyEnabled) {
+                log.error("[MCP] /mcp security: require-auth=true but no JwtDecoder is configured "
+                        + "(set spring.security.oauth2.resourceserver.jwt.*) and api-key-enabled=false. "
+                        + "Failing closed — denying all /mcp requests.");
+                http.authorizeHttpRequests(authorize -> authorize.anyRequest().denyAll());
+                return http.build();
+            }
+            log.info("[MCP] /mcp security: require-auth=true, api-key-enabled=true, no JwtDecoder — "
+                    + "API-key (Key header) is the only accepted credential");
+            http.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated());
             return http.build();
         }
 
-        log.info("[MCP] /mcp security: require-auth=true — OAuth 2.1 resource server (JWT bearer) enabled");
+        log.info("[MCP] /mcp security: require-auth=true — OAuth 2.1 resource server (JWT bearer){} enabled",
+                apiKeyEnabled ? " + API-key (Key header)" : "");
         http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
                 .decoder(jwtDecoder)
                 .jwtAuthenticationConverter(jwtAuthenticationConverter)));
