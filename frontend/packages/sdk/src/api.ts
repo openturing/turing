@@ -719,9 +719,21 @@ export interface TurChatSlotExtractResponse {
   readonly extracted: Readonly<Record<string, string | null>>;
   readonly slotsWritten: number;
   readonly extractedTextChars: number;
+  /**
+   * T102 — per-slot model confidence in `[0,1]`, present only when the request
+   * passed `confidence: true`. Slots below {@link LOW_CONFIDENCE_THRESHOLD}
+   * are worth flagging for human review.
+   */
+  readonly confidences?: Readonly<Record<string, number>>;
   /** Set when the server short-circuited (site/agent missing). */
   readonly error?: string | null;
 }
+
+/**
+ * T102 — UI convention: a per-field confidence below this is "low" and should
+ * be surfaced to the user (e.g. an inline warning to double-check the value).
+ */
+export const LOW_CONFIDENCE_THRESHOLD = 0.7;
 
 /**
  * Uploads a document (PDF / DOCX / TXT / RTF / HTML) or an image of a document
@@ -738,6 +750,7 @@ export async function postSiteSlotExtract(
   file: File,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
+  confidence?: boolean,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   form.append("file", file);
@@ -745,8 +758,45 @@ export async function postSiteSlotExtract(
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
   }
+  if (confidence) {
+    form.append("confidence", "true");
+  }
   const data = await client.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract`,
+    form,
+  );
+  return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
+}
+
+/**
+ * Uploads several documents at once and asks the server to reason ACROSS them
+ * to fill the requested slots — e.g. a CV + a job description producing a
+ * synthesised `skill_gap` slot. Text and image documents may be mixed. A single
+ * file behaves exactly like {@link postSiteSlotExtract}.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract-multi}.
+ */
+export async function postSiteSlotExtractMulti(
+  client: TuringClient,
+  site: string,
+  files: ReadonlyArray<File>,
+  conversationId: string,
+  slotNames?: ReadonlyArray<string>,
+  confidence?: boolean,
+): Promise<TurChatSlotExtractResponse> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  form.append("conversationId", conversationId);
+  if (slotNames && slotNames.length > 0) {
+    form.append("slotNames", slotNames.join(","));
+  }
+  if (confidence) {
+    form.append("confidence", "true");
+  }
+  const data = await client.post<TurChatSlotExtractResponse>(
+    `/sn/${site}/chat/slot-extract-multi`,
     form,
   );
   return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };

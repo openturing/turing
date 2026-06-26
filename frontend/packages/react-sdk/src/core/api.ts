@@ -34,7 +34,7 @@ import type {
  * @since 2026.2.0 (types deduplicated into @viglet/turing-sdk in 2026.3.1)
  */
 
-export { CHAT_DISABLED_HINTS, parseHrefToParams } from "@viglet/turing-sdk";
+export { CHAT_DISABLED_HINTS, parseHrefToParams, LOW_CONFIDENCE_THRESHOLD } from "@viglet/turing-sdk";
 export type {
   SearchParams,
   ClickTrackParams,
@@ -666,12 +666,16 @@ export async function postSiteSlotExtract(
   file: File,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
+  confidence?: boolean,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   form.append("file", file);
   form.append("conversationId", conversationId);
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
+  }
+  if (confidence) {
+    form.append("confidence", "true");
   }
   const { data } = await axios.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract`,
@@ -695,6 +699,7 @@ export async function postSiteSlotExtractMulti(
   files: ReadonlyArray<File>,
   conversationId: string,
   slotNames?: ReadonlyArray<string>,
+  confidence?: boolean,
 ): Promise<TurChatSlotExtractResponse> {
   const form = new FormData();
   for (const file of files) {
@@ -703,6 +708,9 @@ export async function postSiteSlotExtractMulti(
   form.append("conversationId", conversationId);
   if (slotNames && slotNames.length > 0) {
     form.append("slotNames", slotNames.join(","));
+  }
+  if (confidence) {
+    form.append("confidence", "true");
   }
   const { data } = await axios.post<TurChatSlotExtractResponse>(
     `/sn/${site}/chat/slot-extract-multi`,

@@ -216,6 +216,70 @@ class TurChatSlotExtractionServiceTest {
     }
 
     @Test
+    void confidenceFlagPopulatesConfidencesAndWritesScalarValue() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name"), slot("objetivo")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse(
+                "{\"name\":{\"value\":\"Alexandre\",\"confidence\":0.95},"
+                        + "\"objetivo\":{\"value\":null,\"confidence\":0.1}}"));
+        wireChatModel(chatModel);
+
+        SlotExtractionResult result = service.extract(
+                file("cv.png", "image/png", new byte[] { 1 }), agentWithLlm(), CONV, List.of(), true);
+
+        // Scalar value written; confidence surfaced separately.
+        assertThat(result.extracted()).containsEntry("name", "Alexandre");
+        assertThat(result.confidences()).containsEntry("name", 0.95)
+                .containsEntry("objetivo", 0.1);
+        verify(engineService).writeSlot(eq(CONV), eq("name"), eq("Alexandre"),
+                eq(TurChatSlotAuditSource.EXTRACT), anyString());
+        // null value is not written.
+        verify(engineService, never()).writeSlot(eq(CONV), eq("objetivo"), anyString(), any(), any());
+    }
+
+    @Test
+    void withoutConfidenceFlagConfidencesMapIsEmpty() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("{\"name\":\"Alexandre\"}"));
+        wireChatModel(chatModel);
+
+        SlotExtractionResult result = service.extract(
+                file("cv.png", "image/png", new byte[] { 1 }), agentWithLlm(), CONV, List.of(), false);
+
+        assertThat(result.extracted()).containsEntry("name", "Alexandre");
+        assertThat(result.confidences()).isEmpty();
+    }
+
+    @Test
+    void parseJsonReplyWithConfidenceHandlesObjectAndPlainForms() {
+        List<TurAIAgentSlot> slots = List.of(slot("a"), slot("b"), slot("c"));
+        var parsed = TurChatSlotExtractionService.parseJsonReplyWithConfidence(
+                "{\"a\":{\"value\":\"x\",\"confidence\":0.8},"
+                        + "\"b\":\"plain\","                       // tolerated fallback form
+                        + "\"c\":{\"value\":\"y\",\"confidence\":5}}", // out-of-range → clamped to 1.0
+                slots);
+
+        assertThat(parsed.get("a").value()).isEqualTo("x");
+        assertThat(parsed.get("a").confidence()).isEqualTo(0.8);
+        assertThat(parsed.get("b").value()).isEqualTo("plain");
+        assertThat(parsed.get("b").confidence()).isNull();
+        assertThat(parsed.get("c").confidence()).isEqualTo(1.0);
+    }
+
+    @Test
+    void confidenceSystemPromptRequestsObjectForm() {
+        String prompt = TurChatSlotExtractionService.buildSystemPrompt(List.of(slot("name")), true);
+        assertThat(prompt).contains("\"confidence\"").contains("0.0 (guess) to 1.0");
+    }
+
+    @Test
     void applyValidationPatternsDropsNonMatchingValue() {
         List<TurAIAgentSlot> slots = List.of(
                 slot("cpf", true, "^[0-9]{11}$"),
@@ -228,6 +292,67 @@ class TurChatSlotExtractionServiceTest {
                 TurChatSlotExtractionService.applyValidationPatterns(in, slots);
 
         assertThat(out).containsOnlyKeys("name").containsEntry("name", "Alexandre");
+    }
+
+    @Test
+    void multiDocWithImagesReasonsAcrossAndWritesSlot() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("skill_gap")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class)))
+                .thenReturn(chatResponse("{\"skill_gap\":\"missing Kubernetes\"}"));
+        wireChatModel(chatModel);
+
+        SlotExtractionResult result = service.extractMulti(
+                List.of(file("cv.png", "image/png", new byte[] { 1 }),
+                        file("jd.png", "image/png", new byte[] { 2 })),
+                agentWithLlm(), CONV, List.of());
+
+        assertThat(result.extracted()).containsEntry("skill_gap", "missing Kubernetes");
+        assertThat(result.slotsWritten()).isEqualTo(1);
+        // Reasoned across both docs in a single model call.
+        verify(chatModel).call(any(Prompt.class));
+        verify(engineService).writeSlot(eq(CONV), eq("skill_gap"), eq("missing Kubernetes"),
+                eq(TurChatSlotAuditSource.EXTRACT), anyString());
+    }
+
+    @Test
+    void multiDocSingleNonEmptyFileDelegatesToExtract() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("{\"name\":\"Alexandre\"}"));
+        wireChatModel(chatModel);
+
+        // One non-empty file + one empty file → behaves like single-doc extract.
+        SlotExtractionResult result = service.extractMulti(
+                List.of(file("cv.png", "image/png", new byte[] { 1 }),
+                        file("blank.png", "image/png", new byte[0])),
+                agentWithLlm(), CONV, List.of());
+
+        assertThat(result.extracted()).containsEntry("name", "Alexandre");
+        assertThat(result.slotsWritten()).isEqualTo(1);
+    }
+
+    @Test
+    void multiDocReturnsEmptyForAllEmptyOrNullFiles() {
+        assertThat(service.extractMulti(List.of(), agentWithLlm(), CONV, List.of()).extracted())
+                .isEmpty();
+        assertThat(service.extractMulti(
+                List.of(file("a.png", "image/png", new byte[0])),
+                agentWithLlm(), CONV, List.of()).extracted()).isEmpty();
+        verify(engineService, never()).writeSlot(anyString(), anyString(), anyString(), any(), any());
+    }
+
+    @Test
+    void multiDocSystemPromptDirectsCrossDocumentReasoning() {
+        String prompt = TurChatSlotExtractionService.buildMultiDocSystemPrompt(
+                List.of(slot("skill_gap")));
+        assertThat(prompt).contains("MULTIPLE documents").contains("reason ACROSS");
     }
 
     @Test

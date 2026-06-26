@@ -741,34 +741,81 @@ public class TurSNSiteGenAiAPI {
 	public ChatSlotExtractResponse extractSlots(@PathVariable String siteName,
 			@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
 			@RequestParam("conversationId") String conversationId,
-			@RequestParam(value = "slotNames", required = false) String slotNames) {
+			@RequestParam(value = "slotNames", required = false) String slotNames,
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence) {
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
 					if (genAi == null || genAi.getTurAIAgent() == null) {
-						return new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
+						return ChatSlotExtractResponse.error(
 								"No AI agent configured for site '" + siteName + "'");
 					}
 					TurAIAgent agent = genAi.getTurAIAgent();
-					java.util.List<String> requested = (slotNames == null || slotNames.isBlank())
-							? java.util.List.of()
-							: java.util.Arrays.stream(slotNames.split(","))
-									.map(String::trim).filter(s -> !s.isEmpty())
-									.toList();
 					SlotExtractionResult result = slotExtractionService.extract(
-							file, agent, conversationId, requested);
-					return new ChatSlotExtractResponse(result.extracted(),
-							result.slotsWritten(), result.extractedTextChars(), null);
+							file, agent, conversationId, parseSlotNames(slotNames), confidence);
+					return ChatSlotExtractResponse.from(result);
 				})
-				.orElseGet(() -> new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
-						"Site not found: " + siteName));
+				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));
+	}
+
+	private static java.util.List<String> parseSlotNames(String slotNames) {
+		return (slotNames == null || slotNames.isBlank())
+				? java.util.List.of()
+				: java.util.Arrays.stream(slotNames.split(","))
+						.map(String::trim).filter(s -> !s.isEmpty())
+						.toList();
 	}
 
 	public record ChatSlotExtractResponse(
 			java.util.Map<String, String> extracted,
 			int slotsWritten,
 			int extractedTextChars,
+			java.util.Map<String, Double> confidences,
 			String error) {
+
+		static ChatSlotExtractResponse error(String message) {
+			return new ChatSlotExtractResponse(java.util.Map.of(), 0, 0, java.util.Map.of(), message);
+		}
+
+		static ChatSlotExtractResponse from(SlotExtractionResult result) {
+			return new ChatSlotExtractResponse(result.extracted(), result.slotsWritten(),
+					result.extractedTextChars(), result.confidences(), null);
+		}
+	}
+
+	/**
+	 * Multi-document extraction (T101). Same contract as {@code /slot-extract}
+	 * but accepts several files in one request and asks the agent's LLM to
+	 * reason <em>across</em> them — the headline use case is uploading a CV plus
+	 * a job description so the model can fill a synthesised {@code skill_gap}
+	 * slot. Text documents are concatenated under delimiters; image documents
+	 * are attached as vision media. A single file behaves exactly like
+	 * {@code /slot-extract}.
+	 *
+	 * <p>Unauthenticated, same posture as the rest of
+	 * {@code /api/sn/{site}/chat/*}.
+	 *
+	 * @since 2026.3.1
+	 */
+	@PostMapping(value = "/slot-extract-multi", consumes = "multipart/form-data")
+	public ChatSlotExtractResponse extractSlotsMulti(@PathVariable String siteName,
+			@RequestParam("files") java.util.List<org.springframework.web.multipart.MultipartFile> files,
+			@RequestParam("conversationId") String conversationId,
+			@RequestParam(value = "slotNames", required = false) String slotNames,
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null || genAi.getTurAIAgent() == null) {
+						return ChatSlotExtractResponse.error(
+								"No AI agent configured for site '" + siteName + "'");
+					}
+					TurAIAgent agent = genAi.getTurAIAgent();
+					SlotExtractionResult result = slotExtractionService.extractMulti(
+							files, agent, conversationId, parseSlotNames(slotNames), confidence);
+					return ChatSlotExtractResponse.from(result);
+				})
+				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));
 	}
 
 	/**

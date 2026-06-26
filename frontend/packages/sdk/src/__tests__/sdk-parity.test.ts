@@ -69,6 +69,7 @@ const PUBLIC_ENDPOINTS: readonly EndpointContract[] = [
   { method: "GET", path: "/v2/ai-agent/{agentId}/chat-slots", fn: "fetchAgentChatSlots" },
   { method: "POST", path: "/sn/{site}/chat/slots", fn: "postSiteChatSlot" },
   { method: "POST", path: "/sn/{site}/chat/slot-extract", fn: "postSiteSlotExtract" },
+  { method: "POST", path: "/sn/{site}/chat/slot-extract-multi", fn: "postSiteSlotExtractMulti" }, // T101
   { method: "POST", path: "/sn/{site}/chat/slot-upload", fn: "postSiteSlotUpload" }, // T401
   // ── LLM / platform discovery ──
   { method: "GET", path: "/llm", fn: "fetchLlmInstances" },

@@ -84,6 +84,8 @@ public class TurChatSlotExtractionService {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final TypeReference<Map<String, String>> STRING_MAP =
             new TypeReference<>() { };
+    private static final TypeReference<Map<String, Object>> OBJECT_MAP =
+            new TypeReference<>() { };
 
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService cryptoService;
@@ -113,11 +115,19 @@ public class TurChatSlotExtractionService {
     public record SlotExtractionResult(
             Map<String, String> extracted,
             int slotsWritten,
-            int extractedTextChars) {
+            int extractedTextChars,
+            Map<String, Double> confidences) {
         public static SlotExtractionResult empty() {
-            return new SlotExtractionResult(Map.of(), 0, 0);
+            return new SlotExtractionResult(Map.of(), 0, 0, Map.of());
         }
     }
+
+    /**
+     * One slot's extracted value with the model's self-reported confidence
+     * (T102). {@code confidence} is in {@code [0,1]} or null when the model
+     * did not provide one (or confidence was not requested).
+     */
+    public record SlotValueConfidence(String value, Double confidence) { }
 
     /**
      * @param file              Multipart upload — Tika auto-detects the
@@ -134,6 +144,19 @@ public class TurChatSlotExtractionService {
      */
     public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
             String conversationId, List<String> requestedSlotNames) {
+        return extract(file, agent, conversationId, requestedSlotNames, false);
+    }
+
+    /**
+     * @param withConfidence T102 — when true the LLM is asked to return a
+     *                       {@code {value, confidence}} object per slot and the
+     *                       result's {@code confidences} map is populated (the
+     *                       written slot value is still the scalar string).
+     *                       When false the legacy plain-string contract is used
+     *                       and {@code confidences} is empty.
+     */
+    public SlotExtractionResult extract(MultipartFile file, TurAIAgent agent,
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
         if (file == null || file.isEmpty() || agent == null
                 || conversationId == null || conversationId.isBlank()) {
             return SlotExtractionResult.empty();
@@ -161,7 +184,7 @@ public class TurChatSlotExtractionService {
         String contentType = resolveContentType(file);
         if (isImage(contentType)) {
             return extractFromImage(file, contentType, targetSlots, chatModel,
-                    agent, conversationId);
+                    agent, conversationId, withConfidence);
         }
 
         TurFileAttributes parsed = TurFileUtils.documentToText(file);
@@ -177,25 +200,11 @@ public class TurChatSlotExtractionService {
         // hold the most relevant identity fields) survive.
         String trimmedText = text.length() > 24_000 ? text.substring(0, 24_000) : text;
 
-        String systemPrompt = buildSystemPrompt(targetSlots);
         List<Message> messages = List.of(
-                new SystemMessage(systemPrompt),
+                new SystemMessage(buildSystemPrompt(targetSlots, withConfidence)),
                 new UserMessage(trimmedText));
-
-        String reply;
-        try {
-            reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
-        } catch (RuntimeException e) {
-            log.warn("[SlotExtraction] LLM call failed for conv={}: {}", conversationId, e.getMessage());
-            return SlotExtractionResult.empty();
-        }
-        Map<String, String> extracted = applyValidationPatterns(
-                parseJsonReply(reply, targetSlots), targetSlots);
-
-        int written = writeExtractedSlots(extracted, conversationId, "agent=" + agent.getId());
-        log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",
-                conversationId, extracted.size(), written, trimmedText.length());
-        return new SlotExtractionResult(extracted, written, trimmedText.length());
+        return finishExtraction(chatModel, messages, targetSlots, conversationId,
+                "agent=" + agent.getId(), withConfidence, trimmedText.length());
     }
 
     /**
@@ -216,6 +225,14 @@ public class TurChatSlotExtractionService {
      */
     public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
             String conversationId, List<String> requestedSlotNames) {
+        return extractMulti(files, agent, conversationId, requestedSlotNames, false);
+    }
+
+    /**
+     * @param withConfidence T102 — see {@link #extract(MultipartFile, TurAIAgent, String, List, boolean)}.
+     */
+    public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
+            String conversationId, List<String> requestedSlotNames, boolean withConfidence) {
         if (files == null || files.isEmpty() || agent == null
                 || conversationId == null || conversationId.isBlank()) {
             return SlotExtractionResult.empty();
@@ -227,7 +244,7 @@ public class TurChatSlotExtractionService {
             return SlotExtractionResult.empty();
         }
         if (present.size() == 1) {
-            return extract(present.get(0), agent, conversationId, requestedSlotNames);
+            return extract(present.get(0), agent, conversationId, requestedSlotNames, withConfidence);
         }
 
         List<TurAIAgentSlot> targetSlots = resolveTargetSlots(agent, requestedSlotNames);
@@ -291,23 +308,12 @@ public class TurChatSlotExtractionService {
             userBuilder.media(mediaList);
         }
         List<Message> messages = List.of(
-                new SystemMessage(buildMultiDocSystemPrompt(targetSlots)),
+                new SystemMessage(buildMultiDocSystemPrompt(targetSlots, withConfidence)),
                 userBuilder.build());
-
-        String reply;
-        try {
-            reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
-        } catch (RuntimeException e) {
-            log.warn("[SlotExtraction] Multi-doc LLM call failed for conv={}: {}",
-                    conversationId, e.getMessage());
-            return SlotExtractionResult.empty();
-        }
-        Map<String, String> extracted = applyValidationPatterns(
-                parseJsonReply(reply, targetSlots), targetSlots);
-        int written = writeExtractedSlots(extracted, conversationId, "multidoc-agent=" + agent.getId());
-        log.info("[SlotExtraction] (multi-doc) conv={} docs={} extracted={} written={} (textChars={})",
-                conversationId, present.size(), extracted.size(), written, totalChars);
-        return new SlotExtractionResult(extracted, written, totalChars);
+        log.info("[SlotExtraction] (multi-doc) conv={} docs={} (textChars={})",
+                conversationId, present.size(), totalChars);
+        return finishExtraction(chatModel, messages, targetSlots, conversationId,
+                "multidoc-agent=" + agent.getId(), withConfidence, totalChars);
     }
 
     /**
@@ -320,7 +326,7 @@ public class TurChatSlotExtractionService {
      */
     private SlotExtractionResult extractFromImage(MultipartFile file, String contentType,
             List<TurAIAgentSlot> targetSlots, ChatModel chatModel, TurAIAgent agent,
-            String conversationId) {
+            String conversationId, boolean withConfidence) {
         byte[] bytes;
         try {
             bytes = file.getBytes();
@@ -341,23 +347,56 @@ public class TurChatSlotExtractionService {
                         .build())
                 .build();
         List<Message> messages = List.of(
-                new SystemMessage(buildSystemPrompt(targetSlots)),
+                new SystemMessage(buildSystemPrompt(targetSlots, withConfidence)),
                 userMessage);
+        log.info("[SlotExtraction] (image) conv={} ({} bytes)", conversationId, bytes.length);
+        return finishExtraction(chatModel, messages, targetSlots, conversationId,
+                "vision-agent=" + agent.getId(), withConfidence, 0);
+    }
 
+    /**
+     * Shared tail for every extraction path: call the model, parse the reply
+     * (plain or {@code {value, confidence}} per T102), drop values failing
+     * their validation pattern, write the surviving scalars, and build the
+     * result. When {@code withConfidence} is false this is byte-identical to
+     * the pre-T102 behaviour and {@code confidences} is empty.
+     */
+    private SlotExtractionResult finishExtraction(ChatModel chatModel, List<Message> messages,
+            List<TurAIAgentSlot> targetSlots, String conversationId, String originDetail,
+            boolean withConfidence, int textChars) {
         String reply;
         try {
             reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
         } catch (RuntimeException e) {
-            log.warn("[SlotExtraction] Vision LLM call failed for conv={}: {}",
-                    conversationId, e.getMessage());
+            log.warn("[SlotExtraction] LLM call failed for conv={}: {}", conversationId, e.getMessage());
             return SlotExtractionResult.empty();
         }
-        Map<String, String> extracted = applyValidationPatterns(
-                parseJsonReply(reply, targetSlots), targetSlots);
-        int written = writeExtractedSlots(extracted, conversationId, "vision-agent=" + agent.getId());
-        log.info("[SlotExtraction] (image) conv={} extracted={} written={} ({} bytes)",
-                conversationId, extracted.size(), written, bytes.length);
-        return new SlotExtractionResult(extracted, written, 0);
+
+        Map<String, String> values;
+        Map<String, Double> confidences;
+        if (withConfidence) {
+            Map<String, SlotValueConfidence> parsed = parseJsonReplyWithConfidence(reply, targetSlots);
+            values = new LinkedHashMap<>();
+            confidences = new LinkedHashMap<>();
+            for (Map.Entry<String, SlotValueConfidence> e : parsed.entrySet()) {
+                values.put(e.getKey(), e.getValue().value());
+                if (e.getValue().confidence() != null) {
+                    confidences.put(e.getKey(), e.getValue().confidence());
+                }
+            }
+        } else {
+            values = new LinkedHashMap<>(parseJsonReply(reply, targetSlots));
+            confidences = Map.of();
+        }
+
+        values = applyValidationPatterns(values, targetSlots);
+        if (!confidences.isEmpty()) {
+            confidences.keySet().retainAll(values.keySet());
+        }
+        int written = writeExtractedSlots(values, conversationId, originDetail);
+        log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={}, confidence={})",
+                conversationId, values.size(), written, textChars, withConfidence);
+        return new SlotExtractionResult(values, written, textChars, confidences);
     }
 
     private String resolveContentType(MultipartFile file) {
@@ -478,10 +517,14 @@ public class TurChatSlotExtractionService {
      * contract when the schema is small.
      */
     static String buildSystemPrompt(List<TurAIAgentSlot> slots) {
+        return buildSystemPrompt(slots, false);
+    }
+
+    static String buildSystemPrompt(List<TurAIAgentSlot> slots, boolean withConfidence) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are a precision extractor. The user message is the FULL TEXT of a document ");
         sb.append("(curriculum, invoice, form, etc.). Extract values for the following slots:\n\n");
-        appendSlotListAndRules(sb, slots, false);
+        appendSlotListAndRules(sb, slots, false, withConfidence);
         return sb.toString();
     }
 
@@ -494,18 +537,22 @@ public class TurChatSlotExtractionService {
      * extracting each in isolation.
      */
     static String buildMultiDocSystemPrompt(List<TurAIAgentSlot> slots) {
+        return buildMultiDocSystemPrompt(slots, false);
+    }
+
+    static String buildMultiDocSystemPrompt(List<TurAIAgentSlot> slots, boolean withConfidence) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are a precision extractor. The user message contains MULTIPLE documents, each ");
         sb.append("delimited by a '=== Document N (filename) ===' header (any images are attached in the ");
         sb.append("same order). Read ALL of them and reason ACROSS them — comparing, combining, and ");
         sb.append("identifying gaps between documents — to extract values for the following slots:\n\n");
-        appendSlotListAndRules(sb, slots, true);
+        appendSlotListAndRules(sb, slots, true, withConfidence);
         return sb.toString();
     }
 
     /** Shared slot bullet list + JSON contract used by both prompt variants. */
     private static void appendSlotListAndRules(StringBuilder sb, List<TurAIAgentSlot> slots,
-            boolean multiDoc) {
+            boolean multiDoc, boolean withConfidence) {
         for (TurAIAgentSlot slot : slots) {
             sb.append("- ").append(slot.getName());
             if (slot.getDescription() != null && !slot.getDescription().isBlank()) {
@@ -518,11 +565,24 @@ public class TurChatSlotExtractionService {
             sb.append('\n');
         }
         String source = multiDoc ? "documents" : "document";
-        sb.append("\nReturn a single JSON object whose keys are the slot names above and whose ");
-        sb.append("values are STRINGS (or null when the ").append(source)
-                .append(" do not contain enough information ");
-        sb.append("to fill that slot). Examples of valid replies:\n");
-        sb.append("  {\"name\": \"Alexandre\", \"cargo_atual\": \"Gerente de Produto há 4 anos\", \"objetivo\": null}\n\n");
+        if (withConfidence) {
+            // T102 — object form: each slot carries the extracted value plus the
+            // model's self-reported confidence so the UI can flag low-confidence
+            // fills for human review.
+            sb.append("\nReturn a single JSON object whose keys are the slot names above and whose ");
+            sb.append("values are OBJECTS of the form {\"value\": STRING|null, \"confidence\": NUMBER}, ");
+            sb.append("where confidence is your certainty from 0.0 (guess) to 1.0 (certain) that the ");
+            sb.append("value is correct. Use null for value when the ").append(source)
+                    .append(" do not contain enough information. Example of a valid reply:\n");
+            sb.append("  {\"name\": {\"value\": \"Alexandre\", \"confidence\": 0.98}, ");
+            sb.append("\"objetivo\": {\"value\": null, \"confidence\": 0.0}}\n\n");
+        } else {
+            sb.append("\nReturn a single JSON object whose keys are the slot names above and whose ");
+            sb.append("values are STRINGS (or null when the ").append(source)
+                    .append(" do not contain enough information ");
+            sb.append("to fill that slot). Examples of valid replies:\n");
+            sb.append("  {\"name\": \"Alexandre\", \"cargo_atual\": \"Gerente de Produto há 4 anos\", \"objetivo\": null}\n\n");
+        }
         sb.append("Hard rules:\n");
         sb.append("- Reply with the JSON object ONLY. No commentary, no markdown fences, no preamble.\n");
         sb.append("- Use null (not \"\" / not \"N/A\" / not \"unknown\") when you can't find a value.\n");
@@ -560,6 +620,53 @@ public class TurChatSlotExtractionService {
                     body.length(), e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * Confidence-aware parse (T102). Accepts the object form
+     * ({@code {"slot": {"value": "...", "confidence": 0.9}}}) and tolerates a
+     * model that fell back to the plain-string form ({@code {"slot": "..."}},
+     * confidence null). Only keys matching a target slot are kept; an
+     * out-of-range or non-numeric confidence is clamped/ignored rather than
+     * failing the whole parse.
+     */
+    static Map<String, SlotValueConfidence> parseJsonReplyWithConfidence(String reply,
+            List<TurAIAgentSlot> slots) {
+        if (reply == null || reply.isBlank()) return Map.of();
+        String body = stripCodeFences(reply.trim());
+        Map<String, SlotValueConfidence> result = new LinkedHashMap<>();
+        Set<String> allowedKeys = new java.util.HashSet<>();
+        for (TurAIAgentSlot s : slots) allowedKeys.add(s.getName());
+        try {
+            Map<String, Object> raw = JSON.readValue(body, OBJECT_MAP);
+            for (Map.Entry<String, Object> entry : raw.entrySet()) {
+                if (!allowedKeys.contains(entry.getKey())) continue;
+                result.put(entry.getKey(), toValueConfidence(entry.getValue()));
+            }
+        } catch (RuntimeException e) {
+            log.warn("[SlotExtraction] LLM confidence reply was not parseable JSON ({} chars): {}",
+                    body.length(), e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * Normalises one JSON value into a {@link SlotValueConfidence}: an object
+     * {@code {value, confidence}}, or a bare scalar (confidence unknown).
+     */
+    private static SlotValueConfidence toValueConfidence(Object node) {
+        if (node instanceof Map<?, ?> obj) {
+            Object v = obj.get("value");
+            String value = v == null ? null : String.valueOf(v);
+            Double confidence = null;
+            Object c = obj.get("confidence");
+            if (c instanceof Number n) {
+                double d = n.doubleValue();
+                confidence = Math.max(0.0, Math.min(1.0, d));
+            }
+            return new SlotValueConfidence(value, confidence);
+        }
+        return new SlotValueConfidence(node == null ? null : String.valueOf(node), null);
     }
 
     private static String stripCodeFences(String text) {
