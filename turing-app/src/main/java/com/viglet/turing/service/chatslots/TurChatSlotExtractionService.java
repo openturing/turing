@@ -199,6 +199,118 @@ public class TurChatSlotExtractionService {
     }
 
     /**
+     * Multi-document extraction (T101). Accepts several uploads at once and
+     * asks the agent's LLM to reason <em>across</em> them in a single call —
+     * the headline use case is a CV + a job description producing a synthesised
+     * {@code skill_gap} slot, but it is fully generic (the agent's slot catalog
+     * declares what to extract). Text documents are concatenated under
+     * {@code === Document N (filename) ===} delimiters; image documents are
+     * attached as Spring AI {@link Media} blocks in the same order. Empty files
+     * are skipped, and a single non-empty file delegates to {@link #extract}
+     * so single-document behaviour is byte-identical.
+     *
+     * @param files             the uploads to reason across (null/empty → empty result)
+     * @param agent             AI agent owning the conversation + slot catalog
+     * @param conversationId    sticky session id
+     * @param requestedSlotNames optional explicit target subset (see {@link #extract})
+     */
+    public SlotExtractionResult extractMulti(List<MultipartFile> files, TurAIAgent agent,
+            String conversationId, List<String> requestedSlotNames) {
+        if (files == null || files.isEmpty() || agent == null
+                || conversationId == null || conversationId.isBlank()) {
+            return SlotExtractionResult.empty();
+        }
+        List<MultipartFile> present = files.stream()
+                .filter(f -> f != null && !f.isEmpty())
+                .toList();
+        if (present.isEmpty()) {
+            return SlotExtractionResult.empty();
+        }
+        if (present.size() == 1) {
+            return extract(present.get(0), agent, conversationId, requestedSlotNames);
+        }
+
+        List<TurAIAgentSlot> targetSlots = resolveTargetSlots(agent, requestedSlotNames);
+        if (targetSlots.isEmpty()) {
+            log.warn("[SlotExtraction] No target slots resolved for agent '{}' — nothing to extract",
+                    agent.getId());
+            return SlotExtractionResult.empty();
+        }
+        ChatModel chatModel = buildChatModelForAgent(agent);
+        if (chatModel == null) {
+            log.warn("[SlotExtraction] Agent '{}' has no enabled LLM instance — extraction skipped",
+                    agent.getId());
+            return SlotExtractionResult.empty();
+        }
+
+        // Split a shared budget across the documents so a fat CV can't starve
+        // the job description; keep a floor so each doc gets a usable window.
+        int perDocCap = Math.max(4_000, 24_000 / present.size());
+        StringBuilder textBuf = new StringBuilder();
+        List<Media> mediaList = new ArrayList<>();
+        int totalChars = 0;
+        int docIndex = 0;
+        for (MultipartFile file : present) {
+            docIndex++;
+            String filename = file.getOriginalFilename() == null ? "document-" + docIndex
+                    : file.getOriginalFilename();
+            String contentType = resolveContentType(file);
+            if (isImage(contentType)) {
+                try {
+                    mediaList.add(Media.builder()
+                            .mimeType(MimeType.valueOf(contentType))
+                            .data(new ByteArrayResource(file.getBytes()))
+                            .name(filename)
+                            .build());
+                    textBuf.append("=== Document ").append(docIndex).append(" (").append(filename)
+                            .append("): see attached image ===\n\n");
+                } catch (java.io.IOException e) {
+                    log.warn("[SlotExtraction] Could not read image '{}' in multi-doc — skipped: {}",
+                            filename, e.getMessage());
+                }
+                continue;
+            }
+            TurFileAttributes parsed = TurFileUtils.documentToText(file);
+            String text = parsed == null ? null : parsed.getContent();
+            if (text == null || text.isBlank()) {
+                log.warn("[SlotExtraction] Tika produced empty content for '{}' in multi-doc — skipped",
+                        filename);
+                continue;
+            }
+            String trimmed = text.length() > perDocCap ? text.substring(0, perDocCap) : text;
+            totalChars += trimmed.length();
+            textBuf.append("=== Document ").append(docIndex).append(" (").append(filename)
+                    .append(") ===\n").append(trimmed).append("\n\n");
+        }
+        if (textBuf.isEmpty() && mediaList.isEmpty()) {
+            return SlotExtractionResult.empty();
+        }
+
+        UserMessage.Builder userBuilder = UserMessage.builder().text(textBuf.toString());
+        if (!mediaList.isEmpty()) {
+            userBuilder.media(mediaList);
+        }
+        List<Message> messages = List.of(
+                new SystemMessage(buildMultiDocSystemPrompt(targetSlots)),
+                userBuilder.build());
+
+        String reply;
+        try {
+            reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
+        } catch (RuntimeException e) {
+            log.warn("[SlotExtraction] Multi-doc LLM call failed for conv={}: {}",
+                    conversationId, e.getMessage());
+            return SlotExtractionResult.empty();
+        }
+        Map<String, String> extracted = applyValidationPatterns(
+                parseJsonReply(reply, targetSlots), targetSlots);
+        int written = writeExtractedSlots(extracted, conversationId, "multidoc-agent=" + agent.getId());
+        log.info("[SlotExtraction] (multi-doc) conv={} docs={} extracted={} written={} (textChars={})",
+                conversationId, present.size(), extracted.size(), written, totalChars);
+        return new SlotExtractionResult(extracted, written, totalChars);
+    }
+
+    /**
      * Image extraction path (T99): sends the uploaded image to the agent's
      * vision-capable LLM as a Spring AI {@link Media} block and asks it to fill
      * the same target slots a text document would. The reply is parsed and
@@ -369,6 +481,31 @@ public class TurChatSlotExtractionService {
         StringBuilder sb = new StringBuilder();
         sb.append("You are a precision extractor. The user message is the FULL TEXT of a document ");
         sb.append("(curriculum, invoice, form, etc.). Extract values for the following slots:\n\n");
+        appendSlotListAndRules(sb, slots, false);
+        return sb.toString();
+    }
+
+    /**
+     * Multi-document variant (T101): the user message bundles several documents,
+     * each delimited by a {@code === Document N (filename) ===} header (images
+     * arrive as attached media in document order). The model is told to reason
+     * <em>across</em> the documents — the headline use case is a CV + a job
+     * description producing a synthesised {@code skill_gap} slot — rather than
+     * extracting each in isolation.
+     */
+    static String buildMultiDocSystemPrompt(List<TurAIAgentSlot> slots) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are a precision extractor. The user message contains MULTIPLE documents, each ");
+        sb.append("delimited by a '=== Document N (filename) ===' header (any images are attached in the ");
+        sb.append("same order). Read ALL of them and reason ACROSS them — comparing, combining, and ");
+        sb.append("identifying gaps between documents — to extract values for the following slots:\n\n");
+        appendSlotListAndRules(sb, slots, true);
+        return sb.toString();
+    }
+
+    /** Shared slot bullet list + JSON contract used by both prompt variants. */
+    private static void appendSlotListAndRules(StringBuilder sb, List<TurAIAgentSlot> slots,
+            boolean multiDoc) {
         for (TurAIAgentSlot slot : slots) {
             sb.append("- ").append(slot.getName());
             if (slot.getDescription() != null && !slot.getDescription().isBlank()) {
@@ -380,16 +517,22 @@ public class TurChatSlotExtractionService {
             }
             sb.append('\n');
         }
+        String source = multiDoc ? "documents" : "document";
         sb.append("\nReturn a single JSON object whose keys are the slot names above and whose ");
-        sb.append("values are STRINGS (or null when the document does not contain enough information ");
+        sb.append("values are STRINGS (or null when the ").append(source)
+                .append(" do not contain enough information ");
         sb.append("to fill that slot). Examples of valid replies:\n");
         sb.append("  {\"name\": \"Alexandre\", \"cargo_atual\": \"Gerente de Produto há 4 anos\", \"objetivo\": null}\n\n");
         sb.append("Hard rules:\n");
         sb.append("- Reply with the JSON object ONLY. No commentary, no markdown fences, no preamble.\n");
         sb.append("- Use null (not \"\" / not \"N/A\" / not \"unknown\") when you can't find a value.\n");
-        sb.append("- Quote string values literally as they appear in the document (don't paraphrase).\n");
-        sb.append("- Reply in the same language the document was written in.\n");
-        return sb.toString();
+        if (multiDoc) {
+            sb.append("- For analytical slots (gaps, comparisons, summaries) you MAY synthesise across the ");
+            sb.append("documents; for factual slots quote literally as they appear.\n");
+        } else {
+            sb.append("- Quote string values literally as they appear in the document (don't paraphrase).\n");
+        }
+        sb.append("- Reply in the same language the ").append(source).append(" were written in.\n");
     }
 
     /**

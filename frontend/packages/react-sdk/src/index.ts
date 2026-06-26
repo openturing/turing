@@ -24,6 +24,7 @@ export {
   fetchAgentChatSlots,
   postSiteChatSlot,
   postSiteSlotExtract,
+  postSiteSlotExtractMulti,
   postSiteHandoff,
   postSiteFlowSelect,
   postSiteFormSubmit,

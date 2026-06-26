@@ -681,6 +681,37 @@ export async function postSiteSlotExtract(
 }
 
 /**
+ * Uploads several documents at once and asks the server to reason ACROSS them
+ * to fill the requested slots — e.g. a CV + a job description producing a
+ * synthesised `skill_gap` slot. Text and image documents may be mixed. A single
+ * file behaves exactly like {@link postSiteSlotExtract}.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract-multi}.
+ *
+ * @since 2026.3.1
+ */
+export async function postSiteSlotExtractMulti(
+  site: string,
+  files: ReadonlyArray<File>,
+  conversationId: string,
+  slotNames?: ReadonlyArray<string>,
+): Promise<TurChatSlotExtractResponse> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  form.append("conversationId", conversationId);
+  if (slotNames && slotNames.length > 0) {
+    form.append("slotNames", slotNames.join(","));
+  }
+  const { data } = await axios.post<TurChatSlotExtractResponse>(
+    `/sn/${site}/chat/slot-extract-multi`,
+    form,
+  );
+  return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
+}
+
+/**
  * Lightweight read of the conversation's flow state.
  *
  * Server endpoint: {@code GET /api/sn/{site}/chat/state?conversationId=...}.
