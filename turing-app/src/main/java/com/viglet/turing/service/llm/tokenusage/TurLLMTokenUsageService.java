@@ -7,6 +7,7 @@ import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.observability.TurLangSmithExporter;
 import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
@@ -26,15 +27,18 @@ public class TurLLMTokenUsageService {
     private final TurLlmObservation observation;
     private final com.viglet.turing.tenant.TurTenantContext tenantContext;
     private final TurLLMPriceService priceService;
+    private final TurLangSmithExporter langSmithExporter;
 
     public TurLLMTokenUsageService(TurLLMTokenUsageRepository tokenUsageRepository,
             TurLlmObservation observation,
             com.viglet.turing.tenant.TurTenantContext tenantContext,
-            TurLLMPriceService priceService) {
+            TurLLMPriceService priceService,
+            TurLangSmithExporter langSmithExporter) {
         this.tokenUsageRepository = tokenUsageRepository;
         this.observation = observation;
         this.tenantContext = tenantContext;
         this.priceService = priceService;
+        this.langSmithExporter = langSmithExporter;
     }
 
     /**
@@ -108,6 +112,11 @@ public class TurLLMTokenUsageService {
                     ? instance.getTurLLMVendor().getId()
                     : "unknown";
             observation.recordTokens(providerTag, instance.getModelName(), inputTokens, outputTokens);
+
+            // T128 / §IX.9.a — opt-in, fail-open mirror of the turn to LangSmith.
+            String resolvedStage = stage == null || stage.isBlank() ? STAGE_OTHER : stage;
+            langSmithExporter.exportTurn(vendorId, instance.getModelName(), agentId, resolvedStage,
+                    username, inputTokens, outputTokens, costUsd);
 
             log.info("[TokenUsage] Recorded: instance={}, model={}, input={}, output={}, total={}, cost=${}, user={}",
                     instance.getId(), instance.getModelName(),

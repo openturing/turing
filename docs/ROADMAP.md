@@ -65,8 +65,9 @@
 
 ## E.8 — Observability interop
 
-- 💭 **T128** (deps: T32) **LangSmith-compatible export** — `TurChatPipelineObservation` events can be optionally mirrored to a LangSmith project via the public LangSmith API. → §IX.9.a
-- 💭 **T129** (deps: T32) **OpenTelemetry trace export** — wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP-compatible backend (Honeycomb, Datadog, Jaeger). → §IX.9.b
+> **Block complete.** Both tasks have shipped — the opt-in LangSmith run mirror
+> (T128) and chat-pipeline OpenTelemetry span export (T129) — as the fail-open
+> `turing.observability.*` exports. See [CHANGELOG.md](CHANGELOG.md) §E.8.
 
 ## E.9 — Tool-selection quality (MCP / native disambiguation)
 

@@ -55,6 +55,25 @@ turing:
     # reindex_site). Default false: they are not even registered. When true they
     # appear but still require the mcp:write scope per call. Read-only by default.
     write-enabled: false
+  # E.8 / §IX.9 — observability interop (opt-in, fail-open trace exports). Lock in
+  # via capability, never via format: both are off by default and never disturb a
+  # chat turn when the backend is slow or unreachable.
+  # - spans (T129): emit the chat-pipeline stage timers as OpenTelemetry spans (via
+  #   the micrometer-tracing OTel bridge), exported to any OTLP backend when
+  #   OTEL_EXPORTER_OTLP_ENDPOINT is set. The LLM call already has its own span
+  #   (turing.llm.calls); timer metrics are unaffected either way.
+  # - langsmith (T128): mirror each completed chat turn as a run in a LangSmith
+  #   project (POST {api-url}/runs/batch). Metadata-only by design (model, provider,
+  #   tokens, cost, agent, stage) — no message content, to keep conversation PII out
+  #   of a third-party trace store. A blank api-key is a no-op.
+  observability:
+    spans:
+      enabled: false
+    langsmith:
+      enabled: false
+      api-key: ${LANGSMITH_API_KEY:}
+      api-url: https://api.smith.langchain.com
+      project: turing
   keycloak: false
   keycloak-admin-id:
   authentication:

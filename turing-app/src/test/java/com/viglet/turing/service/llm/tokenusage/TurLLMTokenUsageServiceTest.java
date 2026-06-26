@@ -16,6 +16,7 @@ import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 
+import com.viglet.turing.observability.TurLangSmithExporter;
 import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
@@ -58,8 +59,12 @@ class TurLLMTokenUsageServiceTest {
         // path). The cache self-proxy isn't needed in a plain unit test, so the
         // service is its own self-reference.
         TurLLMPriceService priceService = buildPriceService(priceRepository);
+        // LangSmith mirror disabled by default (empty config) → exportTurn is a no-op.
+        TurLangSmithExporter langSmithExporter = new TurLangSmithExporter(
+                new com.viglet.turing.properties.TurConfigProperties(),
+                new com.viglet.core.webhook.VigletWebhookDispatcher());
         service = new TurLLMTokenUsageService(tokenUsageRepository, observation, tenantContext,
-                priceService);
+                priceService, langSmithExporter);
 
         instance = new TurLLMInstance();
         instance.setId("inst-1");

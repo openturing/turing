@@ -23,5 +23,6 @@ public class TurConfigProperties {
 	private TurChatProperty chat = new TurChatProperty();
 	private TurTenancyProperty tenancy = new TurTenancyProperty();
 	private TurMcpServerProperty mcpServer = new TurMcpServerProperty();
+	private TurObservabilityProperty observability = new TurObservabilityProperty();
 
 }

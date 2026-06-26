@@ -1331,18 +1331,6 @@ deployed instance as a PR gate, plus an `npx @viglet/turing-cli`
 quickstart in the docs. Pure packaging/docs on top of T126 — the
 "every PR runs the eval suite" story from the original design.
 
-### IX.9 Observability interop — don't fight LangSmith, federate
-
-Customers who already invested in LangSmith dashboards / OpenTelemetry
-backends should not have to abandon them to adopt Turing.
-
-- **T128 LangSmith mirror**: optional `turing.observability.langsmith.enabled=true` + API key → every chat-pipeline event also pushed to LangSmith via their public ingest API. Customers see Turing traces in LangSmith side-by-side with their LangChain agents.
-- **T129 OTel export**: wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP backend. Standard transport, no provider lock-in.
-
-**Strategic principle**: lock customers in via *capability*, never via
-*format*. The Turing scorecard is irreplaceable; the trace export
-shouldn't be.
-
 ### IX.10 What we explicitly do NOT copy from Deep Agents
 
 - **"Skills" as undefined filesystem files** — Turing makes skills a
