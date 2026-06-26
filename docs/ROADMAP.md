@@ -142,6 +142,7 @@
 - 📋 **T172** (deps: T171) **Predicted Outputs in T19/T24 RAG answer re-rank** — when the LLM answers an SN question and the user clicks "rephrase shorter", the previous answer is the `prediction`. → §X.11.b
 - 📋 **T173** (deps: T131) **OpenAI Strict Structured Outputs (`response_format: json_schema, strict: true`)** — replaces the gpt-4o-mini JSON-truncation workarounds documented in `feedback_gpt4o_mini_json.md`. → §X.11.c
 - 📋 **T174** (deps: T131) **Anthropic structured outputs (ZDR-cached schemas)** — analog to T173 on Claude. → §X.11.d
+- 📋 **T426** (deps: T173, T174) **AI Authoring on provider tool-calling/strict schema (retire `BeanOutputConverter`)** — `TurAiAuthoringService` parses free text into `AiAuthoringResponse<T>` via `BeanOutputConverter`, which 500s when the model emits prose-around-JSON or an empty turn (observed on gpt-4o-mini for the Intent authoring chat). Recovery (brace-scan extract + graceful fallback) was added as a band-aid; the durable fix is to bind the response shape as a provider tool / strict `json_schema` so the model returns validated JSON by construction. → §X.11.c
 
 ## F.11 — Files API + native PDF
 

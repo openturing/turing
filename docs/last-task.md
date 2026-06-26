@@ -1,7 +1,7 @@
-# Last task number — `T425`
+# Last task number — `T426`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T426`; after assigning it, bump the number above and the log line below.
+> `T427`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T426** — AI Authoring on provider tool-calling/strict schema (F.10): retire `BeanOutputConverter`-over-free-text in `TurAiAuthoringService` (it 500s on prose-around-JSON / empty turns from gpt-4o-mini in the Intent authoring chat) in favor of a provider tool / strict `json_schema` so the response is validated JSON by construction. Band-aid recovery (brace-scan extract + graceful fallback) shipped first. deps: T173, T174. → IMPROVEMENTS §X.11 — 2026-06-26
 - **T425** — `mcp` binding for Custom Tools (E.9): Groovy scripts can call an attached MCP server's tools via `mcp.call("dspace_search_items", [...])`, reusing the agent's MCP integration instead of a parallel direct-REST path. Motivated by the Aula-Relâmpago tool hitting the Insper Akamai WAF with the JDK `Java/<v>` UA (403) while the MCP server's `python-httpx` UA is allowlisted. → IMPROVEMENTS §XXI — 2026-06-25
 - **T424** — Trigger/namespace-aware tool prioritization (E.9): boost an attached MCP server's tools when its `llmInstructions` triggers match the message + reserve a pre-filter quota so always-keep native tools can't starve attached MCP/custom tools to zero. Surfaced by a real incident where `dspace_*` was dropped (24 natives ≥ top-K) and gpt-4o-mini looped on `get_current_time`. → IMPROVEMENTS §XXI — 2026-06-25
 - **T411–T423** — Block U: documentation refresh for `docs-turing` (webhooks, routines, cost-governance new pages; chat-flow/chat-analytics rewrites; experiments + human-in-the-loop split-outs; agent-eval/mcp-server/tool-calling/ai-agents/config-reference/token-usage updates). Plan: `docs-turing/_documentation-update-plan.md` — 2026-06-25

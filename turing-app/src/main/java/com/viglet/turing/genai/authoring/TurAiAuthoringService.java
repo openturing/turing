@@ -143,7 +143,7 @@ public class TurAiAuthoringService {
         }
         Prompt prompt = new Prompt(messages, optionsBuilder.build());
 
-        String text = "";
+        String text;
         try {
             // RC1 moved tool execution out of ChatModel.call(); drive the loop
             // explicitly so authoring tools fire (see TurToolExecutionLoop).
@@ -153,18 +153,44 @@ public class TurAiAuthoringService {
                     && aiResponse.getResult().getOutput().getText() != null
                             ? aiResponse.getResult().getOutput().getText()
                             : "";
-            if (text.isBlank()) {
-                throw new IllegalStateException("LLM returned an empty response");
-            }
-            return converter.convert(text);
         } catch (Exception e) {
-            log.error("[AiAuthoring] Chat call failed: {} — raw output ({} chars): {}",
-                    e.getMessage(),
-                    text.length(),
-                    truncateForLog(text),
-                    e);
+            // A genuine infrastructure/provider failure (network, auth, quota)
+            // — surface it so the operator sees the real cause.
+            log.error("[AiAuthoring] LLM call failed: {}", e.getMessage(), e);
             throw new IllegalStateException("AI authoring chat failed: " + e.getMessage(), e);
         }
+
+        // Below here the failures are model-quality issues (empty turn, prose
+        // instead of JSON). Smaller models are flaky at structured-output-with-
+        // tools, so degrade gracefully — keep the form intact and let the user
+        // retry — rather than 500 on an interactive authoring chat.
+        if (text.isBlank()) {
+            log.warn("[AiAuthoring] LLM returned an empty response; returning unchanged-state fallback");
+            return fallbackResponse(request, EMPTY_RESPONSE_FALLBACK_MESSAGE);
+        }
+        try {
+            return parseResponse(converter, text);
+        } catch (RuntimeException e) {
+            log.warn("[AiAuthoring] Could not parse LLM output as the expected JSON ({} chars): {} — "
+                    + "surfacing the raw reply with unchanged state",
+                    text.length(), truncateForLog(text), e);
+            // No recoverable JSON — the model just chatted. Show its reply and
+            // keep the current form so nothing is lost.
+            return fallbackResponse(request, text);
+        }
+    }
+
+    private static final String EMPTY_RESPONSE_FALLBACK_MESSAGE =
+            "I didn't get a usable response that time. Could you rephrase or try again?";
+
+    /**
+     * Builds a graceful fallback when the model output can't be turned into a
+     * valid state update: surface {@code message} and echo back the current
+     * form snapshot unchanged so the user loses nothing.
+     */
+    private <T> AiAuthoringResponse<T> fallbackResponse(AiAuthoringRequest<T> request, String message) {
+        T state = request == null ? null : request.currentState();
+        return new AiAuthoringResponse<>(message, state);
     }
 
     /**
@@ -209,6 +235,75 @@ public class TurAiAuthoringService {
         } else {
             messages.add(new UserMessage(m.content()));
         }
+    }
+
+    /**
+     * Parses the LLM output into a typed {@link AiAuthoringResponse}, tolerating
+     * the common ways a model breaks the "bare JSON only" contract:
+     * <ul>
+     *   <li>conversational prose before/after the JSON (e.g. "He creado…{…}"),</li>
+     *   <li>the object wrapped in a ```json … ``` markdown fence.</li>
+     * </ul>
+     * Tries the raw text first (the happy path), then a recovered JSON substring.
+     * Structured-output-as-guardrail is known to be unreliable on smaller models,
+     * so this recovery is the safety net rather than the exception.
+     */
+    private <T> AiAuthoringResponse<T> parseResponse(
+            BeanOutputConverter<AiAuthoringResponse<T>> converter, String text) {
+        try {
+            return converter.convert(text);
+        } catch (RuntimeException primary) {
+            String json = extractJsonObject(text);
+            if (json != null && !json.equals(text)) {
+                log.warn("[AiAuthoring] LLM did not return bare JSON; recovered an embedded object "
+                        + "({} chars from {} chars of output)", json.length(), text.length());
+                return converter.convert(json);
+            }
+            throw primary;
+        }
+    }
+
+    /**
+     * Extracts the first balanced top-level JSON object from {@code text},
+     * skipping any leading prose or markdown fence. Brace counting is
+     * string-aware so braces inside string values don't unbalance the scan.
+     * Returns {@code null} when no {@code '{'} is present.
+     */
+    static String extractJsonObject(String text) {
+        if (text == null) {
+            return null;
+        }
+        int start = text.indexOf('{');
+        if (start < 0) {
+            return null;
+        }
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (c == '"') {
+                inString = true;
+            } else if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return text.substring(start, i + 1);
+                }
+            }
+        }
+        return null;
     }
 
     private static final int MAX_OUTPUT_TOKENS = 8000;

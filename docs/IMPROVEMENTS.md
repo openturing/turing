@@ -1659,7 +1659,7 @@ with zero engineering work. T191 explicitly wires the three together
 into "self-improving agent overnight" — the long-shot bet that's a
 genuine moat.
 
-### X.11 Predicted Outputs + strict structured outputs (T171–T174)
+### X.11 Predicted Outputs + strict structured outputs (T171–T174, T426)
 
 T171 + T172 make the "regenerate-with-tweak" loop in the chat-flow
 editor (T97 variant generator), persona-prompt editor, locale-string
@@ -1671,9 +1671,15 @@ T173 + T174 replace the legacy `json_object` JSON-mode workarounds
 (remembered explicitly as `feedback_gpt4o_mini_json.md` in agent
 memory) with **strict schema-validated structured outputs**. Every
 Turing path that parses LLM JSON — `LlmJudge`, T28 LLM intent
-classifier, T97 variant generator, chat-flow router decision —
-becomes deterministic by construction. The class of "the model
-returned truncated JSON, the parser exploded" bugs is gone.
+classifier, T97 variant generator, chat-flow router decision, and the
+**AI Authoring chat** (`TurAiAuthoringService`, T426) — becomes
+deterministic by construction. The class of "the model returned
+truncated JSON / prose-around-JSON / an empty turn, the parser
+exploded" bugs is gone. T426 specifically retires the
+`BeanOutputConverter`-over-free-text path that drives the Intent /
+Agent / Custom-Tool authoring forms onto a provider tool / strict
+`json_schema`; the brace-scan-extract + graceful-fallback recovery
+currently in that service is a band-aid until T173/T174 land.
 
 ### X.12 Files API + native PDF (T175–T177)
 
