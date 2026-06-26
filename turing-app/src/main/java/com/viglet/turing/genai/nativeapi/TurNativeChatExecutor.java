@@ -22,12 +22,14 @@ import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.anthropic.client.AnthropicClient;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurChatPromptRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -75,6 +77,7 @@ public class TurNativeChatExecutor {
     private final TurNativeCapabilityService capabilityService;
     private final TurOpenAiResponsesService openAiResponsesService;
     private final TurOpenAiComputerUseService openAiComputerUseService;
+    private final TurAnthropicMessagesService anthropicMessagesService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
 
@@ -83,6 +86,7 @@ public class TurNativeChatExecutor {
             TurNativeCapabilityService capabilityService,
             TurOpenAiResponsesService openAiResponsesService,
             TurOpenAiComputerUseService openAiComputerUseService,
+            TurAnthropicMessagesService anthropicMessagesService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver) {
         this.providerFactory = providerFactory;
@@ -90,6 +94,7 @@ public class TurNativeChatExecutor {
         this.capabilityService = capabilityService;
         this.openAiResponsesService = openAiResponsesService;
         this.openAiComputerUseService = openAiComputerUseService;
+        this.anthropicMessagesService = anthropicMessagesService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
     }
@@ -105,8 +110,11 @@ public class TurNativeChatExecutor {
     public Optional<Flux<ChatResponse>> tryExecute(TurAIAgent agent, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPromptOverride, String conversationId) {
         String pluginType = resolvePluginType(instance);
-        if (pluginType == null || !"openai".equals(pluginType)) {
-            // Anthropic native server tools arrive in F.3; other vendors have no native path.
+        boolean isOpenAi = "openai".equals(pluginType);
+        boolean isAnthropic = "anthropic".equals(pluginType);
+        if (!isOpenAi && !isAnthropic) {
+            // Only OpenAI (F.2) and Anthropic (F.3) have a native path; other
+            // vendors always fall through to the Spring AI executor.
             return Optional.empty();
         }
 
@@ -115,8 +123,15 @@ public class TurNativeChatExecutor {
             return Optional.empty();
         }
 
-        Optional<OpenAIClient> client = nativeClient.openAi(instance);
-        if (client.isEmpty()) {
+        // Acquire the vendor's native client up front; a missing/unusable client
+        // (e.g. no API key) means we can't handle the turn natively.
+        Optional<OpenAIClient> openAiClient = isOpenAi ? nativeClient.openAi(instance) : Optional.empty();
+        Optional<AnthropicClient> anthropicClient = isAnthropic
+                ? nativeClient.anthropic(instance) : Optional.empty();
+        if (isOpenAi && openAiClient.isEmpty()) {
+            return Optional.empty();
+        }
+        if (isAnthropic && anthropicClient.isEmpty()) {
             return Optional.empty();
         }
 
@@ -137,6 +152,20 @@ public class TurNativeChatExecutor {
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
 
+        // F.3 / §X.4 — Anthropic Messages path. All the Anthropic server-side
+        // tools (web_search, web_fetch, code_execution) execute inside
+        // Anthropic's infrastructure and return the answer in a single turn, so
+        // there's no per-tool branching here — the service maps the enabled
+        // capability set to the Messages request.
+        if (isAnthropic) {
+            log.info("[Native] agent '{}' instance '{}' handled by Anthropic Messages path "
+                    + "({} capability/ies, persona '{}')",
+                    agent.getTitle(), instance.getId(), capabilities.size(),
+                    activePersona == null ? "none" : activePersona.getName());
+            return Optional.of(anthropicMessagesService.chat(anthropicClient.get(), instance,
+                    turn.history(), turn.systemPrompt(), capabilities));
+        }
+
         // T136 / §X.3.d — computer_use is not a one-shot built-in: it needs the
         // multi-turn screenshot/action loop. When it is enabled, the whole turn
         // is driven by the dedicated computer-use service (the other native
@@ -154,7 +183,7 @@ public class TurNativeChatExecutor {
             log.info("[Native] agent '{}' instance '{}' handled by OpenAI computer-use loop (persona '{}')",
                     agent.getTitle(), instance.getId(),
                     activePersona == null ? "none" : activePersona.getName());
-            return Optional.of(openAiComputerUseService.chat(client.get(), instance, turn.history(),
+            return Optional.of(openAiComputerUseService.chat(openAiClient.get(), instance, turn.history(),
                     turn.systemPrompt(), computerUse.get()));
         }
 
@@ -162,7 +191,7 @@ public class TurNativeChatExecutor {
                 + "({} capability/ies, persona '{}')",
                 agent.getTitle(), instance.getId(), capabilities.size(),
                 activePersona == null ? "none" : activePersona.getName());
-        return Optional.of(openAiResponsesService.chat(client.get(), instance, turn.history(),
+        return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities));
     }
 

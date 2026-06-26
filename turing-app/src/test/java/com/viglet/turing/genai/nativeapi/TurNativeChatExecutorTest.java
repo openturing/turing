@@ -29,12 +29,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import com.anthropic.client.AnthropicClient;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurChatPromptRequest;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -53,14 +55,17 @@ class TurNativeChatExecutorTest {
     @Mock private TurNativeCapabilityService capabilityService;
     @Mock private TurOpenAiResponsesService openAiResponsesService;
     @Mock private TurOpenAiComputerUseService openAiComputerUseService;
+    @Mock private TurAnthropicMessagesService anthropicMessagesService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
+    @Mock private AnthropicClient anthropicClient;
 
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
-                openAiResponsesService, openAiComputerUseService, promptAssembler, personaResolver);
+                openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
+                promptAssembler, personaResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -80,10 +85,48 @@ class TurNativeChatExecutorTest {
     private final List<ChatMessageItem> history = List.of(new ChatMessageItem("user", "hello"));
 
     @Test
-    void emptyWhenVendorIsNotOpenAi() {
+    void emptyWhenVendorHasNoNativePath() {
+        // Only OpenAI (F.2) and Anthropic (F.3) have a native path; everything
+        // else falls through to the Spring AI executor.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("ollama");
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(anthropicMessagesService, openAiResponsesService);
+    }
+
+    @Test
+    void routesToAnthropicMessagesServiceWhenAnthropicAndCapabilityEnabled() {
         TurLLMInstance instance = instance();
         when(providerFactory.getProvider(instance)).thenReturn(provider);
         when(provider.getPluginType()).thenReturn("anthropic");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.ANTHROPIC_WEB_SEARCH, null));
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(caps);
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.of(anthropicClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(),
+                any(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "claude")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("claude");
+        verifyNoInteractions(openAiResponsesService, openAiComputerUseService);
+    }
+
+    @Test
+    void emptyWhenAnthropicClientUnavailable() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        when(capabilityService.enabledFor("inst-1", "anthropic"))
+                .thenReturn(List.of(new EnabledCapability(TurNativeCapability.ANTHROPIC_WEB_SEARCH, null)));
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.empty());
 
         assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
     }

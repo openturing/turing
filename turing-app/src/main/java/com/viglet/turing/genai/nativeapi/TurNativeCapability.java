@@ -58,7 +58,10 @@ public enum TurNativeCapability {
      *  multi-turn screenshot/action loop driving a pluggable
      *  {@code TurComputerUseDriver} (Turing ships a no-op driver, so it runs
      *  only when a real driver bean is configured). */
-    OPENAI_COMPUTER_USE("openai-computer-use", "openai");
+    OPENAI_COMPUTER_USE("openai-computer-use", "openai"),
+
+    /** T139 / §X.4.a — Anthropic Messages {@code web_search_20250305} server tool. */
+    ANTHROPIC_WEB_SEARCH("anthropic-web-search", "anthropic");
 
     private final String key;
     private final String pluginType;
