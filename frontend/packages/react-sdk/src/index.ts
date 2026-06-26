@@ -43,6 +43,8 @@ export {
   postSummary,
   parseHrefToParams,
   postClick,
+  fetchVoiceAvailability,
+  postVoiceSession,
   CHAT_DISABLED_HINTS,
   LOW_CONFIDENCE_THRESHOLD,
 } from "./core/api";
@@ -79,6 +81,9 @@ export type {
   TurFeaturesInfo,
   TurSystemLocale,
   TurSummaryResult,
+  TurVoiceAvailability,
+  TurVoiceSession,
+  PostVoiceSessionOptions,
 } from "./core/api";
 
 // ── Session ──
@@ -188,6 +193,13 @@ export type {
   UseTuringVoiceReturn,
   UseTuringVoiceOptions,
 } from "./hooks/use-turing-voice";
+export { useTuringRealtimeVoice } from "./hooks/use-turing-realtime-voice";
+export type {
+  UseTuringRealtimeVoiceReturn,
+  UseTuringRealtimeVoiceOptions,
+  RealtimeVoiceStatus,
+  RealtimeToolCall,
+} from "./hooks/use-turing-realtime-voice";
 export { useTuringFlowState } from "./hooks/use-turing-flow-state";
 export type {
   UseTuringFlowStateReturn,

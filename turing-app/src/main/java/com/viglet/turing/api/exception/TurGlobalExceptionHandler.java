@@ -172,6 +172,23 @@ public class TurGlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
     }
 
+    /**
+     * T147/T148 / §X.6 — a real-time voice session could not be minted: missing
+     * credentials, an unsupported realtime model, or a vendor/transport failure
+     * from the {@code /realtime/client_secrets} endpoint. Caller-fixable
+     * pre-conditions (agent disabled, capability off, vendor without voice) are
+     * raised as {@link IllegalArgumentException} (400) by the service; this maps
+     * the genuine upstream/credential failures to 502.
+     */
+    @ExceptionHandler(com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceException.class)
+    public ResponseEntity<ProblemDetail> handleRealtimeVoice(
+            com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceException ex) {
+        ProblemDetail problem = build(HttpStatus.BAD_GATEWAY, TurErrorTypes.PROVIDER_FAILURE,
+                ex.getMessage());
+        log.warn("[GlobalEx] Realtime voice session failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(problem);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleIllegalArgument(IllegalArgumentException ex) {
         ProblemDetail problem = build(HttpStatus.BAD_REQUEST, TurErrorTypes.INVALID_ARGUMENT, ex.getMessage());

@@ -873,6 +873,78 @@ export async function fetchAgentContextInfo(
   return data;
 }
 
+/**
+ * T148 / §X.6.b — whether real-time voice is available for an agent and, when it
+ * is, the resolved model/voice. Drives the SDK's decision to render a voice
+ * button. Server: {@code GET /api/v2/ai-agent/{agentId}/voice/available}.
+ *
+ * @since 2026.3.4
+ */
+export interface TurVoiceAvailability {
+  available: boolean;
+  model?: string | null;
+  voice?: string | null;
+  /** When unavailable: a stable reason code (e.g. "capability-disabled", "vendor-unsupported"). */
+  reason?: string | null;
+}
+
+/**
+ * T148 / §X.6.b — a minted ephemeral real-time voice session. Everything the
+ * browser needs to open the WebSocket transport to the vendor's realtime
+ * endpoint directly. The {@link clientSecret} is short-lived and scoped to one
+ * session; the account API key never reaches the browser.
+ */
+export interface TurVoiceSession {
+  provider: string;
+  clientSecret: string;
+  expiresAt: number;
+  model: string;
+  voice: string;
+  wsUrl: string;
+}
+
+/** Optional hints sent when minting a voice session; all may be omitted. */
+export interface PostVoiceSessionOptions {
+  llmInstanceId?: string;
+  model?: string;
+  voice?: string;
+  locale?: string;
+}
+
+/** T148 — probe whether voice is available for an agent. */
+export async function fetchVoiceAvailability(
+  agentId: string,
+  llmInstanceId?: string,
+): Promise<TurVoiceAvailability> {
+  const { data } = await axios.get<TurVoiceAvailability>(
+    `/v2/ai-agent/${agentId}/voice/available`,
+    { params: llmInstanceId ? { llmInstanceId } : {} },
+  );
+  return data;
+}
+
+/** T148 — mint an ephemeral real-time voice session for an agent. */
+export async function postVoiceSession(
+  agentId: string,
+  options?: PostVoiceSessionOptions,
+): Promise<TurVoiceSession> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/ai-agent/${agentId}/voice/session`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const xsrf = await ensureXsrfToken();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify(options ?? {}),
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return (await response.json()) as TurVoiceSession;
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }
