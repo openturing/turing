@@ -2663,3 +2663,221 @@ and GA4 funnel/audience recipes.
 aligned GA dimensions), Block W (T436 `tool_call` SSE → a `turing_tool_call` event
 for free), and the AG-UI adapter (T441, shared sink architecture). Non-goal: shipping
 our own dashboards — GA4 (and any sink) owns visualization; we only emit clean events.
+
+## XXVI. Synthetic personas — audience-fit content evaluation & persona synthesis from audio (Block AA)
+
+### XXVI.0 The gap & the framing
+
+`TurPersona` today is a **speaker contract**. Every field — `tone`
+(FORMAL/CASUAL/TECHNICAL/EXECUTIVE), `verbosity` (1–5), `languageStyle`,
+`mandatoryTerms`, `forbiddenTerms`, `systemInstruction` — describes **how the
+assistant talks**. It is resolved per agent (`TurAgentPersonaResolver`), composed
+into the system prompt (`TurPersonaPromptComposer` + the cached
+`TurPersonaStaticPromptCache`), and enforced post-LLM (`TurPersonaToneValidator`
+masks forbidden terms). Nothing in the model describes the **reader**: there is no
+education level, no reading grade, no vocabulary ceiling, no comprehension or
+accessibility constraint.
+
+Two requests reframe the persona as an **audience proxy**, not just a voice:
+
+1. **Content-fit evaluation (NotebookLM-style).** Attach sources (an indexed page,
+   an uploaded PDF, a URL) to a persona and generate a report of *what fits and what
+   does not fit that persona* — e.g. a low-education persona should reject dense text
+   full of complex words. This is **content quality from the reader's perspective** —
+   a sibling of GEO (Block O), the content-gap signal (T252), and per-field coverage
+   (T388), all of which already judge indexed content along other axes.
+2. **Persona synthesis from audio.** Record a real conversation/interview, transcribe
+   it, and have the LLM analyze behavioral characteristics to **draft a new persona**.
+   This extends the existing AI-assisted persona authoring (`POST /api/persona/chat`)
+   with a new input modality.
+
+**Architecture decision — extend `TurPersona`, don't fork it.** The user explicitly
+wants to *reuse existing personas* as evaluators. So the persona gains an optional
+**audience facet** behind a `personaKind` discriminator (`SPEAKER` | `AUDIENCE` |
+`BOTH`, default `SPEAKER`). Default-SPEAKER means every existing voice persona, every
+agent attachment, and every prompt-composition path is **byte-for-byte unchanged** —
+the opt-in-flag / default-legacy pattern this project favors, with zero IT
+revalidation. The audience fields are read only by the new evaluation path; the
+prompt composer ignores them.
+
+**Reuse, not new infrastructure.** The block is almost pure composition:
+content extraction via `TurFileUtils` / `VigletContentExtractor` (PDF/DOC) and the
+OCR url path (with its existing SSRF guard); cached report generation via
+`TurLlmSummaryService` (TTL + regenerate already wired to Global Settings); structured
+LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
+**deterministic-scorer + LLM-seam** shape so the numeric half is testable in CI
+without spending LLM credits. The one genuinely new seam is transcription (no STT
+exists today; the `AUDIO` slot only stores a URL).
+
+### XXVI.1 Audience-profile facet on `TurPersona` (T464)
+
+Additive, opt-in. **Decision (locked): extend `TurPersona` — do NOT fork a separate
+`TurAudienceProfile` entity — but model the audience attributes as a cohesive
+*value object*, not as a loose pile of columns.** The reasoning:
+
+- **Extend** (vs. a new entity) because the request is explicitly to *reuse existing
+  personas*, because a separate entity would duplicate the entire surface
+  (`TurPersona`'s CRUD, the `turPersonafindAll`/`findById`/`StaticPrompt` caches +
+  eviction conventions, the `/api/persona/chat` authoring, the admin form, the
+  frontend model/queries/form, the agent attachment) for a feature whose adoption is
+  unproven (YAGNI), and because it preserves the real **BOTH** case — a *peer* persona
+  the assistant both speaks **as** and evaluates content **for** (e.g. "Lucas, fellow
+  alumnus"). With two entities that overlap is impossible to express.
+- **As a value object** (vs. flat nullable columns) because a discriminator plus two
+  disjoint column sets on one table is the "two entities in one trench coat"
+  anti-pattern: audience columns sit dead-null on every voice persona and vice-versa.
+
+Concretely:
+
+1. **`personaKind`** — `@Enumerated(STRING)`, default `SPEAKER` (`SPEAKER` | `AUDIENCE`
+   | `BOTH`). It is the discriminator and the UI gate. (It is exactly the pair of
+   booleans `usableAsSpeaker`/`usableAsAudience` encoded as one enum — the enum is
+   simpler for the admin form.)
+2. **`TurPersonaAudience`** — a JPA `@Embeddable` (or an owned, nullable `@OneToOne`
+   component) holding only the audience attributes, populated only when
+   `personaKind ≠ SPEAKER`:
+   - `readingLevel` / education proxy (enum or grade band — ELEMENTARY … GRADUATE),
+     the field that makes the "pouco estudo" example crisp;
+   - `domainExpertise` (NOVICE … EXPERT) for jargon tolerance;
+   - `vocabularyCeiling` (free text or term list — the complexity budget the
+     readability scorer measures against);
+   - comprehension + accessibility notes (free text — e.g. "dyslexia-friendly",
+     "screen reader", "second-language reader");
+   - `primaryLanguage` for the readability metric's language profile.
+
+3. **Guard (the safety the discriminator buys):** the prompt composer
+   (`TurPersonaPromptComposer`) and agent attachment only act on `SPEAKER`/`BOTH`
+   personas; the content-fit evaluator (T467) only acts on `AUDIENCE`/`BOTH`. An
+   `AUDIENCE`-only persona must not resolve as an agent's voice — validate at the agent
+   attachment / `TurAgentPersonaResolver` boundary so a misconfiguration is rejected
+   rather than silently composing an empty voice.
+
+Default-SPEAKER means every existing voice persona, every agent attachment, and every
+prompt-composition path is **byte-for-byte unchanged** — the opt-in-flag /
+default-legacy pattern this project favors, with zero IT revalidation. The audience
+value object is read only by the new evaluation path; the prompt composer never touches
+it.
+
+Liquibase: a new `v2026.3.x.yaml` (lowercase agnostic types; columns match the JPA
+field names exactly — `personaKind` plus the embeddable's columns, e.g. `readingLevel`,
+`domainExpertise`, `vocabularyCeiling`, `primaryLanguage`). The admin persona form gains
+an "Audience" section, shown when `personaKind ≠ SPEAKER`; the existing voice sections
+stay exactly as they are.
+
+**Escape hatch (the trigger to split later):** if operations later show that audience
+personas are owned by a *different team* (content editors) than voice personas (prompt
+engineers), with distinct QA lifecycles, extract `TurPersonaAudience` into its own
+entity then — the value object makes that a mechanical lift-and-shift, not a rewrite.
+Don't build the separate aggregate before that evidence exists.
+
+### XXVI.2 Persona "notebook" source set (T465)
+
+A persona can own a set of evaluation sources — the NotebookLM "notebook". New
+`TurPersonaSource` (persona FK, `type` SN_DOC | ASSET | URL, `ref`, `cachedText`,
+`extractedAt`). Three ingestion paths, all already present:
+
+- **SN_DOC** — reference an indexed document by id (or a query that resolves to one);
+  pull its searchable text.
+- **ASSET** — an uploaded PDF/DOC routed through `TurFileUtils.documentToText(...)`.
+- **URL** — `TurFileUtils.urlContentToText(...)` behind the existing OCR SSRF guard
+  (`isAllowedRemoteUrlString`).
+
+Extracted text is cached on the row so repeated evaluations and the deterministic
+scorer don't re-fetch. CRUD endpoints under the persona API + an admin "Sources" tab.
+
+### XXVI.3 Pure multilingual readability/complexity scorer (T466)
+
+`TurReadabilityScorer` — a **pure** component (no Spring, no LLM) returning a numeric
+fit sub-score plus the raw metrics behind it:
+
+- Flesch Reading Ease / Flesch–Kincaid grade, **adapted per language** (PT/ES use the
+  known coefficient variants, not the EN constants);
+- average sentence length and average syllables/word;
+- **complex-word ratio** measured against the persona's `vocabularyCeiling`
+  (the heart of the low-education example);
+- a passive-voice / nominalization heuristic.
+
+Because it is pure, its tests are deterministic and free — the same discipline as the
+T385 `TurNLFacetEvalScorer`. It produces a hard, explainable signal that does **not**
+depend on the LLM agreeing.
+
+### XXVI.4 Content-fit evaluator (T467)
+
+The LLM is prompted to **role-play the persona as a reader** ("you are this audience:
+{audience facet}; you are reading the following document") and, **grounded strictly in
+the source text**, returns a structured verdict (LlmJudge JSON shape, grounding
+hard-fail borrowed from T385 so it can't hallucinate problems not in the text):
+
+```
+{ "fitScore": 0..100, "summary": "...",
+  "fits":    [ "short bullet of what condiz" ],
+  "misfits": [ { "span": "...", "reason": "too-complex|jargon|tone|missing-context",
+                 "suggestion": "rewrite" } ] }
+```
+
+The final score **fuses** the deterministic T466 readability sub-score (hard signal,
+weighted) with the LLM's grounded judgment (qualitative misfits) — neither alone is
+enough: the scorer catches "too dense" objectively; the LLM catches tone, missing
+context, and audience-inappropriate framing. Results are cached via
+`TurLlmSummaryService` keyed by (personaId, sourceId, contentHash); regenerate honors
+the Global Settings flag.
+
+### XXVI.5 Persona-fit report API + admin page (T468)
+
+`POST /api/persona/{id}/content-fit` evaluates a single source or the whole notebook
+and returns an aggregated report. The admin page renders, per source, a red/amber/green
+fit bar (the visual language already used by T388 field coverage), the flagged spans
+inline, and the rewrite suggestions — with a regenerate button when caching allows it.
+This is the NotebookLM-style "condiz / não condiz" deliverable the request asked for.
+
+### XXVI.6 Transcription seam — `TurTranscriptionProvider` (T469)
+
+The one new piece of infrastructure. `AUDIO` slots exist (`TurAIAgentSlotType.AUDIO`,
+`isMultiModal()`), but they only store a storage URL — there is **no speech-to-text**.
+Introduce a pluggable `TurTranscriptionProvider { String transcribe(bytes, mimeType,
+languageHint) }`:
+
+- default implementation calls OpenAI Whisper (or a provider-native STT) using an
+  existing `TurLLMInstance` credential;
+- air-gapped installs plug a local STT (the same pluggable-seam discipline as the
+  storage and reranker abstractions).
+
+It wires into the existing `/chat/slot-upload` AUDIO path and **partially unblocks F.5
+(voice agents)**, which needs the same capability. Provider/default choice is left open
+(hence 💭).
+
+### XXVI.7 Persona-from-audio authoring (T470)
+
+`POST /api/persona/derive-from-audio`: upload an audio recording → transcribe (T469) →
+an LLM **behavioral-analysis** prompt extracts both **voice** traits (tone, verbosity,
+languageStyle, characteristic vocabulary) **and** **audience** descriptors (apparent
+education level, domain familiarity, language) from the conversation → a **draft**
+persona. Critically, the draft is **never auto-saved** — it opens the existing
+AI-authoring review form (the T426 provider-tool / strict-`json_schema` path, so the
+draft is validated JSON by construction, not brace-scanned free text) for a human to
+review and save. This mirrors the established "derive, never auto-apply" discipline of
+the T387 manifest deriver.
+
+### XXVI.8 Auto-suggest the best persona variant for content (T471, 💭)
+
+Given a piece of content and a set of audience personas, batch the T467 evaluator and
+rank which persona it best fits. Feeds Block Z A/B persona selection (T69 — "which
+persona variation was preferred" now has a content-side companion: "which persona is
+this content even *for*") and editorial content routing. Open design.
+
+### XXVI.9 Content-fit as an index-time SN signal (T472, 💭)
+
+Run the evaluator at **index time** against a configured target-audience persona and
+store the per-document readability/fit score as an SN field. Surfaces "this content is
+too complex for its intended audience" in the content-gap dashboard — the same surface
+as T252 (no-results gaps) and T388 (field coverage), making audience-fit a first-class
+content-quality KPI rather than an on-demand report. Open design.
+
+**Combines with:** the existing persona stack (extends, doesn't fork), content
+extraction (`TurFileUtils`/`VigletContentExtractor`, T374), `TurLlmSummaryService`
+(cached reports), the LlmJudge structured-verdict path, T385 (deterministic-scorer +
+grounding hard-fail), T388 (red/amber/green coverage UI), T252 (content-gap surface),
+T426 (strict-schema authoring), T64 (AUDIO slot), F.5 (voice agents share the
+transcription seam), and Block Z (T69 A/B persona attribution). Non-goal: turning
+`TurPersona` into a second CMS — the audience facet stays a thin descriptor consumed
+only by the evaluation path; the prompt composer never reads it.

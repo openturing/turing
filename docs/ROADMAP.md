@@ -257,6 +257,31 @@
 - 💭 **T462** (deps: T458, T405) **Search / semantic-navigation conversion events** — `turing_search`, `turing_search_no_results` (= client-side content-gap signal, feeds T252), `turing_search_result_click` (mirrors the existing `postClick` CTR in one call), `turing_search_refined`; **cross-surface session stitching** via the `TUR_SESSION` cookie so a chat lead attributes back to the originating search query. → §XXV.5
 - 💭 **T463** (deps: T459, T461, T462) **React hook + showcase/EDS wiring + docs** — `useTuringAnalytics()` in the react-sdk + react-ui passthrough; wire the GA4 search→chat→lead funnel into the Block Y showcase (T455/T456) and an EDS example block (auto-detecting the host `dataLayer`); `docs-turing` page on the event taxonomy + GA4 funnel/audience recipes. → §XXV.6
 
+## Block AA — Synthetic personas: audience-fit content evaluation & persona synthesis from audio (T464–T472)
+
+> **Why:** today `TurPersona` is a **speaker** contract — it controls how the
+> assistant *talks* (tone/verbosity/languageStyle/mandatory+forbidden terms). It
+> models nothing about the *reader*. This block adds the missing half: a persona
+> as an **audience proxy**, so the platform can answer *"is this indexed page / PDF /
+> URL appropriate for this audience?"* (NotebookLM-style condiz/não-condiz report —
+> e.g. a low-education persona rejects dense, jargon-heavy text), and can **synthesize
+> a new persona from a real recorded conversation** (audio → transcript → behavioral
+> traits). Pure composition of shipped primitives: content extraction (`TurFileUtils`/
+> `VigletContentExtractor`), cached LLM reports (`TurLlmSummaryService`), the LlmJudge
+> structured-verdict path, and the T385 *deterministic-scorer + LLM-seam* shape. The
+> whole block is **opt-in** behind a `personaKind` discriminator (default `SPEAKER` =
+> existing voice personas byte-for-byte unchanged). Rationale → §XXVI.
+
+- 📋 **T464** (deps: existing Persona stack) **Audience-profile facet on `TurPersona`** — extend, don't fork: opt-in `personaKind` discriminator (SPEAKER \| AUDIENCE \| BOTH, default SPEAKER) + a cohesive `TurPersonaAudience` `@Embeddable` (`readingLevel`/education, `domainExpertise`, `vocabularyCeiling`, comprehension + accessibility notes, `primaryLanguage`) — not loose columns. Guard so AUDIENCE-only never resolves as an agent's voice. Additive Liquibase; legacy voice personas untouched; admin "Audience" section gated on kind. → §XXVI.1
+- 📋 **T465** (deps: T464) **Persona "notebook" source set** — attach evaluation sources to a persona: an indexed SN document (by id/query), an uploaded asset (PDF/DOC via `TurFileUtils`), or a URL (OCR url path with the existing SSRF guard). New `TurPersonaSource` (type SN_DOC\|ASSET\|URL, ref, cached extracted text) + CRUD + admin "Sources" tab. → §XXVI.2
+- 📋 **T466** (deps: T464) **Pure multilingual readability/complexity scorer** — deterministic `TurReadabilityScorer` (Flesch Reading Ease / FK-grade adapted PT/ES/EN, avg sentence length, complex-word ratio against `vocabularyCeiling`, passive-voice heuristic) → numeric fit sub-score with **no LLM**, so CI tests are deterministic (the T385 pure-scorer pattern). → §XXVI.3
+- 📋 **T467** (deps: T465, T466, T385) **Content-fit evaluator** — the LLM **role-plays the persona as a reader** and, *grounded in the source text* (grounding hard-fail à la T385), returns a structured verdict: overall fit %, what condiz / what não condiz, flagged spans (too-complex term, jargon, tone/context mismatch) each with a suggested rewrite. Fuses the deterministic T466 score (hard signal) with the LLM judgment; cached via `TurLlmSummaryService`, structured output via the LlmJudge path. → §XXVI.4
+- 📋 **T468** (deps: T467, T388) **Persona-fit report API + admin page** — `POST /api/persona/{id}/content-fit` (one source or the whole notebook) → aggregated report; admin page with per-source red/amber/green fit bars (à la T388 field coverage), flagged spans, rewrite suggestions, and regenerate support. → §XXVI.5
+- 💭 **T469** (deps: T64) **Transcription seam (`TurTranscriptionProvider`)** — a pluggable speech-to-text interface (default: OpenAI Whisper / provider-native via an existing LLM instance; air-gapped installs plug a local STT) wired to the existing `AUDIO` slot upload path. Provider choice open; also partially unblocks F.5 voice agents. → §XXVI.6
+- 📋 **T470** (deps: T469, T426) **Persona-from-audio authoring** — `POST /api/persona/derive-from-audio`: upload audio → transcribe (T469) → LLM behavioral analysis extracts voice traits (tone/verbosity/languageStyle/vocabulary) **and** audience descriptors → **draft** persona that is never auto-saved; it opens the existing AI-authoring review form (T426 strict-schema path) for human approval. → §XXVI.7
+- 💭 **T471** (deps: T467, T69) **Auto-suggest the best persona variant for a piece of content** — given content + a set of audience personas, batch the T467 evaluator and rank which persona it best fits; feeds Block Z A/B persona selection and editorial routing. → §XXVI.8
+- 💭 **T472** (deps: T467, T388) **Content-fit as an index-time SN signal** — run the evaluator at index time against a configured target-audience persona and store a per-document readability/fit score as an SN field; surface "content too complex for its audience" in the content-gap dashboard (cousin of T252/T388). → §XXVI.9
+
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 
 > **Decision:** the 26-task committed Jlama program (was T193–T218) is cut to a
