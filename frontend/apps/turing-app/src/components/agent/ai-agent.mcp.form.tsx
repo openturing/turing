@@ -4,11 +4,12 @@ import { useMcpServers } from "@/api/queries/mcp-server.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
-import { IconCheck, IconServer2 } from "@tabler/icons-react"
+import { IconCheck, IconServer2, IconWorldBolt } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
+import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
 interface Props {
@@ -20,15 +21,20 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
   const { data: mcpServers = [] } = useMcpServers();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [federation, setFederation] = useState(false);
+  const [savedFederation, setSavedFederation] = useState(false);
   const updateMutation = useUpdateAiAgent();
 
   useEffect(() => {
     const ids = new Set((value.mcpServers ?? []).map((s) => s.id));
     setSelectedIds(ids);
     setSavedIds(ids);
+    setFederation(value.mcpNativeFederation ?? false);
+    setSavedFederation(value.mcpNativeFederation ?? false);
   }, [value]);
 
   const isDirty = (() => {
+    if (federation !== savedFederation) return true;
     if (selectedIds.size !== savedIds.size) return true;
     for (const id of selectedIds) {
       if (!savedIds.has(id)) return true;
@@ -47,12 +53,13 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
 
   async function onSave() {
     const selected = mcpServers.filter((s) => selectedIds.has(s.id));
-    const payload: TurAIAgent = { ...value, mcpServers: selected };
+    const payload: TurAIAgent = { ...value, mcpServers: selected, mcpNativeFederation: federation };
     try {
       const result = await updateMutation.mutateAsync(payload);
       if (result) {
         toast.success(t("forms.agentMcp.updated"));
         setSavedIds(new Set(selectedIds));
+        setSavedFederation(federation);
       } else {
         toast.error(t("forms.agentMcp.updateFailed"));
       }
@@ -64,6 +71,7 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
 
   function onReset() {
     setSelectedIds(new Set(savedIds));
+    setFederation(savedFederation);
   }
 
   function getConnectionLabel(mcp: TurMcpServer) {
@@ -155,6 +163,26 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
                 </div>
               </div>
             )}
+          </SectionCard.Content>
+        </SectionCard>
+
+        <SectionCard variant="cyan">
+          <SectionCard.Content>
+            <label className="flex items-start gap-4 cursor-pointer">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 dark:bg-cyan-500/25">
+                <IconWorldBolt className="size-5 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-medium">{t("forms.agentMcp.federation")}</span>
+                <span className="text-xs text-muted-foreground mt-0.5">
+                  {t("forms.agentMcp.federationDesc")}
+                </span>
+              </div>
+              <GradientSwitch
+                checked={federation}
+                onCheckedChange={(checked) => setFederation(!!checked)}
+              />
+            </label>
           </SectionCard.Content>
         </SectionCard>
 

@@ -105,6 +105,24 @@ public class TurAIAgent implements Serializable {
     private boolean skillsEnabled = false;
 
     /**
+     * T145 / §X.5.b — when {@code true}, the agent's attached MCP servers (the
+     * {@link #mcpServers} allow-list) are <em>federated</em> to whichever native
+     * vendor handles the turn: the OpenAI Responses remote {@code mcp} tool
+     * (T138) or the Anthropic MCP Connector (T144). On such a native turn the
+     * same servers are <em>not</em> also wired as Turing-side MCP client tools
+     * (the {@code TurNativeChatExecutor} suppresses the client callbacks to avoid
+     * double-wiring). {@code false} (default) keeps the legacy behaviour: MCP
+     * servers are reached only through Turing's in-process MCP client, and the
+     * vendor-native MCP comes solely from the per-instance capability config.
+     * Has no effect on non-native (Spring AI) turns, where MCP servers always
+     * ride as client tools.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "mcp_native_federation", nullable = false)
+    private boolean mcpNativeFederation = false;
+
+    /**
      * When {@code true}, the agent enqueues every chat turn into the chat
      * memory pipeline so it can be persisted by {@code turing.logging.engine}
      * (mongodb / redis) keyed by {@code conversationId}. Has no effect when

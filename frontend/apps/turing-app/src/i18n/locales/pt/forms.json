@@ -869,7 +869,9 @@
       "noServers": "Nenhum servidor MCP disponível.",
       "createFirst": "Crie um Servidor MCP primeiro para fornecer ferramentas a este agente.",
       "updated": "Servidores MCP atualizados",
-      "updateFailed": "Falha ao atualizar servidores MCP"
+      "updateFailed": "Falha ao atualizar servidores MCP",
+      "federation": "Federação MCP nativa",
+      "federationDesc": "Quando este agente roda em um turno nativo da OpenAI ou Anthropic, chama os servidores MCP HTTP selecionados diretamente pelo provedor (ferramenta MCP remota da OpenAI / MCP Connector da Anthropic) em vez do cliente MCP do Turing. Servidores de comando (stdio) não são afetados."
     },
     "agentCustomTool": {
       "available": "Ferramentas Customizadas Disponíveis",

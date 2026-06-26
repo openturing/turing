@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
@@ -33,6 +35,8 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver;
 import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver.NativeSelection;
+import com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory;
+import com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory.FederatedMcp;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
@@ -90,6 +94,7 @@ public class TurNativeChatExecutor {
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
     private final TurChatToolResolver toolResolver;
+    private final TurMcpFederationDirectory mcpFederationDirectory;
 
     public TurNativeChatExecutor(TurGenAiLlmProviderFactory providerFactory,
             TurNativeProviderClient nativeClient,
@@ -102,7 +107,8 @@ public class TurNativeChatExecutor {
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
-            TurChatToolResolver toolResolver) {
+            TurChatToolResolver toolResolver,
+            TurMcpFederationDirectory mcpFederationDirectory) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -115,6 +121,7 @@ public class TurNativeChatExecutor {
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
         this.toolResolver = toolResolver;
+        this.mcpFederationDirectory = mcpFederationDirectory;
     }
 
     /**
@@ -160,6 +167,22 @@ public class TurNativeChatExecutor {
                 ? instanceCapabilities
                 : selection.nativeCapabilities();
 
+        // T145 / §X.5.b — federate the agent's attached MCP servers to this
+        // vendor when the agent opted in (mcpNativeFederation). Each federated
+        // server becomes a synthetic OPENAI_MCP / ANTHROPIC_MCP capability the
+        // vendor service wires through its shipped remote-MCP path; the
+        // federated servers are then excluded from the Turing MCP client path
+        // (resolveCoexistingTools) so they aren't double-wired.
+        List<FederatedMcp> federated = mcpFederationDirectory.federate(agent, pluginType);
+        if (!federated.isEmpty()) {
+            List<EnabledCapability> merged = new ArrayList<>(capabilities);
+            federated.forEach(f -> merged.add(f.capability()));
+            capabilities = merged;
+        }
+        Set<String> federatedServerIds = federated.stream()
+                .map(f -> f.serverId())
+                .collect(Collectors.toSet());
+
         // Acquire the vendor's native client up front; a missing/unusable client
         // (e.g. no API key) means we can't handle the turn natively.
         Optional<OpenAIClient> openAiClient = isOpenAi ? nativeClient.openAi(instance) : Optional.empty();
@@ -195,8 +218,8 @@ public class TurNativeChatExecutor {
         // selected provider-native capability and run them through the native
         // tool-execution loop. Legacy turns (and owns-turn picks) attach none —
         // identical to the pre-T433 one-shot behaviour.
-        ToolCallback[] coexistingTools =
-                resolveCoexistingTools(selection, agent, activePersona, lastUserMessage);
+        ToolCallback[] coexistingTools = resolveCoexistingTools(
+                selection, agent, activePersona, lastUserMessage, federatedServerIds);
 
         // F.3 / §X.4 — Anthropic path.
         if (isAnthropic) {
@@ -284,11 +307,14 @@ public class TurNativeChatExecutor {
      * {@code function} is claimed by a selected provider-native capability.
      */
     private ToolCallback[] resolveCoexistingTools(NativeSelection selection, TurAIAgent agent,
-            TurPersona activePersona, String lastUserMessage) {
+            TurPersona activePersona, String lastUserMessage, Set<String> federatedMcpServerIds) {
         if (selection == null || selection.hasOwnsTurn()) {
             return new ToolCallback[0];
         }
-        ToolCallback[] agentTools = toolResolver.resolve(agent, activePersona, lastUserMessage, null);
+        // T145 / §X.5.b — exclude the MCP servers federated to the vendor this
+        // turn from the Turing MCP client path so they aren't double-wired.
+        ToolCallback[] agentTools = toolResolver.resolve(
+                agent, activePersona, lastUserMessage, null, null, federatedMcpServerIds);
         return capabilityResolver.coexistingTools(agentTools, selection.claimedFunctions());
     }
 

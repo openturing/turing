@@ -869,7 +869,9 @@
       "noServers": "No MCP servers available.",
       "createFirst": "Create an MCP Server first to provide tools to this agent.",
       "updated": "MCP servers updated",
-      "updateFailed": "Failed to update MCP servers"
+      "updateFailed": "Failed to update MCP servers",
+      "federation": "Native MCP federation",
+      "federationDesc": "When this agent runs on a native OpenAI or Anthropic turn, call the selected HTTP MCP servers directly through the provider (OpenAI remote MCP tool / Anthropic MCP Connector) instead of Turing's MCP client. Command (stdio) servers are unaffected."
     },
     "agentCustomTool": {
       "available": "Available Custom Tools",

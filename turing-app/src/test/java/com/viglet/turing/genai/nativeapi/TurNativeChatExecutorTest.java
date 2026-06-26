@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +65,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
     @Mock private com.viglet.turing.genai.TurChatToolResolver toolResolver;
+    @Mock private com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory mcpFederationDirectory;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
@@ -72,7 +74,14 @@ class TurNativeChatExecutorTest {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver,
-                capabilityResolver, toolResolver);
+                capabilityResolver, toolResolver, mcpFederationDirectory);
+    }
+
+    @BeforeEach
+    void federationDefaultsToEmpty() {
+        // T145 — no MCP federation unless a test opts in; keeps the existing
+        // routing tests unchanged (the directory is consulted on every native turn).
+        lenient().when(mcpFederationDirectory.federate(any(), any())).thenReturn(List.of());
     }
 
     private static TurLLMInstance instance() {

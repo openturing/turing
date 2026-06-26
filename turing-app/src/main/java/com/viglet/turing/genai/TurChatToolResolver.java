@@ -120,10 +120,25 @@ public class TurChatToolResolver {
      *
      * @since 2026.3.1
      */
-    private ToolCallback[] mcpCallbacks(TurAIAgent agent) {
-        return agent.getMcpServers() == null || agent.getMcpServers().isEmpty()
-                ? new ToolCallback[0]
-                : mcpToolCallbackService.getToolCallbacks(agent.getMcpServers());
+    private ToolCallback[] mcpCallbacks(TurAIAgent agent, Set<String> excludeMcpServerIds) {
+        Set<TurMcpServer> servers = agent.getMcpServers();
+        if (servers == null || servers.isEmpty()) {
+            return new ToolCallback[0];
+        }
+        // T145 / §X.5.b — when a native turn federates some of the agent's MCP
+        // servers to the vendor (OpenAI remote mcp / Anthropic connector), those
+        // servers are excluded here so they aren't ALSO wired as Turing MCP
+        // client tools. COMMAND (stdio) servers — never federated — stay.
+        Set<TurMcpServer> effective = servers;
+        if (excludeMcpServerIds != null && !excludeMcpServerIds.isEmpty()) {
+            effective = servers.stream()
+                    .filter(s -> s != null && !excludeMcpServerIds.contains(s.getId()))
+                    .collect(java.util.stream.Collectors.toSet());
+            if (effective.isEmpty()) {
+                return new ToolCallback[0];
+            }
+        }
+        return mcpToolCallbackService.getToolCallbacks(effective);
     }
 
     private ToolCallback[] customCallbacks(TurAIAgent agent) {
@@ -272,12 +287,27 @@ public class TurChatToolResolver {
 
     public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
             String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
+        return resolve(agent, activePersona, userMessage, activeNode, selectedSkillId, Set.of());
+    }
+
+    /**
+     * T145 / §X.5.b overload — same as
+     * {@link #resolve(TurAIAgent, TurPersona, String, ChatFlowNode, String)} but
+     * excludes the given MCP server ids from the Turing MCP <em>client</em> path.
+     * The native chat executor passes the ids of the agent's MCP servers it
+     * federated to the vendor this turn, so they aren't double-wired (vendor
+     * connector + Turing client). Empty set = no exclusion (every caller below
+     * the native path).
+     */
+    public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
+            String userMessage, ChatFlowNode activeNode, String selectedSkillId,
+            Set<String> excludeMcpServerIds) {
         long t0 = System.currentTimeMillis();
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
                 ? new ToolCallback[0]
                 : nativeToolService.getToolCallbacks(selectedNativeTools);
-        ToolCallback[] mcpCallbacks = mcpCallbacks(agent);
+        ToolCallback[] mcpCallbacks = mcpCallbacks(agent, excludeMcpServerIds);
         ToolCallback[] customCallbacks = customCallbacks(agent);
         ToolCallback[] personaBrandCallbacks =
                 personaBrandContextProvider.getToolCallbacks(activePersona);
