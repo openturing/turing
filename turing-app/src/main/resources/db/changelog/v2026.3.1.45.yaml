@@ -1,0 +1,58 @@
+databaseChangeLog:
+  # T100 / §VII.12.b — per-agent document-extraction schema.
+  #
+  # extract_from_document — when 1/true, the slot is a default target of
+  #                         POST /chat/slot-extract even when the caller passes
+  #                         no slotNames. The flagged set is the agent's
+  #                         "document schema". Default false; when no slot on an
+  #                         agent is flagged, extraction falls back to the
+  #                         legacy whole-catalog behaviour (opt-in, no
+  #                         revalidation of existing agents).
+  # validation_pattern    — optional Java regex an extracted value must fully
+  #                         match to be persisted. Nullable = no validation.
+  #
+  # snake_case columns to match ai_agent / ai_agent_slot's other explicit
+  # column names (agent_id); idempotent via columnExists.
+
+  - changeSet:
+      id: v2026.3.1.45-add-ai_agent_slot-extract_from_document
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent_slot
+        - not:
+            - columnExists:
+                tableName: ai_agent_slot
+                columnName: extract_from_document
+      changes:
+        - addColumn:
+            tableName: ai_agent_slot
+            columns:
+              - column:
+                  name: extract_from_document
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T100 default document-extraction target flag; the flagged set is the agent's document schema."
+
+  - changeSet:
+      id: v2026.3.1.45-add-ai_agent_slot-validation_pattern
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent_slot
+        - not:
+            - columnExists:
+                tableName: ai_agent_slot
+                columnName: validation_pattern
+      changes:
+        - addColumn:
+            tableName: ai_agent_slot
+            columns:
+              - column:
+                  name: validation_pattern
+                  type: varchar(500)
+                  remarks: "T100 optional Java regex an extracted value must fully match to be persisted; null = no validation."

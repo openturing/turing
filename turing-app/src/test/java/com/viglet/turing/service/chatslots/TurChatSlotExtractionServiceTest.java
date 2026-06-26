@@ -89,6 +89,13 @@ class TurChatSlotExtractionServiceTest {
         return s;
     }
 
+    private TurAIAgentSlot slot(String name, boolean extractFromDocument, String validationPattern) {
+        TurAIAgentSlot s = slot(name);
+        s.setExtractFromDocument(extractFromDocument);
+        s.setValidationPattern(validationPattern);
+        return s;
+    }
+
     private MultipartFile file(String name, String contentType, byte[] bytes) {
         try {
             MultipartFile f = mock(MultipartFile.class);
@@ -185,5 +192,57 @@ class TurChatSlotExtractionServiceTest {
         assertThat(service.extract(null, agentWithLlm(), CONV, List.of()).extracted()).isEmpty();
         assertThat(service.extract(file("a.png", "image/png", new byte[] { 1 }),
                 agentWithLlm(), "  ", List.of()).extracted()).isEmpty();
+    }
+
+    @Test
+    void documentSchemaLimitsTargetsToFlaggedSlotsWhenNoNamesGiven() {
+        // name is flagged extractFromDocument; cargo is not → only name is a target.
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID)).thenReturn(List.of(
+                slot("name", true, null),
+                slot("cargo", false, null)));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        // The model echoes both keys; parseJsonReply keeps only the target slot.
+        when(chatModel.call(any(Prompt.class)))
+                .thenReturn(chatResponse("{\"name\":\"Alexandre\",\"cargo\":\"Gerente\"}"));
+        wireChatModel(chatModel);
+
+        SlotExtractionResult result = service.extract(
+                file("cv.png", "image/png", new byte[] { 1 }), agentWithLlm(), CONV, List.of());
+
+        assertThat(result.extracted()).containsOnlyKeys("name");
+        verify(engineService, never()).writeSlot(eq(CONV), eq("cargo"), anyString(), any(), any());
+    }
+
+    @Test
+    void applyValidationPatternsDropsNonMatchingValue() {
+        List<TurAIAgentSlot> slots = List.of(
+                slot("cpf", true, "^[0-9]{11}$"),
+                slot("name", true, null));
+        java.util.Map<String, String> in = new java.util.LinkedHashMap<>();
+        in.put("cpf", "not-a-cpf");
+        in.put("name", "Alexandre");
+
+        java.util.Map<String, String> out =
+                TurChatSlotExtractionService.applyValidationPatterns(in, slots);
+
+        assertThat(out).containsOnlyKeys("name").containsEntry("name", "Alexandre");
+    }
+
+    @Test
+    void applyValidationPatternsKeepsMatchingAndIgnoresInvalidRegex() {
+        List<TurAIAgentSlot> slots = List.of(
+                slot("cpf", true, "^[0-9]{11}$"),
+                slot("broken", true, "([unclosed"));
+        java.util.Map<String, String> in = new java.util.LinkedHashMap<>();
+        in.put("cpf", "12345678901");
+        in.put("broken", "anything");
+
+        java.util.Map<String, String> out =
+                TurChatSlotExtractionService.applyValidationPatterns(in, slots);
+
+        // valid CPF kept; an uncompilable pattern is treated as "no validation".
+        assertThat(out).containsEntry("cpf", "12345678901").containsEntry("broken", "anything");
     }
 }

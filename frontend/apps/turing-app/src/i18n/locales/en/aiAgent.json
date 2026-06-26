@@ -44,6 +44,11 @@
       "namePlaceholder": "e.g. visitor_name",
       "nameHint": "Letters, digits and underscores; must start with a letter or underscore.",
       "descriptionPlaceholder": "Optional — what this slot captures and how flows should use it.",
+      "extractFromDocumentHint": "When on, this slot is filled automatically from an uploaded document (CV, invoice, form) even when the caller names no slots. The slots flagged here are this agent's document-extraction schema.",
+      "extractFromDocumentPlaceholder": "",
+      "validationPatternPlaceholder": "e.g. ^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$",
+      "validationPatternHint": "Optional Java regex an extracted value must fully match to be saved; also given to the model as a formatting hint.",
+      "extractBadge": "Doc schema",
       "created": "Slot \"{{name}}\" created",
       "updated": "Slot \"{{name}}\" updated",
       "deleted": "Slot \"{{name}}\" deleted",
@@ -53,7 +58,9 @@
         "name": "Name",
         "type": "Type",
         "description": "Description",
-        "actions": "Actions"
+        "actions": "Actions",
+        "extractFromDocument": "Extract from document",
+        "validationPattern": "Validation pattern"
       },
       "types": {
         "STRING": "String",

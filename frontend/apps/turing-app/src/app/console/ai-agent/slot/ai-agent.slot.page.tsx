@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SmartDescription } from "@/components/ui/smart-description";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   TUR_AI_AGENT_SLOT_TYPES,
@@ -44,9 +45,17 @@ interface FormState {
   name: string;
   type: TurAIAgentSlotType;
   description: string;
+  extractFromDocument: boolean;
+  validationPattern: string;
 }
 
-const EMPTY_FORM: FormState = { name: "", type: "STRING", description: "" };
+const EMPTY_FORM: FormState = {
+  name: "",
+  type: "STRING",
+  description: "",
+  extractFromDocument: false,
+  validationPattern: "",
+};
 
 const NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -86,6 +95,8 @@ export default function AIAgentSlotPage() {
       name: slot.name,
       type: slot.type,
       description: slot.description ?? "",
+      extractFromDocument: slot.extractFromDocument ?? false,
+      validationPattern: slot.validationPattern ?? "",
     });
     setNameError(null);
     setDialogOpen(true);
@@ -106,6 +117,8 @@ export default function AIAgentSlotPage() {
       name: trimmed,
       type: form.type,
       description: form.description.trim() || null,
+      extractFromDocument: form.extractFromDocument,
+      validationPattern: form.validationPattern.trim() || null,
     };
     try {
       if (editing) {
@@ -176,6 +189,14 @@ export default function AIAgentSlotPage() {
                   <TableRow key={slot.id}>
                     <TableCell>
                       <code className="text-xs font-mono">{slot.name}</code>
+                      {slot.extractFromDocument && (
+                        <span
+                          className="ml-2 inline-flex items-center rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400"
+                          title={t("aiAgent.slot.extractFromDocumentHint")}
+                        >
+                          {t("aiAgent.slot.extractBadge")}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
@@ -293,6 +314,38 @@ export default function AIAgentSlotPage() {
                   {t("aiAgent.slot.fields.description")}
                 </SmartDescription.Label>
               </SmartDescription>
+            </div>
+            <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="slot-extract">
+                  {t("aiAgent.slot.fields.extractFromDocument")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("aiAgent.slot.extractFromDocumentHint")}
+                </p>
+              </div>
+              <Switch
+                id="slot-extract"
+                checked={form.extractFromDocument}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, extractFromDocument: checked }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="slot-validation">
+                {t("aiAgent.slot.fields.validationPattern")}
+              </Label>
+              <Input
+                id="slot-validation"
+                value={form.validationPattern}
+                onChange={(e) => setForm({ ...form, validationPattern: e.target.value })}
+                placeholder={t("aiAgent.slot.validationPatternPlaceholder")}
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("aiAgent.slot.validationPatternHint")}
+              </p>
             </div>
           </div>
           <DialogFooter>

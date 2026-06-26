@@ -189,7 +189,8 @@ public class TurChatSlotExtractionService {
             log.warn("[SlotExtraction] LLM call failed for conv={}: {}", conversationId, e.getMessage());
             return SlotExtractionResult.empty();
         }
-        Map<String, String> extracted = parseJsonReply(reply, targetSlots);
+        Map<String, String> extracted = applyValidationPatterns(
+                parseJsonReply(reply, targetSlots), targetSlots);
 
         int written = writeExtractedSlots(extracted, conversationId, "agent=" + agent.getId());
         log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",
@@ -239,7 +240,8 @@ public class TurChatSlotExtractionService {
                     conversationId, e.getMessage());
             return SlotExtractionResult.empty();
         }
-        Map<String, String> extracted = parseJsonReply(reply, targetSlots);
+        Map<String, String> extracted = applyValidationPatterns(
+                parseJsonReply(reply, targetSlots), targetSlots);
         int written = writeExtractedSlots(extracted, conversationId, "vision-agent=" + agent.getId());
         log.info("[SlotExtraction] (image) conv={} extracted={} written={} ({} bytes)",
                 conversationId, extracted.size(), written, bytes.length);
@@ -276,26 +278,75 @@ public class TurChatSlotExtractionService {
     }
 
     /**
-     * Filters the agent's declared slots down to the caller-requested
-     * subset (when {@code requestedNames} is non-empty) or returns all of
-     * them. Order matters: the prompt lists slots in agent-catalog order
-     * so it stays deterministic across runs.
+     * Resolves which slots an extraction call targets. Order matters: the
+     * prompt lists slots in agent-catalog order so it stays deterministic
+     * across runs. Precedence:
+     *
+     * <ol>
+     *   <li>An explicit caller-provided {@code requestedNames} subset always
+     *       wins (legacy per-request behaviour, used by the SDK's
+     *       {@code slotNames} param).</li>
+     *   <li>Otherwise, the agent's <em>document schema</em> (T100): the slots
+     *       flagged {@code extractFromDocument}. This lets an agent declare its
+     *       extraction targets once in admin instead of the caller naming them
+     *       per request.</li>
+     *   <li>Otherwise (no flagged slot — an agent that predates T100), the
+     *       whole catalog, preserving the original behaviour.</li>
+     * </ol>
      */
     private List<TurAIAgentSlot> resolveTargetSlots(TurAIAgent agent, List<String> requestedNames) {
         List<TurAIAgentSlot> all = slotRepository
                 .findByTurAIAgent_IdOrderByNameAsc(agent.getId());
-        if (requestedNames == null || requestedNames.isEmpty()) {
-            return all;
+        if (requestedNames != null && !requestedNames.isEmpty()) {
+            Set<String> wanted = requestedNames.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+            List<TurAIAgentSlot> filtered = new ArrayList<>();
+            for (TurAIAgentSlot slot : all) {
+                if (wanted.contains(slot.getName())) filtered.add(slot);
+            }
+            return filtered;
         }
-        Set<String> wanted = requestedNames.stream()
-                .filter(s -> s != null && !s.isBlank())
-                .map(String::trim)
-                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
-        List<TurAIAgentSlot> filtered = new ArrayList<>();
+        List<TurAIAgentSlot> schema = new ArrayList<>();
         for (TurAIAgentSlot slot : all) {
-            if (wanted.contains(slot.getName())) filtered.add(slot);
+            if (slot.isExtractFromDocument()) schema.add(slot);
         }
-        return filtered;
+        return schema.isEmpty() ? all : schema;
+    }
+
+    /**
+     * Drops extracted values that fail their slot's {@code validationPattern}
+     * (T100) so a malformed fill never reaches the slot. Slots with no pattern
+     * pass through unchanged; an invalid regex is treated as "no validation"
+     * (logged once) rather than silently dropping every value for that slot.
+     */
+    static Map<String, String> applyValidationPatterns(Map<String, String> extracted,
+            List<TurAIAgentSlot> slots) {
+        Map<String, Pattern> patterns = new HashMap<>();
+        for (TurAIAgentSlot s : slots) {
+            String raw = s.getValidationPattern();
+            if (raw == null || raw.isBlank()) continue;
+            try {
+                patterns.put(s.getName(), Pattern.compile(raw.trim()));
+            } catch (RuntimeException e) {
+                log.warn("[SlotExtraction] Slot '{}' has an invalid validationPattern '{}' — ignored: {}",
+                        s.getName(), raw, e.getMessage());
+            }
+        }
+        if (patterns.isEmpty()) return extracted;
+        Map<String, String> valid = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : extracted.entrySet()) {
+            Pattern p = patterns.get(entry.getKey());
+            String value = entry.getValue();
+            if (p != null && value != null && !p.matcher(value).matches()) {
+                log.info("[SlotExtraction] Dropping slot '{}' — value did not match validationPattern",
+                        entry.getKey());
+                continue;
+            }
+            valid.put(entry.getKey(), value);
+        }
+        return valid;
     }
 
     private ChatModel buildChatModelForAgent(TurAIAgent agent) {
@@ -322,6 +373,10 @@ public class TurChatSlotExtractionService {
             sb.append("- ").append(slot.getName());
             if (slot.getDescription() != null && !slot.getDescription().isBlank()) {
                 sb.append(" — ").append(slot.getDescription().trim());
+            }
+            if (slot.getValidationPattern() != null && !slot.getValidationPattern().isBlank()) {
+                sb.append(" (the value must match this regex: ")
+                        .append(slot.getValidationPattern().trim()).append(')');
             }
             sb.append('\n');
         }

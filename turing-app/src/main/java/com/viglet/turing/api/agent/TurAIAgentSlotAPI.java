@@ -132,6 +132,9 @@ public class TurAIAgentSlotAPI {
         if (dto.getType() != null) {
             existing.setType(dto.getType());
         }
+        // T100 — document-extraction schema fields.
+        existing.setExtractFromDocument(dto.isExtractFromDocument());
+        existing.setValidationPattern(dto.getValidationPattern());
         slotRepository.save(existing);
         return slotMapper.toDto(existing);
     }

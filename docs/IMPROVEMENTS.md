@@ -1289,54 +1289,6 @@ click) trigger the resume; flow advances from the suspend point with
 the new slot values. Deep Agents implies you build this yourself with
 generic state machines. Turing makes it a one-line authoring primitive.
 
-### IX.8 Developer experience — CLI + eval as table stakes
-
-#### IX.8.a `turing` CLI (T125)
-
-Deep Agents has a CLI. Turing's CLI must be **strictly better** because
-it spans the whole stack:
-
-```bash
-$ turing init my-agent              # scaffolds agent JSON + flow + tools dir
-$ cd my-agent
-$ turing dev                        # docker-compose up: pg + solr + minio + jar
-                                    # file watcher → hot reload of flow + tools
-$ turing eval                       # run YAML eval suite
-$ turing deploy --env=staging       # push agent + flows + tools + skills
-$ turing logs --tail                # stream chat events from remote
-```
-
-The differentiator: `turing dev` boots the **full Turing stack** locally
-in one command. LangChain's CLI is just the SDK harness — you still
-need your own infrastructure. Turing's CLI is closer to Supabase's CLI
-(supabase + auth + postgres + storage in one) than to LangChain's.
-
-#### IX.8.b `turing eval` (T126)
-
-YAML-defined regression suite. Generalizes the BehavioralIT pattern
-(§VI.4.3) into a customer-facing tool:
-
-```yaml
-# evals/lead-capture.eval.yaml
-fixtures:
-  - id: happy-path-cfo
-    conversation:
-      - user: "Quero saber dos seus programas"
-      - assert.assistant.matches: ".*cargo.*"      # expected to ask cargo
-      - user: "Sou CFO numa fintech"
-      - assert.slot.cargo_atual: "CFO"             # judge captured it
-      - assert.tool_called: search_ee_programs     # tool fired
-      - assert.persona_invariants:                 # tone validator passed
-          forbidden: ["talvez", "não posso"]
-  - id: rejection-path-junior
-    ...
-```
-
-Customers run `turing eval --watch` locally; CI runs on every PR;
-production conversations get one-click "save as eval fixture" (T127).
-LangSmith has eval but provider-locked; Turing's eval works across all
-6 LLM providers because Spring AI abstracts them.
-
 ### IX.9 Observability interop — don't fight LangSmith, federate
 
 Customers who already invested in LangSmith dashboards / OpenTelemetry

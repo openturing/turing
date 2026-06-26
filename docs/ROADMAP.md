@@ -18,7 +18,6 @@
 
 ## D.8 — Document extraction & document AI
 
-- 💭 **T100** (deps: T58) Per-agent extraction schema — agent declares `documentSchema` in admin (slot names + validation patterns) instead of caller passing slot names per request. → §VII.12.b
 - 💭 **T101** (deps: T58) Multi-doc context — upload CV + JD together → LLM identifies skill gap → writes `skill_gap` slot. → §VII.12.c
 - 💭 **T102** (deps: T58) Extraction confidence per field — LLM returns `{value, confidence: 0-1}`; UI shows warning when `confidence < 0.7`. → §VII.12.d
 - 💭 **T103** (deps: T58) Anthropic Files API / OpenAI Files — pass binary PDF/DOCX directly to the LLM (preserves tables/layout) instead of Tika→text. → §VII.12.e
@@ -65,9 +64,10 @@
 
 ## E.7 — Developer experience (CLI + eval)
 
-- 📋 **T125** (deps: —) **`turing` CLI** — `init` (scaffold new agent JSON), `dev` (spin up full local stack with hot reload), `deploy` (push agent + flows + tools + skills to remote instance), `logs` (tail chat events from remote). → §IX.8.a
-- 📋 **T126** (deps: T125) **`turing eval` — YAML-defined regression suite** — agent authors write `evals/onboarding-flow.eval.yaml` with N test conversations + per-turn assertions (slot values, persona invariants, tool-call expected/forbidden, response regex). → §IX.8.b
-- 💭 **T127** (deps: T126) **`turing eval` replay-as-test** — pull a production conversationId from the scorecard, freeze it as an eval fixture with all slot/turn snapshots. → §IX.8.c
+> **Block complete.** All three tasks have shipped — the `turing` CLI
+> (`init`/`dev`/`deploy`/`logs`, T125), the YAML eval regression suite
+> (`turing eval`, T126), and replay-as-test (`turing eval record`, T127) — as
+> the zero-dep `@viglet/turing-cli` package. See [CHANGELOG.md](CHANGELOG.md) §E.7.
 
 ## E.8 — Observability interop
 

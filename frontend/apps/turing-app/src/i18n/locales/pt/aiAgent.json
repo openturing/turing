@@ -44,6 +44,11 @@
       "namePlaceholder": "ex.: nome_visitante",
       "nameHint": "Letras, dígitos e underscores; deve começar com letra ou underscore.",
       "descriptionPlaceholder": "Opcional — o que este slot captura e como os flows devem usá-lo.",
+      "extractFromDocumentHint": "Quando ativo, este slot é preenchido automaticamente a partir de um documento enviado (currículo, nota fiscal, formulário) mesmo que o chamador não informe slots. Os slots marcados aqui formam o esquema de extração de documentos deste agente.",
+      "extractFromDocumentPlaceholder": "",
+      "validationPatternPlaceholder": "ex.: ^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$",
+      "validationPatternHint": "Regex Java opcional que o valor extraído deve corresponder integralmente para ser salvo; também é passado ao modelo como dica de formato.",
+      "extractBadge": "Esquema doc",
       "created": "Slot \"{{name}}\" criado",
       "updated": "Slot \"{{name}}\" atualizado",
       "deleted": "Slot \"{{name}}\" excluído",
@@ -53,7 +58,9 @@
         "name": "Nome",
         "type": "Tipo",
         "description": "Descrição",
-        "actions": "Ações"
+        "actions": "Ações",
+        "extractFromDocument": "Extrair de documento",
+        "validationPattern": "Padrão de validação"
       },
       "types": {
         "STRING": "Texto curto",

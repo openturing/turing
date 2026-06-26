@@ -11,6 +11,8 @@
     "build": "pnpm install && turbo run build && node scripts/build-status.mjs",
     "build:react-sdk": "turbo run build --filter=@viglet/turing-react-sdk && node scripts/build-status.mjs",
     "build:sdk": "turbo run build --filter=@viglet/turing-sdk && node scripts/build-status.mjs",
+    "build:cli": "turbo run build --filter=@viglet/turing-cli && node scripts/build-status.mjs",
+    "test:cli": "pnpm --filter @viglet/turing-cli test",
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
     "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
@@ -28,7 +30,7 @@
     "size:react-ui": "pnpm --filter @viglet/turing-react-ui run build && pnpm --filter @viglet/turing-react-ui run size",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo run build --filter=@viglet/turing-react-ui --filter=@viglet/turing-react-sdk --filter=@viglet/turing-sdk && changeset publish"
+    "release": "turbo run build --filter=@viglet/turing-react-ui --filter=@viglet/turing-react-sdk --filter=@viglet/turing-sdk --filter=@viglet/turing-cli && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",

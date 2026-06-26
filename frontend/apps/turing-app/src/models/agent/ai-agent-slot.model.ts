@@ -42,4 +42,15 @@ export interface TurAIAgentSlot {
   name: string;
   description?: string | null;
   type: TurAIAgentSlotType;
+  /**
+   * T100 — when true, this slot is a default target of document extraction
+   * (`POST /chat/slot-extract`) even when the caller passes no slot names. The
+   * set of slots flagged this way is the agent's document schema.
+   */
+  extractFromDocument?: boolean;
+  /**
+   * T100 — optional Java regex an extracted value must fully match to be
+   * persisted; also surfaced to the LLM as a formatting hint.
+   */
+  validationPattern?: string | null;
 }
