@@ -2423,26 +2423,3 @@ The boost is conditional on the trigger match.
 (an agent that should answer from an MCP knowledge base does not need 24 native
 tools), and/or raise `turing.genai.tool-prefilter.top-K` above the native count.
 A stronger model than `gpt-4o-mini` also reduces the misselection + loop.
-
-### XXI.1 Custom tools reusing the MCP integration (T425)
-
-A second face of the same problem: a Custom Tool that needs the *same* external
-system an MCP server already wraps. The Aula-Relâmpago tool queried the Insper
-DSpace via a **parallel direct-REST** call (`http.getJson` to
-`repositorio-api.insper.edu.br`) while the agent's chat path used the
-`dspace_*` **MCP** tools. The two diverged: the Insper Akamai WAF allowlists
-known library User-Agents (`python-httpx`, `curl`, `okhttp`…) and **403s** the
-JDK default `Java/<version>` that Spring `RestClient` /
-`SimpleClientHttpRequestFactory` sends — so the chat (MCP, honest `python-httpx`
-UA) found material while the tool (direct REST) got zero and bailed with
-"não encontrei material no acervo".
-
-**Fix.** Expose an `mcp` helper in the Groovy custom-tool sandbox, alongside the
-existing `http` / `turingSearch` / `slots` / `workspace` / `code` / `agent`
-bindings: `mcp.call("dspace_search_items", [query: term])`. It resolves the
-active agent's attached MCP servers and invokes the named tool, returning its
-raw (usually JSON) result for the script to parse. The tool then reuses the
-*one* integration configured on the MCP server — no duplicated endpoint/auth, no
-WAF fight in the JVM, no UA forging. Forging a library UA from the JVM is the
-explicit non-goal; routing through the MCP (which legitimately uses its own
-client) is the honest path.
