@@ -1055,6 +1055,16 @@
       "updated": "Ferramentas nativas atualizadas",
       "updateFailed": "Falha ao atualizar ferramentas nativas"
     },
+    "agentCapabilities": {
+      "title": "Ferramentas e Capacidades",
+      "description": "Escolha quem fornece cada capacidade. Uma função oferecida por mais de um provedor é uma escolha única (mutex); capacidades de provedor único são alternâncias. Opções nativas do provedor ficam bloqueadas quando o fornecedor do modelo do agente não corresponde.",
+      "empty": "Nenhuma capacidade disponível.",
+      "mutex": "um provedor",
+      "ownsTurn": "assume o turno sozinho",
+      "vendorMismatch": "Requer um modelo {{provider}} vinculado a este agente",
+      "updated": "Capacidades atualizadas",
+      "updateFailed": "Falha ao atualizar capacidades"
+    },
     "intentSettings": {
       "generalDesc": "Nome e descrição para esta categoria de intenção.",
       "titleDesc": "O rótulo da categoria mostrado nas sugestões do chat.",

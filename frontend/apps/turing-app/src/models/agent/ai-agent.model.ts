@@ -117,6 +117,14 @@ export interface TurAIAgent {
    */
   budgetDowngradeLlmId?: string | null;
   nativeTools?: string | null;
+  /**
+   * T433 / §X.18.b — per-agent selection of provider-native capabilities (CSV of
+   * `TurNativeCapability` keys, mirroring {@link nativeTools}). `null`/undefined =
+   * no explicit selection (legacy winner-takes-all native path); a non-null value
+   * (even "") opts into the "capacidade é mutex, resto coexiste" execution model.
+   * Written by the Tools & Capabilities picker (T434). @since 2026.3.4
+   */
+  nativeCapabilities?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
   /**

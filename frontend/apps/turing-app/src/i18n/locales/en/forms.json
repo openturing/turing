@@ -1055,6 +1055,16 @@
       "updated": "Native tools updated",
       "updateFailed": "Failed to update native tools"
     },
+    "agentCapabilities": {
+      "title": "Tools & Capabilities",
+      "description": "Pick who provides each capability. A function offered by more than one provider is a single choice (mutex); single-provider capabilities are toggles. Provider-native options are locked when this agent's model vendor doesn't match.",
+      "empty": "No capabilities available.",
+      "mutex": "one provider",
+      "ownsTurn": "runs the turn alone",
+      "vendorMismatch": "Needs a {{provider}} model bound to this agent",
+      "updated": "Capabilities updated",
+      "updateFailed": "Failed to update capabilities"
+    },
     "intentSettings": {
       "generalDesc": "Name and description for this intent category.",
       "titleDesc": "The category label shown in the chat suggestions.",

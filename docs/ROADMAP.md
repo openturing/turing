@@ -178,10 +178,10 @@
 
 > **Why now:** §X has ~40 native capabilities landing across many T-numbers, but they are *not* all "tools the agent calls" — some are agent-facing tools, some are per-call request knobs, some are platform/cron features. Today the only activation surface is the per-instance capability matrix REST API (T132) with **no UI**, and a native turn **silently bypasses every Turing/MCP/custom tool** the agent has. This block builds the taxonomy + execution + UI so the remaining §X tasks slot into a consistent home instead of each inventing its own screen. Foundation for T186 (heatmap reads the registry).
 >
-> **T432 + T433 shipped** (2026-06-26) — the registry/taxonomy foundation and the
-> per-agent selection + union execution; see [CHANGELOG.md](CHANGELOG.md) §X.18. T434–T435 remain.
+> **T432 + T433 + T434 shipped** (2026-06-26) — the registry/taxonomy foundation,
+> the per-agent selection + union execution, and the capability-first picker; see
+> [CHANGELOG.md](CHANGELOG.md) §X.18. T435 remains.
 
-- 📋 **T434** (deps: T432, T433) **Agent "Tools & Capabilities" picker (frontend, new sidebar item)** — capability-first UI rendering `kind=TOOL` from the registry grouped by `function`: a function with ≥2 providers becomes a **radio (mutex)**, a single-provider function a toggle; provider-native options are disabled (with tooltip) when the agent's instance vendor doesn't match. Writes Turing-tool picks to the agent `nativeTools` and provider-native picks to the per-agent capability selection (T433). → §X.18.c
 - 📋 **T435** (deps: T432) **REQUEST_OPTION knobs as registry-driven settings** — render `kind=REQUEST_OPTION` capabilities (reasoning effort, citations, predicted/structured outputs, service tier, moderation, stored completions, safety_identifier, context editing, compaction) as grouped settings toggles/selects driven by the registry — **not** in the tool picker — giving T152/T160/T164/T167/T171/T173/T178–T182 a consistent home instead of per-task bespoke UI. → §X.18.d
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)

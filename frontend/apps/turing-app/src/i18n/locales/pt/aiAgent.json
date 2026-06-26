@@ -12,6 +12,7 @@
       "languageModels": "Modelos de Linguagem",
       "personas": "Personas",
       "nativeTools": "Ferramentas Nativas",
+      "capabilities": "Ferramentas e Capacidades",
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
       "intents": "Intents",
@@ -179,6 +180,10 @@
     "tools": {
       "title": "Ferramentas Nativas",
       "description": "Selecione quais chamadas de ferramentas nativas estão disponíveis para este agente."
+    },
+    "capabilities": {
+      "title": "Ferramentas e Capacidades",
+      "description": "Escolha, por função, quem fornece cada capacidade — as ferramentas do Turing ou uma nativa do provedor. Opções da mesma função são mutuamente exclusivas; o restante coexiste no mesmo turno."
     },
     "mcp": {
       "title": "Servidores MCP",
