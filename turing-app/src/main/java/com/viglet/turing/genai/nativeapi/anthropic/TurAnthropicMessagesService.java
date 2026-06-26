@@ -26,6 +26,7 @@ import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.ToolUnion;
+import com.anthropic.models.messages.WebFetchTool20250910;
 import com.anthropic.models.messages.WebSearchTool20250305;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
@@ -50,6 +51,7 @@ import reactor.core.scheduler.Schedulers;
  * them, and the answer comes back in a single turn (CALL semantics):
  * <ul>
  *   <li>{@code ANTHROPIC_WEB_SEARCH} → {@code web_search_20250305} (T139)</li>
+ *   <li>{@code ANTHROPIC_WEB_FETCH}  → {@code web_fetch_20250910} (T140, beta)</li>
  * </ul>
  *
  * <p>Tools that ship as Anthropic beta features (web_fetch, code_execution)
@@ -66,6 +68,9 @@ public class TurAnthropicMessagesService {
 
     private static final String DEFAULT_MODEL = "claude-sonnet-4-20250514";
     private static final long DEFAULT_MAX_TOKENS = 4096L;
+
+    /** {@code anthropic-beta} token gating the web_fetch server tool (T140). */
+    private static final String BETA_WEB_FETCH = "web-fetch-2025-09-10";
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -156,6 +161,10 @@ public class TurAnthropicMessagesService {
             switch (enabled.capability()) {
                 case ANTHROPIC_WEB_SEARCH -> tools.add(ToolUnion.ofWebSearchTool20250305(
                         WebSearchTool20250305.builder().build()));
+                case ANTHROPIC_WEB_FETCH -> {
+                    tools.add(ToolUnion.ofWebFetchTool20250910(WebFetchTool20250910.builder().build()));
+                    betas.add(BETA_WEB_FETCH);
+                }
                 default -> log.debug("[Native][Anthropic-Messages] capability '{}' is not wired on "
                         + "the Anthropic path — skipping", enabled.capability().getKey());
             }

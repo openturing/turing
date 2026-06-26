@@ -46,6 +46,27 @@ class TurAnthropicMessagesServiceTest {
     }
 
     @Test
+    void webFetchMapsToWebFetchToolAndRequiresBetaHeader() {
+        Set<String> betas = new LinkedHashSet<>();
+        List<ToolUnion> tools = service.buildTools(
+                List.of(cap(TurNativeCapability.ANTHROPIC_WEB_FETCH, null)), betas);
+        assertThat(tools).hasSize(1);
+        assertThat(tools.get(0).isWebFetchTool20250910()).isTrue();
+        assertThat(betas).containsExactly("web-fetch-2025-09-10");
+    }
+
+    @Test
+    void multipleToolsAccumulateOnlyTheirBetaTokens() {
+        Set<String> betas = new LinkedHashSet<>();
+        List<ToolUnion> tools = service.buildTools(List.of(
+                cap(TurNativeCapability.ANTHROPIC_WEB_SEARCH, null),
+                cap(TurNativeCapability.ANTHROPIC_WEB_FETCH, null)), betas);
+        assertThat(tools).hasSize(2);
+        // web_search is GA (no token); only web_fetch contributes one.
+        assertThat(betas).containsExactly("web-fetch-2025-09-10");
+    }
+
+    @Test
     void openAiCapabilitiesAreSkippedOnAnthropicPath() {
         // Defensive: the executor filters by vendor, but a stray OpenAI key must not produce a tool.
         assertThat(service.buildTools(List.of(cap(TurNativeCapability.OPENAI_WEB_SEARCH, null))))

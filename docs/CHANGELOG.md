@@ -351,6 +351,7 @@
 ### F.3 — Anthropic server-side tools (§X.4)
 
 - **T139** — **Anthropic `web_search_20250305` server tool** — new `TurAnthropicMessagesService` (Messages API analog of `TurOpenAiResponsesService`) maps enabled `anthropic`-vendor capabilities to Anthropic server-side tools that execute in Anthropic's infrastructure (zero Java callbacks, single-turn CALL semantics). `TurNativeChatExecutor` now branches by vendor — OpenAI → Responses, Anthropic → Messages — sharing the T131 prompt-assembly fusion; the `anthropic-web-search` capability (`ANTHROPIC_WEB_SEARCH`) wires `web_search_20250305` (GA, no beta header). `buildTools` collects `anthropic-beta` tokens for the beta-gated tools that follow (T140/T141). No frontend change — selectable via the existing `/api/llm/{id}/capability` matrix API (matrix UI is T132). (§X.4.a)
+- **T140** — **Anthropic `web_fetch_20250910` server tool** — `ANTHROPIC_WEB_FETCH` (`anthropic-web-fetch`) wires the `web_fetch_20250910` tool so Claude pulls a URL/PDF directly (no Turing crawler). It's beta-gated: `buildTools` pushes the `web-fetch-2025-09-10` token, which `buildParams` attaches as the `anthropic-beta` request header. No frontend change (matrix API path). (§X.4.b)
 
 ## Block M — Verifiable answers (provider-agnostic provenance, §XVII)
 

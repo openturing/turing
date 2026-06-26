@@ -61,7 +61,10 @@ public enum TurNativeCapability {
     OPENAI_COMPUTER_USE("openai-computer-use", "openai"),
 
     /** T139 / §X.4.a — Anthropic Messages {@code web_search_20250305} server tool. */
-    ANTHROPIC_WEB_SEARCH("anthropic-web-search", "anthropic");
+    ANTHROPIC_WEB_SEARCH("anthropic-web-search", "anthropic"),
+    /** T140 / §X.4.b — Anthropic Messages {@code web_fetch_20250910} server tool
+     *  (beta {@code web-fetch-2025-09-10}). */
+    ANTHROPIC_WEB_FETCH("anthropic-web-fetch", "anthropic");
 
     private final String key;
     private final String pluginType;
