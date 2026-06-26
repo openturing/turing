@@ -16,12 +16,15 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
       { label: "Documentation", href: LINKS.docs },
       { label: "GitHub", href: LINKS.github },
       { label: "npm", href: LINKS.npm },
+      { label: "CLI", href: LINKS.cli },
       { label: "llms.txt", href: "/llms.txt" },
     ],
   },
   {
-    heading: "Community",
+    heading: "Open & transparent",
     links: [
+      { label: "Roadmap", href: LINKS.roadmap },
+      { label: "Changelog", href: LINKS.changelog },
       { label: "Discussions", href: LINKS.discussions },
       { label: "Issues", href: LINKS.issues },
       { label: "viglet.org", href: LINKS.viglet },

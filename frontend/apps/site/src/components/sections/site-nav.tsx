@@ -3,11 +3,12 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Container, GitHubIcon, Logo, LINKS } from "@/components/brand";
+import { formatStars, useGitHubStars } from "@/components/github-stars";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Capabilities", href: "#features" },
-  { label: "How it works", href: "#how" },
+  { label: "Why Turing", href: "#why" },
   { label: "Developers", href: "#developers" },
   { label: "Marketplace", href: "#marketplace" },
   { label: "Docs", href: LINKS.docs },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
 
 export function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
+  const stars = useGitHubStars();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -49,9 +51,15 @@ export function SiteNav() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-            <a href={LINKS.github} target="_blank" rel="noreferrer">
+            <a href={LINKS.github} target="_blank" rel="noreferrer" title="Star on GitHub">
               <GitHubIcon className="size-4" />
               Star
+              {stars !== null && (
+                <span className="ml-0.5 inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                  <Star className="size-3 fill-current" />
+                  {formatStars(stars)}
+                </span>
+              )}
             </a>
           </Button>
           <Button asChild size="sm">

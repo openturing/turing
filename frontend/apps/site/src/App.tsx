@@ -1,7 +1,8 @@
 import { SiteNav } from "@/components/sections/site-nav";
 import { Hero } from "@/components/sections/hero";
 import { Providers } from "@/components/sections/providers";
-import { Features } from "@/components/sections/features";
+import { Pillars } from "@/components/sections/pillars";
+import { Comparison } from "@/components/sections/comparison";
 import { HowItWorks } from "@/components/sections/how-it-works";
 import { CodeShowcase } from "@/components/sections/code-showcase";
 import { Cli } from "@/components/sections/cli";
@@ -18,7 +19,8 @@ export default function App() {
       <main className="flex-1">
         <Hero />
         <Providers />
-        <Features />
+        <Pillars />
+        <Comparison />
         <HowItWorks />
         <CodeShowcase />
         <Cli />

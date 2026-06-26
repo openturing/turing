@@ -1,70 +1,107 @@
 import {
   Bot,
-  Boxes,
-  Code2,
-  Database,
   Search,
-  Wrench,
+  ServerCog,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
-export interface Feature {
+export interface Pillar {
   icon: LucideIcon;
   iconClass: string;
+  step: string;
   title: string;
   description: string;
   tags: string[];
 }
 
-export const FEATURES: Feature[] = [
-  {
-    icon: Bot,
-    iconClass: "from-[#1a3a9e] to-[#4169E1]",
-    title: "AI Agents",
-    description:
-      "Configurable agents with system prompts, tools, memory, slots and capability matrices. Agents reason, call tools and stream answers token-by-token.",
-    tags: ["Tool calling", "Streaming", "Memory"],
-  },
-  {
-    icon: Wrench,
-    iconClass: "from-[#4f46e5] to-[#6366f1]",
-    title: "Tools & MCP",
-    description:
-      "Built-in search tools, custom Groovy tools, and a full MCP Server with cross-vendor federation — plus native provider tools (web search, code execution, computer use).",
-    tags: ["MCP Server", "Federation", "Custom tools"],
-  },
-  {
-    icon: Boxes,
-    iconClass: "from-[#7c3aed] to-[#a78bfa]",
-    title: "Skills",
-    description:
-      "Anthropic-standard skill folders run in a hardened Docker sandbox with progressive disclosure. Drop in a SKILL.md, import a ZIP, and agents use it automatically.",
-    tags: ["Sandboxed", "SKILL.md", "Importable"],
-  },
-  {
-    icon: Database,
-    iconClass: "from-[#059669] to-[#10b981]",
-    title: "RAG & Reranking",
-    description:
-      "Retrieval-augmented generation with hybrid ranking (RRF), a pluggable reranker (LLM, cross-encoder or Cohere) and an embedded vector store on Lucene.",
-    tags: ["Hybrid RRF", "Reranker", "Vectors"],
-  },
+/** The platform in four outcomes — Search it → Ask it → Automate it → Run it. */
+export const PILLARS: Pillar[] = [
   {
     icon: Search,
     iconClass: "from-[#d97706] to-[#f59e0b]",
-    title: "Semantic Navigation",
+    step: "Search it",
+    title: "Production search over your content",
     description:
-      "Faceted, multilingual search with field manifests as code, currency & numeric localization, and field-coverage observability — production search, not a demo.",
-    tags: ["Facets", "Manifest", "i18n"],
+      "Faceted, multilingual, typo-tolerant search on Solr, Elasticsearch or Lucene — with field manifests as code, currency/number localization and coverage observability.",
+    tags: ["Facets", "Hybrid RRF", "Autocomplete", "i18n"],
   },
   {
-    icon: Code2,
-    iconClass: "from-[#e11d48] to-[#fb7185]",
-    title: "SDKs & APIs",
+    icon: Sparkles,
+    iconClass: "from-[#059669] to-[#10b981]",
+    step: "Ask it",
+    title: "RAG & chat that cite their sources",
     description:
-      "React SDK, a zero-dependency vanilla JS SDK (Adobe EDS-ready), headless UI components, a CLI, plus REST, SSE streaming and GraphQL APIs.",
-    tags: ["React", "Vanilla JS", "CLI"],
+      "Retrieval-augmented generation with a pluggable reranker (LLM, cross-encoder or Cohere) and an embedded vector store — grounded answers that stream token-by-token with citations.",
+    tags: ["RAG", "Reranker", "Citations", "SSE streaming"],
   },
+  {
+    icon: Bot,
+    iconClass: "from-[#1a3a9e] to-[#4169E1]",
+    step: "Automate it",
+    title: "Agents with tools, skills & MCP",
+    description:
+      "Configurable AI agents that call tools, run Anthropic-standard skills in a Docker sandbox, query MCP servers (with cross-vendor federation) and use native provider tools.",
+    tags: ["Tool calling", "Skills", "MCP Server", "Code interpreter"],
+  },
+  {
+    icon: ServerCog,
+    iconClass: "from-[#4f46e5] to-[#6366f1]",
+    step: "Run it",
+    title: "Self-hosted, any LLM, your data",
+    description:
+      "Open source under Apache 2.0. Bring any LLM (OpenAI, Anthropic, Gemini, Ollama, Azure), your own search engine and storage. Multi-tenant, observable, your infrastructure.",
+    tags: ["Apache 2.0", "Self-host", "Multi-tenant", "Any LLM"],
+  },
+];
+
+export interface ComparisonRow {
+  feature: string;
+  /** "yes" | "partial" | "no" | freeform short text */
+  turing: string;
+  saas: string;
+  diy: string;
+}
+
+/** Honest, high-level comparison. Verify current vendor capabilities — as of 2026. */
+export const COMPARISON_COLUMNS = {
+  turing: "Viglet Turing ES",
+  saas: "Hosted search SaaS",
+  diy: "DIY (LangChain + vector DB)",
+};
+
+export const COMPARISON: ComparisonRow[] = [
+  { feature: "Open source (Apache 2.0)", turing: "yes", saas: "no", diy: "partial" },
+  { feature: "Self-host — data stays in your infra", turing: "yes", saas: "no", diy: "yes" },
+  { feature: "Faceted enterprise search", turing: "yes", saas: "yes", diy: "build it" },
+  { feature: "RAG + pluggable reranker", turing: "yes", saas: "partial", diy: "build it" },
+  { feature: "AI agents, tools & skills built in", turing: "yes", saas: "partial", diy: "build it" },
+  { feature: "Any LLM provider", turing: "yes", saas: "partial", diy: "yes" },
+  { feature: "Bring your own search engine", turing: "yes", saas: "no", diy: "partial" },
+  { feature: "Time to first result", turing: "minutes", saas: "minutes", diy: "weeks" },
+];
+
+export interface SearchDoc {
+  title: string;
+  type: string;
+  snippet: string;
+}
+
+/**
+ * Sample corpus for the in-page interactive demo (client-side filtering).
+ * Goes truly live once pointed at a public Turing instance (see ROADMAP T477/T478).
+ */
+export const SEARCH_DOCS: SearchDoc[] = [
+  { title: "Reset your account password", type: "Help", snippet: "Step-by-step guide to recover access via the self-service portal and SSO." },
+  { title: "Enterprise plan — SSO & audit logs", type: "Pricing", snippet: "SAML/OIDC single sign-on, SCIM provisioning and exportable audit trails." },
+  { title: "REST API: search endpoint", type: "Docs", snippet: "POST /api/sn/{site}/search with facets, pagination and locale support." },
+  { title: "Connecting Adobe AEM content", type: "Guide", snippet: "Crawl and index AEM pages and assets into a semantic navigation site." },
+  { title: "Data residency & compliance", type: "Security", snippet: "Self-hosted deployment keeps all content and embeddings inside your network." },
+  { title: "Build a chat agent over your docs", type: "Tutorial", snippet: "Wire useTuringChat to an agent with search tools and stream cited answers." },
+  { title: "Hybrid ranking (RRF) explained", type: "Docs", snippet: "Combine BM25 and vector scores with reciprocal rank fusion for relevance." },
+  { title: "Importing a product catalog", type: "Guide", snippet: "Provision fields from a manifest and bulk-index a structured catalog." },
+  { title: "Webhooks for human handoff", type: "Docs", snippet: "Forward a conversation to a human channel when a slot is captured." },
+  { title: "Self-host with Docker Compose", type: "Ops", snippet: "Run the full Turing stack locally with turing dev in one command." },
 ];
 
 export interface Step {

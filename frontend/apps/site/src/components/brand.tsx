@@ -75,12 +75,18 @@ export function GitHubIcon({ className }: { className?: string }) {
   );
 }
 
+export const REPO = "openviglet/turing";
+
 export const LINKS = {
   docs: "https://docs.viglet.org/turing/",
   github: "https://github.com/openviglet/turing",
   discussions: "https://github.com/openviglet/turing/discussions",
   issues: "https://github.com/openviglet/turing/issues",
+  // GitHub renders these markdown files; blob/HEAD follows the default branch.
+  roadmap: "https://github.com/openviglet/turing/blob/HEAD/docs/ROADMAP.md",
+  changelog: "https://github.com/openviglet/turing/blob/HEAD/docs/CHANGELOG.md",
   npm: "https://www.npmjs.com/package/@viglet/turing-react-sdk",
+  cli: "https://www.npmjs.com/package/@viglet/turing-cli",
   storybook: "/react-sdk/",
   viglet: "https://www.viglet.org",
 } as const;
