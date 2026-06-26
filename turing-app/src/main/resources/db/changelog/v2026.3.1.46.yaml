@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T431 / §VII.12.e — per-LLM-instance file-upload capability flag.
+  #
+  # file_upload_enabled — when true, document-to-slot extraction (T103) sends
+  #                       raw PDF/DOCX binaries to this provider's native file
+  #                       input instead of Tika→text. Default false (Tika path),
+  #                       so existing instances are unaffected. The user enables
+  #                       it only for providers that support document input
+  #                       (Anthropic / Gemini / OpenAI). Mirrors tools_enabled.
+
+  - changeSet:
+      id: v2026.3.1.46-add-llm_instance-file_upload_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: file_upload_enabled
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: file_upload_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T431 allow sending raw document binaries to this provider's native file input (T103 passthrough)."

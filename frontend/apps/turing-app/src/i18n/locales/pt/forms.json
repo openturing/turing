@@ -102,6 +102,8 @@
       "enabledDesc": "Alterne para habilitar ou desabilitar esta instância de modelo de linguagem.",
       "toolsEnabled": "Ferramentas Habilitadas",
       "toolsEnabledDesc": "Habilite chamadas de ferramentas (busca web, clima, execução de código). Desabilite para modelos que não suportam chamadas de função.",
+      "fileUploadEnabled": "Upload de Arquivos Habilitado",
+      "fileUploadEnabledDesc": "Envia o binário do documento (PDF, DOCX) direto para a capacidade de arquivos nativa deste provedor na extração de documentos, preservando tabelas e layout, em vez da extração de texto no servidor. Habilite apenas para provedores que suportam entrada de documentos (Anthropic, Gemini, OpenAI).",
       "titleAndVendor": "Título, fornecedor e descrição.",
       "modelSettings": "Configurações do Modelo",
       "modelSettingsDesc": "Endpoint, nome do modelo e chave de API.",

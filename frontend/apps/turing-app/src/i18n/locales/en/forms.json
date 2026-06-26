@@ -102,6 +102,8 @@
       "enabledDesc": "Toggle to enable or disable this language model instance.",
       "toolsEnabled": "Tools Enabled",
       "toolsEnabledDesc": "Enable tool calling (web search, weather, code execution). Disable for models that do not support function calling.",
+      "fileUploadEnabled": "File Upload Enabled",
+      "fileUploadEnabledDesc": "Send raw document binaries (PDF, DOCX) to this provider's native file input for document extraction, preserving tables and layout, instead of server-side text extraction. Enable only for providers that support document input (Anthropic, Gemini, OpenAI).",
       "titleAndVendor": "Title, vendor, and description.",
       "modelSettings": "Model Settings",
       "modelSettingsDesc": "Endpoint, model name, and API key.",

@@ -1,7 +1,7 @@
-# Last task number — `T430`
+# Last task number — `T431`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T431`; after assigning it, bump the number above and the log line below.
+> `T432`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T431** — Per-LLM-instance file-upload capability flag (D.8 / T103 follow-up): `fileUploadEnabled` boolean on `TurLLMInstance` (Liquibase v2026.3.1.46) so the admin decides which providers may receive raw document binaries; the T103 binary passthrough now fires when the request opts in OR the agent's resolved LLM has the flag on. Admin + bento LLM forms gain the switch (en/pt). deps: T103. — 2026-06-26
 - **T430** — `turing eval` CI gate (E.7 follow-up): reusable GitHub composite action running `turing eval` as a PR gate + `npx @viglet/turing-cli` quickstart docs. deps: T126. → IMPROVEMENTS §IX.8.d — 2026-06-26
 - **T429** — Global chat-event tail for `turing logs` (E.7 follow-up): admin SSE firehose of recent chat events across conversations (bounded ring buffer) so `logs` works without a conversationId. deps: T125. → IMPROVEMENTS §IX.8.c — 2026-06-26
 - **T428** — `assert.outcome` in `turing eval` (E.7 follow-up): expose terminal outcome (CAPTURED/ABANDONED/HANDOFF) the TurAgentEvalRunnerService already computes so fixtures can assert end state. deps: T126. → IMPROVEMENTS §IX.8.b — 2026-06-26

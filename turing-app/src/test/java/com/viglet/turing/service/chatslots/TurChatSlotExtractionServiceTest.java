@@ -274,6 +274,36 @@ class TurChatSlotExtractionServiceTest {
     }
 
     @Test
+    void instanceFileUploadEnabledRoutesPdfThroughMediaWithoutRequestFlag() {
+        when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(slot("name")));
+        when(engineService.writeSlot(anyString(), anyString(), anyString(), any(), any()))
+                .thenReturn(1);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(chatModel.call(any(Prompt.class))).thenReturn(chatResponse("{\"name\":\"Alexandre\"}"));
+        wireChatModel(chatModel);
+
+        // Agent's LLM has fileUploadEnabled=true → binary passthrough fires even
+        // though the request did NOT pass nativeBinary (passBinary=false).
+        TurLLMInstance llm = enabledLlm();
+        llm.setFileUploadEnabled(true);
+        TurAIAgent agent = new TurAIAgent();
+        agent.setId(AGENT_ID);
+        agent.setLlmInstances(java.util.Set.of(llm));
+
+        SlotExtractionResult result = service.extract(
+                file("cv.pdf", "application/pdf", new byte[] { 1, 2 }),
+                agent, CONV, List.of(), false, false);
+
+        assertThat(result.extracted()).containsEntry("name", "Alexandre");
+        ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatModel).call(captor.capture());
+        List<Message> messages = captor.getValue().getInstructions();
+        UserMessage userMessage = (UserMessage) messages.get(messages.size() - 1);
+        assertThat(userMessage.getMedia()).isNotEmpty();
+    }
+
+    @Test
     void nativeBinaryRoutesPdfThroughMediaWithoutTika() {
         when(slotRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
                 .thenReturn(List.of(slot("name")));

@@ -182,7 +182,8 @@ public class TurChatSlotExtractionService {
             return SlotExtractionResult.empty();
         }
 
-        ChatModel chatModel = buildChatModelForAgent(agent);
+        TurLLMInstance llm = resolveLlmInstance(agent);
+        ChatModel chatModel = buildChatModel(llm);
         if (chatModel == null) {
             log.warn("[SlotExtraction] Agent '{}' has no enabled LLM instance — extraction skipped",
                     agent.getId());
@@ -194,10 +195,11 @@ public class TurChatSlotExtractionService {
         // nothing. Route images straight to the agent's vision LLM as a Media
         // block instead — same contract (buildSystemPrompt + parseJsonReply),
         // no Tesseract dependency, reusing the agent's already-configured model.
-        // T103 — when passBinary is on, the same media route carries a PDF/DOCX
-        // binary directly to a provider with native file understanding.
+        // T103/T431 — binary passthrough fires when the request opts in OR the
+        // resolved LLM instance has file upload enabled (the admin-level switch).
+        boolean passBinaryEffective = passBinary || (llm != null && llm.isFileUploadEnabled());
         String contentType = resolveContentType(file);
-        if (isImage(contentType) || passBinary) {
+        if (isImage(contentType) || passBinaryEffective) {
             SlotExtractionResult mediaResult = extractFromBinary(file, contentType, targetSlots,
                     chatModel, agent, conversationId, withConfidence);
             // For an image there is no text fallback; for a binary document a
@@ -287,12 +289,16 @@ public class TurChatSlotExtractionService {
                     agent.getId());
             return SlotExtractionResult.empty();
         }
-        ChatModel chatModel = buildChatModelForAgent(agent);
+        TurLLMInstance llm = resolveLlmInstance(agent);
+        ChatModel chatModel = buildChatModel(llm);
         if (chatModel == null) {
             log.warn("[SlotExtraction] Agent '{}' has no enabled LLM instance — extraction skipped",
                     agent.getId());
             return SlotExtractionResult.empty();
         }
+        // T103/T431 — binary passthrough fires when the request opts in OR the
+        // resolved LLM instance has file upload enabled (the admin-level switch).
+        boolean passBinaryEffective = passBinary || (llm != null && llm.isFileUploadEnabled());
 
         // Split a shared budget across the documents so a fat CV can't starve
         // the job description; keep a floor so each doc gets a usable window.
@@ -307,7 +313,7 @@ public class TurChatSlotExtractionService {
                     : file.getOriginalFilename();
             String contentType = resolveContentType(file);
             // T99 images always go as media; T103 sends every binary as media too.
-            if (isImage(contentType) || passBinary) {
+            if (isImage(contentType) || passBinaryEffective) {
                 try {
                     mediaList.add(Media.builder()
                             .mimeType(MimeType.valueOf(contentType))
@@ -546,11 +552,15 @@ public class TurChatSlotExtractionService {
         return valid;
     }
 
-    private ChatModel buildChatModelForAgent(TurAIAgent agent) {
-        TurLLMInstance llm = agent.getLlmInstances().stream()
+    /** The LLM instance used for extraction: the first enabled one, else the first. */
+    private TurLLMInstance resolveLlmInstance(TurAIAgent agent) {
+        return agent.getLlmInstances().stream()
                 .filter(l -> l.getEnabled() == 1)
                 .findFirst()
                 .orElseGet(() -> agent.getLlmInstances().stream().findFirst().orElse(null));
+    }
+
+    private ChatModel buildChatModel(TurLLMInstance llm) {
         if (llm == null) return null;
         String apiKey = cryptoService.decrypt(llm.getApiKeyEncrypted());
         return llmProviderFactory.getProvider(llm).createChatModel(llm, apiKey);

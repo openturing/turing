@@ -128,6 +128,7 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setMaxRetries(turLLMInstance.getMaxRetries());
             turLLMInstanceEdit.setProviderOptionsJson(turLLMInstance.getProviderOptionsJson());
             turLLMInstanceEdit.setToolsEnabled(turLLMInstance.isToolsEnabled());
+            turLLMInstanceEdit.setFileUploadEnabled(turLLMInstance.isFileUploadEnabled());
             if (StringUtils.hasText(apiKey)) {
                 turLLMInstanceEdit.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey));
             }

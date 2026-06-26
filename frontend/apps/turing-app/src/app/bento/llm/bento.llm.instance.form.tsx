@@ -644,6 +644,29 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
               </FormItemTwoColumns>
             )}
           />
+          <FormField
+            control={form.control}
+            name="fileUploadEnabled"
+            render={({ field }) => (
+              <FormItemTwoColumns>
+                <FormItemTwoColumns.Left>
+                  <FormItemTwoColumns.Label>{t("forms.llm.fileUploadEnabled")}</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Description className="mt-1 text-sm font-normal">
+                    {t("forms.llm.fileUploadEnabledDesc")}
+                  </FormItemTwoColumns.Description>
+                </FormItemTwoColumns.Left>
+                <FormItemTwoColumns.Right>
+                  <FormControl>
+                    <GradientSwitch
+                      checked={field.value === true}
+                      onCheckedChange={(checked) => field.onChange(checked)}
+                    />
+                  </FormControl>
+                </FormItemTwoColumns.Right>
+                <FormMessage />
+              </FormItemTwoColumns>
+            )}
+          />
         </BentoFormSection>
       </form>
     </Form>

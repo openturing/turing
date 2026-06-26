@@ -131,6 +131,17 @@ public class TurLLMInstance implements Serializable, VigletTenantOwnedInfra {
 	@Column(name = "tools_enabled", nullable = false)
 	private boolean toolsEnabled = true;
 
+	/**
+	 * T431 — when {@code true}, this provider is allowed to receive raw
+	 * document binaries (PDF / DOCX …) via its native file-input capability,
+	 * so document-to-slot extraction (T103) sends the file straight to the
+	 * model instead of flattening it to text with Tika. The user enables it
+	 * only for providers that actually support document input (Anthropic /
+	 * Gemini / OpenAI); default {@code false} keeps the Tika text path.
+	 */
+	@Column(name = "file_upload_enabled", nullable = false)
+	private boolean fileUploadEnabled = false;
+
 	@Column
 	@JsonIgnore
 	private String apiKeyEncrypted;

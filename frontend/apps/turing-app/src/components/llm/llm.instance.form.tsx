@@ -769,6 +769,29 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="fileUploadEnabled"
+                      render={({ field }) => (
+                        <FormItemTwoColumns>
+                          <FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Label>{t("forms.llm.fileUploadEnabled")}</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
+                              {t("forms.llm.fileUploadEnabledDesc")}
+                            </FormItemTwoColumns.Description>
+                          </FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Right>
+                            <FormControl>
+                              <GradientSwitch
+                                checked={field.value === true}
+                                onCheckedChange={(checked) => field.onChange(checked)}
+                              />
+                            </FormControl>
+                          </FormItemTwoColumns.Right>
+                          <FormMessage />
+                        </FormItemTwoColumns>
+                      )}
+                    />
                   </SectionCard.Content>
                 </SectionCard>
 
