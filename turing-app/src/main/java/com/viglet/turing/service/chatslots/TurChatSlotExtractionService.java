@@ -23,10 +23,14 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.commons.file.TurFileAttributes;
+import com.viglet.turing.genai.TurChatAttachmentService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -47,9 +51,13 @@ import tools.jackson.databind.ObjectMapper;
  * conversation id, and a list of slot names; the service:
  *
  * <ol>
- *   <li>Runs Tika ({@link TurFileUtils#documentToText}) to extract plain
- *       text from the upload. Same code path the asset-indexing RAG uses,
- *       so behavior is consistent across the platform.</li>
+ *   <li>For text-bearing uploads, runs Tika
+ *       ({@link TurFileUtils#documentToText}) to extract plain text. Same
+ *       code path the asset-indexing RAG uses, so behavior is consistent
+ *       across the platform. For <b>image</b> uploads (a phone-photo of a
+ *       CV — {@code image/png|jpeg|gif|webp}, T99) Tika yields no text, so
+ *       the bytes are instead sent to the agent's vision LLM as a Spring AI
+ *       {@code Media} block — same extraction contract, no OCR dependency.</li>
  *   <li>Builds a structured-output prompt listing the target slot names
  *       and their descriptions (read from the agent's slot catalog), then
  *       calls the agent's configured LLM with the prompt + the extracted
@@ -131,19 +139,6 @@ public class TurChatSlotExtractionService {
             return SlotExtractionResult.empty();
         }
 
-        TurFileAttributes parsed = TurFileUtils.documentToText(file);
-        String text = parsed == null ? null : parsed.getContent();
-        if (text == null || text.isBlank()) {
-            log.warn("[SlotExtraction] Tika produced empty content for file '{}'",
-                    file.getOriginalFilename());
-            return SlotExtractionResult.empty();
-        }
-        // Trim very large documents — most career documents are <20k chars,
-        // and longer ones blow the LLM's context window on cheaper models.
-        // The trim is from the END so the opening sections (which usually
-        // hold the most relevant identity fields) survive.
-        String trimmedText = text.length() > 24_000 ? text.substring(0, 24_000) : text;
-
         List<TurAIAgentSlot> targetSlots = resolveTargetSlots(agent, requestedSlotNames);
         if (targetSlots.isEmpty()) {
             log.warn("[SlotExtraction] No target slots resolved for agent '{}' — nothing to extract",
@@ -157,6 +152,30 @@ public class TurChatSlotExtractionService {
                     agent.getId());
             return SlotExtractionResult.empty();
         }
+
+        // T99 — a phone-photo of a CV (image/*) carries no machine-readable
+        // text, so Tika returns empty and the legacy path silently extracted
+        // nothing. Route images straight to the agent's vision LLM as a Media
+        // block instead — same contract (buildSystemPrompt + parseJsonReply),
+        // no Tesseract dependency, reusing the agent's already-configured model.
+        String contentType = resolveContentType(file);
+        if (isImage(contentType)) {
+            return extractFromImage(file, contentType, targetSlots, chatModel,
+                    agent, conversationId);
+        }
+
+        TurFileAttributes parsed = TurFileUtils.documentToText(file);
+        String text = parsed == null ? null : parsed.getContent();
+        if (text == null || text.isBlank()) {
+            log.warn("[SlotExtraction] Tika produced empty content for file '{}'",
+                    file.getOriginalFilename());
+            return SlotExtractionResult.empty();
+        }
+        // Trim very large documents — most career documents are <20k chars,
+        // and longer ones blow the LLM's context window on cheaper models.
+        // The trim is from the END so the opening sections (which usually
+        // hold the most relevant identity fields) survive.
+        String trimmedText = text.length() > 24_000 ? text.substring(0, 24_000) : text;
 
         String systemPrompt = buildSystemPrompt(targetSlots);
         List<Message> messages = List.of(
@@ -176,6 +195,67 @@ public class TurChatSlotExtractionService {
         log.info("[SlotExtraction] conv={} extracted={} written={} (textChars={})",
                 conversationId, extracted.size(), written, trimmedText.length());
         return new SlotExtractionResult(extracted, written, trimmedText.length());
+    }
+
+    /**
+     * Image extraction path (T99): sends the uploaded image to the agent's
+     * vision-capable LLM as a Spring AI {@link Media} block and asks it to fill
+     * the same target slots a text document would. The reply is parsed and
+     * persisted identically to the Tika path. {@code extractedTextChars} is 0
+     * because no text was extracted — callers reading that field as a "did we
+     * get content?" signal should also inspect {@code slotsWritten}.
+     */
+    private SlotExtractionResult extractFromImage(MultipartFile file, String contentType,
+            List<TurAIAgentSlot> targetSlots, ChatModel chatModel, TurAIAgent agent,
+            String conversationId) {
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (java.io.IOException e) {
+            log.warn("[SlotExtraction] Could not read image upload '{}': {}",
+                    file.getOriginalFilename(), e.getMessage());
+            return SlotExtractionResult.empty();
+        }
+
+        String filename = file.getOriginalFilename();
+        UserMessage userMessage = UserMessage.builder()
+                .text("The attached image is a document (CV, form, receipt, etc.). "
+                        + "Read it and extract the slot values defined by the system prompt.")
+                .media(Media.builder()
+                        .mimeType(MimeType.valueOf(contentType))
+                        .data(new ByteArrayResource(bytes))
+                        .name(filename == null ? "image" : filename)
+                        .build())
+                .build();
+        List<Message> messages = List.of(
+                new SystemMessage(buildSystemPrompt(targetSlots)),
+                userMessage);
+
+        String reply;
+        try {
+            reply = chatModel.call(new Prompt(messages)).getResult().getOutput().getText();
+        } catch (RuntimeException e) {
+            log.warn("[SlotExtraction] Vision LLM call failed for conv={}: {}",
+                    conversationId, e.getMessage());
+            return SlotExtractionResult.empty();
+        }
+        Map<String, String> extracted = parseJsonReply(reply, targetSlots);
+        int written = writeExtractedSlots(extracted, conversationId, "vision-agent=" + agent.getId());
+        log.info("[SlotExtraction] (image) conv={} extracted={} written={} ({} bytes)",
+                conversationId, extracted.size(), written, bytes.length);
+        return new SlotExtractionResult(extracted, written, 0);
+    }
+
+    private String resolveContentType(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType == null || contentType.isBlank()) {
+            return "application/octet-stream";
+        }
+        return contentType;
+    }
+
+    private static boolean isImage(String contentType) {
+        return contentType != null && TurChatAttachmentService.IMAGE_MIME_TYPES.contains(contentType);
     }
 
     /**

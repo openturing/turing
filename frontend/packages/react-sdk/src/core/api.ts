@@ -652,8 +652,10 @@ export async function postSiteChatSlot(
 }
 
 /**
- * Uploads a document and asks the server to extract values for the requested
- * slots using the agent's configured LLM.
+ * Uploads a document (or an image of a document — PNG / JPEG / GIF / WebP, e.g.
+ * a phone-photo of a CV) and asks the server to extract values for the requested
+ * slots using the agent's configured LLM. Image uploads are routed to the
+ * agent's vision model server-side; pass the image File unchanged.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract}.
  *

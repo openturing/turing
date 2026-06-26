@@ -505,6 +505,15 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@types/node@25.9.3)(jsdom@29.1.1)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7)(jiti@2.7.0))
 
+  packages/cli:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.3
+        version: 25.9.3
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/flow-dsl:
     devDependencies:
       '@types/node':

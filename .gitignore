@@ -102,3 +102,4 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /frontend/packages/react-ui/dist
 /frontend/packages/react-ui/.turbo
 scripts/sonar/scan.log
+/frontend/packages/cli/dist

@@ -724,8 +724,11 @@ export interface TurChatSlotExtractResponse {
 }
 
 /**
- * Uploads a document (PDF / DOCX / TXT / RTF / HTML) and asks the server to
+ * Uploads a document (PDF / DOCX / TXT / RTF / HTML) or an image of a document
+ * (PNG / JPEG / GIF / WebP — e.g. a phone-photo of a CV) and asks the server to
  * extract values for the requested slots using the agent's configured LLM.
+ * Image uploads are routed to the agent's vision model server-side; no client
+ * change is needed beyond passing the image File.
  *
  * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract}.
  */
