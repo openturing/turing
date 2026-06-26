@@ -21,10 +21,13 @@ import org.springframework.util.StringUtils;
 import com.anthropic.models.messages.CitationCharLocation;
 import com.anthropic.models.messages.CitationPageLocation;
 import com.anthropic.models.messages.CitationsConfigParam;
+import com.anthropic.models.messages.CitationsSearchResultLocation;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.ContentBlockParam;
 import com.anthropic.models.messages.DocumentBlockParam;
 import com.anthropic.models.messages.Message;
+import com.anthropic.models.messages.SearchResultBlockParam;
+import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.TextCitation;
 import com.viglet.turing.genai.citation.TurChatCitation;
 import com.viglet.turing.genai.citation.TurCitationDocument;
@@ -51,6 +54,40 @@ public class TurAnthropicCitationSupport {
 
     private static final String LOCATION_CHAR = "char";
     private static final String LOCATION_PAGE = "page";
+    private static final String LOCATION_SEARCH_RESULT = "search_result";
+    private static final String DEFAULT_SOURCE = "source";
+    private static final String DEFAULT_TITLE = "Source";
+
+    /**
+     * T153 / §X.7.b — wrap each retrieved passage in an Anthropic
+     * {@code search_result} content block (citations enabled), the
+     * encyclopedia-quality citation format for retrieval hits, instead of the
+     * {@code document} block ({@link #documentBlocks}). Order is preserved so the
+     * response's {@code searchResultIndex} resolves back onto
+     * {@code documents.get(i)}. {@code source} carries the deep link (or the
+     * sourceId when no URL), {@code title} the label, and the passage text is the
+     * single text block of {@code content}; blank fields are defaulted so the
+     * block stays valid and the index stays aligned.
+     */
+    public List<ContentBlockParam> searchResultBlocks(List<TurCitationDocument> documents) {
+        List<ContentBlockParam> blocks = new ArrayList<>();
+        if (documents == null) {
+            return blocks;
+        }
+        for (TurCitationDocument doc : documents) {
+            String text = doc.text() == null || doc.text().isBlank() ? " " : doc.text();
+            String source = StringUtils.hasText(doc.url()) ? doc.url()
+                    : (StringUtils.hasText(doc.sourceId()) ? doc.sourceId() : DEFAULT_SOURCE);
+            String title = StringUtils.hasText(doc.title()) ? doc.title() : DEFAULT_TITLE;
+            blocks.add(ContentBlockParam.ofSearchResult(SearchResultBlockParam.builder()
+                    .source(source)
+                    .title(title)
+                    .addContent(TextBlockParam.builder().text(text).build())
+                    .citations(CitationsConfigParam.builder().enabled(true).build())
+                    .build()));
+        }
+        return blocks;
+    }
 
     /**
      * Build one citations-enabled {@code document} block per passage, preserving
@@ -131,8 +168,16 @@ public class TurAnthropicCitationSupport {
             return build(documents, (int) loc.documentIndex(), loc.documentTitle().orElse(null),
                     loc.citedText(), (int) loc.startPageNumber(), (int) loc.endPageNumber(), LOCATION_PAGE);
         }
-        // content-block / web-search / search-result locations aren't produced by
-        // the plain-text document blocks T152 sends — ignore defensively.
+        if (citation.isSearchResultLocation()) {
+            // T153 / §X.7.b — search_result blocks cite by searchResultIndex (which
+            // block) + start/endBlockIndex (which text blocks within it).
+            CitationsSearchResultLocation loc = citation.asSearchResultLocation();
+            return build(documents, (int) loc.searchResultIndex(), loc.title().orElse(null),
+                    loc.citedText(), (int) loc.startBlockIndex(), (int) loc.endBlockIndex(),
+                    LOCATION_SEARCH_RESULT);
+        }
+        // content-block / web-search locations aren't produced by the blocks
+        // Turing sends (document T152 / search_result T153) — ignore defensively.
         log.debug("[Native][Anthropic-Citations] ignoring unsupported citation location type");
         return null;
     }

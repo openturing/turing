@@ -294,12 +294,14 @@ public class TurAnthropicMessagesService {
     }
 
     /**
-     * Build the conversation from history. T152 / §X.7.a — when
+     * Build the conversation from history. T152 / §X.7.a + T153 / §X.7.b — when
      * {@code citationDocuments} is non-empty, the <b>last user turn</b> (the
      * question) is rebuilt to carry the retrieved passages as leading
-     * {@code document} content blocks (citations enabled) followed by the
-     * question text, so Claude grounds and cites against them. All other turns
-     * are plain text, identical to the pre-T152 path.
+     * {@code search_result} content blocks (citations enabled) followed by the
+     * question text, so Claude grounds and cites against them. Turing's retrieval
+     * hits use the {@code search_result} block (the encyclopedia-quality citation
+     * format, T153) rather than the older {@code document} block (T152). All other
+     * turns are plain text, identical to the pre-T152 path.
      */
     private List<MessageParam> seedConversation(List<ChatMessageItem> history,
             List<TurCitationDocument> citationDocuments) {
@@ -316,7 +318,7 @@ public class TurAnthropicMessagesService {
             }
             if (i == lastUserIdx) {
                 List<ContentBlockParam> blocks = new ArrayList<>(
-                        citationSupport.documentBlocks(citationDocuments));
+                        citationSupport.searchResultBlocks(citationDocuments));
                 blocks.add(ContentBlockParam.ofText(
                         TextBlockParam.builder().text(message.content()).build()));
                 conversation.add(MessageParam.builder()

@@ -18,16 +18,19 @@ import org.junit.jupiter.api.Test;
 
 import com.anthropic.models.messages.CitationCharLocation;
 import com.anthropic.models.messages.CitationPageLocation;
+import com.anthropic.models.messages.CitationsSearchResultLocation;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.ContentBlockParam;
 import com.anthropic.models.messages.DocumentBlockParam;
+import com.anthropic.models.messages.SearchResultBlockParam;
 import com.anthropic.models.messages.TextBlock;
 import com.viglet.turing.genai.citation.TurChatCitation;
 import com.viglet.turing.genai.citation.TurCitationDocument;
 
 /**
- * Unit tests for {@link TurAnthropicCitationSupport} (T152 / §X.7.a): document
- * block construction and per-sentence citation extraction.
+ * Unit tests for {@link TurAnthropicCitationSupport} (T152 / §X.7.a + T153 /
+ * §X.7.b): document &amp; search_result block construction and per-sentence
+ * citation extraction.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -69,6 +72,59 @@ class TurAnthropicCitationSupportTest {
     @Test
     void documentBlocksToleratesNull() {
         assertThat(support.documentBlocks(null)).isEmpty();
+    }
+
+    @Test
+    void searchResultBlocksEnableCitationsAndCarrySourceTitleContent() {
+        List<ContentBlockParam> blocks = support.searchResultBlocks(DOCS);
+
+        assertThat(blocks).hasSize(2);
+        SearchResultBlockParam first = blocks.get(0).searchResult().orElseThrow();
+        assertThat(first.citations().orElseThrow().enabled()).contains(true);
+        assertThat(first.title()).isEqualTo("Doc A");
+        assertThat(first.source()).isEqualTo("/sn/site/document/doc-a");
+        assertThat(first.content()).hasSize(1);
+        assertThat(first.content().get(0).text()).isEqualTo("The sky is blue today.");
+    }
+
+    @Test
+    void searchResultBlocksFallBackToSourceIdWhenNoUrl() {
+        List<TurCitationDocument> noUrl = List.of(
+                new TurCitationDocument("doc-a", "Doc A", null, "text"));
+        SearchResultBlockParam block = support.searchResultBlocks(noUrl).get(0).searchResult().orElseThrow();
+        assertThat(block.source()).isEqualTo("doc-a");
+    }
+
+    @Test
+    void searchResultBlocksToleratesNull() {
+        assertThat(support.searchResultBlocks(null)).isEmpty();
+    }
+
+    @Test
+    void extractCitationsResolvesSearchResultLocationOntoSource() {
+        ContentBlock block = ContentBlock.ofText(TextBlock.builder()
+                .text("Water boils at 100C.")
+                .addCitation(CitationsSearchResultLocation.builder()
+                        .citedText("boils at 100C")
+                        .searchResultIndex(1)
+                        .source("/sn/site/document/doc-b")
+                        .title("Doc B")
+                        .startBlockIndex(0)
+                        .endBlockIndex(1)
+                        .build())
+                .build());
+
+        List<TurChatCitation> citations = support.extractFromContent(List.of(block), DOCS);
+
+        assertThat(citations).hasSize(1);
+        TurChatCitation c = citations.get(0);
+        assertThat(c.documentIndex()).isEqualTo(1);
+        assertThat(c.sourceId()).isEqualTo("doc-b");
+        assertThat(c.url()).isEqualTo("/sn/site/document/doc-b");
+        assertThat(c.citedText()).isEqualTo("boils at 100C");
+        assertThat(c.startIndex()).isZero();
+        assertThat(c.endIndex()).isEqualTo(1);
+        assertThat(c.locationType()).isEqualTo("search_result");
     }
 
     @Test
