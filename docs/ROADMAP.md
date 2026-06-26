@@ -70,7 +70,9 @@
 
 ## E.9 — Tool-selection quality (MCP / native disambiguation)
 
-- 💭 **T424** (deps: T29) **Trigger/namespace-aware tool prioritization** — when an attached MCP server's `llmInstructions` trigger words match the user message, boost that server's tools in the pre-filter (and optionally demote/skip overlapping built-in `dsl_*`/native tools for that turn) so weak models (e.g. gpt-4o-mini) reliably pick the MCP tools over competing built-ins instead of a semantically-close native one. Pure list ordering is NOT a reliable LLM priority signal — this is intent+namespace ranking on top of §IV.2's BM25 pre-filter. → §XXI.1
+> **Block complete.** Both tasks have shipped — trigger/namespace-aware tool
+> prioritization with an anti-starvation quota floor (T424) and the `mcp` binding
+> for Custom Tools (T425). See [CHANGELOG.md](CHANGELOG.md) §E.9.
 
 ## F.2 — OpenAI Responses API + built-in tools
 

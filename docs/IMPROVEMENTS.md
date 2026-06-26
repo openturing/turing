@@ -40,7 +40,6 @@ moved — verify against `git ls-files` before acting.
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
 - [XVIII. Pluggable reranker — follow-up (Block N)](#xviii-pluggable-reranker--follow-up-block-n)
 - [XX. Structured-source indexing — the cursarei / Dumont reference (Block R)](#xx-structured-source-indexing--the-cursarei--dumont-reference-block-r)
-- [XXI. Tool-selection quality — trigger/namespace-aware prioritization](#xxi-tool-selection-quality--triggernamespace-aware-prioritization)
 
 ---
 
@@ -2372,54 +2371,3 @@ are integration seams, not new primitives. **T393** shipped the `viglet-core` li
 neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG). None of
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
-
-## XXI. Tool-selection quality — trigger/namespace-aware prioritization
-
-**Problem (real incident, 2026-06-25).** An agent attached an MCP server
-("Insper Repositório", tools `dspace_*`) with explicit `llmInstructions`
-("QUANDO USAR… palavras-gatilho: …canais, comunidades, coleções…"). Asked
-"quais são os canais da base de conhecimento do Insper", a weak model
-(`gpt-4o-mini`) did **not** call the `dspace_*` tools. Two failure modes
-surfaced, neither fixable by reordering the tool list (array order is **not** a
-reliable LLM priority signal — models select by name+description match):
-
-1. **Semantic collision with built-ins.** The native `dsl_list_indices`
-   ("list indices / channels") matches "canais" more strongly than
-   `dspace_list_communities`, so the model picked it. Mitigated by deselecting
-   the `dsl_*` native tools — but that is a manual, per-agent workaround.
-
-2. **The §IV.2 pre-filter starves attached MCP tools to zero.**
-   `TurToolPreFilterService` treats the agent's **native** tools as
-   *always-keep*, and fills only `topK − protectedCount` slots from the
-   *ranked* (MCP/custom) pool. When an agent has many native tools selected
-   (observed: 24 natives, `topK=10`), `quotaForRanked = max(0, 10−24) = 0` — so
-   **every attached `dspace_*` tool is dropped before the LLM sees it**
-   (`34 → 24 tools`, the 24 being natives). The model, left with `get_current_time`
-   et al. and no knowledge-base tool, looped on `get_current_time` until the
-   10-round `TurToolExecutionLoop` abort and returned 0 chars.
-
-**Design.** Make MCP-tool selection intent-aware rather than count-fragile:
-
-- **Trigger boost.** When the user message matches an attached MCP server's
-  `llmInstructions` trigger words, treat that server's tools as *boosted*: add
-  them to the always-keep set for the turn (so the pre-filter can never drop
-  them) and, optionally, **demote/skip the overlapping built-in `dsl_*`/native
-  tools** for that turn so a weak model isn't tempted by a semantically-close
-  native.
-- **Reserve a quota for attached tools.** Independently of the boost, the
-  pre-filter must never let always-keep natives reduce the
-  MCP/custom quota to zero — reserve a floor (e.g. `min(attachedCount, k)`) so
-  operator-attached tools always reach the model. The current
-  "native = always-keep, MCP = ranked-only" split is the root of failure mode 2.
-- **Namespace ranking, not list order.** Ordering is not the lever; ranking on
-  (intent match × namespace match against the triggering server) is. This sits
-  on top of §IV.2's BM25 pre-filter, reusing the same per-turn Lucene index.
-
-**Non-goal.** Don't hard-pin a server's tools on every turn — that defeats the
-pre-filter's token savings and forces irrelevant tools into unrelated turns.
-The boost is conditional on the trigger match.
-
-**Interim guidance (no code).** Trim the agent's native tools to what it needs
-(an agent that should answer from an MCP knowledge base does not need 24 native
-tools), and/or raise `turing.genai.tool-prefilter.top-K` above the native count.
-A stronger model than `gpt-4o-mini` also reduces the misselection + loop.
