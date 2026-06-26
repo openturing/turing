@@ -1731,6 +1731,93 @@ customer value — there is no monolithic "Block F is done" gate.
 > Claude starts citing; OpenAI starts batching; the bill drops 50%.
 > That is the platform pitch."
 
+### X.18 Capability taxonomy & UX surfacing (T432–T435)
+
+§X commits ~40 native capabilities across F.4–F.14. The audit that
+produced Block F treated them as one list ("the capability matrix"),
+but building the activation UX exposes that they are **three different
+kinds of thing** that must not share a screen, plus a runtime
+override that today is silent and surprising. This subsection is the
+design that makes the whole of §X *usable* by a non-engineer author.
+
+**The problem, concretely.** Today the only way to turn a native
+capability on is the per-instance REST matrix (T132,
+`/api/llm/{id}/capability`) — and **no frontend calls it**. Worse, the
+runtime semantics are winner-takes-all: when *any* native capability is
+enabled on an instance and the turn is "plain" (no attachments, no
+flow), `TurNativeChatExecutor` routes the **entire** turn through the
+vendor SDK and attaches **zero** Turing/MCP/custom tools (it has no
+equivalent of the Spring AI tool-execution loop). So an admin who
+enables Anthropic `web_search` to "add web search" silently loses
+`finance`, `weather`, code-interpreter, every MCP server, and every
+custom tool for that agent's simple turns. The overlap the operator
+worries about ("Anthropic web_search *and* Turing web search both on")
+is not two tools competing — it is an invisible engine swap.
+
+**Three kinds, three homes.** Every capability (native *and* the
+existing Turing native-tool groups) is tagged in a backend **registry**
+(T432) so both UIs render from one source:
+
+| `kind` | What it is | Examples | UI home |
+|---|---|---|---|
+| `TOOL` | The model *invokes* it mid-turn | web_search, file_search, code_interpreter, web_fetch, code_execution, bash/text_editor, memory tool (T163), MCP connector (T144); **+ Turing groups** dsl/finance/weather/imageSearch/… | Agent **"Tools & Capabilities"** picker (T434), capability-first |
+| `REQUEST_OPTION` | *How* the call is made — not invocable | service/batch tier (T156–T160), token counting (T161), predicted outputs (T171), structured outputs (T173/T174), reasoning effort/summary/logprobs (T178–T180), citations (T152), context editing/compaction (T164/T165), stored completions (T167), safety_identifier (T181), moderation (T182) | Registry-driven **settings** toggles (T435), never the tool picker |
+| `PLATFORM` | Not per-agent | usage import (T183), evals (T168), distillation (T169), nightly batch summarization (T157) | Own screens (System Info / Global Settings) |
+
+If these share one "select your native APIs" list, the operator sees
+*Predicted Outputs* next to *Web Search* with no way to tell that one
+fires mid-turn and the other silently changes request shape. The
+`kind` tag is what keeps them apart.
+
+**The `function` tag is the unifier.** Each `TOOL` carries an abstract
+`function` (`WEB_SEARCH`, `CODE_EXEC`, `DOC_SEARCH`, `FINANCE`, …) shared
+across providers *and* across the Turing/native boundary. This is what
+lets the picker group "Turing web crawler", "OpenAI web_search" and
+"Anthropic web_search" into **one row with a radio**, and is also the
+key to the chosen execution model.
+
+**Execution model — "capacidade é mutex, resto coexiste" (the decided
+option, T433).** For a given `function`, at most one provider may be
+selected (a radio, so the UI makes a same-function clash impossible by
+construction). At runtime the native path stops being winner-takes-all:
+`TurNativeChatExecutor` attaches the selected provider-native server
+tools **plus** every Turing/MCP/custom tool whose `function` is *not*
+claimed by a provider-native pick, and runs them through a native
+tool-execution loop. So "Web Search = Anthropic, Finance/Weather =
+Turing" works: `web_search` runs server-side at Anthropic while
+`finance`/`weather` run as `@Tool` callbacks in the same turn, because
+their functions don't collide. Both vendors' APIs (OpenAI Responses,
+Anthropic Messages) already accept client-side tool definitions next to
+server tools and return `tool_use` blocks for the client to execute —
+so the work is a native-path tool loop, not a protocol change. The two
+existing `ownsTurn` capabilities (computer_use, and voice when it
+lands) keep taking the whole turn — the picker shows that as a stronger
+"this capability runs the turn alone" warning, mirroring the special
+case already in the executor.
+
+**Scope: instance = capable, agent = used.** A provider capability is
+intrinsically provider-bound (Anthropic `web_search` only exists on an
+Anthropic instance), so its *technical config* (vector-store ids, MCP
+URLs, tier defaults) rightly lives on `TurLLMInstance` (T132 +
+heatmap T186). But **two agents can share one instance**, so enablement
+cannot be purely per-instance or every agent on that key inherits it.
+T433 therefore adds a **per-agent capability selection** (a subset of
+what the instance is capable of, mirroring the `nativeTools` CSV
+column); the executor resolves `agentSelected ∩ instanceCapable`. The
+agent picker writes Turing-tool picks to `nativeTools` and
+provider-native picks to that per-agent selection, while deep technical
+config stays on the instance. The instance screen answers "what can
+this key do"; the agent screen answers "what does this agent use".
+
+**Why this is the right altitude.** The registry is built once; each
+future §X task ships by adding a descriptor row (`kind` + `function` +
+`provider`), and both the agent picker and the admin heatmap absorb it
+with no new screen. That is what lets F.4–F.14 land incrementally
+without the activation UX rotting into 40 bespoke checkboxes — the
+sequencing in §X.16 stays valid, this block just gives every group a
+consistent front door. Slots into Group 1 (Foundation) as the UX
+companion to T132.
+
 ---
 
 ## XI. Embedded LLM (Jlama) — downgraded to a spike

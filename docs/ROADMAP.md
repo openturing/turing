@@ -163,7 +163,7 @@
 - 📋 **T183** (deps: T131) **Anthropic Admin + Usage API integration** — `TurAnthropicUsageImporter` runs nightly, pulls per-workspace / per-model / per-service-tier token consumption + USD cost from the Anthropic Admin/Usage API, persists to `tur_ai_usage_daily` (Li… → §X.14.c
 - 📋 **T184** (deps: T183) **Per-tenant AI Spend widget** — System Info gains an "AI Spend" card showing 30-day spend per LLM / per agent / per stage (chat.live vs chat.background) with budget alert thresholds. → §X.14.d
 - 💭 **T185** (deps: T183, T184) **Soft budget caps per agent** — agent setting `monthlyBudgetUsd`; when projected spend (based on rolling 7-day average) would breach the cap, the engine downgrades to a cheaper tier (e.g. → §X.14.e
-- 💭 **T186** (deps: T132) **Capability matrix UI heatmap** — admin dashboard heatmap of (LLM instance × capability) showing which natives are wired and which are pending. → §X.14.f
+- 💭 **T186** (deps: T132, T432) **Capability matrix UI heatmap** — admin dashboard heatmap of (LLM instance × capability) showing which natives are wired and which are pending; renders from the T432 registry grouped by `provider` × `category`. → §X.14.f
 
 ## F.14 — Bold creative bets (the long shots)
 
@@ -173,6 +173,16 @@
 - 💭 **T190** (deps: T136, T142, T78) **"Self-installing" enterprise connectors via computer_use** — customer says "connect my company's Notion" → Turing's computer-use agent navigates to Notion → guides them through API token generation → tests the connection → enables the con… → §X.15.d
 - 💭 **T191** (deps: T169, T126) **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if… → §X.15.e
 - 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
+
+## F.15 — Capability surfacing & UX (the layer that makes the whole §X usable)
+
+> **Why now:** §X has ~40 native capabilities landing across many T-numbers, but they are *not* all "tools the agent calls" — some are agent-facing tools, some are per-call request knobs, some are platform/cron features. Today the only activation surface is the per-instance capability matrix REST API (T132) with **no UI**, and a native turn **silently bypasses every Turing/MCP/custom tool** the agent has. This block builds the taxonomy + execution + UI so the remaining §X tasks slot into a consistent home instead of each inventing its own screen. Foundation for T186 (heatmap reads the registry).
+>
+> **T432 shipped** (2026-06-26) — the registry/taxonomy foundation; see [CHANGELOG.md](CHANGELOG.md) §X.18. T433–T435 remain.
+
+- 📋 **T433** (deps: T432, T136) **Per-agent capability selection + union execution ("capacidade é mutex, resto coexiste")** — add a per-agent native-capability selection (subset of what the instance is capable of; mirrors the `nativeTools` CSV column). `TurNativeChatExecutor` resolves `agentSelected ∩ instanceCapable` and, on a native turn, **attaches the agent's Turing/MCP/custom tools whose `function` is not claimed by a selected provider-native capability**, running them through a native tool-execution loop (today the native path runs zero Turing tools). `ownsTurn` capabilities (computer_use, voice) still own the whole turn. → §X.18.b
+- 📋 **T434** (deps: T432, T433) **Agent "Tools & Capabilities" picker (frontend, new sidebar item)** — capability-first UI rendering `kind=TOOL` from the registry grouped by `function`: a function with ≥2 providers becomes a **radio (mutex)**, a single-provider function a toggle; provider-native options are disabled (with tooltip) when the agent's instance vendor doesn't match. Writes Turing-tool picks to the agent `nativeTools` and provider-native picks to the per-agent capability selection (T433). → §X.18.c
+- 📋 **T435** (deps: T432) **REQUEST_OPTION knobs as registry-driven settings** — render `kind=REQUEST_OPTION` capabilities (reasoning effort, citations, predicted/structured outputs, service tier, moderation, stored completions, safety_identifier, context editing, compaction) as grouped settings toggles/selects driven by the registry — **not** in the tool picker — giving T152/T160/T164/T167/T171/T173/T178–T182 a consistent home instead of per-task bespoke UI. → §X.18.d
 
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 

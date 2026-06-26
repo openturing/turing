@@ -47,4 +47,36 @@ class TurNativeCapabilityTest {
         assertThat(TurNativeCapability.OPENAI_WEB_SEARCH.isForPlugin("anthropic")).isFalse();
         assertThat(TurNativeCapability.OPENAI_WEB_SEARCH.isForPlugin(null)).isFalse();
     }
+
+    @Test
+    void everyCapabilityIsFullyTagged() {
+        assertThat(TurNativeCapability.values()).allSatisfy(c -> {
+            assertThat(c.getKind()).isNotNull();
+            assertThat(c.getFunction()).isNotBlank();
+            assertThat(c.getCategory()).isNotBlank();
+            assertThat(c.getProvider()).isNotNull();
+        });
+    }
+
+    @Test
+    void providerDerivesFromPluginType() {
+        assertThat(TurNativeCapability.OPENAI_WEB_SEARCH.getProvider())
+                .isEqualTo(com.viglet.turing.genai.nativeapi.capability.TurCapabilityProvider.OPENAI);
+        assertThat(TurNativeCapability.ANTHROPIC_WEB_SEARCH.getProvider())
+                .isEqualTo(com.viglet.turing.genai.nativeapi.capability.TurCapabilityProvider.ANTHROPIC);
+    }
+
+    @Test
+    void crossVendorWebSearchSharesFunction() {
+        assertThat(TurNativeCapability.OPENAI_WEB_SEARCH.getFunction())
+                .isEqualTo(TurNativeCapability.ANTHROPIC_WEB_SEARCH.getFunction());
+    }
+
+    @Test
+    void onlyComputerUseOwnsTurn() {
+        assertThat(TurNativeCapability.OPENAI_COMPUTER_USE.isOwnsTurn()).isTrue();
+        assertThat(TurNativeCapability.ANTHROPIC_COMPUTER_USE.isOwnsTurn()).isTrue();
+        assertThat(TurNativeCapability.OPENAI_WEB_SEARCH.isOwnsTurn()).isFalse();
+        assertThat(TurNativeCapability.ANTHROPIC_CODE_EXECUTION.isOwnsTurn()).isFalse();
+    }
 }

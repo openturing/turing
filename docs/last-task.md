@@ -1,7 +1,7 @@
-# Last task number — `T431`
+# Last task number — `T435`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T432`; after assigning it, bump the number above and the log line below.
+> `T436`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T432–T435** — Block F.15: Capability surfacing & UX. T432 capability registry/taxonomy (`kind`/`function`/`provider`/`category`/`ownsTurn`, tags Turing native-tool groups too, `GET /api/capability/registry`); T433 per-agent capability selection (`agentSelected ∩ instanceCapable`) + union execution on the native path ("capacidade é mutex, resto coexiste" — provider server tools + non-conflicting Turing/MCP/custom tools in one native tool-loop; `ownsTurn` still owns the turn); T434 agent "Tools & Capabilities" picker (capability-first, radio per `function`, instance-vendor gating); T435 REQUEST_OPTION knobs as registry-driven settings. Motivated by: no UI for the T132 matrix today + native turn silently bypasses all Turing/MCP/custom tools. deps: T132, T136. → IMPROVEMENTS §X.18 — 2026-06-26
 - **T431** — Per-LLM-instance file-upload capability flag (D.8 / T103 follow-up): `fileUploadEnabled` boolean on `TurLLMInstance` (Liquibase v2026.3.1.46) so the admin decides which providers may receive raw document binaries; the T103 binary passthrough now fires when the request opts in OR the agent's resolved LLM has the flag on. Admin + bento LLM forms gain the switch (en/pt). deps: T103. — 2026-06-26
 - **T430** — `turing eval` CI gate (E.7 follow-up): reusable GitHub composite action running `turing eval` as a PR gate + `npx @viglet/turing-cli` quickstart docs. deps: T126. → IMPROVEMENTS §IX.8.d — 2026-06-26
 - **T429** — Global chat-event tail for `turing logs` (E.7 follow-up): admin SSE firehose of recent chat events across conversations (bounded ring buffer) so `logs` works without a conversationId. deps: T125. → IMPROVEMENTS §IX.8.c — 2026-06-26
