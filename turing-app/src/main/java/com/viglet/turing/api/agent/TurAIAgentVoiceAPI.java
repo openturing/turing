@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceSession;
 import com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceSessionService;
 import com.viglet.turing.genai.nativeapi.voice.TurRealtimeVoiceSessionService.VoiceAvailability;
+import com.viglet.turing.genai.nativeapi.voice.TurVoiceTranslationService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +46,24 @@ import lombok.extern.slf4j.Slf4j;
 public class TurAIAgentVoiceAPI {
 
     private final TurRealtimeVoiceSessionService voiceSessionService;
+    private final TurVoiceTranslationService voiceTranslationService;
 
-    public TurAIAgentVoiceAPI(TurRealtimeVoiceSessionService voiceSessionService) {
+    public TurAIAgentVoiceAPI(TurRealtimeVoiceSessionService voiceSessionService,
+            TurVoiceTranslationService voiceTranslationService) {
         this.voiceSessionService = voiceSessionService;
+        this.voiceTranslationService = voiceTranslationService;
     }
 
     /** Optional hints from the browser; all fields may be omitted (the server fills defaults). */
     public record VoiceSessionRequest(String llmInstanceId, String model, String voice, String locale) {
+    }
+
+    /** T150 — one transcript segment to translate for the operator's spectator view. */
+    public record VoiceTranslateRequest(String text, String targetLang, String sourceLang) {
+    }
+
+    /** T150 — the translated segment. */
+    public record VoiceTranslateResponse(String translation) {
     }
 
     /** Whether voice is available for this agent (drives the UI), plus the resolved model/voice. */
@@ -69,5 +81,18 @@ public class TurAIAgentVoiceAPI {
                 ? new VoiceSessionRequest(null, null, null, null) : request;
         return voiceSessionService.createForAgent(agentId, req.llmInstanceId(), req.model(),
                 req.voice(), req.locale());
+    }
+
+    /**
+     * T150 / §X.6.d — translate one transcript segment into the operator's
+     * language for the spectator view (simultaneous interpretation). Stateless:
+     * the {@code agentId} only scopes the route; translation uses the default LLM.
+     */
+    @PostMapping("/translate")
+    public VoiceTranslateResponse translate(@PathVariable String agentId,
+            @RequestBody VoiceTranslateRequest request) {
+        String translation = voiceTranslationService.translate(
+                request.targetLang(), request.sourceLang(), request.text());
+        return new VoiceTranslateResponse(translation);
     }
 }

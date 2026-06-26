@@ -945,6 +945,36 @@ export async function postVoiceSession(
   return (await response.json()) as TurVoiceSession;
 }
 
+/**
+ * T150 / §X.6.d — translate one transcript segment into the operator's language
+ * for the spectator view. Server: {@code POST /api/v2/ai-agent/{agentId}/voice/translate}.
+ *
+ * @since 2026.3.4
+ */
+export async function postVoiceTranslation(
+  agentId: string,
+  text: string,
+  targetLang: string,
+  sourceLang?: string,
+): Promise<string> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/ai-agent/${agentId}/voice/translate`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const xsrf = await ensureXsrfToken();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ text, targetLang, sourceLang }),
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  const data = (await response.json()) as { translation?: string };
+  return data.translation ?? "";
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }

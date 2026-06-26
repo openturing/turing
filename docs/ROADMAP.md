@@ -100,12 +100,12 @@
 
 ## F.5 — Voice agents (Realtime API)
 
-> T147 + T148 + T149 have shipped — the `TurRealtimeVoiceProvider` seam + OpenAI
+> T147–T150 have shipped — the `TurRealtimeVoiceProvider` seam + OpenAI
 > ephemeral session minting, the `/voice/session` + `/voice/available`
-> endpoints, the full-duplex `useTuringRealtimeVoice` SDK hook, and the
-> full-screen voice kiosk. See [CHANGELOG.md](CHANGELOG.md) §X.6.
+> endpoints, the full-duplex `useTuringRealtimeVoice` SDK hook, the full-screen
+> voice kiosk, and operator spectator translation. See
+> [CHANGELOG.md](CHANGELOG.md) §X.6.
 
-- 💭 **T150** (deps: T147) **`gpt-realtime-translate` simultaneous interpretation** — visitor speaks Portuguese, agent answers Portuguese AND the operator sees a live English translation in spectator mode (T120). → §X.6.d
 - 💭 **T151** (deps: T147) **Voice authoring of chat-flows** — admin says "add an `aiQuestion` node asking for the lead's cargo, then route by role" → Realtime parses → emits chat-flow JSON patch → applies via the editor's existing event bus. → §X.6.e
 
 ## F.6 — Citations & verifiable RAG

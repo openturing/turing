@@ -1,16 +1,24 @@
 import {
   IconAlertTriangle,
+  IconLanguage,
   IconMicrophone,
   IconMicrophoneOff,
   IconPlayerStopFilled,
 } from "@tabler/icons-react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
-import { useTuringRealtimeVoice } from "@viglet/turing-react-sdk";
+import { postVoiceTranslation, useTuringRealtimeVoice } from "@viglet/turing-react-sdk";
 
 import { cn } from "@/lib/utils";
+
+interface SpectatorLine {
+  readonly id: number;
+  readonly role: "you" | "assistant";
+  readonly original: string;
+  readonly translated: string;
+}
 
 /**
  * T149 / §X.6.c — voice-first kiosk mode. A full-screen, chrome-free voice UI
@@ -29,6 +37,31 @@ export default function VoiceKioskPage() {
   const agentId = searchParams.get("agent") ?? "";
   const llmInstanceId = searchParams.get("llm") ?? undefined;
   const locale = searchParams.get("locale") ?? undefined;
+  // T150 — ?spectator=<lang> turns on the operator's live-translation panel.
+  const spectatorLang = searchParams.get("spectator") ?? undefined;
+
+  const [spectatorLines, setSpectatorLines] = useState<SpectatorLine[]>([]);
+  const nextLineId = useRef(0);
+
+  const applyTranslation = useCallback((id: number, translated: string) => {
+    setSpectatorLines((prev) =>
+      prev.map((line) => (line.id === id ? { ...line, translated } : line)),
+    );
+  }, []);
+
+  const translateSegment = useCallback(
+    (role: "you" | "assistant", text: string) => {
+      if (!spectatorLang || !text.trim()) return;
+      const id = nextLineId.current++;
+      // Show the original immediately; fill in the translation when it lands.
+      setSpectatorLines((prev) => [...prev, { id, role, original: text, translated: "" }]);
+      // A failed segment is non-fatal — the original stays visible.
+      postVoiceTranslation(agentId, text, spectatorLang, locale)
+        .then((translated) => applyTranslation(id, translated))
+        .catch(() => undefined);
+    },
+    [agentId, spectatorLang, locale, applyTranslation],
+  );
 
   const {
     supported,
@@ -45,7 +78,15 @@ export default function VoiceKioskPage() {
     stop,
     mute,
     unmute,
-  } = useTuringRealtimeVoice({ agentId, llmInstanceId, locale });
+  } = useTuringRealtimeVoice({
+    agentId,
+    llmInstanceId,
+    locale,
+    onUserUtterance: spectatorLang ? (text) => translateSegment("you", text) : undefined,
+    onAssistantUtterance: spectatorLang
+      ? (text) => translateSegment("assistant", text)
+      : undefined,
+  });
 
   const statusLabel = useMemo(() => {
     if (isConnecting) return t("voiceKiosk.connecting");
@@ -55,12 +96,11 @@ export default function VoiceKioskPage() {
     return t("voiceKiosk.tapToStart");
   }, [isConnecting, isAssistantSpeaking, isListening, status, t]);
 
-  const blocker =
-    !supported
-      ? t("voiceKiosk.unsupported")
-      : !agentId
-        ? t("voiceKiosk.missingAgent")
-        : null;
+  const blocker = useMemo(() => {
+    if (!supported) return t("voiceKiosk.unsupported");
+    if (!agentId) return t("voiceKiosk.missingAgent");
+    return null;
+  }, [supported, agentId, t]);
 
   const onOrbClick = () => {
     if (blocker) return;
@@ -155,6 +195,33 @@ export default function VoiceKioskPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* T150 — operator spectator: live translation of each utterance. */}
+      {spectatorLang && (
+        <aside className="absolute inset-y-0 right-0 flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/10 bg-black/40 p-5 backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white/60">
+            <IconLanguage className="size-4" />
+            {spectatorLang}
+          </div>
+          {spectatorLines.map((line) => (
+            <div
+              key={line.id}
+              className={cn(
+                "rounded-xl px-3 py-2 text-sm",
+                line.role === "you" ? "bg-white/10" : "bg-indigo-500/20",
+              )}
+            >
+              <span className="mb-0.5 block text-[10px] uppercase tracking-wide text-white/40">
+                {line.role === "you" ? t("voiceKiosk.you") : t("voiceKiosk.assistant")}
+              </span>
+              <span className="block text-white/90">{line.translated || line.original}</span>
+              {line.translated && (
+                <span className="mt-0.5 block text-xs italic text-white/40">{line.original}</span>
+              )}
+            </div>
+          ))}
+        </aside>
       )}
     </div>
   );

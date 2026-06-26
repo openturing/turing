@@ -58,6 +58,13 @@ export interface UseTuringRealtimeVoiceOptions {
   readonly onToolCall?: (call: RealtimeToolCall) => void;
   /** Called on any fatal session error. */
   readonly onError?: (error: Error) => void;
+  /**
+   * T150 — called once per <b>completed</b> visitor utterance (not per delta).
+   * The whole transcribed segment, ready to translate for a spectator.
+   */
+  readonly onUserUtterance?: (text: string) => void;
+  /** T150 — called once per completed assistant turn (the full spoken text). */
+  readonly onAssistantUtterance?: (text: string) => void;
 }
 
 export interface UseTuringRealtimeVoiceReturn {
@@ -161,7 +168,18 @@ function pcm16Base64ToFloat32(b64: string): Float32Array {
 export function useTuringRealtimeVoice(
   options: UseTuringRealtimeVoiceOptions,
 ): UseTuringRealtimeVoiceReturn {
-  const { agentId, llmInstanceId, model, voice, locale, autoStart, onToolCall, onError } = options;
+  const {
+    agentId,
+    llmInstanceId,
+    model,
+    voice,
+    locale,
+    autoStart,
+    onToolCall,
+    onError,
+    onUserUtterance,
+    onAssistantUtterance,
+  } = options;
 
   const [supported] = useState(isRealtimeSupported);
   const [status, setStatus] = useState<RealtimeVoiceStatus>("idle");
@@ -183,15 +201,22 @@ export function useTuringRealtimeVoice(
   const playCursorRef = useRef(0);
   const pendingSourcesRef = useRef(0);
   const startingRef = useRef(false);
+  // Accumulates the current assistant turn's transcript so a completed-utterance
+  // callback (T150) can fire the full text on the turn's `.done` boundary.
+  const assistantTurnRef = useRef("");
 
   // Keep callbacks in refs so the long-lived socket handlers always see the
   // latest closures without re-subscribing.
   const onToolCallRef = useRef(onToolCall);
   const onErrorRef = useRef(onError);
+  const onUserUtteranceRef = useRef(onUserUtterance);
+  const onAssistantUtteranceRef = useRef(onAssistantUtterance);
   useEffect(() => {
     onToolCallRef.current = onToolCall;
     onErrorRef.current = onError;
-  }, [onToolCall, onError]);
+    onUserUtteranceRef.current = onUserUtterance;
+    onAssistantUtteranceRef.current = onAssistantUtterance;
+  }, [onToolCall, onError, onUserUtterance, onAssistantUtterance]);
 
   const teardown = useCallback((nextStatus: RealtimeVoiceStatus) => {
     try {
@@ -277,12 +302,28 @@ export function useTuringRealtimeVoice(
         case "response.audio_transcript.delta":
         case "response.output_audio_transcript.delta": {
           const delta = typeof evt.delta === "string" ? evt.delta : "";
-          if (delta) setAssistantTranscript((prev) => prev + delta);
+          if (delta) {
+            assistantTurnRef.current += delta;
+            setAssistantTranscript((prev) => prev + delta);
+          }
+          break;
+        }
+        case "response.audio_transcript.done":
+        case "response.output_audio_transcript.done": {
+          // Prefer the event's full transcript; fall back to the accumulated turn.
+          const full = typeof evt.transcript === "string" && evt.transcript
+            ? evt.transcript
+            : assistantTurnRef.current;
+          assistantTurnRef.current = "";
+          if (full) onAssistantUtteranceRef.current?.(full);
           break;
         }
         case "conversation.item.input_audio_transcription.completed": {
           const text = typeof evt.transcript === "string" ? evt.transcript : "";
-          if (text) setUserTranscript((prev) => (prev ? `${prev} ${text}` : text));
+          if (text) {
+            setUserTranscript((prev) => (prev ? `${prev} ${text}` : text));
+            onUserUtteranceRef.current?.(text);
+          }
           break;
         }
         case "response.function_call_arguments.done": {
