@@ -85,7 +85,11 @@
 
 ## F.3 — Anthropic server-side tools
 
-- 💭 **T142** (deps: T131) **Anthropic `bash_20250124` + `text_editor_20250728` tools** — Claude edits markdown files persisted in `TurAgentWorkspace` (T111). → §X.4.d
+> **Block complete.** All five shipped — one-shot server tools `web_search`
+> (T139), `web_fetch` (T140), `code_execution` (T141) via `TurAnthropicMessagesService`,
+> plus the multi-turn loops `computer_use` (T143, reusing the `TurComputerUseDriver`
+> seam) and `bash` + `text_editor` (T142, against `TurAgentWorkspace`).
+> See [CHANGELOG.md](CHANGELOG.md) §X.4.
 
 ## F.4 — MCP Connector (both vendors)
 

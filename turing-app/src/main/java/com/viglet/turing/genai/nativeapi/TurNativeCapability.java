@@ -75,7 +75,13 @@ public enum TurNativeCapability {
      *  the OpenAI variant (T136); runs only when a real driver bean is
      *  configured. Anthropic ships a server-side prompt-injection classifier for
      *  this tool. */
-    ANTHROPIC_COMPUTER_USE("anthropic-computer-use", "anthropic");
+    ANTHROPIC_COMPUTER_USE("anthropic-computer-use", "anthropic"),
+    /** T142 / §X.4.d — Anthropic {@code text_editor_20250728} client tool, executed
+     *  against {@code TurAgentWorkspace} for agentic markdown authoring. */
+    ANTHROPIC_TEXT_EDITOR("anthropic-text-editor", "anthropic"),
+    /** T142 / §X.4.d — Anthropic {@code bash_20250124} client tool, executed via the
+     *  pluggable {@code TurAgentBashExecutor} seam (no-op default). */
+    ANTHROPIC_BASH("anthropic-bash", "anthropic");
 
     private final String key;
     private final String pluginType;

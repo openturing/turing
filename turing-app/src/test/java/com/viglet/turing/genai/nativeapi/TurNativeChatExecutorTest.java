@@ -38,6 +38,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
+import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -58,6 +59,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurOpenAiComputerUseService openAiComputerUseService;
     @Mock private TurAnthropicMessagesService anthropicMessagesService;
     @Mock private TurAnthropicComputerUseService anthropicComputerUseService;
+    @Mock private TurAnthropicEditorService anthropicEditorService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private TurGenAiLlmProvider provider;
@@ -67,7 +69,7 @@ class TurNativeChatExecutorTest {
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
-                anthropicComputerUseService, promptAssembler, personaResolver);
+                anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver);
     }
 
     private static TurLLMInstance instance() {
@@ -119,7 +121,31 @@ class TurNativeChatExecutorTest {
         assertThat(result).isPresent();
         assertThat(result.get().blockFirst().content()).isEqualTo("claude");
         verifyNoInteractions(openAiResponsesService, openAiComputerUseService,
-                anthropicComputerUseService);
+                anthropicComputerUseService, anthropicEditorService);
+    }
+
+    @Test
+    void routesToAnthropicEditorLoopWhenTextEditorEnabled() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.ANTHROPIC_TEXT_EDITOR, null));
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(caps);
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.of(anthropicClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(anthropicEditorService.chat(eq(anthropicClient), eq(instance), any(), eq("conv-1"),
+                anyList(), any(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "authored")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("authored");
+        verifyNoInteractions(anthropicMessagesService, anthropicComputerUseService,
+                openAiResponsesService);
     }
 
     @Test
@@ -140,7 +166,8 @@ class TurNativeChatExecutorTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().blockFirst().content()).isEqualTo("operated");
-        verifyNoInteractions(anthropicMessagesService, openAiResponsesService, openAiComputerUseService);
+        verifyNoInteractions(anthropicMessagesService, anthropicEditorService,
+                openAiResponsesService, openAiComputerUseService);
     }
 
     @Test

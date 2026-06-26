@@ -1459,28 +1459,6 @@ instance keeps falling through to the Spring AI executor. Block F has
 **no monolithic flag day** — features ship one at a time, each guarded
 by its own capability row.
 
-### X.4 Anthropic server-side tools (T139–T143)
-
-Same shape, different vendor. Important wins specific to Anthropic:
-
-- **T141 `code_execution` is FREE when paired with web_search /
-  web_fetch.** Anthropic's pricing has a deliberate carrot for the
-  retrieve-then-compute pattern. Combine with T139 / T140 and Claude
-  composes Python that reads retrieved JSON / CSV → emits a chart →
-  Turing stores it in `TurAgentWorkspace` (T111) and surfaces via
-  the workspace SSE bus (T113). All in a single Anthropic turn.
-- **T143 `computer_use_20251124` ships a server-side
-  prompt-injection classifier** that scores every screenshot
-  before passing it back to the model. Higher trust than T136
-  (OpenAI variant has no equivalent classifier). For customers
-  with stringent security review, this is the production-grade
-  computer-use path.
-- **T142 `bash` + `text_editor` enable agentic content authoring.**
-  Pair with `TurAgentWorkspace` (T111) and Claude can iteratively
-  edit a markdown playbook across multiple turns (`text_editor.create`
-  → `text_editor.str_replace` → `text_editor.view`), with the workspace
-  surfacing the live draft to the operator (T120 spectator mode).
-
 ### X.5 MCP Connector — both vendors (T144–T146)
 
 OpenAI's remote `mcp` tool (T138) and Anthropic's MCP Connector (T144)

@@ -31,6 +31,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
+import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -80,6 +81,7 @@ public class TurNativeChatExecutor {
     private final TurOpenAiComputerUseService openAiComputerUseService;
     private final TurAnthropicMessagesService anthropicMessagesService;
     private final TurAnthropicComputerUseService anthropicComputerUseService;
+    private final TurAnthropicEditorService anthropicEditorService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
 
@@ -90,6 +92,7 @@ public class TurNativeChatExecutor {
             TurOpenAiComputerUseService openAiComputerUseService,
             TurAnthropicMessagesService anthropicMessagesService,
             TurAnthropicComputerUseService anthropicComputerUseService,
+            TurAnthropicEditorService anthropicEditorService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver) {
         this.providerFactory = providerFactory;
@@ -99,6 +102,7 @@ public class TurNativeChatExecutor {
         this.openAiComputerUseService = openAiComputerUseService;
         this.anthropicMessagesService = anthropicMessagesService;
         this.anthropicComputerUseService = anthropicComputerUseService;
+        this.anthropicEditorService = anthropicEditorService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
     }
@@ -176,6 +180,20 @@ public class TurNativeChatExecutor {
                         activePersona == null ? "none" : activePersona.getName());
                 return Optional.of(anthropicComputerUseService.chat(anthropicClient.get(), instance,
                         turn.history(), turn.systemPrompt(), computerUse.get()));
+            }
+
+            // T142 / §X.4.d — text_editor / bash are client-executed multi-turn
+            // tools (the editor loop drives them against TurAgentWorkspace + the
+            // bash seam), so they own the turn when enabled.
+            boolean hasEditorTool = capabilities.stream().anyMatch(c ->
+                    c.capability() == TurNativeCapability.ANTHROPIC_TEXT_EDITOR
+                            || c.capability() == TurNativeCapability.ANTHROPIC_BASH);
+            if (hasEditorTool) {
+                log.info("[Native] agent '{}' instance '{}' handled by Anthropic editor loop "
+                        + "(persona '{}')", agent.getTitle(), instance.getId(),
+                        activePersona == null ? "none" : activePersona.getName());
+                return Optional.of(anthropicEditorService.chat(anthropicClient.get(), instance,
+                        agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities));
             }
 
             // The remaining Anthropic server-side tools (web_search, web_fetch,
