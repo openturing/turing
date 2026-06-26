@@ -53,7 +53,7 @@ jobs:
       contents: read # only reads THIS repo; the push uses GH_PKG_TOKEN
     steps:
       - name: Checkout (full history + tags)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
