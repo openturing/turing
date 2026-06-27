@@ -1,5 +1,10 @@
 import { useCallback, useRef, useState } from "react";
-import type { TurChatConversationMessage, TurChatForm, TurChatSource } from "../core/types";
+import type {
+  TurChatCitation,
+  TurChatConversationMessage,
+  TurChatForm,
+  TurChatSource,
+} from "../core/types";
 
 /**
  * Streaming-chat lifecycle status, shared by every chat hook. {@code loading}
@@ -38,6 +43,15 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.1
    */
   sources?: TurChatSource[];
+  /**
+   * Per-sentence Anthropic citations behind this assistant answer (T152/T154),
+   * emitted as a `"citations"` SSE event. Each carries the answer-span offsets
+   * (`answerStart`/`answerEnd`) so the host can underline the cited claim and
+   * show the source quote + deep link in a popover.
+   *
+   * @since 2026.3.4
+   */
+  citations?: TurChatCitation[];
 }
 
 /** Auto-generated, collision-resistant id for React keys and turn tracking. */

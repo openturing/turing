@@ -214,8 +214,9 @@ public class TurAnthropicMessagesService {
             MessageCreateParams params = buildParamsFromConversation(
                     instance, conversation, systemPrompt, tools, betas, mcpServers);
             Message response = client.messages().create(params);
-            appendText(response, text);
-            citations.addAll(citationSupport.extractCitations(response, citationDocuments));
+            // T154 / §X.7.c — append text and decode citations in one pass so each
+            // citation carries its answer-span offsets (for inline underlining).
+            citationSupport.appendTextAndCitations(response, text, citations, citationDocuments);
 
             List<ToolUseBlock> calls = clientToolUseBlocks(response, toolIndex);
             if (calls.isEmpty()) {
@@ -411,14 +412,6 @@ public class TurAnthropicMessagesService {
             log.debug("[Native][Anthropic-Messages] could not serialize tool_use input: {}",
                     e.getMessage());
             return "{}";
-        }
-    }
-
-    private void appendText(Message response, StringBuilder sink) {
-        for (ContentBlock block : response.content()) {
-            if (block.isText()) {
-                sink.append(block.asText().text());
-            }
         }
     }
 

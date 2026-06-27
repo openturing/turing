@@ -2,7 +2,8 @@ import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
 import { IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconUser } from "@tabler/icons-react"
-import { TuringChatMessage, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips } from "@viglet/turing-react-sdk"
+import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, type TuringCitedMark } from "@viglet/turing-react-sdk"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useTranslation } from "react-i18next"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -69,6 +70,64 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
 }
 
 /**
+ * T154 / §X.7.c — citation-aware answer. When Claude returns per-sentence
+ * citations (Anthropic Citations, T152/T153) the answer is rendered as text
+ * with each grounded claim underlined; hovering shows the source quote + a deep
+ * link in a popover. Markdown isn't rendered here (the cited spans are char
+ * offsets into the raw text) — `AssistantContent` handles the no-citation path.
+ */
+function CitedAssistantContent({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const renderMark = (mark: TuringCitedMark) => (
+    <HoverCard openDelay={120} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <mark className="cursor-help rounded-sm bg-blue-500/10 underline decoration-blue-500/50 decoration-dotted underline-offset-4 text-foreground">
+          {mark.text}
+        </mark>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 text-xs">
+        <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+          {t("chat.citations.heading")}
+        </div>
+        <div className="space-y-2">
+          {mark.citations.map((c, i) => (
+            <div key={`${c.sourceId ?? c.documentIndex}-${i}`} className="space-y-1">
+              <div className="font-medium text-foreground">
+                {c.documentTitle || c.sourceId || t("chat.citations.source")}
+                {c.locationType === "page" && c.startIndex != null
+                  ? ` · ${t("chat.citations.page")} ${c.startIndex}`
+                  : ""}
+              </div>
+              <blockquote className="border-l-2 border-blue-500/40 pl-2 italic text-muted-foreground">
+                {c.citedText}
+              </blockquote>
+              {c.url ? (
+                <a
+                  className="text-primary hover:underline"
+                  href={c.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("chat.citations.open")}
+                </a>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  )
+  return (
+    <TuringCitedAnswer
+      text={message.content}
+      citations={message.citations ?? []}
+      renderMark={renderMark}
+      className="whitespace-pre-wrap break-words"
+    />
+  )
+}
+
+/**
  * Admin skin over the shared headless {@code TuringSourceChips} (T293). Renders
  * the RAG provenance behind an answer as confidence-graded chips with a
  * one-click "why did you say this?" expansion to the cited passages. The
@@ -110,6 +169,30 @@ function SourceChips({ message }: Readonly<{ message: ChatMessage }>) {
         link: "text-primary hover:underline shrink-0",
       }}
     />
+  )
+}
+
+/** The assistant bubble body: copy button, content (cited-aware), and source chips. */
+function AssistantBody({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const hasCitations = Boolean(message.citations && message.citations.length > 0)
+  return (
+    <div className="relative group/msg text-sm leading-relaxed prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-headings:text-foreground prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[13px] prose-code:font-semibold prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-th:text-foreground prose-a:text-primary prose-blockquote:border-primary/40 prose-blockquote:text-muted-foreground prose-li:marker:text-muted-foreground">
+      <TuringCopyButton
+        value={message.content}
+        labels={{ copy: t("chat.copyToClipboard"), copied: t("chat.copyToClipboard") }}
+        icons={{ copy: <IconCopy className="size-4" />, copied: <IconCheck className="size-4" /> }}
+        classNames={{
+          button: "not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all",
+          idle: "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground",
+          copied: "opacity-100 text-emerald-500",
+        }}
+      />
+      {hasCitations
+        ? <CitedAssistantContent message={message} />
+        : <AssistantContent content={message.content} />}
+      <SourceChips message={message} />
+    </div>
   )
 }
 
@@ -178,20 +261,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
             }}
           >
             {isAssistant ? (
-              <div className="relative group/msg text-sm leading-relaxed prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-headings:text-foreground prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:text-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[13px] prose-code:font-semibold prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-th:text-foreground prose-a:text-primary prose-blockquote:border-primary/40 prose-blockquote:text-muted-foreground prose-li:marker:text-muted-foreground">
-                <TuringCopyButton
-                  value={message.content}
-                  labels={{ copy: t("chat.copyToClipboard"), copied: t("chat.copyToClipboard") }}
-                  icons={{ copy: <IconCopy className="size-4" />, copied: <IconCheck className="size-4" /> }}
-                  classNames={{
-                    button: "not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all",
-                    idle: "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground",
-                    copied: "opacity-100 text-emerald-500",
-                  }}
-                />
-                <AssistantContent content={message.content} />
-                <SourceChips message={message} />
-              </div>
+              <AssistantBody message={message} />
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>
             )}

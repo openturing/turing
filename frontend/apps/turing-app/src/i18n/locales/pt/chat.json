@@ -32,6 +32,12 @@
       "confidenceMedium": "Confiança média",
       "confidenceLow": "Baixa confiança"
     },
+    "citations": {
+      "heading": "Citações",
+      "source": "Fonte",
+      "page": "p.",
+      "open": "Abrir fonte"
+    },
     "selectModelToStart": "Selecione um modelo para começar...",
     "selectModelToChat": "Selecione um modelo de linguagem para começar a conversar.",
     "selectModelToExplore": "Selecione um modelo de linguagem para começar a explorar.",

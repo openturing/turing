@@ -1,4 +1,5 @@
 import type {
+  TurChatCitation,
   TurChatConversationMessage,
   TurChatSource,
   ChatMessage as TuringChatMessage,
@@ -35,6 +36,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.1
    */
   sources?: TurChatSource[]
+  /**
+   * Per-sentence Anthropic citations behind the assistant answer (T152/T154).
+   * When present, the message list underlines the exact cited span in the
+   * answer and shows the source quote + deep link in a hover popover.
+   *
+   * @since 2026.3.4
+   */
+  citations?: TurChatCitation[]
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -52,6 +61,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     timestamp: Date.now(),
     options: m.suggestedOptions,
     sources: m.sources,
+    citations: m.citations,
   }))
 }
 
@@ -63,6 +73,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     content: m.content,
     suggestedOptions: m.options,
     sources: m.sources,
+    citations: m.citations,
   }))
 }
 

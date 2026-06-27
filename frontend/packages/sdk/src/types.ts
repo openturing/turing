@@ -285,8 +285,15 @@ export interface TurChatCitation {
   startIndex?: number | null;
   /** End char offset (`char`) or end page (`page`), when present. */
   endIndex?: number | null;
-  /** `"char"` for plain-text sources, `"page"` for PDF page citations. */
+  /** `"char"`, `"page"` (PDF), or `"search_result"` location type. */
   locationType?: string;
+  /**
+   * T154 — start char offset of the cited claim in the assistant answer text.
+   * The citation-aware UI underlines `answer.slice(answerStart, answerEnd)`.
+   */
+  answerStart?: number | null;
+  /** T154 — end char offset of the cited claim in the assistant answer text. */
+  answerEnd?: number | null;
 }
 
 /**

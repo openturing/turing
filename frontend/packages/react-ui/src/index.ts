@@ -80,6 +80,14 @@ export type {
   TuringSourceConfidence,
 } from "./TuringSourceChips";
 
+export { TuringCitedAnswer, segmentCitedAnswer } from "./TuringCitedAnswer";
+export type {
+  TuringCitedAnswerProps,
+  TuringCitedAnswerClassNames,
+  TuringCitation,
+  TuringCitedMark,
+} from "./TuringCitedAnswer";
+
 // Design-less search primitives migrated from `@viglet/turing-react-sdk` (T306).
 // Pure renderers (props + render-props, no hook/API coupling); their structural
 // data types are redeclared locally to keep this package zero-runtime-dep.

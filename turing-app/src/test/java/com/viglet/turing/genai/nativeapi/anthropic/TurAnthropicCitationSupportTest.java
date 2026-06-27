@@ -192,4 +192,37 @@ class TurAnthropicCitationSupportTest {
     void extractCitationsToleratesNull() {
         assertThat(support.extractCitations(null, DOCS)).isEmpty();
     }
+
+    @Test
+    void appendTextAndCitationsCapturesAnswerSpanOffsets() {
+        // Two text blocks: the first uncited, the second cited. The cited block's
+        // answer span must be [len(first), len(first)+len(second)).
+        ContentBlock plain = ContentBlock.ofText(TextBlock.builder()
+                .text("Here is the answer. ")
+                .citations(List.of())
+                .build());
+        ContentBlock cited = ContentBlock.ofText(TextBlock.builder()
+                .text("The sky is blue.")
+                .addCitation(CitationsSearchResultLocation.builder()
+                        .citedText("The sky is blue today.")
+                        .searchResultIndex(0)
+                        .source("/sn/site/document/doc-a")
+                        .title("Doc A")
+                        .startBlockIndex(0)
+                        .endBlockIndex(1)
+                        .build())
+                .build());
+
+        StringBuilder answer = new StringBuilder();
+        List<TurChatCitation> sink = new java.util.ArrayList<>();
+        support.appendTextAndCitations(List.of(plain, cited), answer, sink, DOCS);
+
+        assertThat(answer.toString()).isEqualTo("Here is the answer. The sky is blue.");
+        assertThat(sink).hasSize(1);
+        TurChatCitation c = sink.get(0);
+        assertThat(c.answerStart()).isEqualTo("Here is the answer. ".length());
+        assertThat(c.answerEnd()).isEqualTo("Here is the answer. The sky is blue.".length());
+        assertThat(c.sourceId()).isEqualTo("doc-a");
+        assertThat(c.locationType()).isEqualTo("search_result");
+    }
 }

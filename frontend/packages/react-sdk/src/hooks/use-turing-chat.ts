@@ -513,12 +513,15 @@ export function useTuringChat(
         const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
         const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
+        const finalCitations =
+          res?.citations && res.citations.length > 0 ? res.citations : undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
+          citations: finalCitations,
         }));
         setActiveForm(finalForm ?? null);
         setStatus("success");

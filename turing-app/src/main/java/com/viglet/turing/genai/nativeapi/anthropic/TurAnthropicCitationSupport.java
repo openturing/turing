@@ -133,7 +133,8 @@ public class TurAnthropicCitationSupport {
     /**
      * Decode the citations from a content-block list (split out from
      * {@link #extractCitations(Message, List)} so it is testable without
-     * building a full {@link Message}).
+     * building a full {@link Message}). Answer-span offsets are left null — use
+     * {@link #appendTextAndCitations} on the live path to populate them.
      */
     List<TurChatCitation> extractFromContent(List<ContentBlock> content,
             List<TurCitationDocument> documents) {
@@ -155,6 +156,48 @@ public class TurAnthropicCitationSupport {
             });
         }
         return citations;
+    }
+
+    /**
+     * T154 / §X.7.c — single pass over the response content that both appends the
+     * answer text to {@code answer} and decodes citations <b>with their answer-span
+     * offsets</b> into {@code sink}. Anthropic emits one text block per cited
+     * claim, so each citation on a block annotates that block's text range
+     * {@code [start, end)} in the concatenated answer — captured here while the
+     * running offset is known (which {@link #extractFromContent} can't do, since
+     * it has no view of the accumulated answer). Safe to call once per
+     * tool-execution round; offsets stay correct relative to the final answer.
+     */
+    public void appendTextAndCitations(Message response, StringBuilder answer,
+            List<TurChatCitation> sink, List<TurCitationDocument> documents) {
+        if (response != null) {
+            appendTextAndCitations(response.content(), answer, sink, documents);
+        }
+    }
+
+    /** Content-list overload (testable without building a full {@link Message}). */
+    void appendTextAndCitations(List<ContentBlock> content, StringBuilder answer,
+            List<TurChatCitation> sink, List<TurCitationDocument> documents) {
+        if (content == null) {
+            return;
+        }
+        for (ContentBlock block : content) {
+            if (!block.isText()) {
+                continue;
+            }
+            var textBlock = block.asText();
+            int start = answer.length();
+            answer.append(textBlock.text());
+            int end = answer.length();
+            textBlock.citations().ifPresent(list -> {
+                for (TextCitation citation : list) {
+                    TurChatCitation decoded = decode(citation, documents);
+                    if (decoded != null) {
+                        sink.add(decoded.withAnswerSpan(start, end));
+                    }
+                }
+            });
+        }
     }
 
     private TurChatCitation decode(TextCitation citation, List<TurCitationDocument> documents) {
@@ -195,6 +238,8 @@ public class TurAnthropicCitationSupport {
                 citedText,
                 startIndex,
                 endIndex,
-                locationType);
+                locationType,
+                /* answerStart */ null,
+                /* answerEnd */ null);
     }
 }
