@@ -433,7 +433,8 @@ public class TurAgentChatExecutor {
         // dangling stream; WARN logs + proceeds; COMPACT routes the prompt
         // through the T115-backed compactor (summarizing the older middle
         // turns) and proceeds best-effort even if still over budget.
-        TurTokenBudgetService.CheckResult budgetCheck = tokenBudgetService.check(agent, messages);
+        TurTokenBudgetService.CheckResult budgetCheck =
+                tokenBudgetService.check(agent, llmInstance, messages);
         if (budgetCheck.decision() == TurTokenBudgetService.Decision.COMPACT) {
             TurPromptCompactor.CompactionResult compaction = promptCompactor.compact(agent, messages);
             if (compaction.compacted()) {

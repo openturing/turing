@@ -18,6 +18,9 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import static org.mockito.Mockito.mock;
+
+import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAgentOverBudgetBehavior;
 
@@ -28,7 +31,9 @@ import com.viglet.turing.persistence.model.agent.TurAgentOverBudgetBehavior;
  */
 class TurTokenBudgetServiceTest {
 
-    private final TurTokenBudgetService service = new TurTokenBudgetService();
+    // instance is always null in these tests → heuristic path (exact counting untouched).
+    private final TurTokenBudgetService service = new TurTokenBudgetService(
+            mock(TurTokenCountingService.class), new TurProviderOptionsParser());
 
     private static TurAIAgent agent(int max, TurAgentOverBudgetBehavior behavior) {
         TurAIAgent a = new TurAIAgent();
