@@ -13,9 +13,11 @@
 package com.viglet.turing.genai.nativeapi.openai;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
@@ -42,6 +44,7 @@ import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapab
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport.ToolOutcome;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.genai.workspace.TurAgentWorkspace;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 import lombok.extern.slf4j.Slf4j;
@@ -88,11 +91,14 @@ public class TurOpenAiResponsesService {
 
     private final TurProviderOptionsParser optionsParser;
     private final TurNativeFunctionToolSupport toolSupport;
+    private final TurAgentWorkspace workspace;
 
     public TurOpenAiResponsesService(TurProviderOptionsParser optionsParser,
-            TurNativeFunctionToolSupport toolSupport) {
+            TurNativeFunctionToolSupport toolSupport,
+            TurAgentWorkspace workspace) {
         this.optionsParser = optionsParser;
         this.toolSupport = toolSupport;
+        this.workspace = workspace;
     }
 
     /**
@@ -121,8 +127,25 @@ public class TurOpenAiResponsesService {
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                serviceTier, null, null);
+    }
+
+    /**
+     * Canonical entry point. {@code agentId} + {@code conversationId} scope where
+     * an {@code image_generation} result is persisted (the per-conversation
+     * {@link TurAgentWorkspace}) so the assistant turn can carry a renderable
+     * {@code sandbox:} image URL; pass {@code null} for both when there is no
+     * conversation scope (the image is then dropped, logged, never failing the
+     * turn).
+     */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools, serviceTier))
+                        capabilities, coexistingTools, serviceTier, agentId, conversationId))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
                         StringUtils.hasText(text) ? text : "")))
@@ -132,7 +155,8 @@ public class TurOpenAiResponsesService {
 
     String runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
-            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
@@ -146,6 +170,7 @@ public class TurOpenAiResponsesService {
                     serverTools, functionTools, serviceTier);
             Response response = client.responses().create(params);
             text.append(extractText(response));
+            appendGeneratedImages(text, response, agentId, conversationId);
 
             List<ResponseFunctionToolCall> calls = functionCalls(response);
             if (calls.isEmpty()) {
@@ -343,6 +368,59 @@ public class TurOpenAiResponsesService {
             }
         }
         return text.toString();
+    }
+
+    /**
+     * Surface any {@code image_generation} output the model produced. The
+     * Responses tool returns the image inline as base64 on an
+     * {@code ImageGenerationCall} output item — which {@link #extractText} drops
+     * (it only reads message text). Without this, the model would say "here is
+     * the image" while nothing renders. Each image is persisted to the
+     * per-conversation {@link TurAgentWorkspace} and a {@code sandbox:}-prefixed
+     * signed URL is appended as markdown so the chat renders it inline (same
+     * scheme the code-interpreter uses).
+     *
+     * <p>Persistence failures (storage disabled, no conversation scope) are
+     * logged and skipped — the turn still returns its text, just without the
+     * image, rather than failing outright.
+     */
+    private void appendGeneratedImages(StringBuilder text, Response response,
+            String agentId, String conversationId) {
+        if (workspace == null || !StringUtils.hasText(agentId) || !StringUtils.hasText(conversationId)) {
+            return;
+        }
+        int index = 0;
+        for (ResponseOutputItem item : response.output()) {
+            if (!item.isImageGenerationCall()) {
+                continue;
+            }
+            Optional<String> base64 = item.asImageGenerationCall().result();
+            if (base64.isEmpty() || base64.get().isBlank()) {
+                continue;
+            }
+            String key = "generated-images/" + safeImageId(item.asImageGenerationCall().id(), index) + ".png";
+            try {
+                byte[] bytes = Base64.getDecoder().decode(base64.get());
+                workspace.put(agentId, conversationId, key, bytes, "image/png");
+                String url = workspace.signedUrl(agentId, conversationId, key);
+                text.append("\n\n![Generated image](sandbox:").append(url).append(")");
+            } catch (RuntimeException e) {
+                log.warn("[Native][OpenAI-Responses] could not surface generated image '{}': {}",
+                        key, e.getMessage());
+            }
+            index++;
+        }
+    }
+
+    /** Filename-safe image id from the provider id, falling back to the index. */
+    static String safeImageId(String id, int index) {
+        if (StringUtils.hasText(id)) {
+            String safe = id.replaceAll("[^A-Za-z0-9_-]", "");
+            if (!safe.isBlank()) {
+                return safe;
+            }
+        }
+        return "image-" + index;
     }
 
     private String resolveModel(TurLLMInstance instance) {

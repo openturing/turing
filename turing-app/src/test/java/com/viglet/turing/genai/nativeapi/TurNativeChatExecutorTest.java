@@ -296,7 +296,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any()))
+                any(), anyList(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -324,7 +324,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList(), any(), any()))
+                promptCaptor.capture(), anyList(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()

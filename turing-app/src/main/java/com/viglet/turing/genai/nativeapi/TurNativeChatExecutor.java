@@ -344,7 +344,8 @@ public class TurNativeChatExecutor {
                 activePersona == null ? "none" : activePersona.getName());
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
-                serviceTierResolver.resolveForChat(agent, instance).orElse(null)));
+                serviceTierResolver.resolveForChat(agent, instance).orElse(null),
+                agent.getId(), conversationId));
     }
 
     /**

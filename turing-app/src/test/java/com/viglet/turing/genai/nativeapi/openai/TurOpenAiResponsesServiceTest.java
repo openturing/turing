@@ -24,7 +24,8 @@ class TurOpenAiResponsesServiceTest {
 
     private final TurProviderOptionsParser optionsParser = new TurProviderOptionsParser();
     private final TurOpenAiResponsesService service = new TurOpenAiResponsesService(
-            optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser));
+            optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser),
+            org.mockito.Mockito.mock(com.viglet.turing.genai.workspace.TurAgentWorkspace.class));
 
     private static EnabledCapability cap(TurNativeCapability capability, String configJson) {
         return new EnabledCapability(capability, configJson);
@@ -111,5 +112,18 @@ class TurOpenAiResponsesServiceTest {
     @Test
     void buildFunctionToolsToleratesNull() {
         assertThat(service.buildFunctionTools(null)).isEmpty();
+    }
+
+    @Test
+    void safeImageIdStripsUnsafeCharsAndFallsBack() {
+        // Provider ids are kept verbatim when already filename-safe.
+        assertThat(TurOpenAiResponsesService.safeImageId("ig_abc-123", 0)).isEqualTo("ig_abc-123");
+        // Path/extension characters are stripped so the key can't escape the folder.
+        assertThat(TurOpenAiResponsesService.safeImageId("../../etc/passwd.png", 0))
+                .isEqualTo("etcpasswdpng");
+        // Blank / null id falls back to the positional index.
+        assertThat(TurOpenAiResponsesService.safeImageId(null, 2)).isEqualTo("image-2");
+        assertThat(TurOpenAiResponsesService.safeImageId("   ", 5)).isEqualTo("image-5");
+        assertThat(TurOpenAiResponsesService.safeImageId("///", 3)).isEqualTo("image-3");
     }
 }

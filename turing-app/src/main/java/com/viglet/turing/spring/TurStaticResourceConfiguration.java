@@ -24,12 +24,14 @@ package com.viglet.turing.spring;
 import java.io.IOException;
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -43,6 +45,13 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
     public static final String FORWARD_INDEX_HTML = "forward:/index.html";
     @Value("${turing.allowedOrigins:http://localhost:5173,http://localhost:2700}")
     private String allowedOrigins;
+
+    private final AsyncTaskExecutor mvcAsyncTaskExecutor;
+
+    public TurStaticResourceConfiguration(
+            @Qualifier(TurMvcAsyncConfig.EXECUTOR_BEAN) AsyncTaskExecutor mvcAsyncTaskExecutor) {
+        this.mvcAsyncTaskExecutor = mvcAsyncTaskExecutor;
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -75,6 +84,7 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
     @Override
     public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
         configurer.setDefaultTimeout(-1);
+        configurer.setTaskExecutor(mvcAsyncTaskExecutor);
     }
 
     @Override
