@@ -51,15 +51,20 @@ public class TurBatchJobPoller {
     private final TurBatchJobRepository batchJobRepository;
     private final TurConfigProperties configProperties;
     private final Map<String, TurBatchCompletionHandler> handlersByPurpose;
+    private final Map<String, TurBatchEmbeddingCompletionHandler> embeddingHandlersByPurpose;
 
     public TurBatchJobPoller(TurBatchInferenceService batchInferenceService,
             TurBatchJobRepository batchJobRepository,
             TurConfigProperties configProperties,
-            List<TurBatchCompletionHandler> handlers) {
+            List<TurBatchCompletionHandler> handlers,
+            List<TurBatchEmbeddingCompletionHandler> embeddingHandlers) {
         this.batchInferenceService = batchInferenceService;
         this.batchJobRepository = batchJobRepository;
         this.configProperties = configProperties;
         this.handlersByPurpose = handlers.stream().collect(Collectors.toMap(
+                handler -> handler.purpose().toLowerCase(Locale.ROOT),
+                Function.identity()));
+        this.embeddingHandlersByPurpose = embeddingHandlers.stream().collect(Collectors.toMap(
                 handler -> handler.purpose().toLowerCase(Locale.ROOT),
                 Function.identity()));
     }
@@ -91,7 +96,11 @@ public class TurBatchJobPoller {
             return;
         }
         if (status.state() == TurBatchState.COMPLETED) {
-            dispatch(job);
+            if (job.getJobKind() == TurBatchKind.EMBEDDING) {
+                dispatchEmbedding(job);
+            } else {
+                dispatchChat(job);
+            }
         } else {
             job.setErrorMessage("Batch ended in state " + status.state());
             finish(job);
@@ -100,12 +109,12 @@ public class TurBatchJobPoller {
         }
     }
 
-    private void dispatch(TurBatchJob job) {
+    private void dispatchChat(TurBatchJob job) {
         List<TurBatchChatResult> results = batchInferenceService.fetchResults(job);
         TurBatchCompletionHandler handler =
                 handlersByPurpose.get(job.getPurpose().toLowerCase(Locale.ROOT));
         if (handler == null) {
-            log.warn("[Batch] no completion handler for purpose '{}' (job {}) — results dropped",
+            log.warn("[Batch] no chat completion handler for purpose '{}' (job {}) — results dropped",
                     job.getPurpose(), job.getId());
         } else {
             try {
@@ -116,7 +125,28 @@ public class TurBatchJobPoller {
             }
         }
         finish(job);
-        log.info("[Batch] job {} ({}) completed: {} ok, {} failed",
+        log.info("[Batch] chat job {} ({}) completed: {} ok, {} failed",
+                job.getId(), job.getPurpose(), job.getCompletedRequests(), job.getFailedRequests());
+    }
+
+    private void dispatchEmbedding(TurBatchJob job) {
+        List<TurBatchEmbeddingResult> results = batchInferenceService.fetchEmbeddingResults(job);
+        TurBatchEmbeddingCompletionHandler handler =
+                embeddingHandlersByPurpose.get(job.getPurpose().toLowerCase(Locale.ROOT));
+        if (handler == null) {
+            log.warn("[Batch] no embedding completion handler for purpose '{}' (job {}) — results dropped",
+                    job.getPurpose(), job.getId());
+        } else {
+            try {
+                handler.onBatchComplete(job, results);
+            } catch (Exception e) {
+                log.error("[Batch] embedding handler '{}' failed for job {}",
+                        job.getPurpose(), job.getId(), e);
+                job.setErrorMessage("Handler error: " + e.getMessage());
+            }
+        }
+        finish(job);
+        log.info("[Batch] embedding job {} ({}) completed: {} ok, {} failed",
                 job.getId(), job.getPurpose(), job.getCompletedRequests(), job.getFailedRequests());
     }
 

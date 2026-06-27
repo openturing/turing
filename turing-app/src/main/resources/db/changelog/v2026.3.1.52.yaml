@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T158 / §X.8.c — batch_job.jobKind so the poller knows whether to fetch chat
+  # or embedding results when an embeddings re-embedding batch (T158) completes.
+  # Backfills existing rows to CHAT (the only kind before T158).
+  #
+  # Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.52-add-batch_job-jobKind
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: batch_job
+                columnName: jobKind
+      changes:
+        - addColumn:
+            tableName: batch_job
+            columns:
+              - column:
+                  name: jobKind
+                  type: varchar(16)
+                  defaultValue: CHAT
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: batch_job
+            columns:
+              - column:
+                  name: jobKind
+                  value: CHAT
+            where: jobKind IS NULL

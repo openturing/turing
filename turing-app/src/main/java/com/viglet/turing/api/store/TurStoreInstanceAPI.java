@@ -89,6 +89,7 @@ public class TurStoreInstanceAPI {
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
     private final TurInfraTenantScope tenantScope;
+    private final com.viglet.turing.genai.batch.embedding.TurBatchReEmbeddingService batchReEmbeddingService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurStoreInstanceAPI(TurStoreInstanceRepository turStoreInstanceRepository,
@@ -98,7 +99,8 @@ public class TurStoreInstanceAPI {
             TurEmbeddingModelRepository embeddingModelRepository,
             TurGlobalSettingsService globalSettingsService,
             TurRagContextBuilder ragContextBuilder,
-            TurInfraTenantScope tenantScope) {
+            TurInfraTenantScope tenantScope,
+            com.viglet.turing.genai.batch.embedding.TurBatchReEmbeddingService batchReEmbeddingService) {
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turStoreInstanceMapper = turStoreInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -107,6 +109,7 @@ public class TurStoreInstanceAPI {
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.tenantScope = tenantScope;
+        this.batchReEmbeddingService = batchReEmbeddingService;
     }
 
     @Operation(summary = "Embedding Store List")
@@ -295,6 +298,37 @@ public class TurStoreInstanceAPI {
             log.warn("[Store] Import failed for collection '{}': {}", collectionName, e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * F.7 / §X.8.c — schedule a batch re-embedding of a collection (50% off, 24h)
+     * after switching its embedding model, instead of a synchronous re-embed.
+     * Reads the collection's chunks, submits their text as an OpenAI embeddings
+     * Batch keyed by chunk id; the precomputed vectors are written back when the
+     * batch ends. Returns the number of chunks scheduled — {@code 0} (HTTP 409)
+     * when the Batch embedding tier is off or the model's vendor has no Batch
+     * embeddings API, so the caller can fall back to the synchronous reindex.
+     */
+    @Operation(summary = "Schedule batch re-embedding of a collection")
+    @PostMapping("/{id}/collections/{collectionName}/reembed-batch")
+    @Secured({"ROLE_ADMIN", "STORE_EDIT"})
+    public ResponseEntity<Map<String, Object>> reEmbedCollection(@PathVariable String id,
+            @PathVariable String collectionName,
+            @RequestParam("embeddingModelId") String embeddingModelId) {
+        TurStoreInstance instance = turStoreInstanceRepository.findById(id)
+                .filter(tenantScope::isVisibleToTenant).orElse(null);
+        TurEmbeddingModel embeddingModel = embeddingModelRepository.findById(embeddingModelId)
+                .filter(tenantScope::isVisibleToTenant).orElse(null);
+        if (instance == null || embeddingModel == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (!batchReEmbeddingService.isAvailable(embeddingModel)) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "scheduled", 0,
+                    "reason", "Batch embedding tier disabled or vendor has no embeddings Batch API"));
+        }
+        int scheduled = batchReEmbeddingService.submitForCollection(instance, collectionName, embeddingModel);
+        return ResponseEntity.ok(Map.of("scheduled", scheduled));
     }
 
     /**

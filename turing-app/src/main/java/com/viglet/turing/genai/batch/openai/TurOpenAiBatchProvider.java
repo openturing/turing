@@ -30,6 +30,9 @@ import com.openai.models.files.FileObject;
 import com.openai.models.files.FilePurpose;
 import com.viglet.turing.genai.batch.TurBatchChatRequest;
 import com.viglet.turing.genai.batch.TurBatchChatResult;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingProvider;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingRequest;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingResult;
 import com.viglet.turing.genai.batch.TurBatchProvider;
 import com.viglet.turing.genai.batch.TurBatchState;
 import com.viglet.turing.genai.batch.TurBatchStatus;
@@ -58,9 +61,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class TurOpenAiBatchProvider implements TurBatchProvider {
+public class TurOpenAiBatchProvider implements TurBatchProvider, TurBatchEmbeddingProvider {
 
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
+    private static final String DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
 
     private final TurNativeProviderClient nativeProviderClient;
 
@@ -75,14 +79,37 @@ public class TurOpenAiBatchProvider implements TurBatchProvider {
 
     @Override
     public String submitChat(TurLLMInstance instance, List<TurBatchChatRequest> requests) {
-        OpenAIClient client = client(instance);
         String defaultModel = StringUtils.hasText(instance.getModelName())
                 ? instance.getModelName()
                 : DEFAULT_MODEL;
-
         String jsonl = TurOpenAiBatchJsonl.buildInputJsonl(requests, defaultModel);
-        byte[] bytes = jsonl.getBytes(StandardCharsets.UTF_8);
+        String batchId = createBatch(instance, jsonl, TurOpenAiBatchJsonl.CHAT_COMPLETIONS_URL);
+        log.info("[Batch][OpenAI] submitted chat batch {} ({} requests) for instance {}",
+                batchId, requests.size(), instance.getId());
+        return batchId;
+    }
 
+    @Override
+    public String submitEmbeddings(TurLLMInstance instance, List<TurBatchEmbeddingRequest> requests) {
+        String defaultModel = StringUtils.hasText(instance.getModelName())
+                ? instance.getModelName()
+                : DEFAULT_EMBEDDING_MODEL;
+        String jsonl = TurOpenAiEmbeddingBatchJsonl.buildInputJsonl(requests, defaultModel);
+        String batchId = createBatch(instance, jsonl, TurOpenAiEmbeddingBatchJsonl.EMBEDDINGS_URL);
+        log.info("[Batch][OpenAI] submitted embeddings batch {} ({} requests) for instance {}",
+                batchId, requests.size(), instance.getId());
+        return batchId;
+    }
+
+    @Override
+    public List<TurBatchEmbeddingResult> embeddingResults(TurLLMInstance instance, String vendorBatchId) {
+        return TurOpenAiEmbeddingBatchJsonl.parseOutputJsonl(downloadOutput(instance, vendorBatchId));
+    }
+
+    /** Shared Files-then-Batch submission used by both chat and embeddings. */
+    private String createBatch(TurLLMInstance instance, String jsonl, String endpointUrl) {
+        OpenAIClient client = client(instance);
+        byte[] bytes = jsonl.getBytes(StandardCharsets.UTF_8);
         FileObject inputFile = client.files().create(FileCreateParams.builder()
                 .purpose(FilePurpose.BATCH)
                 .file(MultipartField.<InputStream>builder()
@@ -91,15 +118,11 @@ public class TurOpenAiBatchProvider implements TurBatchProvider {
                         .contentType("application/jsonl")
                         .build())
                 .build());
-
         Batch batch = client.batches().create(BatchCreateParams.builder()
                 .inputFileId(inputFile.id())
-                .endpoint(BatchCreateParams.Endpoint.of(TurOpenAiBatchJsonl.CHAT_COMPLETIONS_URL))
+                .endpoint(BatchCreateParams.Endpoint.of(endpointUrl))
                 .completionWindow(BatchCreateParams.CompletionWindow._24H)
                 .build());
-
-        log.info("[Batch][OpenAI] submitted batch {} ({} requests) for instance {}",
-                batch.id(), requests.size(), instance.getId());
         return batch.id();
     }
 
@@ -121,16 +144,20 @@ public class TurOpenAiBatchProvider implements TurBatchProvider {
 
     @Override
     public List<TurBatchChatResult> results(TurLLMInstance instance, String vendorBatchId) {
+        return TurOpenAiBatchJsonl.parseOutputJsonl(downloadOutput(instance, vendorBatchId));
+    }
+
+    /** Download the raw output-file JSONL for a completed batch (empty string when none). */
+    private String downloadOutput(TurLLMInstance instance, String vendorBatchId) {
         OpenAIClient client = client(instance);
         Batch batch = client.batches().retrieve(vendorBatchId);
         String outputFileId = batch.outputFileId().orElse(null);
         if (!StringUtils.hasText(outputFileId)) {
             log.warn("[Batch][OpenAI] batch {} completed with no output file", vendorBatchId);
-            return List.of();
+            return "";
         }
         try (HttpResponse content = client.files().content(outputFileId)) {
-            String body = readBody(content.body());
-            return TurOpenAiBatchJsonl.parseOutputJsonl(body);
+            return readBody(content.body());
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to read OpenAI batch output for " + vendorBatchId, e);

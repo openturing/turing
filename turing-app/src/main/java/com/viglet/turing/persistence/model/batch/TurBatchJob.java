@@ -13,6 +13,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 
+import com.viglet.turing.genai.batch.TurBatchKind;
 import com.viglet.turing.genai.batch.TurBatchState;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
@@ -78,6 +79,11 @@ public class TurBatchJob implements Serializable {
     /** Logical workload key, routes completion to a {@code TurBatchCompletionHandler}. */
     @Column(name = "purpose", nullable = false, length = 64)
     private String purpose;
+
+    /** Whether this batch carries chat or embedding work — decides the result fetch on completion. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "jobKind", nullable = false, length = 16)
+    private TurBatchKind jobKind = TurBatchKind.CHAT;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 16)

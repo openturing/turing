@@ -169,6 +169,38 @@ public class TurLuceneVectorStore implements VectorStore {
         }
     }
 
+    /**
+     * F.7 / §X.8.c — upsert documents with <b>precomputed</b> embedding vectors,
+     * skipping the embedding model entirely. Used by the batch re-embedding path
+     * (T158): vectors computed by an OpenAI embeddings Batch job are written back
+     * verbatim to the same chunk ids. Same upsert-by-id semantics as
+     * {@link #add(List)} but the caller supplies one vector per document (lists
+     * must be the same length and aligned by index).
+     */
+    public void addPrecomputed(List<Document> documents, List<float[]> vectors) {
+        if (documents == null || documents.isEmpty()) {
+            return;
+        }
+        if (vectors == null || vectors.size() != documents.size()) {
+            throw new IllegalArgumentException(
+                    "addPrecomputed requires one vector per document (aligned by index)");
+        }
+        try {
+            IndexWriter writer = index.getWriter();
+            for (int i = 0; i < documents.size(); i++) {
+                Document document = documents.get(i);
+                org.apache.lucene.document.Document luceneDoc = toLuceneDocument(document, vectors.get(i));
+                writer.updateDocument(new Term(FIELD_ID, document.getId()), luceneDoc);
+            }
+            writer.commit();
+            log.debug("[LuceneVectorStore] Upserted {} precomputed document(s) to collection '{}'",
+                    documents.size(), collectionName);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to add precomputed documents to Lucene vector store '" + collectionName + "'", e);
+        }
+    }
+
     @Override
     public void delete(List<String> idList) {
         if (idList == null || idList.isEmpty()) {

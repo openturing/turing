@@ -284,6 +284,61 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
     }
 
     /**
+     * F.7 / §X.8.c — bulk upsert with precomputed vectors (and re-embed for any
+     * record missing one). Fills the Lucene gap that previously left
+     * {@code importChunks} unimplemented: records that already carry an
+     * {@code embedding} are written verbatim via
+     * {@link TurLuceneVectorStore#addPrecomputed}, so a batch re-embedding job
+     * (T158) can write its vectors back; records without an embedding fall back
+     * to synchronous embedding via {@code embeddingModel} (when supplied).
+     */
+    @Override
+    public com.viglet.turing.genai.provider.store.TurStoreImportResult importChunks(
+            TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            Iterable<com.viglet.turing.genai.provider.store.TurStoreExportRecord> records,
+            EmbeddingModel embeddingModel) {
+        TurLuceneVectorStore store = (TurLuceneVectorStore) createVectorStore(
+                turStoreInstance, embeddingModel, decryptedCredential, collectionName);
+
+        List<org.springframework.ai.document.Document> precomputedDocs = new ArrayList<>();
+        List<float[]> precomputedVectors = new ArrayList<>();
+        List<org.springframework.ai.document.Document> toEmbed = new ArrayList<>();
+        int total = 0;
+        int failed = 0;
+
+        for (var rec : records) {
+            total++;
+            if (rec == null || rec.id() == null) {
+                failed++;
+                continue;
+            }
+            org.springframework.ai.document.Document doc = org.springframework.ai.document.Document.builder()
+                    .id(rec.id())
+                    .text(rec.content() == null ? "" : rec.content())
+                    .metadata(rec.metadata() == null ? Map.of() : rec.metadata())
+                    .build();
+            if (rec.embedding() != null && rec.embedding().length > 0) {
+                precomputedDocs.add(doc);
+                precomputedVectors.add(rec.embedding());
+            } else if (embeddingModel != null) {
+                toEmbed.add(doc);
+            } else {
+                failed++;
+            }
+        }
+
+        store.addPrecomputed(precomputedDocs, precomputedVectors);
+        if (!toEmbed.isEmpty()) {
+            store.add(toEmbed);
+        }
+        int imported = precomputedDocs.size() + toEmbed.size();
+        return new com.viglet.turing.genai.provider.store.TurStoreImportResult(
+                total, imported, precomputedDocs.size(), toEmbed.size(), failed);
+    }
+
+    /**
      * Translates the {@code Map<String, List<String>>} convention used by the
      * ANN search endpoint into a Lucene {@link BooleanQuery}: keys joined
      * with {@code AND}, multi-value lists with {@code SHOULD} (≥1 must

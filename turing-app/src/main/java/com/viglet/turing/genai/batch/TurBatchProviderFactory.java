@@ -38,26 +38,36 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 public class TurBatchProviderFactory {
 
     private final Map<String, TurBatchProvider> providerMap;
+    private final Map<String, TurBatchEmbeddingProvider> embeddingProviderMap;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
 
     public TurBatchProviderFactory(List<TurBatchProvider> providers,
+            List<TurBatchEmbeddingProvider> embeddingProviders,
             TurGenAiLlmProviderFactory llmProviderFactory) {
         this.providerMap = providers.stream().collect(Collectors.toMap(
+                provider -> provider.getPluginType().toLowerCase(Locale.ROOT),
+                Function.identity()));
+        this.embeddingProviderMap = embeddingProviders.stream().collect(Collectors.toMap(
                 provider -> provider.getPluginType().toLowerCase(Locale.ROOT),
                 Function.identity()));
         this.llmProviderFactory = llmProviderFactory;
     }
 
-    /** The batch provider for the instance's vendor, if one exists. */
+    /** The chat-batch provider for the instance's vendor, if one exists. */
     public Optional<TurBatchProvider> getProvider(TurLLMInstance instance) {
+        return Optional.ofNullable(providerMap.get(pluginType(instance)));
+    }
+
+    /** The embeddings-batch provider for the instance's vendor, if one exists (OpenAI only). */
+    public Optional<TurBatchEmbeddingProvider> getEmbeddingProvider(TurLLMInstance instance) {
+        return Optional.ofNullable(embeddingProviderMap.get(pluginType(instance)));
+    }
+
+    private String pluginType(TurLLMInstance instance) {
         if (instance == null) {
-            return Optional.empty();
+            return null;
         }
         TurGenAiLlmProvider llmProvider = llmProviderFactory.getProvider(instance);
-        if (llmProvider == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(
-                providerMap.get(llmProvider.getPluginType().toLowerCase(Locale.ROOT)));
+        return llmProvider == null ? null : llmProvider.getPluginType().toLowerCase(Locale.ROOT);
     }
 }

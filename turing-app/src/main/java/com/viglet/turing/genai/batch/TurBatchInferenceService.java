@@ -92,20 +92,71 @@ public class TurBatchInferenceService {
         }
         try {
             String vendorBatchId = provider.get().submitChat(instance, requests);
-            TurBatchJob job = new TurBatchJob();
-            job.setInstanceId(instance.getId());
-            job.setPluginType(provider.get().getPluginType());
-            job.setVendorBatchId(vendorBatchId);
-            job.setPurpose(purpose);
-            job.setState(TurBatchState.VALIDATING);
-            job.setTotalRequests(requests.size());
-            job.setContextJson(contextJson);
-            return Optional.of(batchJobRepository.save(job));
+            return Optional.of(persistJob(instance, provider.get().getPluginType(), vendorBatchId,
+                    purpose, TurBatchKind.CHAT, requests.size(), contextJson));
         } catch (Exception e) {
             log.error("[Batch] failed to submit '{}' batch for instance {}",
                     purpose, instance.getId(), e);
             return Optional.empty();
         }
+    }
+
+    /** True when the instance's vendor exposes an embeddings Batch API (OpenAI only). */
+    public boolean isEmbeddingSupported(TurLLMInstance instance) {
+        return providerFactory.getEmbeddingProvider(instance).isPresent();
+    }
+
+    /**
+     * Submit an embeddings batch (T158) and persist an {@link TurBatchKind#EMBEDDING}
+     * tracking job. Same opt-in/fallback semantics as {@link #submit}.
+     */
+    public Optional<TurBatchJob> submitEmbeddings(TurLLMInstance instance, String purpose,
+            List<TurBatchEmbeddingRequest> requests, String contextJson) {
+        if (!isEnabled() || instance == null || CollectionUtils.isEmpty(requests)) {
+            return Optional.empty();
+        }
+        Optional<TurBatchEmbeddingProvider> provider = providerFactory.getEmbeddingProvider(instance);
+        if (provider.isEmpty()) {
+            return Optional.empty();
+        }
+        int max = configProperties.getBatch().getMaxRequestsPerBatch();
+        if (requests.size() > max) {
+            log.warn("[Batch] embeddings purpose '{}' has {} requests, exceeding cap {} — not submitting",
+                    purpose, requests.size(), max);
+            return Optional.empty();
+        }
+        try {
+            String vendorBatchId = provider.get().submitEmbeddings(instance, requests);
+            return Optional.of(persistJob(instance, provider.get().getPluginType(), vendorBatchId,
+                    purpose, TurBatchKind.EMBEDDING, requests.size(), contextJson));
+        } catch (Exception e) {
+            log.error("[Batch] failed to submit embeddings '{}' batch for instance {}",
+                    purpose, instance.getId(), e);
+            return Optional.empty();
+        }
+    }
+
+    /** Fetch the per-chunk embedding vectors of a completed embeddings job. */
+    public List<TurBatchEmbeddingResult> fetchEmbeddingResults(TurBatchJob job) {
+        TurLLMInstance instance = resolveInstance(job);
+        TurBatchEmbeddingProvider provider = providerFactory.getEmbeddingProvider(instance)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No embedding batch provider for instance " + instance.getId()));
+        return provider.embeddingResults(instance, job.getVendorBatchId());
+    }
+
+    private TurBatchJob persistJob(TurLLMInstance instance, String pluginType, String vendorBatchId,
+            String purpose, TurBatchKind kind, int total, String contextJson) {
+        TurBatchJob job = new TurBatchJob();
+        job.setInstanceId(instance.getId());
+        job.setPluginType(pluginType);
+        job.setVendorBatchId(vendorBatchId);
+        job.setPurpose(purpose);
+        job.setJobKind(kind);
+        job.setState(TurBatchState.VALIDATING);
+        job.setTotalRequests(total);
+        job.setContextJson(contextJson);
+        return batchJobRepository.save(job);
     }
 
     /** Refresh a job's status from the vendor and persist the new counts/state. */
