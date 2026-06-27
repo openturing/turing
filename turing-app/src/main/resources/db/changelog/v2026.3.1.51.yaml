@@ -1,0 +1,102 @@
+databaseChangeLog:
+  # T156 / §X.8.a — Batch inference job registry.
+  #
+  # batch_job is the durable hand-off between fire-and-forget Batch submission
+  # (TurBatchInferenceService.submit) and deferred completion (up to 24h later):
+  # TurBatchJobPoller refreshes each row's state on a schedule and, when the
+  # vendor batch ends, routes the results to the TurBatchCompletionHandler bound
+  # to the job's purpose. Without this table a restart would orphan in-flight
+  # batches. Opt-in via turing.batch.enabled (default false) — when off no rows
+  # are ever written and every consumer runs its synchronous path unchanged.
+  #
+  # Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.51-create-batch_job
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: batch_job
+      changes:
+        - createTable:
+            tableName: batch_job
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: instanceId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pluginType
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendorBatchId
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purpose
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: state
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: totalRequests
+                  type: bigint
+              - column:
+                  name: completedRequests
+                  type: bigint
+              - column:
+                  name: failedRequests
+                  type: bigint
+              - column:
+                  name: contextJson
+                  type: longtext
+              - column:
+                  name: resultsCollected
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: errorMessage
+                  type: varchar(1024)
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lastPolledAt
+                  type: timestamp
+              - column:
+                  name: completedAt
+                  type: timestamp
+        - createIndex:
+            tableName: batch_job
+            indexName: ix_batch_job_open
+            columns:
+              - column:
+                  name: resultsCollected
+              - column:
+                  name: state
+        - createIndex:
+            tableName: batch_job
+            indexName: ix_batch_job_purpose
+            columns:
+              - column:
+                  name: purpose

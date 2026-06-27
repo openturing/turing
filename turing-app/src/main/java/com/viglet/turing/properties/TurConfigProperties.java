@@ -24,5 +24,6 @@ public class TurConfigProperties {
 	private TurTenancyProperty tenancy = new TurTenancyProperty();
 	private TurMcpServerProperty mcpServer = new TurMcpServerProperty();
 	private TurObservabilityProperty observability = new TurObservabilityProperty();
+	private TurBatchProperty batch = new TurBatchProperty();
 
 }
