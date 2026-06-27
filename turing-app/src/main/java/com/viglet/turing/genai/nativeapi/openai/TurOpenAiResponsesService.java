@@ -113,8 +113,16 @@ public class TurOpenAiResponsesService {
     public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools, null);
+    }
+
+    /** F.7 / §X.8.e — chat with an explicit {@link TurServiceTier} (null → provider default). */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools))
+                        capabilities, coexistingTools, serviceTier))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
                         StringUtils.hasText(text) ? text : "")))
@@ -123,7 +131,8 @@ public class TurOpenAiResponsesService {
     }
 
     String runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
-            String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
+            String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
@@ -133,8 +142,8 @@ public class TurOpenAiResponsesService {
         int toolCalls = 0;
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-            ResponseCreateParams params =
-                    buildParamsFromItems(instance, items, systemPrompt, serverTools, functionTools);
+            ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
+                    serverTools, functionTools, serviceTier);
             Response response = client.responses().create(params);
             text.append(extractText(response));
 
@@ -175,12 +184,13 @@ public class TurOpenAiResponsesService {
     ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
-                buildTools(capabilities), List.of());
+                buildTools(capabilities), List.of(), null);
     }
 
     private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
             List<ResponseInputItem> items, String systemPrompt, List<Tool> serverTools,
-            List<Tool> functionTools) {
+            List<Tool> functionTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
@@ -191,6 +201,10 @@ public class TurOpenAiResponsesService {
 
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
+        }
+        if (serviceTier != null) {
+            builder.serviceTier(com.openai.models.responses.ResponseCreateParams.ServiceTier
+                    .of(serviceTier.openAiValue()));
         }
         for (Tool tool : serverTools) {
             builder.addTool(tool);

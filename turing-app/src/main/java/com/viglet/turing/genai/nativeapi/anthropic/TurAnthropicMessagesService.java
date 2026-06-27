@@ -139,7 +139,17 @@ public class TurAnthropicMessagesService {
     public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools) {
-        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools, List.of());
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                List.of(), null);
+    }
+
+    /** F.7 / §X.8.e — citations + explicit {@link com.viglet.turing.genai.servicetier.TurServiceTier}. */
+    public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            List<TurCitationDocument> citationDocuments) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                citationDocuments, null);
     }
 
     /**
@@ -153,9 +163,10 @@ public class TurAnthropicMessagesService {
     public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
-            List<TurCitationDocument> citationDocuments) {
+            List<TurCitationDocument> citationDocuments,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools, citationDocuments))
+                        capabilities, coexistingTools, citationDocuments, serviceTier))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(TurAnthropicMessagesService::emitTurn)
                 .doOnError(err -> log.error("[Native][Anthropic-Messages] instance '{}' error: {}",
@@ -195,7 +206,8 @@ public class TurAnthropicMessagesService {
 
     TurnResult runLoop(AnthropicClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
-            List<TurCitationDocument> citationDocuments) {
+            List<TurCitationDocument> citationDocuments,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         long t0 = System.currentTimeMillis();
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> serverTools = buildTools(capabilities, betas);
@@ -212,7 +224,7 @@ public class TurAnthropicMessagesService {
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             MessageCreateParams params = buildParamsFromConversation(
-                    instance, conversation, systemPrompt, tools, betas, mcpServers);
+                    instance, conversation, systemPrompt, tools, betas, mcpServers, serviceTier);
             Message response = client.messages().create(params);
             // T154 / §X.7.c — append text and decode citations in one pass so each
             // citation carries its answer-span offsets (for inline underlining).
@@ -257,12 +269,13 @@ public class TurAnthropicMessagesService {
         List<ToolUnion> tools = buildTools(capabilities, betas);
         List<Object> mcpServers = buildMcpServers(capabilities, betas);
         return buildParamsFromConversation(instance, seedConversation(history), systemPrompt, tools,
-                betas, mcpServers);
+                betas, mcpServers, null);
     }
 
     private MessageCreateParams buildParamsFromConversation(TurLLMInstance instance,
             List<MessageParam> conversation, String systemPrompt, List<ToolUnion> tools,
-            Set<String> betas, List<Object> mcpServers) {
+            Set<String> betas, List<Object> mcpServers,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(resolveModel(instance))
                 .maxTokens(resolveMaxTokens(instance))
@@ -273,6 +286,10 @@ public class TurAnthropicMessagesService {
         }
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
+        }
+        if (serviceTier != null) {
+            builder.serviceTier(com.anthropic.models.messages.MessageCreateParams.ServiceTier
+                    .of(serviceTier.anthropicValue()));
         }
         for (ToolUnion tool : tools) {
             builder.addTool(tool);

@@ -27,6 +27,14 @@ public class TurGenAiProperty {
     /** Citation drift detection knobs (§X.7.d / T155). */
     private TurGenAiCitationDriftProperty citationDrift = new TurGenAiCitationDriftProperty();
 
+    /**
+     * F.7 / §X.8.e — global default {@code service_tier} for live chat requests
+     * ({@code auto} / {@code default} / {@code flex} / {@code priority}). Blank
+     * (default) leaves the provider's own default; a per-agent Request Option or
+     * per-instance {@code serviceTier} overrides it.
+     */
+    private String serviceTier;
+
     @Getter
     @Setter
     public static class TurGenAiReindexProperty {

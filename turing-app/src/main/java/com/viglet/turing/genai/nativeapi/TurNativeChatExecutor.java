@@ -102,6 +102,7 @@ public class TurNativeChatExecutor {
     private final TurRagSearchToolService ragSearchToolService;
     private final TurProviderOptionsParser optionsParser;
     private final TurCitationDriftService citationDriftService;
+    private final com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -123,7 +124,8 @@ public class TurNativeChatExecutor {
             TurMcpFederationDirectory mcpFederationDirectory,
             TurRagSearchToolService ragSearchToolService,
             TurProviderOptionsParser optionsParser,
-            TurCitationDriftService citationDriftService) {
+            TurCitationDriftService citationDriftService,
+            com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -140,6 +142,7 @@ public class TurNativeChatExecutor {
         this.ragSearchToolService = ragSearchToolService;
         this.optionsParser = optionsParser;
         this.citationDriftService = citationDriftService;
+        this.serviceTierResolver = serviceTierResolver;
     }
 
     /**
@@ -302,7 +305,8 @@ public class TurNativeChatExecutor {
                     activePersona == null ? "none" : activePersona.getName());
             Flux<ChatResponse> messages = anthropicMessagesService.chat(anthropicClient.get(), instance,
                     turn.history(), turn.systemPrompt(), capabilities, coexistingTools,
-                    citationDocuments);
+                    citationDocuments,
+                    serviceTierResolver.resolveForChat(agent, instance).orElse(null));
             // T155 / §X.7.d — when citations are on and drift detection is
             // enabled, persist the per-sentence citations as they stream so the
             // daily scan can later re-resolve them. No-op pass-through otherwise.
@@ -339,7 +343,8 @@ public class TurNativeChatExecutor {
                 agent.getTitle(), instance.getId(), capabilities.size(),
                 activePersona == null ? "none" : activePersona.getName());
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
-                turn.systemPrompt(), capabilities, coexistingTools));
+                turn.systemPrompt(), capabilities, coexistingTools,
+                serviceTierResolver.resolveForChat(agent, instance).orElse(null)));
     }
 
     /**
