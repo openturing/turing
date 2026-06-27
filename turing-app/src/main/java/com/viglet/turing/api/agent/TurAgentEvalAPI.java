@@ -59,6 +59,18 @@ public class TurAgentEvalAPI {
         return runnerService.runAgent(agentId);
     }
 
+    @Operation(summary = "Submit the agent's rubric judgements as a Batch (50% off, ~24h)")
+    @PostMapping("/run-batch")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public java.util.Map<String, Object> runBatch(@PathVariable String agentId) {
+        int scheduled = runnerService.submitJudgeBatch(agentId);
+        if (scheduled < 0) {
+            return java.util.Map.of("scheduled", 0,
+                    "reason", "Batch eval tier disabled or no usable batch-capable LLM");
+        }
+        return java.util.Map.of("scheduled", scheduled);
+    }
+
     @Operation(summary = "Latest eval report for the agent")
     @GetMapping("/report")
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })

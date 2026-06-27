@@ -97,6 +97,8 @@ public class TurAgentEvalRunnerService {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
+    private final com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService;
+    private final com.viglet.turing.properties.TurConfigProperties configProperties;
 
     public TurAgentEvalRunnerService(TurAIAgentRepository agentRepository,
             TurAgentEvalSetRepository evalSetRepository,
@@ -108,7 +110,9 @@ public class TurAgentEvalRunnerService {
             TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurLlmModelFactory llmModelFactory,
-            TurSecretCryptoService secretCryptoService) {
+            TurSecretCryptoService secretCryptoService,
+            com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService,
+            com.viglet.turing.properties.TurConfigProperties configProperties) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
         this.reportRepository = reportRepository;
@@ -120,6 +124,8 @@ public class TurAgentEvalRunnerService {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
+        this.batchInferenceService = batchInferenceService;
+        this.configProperties = configProperties;
     }
 
     // ─────────────────────────── Public API ───────────────────────────
@@ -159,6 +165,53 @@ public class TurAgentEvalRunnerService {
             }
         }
         return persistReport(agent, results);
+    }
+
+    /**
+     * F.7 / §X.8.d — submit every enabled case's <b>rubric</b> judgement as a
+     * single LLM-Judge Batch (50% off, ~24h) instead of synchronous calls. The
+     * rubric judge only needs the rubric + the scripted user turns (both on the
+     * eval case), so no conversation replay is required — this is a pure,
+     * fire-and-forget judging pass for overnight CI. The verdicts are parsed and
+     * logged by {@code TurEvalJudgeBatchHandler} when the batch ends.
+     *
+     * <p>Returns the number of rubrics scheduled, or {@code -1} when the Batch
+     * eval tier is unavailable (caller falls back to {@link #runAgent}).
+     */
+    public int submitJudgeBatch(String agentId) {
+        if (!configProperties.getBatch().isEnabled()
+                || !configProperties.getBatch().getEval().isEnabled()) {
+            return -1;
+        }
+        TurAIAgent agent = agentRepository.findById(agentId).orElse(null);
+        if (agent == null) {
+            return -1;
+        }
+        TurLLMInstance llmInstance = resolveLlm(agent);
+        if (llmInstance == null || !batchInferenceService.isSupported(llmInstance)) {
+            return -1;
+        }
+        List<com.viglet.turing.genai.batch.TurBatchChatRequest> requests = new ArrayList<>();
+        for (TurAgentEvalSet set : evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)) {
+            if (set.getEnabled() != 1) {
+                continue;
+            }
+            for (TurAgentEvalCase evalCase : orderedCases(set)) {
+                if (evalCase.getRubric() == null || evalCase.getRubric().isBlank()) {
+                    continue;
+                }
+                requests.add(new com.viglet.turing.genai.batch.TurBatchChatRequest(
+                        evalCase.getId(), TurEvalJudgePrompt.SYSTEM,
+                        TurEvalJudgePrompt.buildUser(evalCase.getRubric(),
+                                parseTurns(evalCase.getSeedTurnsJson())),
+                        null, 0d, null));
+            }
+        }
+        if (requests.isEmpty()) {
+            return 0;
+        }
+        return batchInferenceService.submit(llmInstance, "llm-judge-eval", requests, agentId)
+                .map(job -> requests.size()).orElse(-1);
     }
 
     /**
@@ -310,53 +363,16 @@ public class TurAgentEvalRunnerService {
 
     private JudgeVerdict judge(ChatModel judgeModel, String rubric, List<String> turns) {
         try {
-            String transcript = String.join("\n", turns);
-            String system = """
-                    You are a strict, impartial conversation auditor for an AI agent.
-                    Given a RUBRIC and the user's scripted turns of a conversation, decide
-                    whether the agent's behaviour satisfies the rubric. Be conservative:
-                    when in doubt, fail. Reply in the SAME language as the rubric.
-                    Respond with ONLY a compact JSON object, no markdown fences, exactly:
-                    {"verdict":"pass"|"fail","score":0.0-1.0,"rationale":"one short sentence"}
-                    """;
-            String user = "RUBRIC:\n" + rubric + "\n\nUSER TURNS:\n" + transcript;
-            Prompt prompt = new Prompt(List.of(new SystemMessage(system), new UserMessage(user)));
+            Prompt prompt = new Prompt(List.of(
+                    new SystemMessage(TurEvalJudgePrompt.SYSTEM),
+                    new UserMessage(TurEvalJudgePrompt.buildUser(rubric, turns))));
             String reply = judgeModel.call(prompt).getResult().getOutput().getText();
-            return parseVerdict(reply);
+            TurEvalJudgePrompt.Verdict verdict = TurEvalJudgePrompt.parse(reply);
+            return new JudgeVerdict(verdict.pass(), verdict.score(), verdict.rationale());
         } catch (RuntimeException e) {
             log.warn("[AgentEval] judge failed: {}", e.getMessage());
             return new JudgeVerdict(false, 0d, "judge error: " + e.getMessage());
         }
-    }
-
-    private JudgeVerdict parseVerdict(String reply) {
-        if (reply == null || reply.isBlank()) {
-            return new JudgeVerdict(false, 0d, "empty judge reply");
-        }
-        String json = extractJson(reply);
-        try {
-            Map<String, Object> parsed = OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
-            String verdict = String.valueOf(parsed.getOrDefault("verdict", "fail")).trim().toLowerCase();
-            boolean pass = "pass".equals(verdict);
-            double defaultScore = pass ? 1d : 0d;
-            double score = parsed.get("score") instanceof Number n ? n.doubleValue() : defaultScore;
-            score = Math.clamp(score, 0d, 1d);
-            Object rationale = parsed.get("rationale");
-            return new JudgeVerdict(pass, score, rationale == null ? null : String.valueOf(rationale));
-        } catch (RuntimeException e) {
-            log.warn("[AgentEval] could not parse judge JSON '{}': {}", json, e.getMessage());
-            return new JudgeVerdict(false, 0d, "unparseable judge reply");
-        }
-    }
-
-    /** Strips markdown fences / prose around the JSON object the judge returned. */
-    private static String extractJson(String reply) {
-        int start = reply.indexOf('{');
-        int end = reply.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            return reply.substring(start, end + 1);
-        }
-        return reply.trim();
     }
 
     // ─────────────────────────── Outcome resolution ───────────────────────────
