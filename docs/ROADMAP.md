@@ -109,7 +109,11 @@
 
 ## F.7 — Batch + token economics
 
-- 💭 **T162** (deps: T161) **Pre-flight cost quote in chat UI** — when token-counting estimate × model price exceeds `softCostBudgetPerTurnUsd`, the SDK shows a "this turn will cost $X.XX, confirm?" gate. → §X.8.g
+> **Block complete.** All seven tasks have shipped — the unified
+> `TurBatchInferenceService` (T156), nightly batch summarization (T157), bulk
+> re-embedding via Batch (T158), LLM-Judge eval at the batch tier (T159),
+> service-tier routing (T160), Anthropic exact token counting (T161), and the
+> pre-flight cost quote gate (T162). See [CHANGELOG.md](CHANGELOG.md) §X.8.
 
 ## F.8 — Memory tool + context editing
 

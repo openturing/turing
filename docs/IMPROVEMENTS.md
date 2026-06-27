@@ -1475,28 +1475,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.8 Batch processing + token economics (T156–T162)
-
-Both vendors offer Batch APIs at **50% off**. The candidates inside
-Turing are obvious — every workload that's bulk + non-interactive
-should go batch:
-
-- T157 nightly AI Insights generation (already shipped via
-  `TurLlmSummaryService`, just needs Batch routing).
-- T158 bulk re-embedding on model upgrade.
-- T159 eval runs (T126 regression suites).
-
-T160 service tier routing maps stages: `chat.live` → `priority`
-(interactive SLA), `chat.background` → `flex` (near-batch sync),
-default `auto`. T161 Anthropic token counting replaces the
-`cl100k_base` heuristic with the vendor's exact count, plumbed into
-the T123 budget-enforcement check. T162 surfaces a pre-flight cost
-quote in the UI for cost-sensitive deployments.
-
-**Economic impact** of Block F's batch path alone: the AI Insights
-+ classification + LLM-Judge eval workloads roughly halve in cost at
-zero quality loss. The customer doesn't notice; the bill drops.
-
 ### X.9 Memory tool + context editing (T163–T166)
 
 Anthropic ships three independent context-management features that

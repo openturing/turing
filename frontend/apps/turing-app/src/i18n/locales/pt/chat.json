@@ -45,6 +45,11 @@
     "askAboutContent": "Faça perguntas sobre seu conteúdo indexado.",
     "askAnythingAgent": "Pergunte qualquer coisa que este agente possa ajudar.",
     "askAboutSemantic": "Pergunte sobre seu conteúdo de navegação semântica...",
+    "costGate": {
+      "title": "Confirmar custo do turno",
+      "body": "Este turno deve custar cerca de ${{cost}} ({{tokens}} tokens de entrada){{approx}}, acima do limite de {{cap}} por turno. Enviar mesmo assim?",
+      "confirm": "Enviar mesmo assim"
+    },
     "askAgent": "Pergunte ao {{agent}}...",
     "usingModel": "Usando {{model}} ({{vendor}})",
     "usingModelForSN": "Faça perguntas sobre seu conteúdo indexado. Usando {{model}}.",

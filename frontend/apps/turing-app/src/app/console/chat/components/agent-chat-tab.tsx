@@ -9,7 +9,19 @@ import {
   type ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  fetchPreflightCost,
+  type TurPreflightQuote,
+} from "@/services/agent/agent-preflight-cost.service"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
@@ -195,12 +207,37 @@ export function AgentChatTab({
     }
   }, [status, onResponseComplete])
 
+  // T162 / §X.8.g — pre-flight cost gate. Holds the pending text + quote while
+  // the user confirms a turn projected to breach the agent's per-turn soft cap.
+  const [costGate, setCostGate] = useState<{ text: string; quote: TurPreflightQuote } | null>(null)
+
+  const dispatchSend = useCallback(
+    (text: string) => {
+      setInput("")
+      void send(text)
+    },
+    [send],
+  )
+
   const handleSend = useCallback(() => {
     const text = input.trim()
     if (!text || isStreaming || !llmInstanceId) return
-    setInput("")
-    void send(text)
-  }, [input, isStreaming, llmInstanceId, send])
+    // Quote first; only gate when the projected cost breaches the soft cap.
+    void fetchPreflightCost(agent.id, text).then((quote) => {
+      if (quote.enabled && quote.overSoftCap) {
+        setCostGate({ text, quote })
+      } else {
+        dispatchSend(text)
+      }
+    })
+  }, [input, isStreaming, llmInstanceId, agent.id, dispatchSend])
+
+  const confirmCostGate = useCallback(() => {
+    if (costGate) {
+      dispatchSend(costGate.text)
+      setCostGate(null)
+    }
+  }, [costGate, dispatchSend])
 
   const handleOptionClick = useCallback(
     (label: string) => {
@@ -352,6 +389,33 @@ export function AgentChatTab({
           </div>
         </div>
       </div>
+
+      {/* T162 / §X.8.g — pre-flight cost confirmation gate. */}
+      <Dialog open={costGate !== null} onOpenChange={(open) => !open && setCostGate(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("chat.costGate.title", { defaultValue: "Confirm turn cost" })}</DialogTitle>
+            <DialogDescription>
+              {t("chat.costGate.body", {
+                defaultValue:
+                  "This turn is projected to cost about ${{cost}} ({{tokens}} input tokens){{approx}}, above the {{cap}} per-turn limit. Send anyway?",
+                cost: costGate ? costGate.quote.estimatedCostUsd.toFixed(2) : "0.00",
+                tokens: costGate ? costGate.quote.inputTokens : 0,
+                approx: costGate && !costGate.quote.exact ? " (estimated)" : "",
+                cap: costGate?.quote.softCapUsd != null ? `$${costGate.quote.softCapUsd.toFixed(2)}` : "",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCostGate(null)}>
+              {t("common.cancel", { defaultValue: "Cancel" })}
+            </Button>
+            <Button onClick={confirmCostGate}>
+              {t("chat.costGate.confirm", { defaultValue: "Send anyway" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
