@@ -1,0 +1,92 @@
+databaseChangeLog:
+  # T155 / §X.7.d — citation drift detection.
+  #
+  # chat_citation_record persists each Anthropic Citation (T152-T154) at answer
+  # time so the daily TurCitationDriftDetectionJob can re-resolve it against the
+  # live index and flag citationStale=true when the cited source was re-indexed
+  # (modification_date newer than the answer) or the cited span no longer exists.
+  # Opt-in via turing.genai.citation-drift.enabled (default false) — when off no
+  # rows are written, so existing citation-streaming agents are unchanged.
+  #
+  # Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.50-create-chat_citation_record
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_citation_record
+      changes:
+        - createTable:
+            tableName: chat_citation_record
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: agentId
+                  type: varchar(36)
+              - column:
+                  name: question
+                  type: longtext
+              - column:
+                  name: sourceId
+                  type: varchar(512)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: documentTitle
+                  type: varchar(512)
+              - column:
+                  name: url
+                  type: longtext
+              - column:
+                  name: citedText
+                  type: longtext
+              - column:
+                  name: topK
+                  type: int
+              - column:
+                  name: answerProducedAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: citationStale
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: staleReason
+                  type: varchar(512)
+              - column:
+                  name: lastCheckedAt
+                  type: timestamp
+              - column:
+                  name: driftDetectedAt
+                  type: timestamp
+        - createIndex:
+            tableName: chat_citation_record
+            indexName: ix_chat_citation_record_conversation
+            columns:
+              - column:
+                  name: conversationId
+        - createIndex:
+            tableName: chat_citation_record
+            indexName: ix_chat_citation_record_scan
+            columns:
+              - column:
+                  name: citationStale
+              - column:
+                  name: answerProducedAt

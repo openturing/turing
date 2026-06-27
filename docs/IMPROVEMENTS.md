@@ -1475,19 +1475,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.7 Citations & verifiable RAG (T155)
-
-Anthropic Citations (T152), the Search Results content type (T153),
-and the citation-aware chat UI (T154) have shipped — Turing now
-underlines the exact span Claude grounded each claim on and links it
-to the source. The remaining bet is **T155 citation drift detection**:
-an async job re-resolves recent citations and flags messages where the
-cited chunk has been re-indexed since the answer (`citationStale=true`),
-so Turing can answer the full compliance question — "can you prove what
-document this answer came from, **and whether that document has changed
-since**?" — with a recorded yes. This is the piece that turns provable
-provenance into an auditable, time-aware record.
-
 ### X.8 Batch processing + token economics (T156–T162)
 
 Both vendors offer Batch APIs at **50% off**. The candidates inside

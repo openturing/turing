@@ -146,6 +146,25 @@ public class TurRagSearchToolService {
      * @since 2026.3.4
      */
     public List<TurCitationDocument> retrievePassagesForCitations(String query, int topK) {
+        return TurCitationDocument.fromDocuments(retrieveRawForCitations(query, topK));
+    }
+
+    /**
+     * T155 / §X.7.d — the raw {@link Document} hits behind
+     * {@link #retrievePassagesForCitations}, retrieved through the exact same
+     * default-flags path so the citation-drift scan re-resolves a citation
+     * against precisely what produced it. Returning the raw documents (rather
+     * than {@link TurCitationDocument}) keeps the per-chunk metadata the scan
+     * needs to detect drift — {@code source_id} for matching and
+     * {@code modification_date} for the "re-indexed since the answer" test.
+     *
+     * <p>Returns an empty list — never throws — when RAG is disabled,
+     * unconfigured, the query is blank, or retrieval fails, so callers degrade
+     * to "could not re-verify" rather than failing the scan.
+     *
+     * @since 2026.3.4
+     */
+    public List<Document> retrieveRawForCitations(String query, int topK) {
         if (!isAvailable() || query == null || query.isBlank()) {
             return List.of();
         }
@@ -159,7 +178,7 @@ public class TurRagSearchToolService {
             AgentRagFlags flags = AgentRagFlags.defaults();
             RetrievalResult retrieval = retrieveDocuments(query, k, flags.bm25Enabled(),
                     flags.hybridEnabled(), flags, infra, null);
-            return TurCitationDocument.fromDocuments(retrieval.results());
+            return retrieval.results();
         } catch (Exception e) {
             log.warn("[RAG] Citation retrieval failed for query '{}': {}", query, e.getMessage());
             return List.of();

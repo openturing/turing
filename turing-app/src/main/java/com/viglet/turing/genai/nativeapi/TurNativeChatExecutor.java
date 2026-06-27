@@ -33,6 +33,7 @@ import com.viglet.turing.genai.TurChatToolResolver;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.citation.TurCitationDocument;
+import com.viglet.turing.genai.citation.TurCitationDriftService;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.genai.tool.TurRagSearchToolService;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
@@ -100,6 +101,7 @@ public class TurNativeChatExecutor {
     private final TurMcpFederationDirectory mcpFederationDirectory;
     private final TurRagSearchToolService ragSearchToolService;
     private final TurProviderOptionsParser optionsParser;
+    private final TurCitationDriftService citationDriftService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -120,7 +122,8 @@ public class TurNativeChatExecutor {
             TurChatToolResolver toolResolver,
             TurMcpFederationDirectory mcpFederationDirectory,
             TurRagSearchToolService ragSearchToolService,
-            TurProviderOptionsParser optionsParser) {
+            TurProviderOptionsParser optionsParser,
+            TurCitationDriftService citationDriftService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -136,6 +139,7 @@ public class TurNativeChatExecutor {
         this.mcpFederationDirectory = mcpFederationDirectory;
         this.ragSearchToolService = ragSearchToolService;
         this.optionsParser = optionsParser;
+        this.citationDriftService = citationDriftService;
     }
 
     /**
@@ -296,9 +300,17 @@ public class TurNativeChatExecutor {
                     agent.getTitle(), instance.getId(), capabilities.size(),
                     citationDocuments.size(),
                     activePersona == null ? "none" : activePersona.getName());
-            return Optional.of(anthropicMessagesService.chat(anthropicClient.get(), instance,
+            Flux<ChatResponse> messages = anthropicMessagesService.chat(anthropicClient.get(), instance,
                     turn.history(), turn.systemPrompt(), capabilities, coexistingTools,
-                    citationDocuments));
+                    citationDocuments);
+            // T155 / §X.7.d — when citations are on and drift detection is
+            // enabled, persist the per-sentence citations as they stream so the
+            // daily scan can later re-resolve them. No-op pass-through otherwise.
+            if (citationsEnabled) {
+                messages = citationDriftService.tapForPersistence(messages, agent.getId(),
+                        conversationId, lastUserMessage, CITATION_TOP_K);
+            }
+            return Optional.of(messages);
         }
 
         // T136 / §X.3.d — computer_use is not a one-shot built-in: it needs the

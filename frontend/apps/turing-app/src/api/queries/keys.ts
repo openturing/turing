@@ -46,6 +46,11 @@ export const queryKeys = {
     list: () => [...queryKeys.llmInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.llmInstances.all(), 'detail', id] as const,
   },
+  llmInstanceCapabilities: {
+    all: () => ['llm-instance-capabilities'] as const,
+    list: (instanceId: string) =>
+      [...queryKeys.llmInstanceCapabilities.all(), 'list', instanceId] as const,
+  },
   aiAgents: {
     all: () => ['ai-agents'] as const,
     list: () => [...queryKeys.aiAgents.all(), 'list'] as const,

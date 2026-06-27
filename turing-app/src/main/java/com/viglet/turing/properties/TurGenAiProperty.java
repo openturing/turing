@@ -24,6 +24,9 @@ public class TurGenAiProperty {
     /** Human-in-the-loop {@code humanApproval} node knobs (§IX.5.a / T119). */
     private TurGenAiHumanApprovalProperty humanApproval = new TurGenAiHumanApprovalProperty();
 
+    /** Citation drift detection knobs (§X.7.d / T155). */
+    private TurGenAiCitationDriftProperty citationDrift = new TurGenAiCitationDriftProperty();
+
     @Getter
     @Setter
     public static class TurGenAiReindexProperty {
@@ -156,5 +159,63 @@ public class TurGenAiProperty {
          * "wait indefinitely" — the conversation parks until an operator acts.
          */
         private int defaultTimeoutSeconds = 0;
+    }
+
+    /**
+     * §X.7.d / T155 — citation drift detection. Builds on the Anthropic
+     * Citations path (T152–T154): when an agent answers with verifiable RAG
+     * citations, each cited passage is persisted as a {@code chat_citation_record}
+     * row, and a daily background job re-resolves recent citations against the
+     * current index. A citation is flagged {@code citationStale} when the source
+     * was re-indexed (its {@code modification_date} is newer than the answer) or
+     * the cited passage is no longer present in the live index — so the
+     * compliance question "what document did this answer come from, and has it
+     * changed since?" has a recorded answer.
+     *
+     * <p><b>Opt-in, default off.</b> When {@link #enabled} is {@code false}
+     * nothing is persisted and the scan job is a no-op, so agents that already
+     * stream citations (T152) are byte-for-byte unchanged. Flip it on for
+     * deployments that need the auditable, time-aware provenance record.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.3.4
+     */
+    @Getter
+    @Setter
+    public static class TurGenAiCitationDriftProperty {
+        /**
+         * Master switch for both citation persistence (at answer time) and the
+         * daily drift scan. {@code false} (default) → no rows written, scan job
+         * returns immediately.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Only re-check citations whose answer was produced within the last N
+         * days; older records are left untouched (they age out of relevance and
+         * keep the scan bounded). Default {@code 7}.
+         */
+        private int checkWindowDays = 7;
+
+        /**
+         * Skip a record the scan already checked less than this many hours ago,
+         * so a daily job doesn't re-resolve the same citation every run until it
+         * either drifts or ages out of the window. Default {@code 24}.
+         */
+        private int recheckIntervalHours = 24;
+
+        /**
+         * How many passages to re-retrieve when verifying a citation. A wider
+         * pool than the answer-time top-K reduces false "not present" verdicts
+         * caused by pure ranking drift. Default {@code 20}.
+         */
+        private int recheckTopK = 20;
+
+        /**
+         * Maximum number of due records processed per scan run, so a large
+         * backlog doesn't run the job long past its lock window. Default
+         * {@code 500}.
+         */
+        private int maxPerRun = 500;
     }
 }

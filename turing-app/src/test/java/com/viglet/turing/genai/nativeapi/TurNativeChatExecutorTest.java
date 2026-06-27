@@ -69,6 +69,7 @@ class TurNativeChatExecutorTest {
     @Mock private com.viglet.turing.genai.TurChatToolResolver toolResolver;
     @Mock private com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory mcpFederationDirectory;
     @Mock private com.viglet.turing.genai.tool.TurRagSearchToolService ragSearchToolService;
+    @Mock private com.viglet.turing.genai.citation.TurCitationDriftService citationDriftService;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
@@ -81,7 +82,7 @@ class TurNativeChatExecutorTest {
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
-                optionsParser);
+                optionsParser, citationDriftService);
     }
 
     @BeforeEach
@@ -161,6 +162,10 @@ class TurNativeChatExecutorTest {
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(), any(),
                 anyList(), any(), eq(docs)))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "cited")));
+        // T155 — with citations on, the flux is routed through drift persistence;
+        // the no-op pass-through (disabled) returns the source unchanged.
+        when(citationDriftService.tapForPersistence(any(), any(), any(), any(), anyInt()))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         TurAIAgent agent = agent();
         agent.setRequestOptionsJson("{\"citations\":\"true\"}");

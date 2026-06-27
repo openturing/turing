@@ -31,10 +31,12 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
 import com.viglet.turing.genai.spectator.TurChatMessageEvent;
 import com.viglet.turing.genai.spectator.TurChatMessageEventBus;
+import com.viglet.turing.genai.citation.TurCitationDriftService;
 import com.viglet.turing.genai.spectator.TurCopilotService;
 import com.viglet.turing.genai.spectator.TurCopilotService.ManualTurnResult;
 import com.viglet.turing.genai.workspace.TurWorkspaceEvent;
 import com.viglet.turing.genai.workspace.TurWorkspaceEventBus;
+import com.viglet.turing.persistence.dto.agent.TurChatCitationDriftDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionExportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionMessagesDto;
@@ -100,6 +102,7 @@ public class TurChatSessionAPI {
     private final TurWorkspaceEventBus workspaceEventBus;
     private final TurChatSlotSseRegistry slotSseRegistry;
     private final TurCopilotService copilotService;
+    private final TurCitationDriftService citationDriftService;
 
     public TurChatSessionAPI(TurChatFlowEngineService chatFlowEngineService,
             TurChatMemoryService chatMemoryService,
@@ -110,7 +113,8 @@ public class TurChatSessionAPI {
             TurChatSlotEventBus slotEventBus,
             TurWorkspaceEventBus workspaceEventBus,
             TurChatSlotSseRegistry slotSseRegistry,
-            TurCopilotService copilotService) {
+            TurCopilotService copilotService,
+            TurCitationDriftService citationDriftService) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatMemoryService = chatMemoryService;
         this.llmSummaryService = llmSummaryService;
@@ -121,6 +125,7 @@ public class TurChatSessionAPI {
         this.workspaceEventBus = workspaceEventBus;
         this.slotSseRegistry = slotSseRegistry;
         this.copilotService = copilotService;
+        this.citationDriftService = citationDriftService;
     }
 
     @Operation(summary = "List slots captured during a chat session, merged into a "
@@ -172,6 +177,23 @@ public class TurChatSessionAPI {
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
     public TurChatSlotAuditDto slotAudit(@PathVariable String conversationId) {
         return new TurChatSlotAuditDto(conversationId, slotAuditEntries(conversationId));
+    }
+
+    @Operation(summary = "T155 — citation drift verdicts. Lists every Anthropic Citation "
+            + "persisted for this conversation with its current drift status: whether the "
+            + "cited source has been re-indexed since the answer or its cited passage is no "
+            + "longer present (citationStale). Answers the compliance question 'what document "
+            + "did this answer cite, and has it changed since?'. Pass recheck=true to "
+            + "re-resolve the citations against the live index synchronously before returning "
+            + "(on-demand 'prove it now'); requires turing.genai.citation-drift.enabled.")
+    @GetMapping("/{conversationId}/citation-drift")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurChatCitationDriftDto citationDrift(@PathVariable String conversationId,
+            @RequestParam(defaultValue = "false") boolean recheck) {
+        var records = (recheck && citationDriftService.isEnabled())
+                ? citationDriftService.recheckConversation(conversationId)
+                : citationDriftService.findByConversation(conversationId);
+        return TurChatCitationDriftDto.from(conversationId, records);
     }
 
     @Operation(summary = "T65 — full snapshot export of a conversation's runtime state "

@@ -107,10 +107,6 @@
 > translation (T150), and voice authoring of chat-flows (T151). See
 > [CHANGELOG.md](CHANGELOG.md) §X.6.
 
-## F.6 — Citations & verifiable RAG
-
-- 💭 **T155** (deps: T154) **Citation drift detection** — async job re-resolves recent citations; flags messages where the cited chunk has been re-indexed since the answer (`citationStale=true`). → §X.7.d
-
 ## F.7 — Batch + token economics
 
 - 📋 **T156** (deps: T131) **`TurBatchInferenceService`** — unified abstraction over OpenAI Batch API (`client.batches()`) and Anthropic Message Batches (`POST /v1/messages/batches`). → §X.8.a
