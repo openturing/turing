@@ -115,7 +115,12 @@
       "vendorRequired": "Vendor is required.",
       "dangerZoneTitle": "Danger zone",
       "dangerZoneDesc": "Permanently delete this language model instance. Agents that reference it will fail on their next call until reassigned.",
-      "deleteAction": "Delete this language model"
+      "deleteAction": "Delete this language model",
+      "nativeCapabilities": "Native Capabilities",
+      "nativeCapabilitiesDesc": "Provider-native features (image generation, web search, …) this instance is allowed to use. An agent can only select a capability that is enabled here.",
+      "nativeCapabilityOwnsTurn": "takes the whole turn",
+      "nativeCapabilityUpdated": "Capability updated.",
+      "nativeCapabilityUpdateFailed": "Could not update capability."
     },
     "token": {
       "general": "General",

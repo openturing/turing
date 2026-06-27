@@ -21,6 +21,7 @@ import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurAgentChatRequest;
+import com.viglet.turing.genai.TurChatProviderErrorMapper;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.nativeapi.TurNativeChatExecutor;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
@@ -232,20 +233,36 @@ public class TurAIAgentChatAPI {
         // here and falls through to the unchanged Spring AI executor below.
         boolean plainTurn = (files == null || files.isEmpty())
                 && (request.flowId() == null || request.flowId().isBlank());
+        Flux<ChatResponse> stream = null;
         if (plainTurn) {
             var nativeStream = nativeChatExecutor.tryExecute(agent, turLLMInstance, mapped, null,
                     request.conversationId());
             if (nativeStream.isPresent()) {
-                return nativeStream.get()
+                stream = nativeStream.get()
                         .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
             }
         }
+        if (stream == null) {
+            stream = agentChatExecutor.execute(
+                            new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
+                                    request.conversationId(), request.flowId(), files),
+                            request.forcedVariant(), request.selectedSkillId())
+                    .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
+        }
 
-        return agentChatExecutor.execute(
-                        new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
-                                request.conversationId(), request.flowId(), files),
-                        request.forcedVariant(), request.selectedSkillId())
-                .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
+        // The response is already streaming as text/event-stream, so the global
+        // exception advice can no longer write a JSON ProblemDetail body when a
+        // provider error fires mid-stream — the stream just breaks and the UI
+        // renders a blank assistant reply. Convert the error to a readable
+        // assistant turn so the visitor sees *why* the turn failed (e.g. an
+        // OpenAI "organization must be verified" 403) instead of nothing.
+        String agentTitle = agent.getTitle();
+        java.util.Locale locale = httpRequest.getLocale();
+        return stream.onErrorResume(err -> {
+            log.error("[AgentChat] Agent '{}' stream failed: {}", agentTitle, err.getMessage(), err);
+            return Flux.just(new ChatResponse("assistant",
+                    TurChatProviderErrorMapper.toUserMessage(err, locale), "token"));
+        });
     }
 
     /**

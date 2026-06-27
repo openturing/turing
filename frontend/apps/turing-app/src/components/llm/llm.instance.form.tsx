@@ -46,6 +46,7 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
+import { LLMInstanceCapabilitiesForm } from "./llm.instance.capabilities.form"
 const turLLMVendorService = new TurLLMVendorService();
 const urlBase = ROUTES.LLM_INSTANCE
 interface Props {
@@ -794,6 +795,19 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     />
                   </SectionCard.Content>
                 </SectionCard>
+
+                {/* Native Capabilities — the per-instance gate that actually
+                    enables provider-native features (image generation, web
+                    search, …). Only meaningful for an existing instance whose
+                    vendor has a native path (OpenAI/Anthropic); the component
+                    self-renders nothing otherwise. */}
+                {!isNew && (
+                  <LLMInstanceCapabilitiesForm
+                    instanceId={value.id}
+                    vendorId={selectedVendorId}
+                    readOnly={readOnly}
+                  />
+                )}
 
                 {/* Danger zone — labelled, always-visible counterpart to the
                     desktop-only CardHeader trash icon. Shares the same

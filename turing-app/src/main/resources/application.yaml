@@ -327,7 +327,7 @@ spring:
       hibernate:
         "[globally_quoted_identifiers]": true
         "[format_sql]": false
-        "[enable_lazy_load_no_trans]": true
+        "[enable_lazy_load_no_trans]": false
         "[generate_statistics]": false
       "[jakarta.persistence.sharedCache.mode]": ALL
     hibernate:
@@ -496,11 +496,6 @@ logging:
       springframework: INFO
       apache: INFO
       "[apache.activemq]": ERROR
-      # Suppress HHH90030002 — benign WARN emitted on every session detach because
-      # @TenantId keeps a tenant filter enabled, even when tenancy is off (resolver
-      # yields DEFAULT). Fires for uninitialized LAZY collections like
-      # TurPrivilege.turRoles, which aren't tenant-scoped, so it's pure noise.
-      "[hibernate.orm.collection]": ERROR
     com:
       viglet: INFO
     dev:

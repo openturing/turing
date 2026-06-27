@@ -115,7 +115,12 @@
       "vendorRequired": "Fornecedor é obrigatório.",
       "dangerZoneTitle": "Zona de perigo",
       "dangerZoneDesc": "Apaga permanentemente esta instância de modelo de linguagem. Agentes que a referenciam vão falhar na próxima chamada até serem reatribuídos.",
-      "deleteAction": "Apagar este modelo de linguagem"
+      "deleteAction": "Apagar este modelo de linguagem",
+      "nativeCapabilities": "Capacidades Nativas",
+      "nativeCapabilitiesDesc": "Recursos nativos do provedor (geração de imagem, busca na web, …) que esta instância pode usar. Um agente só consegue selecionar uma capacidade que esteja habilitada aqui.",
+      "nativeCapabilityOwnsTurn": "ocupa o turno inteiro",
+      "nativeCapabilityUpdated": "Capacidade atualizada.",
+      "nativeCapabilityUpdateFailed": "Não foi possível atualizar a capacidade."
     },
     "token": {
       "general": "Geral",
