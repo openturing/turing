@@ -97,6 +97,8 @@ public class TurChatStreamingDispatcher {
     private final TurChatMessageEventBus chatMessageEventBus;
     private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
     private final com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService;
+    private final com.viglet.turing.genai.clienttool.TurClientToolService clientToolService;
+    private final TurClientToolParkRegistry clientToolParkRegistry;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -107,7 +109,9 @@ public class TurChatStreamingDispatcher {
             TurToolExecutionLoop toolExecutionLoop,
             TurChatMessageEventBus chatMessageEventBus,
             com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
-            com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService) {
+            com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService,
+            com.viglet.turing.genai.clienttool.TurClientToolService clientToolService,
+            TurClientToolParkRegistry clientToolParkRegistry) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -118,6 +122,8 @@ public class TurChatStreamingDispatcher {
         this.chatMessageEventBus = chatMessageEventBus;
         this.costBudgetGate = costBudgetGate;
         this.toolCallTraceService = toolCallTraceService;
+        this.clientToolService = clientToolService;
+        this.clientToolParkRegistry = clientToolParkRegistry;
     }
 
     /**
@@ -351,6 +357,9 @@ public class TurChatStreamingDispatcher {
         long tStart = turn.tStart();
         long tSetupEnd = turn.tSetupEnd();
         final Prompt prompt = new Prompt(messages, initialOptions);
+        // T438 — the agent's declared frontend tool names (empty unless opted in).
+        // A model call to one of these parks the turn instead of executing it.
+        final java.util.Set<String> clientToolNames = clientToolService.namesFor(agent);
         Flux<ChatResponse> turnFlux = Mono.fromCallable(() -> {
             // Post-T16: single LLM call per turn. The system prompt was
             // composed in setup with the post-advance node already in
@@ -365,8 +374,18 @@ public class TurChatStreamingDispatcher {
             // ChatModel.call() — drive it explicitly so registered tools (native
             // / MCP / custom) actually fire instead of the model returning a bare
             // tool-call response (empty assistant text). See TurToolExecutionLoop.
-            org.springframework.ai.chat.model.ChatResponse response =
-                    toolExecutionLoop.call(chatModel, prompt);
+            //
+            // T438 — when the model instead calls a declared frontend ("client")
+            // tool, the client-tool-aware loop throws: we park the turn (storing
+            // everything a resume needs) and emit a `client_tool_call` event so
+            // the browser runs it and POSTs the result back to continue.
+            org.springframework.ai.chat.model.ChatResponse response;
+            try {
+                response = toolExecutionLoop.callWithClientTools(chatModel, prompt, clientToolNames);
+            } catch (com.viglet.turing.genai.clienttool.TurClientToolParkException park) {
+                return parkClientTool(turn, chatModel, initialOptions, flowContext,
+                        effectivePersona, park);
+            }
             long tLlmEnd = System.currentTimeMillis();
             double turnCost = tokenUsageService.recordUsage(llmInstance, response, username,
                     agent == null ? null : agent.getId(),
@@ -527,6 +546,70 @@ public class TurChatStreamingDispatcher {
     }
 
     /**
+     * T438 — parks the turn that just requested a frontend tool and returns the
+     * {@link AssistantTurn} that {@link #emitTurn} fans out as the single
+     * {@code client_tool_call} SSE event. The park holds everything a resume
+     * needs ({@link #resumeClientTool}); a blank conversation id can't be resumed
+     * (no key), so we still surface the event but skip the park.
+     */
+    private AssistantTurn parkClientTool(TurChatTurnContext turn, ChatModel chatModel,
+            ChatOptions initialOptions, TurAgentChatFlowContext flowContext, TurPersona persona,
+            com.viglet.turing.genai.clienttool.TurClientToolParkException park) {
+        org.springframework.ai.chat.messages.AssistantMessage.ToolCall call = park.toolCall();
+        String callId = call.id() != null && !call.id().isBlank()
+                ? call.id()
+                : java.util.UUID.randomUUID().toString();
+        String conversationId = turn.conversationId();
+        if (conversationId != null && !conversationId.isBlank()) {
+            clientToolParkRegistry.park(new TurClientToolParkRegistry.ParkedClientTurn(
+                    conversationId, callId, call.name(), call.arguments(),
+                    turn, chatModel, initialOptions, flowContext, persona,
+                    park.promptMessages(), park.assistantMessage(),
+                    System.currentTimeMillis() + TurClientToolParkRegistry.DEFAULT_TTL_MILLIS));
+        } else {
+            log.warn("[ClientTool] stateless turn (no conversationId) — emitting "
+                    + "client_tool_call '{}' without a resumable park", call.name());
+        }
+        return AssistantTurn.parked(new ClientToolCall(callId, call.name(), call.arguments()));
+    }
+
+    /**
+     * T438 — resumes a turn parked on a frontend tool. Appends the browser's
+     * result (or error) as the tool response for {@code callId} and re-dispatches
+     * the continuation through {@link #dispatchCall} (which may answer or park
+     * again on another client tool). Throws {@link IllegalArgumentException} when
+     * the park is unknown / already resumed / expired so the controller can map
+     * it to a 404/410.
+     *
+     * @param result the browser's tool result as a JSON/string payload (nullable)
+     * @param error  a client-side error message; when non-null it is fed back to
+     *               the model as the tool result instead of {@code result}
+     */
+    public Flux<ChatResponse> resumeClientTool(String conversationId, String callId,
+            String result, String error) {
+        TurClientToolParkRegistry.ParkedClientTurn parked =
+                clientToolParkRegistry.take(conversationId, callId);
+        if (parked == null) {
+            throw new IllegalArgumentException(
+                    "No parked client-tool call for conversation=" + conversationId + " callId=" + callId);
+        }
+        String responseData = error != null && !error.isBlank()
+                ? "ERROR: " + error
+                : (result == null ? "" : result);
+        var toolResponse = new org.springframework.ai.chat.messages.ToolResponseMessage.ToolResponse(
+                callId, parked.toolName(), responseData);
+        List<Message> resumeMessages = new java.util.ArrayList<>(parked.promptMessages());
+        resumeMessages.add(parked.assistantMessage());
+        resumeMessages.add(org.springframework.ai.chat.messages.ToolResponseMessage.builder()
+                .responses(List.of(toolResponse))
+                .build());
+        log.info("[ClientTool] resuming conv={} callId={} tool={} ({})",
+                conversationId, callId, parked.toolName(), error != null ? "error" : "result");
+        return dispatchCall(parked.turn(), parked.chatModel(), resumeMessages,
+                parked.initialOptions(), parked.flowContext(), parked.persona());
+    }
+
+    /**
      * Records token + turn counters and appends the user/assistant pair to
      * chat memory. Token counts come from {@code response.getMetadata()} when
      * available; otherwise we record zeros so dashboards still get the turn
@@ -579,7 +662,21 @@ public class TurChatStreamingDispatcher {
      * {@link ChatResponse} events.
      */
     private record AssistantTurn(String text, List<String> options, String formJson,
-            List<TurRagSource> sources) {
+            List<TurRagSource> sources, ClientToolCall clientToolCall) {
+
+        AssistantTurn(String text, List<String> options, String formJson,
+                List<TurRagSource> sources) {
+            this(text, options, formJson, sources, null);
+        }
+
+        /** T438 — a turn that parked on a frontend tool instead of answering. */
+        static AssistantTurn parked(ClientToolCall call) {
+            return new AssistantTurn("", List.of(), null, List.of(), call);
+        }
+    }
+
+    /** T438 — payload of the {@code client_tool_call} SSE event. */
+    private record ClientToolCall(String callId, String name, String args) {
     }
 
     /**
@@ -616,6 +713,19 @@ public class TurChatStreamingDispatcher {
      * assistant bubble and chips.
      */
     private static Flux<ChatResponse> emitTurn(AssistantTurn turn) {
+        // T438 — a parked turn emits exactly one `client_tool_call` event and
+        // nothing else; the answer (if any) comes after the browser resumes.
+        if (turn.clientToolCall() != null) {
+            ClientToolCall call = turn.clientToolCall();
+            try {
+                String json = OBJECT_MAPPER.writeValueAsString(call);
+                return Flux.just(new ChatResponse(ASSISTANT, json, "client_tool_call"));
+            } catch (JacksonException e) {
+                log.warn("[AgentExec] could not serialize client_tool_call '{}': {}",
+                        call.name(), e.getMessage());
+                return Flux.empty();
+            }
+        }
         Flux<ChatResponse> events = turn.text() == null || turn.text().isEmpty()
                 ? Flux.empty()
                 : Flux.just(new ChatResponse(ASSISTANT, turn.text()));

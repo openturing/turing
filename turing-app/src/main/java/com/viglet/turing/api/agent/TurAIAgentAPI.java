@@ -229,6 +229,9 @@ public class TurAIAgentAPI {
             agentEdit.setMcpNativeFederation(turAIAgent.isMcpNativeFederation());
             // T436 — live tool-call events on the chat SSE (opt-in).
             agentEdit.setToolCallEventsEnabled(turAIAgent.isToolCallEventsEnabled());
+            // T438 — frontend ("client") tools (opt-in) + their declarations.
+            agentEdit.setClientToolsEnabled(turAIAgent.isClientToolsEnabled());
+            agentEdit.setClientToolsJson(turAIAgent.getClientToolsJson());
             // Chat memory configuration — silently dropped before this fix,
             // which is why toggling the UI switch had no effect after save.
             agentEdit.setChatMemoryEnabled(turAIAgent.isChatMemoryEnabled());

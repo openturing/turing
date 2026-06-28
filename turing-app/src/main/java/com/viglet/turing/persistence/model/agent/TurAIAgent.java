@@ -138,6 +138,32 @@ public class TurAIAgent implements Serializable {
     private boolean toolCallEventsEnabled = false;
 
     /**
+     * T438 / §XXII.3 — per-agent opt-in for frontend ("client") tools. When
+     * {@code true} and {@link #clientToolsJson} declares at least one tool, those
+     * tools are advertised to the model; a call to one parks the turn and emits a
+     * {@code client_tool_call} SSE event for the browser to run (resumed via
+     * {@code POST /api/v2/chat/client-tool-result}). Default {@code false} keeps
+     * the turn server-only (no client round-trip).
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "client_tools_enabled", nullable = false)
+    private boolean clientToolsEnabled = false;
+
+    /**
+     * T438 / §XXII.3 — JSON array declaring this agent's client tools:
+     * {@code [{"name":"…","description":"…","schema":{…}}]}. {@code schema} is the
+     * JSON-Schema for the tool's input parameters, advertised to the model. Only
+     * declared names are callable; an unknown name is rejected on resume.
+     * {@code longtext} for cross-DB portability. Null/blank → no client tools.
+     *
+     * @since 2026.3.4
+     */
+    @Lob
+    @Column(name = "client_tools_json")
+    private String clientToolsJson;
+
+    /**
      * When {@code true}, the agent enqueues every chat turn into the chat
      * memory pipeline so it can be persisted by {@code turing.logging.engine}
      * (mongodb / redis) keyed by {@code conversationId}. Has no effect when

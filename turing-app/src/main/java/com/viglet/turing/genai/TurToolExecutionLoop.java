@@ -9,12 +9,17 @@
  */
 package com.viglet.turing.genai;
 
+import java.util.Set;
+
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.stereotype.Component;
+
+import com.viglet.turing.genai.clienttool.TurClientToolParkException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -91,6 +96,53 @@ public class TurToolExecutionLoop {
         ChatResponse response = chatModel.call(prompt);
         int iterations = 0;
         while (response != null && response.hasToolCalls()) {
+            if (iterations++ >= MAX_TOOL_ITERATIONS) {
+                log.warn("[ToolLoop] aborting after {} tool-execution rounds — the model kept "
+                        + "requesting tools without producing a final answer", MAX_TOOL_ITERATIONS);
+                break;
+            }
+            ToolExecutionResult result = toolCallingManager.executeToolCalls(prompt, response);
+            prompt = new Prompt(result.conversationHistory(), prompt.getOptions());
+            response = chatModel.call(prompt);
+        }
+        return response;
+    }
+
+    /**
+     * T438 — same as {@link #call(ChatModel, Prompt)} but client-tool aware: when
+     * the model requests a tool whose name is in {@code clientToolNames} (a
+     * frontend tool the server can't run), the loop stops <em>before</em>
+     * executing tools and throws {@link TurClientToolParkException} carrying the
+     * messages fed to that call plus the assistant message holding the tool call.
+     * The dispatcher catches it, parks the turn, and emits a
+     * {@code client_tool_call} SSE event. Server-side tool calls in earlier
+     * rounds run normally; only a client-tool request parks.
+     *
+     * <p>When {@code clientToolNames} is empty this is identical to
+     * {@link #call(ChatModel, Prompt)}.
+     *
+     * @throws TurClientToolParkException when a client tool is requested
+     */
+    public ChatResponse callWithClientTools(ChatModel chatModel, Prompt prompt,
+            Set<String> clientToolNames) {
+        if (clientToolNames == null || clientToolNames.isEmpty()) {
+            return call(chatModel, prompt);
+        }
+        ChatResponse response = chatModel.call(prompt);
+        int iterations = 0;
+        while (response != null && response.hasToolCalls()) {
+            AssistantMessage assistant = response.getResult().getOutput();
+            AssistantMessage.ToolCall clientCall = assistant.getToolCalls().stream()
+                    .filter(tc -> clientToolNames.contains(tc.name()))
+                    .findFirst()
+                    .orElse(null);
+            if (clientCall != null) {
+                // Park: hand the dispatcher the messages that produced this call
+                // and the assistant message, so a resume can append the browser's
+                // tool response and continue from exactly here.
+                throw new TurClientToolParkException(
+                        clientCall, prompt.getInstructions(), assistant);
+            }
             if (iterations++ >= MAX_TOOL_ITERATIONS) {
                 log.warn("[ToolLoop] aborting after {} tool-execution rounds — the model kept "
                         + "requesting tools without producing a final answer", MAX_TOOL_ITERATIONS);

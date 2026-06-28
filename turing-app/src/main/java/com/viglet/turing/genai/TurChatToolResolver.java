@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.clienttool.TurClientToolService;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
@@ -67,6 +68,7 @@ public class TurChatToolResolver {
     private final TurPersonaBrandContextProvider personaBrandContextProvider;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurSkillRunnerService skillRunnerService;
+    private final TurClientToolService clientToolService;
 
     public TurChatToolResolver(TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -75,7 +77,8 @@ public class TurChatToolResolver {
             TurToolPreFilterService toolPreFilterService,
             TurPersonaBrandContextProvider personaBrandContextProvider,
             TurChatPipelineObservation chatPipelineObservation,
-            TurSkillRunnerService skillRunnerService) {
+            TurSkillRunnerService skillRunnerService,
+            TurClientToolService clientToolService) {
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
@@ -84,6 +87,7 @@ public class TurChatToolResolver {
         this.personaBrandContextProvider = personaBrandContextProvider;
         this.chatPipelineObservation = chatPipelineObservation;
         this.skillRunnerService = skillRunnerService;
+        this.clientToolService = clientToolService;
     }
 
     /**
@@ -312,12 +316,20 @@ public class TurChatToolResolver {
         ToolCallback[] personaBrandCallbacks =
                 personaBrandContextProvider.getToolCallbacks(activePersona);
         ToolCallback[] skillCallbacks = skillCallbacks(agent, selectedSkillId);
+        // T438 — frontend ("client") tools. Advertised to the model so it can
+        // call them; the call parks the turn (it is never run server-side).
+        ToolCallback[] clientCallbacks = clientToolService.isEnabled(agent)
+                ? clientToolService.buildToolCallbacks(agent)
+                : new ToolCallback[0];
         ToolCallback[] decorated = toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
-                        skillCallbacks)
+                        skillCallbacks, clientCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
         Set<String> alwaysKeep = buildAlwaysKeep(selectedNativeTools, skillCallbacks, activeNode);
+        // Client tools are author-declared (not domain-relevance ranked) — keep
+        // them past the BM25 pre-filter so the model always sees what it may call.
+        alwaysKeep.addAll(clientToolService.namesFor(agent));
         // T424 / §XXI part (b) — trigger boost: when the user message hits an
         // attached MCP server's declared trigger words (or its title), promote
         // that server's tools into the always-keep set so the pre-filter can

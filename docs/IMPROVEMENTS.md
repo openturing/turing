@@ -2286,19 +2286,6 @@ these block the Dumont collection work — a sidecar
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
 
-### XXII.3 Client-tool protocol — backend round-trip (T438)
-
-The agent requests a frontend tool: the loop emits a **`client_tool_call`** SSE
-event `{ callId, name, args }` and **parks** the turn awaiting a result (same
-suspend/resume machinery as the T119 `humanApproval` node — a parked turn keyed
-by `(conversationId, callId)`). New endpoint **`POST /chat/client-tool-result`**
-`{ conversationId, callId, result|error }` feeds the value back and the tool
-loop resumes streaming. Allowed client-tool **names + JSON schemas are declared
-per-agent** (so the model is told they exist and the backend can validate the
-returned shape); an unknown/disallowed name is rejected. Timeout + abort path so
-a never-answered client call can't wedge the conversation. Gated per-agent
-(`clientToolsEnabled`).
-
 ### XXII.4 SDK client-tool registration (T439)
 
 Vanilla SDK: `chatController.registerClientTool(name, async (args) => result)`;
