@@ -89,6 +89,15 @@ export type {
   TuringToolCall,
 } from "./TuringToolActivity";
 
+export { TuringGenerativeContent } from "./TuringGenerativeContent";
+export type {
+  TuringGenerativeContentProps,
+  TuringGenerativeContentClassNames,
+  TuringGenerativeItem,
+  TuringGenerativeComponentProps,
+  TuringGenerativeRegistry,
+} from "./TuringGenerativeContent";
+
 export { TuringCitedAnswer, segmentCitedAnswer } from "./TuringCitedAnswer";
 export type {
   TuringCitedAnswerProps,

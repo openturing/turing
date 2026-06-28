@@ -2286,17 +2286,6 @@ these block the Dumont collection work — a sidecar
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
 
-### XXII.5 Generative UI via client tools (T440)
-
-A client tool whose "result" is a **rendered component** rather than a data
-value — AG-UI's tool-based generative UI. Built entirely on T438/T439: register
-a tool whose handler renders a host-supplied React component (looked up in a
-small component registry by name) with the agent-provided props, optionally
-returning a structured value back to the loop when the user interacts (e.g. a
-custom picker). Reuses the `TuringRichContent` segment-dispatch model (T295) so
-generative segments and markdown/html/d2 segments share one render path. No new
-backend beyond T438.
-
 ### XXII.6 Canonical AG-UI protocol adapter (T441, 💭 bet)
 
 Optional, strategic: an endpoint that re-encodes Turing's chat stream into the

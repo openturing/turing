@@ -123,6 +123,8 @@ export { useTuringTabs } from "./hooks/use-turing-tabs";
 export type { UseTuringTabsReturn, UseTuringTabsOptions, TabDefinition, EnrichedTab } from "./hooks/use-turing-tabs";
 export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus, SendOverrides } from "./hooks/use-turing-chat";
+export { useGenerativeUI } from "./hooks/use-turing-generative-ui";
+export type { UseGenerativeUIReturn } from "./hooks/use-turing-generative-ui";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,
@@ -280,6 +282,7 @@ export {
   TuringChatMessage,
   TuringSourceChips,
   TuringToolActivity,
+  TuringGenerativeContent,
   TuringCitedAnswer,
   segmentCitedAnswer,
   TuringSearchBar,
@@ -330,6 +333,11 @@ export type {
   TuringToolActivityLabels,
   TuringToolActivityIcons,
   TuringToolCall,
+  TuringGenerativeContentProps,
+  TuringGenerativeContentClassNames,
+  TuringGenerativeItem,
+  TuringGenerativeComponentProps,
+  TuringGenerativeRegistry,
   TuringCitedAnswerProps,
   TuringCitedAnswerClassNames,
   TuringCitation,

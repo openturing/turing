@@ -192,11 +192,13 @@
 > shipped, built alongside it), T437 (SDK/`useTuringChat` `toolCalls` + headless
 > `TuringToolActivity`), T438 (client-tool protocol backend round-trip —
 > `client_tool_call` event + `POST /api/v2/chat/client-tool-result`, in-memory
-> park MVP), and T439 (SDK `registerClientTool`/`clientTools` + the resume
-> round-trip in both SDKs). See [CHANGELOG.md](CHANGELOG.md) Block W + E.7. Only
-> T440 remains (T441 is a 💭 bet).
+> park MVP), T439 (SDK `registerClientTool`/`clientTools` + the resume
+> round-trip in both SDKs), and T440 (generative UI via client tools —
+> `useGenerativeUI` + headless `TuringGenerativeContent`). See
+> [CHANGELOG.md](CHANGELOG.md) Block W + E.7. **All 📋 tasks shipped**; only
+> **T441** (canonical AG-UI protocol adapter) remains, a 💭 bet held until a
+> named integration asks for it.
 
-- 📋 **T440** (deps: T439, T295) **Generative UI via client tools** — a client tool whose handler renders a host-registered React component (looked up by name) with agent-provided props, optionally returning a value when the user interacts; reuses the `TuringRichContent` segment-dispatch model so generative + markdown/html/d2 segments share one render path. No backend beyond T438. → §XXII.5
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
 ## Block X — Creative experiences at the search × agent intersection
