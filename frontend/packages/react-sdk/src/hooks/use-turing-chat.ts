@@ -5,6 +5,7 @@ import {
   fetchChatEnabled,
   postAgentChat,
   postChatConversation,
+  postClientToolResult,
   postSiteFormSubmit,
   type ChatDisabledReason,
 } from "../core/api";
@@ -15,10 +16,14 @@ import {
   getOrCreateTurSession,
 } from "../core/session";
 import type {
+  ClientToolHandler,
+  ClientToolRegistration,
   TurChatConversationMessage,
+  TurChatConversationResponse,
   TurChatForm,
   TurChatFormSubmitResponse,
   TurChatToolCall,
+  TurClientToolCall,
 } from "../core/types";
 import {
   newId,
@@ -182,6 +187,16 @@ export interface UseTuringChatOptions {
    * @since 2026.3.1
    */
   readonly initialMessages?: ChatMessage[];
+  /**
+   * T439 — frontend ("client") tool handlers, keyed by tool name, as either a
+   * bare handler or `{ schema?, handler }`. When the agent (which must declare
+   * the tool, `clientToolsEnabled`) calls one, the hook runs the handler and
+   * POSTs its result so the turn continues. Mirrors `useCopilotAction`. Read on
+   * every send (live), so a changing object is honoured without a remount.
+   *
+   * @since 2026.3.4
+   */
+  readonly clientTools?: Record<string, ClientToolRegistration>;
 }
 
 export interface UseTuringChatReturn {
@@ -258,9 +273,100 @@ export interface UseTuringChatReturn {
    * @since 2026.2.16
    */
   resetFlow: () => Promise<boolean>;
+  /**
+   * T439 — register a frontend ("client") tool handler the agent can invoke.
+   * Replaces any prior handler for {@code name}; returns an unregister function.
+   * Equivalent to an entry in the {@code clientTools} option.
+   *
+   * @since 2026.3.4
+   */
+  registerClientTool: (name: string, handler: ClientToolHandler) => () => void;
+  /** Remove a previously-registered client-tool handler. */
+  unregisterClientTool: (name: string) => void;
 }
 
 const DEFAULT_MAX_MESSAGES = 50;
+
+/** Cap on chained client-tool round-trips in a single turn (runaway guard). */
+const MAX_CLIENT_TOOL_HOPS = 10;
+
+function asClientToolHandler(registration: ClientToolRegistration): ClientToolHandler {
+  return typeof registration === "function" ? registration : registration.handler;
+}
+
+/**
+ * Runs the registered handler for a {@link TurClientToolCall} and normalizes the
+ * outcome to `{result}` or `{error}` — a missing/throwing handler is reported to
+ * the agent as a tool error rather than surfacing in the UI (T439).
+ */
+async function runClientToolHandler(
+  handlers: Map<string, ClientToolHandler>,
+  call: TurClientToolCall,
+): Promise<{ result?: unknown; error?: string }> {
+  const handler = handlers.get(call.name);
+  if (!handler) {
+    return { error: `No client tool handler registered for '${call.name}'` };
+  }
+  let parsedArgs: unknown;
+  try {
+    parsedArgs = call.args ? JSON.parse(call.args) : {};
+  } catch {
+    parsedArgs = call.args;
+  }
+  try {
+    return { result: await handler(parsedArgs) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** Merges two tool-call lists by `callId` (later entries win). */
+function mergeToolCallLists(a: TurChatToolCall[], b: TurChatToolCall[]): TurChatToolCall[] {
+  const byId = new Map<string, TurChatToolCall>();
+  for (const c of a) byId.set(c.callId, c);
+  for (const c of b) byId.set(c.callId, c);
+  return [...byId.values()];
+}
+
+interface ClientToolRoundTripCtx {
+  handlers: Map<string, ClientToolHandler>;
+  conversationId: string;
+  signal: AbortSignal;
+  onToken: (token: string) => void;
+  onToolCall: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
+  shouldStop: () => boolean;
+}
+
+/**
+ * T438 / T439 — drives the client-tool round-trips for a parked turn: runs the
+ * registered handler, POSTs its result, and consumes the continuation, looping
+ * until the agent answers (no `clientToolCall`), the hop cap trips, or the turn
+ * goes stale. Returns the final response plus the content + tool calls
+ * accumulated across all legs (extracted to keep `runAssistantTurn` simple).
+ */
+async function runClientToolRoundTrips(
+  initial: TurChatConversationResponse,
+  ctx: ClientToolRoundTripCtx,
+): Promise<{ res: TurChatConversationResponse; content: string; toolCalls: TurChatToolCall[] }> {
+  let res = initial;
+  let content = res?.content ?? "";
+  let toolCalls: TurChatToolCall[] = res?.toolCalls ?? [];
+  let hops = 0;
+  while (res?.clientToolCall && hops < MAX_CLIENT_TOOL_HOPS && !ctx.shouldStop()) {
+    hops += 1;
+    const call = res.clientToolCall;
+    const { result, error } = await runClientToolHandler(ctx.handlers, call);
+    res = await postClientToolResult(
+      { conversationId: ctx.conversationId, callId: call.callId, result, error },
+      { onToken: ctx.onToken, onToolCall: ctx.onToolCall, signal: ctx.signal },
+    );
+    content += res?.content ?? "";
+    if (res?.toolCalls?.length) {
+      toolCalls = mergeToolCallLists(toolCalls, res.toolCalls);
+    }
+  }
+  return { res, content, toolCalls };
+}
 
 function storageKey(site: string, suffix: string | true): string {
   const tag = typeof suffix === "string" ? suffix : "default";
@@ -425,6 +531,21 @@ export function useTuringChat(
   // without a re-render.
   const conversationIdRef = useRef<string | null>(conversationId);
 
+  // T439 — imperatively-registered client-tool handlers. Option-provided
+  // handlers (`options.clientTools`) are merged on top of these at send time so
+  // a changing option object is honoured live without a remount.
+  const clientToolHandlersRef = useRef<Map<string, ClientToolHandler>>(new Map());
+  const optionClientTools = options.clientTools;
+  const resolveClientToolHandlers = useCallback((): Map<string, ClientToolHandler> => {
+    const merged = new Map(clientToolHandlersRef.current);
+    if (optionClientTools) {
+      for (const [name, registration] of Object.entries(optionClientTools)) {
+        merged.set(name, asClientToolHandler(registration));
+      }
+    }
+    return merged;
+  }, [optionClientTools]);
+
   // Resolve enabled flag once per site (skipped in agent mode). Also captures
   // the server-driven session cookie name + TTL so the SDK can mint
   // TUR_SESSION with the deployment's overrides.
@@ -499,7 +620,7 @@ export function useTuringChat(
           patchAssistant(assistantId, (m) => ({ ...m, toolCalls: all }));
         };
 
-        const res = agentId && effectiveLlmInstanceId
+        let res = agentId && effectiveLlmInstanceId
           ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
               conversationId: activeConversationId,
               flowId,
@@ -520,16 +641,32 @@ export function useTuringChat(
 
         if (isStale(requestId)) return;
 
+        // T438 / T439 — resolve any client-tool round-trips before finalizing:
+        // run the registered handler, POST the result, and consume the
+        // continuation into the same bubble (tokens append live), accumulating
+        // content + tool calls across legs.
+        const roundTrip = await runClientToolRoundTrips(res, {
+          handlers: resolveClientToolHandlers(),
+          conversationId: activeConversationId,
+          signal: controller.signal,
+          onToken,
+          onToolCall,
+          shouldStop: () => isStale(requestId),
+        });
+        if (isStale(requestId)) return;
+        res = roundTrip.res;
+        const aggregatedContent = roundTrip.content;
+        const aggregatedToolCalls = roundTrip.toolCalls;
+
         const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
         const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         const finalCitations =
           res?.citations && res.citations.length > 0 ? res.citations : undefined;
-        const finalToolCalls =
-          res?.toolCalls && res.toolCalls.length > 0 ? res.toolCalls : undefined;
+        const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
-          content: res?.content ?? m.content,
+          content: aggregatedContent || m.content,
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
@@ -543,7 +680,8 @@ export function useTuringChat(
       }
     },
     [siteName, effectiveLocale, flowId, selectedSkillId, forcedVariant, agentId,
-      openAssistantBubble, appendToken, patchAssistant, isStale, handleSendError, setStatus],
+      openAssistantBubble, appendToken, patchAssistant, isStale, handleSendError, setStatus,
+      resolveClientToolHandlers],
   );
 
   const send = useCallback(
@@ -686,6 +824,18 @@ export function useTuringChat(
     }
   }, [agentId, agentLlmInstanceId, flowId, siteName]);
 
+  // T439 — imperative client-tool registration (stable identities; mutate the ref).
+  const registerClientTool = useCallback(
+    (name: string, handler: ClientToolHandler): (() => void) => {
+      clientToolHandlersRef.current.set(name, handler);
+      return () => clientToolHandlersRef.current.delete(name);
+    },
+    [],
+  );
+  const unregisterClientTool = useCallback((name: string) => {
+    clientToolHandlersRef.current.delete(name);
+  }, []);
+
   return {
     enabled,
     disabledReason,
@@ -700,5 +850,7 @@ export function useTuringChat(
     stop,
     reset,
     resetFlow,
+    registerClientTool,
+    unregisterClientTool,
   };
 }

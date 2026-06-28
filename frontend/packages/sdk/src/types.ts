@@ -243,7 +243,30 @@ export interface TurChatConversationMessage {
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options" | "form" | "sources" | "citations" | "tool_call";
+  type?:
+    | "token"
+    | "options"
+    | "form"
+    | "sources"
+    | "citations"
+    | "tool_call"
+    | "client_tool_call";
+}
+
+/**
+ * T438 — payload of the `"client_tool_call"` SSE event: the agent asked the
+ * <em>browser</em> to run a frontend tool and the turn parked. The SDK runs the
+ * registered handler for {@link #name}, POSTs the result to
+ * `/v2/chat/client-tool-result`, and the continuation streams back. Distinct
+ * from {@link TurChatToolCall} (which is read-only tool <em>activity</em>).
+ */
+export interface TurClientToolCall {
+  /** Correlates the call with its result POST; keyed park on the server. */
+  callId: string;
+  /** The frontend tool the agent invoked (must be a registered handler). */
+  name: string;
+  /** Raw JSON arguments string the model passed (parse before calling the handler). */
+  args: string;
 }
 
 /**
@@ -379,6 +402,12 @@ export interface TurChatConversationResponse {
    * agent has `toolCallEventsEnabled`.
    */
   toolCalls?: TurChatToolCall[];
+  /**
+   * T438 — set when the turn parked on a frontend ("client") tool: the stream
+   * ended with a `client_tool_call` event instead of a final answer. The SDK
+   * runs the registered handler and resumes via `/v2/chat/client-tool-result`.
+   */
+  clientToolCall?: TurClientToolCall;
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

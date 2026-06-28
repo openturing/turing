@@ -190,12 +190,12 @@
 > **Shipped so far:** T436 (live `tool_call` SSE events) + its prerequisite
 > **T427** (per-conversation tool-call trace, designed in §IX.8.a but never
 > shipped, built alongside it), T437 (SDK/`useTuringChat` `toolCalls` + headless
-> `TuringToolActivity`), and T438 (client-tool protocol backend round-trip —
+> `TuringToolActivity`), T438 (client-tool protocol backend round-trip —
 > `client_tool_call` event + `POST /api/v2/chat/client-tool-result`, in-memory
-> park MVP). See [CHANGELOG.md](CHANGELOG.md) Block W + E.7. T439–T440 remain
-> (T441 is a 💭 bet).
+> park MVP), and T439 (SDK `registerClientTool`/`clientTools` + the resume
+> round-trip in both SDKs). See [CHANGELOG.md](CHANGELOG.md) Block W + E.7. Only
+> T440 remains (T441 is a 💭 bet).
 
-- 📋 **T439** (deps: T438) **SDK client-tool registration** — `chatController.registerClientTool(name, handler)` + a `clientTools` option on `useTuringChat` (`{[name]: {schema, handler}}`); on `client_tool_call` the SDK runs the handler, POSTs the result, and the stream continues. Mirrors `useCopilotAction` ergonomics (thin CopilotKit migration shim); handler errors flow back to the agent as a tool error, not into the UI. → §XXII.4
 - 📋 **T440** (deps: T439, T295) **Generative UI via client tools** — a client tool whose handler renders a host-registered React component (looked up by name) with agent-provided props, optionally returning a value when the user interacts; reuses the `TuringRichContent` segment-dispatch model so generative + markdown/html/d2 segments share one render path. No backend beyond T438. → §XXII.5
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 

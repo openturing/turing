@@ -26,6 +26,7 @@ export {
   fetchChatEnabled,
   postChatConversation,
   postAgentChat,
+  postClientToolResult,
   postLlmChat,
   postSemanticChat,
   deleteSiteConversationState,
@@ -68,6 +69,8 @@ export type {
   ChatDisabledReason,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostClientToolResultOptions,
+  ClientToolResultBody,
   PostLlmChatOptions,
   PostSemanticChatOptions,
   TurChatSessionSlots,
@@ -153,6 +156,8 @@ export type {
   ChatMessage,
   ChatStatus,
   SendOverrides,
+  ClientToolHandler,
+  ClientToolRegistration,
 } from "./controllers/chat";
 export { createAutoComplete } from "./controllers/autocomplete";
 export type {
@@ -201,6 +206,7 @@ export type {
   TurChatSource,
   TurChatCitation,
   TurChatToolCall,
+  TurClientToolCall,
   TurChatForm,
   TurChatFormField,
   TurChatFormSubmitResponse,

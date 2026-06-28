@@ -5,6 +5,7 @@ import {
   fetchChatEnabled,
   postAgentChat,
   postChatConversation,
+  postClientToolResult,
   type ChatDisabledReason,
 } from "../api";
 import {
@@ -21,7 +22,62 @@ import type {
   TurChatFormSubmitResponse,
   TurChatSource,
   TurChatToolCall,
+  TurClientToolCall,
 } from "../types";
+
+/**
+ * T439 — a frontend ("client") tool handler: runs in the browser when the agent
+ * calls the tool, receiving the parsed arguments and returning the result fed
+ * back to the agent. May be async; a thrown error is reported to the agent as a
+ * tool error (it decides whether to retry/abandon) rather than surfacing in the UI.
+ */
+export type ClientToolHandler = (args: unknown) => unknown | Promise<unknown>;
+
+/** Client-tool registration accepting either a bare handler or a `{schema, handler}` object. */
+export type ClientToolRegistration =
+  | ClientToolHandler
+  | { handler: ClientToolHandler; schema?: unknown };
+
+function asClientToolHandler(registration: ClientToolRegistration): ClientToolHandler {
+  return typeof registration === "function" ? registration : registration.handler;
+}
+
+/** Cap on chained client-tool round-trips in a single turn (runaway guard). */
+const MAX_CLIENT_TOOL_HOPS = 10;
+
+/**
+ * Runs the registered handler for a {@link TurClientToolCall} and normalizes the
+ * outcome to a `{result}` or `{error}`. A missing handler or a thrown handler is
+ * reported as an `error` so the agent (not the UI) decides how to recover.
+ */
+async function runClientToolHandler(
+  handlers: Map<string, ClientToolHandler>,
+  call: TurClientToolCall,
+): Promise<{ result?: unknown; error?: string }> {
+  const handler = handlers.get(call.name);
+  if (!handler) {
+    return { error: `No client tool handler registered for '${call.name}'` };
+  }
+  let parsedArgs: unknown;
+  try {
+    parsedArgs = call.args ? JSON.parse(call.args) : {};
+  } catch {
+    parsedArgs = call.args; // hand the raw string through when args isn't JSON
+  }
+  try {
+    return { result: await handler(parsedArgs) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** Merges two tool-call lists by `callId` (later entries win). */
+function mergeToolCallLists(a: TurChatToolCall[], b: TurChatToolCall[]): TurChatToolCall[] {
+  const byId = new Map<string, TurChatToolCall>();
+  for (const c of a) byId.set(c.callId, c);
+  for (const c of b) byId.set(c.callId, c);
+  return [...byId.values()];
+}
 
 /**
  * Vanilla chat controller — the framework-agnostic equivalent of the React
@@ -125,6 +181,14 @@ export interface ChatControllerOptions {
   readonly conversationId?: string;
   /** Seed the message list at construction. */
   readonly initialMessages?: ChatMessage[];
+  /**
+   * T439 — frontend ("client") tool handlers, keyed by tool name. When the agent
+   * (which must declare the tool, `clientToolsEnabled`) calls one, the controller
+   * runs the handler and POSTs its result so the turn continues. Equivalent to
+   * calling {@link ChatController.registerClientTool} for each entry; mirrors
+   * CopilotKit's `useCopilotAction` ergonomics.
+   */
+  readonly clientTools?: Record<string, ClientToolRegistration>;
 }
 
 export interface ChatControllerState {
@@ -156,6 +220,13 @@ export interface ChatController extends Store<ChatControllerState> {
     values: Record<string, string>,
     overrides?: SendOverrides,
   ): Promise<TurChatFormSubmitResponse | null>;
+  /**
+   * T439 — register a frontend ("client") tool handler the agent can invoke.
+   * Replaces any prior handler for {@code name}. Returns an unregister function.
+   */
+  registerClientTool(name: string, handler: ClientToolHandler): () => void;
+  /** Remove a previously-registered client-tool handler. */
+  unregisterClientTool(name: string): void;
   /** Abort the in-flight assistant turn. */
   stop(): void;
   /** Clear all messages and reset error state. */
@@ -274,7 +345,17 @@ export function createChatController(
     agent,
     conversationId: controlledConversationId,
     initialMessages,
+    clientTools,
   } = options;
+
+  // T439 — registered client-tool handlers, seeded from `options.clientTools`
+  // and mutable via registerClientTool/unregisterClientTool.
+  const clientToolHandlers = new Map<string, ClientToolHandler>();
+  if (clientTools) {
+    for (const [name, registration] of Object.entries(clientTools)) {
+      clientToolHandlers.set(name, asClientToolHandler(registration));
+    }
+  }
 
   // T73: forced A/B variant. Explicit option wins; otherwise auto-detect the
   // `?_ab_variant=<label>` URL param unless the host opted out. Resolved once
@@ -467,7 +548,7 @@ export function createChatController(
         );
       };
 
-      const res =
+      let res =
         agentId && effectiveLlmInstanceId
           ? await postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
               conversationId: activeConversationId,
@@ -488,17 +569,40 @@ export function createChatController(
 
       if (requestId !== latestRequestId || aborted) return;
 
+      // T438 / T439 — drive any client-tool round-trips. The turn parked with a
+      // `client_tool_call` instead of an answer: run the registered handler,
+      // POST its result, and consume the continuation into the same bubble
+      // (tokens append live via `onToken`). Repeat until the agent answers or a
+      // hop cap trips. `content` is accumulated across legs.
+      let aggregatedContent = res?.content ?? "";
+      let aggregatedToolCalls: TurChatToolCall[] = res?.toolCalls ?? [];
+      let hops = 0;
+      while (res?.clientToolCall && hops < MAX_CLIENT_TOOL_HOPS) {
+        hops += 1;
+        const call = res.clientToolCall;
+        const { result, error } = await runClientToolHandler(clientToolHandlers, call);
+        res = await postClientToolResult(
+          client,
+          { conversationId: activeConversationId, callId: call.callId, result, error },
+          { onToken, onToolCall, signal: controller.signal },
+        );
+        if (requestId !== latestRequestId || aborted) return;
+        aggregatedContent += res?.content ?? "";
+        if (res?.toolCalls?.length) {
+          aggregatedToolCalls = mergeToolCallLists(aggregatedToolCalls, res.toolCalls);
+        }
+      }
+
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
       const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
       const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
       const finalCitations =
         res?.citations && res.citations.length > 0 ? res.citations : undefined;
-      const finalToolCalls =
-        res?.toolCalls && res.toolCalls.length > 0 ? res.toolCalls : undefined;
+      const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
-          content: res?.content ?? m.content,
+          content: aggregatedContent || m.content,
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
@@ -603,12 +707,23 @@ export function createChatController(
     abortController = null;
   }
 
+  function registerClientTool(name: string, handler: ClientToolHandler): () => void {
+    clientToolHandlers.set(name, handler);
+    return () => unregisterClientTool(name);
+  }
+
+  function unregisterClientTool(name: string): void {
+    clientToolHandlers.delete(name);
+  }
+
   return {
     getState: store.getState,
     setState: store.setState,
     subscribe: store.subscribe,
     send,
     submitForm,
+    registerClientTool,
+    unregisterClientTool,
     stop,
     reset,
     resetFlow,

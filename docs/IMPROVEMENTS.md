@@ -2286,16 +2286,6 @@ these block the Dumont collection work — a sidecar
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
 
-### XXII.4 SDK client-tool registration (T439)
-
-Vanilla SDK: `chatController.registerClientTool(name, async (args) => result)`;
-on a `client_tool_call` event the controller runs the handler, POSTs to
-`/chat/client-tool-result`, and the stream continues. React SDK: a
-`clientTools` option on `useTuringChat` (`{ [name]: { schema, handler } }`).
-Mirrors the `useCopilotAction` ergonomics so the migration story from CopilotKit
-is a thin shim. Handler errors are returned to the agent as a tool error (the
-loop decides whether to retry/abandon), not thrown into the UI.
-
 ### XXII.5 Generative UI via client tools (T440)
 
 A client tool whose "result" is a **rendered component** rather than a data

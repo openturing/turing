@@ -9,6 +9,7 @@ import type {
   TurChatSource,
   TurChatStreamEvent,
   TurChatToolCall,
+  TurClientToolCall,
   TurIntent,
   TurLlmContextInfo,
   TurLlmInstance,
@@ -44,6 +45,8 @@ export type {
   ChatDisabledReason,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostClientToolResultOptions,
+  ClientToolResultBody,
   PostLlmChatOptions,
   PostSemanticChatOptions,
   TurChatSessionSlots,
@@ -78,6 +81,8 @@ import type {
   ChatEnabledResponse,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostClientToolResultOptions,
+  ClientToolResultBody,
   PostLlmChatOptions,
   PostSemanticChatOptions,
   TurChatSessionSlots,
@@ -284,6 +289,19 @@ function mergeToolCall(existing: TurChatToolCall[], event: TurChatToolCall): Tur
   return next;
 }
 
+/** Parses a `"client_tool_call"` SSE event payload (T438), or `null`. */
+function parseClientToolCallEvent(content: string): TurClientToolCall | null {
+  try {
+    const parsed = JSON.parse(content) as TurClientToolCall;
+    if (parsed && typeof parsed.callId === "string" && typeof parsed.name === "string") {
+      return { callId: parsed.callId, name: parsed.name, args: parsed.args ?? "" };
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
@@ -299,6 +317,7 @@ async function consumeAssistantStream(
   sources?: TurChatSource[];
   citations?: TurChatCitation[];
   toolCalls?: TurChatToolCall[];
+  clientToolCall?: TurClientToolCall;
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -312,6 +331,7 @@ async function consumeAssistantStream(
   let sources: TurChatSource[] | undefined;
   let citations: TurChatCitation[] | undefined;
   let toolCalls: TurChatToolCall[] = [];
+  let clientToolCall: TurClientToolCall | undefined;
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -352,6 +372,13 @@ async function consumeAssistantStream(
       if (parsedCall) {
         toolCalls = mergeToolCall(toolCalls, parsedCall);
         onToolCall?.(parsedCall, toolCalls);
+      }
+      return true;
+    }
+    if (parsed.type === "client_tool_call") {
+      const parsedClientCall = parseClientToolCallEvent(parsed.content);
+      if (parsedClientCall) {
+        clientToolCall = parsedClientCall;
       }
       return true;
     }
@@ -397,6 +424,7 @@ async function consumeAssistantStream(
     sources,
     citations,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+    clientToolCall,
   };
 }
 
@@ -461,7 +489,7 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations, toolCalls } =
+  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
     await consumeAssistantStream(
       response,
       options?.onToken,
@@ -471,7 +499,16 @@ export async function postChatConversation(
       options?.onCitations,
       options?.onToolCall,
     );
-  return { role: "assistant", content: text, options: chipOptions, form, sources, citations, toolCalls };
+  return {
+    role: "assistant",
+    content: text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    toolCalls,
+    clientToolCall,
+  };
 }
 
 /**
@@ -534,7 +571,7 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations, toolCalls } =
+  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
     await consumeAssistantStream(
       response,
       options?.onToken,
@@ -544,7 +581,72 @@ export async function postAgentChat(
       options?.onCitations,
       options?.onToolCall,
     );
-  return { role: "assistant", content: text, options: chipOptions, form, sources, citations, toolCalls };
+  return {
+    role: "assistant",
+    content: text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    toolCalls,
+    clientToolCall,
+  };
+}
+
+/**
+ * T438 — resumes a turn parked on a frontend ("client") tool by POSTing the
+ * browser's result to `POST /v2/chat/client-tool-result` and consuming the
+ * continuation SSE. Same response shape as a chat turn, so the continuation may
+ * itself park again on another client tool (chained round-trips).
+ *
+ * @since 2026.3.4
+ */
+export async function postClientToolResult(
+  body: ClientToolResultBody,
+  options?: PostClientToolResultOptions,
+): Promise<TurChatConversationResponse> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/chat/client-tool-result`;
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    "Content-Type": "application/json",
+  };
+  const xsrf = await ensureXsrfToken();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify(body),
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
+    await consumeAssistantStream(
+      response,
+      options?.onToken,
+      options?.onOptions,
+      options?.onForm,
+      options?.onSources,
+      options?.onCitations,
+      options?.onToolCall,
+    );
+  return {
+    role: "assistant",
+    content: text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    toolCalls,
+    clientToolCall,
+  };
 }
 
 /**
