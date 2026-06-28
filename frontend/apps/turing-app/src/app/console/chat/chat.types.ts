@@ -2,6 +2,7 @@ import type {
   TurChatCitation,
   TurChatConversationMessage,
   TurChatSource,
+  TurChatToolCall,
   ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 
@@ -44,6 +45,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   citations?: TurChatCitation[]
+  /**
+   * Live tool-call activity behind the assistant answer (T436/T437). When
+   * present (agent has `toolCallEventsEnabled`), the message list renders the
+   * running/finished tools above the bubble via {@code TuringToolActivity}.
+   *
+   * @since 2026.3.4
+   */
+  toolCalls?: TurChatToolCall[]
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -62,6 +71,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     options: m.suggestedOptions,
     sources: m.sources,
     citations: m.citations,
+    toolCalls: m.toolCalls,
   }))
 }
 
@@ -74,6 +84,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     suggestedOptions: m.options,
     sources: m.sources,
     citations: m.citations,
+    toolCalls: m.toolCalls,
   }))
 }
 

@@ -200,6 +200,7 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurChatCitation,
+  TurChatToolCall,
   TurChatForm,
   TurChatFormField,
   TurChatFormSubmitResponse,

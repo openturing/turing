@@ -1,8 +1,8 @@
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconUser } from "@tabler/icons-react"
-import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, type TuringCitedMark } from "@viglet/turing-react-sdk"
+import { IconAlertTriangle, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconTool, IconUser } from "@tabler/icons-react"
+import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, TuringToolActivity, type TuringCitedMark } from "@viglet/turing-react-sdk"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useTranslation } from "react-i18next"
 import rehypeHighlight from "rehype-highlight"
@@ -172,6 +172,46 @@ function SourceChips({ message }: Readonly<{ message: ChatMessage }>) {
   )
 }
 
+/**
+ * Admin skin over the shared headless {@code TuringToolActivity} (T437). Renders
+ * the agent's live tool calls (running → done/failed) above the answer when the
+ * agent has `toolCallEventsEnabled`. The `data-status` attribute drives row
+ * styling; running rows carry `aria-busy`.
+ */
+function ToolActivity({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  if (!message.toolCalls || message.toolCalls.length === 0) return null
+  return (
+    <TuringToolActivity
+      toolCalls={message.toolCalls}
+      labels={{
+        heading: t("chat.tools.heading"),
+        calling: t("chat.tools.calling"),
+        running: t("chat.tools.running"),
+        done: t("chat.tools.done"),
+        error: t("chat.tools.error"),
+      }}
+      icons={{
+        tool: <IconTool className="size-3.5 shrink-0" />,
+        running: <IconLoader2 className="size-3.5 shrink-0 animate-spin" />,
+        done: <IconCheck className="size-3.5 shrink-0 text-emerald-500" />,
+        error: <IconAlertTriangle className="size-3.5 shrink-0 text-red-500" />,
+      }}
+      classNames={{
+        container: "not-prose mb-2 border-b border-border/60 pb-2",
+        heading: "text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 mb-1.5",
+        list: "flex flex-col gap-1",
+        item: "flex items-center gap-2 text-xs text-foreground/80 data-[status=running]:text-foreground",
+        name: "font-medium truncate max-w-[200px]",
+        status:
+          "ml-auto text-[10px] uppercase tracking-wide rounded-full px-1.5 py-0.5 data-[status=running]:bg-blue-500/10 data-[status=running]:text-blue-600 data-[status=done]:bg-emerald-500/10 data-[status=done]:text-emerald-600 data-[status=error]:bg-red-500/10 data-[status=error]:text-red-600",
+        duration: "text-[10px] font-mono text-muted-foreground/70",
+        args: "sr-only",
+      }}
+    />
+  )
+}
+
 /** The assistant bubble body: copy button, content (cited-aware), and source chips. */
 function AssistantBody({ message }: Readonly<{ message: ChatMessage }>) {
   const { t } = useTranslation()
@@ -188,6 +228,7 @@ function AssistantBody({ message }: Readonly<{ message: ChatMessage }>) {
           copied: "opacity-100 text-emerald-500",
         }}
       />
+      <ToolActivity message={message} />
       {hasCitations
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}

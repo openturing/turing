@@ -235,12 +235,38 @@ export interface TurChatConversationMessage {
  *   array of the RAG provenance behind the answer;
  * - `type === "citations"` (T152) carries a JSON-encoded {@link TurChatCitation}[]
  *   of the per-sentence Anthropic citations grounding the answer;
+ * - `type === "tool_call"` (T436) carries a JSON-encoded {@link TurChatToolCall}
+ *   lifecycle event (a tool starting or finishing) so the UI can show live tool
+ *   activity;
  * - otherwise `content` is assistant text to append.
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options" | "form" | "sources" | "citations";
+  type?: "token" | "options" | "form" | "sources" | "citations" | "tool_call";
+}
+
+/**
+ * T436 — one tool-call lifecycle event carried by the `"tool_call"` SSE event,
+ * and (merged by `callId`) the shape surfaced on
+ * {@link TurChatConversationResponse.toolCalls}. Mirrors the backend
+ * `TurChatToolCall` record. The headless `TuringToolActivity` atom renders the
+ * running/finished tool list from these. Emitted only when the agent opts into
+ * `toolCallEventsEnabled`; arguments are redacted/truncated server-side.
+ */
+export interface TurChatToolCall {
+  /** Unique id of this invocation within the turn (correlates start/end). */
+  callId: string;
+  /** Tool name (matches the server `ToolDefinition.name()`). */
+  name: string;
+  /** `"start"` when the tool begins, `"end"` when it completes or fails. */
+  phase: "start" | "end";
+  /** Redacted/truncated argument digest — present on `start`; never raw secrets. */
+  argsSummary?: string | null;
+  /** `"ok"` | `"error"` — present on `end`. */
+  status?: string | null;
+  /** End-to-end call duration in ms — present on `end`. */
+  durationMs?: number | null;
 }
 
 /**
@@ -347,6 +373,12 @@ export interface TurChatConversationResponse {
   sources?: TurChatSource[];
   /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
   citations?: TurChatCitation[];
+  /**
+   * Tool calls the agent made during the turn (T436), merged by `callId` so
+   * each entry carries its latest phase/status/duration. Present only when the
+   * agent has `toolCallEventsEnabled`.
+   */
+  toolCalls?: TurChatToolCall[];
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

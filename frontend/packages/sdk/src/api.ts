@@ -8,6 +8,7 @@ import type {
   TurChatResponse,
   TurChatSource,
   TurChatStreamEvent,
+  TurChatToolCall,
   TurIntent,
   TurLlmContextInfo,
   TurLlmInstance,
@@ -190,6 +191,11 @@ export interface PostChatConversationOptions {
   readonly onSources?: (sources: TurChatSource[]) => void;
   /** Fired when the engine emits per-sentence Anthropic citations (T152). */
   readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /**
+   * Fired on each live tool-call lifecycle event (T436): `call` is the just-
+   * received `start`/`end`, `all` is the merged-by-`callId` list so far.
+   */
+  readonly onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -242,6 +248,39 @@ function parseSourcesEvent(content: string): TurChatSource[] | null {
   return null;
 }
 
+/** Parses a `"tool_call"` SSE event payload (T436) into a tool-call lifecycle event, or `null`. */
+function parseToolCallEvent(content: string): TurChatToolCall | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatToolCall;
+    if (parsed && typeof parsed.callId === "string" && typeof parsed.name === "string") {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/**
+ * Upserts a tool-call lifecycle event into the accumulated list by `callId`
+ * (T436): a `start` appends a new entry; a matching `end` merges status/duration
+ * onto it (keeping the `start`'s `argsSummary`). Returns a new array so callers
+ * can treat it immutably.
+ */
+function mergeToolCall(existing: TurChatToolCall[], event: TurChatToolCall): TurChatToolCall[] {
+  const idx = existing.findIndex((c) => c.callId === event.callId);
+  if (idx === -1) return [...existing, event];
+  const next = [...existing];
+  const prev = next[idx];
+  next[idx] = {
+    ...prev,
+    ...event,
+    // an `end` event carries no args — keep the digest captured at `start`.
+    argsSummary: event.argsSummary ?? prev.argsSummary,
+  };
+  return next;
+}
+
 /** Parses a `"citations"` SSE event payload (T152) into per-sentence citations, or `null`. */
 function parseCitationsEvent(content: string): TurChatCitation[] | null {
   try {
@@ -268,12 +307,14 @@ async function consumeAssistantStream(
   onForm?: (form: TurChatForm) => void,
   onSources?: (sources: TurChatSource[]) => void,
   onCitations?: (citations: TurChatCitation[]) => void,
+  onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
 ): Promise<{
   text: string;
   options: string[];
   form?: TurChatForm;
   sources?: TurChatSource[];
   citations?: TurChatCitation[];
+  toolCalls?: TurChatToolCall[];
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -286,6 +327,7 @@ async function consumeAssistantStream(
   let form: TurChatForm | undefined;
   let sources: TurChatSource[] | undefined;
   let citations: TurChatCitation[] | undefined;
+  let toolCalls: TurChatToolCall[] = [];
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -318,6 +360,14 @@ async function consumeAssistantStream(
       if (parsedCitations) {
         citations = parsedCitations;
         onCitations?.(parsedCitations);
+      }
+      return true;
+    }
+    if (parsed.type === "tool_call") {
+      const parsedCall = parseToolCallEvent(parsed.content);
+      if (parsedCall) {
+        toolCalls = mergeToolCall(toolCalls, parsedCall);
+        onToolCall?.(parsedCall, toolCalls);
       }
       return true;
     }
@@ -356,7 +406,14 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return { text: aggregated, options: optionLabels, form, sources, citations };
+  return {
+    text: aggregated,
+    options: optionLabels,
+    form,
+    sources,
+    citations,
+    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+  };
 }
 
 /**
@@ -391,15 +448,17 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations } = await consumeAssistantStream(
-    response,
-    options?.onToken,
-    options?.onOptions,
-    options?.onForm,
-    options?.onSources,
-    options?.onCitations,
-  );
-  return { role: "assistant", content: text, options: chipOptions, form, sources, citations };
+  const { text, options: chipOptions, form, sources, citations, toolCalls } =
+    await consumeAssistantStream(
+      response,
+      options?.onToken,
+      options?.onOptions,
+      options?.onForm,
+      options?.onSources,
+      options?.onCitations,
+      options?.onToolCall,
+    );
+  return { role: "assistant", content: text, options: chipOptions, form, sources, citations, toolCalls };
 }
 
 export interface PostAgentChatOptions {
@@ -411,6 +470,11 @@ export interface PostAgentChatOptions {
   readonly onSources?: (sources: TurChatSource[]) => void;
   /** Fired when the engine emits per-sentence Anthropic citations (T152). */
   readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /**
+   * Fired on each live tool-call lifecycle event (T436): `call` is the just-
+   * received `start`/`end`, `all` is the merged-by-`callId` list so far.
+   */
+  readonly onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;
@@ -481,15 +545,17 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations } = await consumeAssistantStream(
-    response,
-    options?.onToken,
-    options?.onOptions,
-    options?.onForm,
-    options?.onSources,
-    options?.onCitations,
-  );
-  return { role: "assistant", content: text, options: chipOptions, form, sources, citations };
+  const { text, options: chipOptions, form, sources, citations, toolCalls } =
+    await consumeAssistantStream(
+      response,
+      options?.onToken,
+      options?.onOptions,
+      options?.onForm,
+      options?.onSources,
+      options?.onCitations,
+      options?.onToolCall,
+    );
+  return { role: "assistant", content: text, options: chipOptions, form, sources, citations, toolCalls };
 }
 
 /**

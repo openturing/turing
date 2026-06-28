@@ -38,6 +38,13 @@
       "page": "p.",
       "open": "Abrir fonte"
     },
+    "tools": {
+      "heading": "Ferramentas",
+      "calling": "Chamando",
+      "running": "executando",
+      "done": "concluído",
+      "error": "falhou"
+    },
     "selectModelToStart": "Selecione um modelo para começar...",
     "selectModelToChat": "Selecione um modelo de linguagem para começar a conversar.",
     "selectModelToExplore": "Selecione um modelo de linguagem para começar a explorar.",

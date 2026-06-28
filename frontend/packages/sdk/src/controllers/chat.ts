@@ -20,6 +20,7 @@ import type {
   TurChatForm,
   TurChatFormSubmitResponse,
   TurChatSource,
+  TurChatToolCall,
 } from "../types";
 
 /**
@@ -71,6 +72,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * the source.
    */
   citations?: TurChatCitation[];
+  /**
+   * Live tool-call activity behind this assistant turn (T436), merged by
+   * `callId`. Populated incrementally as `tool_call` events stream in (so a UI
+   * can show "calling search_knowledge_base…" while the answer is prepared) and
+   * finalized when the turn completes. Present only when the agent has
+   * `toolCallEventsEnabled`.
+   */
+  toolCalls?: TurChatToolCall[];
 }
 
 export interface ChatControllerAgent {
@@ -448,6 +457,16 @@ export function createChatController(
         );
       };
 
+      // T436 — patch the live tool-call list onto the in-flight assistant bubble
+      // as `tool_call` events arrive, so a UI can show running tool activity
+      // before the answer text streams in. `all` is already merged by callId.
+      const onToolCall = (_call: TurChatToolCall, all: TurChatToolCall[]) => {
+        if (requestId !== latestRequestId || aborted) return;
+        commitMessages(
+          patchMessage(messages, assistantId, (m) => ({ ...m, toolCalls: all })),
+        );
+      };
+
       const res =
         agentId && effectiveLlmInstanceId
           ? await postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
@@ -455,6 +474,7 @@ export function createChatController(
               flowId,
               forcedVariant,
               onToken,
+              onToolCall,
               signal: controller.signal,
             })
           : await postChatConversation(client, site, wire, locale, {
@@ -462,6 +482,7 @@ export function createChatController(
               flowId,
               forcedVariant,
               onToken,
+              onToolCall,
               signal: controller.signal,
             });
 
@@ -472,6 +493,8 @@ export function createChatController(
       const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
       const finalCitations =
         res?.citations && res.citations.length > 0 ? res.citations : undefined;
+      const finalToolCalls =
+        res?.toolCalls && res.toolCalls.length > 0 ? res.toolCalls : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
@@ -480,6 +503,8 @@ export function createChatController(
           form: finalForm,
           sources: finalSources,
           citations: finalCitations,
+          // keep the live-accumulated toolCalls if the final response omitted them
+          toolCalls: finalToolCalls ?? m.toolCalls,
         })),
         "success",
       );

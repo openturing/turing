@@ -2286,16 +2286,6 @@ these block the Dumont collection work — a sidecar
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
 
-### XXII.2 SDK + headless UI consume tool-call events (T437)
-
-Vanilla SDK: the chat controller parses `tool_call` and exposes a
-`toolCalls: TurChatToolCall[]` array on the in-flight assistant message (and on
-controller state for the active turn). React SDK: `useTuringChat` surfaces the
-same on `ChatMessage.toolCalls`. `@viglet/turing-react-ui`: a new **headless**
-`TuringToolActivity` atom (same skinning contract as `TuringThinkingDots` /
-`TuringSourceChips` — `classNames`/`labels`/`icons`, zero styling) that renders
-the running/finished tool list. Admin chat + viglet.com skin it.
-
 ### XXII.3 Client-tool protocol — backend round-trip (T438)
 
 The agent requests a frontend tool: the loop emits a **`client_tool_call`** SSE

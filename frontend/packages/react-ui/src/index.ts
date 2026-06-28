@@ -80,6 +80,15 @@ export type {
   TuringSourceConfidence,
 } from "./TuringSourceChips";
 
+export { TuringToolActivity } from "./TuringToolActivity";
+export type {
+  TuringToolActivityProps,
+  TuringToolActivityClassNames,
+  TuringToolActivityLabels,
+  TuringToolActivityIcons,
+  TuringToolCall,
+} from "./TuringToolActivity";
+
 export { TuringCitedAnswer, segmentCitedAnswer } from "./TuringCitedAnswer";
 export type {
   TuringCitedAnswerProps,

@@ -187,12 +187,12 @@
 > for Turing's *own* agent runtime (it is **not** a multi-runtime protocol
 > adapter — that stays a 💭 bet, T441). Rationale → §XXII.
 >
-> **Shipped so far:** T436 (live `tool_call` SSE events) — and its prerequisite
-> **T427** (per-conversation tool-call trace), which had been designed in
-> §IX.8.a but never shipped, built alongside it. See [CHANGELOG.md](CHANGELOG.md)
-> Block W + E.7. T437–T440 remain (T441 is a 💭 bet).
+> **Shipped so far:** T436 (live `tool_call` SSE events) + its prerequisite
+> **T427** (per-conversation tool-call trace, designed in §IX.8.a but never
+> shipped, built alongside it), and T437 (SDK/`useTuringChat` `toolCalls` +
+> headless `TuringToolActivity`). See [CHANGELOG.md](CHANGELOG.md) Block W + E.7.
+> T438–T440 remain (T441 is a 💭 bet).
 
-- 📋 **T437** (deps: T436) **SDK + headless UI consume tool-call events** — vanilla chat controller + `useTuringChat` surface `toolCalls` on the in-flight assistant message; new headless `TuringToolActivity` atom in `@viglet/turing-react-ui` (same skinning contract as `TuringThinkingDots`); admin chat + viglet.com skin it. → §XXII.2
 - 📋 **T438** (deps: T436) **Client-tool protocol (backend round-trip)** — agent emits a `client_tool_call` SSE event and the turn **parks** awaiting a result (same suspend/resume as the T119 `humanApproval` node, keyed by `(conversationId, callId)`); new `POST /chat/client-tool-result` resumes the loop. Allowed client-tool names + JSON schemas declared per-agent + validated; timeout/abort so an unanswered call can't wedge the conversation. Gated `clientToolsEnabled`. → §XXII.3
 - 📋 **T439** (deps: T438) **SDK client-tool registration** — `chatController.registerClientTool(name, handler)` + a `clientTools` option on `useTuringChat` (`{[name]: {schema, handler}}`); on `client_tool_call` the SDK runs the handler, POSTs the result, and the stream continues. Mirrors `useCopilotAction` ergonomics (thin CopilotKit migration shim); handler errors flow back to the agent as a tool error, not into the UI. → §XXII.4
 - 📋 **T440** (deps: T439, T295) **Generative UI via client tools** — a client tool whose handler renders a host-registered React component (looked up by name) with agent-provided props, optionally returning a value when the user interacts; reuses the `TuringRichContent` segment-dispatch model so generative + markdown/html/d2 segments share one render path. No backend beyond T438. → §XXII.5

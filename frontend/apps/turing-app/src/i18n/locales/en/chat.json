@@ -38,6 +38,13 @@
       "page": "p.",
       "open": "Open source"
     },
+    "tools": {
+      "heading": "Tools",
+      "calling": "Calling",
+      "running": "running",
+      "done": "done",
+      "error": "failed"
+    },
     "selectModelToStart": "Select a model to start...",
     "selectModelToChat": "Select a language model to start chatting.",
     "selectModelToExplore": "Select a language model to start exploring.",

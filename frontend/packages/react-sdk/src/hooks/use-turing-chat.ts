@@ -18,6 +18,7 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatToolCall,
 } from "../core/types";
 import {
   newId,
@@ -490,6 +491,13 @@ export function useTuringChat(
       try {
         const assistantId = openAssistantBubble();
         const onToken = (token: string) => appendToken(assistantId, requestId, token);
+        // T436 — patch live tool-call activity onto the in-flight bubble as
+        // `tool_call` events arrive (`all` is merged by callId), so the host
+        // can render running tool activity before the answer text streams in.
+        const onToolCall = (_call: TurChatToolCall, all: TurChatToolCall[]) => {
+          if (isStale(requestId)) return;
+          patchAssistant(assistantId, (m) => ({ ...m, toolCalls: all }));
+        };
 
         const res = agentId && effectiveLlmInstanceId
           ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
@@ -498,6 +506,7 @@ export function useTuringChat(
               forcedVariant,
               selectedSkillId,
               onToken,
+              onToolCall,
               signal: controller.signal,
             })
           : await postChatConversation(siteName, wire, effectiveLocale, {
@@ -505,6 +514,7 @@ export function useTuringChat(
               flowId,
               forcedVariant,
               onToken,
+              onToolCall,
               signal: controller.signal,
             });
 
@@ -515,6 +525,8 @@ export function useTuringChat(
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         const finalCitations =
           res?.citations && res.citations.length > 0 ? res.citations : undefined;
+        const finalToolCalls =
+          res?.toolCalls && res.toolCalls.length > 0 ? res.toolCalls : undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
           content: res?.content ?? m.content,
@@ -522,6 +534,7 @@ export function useTuringChat(
           form: finalForm,
           sources: finalSources,
           citations: finalCitations,
+          toolCalls: finalToolCalls ?? m.toolCalls,
         }));
         setActiveForm(finalForm ?? null);
         setStatus("success");
