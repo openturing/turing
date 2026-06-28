@@ -45,6 +45,8 @@ export interface TurAIAgent {
   ragEnabled: boolean;
   /** Opt-in: augments the system prompt with the ```html / ```d2 live-preview rendering guidance so the agent can emit interactive blocks (games, demos, Chart.js, diagrams). Default false. */
   richContentEnabled?: boolean;
+  /** T436: opt-in to live `tool_call` events on the chat SSE so the UI can show the agent's tool activity ("calling search_knowledge_base…") while the tool loop runs. Applies to CALL-mode turns. Default false (streams stay byte-identical). */
+  toolCallEventsEnabled?: boolean;
   /** T323: opt-in to Anthropic-compatible skills. When enabled (and the skill sandbox + a Default LLM are available), every enabled skill is offered to the agent's chat turns via the `run_skill` tool; the skill always runs on the Global Settings Default LLM. Default false. */
   skillsEnabled?: boolean;
   /** T145: opt-in to cross-vendor MCP federation. On a native OpenAI/Anthropic turn the agent's selected HTTP MCP servers are called directly by the provider (OpenAI remote mcp tool / Anthropic MCP Connector) instead of Turing's MCP client. Default false. */

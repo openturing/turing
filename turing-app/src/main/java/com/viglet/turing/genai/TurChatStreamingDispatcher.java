@@ -24,6 +24,8 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
+import com.viglet.turing.genai.tool.TurChatToolCall;
+import com.viglet.turing.genai.tool.TurToolCallCollector;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
@@ -48,6 +50,7 @@ import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -93,6 +96,7 @@ public class TurChatStreamingDispatcher {
     private final TurToolExecutionLoop toolExecutionLoop;
     private final TurChatMessageEventBus chatMessageEventBus;
     private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
+    private final com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -102,7 +106,8 @@ public class TurChatStreamingDispatcher {
             TurChatPipelineObservation chatPipelineObservation,
             TurToolExecutionLoop toolExecutionLoop,
             TurChatMessageEventBus chatMessageEventBus,
-            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
+            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
+            com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -112,6 +117,7 @@ public class TurChatStreamingDispatcher {
         this.toolExecutionLoop = toolExecutionLoop;
         this.chatMessageEventBus = chatMessageEventBus;
         this.costBudgetGate = costBudgetGate;
+        this.toolCallTraceService = toolCallTraceService;
     }
 
     /**
@@ -345,7 +351,7 @@ public class TurChatStreamingDispatcher {
         long tStart = turn.tStart();
         long tSetupEnd = turn.tSetupEnd();
         final Prompt prompt = new Prompt(messages, initialOptions);
-        return Mono.fromCallable(() -> {
+        Flux<ChatResponse> turnFlux = Mono.fromCallable(() -> {
             // Post-T16: single LLM call per turn. The system prompt was
             // composed in setup with the post-advance node already in
             // context — no need to skip the call on freshly-triggered
@@ -451,6 +457,73 @@ public class TurChatStreamingDispatcher {
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
                         agent.getTitle(), err.getMessage(), err))
                 .flatMapMany(TurChatStreamingDispatcher::emitTurn);
+
+        // T427 / T436 — the per-turn tool-call collector (published in the tool
+        // context by the executor). After the loop, its terminal rows are drained
+        // into the read-only trace store; when the agent opts into live events,
+        // each call is also streamed as a `tool_call` SSE event interleaved with
+        // the turn (they arrive while the tool loop runs, before the answer token).
+        TurToolCallCollector collector = readToolCallCollector(initialOptions);
+        if (collector == null) {
+            return turnFlux;
+        }
+        if (!agent.isToolCallEventsEnabled()) {
+            return turnFlux.doFinally(sig -> drainToolCallTrace(conversationId, collector));
+        }
+        Sinks.Many<ChatResponse> toolEventSink = Sinks.many().unicast().onBackpressureBuffer();
+        collector.attachListener(call -> toolEventSink.tryEmitNext(toToolCallEvent(call)));
+        Flux<ChatResponse> completing = turnFlux
+                .doOnComplete(toolEventSink::tryEmitComplete)
+                .doOnError(err -> toolEventSink.tryEmitComplete());
+        return Flux.merge(toolEventSink.asFlux(), completing)
+                .doFinally(sig -> drainToolCallTrace(conversationId, collector));
+    }
+
+    /**
+     * Reads the per-turn {@link TurToolCallCollector} from the CALL-branch tool
+     * context. Returns {@code null} for tool-stripped options (active node forbids
+     * tools) or non-tool-calling options — both legitimately skip the trace.
+     */
+    private static TurToolCallCollector readToolCallCollector(ChatOptions options) {
+        if (!(options instanceof org.springframework.ai.model.tool.ToolCallingChatOptions toolOptions)) {
+            return null;
+        }
+        var ctx = toolOptions.getToolContext();
+        if (ctx == null) {
+            return null;
+        }
+        Object raw = ctx.get(
+                com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_TOOL_CALLS);
+        return raw instanceof TurToolCallCollector collector ? collector : null;
+    }
+
+    /** Serializes a {@link TurChatToolCall} into a {@code "tool_call"} SSE event. */
+    private static ChatResponse toToolCallEvent(
+            com.viglet.turing.genai.tool.TurChatToolCall call) {
+        try {
+            return new ChatResponse(ASSISTANT, OBJECT_MAPPER.writeValueAsString(call), "tool_call");
+        } catch (JacksonException e) {
+            log.warn("[AgentExec] could not serialize tool_call event for '{}': {}",
+                    call.name(), e.getMessage());
+            return new ChatResponse(ASSISTANT, "{}", "tool_call");
+        }
+    }
+
+    /**
+     * Drains the turn's terminal tool-call rows into the per-conversation trace
+     * store (T427). Best-effort and off the critical path — a failure here must
+     * never surface to the chat.
+     */
+    private void drainToolCallTrace(String conversationId,
+            com.viglet.turing.genai.tool.TurToolCallCollector collector) {
+        try {
+            if (conversationId != null && !conversationId.isBlank()
+                    && toolCallTraceService != null && !collector.isEmpty()) {
+                toolCallTraceService.record(conversationId, collector.snapshot());
+            }
+        } catch (RuntimeException e) {
+            log.debug("[AgentExec] tool-call trace record failed: {}", e.getMessage());
+        }
     }
 
     /**

@@ -63,6 +63,15 @@ public class TurLoggingToolCallback implements ToolCallback {
         log.info("[ToolCall] Invoking tool '{}' with input: {}", toolName, toolInput);
         long start = System.currentTimeMillis();
         boolean success = false;
+        // T427 / T436 — open the tool-call lifecycle: a `start` event (live, if
+        // the agent opted in) carrying the redacted arg digest, then an `end`
+        // event + trace row on completion. callId is unique per invocation.
+        String callId = java.util.UUID.randomUUID().toString();
+        String argsSummary = TurToolArgsSummary.summarize(toolInput);
+        TurToolCallCollector toolCalls = toolCallCollector(toolContext);
+        if (toolCalls != null) {
+            toolCalls.onStart(callId, toolName, argsSummary);
+        }
         try {
             String result = delegate.call(toolInput, toolContext);
             long elapsed = System.currentTimeMillis() - start;
@@ -77,8 +86,20 @@ public class TurLoggingToolCallback implements ToolCallback {
             log.error("[ToolCall] Tool '{}' failed after {}ms: {}", toolName, elapsed, e.getMessage());
             throw e;
         } finally {
-            recordAnalytics(toolContext, toolName, System.currentTimeMillis() - start, success);
+            long elapsed = System.currentTimeMillis() - start;
+            recordAnalytics(toolContext, toolName, elapsed, success);
+            if (toolCalls != null) {
+                toolCalls.onEnd(callId, toolName, argsSummary, success, elapsed);
+            }
         }
+    }
+
+    private static TurToolCallCollector toolCallCollector(ToolContext toolContext) {
+        if (toolContext == null || toolContext.getContext() == null) {
+            return null;
+        }
+        Object raw = toolContext.getContext().get(TurCustomToolCallbackService.TOOL_CONTEXT_TOOL_CALLS);
+        return raw instanceof TurToolCallCollector collector ? collector : null;
     }
 
     private void recordAnalytics(ToolContext toolContext, String toolName, long elapsedMs, boolean success) {

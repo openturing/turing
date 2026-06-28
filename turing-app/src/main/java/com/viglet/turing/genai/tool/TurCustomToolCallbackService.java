@@ -153,6 +153,20 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_RAG_SOURCES = "turing.ragSources";
 
+    /**
+     * T427 / T436 — key under which the chat executor publishes a
+     * {@link TurToolCallCollector} so {@link TurLoggingToolCallback} records each
+     * tool invocation (name, redacted arg digest, latency, ok/err). The
+     * streaming dispatcher drains it after the tool-execution loop into the
+     * per-conversation trace store (T427) and, when the agent opts into
+     * {@code toolCallEventsEnabled}, attaches a live listener that streams each
+     * call as a {@code "tool_call"} SSE event (T436). Absent → no trace, no live
+     * events (legacy callers / unit tests).
+     *
+     * @since 2026.3.4
+     */
+    public static final String TOOL_CONTEXT_TOOL_CALLS = "turing.toolCalls";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;

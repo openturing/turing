@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconSparkles, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -122,6 +122,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
       richContentEnabled: value.richContentEnabled ?? false,
+      toolCallEventsEnabled: value.toolCallEventsEnabled ?? false,
       skillsEnabled: value.skillsEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
@@ -520,6 +521,38 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.enableRichContent")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
                         {t("forms.agentSettings.enableRichContentDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconActivity}
+              title={t("forms.agentSettings.toolActivity")}
+              description={t("forms.agentSettings.toolActivityDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="toolCallEventsEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableToolActivity")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enableToolActivityDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

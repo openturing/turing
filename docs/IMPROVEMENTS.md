@@ -1294,17 +1294,9 @@ The `turing` CLI + `turing eval` shipped (T125–T127); these close the
 honest gaps left in the first cut, all of which need a small **backend**
 surface the CLI can read — they can't be fixed in the CLI alone.
 
-#### IX.8.a Per-conversation tool-call trace (T427)
+#### IX.8.a Per-conversation tool-call trace (T427) — ✅ shipped
 
-`turing eval`'s `assert.tool_called` is currently *best-effort*: it
-infers a tool fired by scanning the T60 slot-audit for `source=TOOL`
-writes, so a tool that runs without writing a slot is invisible and a
-slot written by two paths is ambiguous. The fix is a read-only
-`GET /api/chat/sessions/{id}/tool-calls` returning the tools that
-actually executed per turn (name, arg digest, latency, ok/err). The data
-already flows through `TurLoggingToolCallback`; this persists/exposes it
-per conversation. Doubles as an observability surface (per-conversation
-tool timeline) independent of the eval use.
+Shipped alongside Block W (T436) — see [CHANGELOG.md](CHANGELOG.md) §E.7.
 
 #### IX.8.b `assert.outcome` terminal-state assertion (T428)
 
@@ -2293,20 +2285,6 @@ these block the Dumont collection work — a sidecar
 > selling point). The goal here is UI-observable parity for Turing's *own*
 > agent runtime, not multi-runtime federation. The optional canonical-protocol
 > adapter (§XXII.6) is a 💭 bet, deliberately separated.
-
-### XXII.1 Live tool-call events on the chat SSE (T436)
-
-The chat SSE today carries `token` / `options` / `form` / `sources` event
-types (`TurChatStreamEvent`). Add a **`tool_call`** event carrying a small
-lifecycle payload: `{ callId, name, phase: "start"|"result"|"end", argsSummary?,
-status?, durationMs? }`. The emit point is the existing server-side tool loop
-(`TurToolExecutionLoop` / `TurNativeChatExecutor`) — wrap the per-tool
-invocation with before/after callbacks that publish onto the same SSE the
-pipeline already owns. **Opt-in per-agent** (`toolCallEventsEnabled`, default
-off) so existing streams stay byte-identical and the IT corpus needs no
-revalidation — consistent with [feedback_behavior_changes_optin_flag]. Args are
-**summarized/redacted**, never the raw secret-bearing payload. Reuses the
-trace-shaping logic from T427 so the live event and the read-only trace agree.
 
 ### XXII.2 SDK + headless UI consume tool-call events (T437)
 

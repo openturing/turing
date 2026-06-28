@@ -570,6 +570,14 @@ public class TurAgentChatExecutor {
         toolContextMap.put(
                 com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES,
                 new com.viglet.turing.genai.rag.TurRagSourceCollector());
+        // T427 / T436 — publish a per-turn tool-call collector. TurLoggingToolCallback
+        // records each invocation into it; the dispatcher drains it into the
+        // read-only trace store after the loop and (when toolCallEventsEnabled)
+        // streams the calls live as `tool_call` SSE events. Always present so the
+        // callback has a stable target; empty when no tool fires this turn.
+        toolContextMap.put(
+                com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_TOOL_CALLS,
+                new com.viglet.turing.genai.tool.TurToolCallCollector());
         // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
         // internal tool execution is now the default once callbacks are present.
         return providerToolOptions(chatModel, callbacks, toolContextMap);

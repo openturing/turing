@@ -123,6 +123,21 @@ public class TurAIAgent implements Serializable {
     private boolean mcpNativeFederation = false;
 
     /**
+     * T436 / §XXII.1 — per-agent opt-in for live tool-call events on the chat
+     * SSE. When {@code true}, every server-side tool invocation in a CALL-mode
+     * turn emits a structured {@code "tool_call"} event ({@code start} then
+     * {@code end}, with a redacted arg digest, status, and duration) so the UI
+     * can show "the agent is calling {@code search_knowledge_base}…" while the
+     * tool loop runs. Default {@code false} keeps existing streams byte-for-byte
+     * identical (no extra SSE events). Independent of the read-only T427 trace,
+     * which is always recorded; this flag only governs the <em>live</em> stream.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "tool_call_events_enabled", nullable = false)
+    private boolean toolCallEventsEnabled = false;
+
+    /**
      * When {@code true}, the agent enqueues every chat turn into the chat
      * memory pipeline so it can be persisted by {@code turing.logging.engine}
      * (mongodb / redis) keyed by {@code conversationId}. Has no effect when

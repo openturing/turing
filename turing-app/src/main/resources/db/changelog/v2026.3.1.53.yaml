@@ -1,0 +1,34 @@
+databaseChangeLog:
+  # T436 / §XXII.1 — ai_agent.tool_call_events_enabled: per-agent opt-in for live
+  # `tool_call` events on the chat SSE. Default 0 keeps existing streams
+  # byte-for-byte identical. The read-only T427 tool-call trace is independent
+  # and needs no schema (process-local in-memory store).
+  #
+  # Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.53-add-ai_agent-tool_call_events_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: tool_call_events_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: tool_call_events_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: tool_call_events_enabled
+                  valueBoolean: false
+            where: tool_call_events_enabled IS NULL
