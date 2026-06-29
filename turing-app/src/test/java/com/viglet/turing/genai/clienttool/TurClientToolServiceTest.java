@@ -19,7 +19,8 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 class TurClientToolServiceTest {
 
-    private final TurClientToolService service = new TurClientToolService();
+    private final TurAnswerAsAppClientTools answerAsAppClientTools = new TurAnswerAsAppClientTools();
+    private final TurClientToolService service = new TurClientToolService(answerAsAppClientTools);
 
     private static TurAIAgent agent(boolean enabled, String json) {
         TurAIAgent agent = new TurAIAgent();
@@ -80,6 +81,55 @@ class TurClientToolServiceTest {
     @Test
     void nonArrayJsonYieldsNoTools() {
         TurAIAgent a = agent(true, "{\"name\":\"x\"}");
+        assertThat(service.declarations(a)).isEmpty();
+    }
+
+    // --- T442 answer-as-an-app built-in tools ---
+
+    @Test
+    void answerAsAppFlagAdvertisesBuiltInToolsWithoutCustomDeclarations() {
+        TurAIAgent a = agent(false, null);
+        a.setAnswerAsAppEnabled(true);
+
+        assertThat(service.isEnabled(a)).isTrue();
+        assertThat(service.namesFor(a)).containsExactly(
+                TurAnswerAsAppClientTools.COMPARISON_TABLE,
+                TurAnswerAsAppClientTools.SPEC_CARD,
+                TurAnswerAsAppClientTools.CONFIGURATOR);
+        assertThat(service.buildToolCallbacks(a)).hasSize(3);
+        assertThat(service.declarations(a).get(0).effectiveSchema()).contains("columns");
+    }
+
+    @Test
+    void answerAsAppBuiltInsPrecedeCustomClientTools() {
+        TurAIAgent a = agent(true, "[{\"name\":\"open_modal\"}]");
+        a.setAnswerAsAppEnabled(true);
+
+        assertThat(service.namesFor(a)).containsExactly(
+                TurAnswerAsAppClientTools.COMPARISON_TABLE,
+                TurAnswerAsAppClientTools.SPEC_CARD,
+                TurAnswerAsAppClientTools.CONFIGURATOR,
+                "open_modal");
+    }
+
+    @Test
+    void customDeclarationOverridesBuiltInOfSameName() {
+        // A custom tool named like a built-in wins (first-seen built-in is kept,
+        // so the duplicate custom one is skipped) — exactly one entry per name.
+        String json = "[{\"name\":\"comparison_table\",\"description\":\"custom\"}]";
+        TurAIAgent a = agent(true, json);
+        a.setAnswerAsAppEnabled(true);
+
+        assertThat(service.namesFor(a)).containsExactly(
+                TurAnswerAsAppClientTools.COMPARISON_TABLE,
+                TurAnswerAsAppClientTools.SPEC_CARD,
+                TurAnswerAsAppClientTools.CONFIGURATOR);
+    }
+
+    @Test
+    void answerAsAppDisabledByDefault() {
+        TurAIAgent a = agent(false, null);
+        assertThat(service.isEnabled(a)).isFalse();
         assertThat(service.declarations(a)).isEmpty();
     }
 }

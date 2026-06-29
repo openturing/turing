@@ -86,6 +86,23 @@ public class TurAIAgent implements Serializable {
     private boolean richContentEnabled = false;
 
     /**
+     * T442 / §XXIII.1 — per-agent opt-in for "answer-as-an-app": built-in
+     * generative-UI client tools ({@code comparison_table}, {@code spec_card},
+     * {@code configurator}) that let the model assemble a live mini-app from a
+     * typed SN search result set instead of returning prose. When {@code true}
+     * the built-in tools are advertised (folded into the T438 client-tool set,
+     * so they park + resume the same way) and the agent's system prompt is
+     * augmented with {@code prompts/answer-as-app.md}. Independent of
+     * {@link #clientToolsEnabled}: an operator can enable answer-as-app without
+     * declaring any custom client tools. Default {@code false} keeps existing
+     * agents byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "answer_as_app_enabled", nullable = false)
+    private boolean answerAsAppEnabled = false;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,

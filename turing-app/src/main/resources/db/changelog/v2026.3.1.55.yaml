@@ -1,0 +1,34 @@
+databaseChangeLog:
+  # T442 / §XXIII.1 — answer-as-an-app: per-agent opt-in flag that folds the
+  # built-in generative-UI client tools (comparison_table / spec_card /
+  # configurator) into the agent's advertised tool set and injects
+  # prompts/answer-as-app.md. Default off keeps existing agents unchanged.
+  #
+  # Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.55-add-ai_agent-answer_as_app_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: answer_as_app_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: answer_as_app_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: answer_as_app_enabled
+                  valueBoolean: false
+            where: answer_as_app_enabled IS NULL

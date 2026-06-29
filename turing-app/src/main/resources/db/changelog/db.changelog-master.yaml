@@ -227,3 +227,5 @@ databaseChangeLog:
       file: db/changelog/v2026.3.1.53.yaml
   - include:
       file: db/changelog/v2026.3.1.54.yaml
+  - include:
+      file: db/changelog/v2026.3.1.55.yaml

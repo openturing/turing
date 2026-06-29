@@ -222,6 +222,8 @@ public class TurAIAgentAPI {
             // Field-by-field copy like the other toggles — omitting it would
             // silently drop the switch on save.
             agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
+            // T442 — answer-as-an-app generative-UI client tools (opt-in).
+            agentEdit.setAnswerAsAppEnabled(turAIAgent.isAnswerAsAppEnabled());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());

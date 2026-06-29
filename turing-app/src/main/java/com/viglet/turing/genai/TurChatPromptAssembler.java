@@ -88,6 +88,17 @@ public class TurChatPromptAssembler {
 
     private String renderPrompt = "";
 
+    /**
+     * T442 / §XXIII.1 — answer-as-an-app guidance teaching the model the built-in
+     * {@code comparison_table} / {@code spec_card} / {@code configurator} client
+     * tools and the search-first, type-driven workflow. Appended only when
+     * {@link TurAIAgent#isAnswerAsAppEnabled()}. Loaded once at startup.
+     */
+    @Value("classpath:prompts/answer-as-app.md")
+    private Resource answerAsAppPromptResource;
+
+    private String answerAsAppPrompt = "";
+
     @PostConstruct
     void loadRenderPrompt() {
         try {
@@ -96,6 +107,13 @@ public class TurChatPromptAssembler {
             log.warn("[PromptAssembler] could not load prompts/render.md — rich-content "
                     + "agents will fall back to the model's own formatting: {}", e.getMessage());
             renderPrompt = "";
+        }
+        try {
+            answerAsAppPrompt = answerAsAppPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[PromptAssembler] could not load prompts/answer-as-app.md — answer-as-app "
+                    + "agents will fall back to prose: {}", e.getMessage());
+            answerAsAppPrompt = "";
         }
     }
 
@@ -115,6 +133,43 @@ public class TurChatPromptAssembler {
         this.chatAttachmentService = chatAttachmentService;
         this.mcpInstructionsProvider = mcpInstructionsProvider;
         this.skillRunnerService = skillRunnerService;
+    }
+
+    /**
+     * Layer the per-agent capability prompt blocks onto the base system prompt:
+     * MCP server instructions, then the opt-in {@code prompts/render.md}
+     * (rich content), {@code prompts/answer-as-app.md} (T442 generative-UI client
+     * tools), and the skill progressive-disclosure block. Each block is a no-op
+     * for default-off agents, so existing agents are byte-for-byte unchanged.
+     */
+    private String augmentWithCapabilityPrompts(TurAIAgent agent, String baseSystemPrompt,
+            String selectedSkillId) {
+        // Per-agent MCP server instructions (enabled servers with non-blank
+        // llmInstructions). No-op when the agent has no MCP servers.
+        String augmented = baseSystemPrompt
+                + mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
+        // Rich-content rendering opt-in: teach the ```html / ```d2 conventions
+        // the chat client renders natively.
+        if (agent.isRichContentEnabled() && !renderPrompt.isBlank()) {
+            augmented = augmented + "\n\n" + renderPrompt;
+        }
+        // T442 / §XXIII.1 — answer-as-an-app opt-in: teach the built-in
+        // generative-UI client tools (comparison_table / spec_card /
+        // configurator) and the search-first, manifest-type-driven workflow. The
+        // tools are advertised by TurClientToolService when the same flag is on.
+        if (agent.isAnswerAsAppEnabled() && !answerAsAppPrompt.isBlank()) {
+            augmented = augmented + "\n\n" + answerAsAppPrompt;
+        }
+        // T323 / §IX.4.d — skill delegation: append the cheap progressive-
+        // disclosure block (each enabled skill's name + description) and the
+        // run_skill instruction when skills are enabled AND the delegation layer
+        // is available. T325 — honour an optional single-skill pin.
+        if (agent.isSkillsEnabled() && skillRunnerService.isAvailable()) {
+            augmented = augmented
+                    + skillRunnerService.buildSystemPromptBlock(
+                            skillRunnerService.offeredSkills(selectedSkillId));
+        }
+        return augmented;
     }
 
     /**
@@ -161,33 +216,7 @@ public class TurChatPromptAssembler {
         String lastUserMessage = request.lastUserMessage();
         String baseSystemPrompt = request.baseSystemPrompt();
         long t0 = System.currentTimeMillis();
-        // Append the per-agent MCP server instructions (enabled servers with
-        // non-blank llmInstructions) so the model knows how/when to use the
-        // tools those servers expose. No-op when the agent has no MCP servers
-        // or none carry instructions.
-        String mcpAugmented = baseSystemPrompt
-                + mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
-        // Rich-content rendering opt-in: when the operator enabled it on this
-        // agent, teach the model the ```html / ```d2 conventions the chat client
-        // renders natively. Default-off agents are byte-for-byte unchanged.
-        if (agent.isRichContentEnabled() && !renderPrompt.isBlank()) {
-            mcpAugmented = mcpAugmented + "\n\n" + renderPrompt;
-        }
-        // T323 / §IX.4.d — skill delegation. When the operator enabled skills on
-        // this agent AND the delegation layer is available (object storage +
-        // Code Interpreter DOCKER + a Default LLM), append the cheap
-        // progressive-disclosure block (each enabled skill's name + description)
-        // and the instruction to call `run_skill`. The skill itself runs on the
-        // Global Settings Default LLM (TurSkillRunnerService), never on this
-        // agent's model. No-op (empty block) for default-off agents or when the
-        // layer is unavailable, so existing agents are byte-for-byte unchanged.
-        if (agent.isSkillsEnabled() && skillRunnerService.isAvailable()) {
-            // T325 — honour an optional skill-mode pin (single skill) over the
-            // full enabled set; offeredSkills(null) returns all (legacy).
-            mcpAugmented = mcpAugmented
-                    + skillRunnerService.buildSystemPromptBlock(
-                            skillRunnerService.offeredSkills(selectedSkillId));
-        }
+        String mcpAugmented = augmentWithCapabilityPrompts(agent, baseSystemPrompt, selectedSkillId);
         String flowAugmented = flowContext == null
                 ? mcpAugmented
                 : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(

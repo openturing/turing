@@ -43,29 +43,57 @@ public class TurClientToolService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    /** True when the agent opts in and declares at least one valid client tool. */
-    public boolean isEnabled(TurAIAgent agent) {
-        return agent != null && agent.isClientToolsEnabled() && !declarations(agent).isEmpty();
+    private final TurAnswerAsAppClientTools answerAsAppClientTools;
+
+    public TurClientToolService(TurAnswerAsAppClientTools answerAsAppClientTools) {
+        this.answerAsAppClientTools = answerAsAppClientTools;
     }
 
-    /** Parsed, validated client-tool declarations for the agent (never null). */
+    /** True when the agent advertises at least one client tool (custom or built-in). */
+    public boolean isEnabled(TurAIAgent agent) {
+        return agent != null && !declarations(agent).isEmpty();
+    }
+
+    /**
+     * Parsed, validated client-tool declarations for the agent (never null).
+     *
+     * <p>Built-in answer-as-app tools (T442) are prepended when the agent opts
+     * in via {@code answerAsAppEnabled} — independent of {@code clientToolsEnabled}
+     * — followed by the operator-declared tools from {@code clientToolsJson}.
+     * Names are de-duplicated (first wins), so an operator can override a
+     * built-in by declaring a custom tool of the same name.
+     */
     public List<TurClientTool> declarations(TurAIAgent agent) {
-        if (agent == null || !agent.isClientToolsEnabled()) {
-            return List.of();
-        }
-        String json = agent.getClientToolsJson();
-        if (json == null || json.isBlank()) {
+        if (agent == null) {
             return List.of();
         }
         List<TurClientTool> tools = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        // T442 — built-in answer-as-app generative-UI tools (opt-in, standalone).
+        if (agent.isAnswerAsAppEnabled()) {
+            for (TurClientTool builtIn : answerAsAppClientTools.declarations()) {
+                if (seen.add(builtIn.name())) {
+                    tools.add(builtIn);
+                }
+            }
+        }
+        // Operator-declared client tools (T438).
+        String json = agent.getClientToolsJson();
+        if (agent.isClientToolsEnabled() && json != null && !json.isBlank()) {
+            parseDeclarations(agent, json, tools, seen);
+        }
+        return tools;
+    }
+
+    private void parseDeclarations(TurAIAgent agent, String json, List<TurClientTool> tools,
+            Set<String> seen) {
         try {
             JsonNode root = OBJECT_MAPPER.readTree(json);
             if (!root.isArray()) {
                 log.warn("[ClientTool] agent '{}' clientToolsJson is not a JSON array — ignoring",
                         agent.getId());
-                return List.of();
+                return;
             }
-            Set<String> seen = new LinkedHashSet<>();
             for (JsonNode node : root) {
                 String name = text(node, "name");
                 if (name == null || name.isBlank() || !seen.add(name)) {
@@ -81,9 +109,7 @@ public class TurClientToolService {
         } catch (RuntimeException e) {
             log.warn("[ClientTool] agent '{}' clientToolsJson parse failed: {}",
                     agent.getId(), e.getMessage());
-            return List.of();
         }
-        return tools;
     }
 
     /** Tool callbacks advertising the agent's client tools to the model. */

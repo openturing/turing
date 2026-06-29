@@ -125,6 +125,8 @@ export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus, SendOverrides } from "./hooks/use-turing-chat";
 export { useGenerativeUI } from "./hooks/use-turing-generative-ui";
 export type { UseGenerativeUIReturn } from "./hooks/use-turing-generative-ui";
+export { useAnswerAsApp } from "./hooks/use-turing-answer-as-app";
+export type { UseAnswerAsAppReturn } from "./hooks/use-turing-answer-as-app";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,

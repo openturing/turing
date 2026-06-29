@@ -98,6 +98,31 @@ export type {
   TuringGenerativeRegistry,
 } from "./TuringGenerativeContent";
 
+// T442 / §XXIII.1 — answer-as-an-app generative components (comparison table,
+// spec card, configurator) keyed by the built-in client-tool names. Headless,
+// zero-dep; register against `useGenerativeUI` + `TuringGenerativeContent`.
+export {
+  TuringComparisonTable,
+  TuringSpecCard,
+  TuringConfigurator,
+  ANSWER_AS_APP_COMPONENTS,
+  formatTypedValue,
+} from "./TuringAnswerAsApp";
+export type {
+  TuringAppFieldType,
+  TuringAppControlType,
+  TuringAppColumn,
+  TuringAppField,
+  TuringAppAction,
+  TuringAppControl,
+  TuringComparisonTableProps,
+  TuringComparisonTableClassNames,
+  TuringSpecCardProps,
+  TuringSpecCardClassNames,
+  TuringConfiguratorProps,
+  TuringConfiguratorClassNames,
+} from "./TuringAnswerAsApp";
+
 export { TuringCitedAnswer, segmentCitedAnswer } from "./TuringCitedAnswer";
 export type {
   TuringCitedAnswerProps,

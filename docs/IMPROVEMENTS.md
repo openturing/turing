@@ -2305,16 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.1 Answer-as-an-app — search-grounded generative UI (T442)
-
-The agent stops returning a paragraph and assembles a **live mini-app from the
-indexed result set**: a comparison table, a configurator, a spec card, a
-ranked-options widget. The `manifest` (T386) makes this tractable — the agent
-knows `price` is `CURRENCY` and renders a slider, `releaseDate` is a date and
-renders a timeline. Implemented as a generative-UI client tool (T440) whose
-props are populated from a real SN search. Impossible in a pure-agent framework:
-it has no typed index to draw from. → builds on T440, T386, T383.
-
 ### XXIII.2 Co-browse the search UI — the agent drives the real page (T443)
 
 Slots already sync agent↔UI state; client tools (T438) let the agent mutate the
