@@ -98,6 +98,7 @@ public class TurAgentEvalRunnerService {
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService;
+    private final com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService;
     private final com.viglet.turing.properties.TurConfigProperties configProperties;
 
     /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
@@ -117,6 +118,7 @@ public class TurAgentEvalRunnerService {
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService,
             com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService,
+            com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService,
             com.viglet.turing.properties.TurConfigProperties configProperties) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
@@ -130,6 +132,7 @@ public class TurAgentEvalRunnerService {
         this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
         this.batchInferenceService = batchInferenceService;
+        this.openAiEvalsService = openAiEvalsService;
         this.configProperties = configProperties;
     }
 
@@ -265,6 +268,49 @@ public class TurAgentEvalRunnerService {
         }
         return batchInferenceService.submit(llmInstance, "llm-judge-eval", requests, agentId)
                 .map(job -> requests.size()).orElse(-1);
+    }
+
+    /**
+     * F.9 / §X.10.b — push every enabled case's <b>rubric</b> fixture to the
+     * OpenAI Evals API and start a run whose server-side {@code label_model}
+     * grader judges them (T168). Like {@link #submitJudgeBatch} the rubric judge
+     * only needs the rubric + scripted user turns (both on the eval case), so no
+     * conversation replay is required — Turing pushes the fixtures and OpenAI
+     * runs the grader.
+     *
+     * <p>Returns the submission (eval/run ids + report URL) or empty when the
+     * Evals tier is off, the eval LLM isn't OpenAI-backed, there are no rubric
+     * cases, or the API call fails — the caller then falls back to {@link #runAgent}.
+     */
+    public Optional<com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService.EvalSubmission>
+            submitToOpenAiEvals(String agentId) {
+        TurAIAgent agent = agentRepository.findById(agentId).orElse(null);
+        if (agent == null) {
+            return Optional.empty();
+        }
+        TurLLMInstance llmInstance = resolveLlm(agent);
+        if (llmInstance == null || !openAiEvalsService.isSupported(llmInstance)) {
+            return Optional.empty();
+        }
+        List<com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsPayload.EvalFixture> fixtures =
+                new ArrayList<>();
+        for (TurAgentEvalSet set : evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)) {
+            if (set.getEnabled() != 1) {
+                continue;
+            }
+            for (TurAgentEvalCase evalCase : orderedCases(set)) {
+                if (evalCase.getRubric() == null || evalCase.getRubric().isBlank()) {
+                    continue;
+                }
+                fixtures.add(new com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsPayload
+                        .EvalFixture(evalCase.getId(), evalCase.getRubric(),
+                        String.join("\n", parseTurns(evalCase.getSeedTurnsJson()))));
+            }
+        }
+        if (fixtures.isEmpty()) {
+            return Optional.empty();
+        }
+        return openAiEvalsService.submit(llmInstance, agent.getTitle(), fixtures);
     }
 
     /**

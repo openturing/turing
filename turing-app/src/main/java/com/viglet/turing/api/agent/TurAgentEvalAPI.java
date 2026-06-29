@@ -71,6 +71,22 @@ public class TurAgentEvalAPI {
         return java.util.Map.of("scheduled", scheduled);
     }
 
+    @Operation(summary = "Push the agent's rubric fixtures to the OpenAI Evals API (server-side graders)")
+    @PostMapping("/run-openai-evals")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public java.util.Map<String, Object> runOpenAiEvals(@PathVariable String agentId) {
+        return runnerService.submitToOpenAiEvals(agentId)
+                .<java.util.Map<String, Object>>map(s -> java.util.Map.of(
+                        "submitted", true,
+                        "evalId", s.evalId(),
+                        "runId", s.runId(),
+                        "reportUrl", s.reportUrl() == null ? "" : s.reportUrl(),
+                        "fixtureCount", s.fixtureCount()))
+                .orElseGet(() -> java.util.Map.of("submitted", false,
+                        "reason", "OpenAI Evals tier disabled, eval LLM not OpenAI-backed, "
+                                + "or no rubric cases"));
+    }
+
     @Operation(summary = "Latest eval report for the agent")
     @GetMapping("/report")
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
