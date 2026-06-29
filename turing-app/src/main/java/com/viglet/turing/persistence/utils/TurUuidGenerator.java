@@ -21,7 +21,6 @@
 
 package com.viglet.turing.persistence.utils;
 
-import java.lang.reflect.Member;
 import java.util.EnumSet;
 import java.util.UUID;
 
@@ -47,7 +46,7 @@ public class TurUuidGenerator
     }
 
     @Override
-    public void initialize(TurAssignableUuidGenerator annotation, Member member, GeneratorCreationContext context) {
+    public void initialize(TurAssignableUuidGenerator annotation, GeneratorCreationContext context) {
         // Método chamado pelo Hibernate para configurar o gerador via anotação
     }
 
