@@ -15,6 +15,11 @@ import {
 } from "../session";
 import { postSiteFormSubmit } from "../api";
 import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../analytics";
+import {
+  createAbandonmentWatcher,
+  type AbandonmentOptions,
+  type AbandonmentWatcher,
+} from "../analytics-lifecycle";
 import { createStore, type Store } from "../store";
 import type {
   TurChatCitation,
@@ -199,6 +204,15 @@ export interface ChatControllerOptions {
    * attach a sink (e.g. `googleAnalyticsSink()`).
    */
   readonly analytics?: TuringAnalytics;
+  /**
+   * T460 (Block Z) — client-side abandonment detection. When `analytics` is set
+   * this defaults **on**: a started conversation (≥1 user message) that ends
+   * without a conversion emits a single `turing_chat_abandoned` on tab hide,
+   * page unload, or idle timeout — the drop-off signal the server can't see.
+   * Pass `false` to disable, or an object to tune `idleMs` / `onHidden` /
+   * `onUnload`. No effect without `analytics` or outside a browser.
+   */
+  readonly abandonment?: AbandonmentOptions | boolean;
 }
 
 export interface ChatControllerState {
@@ -357,6 +371,7 @@ export function createChatController(
     initialMessages,
     clientTools,
     analytics,
+    abandonment,
   } = options;
 
   // T439 — registered client-tool handlers, seeded from `options.clientTools`
@@ -420,6 +435,31 @@ export function createChatController(
   // Seed the bus envelope with the identity known at construction. The
   // conversation/session id is stamped lazily in `send` once resolved.
   analytics?.setContext({ site: site || undefined, agentId });
+
+  // T460 — abandonment / engagement detection. `converted` (set by T461 on a
+  // lead capture / handoff) and `abandonmentFired` (once-only) guard the fire;
+  // `convStartedAt` measures elapsed time; `lastNodeId` is the last flow step
+  // reached (populated by T461's step tracking) reported in the event.
+  const abandonmentEnabled = Boolean(analytics) && abandonment !== false;
+  const abandonmentOptions: AbandonmentOptions =
+    typeof abandonment === "object" ? abandonment : {};
+  let abandonmentWatcher: AbandonmentWatcher | null = null;
+  let abandonmentFired = false;
+  let converted = false;
+  let convStartedAt = 0;
+  let lastNodeId: string | null = null;
+
+  function fireAbandonment(reason: string): void {
+    if (!analytics || abandonmentFired || converted || userTurns < 1) return;
+    abandonmentFired = true;
+    analytics.emit(TURING_ANALYTICS_EVENTS.chatAbandoned, {
+      reason,
+      turns: userTurns,
+      last_step: userTurns,
+      last_node_id: lastNodeId ?? undefined,
+      elapsed_ms: convStartedAt ? Date.now() - convStartedAt : undefined,
+    });
+  }
 
   function commitMessages(next: ChatMessage[], status?: ChatStatus): void {
     messages = next;
@@ -518,12 +558,19 @@ export function createChatController(
       userTurns += 1;
       if (!chatStarted) {
         chatStarted = true;
+        convStartedAt = Date.now();
         analytics.emit(TURING_ANALYTICS_EVENTS.chatStart, { mode: isAgentMode ? "agent" : "site" });
+        // T460 — arm the abandonment watcher once the conversation is real.
+        if (abandonmentEnabled && !abandonmentWatcher) {
+          abandonmentWatcher = createAbandonmentWatcher(fireAbandonment, abandonmentOptions);
+        }
       }
       analytics.emit(TURING_ANALYTICS_EVENTS.chatMessageSent, {
         turn: userTurns,
         length: content.length,
       });
+      // Each message is engagement — reset the idle clock.
+      abandonmentWatcher?.ping();
     }
 
     const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
@@ -721,6 +768,14 @@ export function createChatController(
     // T458 — a reset starts a fresh conversation; re-arm the start event.
     chatStarted = false;
     userTurns = 0;
+    // T460 — tear down the old watcher and clear the abandonment/conversion
+    // guards so the next conversation is tracked from scratch.
+    abandonmentWatcher?.stop();
+    abandonmentWatcher = null;
+    abandonmentFired = false;
+    converted = false;
+    convStartedAt = 0;
+    lastNodeId = null;
     commitMessages([]);
     store.setState({ error: null, status: "idle", isStreaming: false, activeForm: null });
   }
@@ -746,6 +801,9 @@ export function createChatController(
     latestRequestId++;
     abortController?.abort();
     abortController = null;
+    // T460 — release lifecycle listeners so we don't leak across mounts.
+    abandonmentWatcher?.stop();
+    abandonmentWatcher = null;
   }
 
   function registerClientTool(name: string, handler: ClientToolHandler): () => void {

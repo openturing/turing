@@ -104,6 +104,12 @@ export function googleAnalyticsSink(options: GoogleAnalyticsSinkOptions = {}): T
 
     const params = toFlatParams(event);
     if (measurementId) params.send_to = measurementId;
+    // T460 — the abandonment event fires during tab hide / unload, when a
+    // normal XHR would be cancelled. GA4 honours `transport_type: 'beacon'` to
+    // flush via `navigator.sendBeacon`, which survives the teardown.
+    if (event.name === "turing_chat_abandoned") {
+      (params as Record<string, unknown>).transport_type = "beacon";
+    }
 
     const useGtag = transport === "gtag" || transport === "both" || (transport === "auto" && !!gtag);
     const useDataLayer =

@@ -158,6 +158,13 @@ export type {
   GoogleAnalyticsSinkOptions,
   DebugSinkOptions,
 } from "./analytics-sinks";
+// ── Analytics lifecycle: abandonment watcher (T460) ──
+export { createAbandonmentWatcher } from "./analytics-lifecycle";
+export type {
+  AbandonmentOptions,
+  AbandonmentReason,
+  AbandonmentWatcher,
+} from "./analytics-lifecycle";
 
 // ── Controllers ──
 export { createSearchController } from "./controllers/search";
