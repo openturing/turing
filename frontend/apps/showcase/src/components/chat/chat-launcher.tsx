@@ -1,14 +1,27 @@
 import { AtlasChatPanel } from "@/components/chat/atlas-chat";
+import { onAskAtlas } from "@/lib/ask-atlas";
 import { IconSparkles } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Floating "Ask Atlas" launcher + slide-over chat panel. Must render inside a
  * `TuringProvider` (the storefront supplies it) so the chat hooks resolve the
- * site/config from context.
+ * site/config from context. Subscribes to the {@link onAskAtlas} bridge so the
+ * "Why #1?" button and the proactive copilot can open it with a preset prompt.
  */
 export function ChatLauncher() {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
+
+  useEffect(
+    () =>
+      onAskAtlas((question) => {
+        setPending(question);
+        setOpen(true);
+      }),
+    []
+  );
+
   return (
     <>
       {!open && (
@@ -28,7 +41,11 @@ export function ChatLauncher() {
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <AtlasChatPanel onClose={() => setOpen(false)} />
+          <AtlasChatPanel
+            onClose={() => setOpen(false)}
+            initialMessage={pending}
+            onInitialConsumed={() => setPending(null)}
+          />
         </>
       )}
     </>

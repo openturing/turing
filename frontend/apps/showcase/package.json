@@ -21,6 +21,7 @@
     "@terrastruct/d2": "^0.1.33",
     "@viglet/turing-react-sdk": "workspace:*",
     "@viglet/turing-react-ui": "workspace:*",
+    "@viglet/turing-sdk": "workspace:*",
     "axios": "^1.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

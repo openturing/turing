@@ -3,6 +3,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { CartProvider } from "./contexts/cart";
 import StorefrontPage from "./pages/storefront";
 import ProductPage from "./pages/product";
+import EmbedDemoPage from "./pages/embed-demo";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Routes>
           <Route path="/" element={<StorefrontPage />} />
           <Route path="/product" element={<ProductPage />} />
+          <Route path="/embed-demo" element={<EmbedDemoPage />} />
         </Routes>
       </CartProvider>
     </ThemeProvider>

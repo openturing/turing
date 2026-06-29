@@ -23,6 +23,8 @@ import {
   TuringToolActivity,
   TuringWorkspacePanelView,
   useAnswerAsApp,
+  useCoBrowseSearch,
+  useSearchStore,
   useTuringChat,
   useTuringSlotUpload,
   useTuringSlots,
@@ -152,18 +154,28 @@ function MessageBubble({
   );
 }
 
-export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
+export function AtlasChatPanel({
+  onClose,
+  initialMessage,
+  onInitialConsumed,
+}: Readonly<{
+  onClose: () => void;
+  initialMessage?: string | null;
+  onInitialConsumed?: () => void;
+}>) {
   const cart = useCart();
-  // Answer-as-app generative UI (T442) + cart client tools (T438/T439), merged
-  // into one client-tool map for the chat hook.
+  const store = useSearchStore();
+  // Answer-as-app generative UI (T442) + cart client tools (T438/T439) +
+  // co-browse search-driving tools (T443), merged into one client-tool map.
   const app = useAnswerAsApp();
+  const coBrowse = useCoBrowseSearch(store);
   const cartTools = useMemo(
     () => createCartClientTools({ add: cart.add, remove: cart.remove, clear: cart.clear, items: cart.items }),
     [cart.add, cart.remove, cart.clear, cart.items]
   );
   const clientTools = useMemo(
-    () => ({ ...app.clientTools, ...cartTools }),
-    [app.clientTools, cartTools]
+    () => ({ ...app.clientTools, ...coBrowse.clientTools, ...cartTools }),
+    [app.clientTools, coBrowse.clientTools, cartTools]
   );
 
   const {
@@ -183,6 +195,7 @@ export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const sentInitialRef = useRef<string | null>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -194,6 +207,16 @@ export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
     setInput("");
     void send(trimmed);
   };
+
+  // Auto-send a prompt handed in via the ask-Atlas bridge (Why #1? / proactive).
+  useEffect(() => {
+    if (!initialMessage || enabled === false) return;
+    if (sentInitialRef.current === initialMessage) return;
+    sentInitialRef.current = initialMessage;
+    const trimmed = initialMessage.trim();
+    if (trimmed && !isStreaming) void send(trimmed);
+    onInitialConsumed?.();
+  }, [initialMessage, enabled, isStreaming, send, onInitialConsumed]);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;

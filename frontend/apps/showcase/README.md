@@ -95,6 +95,31 @@ an AI agent with the relevant capabilities enabled (`clientToolsEnabled`,
 `answerAsAppEnabled`, `toolCallEventsEnabled`, `skillsEnabled`, code interpreter);
 the client wiring is always present.
 
+## Creative bets (T455)
+
+The thin compositions that only pay off because Turing owns search **and** agents:
+
+- **Co-browse the search UI** (T443) — `useCoBrowseSearch(store)` folds
+  `set_search_query`/`toggle_facet`/`clear_facets`/`set_sort`/`set_page` into the
+  chat's client tools, so the agent drives the real storefront the shopper is
+  looking at (the chat is a remote control, not a parallel box).
+- **Glass-box "Why #1?"** (T444) — a button on the results asks the agent to
+  explain the top result's ranking (via the `explain_ranking` tool) using the
+  real BM25 / vector / RRF / rerank signals.
+- **Ambient proactive copilot** (T445) — `useTuringProactiveCopilot` surfaces a
+  bottom-left toast when an interaction signal crosses the agent's threshold;
+  accepting hands the prompt to the chat.
+- **Agent→agent handoff** (T448) — when the agent delegates (e.g. sales →
+  returns specialist), the `delegate_to_agent` call shows up for free in the
+  inline **tool-call activity** (T436) already wired in the chat.
+- **Embeddable action widget** (T450) — [`/embed-demo`](src/pages/embed-demo.tsx)
+  is a **mock third-party site** that embeds the Atlas agent via the zero-dep
+  vanilla `@viglet/turing-sdk` `createHostActions({ onAddToCart })`, so the agent
+  can add to *that site's* cart — Turing as an action layer over any website.
+
+The glass-box / proactive / co-browse / handoff behaviors are gated by the
+matching per-agent flags server-side; the client wiring is always present.
+
 ### Hybrid ranking + reranker (server toggle)
 
 `HYBRID_RRF` (T383) and the pluggable reranker (Block N) are **site-level

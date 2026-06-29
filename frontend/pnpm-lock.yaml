@@ -257,6 +257,9 @@ importers:
       '@viglet/turing-react-ui':
         specifier: workspace:*
         version: link:../../packages/react-ui
+      '@viglet/turing-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       axios:
         specifier: ^1.18.0
         version: 1.18.0

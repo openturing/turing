@@ -2,11 +2,14 @@ import { BrandHeader } from "@/components/brand-header";
 import { ChatLauncher } from "@/components/chat/chat-launcher";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
+import { askAtlas } from "@/lib/ask-atlas";
+import { firstValue } from "@/lib/format";
 import { resolveSiteName } from "@/lib/resolve-site";
 import { cn } from "@/lib/utils";
 import {
   IconAdjustmentsHorizontal,
   IconArrowsSort,
+  IconBolt,
   IconLoader2,
   IconMoodEmpty,
   IconSearch,
@@ -21,6 +24,7 @@ import {
   useTuringClickTracking,
   useTuringFacets,
   useTuringPagination,
+  useTuringProactiveCopilot,
   useTuringSortOptions,
   useTuringSpellCheck,
   useTuringTabs,
@@ -28,6 +32,37 @@ import {
 } from "@viglet/turing-react-sdk";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
+/* ── Ambient proactive copilot (T445) ── */
+function ProactiveToast() {
+  const { suggestion, dismiss } = useTuringProactiveCopilot();
+  if (!suggestion) return null;
+  return (
+    <div className="fixed bottom-5 left-5 z-40 max-w-xs rounded-xl border border-border bg-card p-3 shadow-lg">
+      <div className="flex items-start gap-2">
+        <IconBolt className="mt-0.5 size-4 shrink-0 text-accent-foreground" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-foreground">{suggestion.message}</p>
+          <div className="mt-2 flex gap-2">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                askAtlas(suggestion.suggestedPrompt);
+                dismiss();
+              }}
+            >
+              Ask Atlas
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={dismiss}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Category tabs (T247) — drive the "category" facet from a top bar; the
    sidebar then hides the category group so the two don't conflict. ── */
@@ -345,6 +380,22 @@ function StorefrontContent() {
 
               <SpellSuggestion />
 
+              {/* Glass-box ranking (T444) — ask the agent why the top result ranks #1. */}
+              {hasResults && query !== "*" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    askAtlas(
+                      `Why is "${firstValue(store.documents[0].raw.fields.title) || store.documents[0].title}" ranked first for "${query}"?`
+                    )
+                  }
+                  className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+                >
+                  <IconSparkles className="size-3.5" />
+                  Why is the top result #1?
+                </button>
+              )}
+
               {hasResults ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {store.documents.map((doc, i) => (
@@ -378,6 +429,7 @@ function StorefrontContent() {
         </div>
       </footer>
 
+      <ProactiveToast />
       <ChatLauncher />
     </div>
   );
