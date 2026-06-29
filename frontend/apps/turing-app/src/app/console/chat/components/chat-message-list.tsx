@@ -1,7 +1,8 @@
+import { useState } from "react"
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { IconAlertTriangle, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconTool, IconUser } from "@tabler/icons-react"
+import { IconAlertTriangle, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
 import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, TuringToolActivity, type TuringCitedMark } from "@viglet/turing-react-sdk"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useTranslation } from "react-i18next"
@@ -25,6 +26,15 @@ interface ChatMessageListProps {
    * @since 2026.2.7
    */
   onOptionClick?: (label: string) => void
+  /**
+   * F.9 / T170 — optional thumb-up/down handler. When provided, assistant
+   * bubbles render a thumbs control whose click records an operator preference
+   * (the DPO signal). The caller resolves the prompt the answer responded to.
+   * Omitted → no thumbs render (other chat surfaces are unchanged).
+   *
+   * @since 2026.3.4
+   */
+  onFeedback?: (message: ChatMessage, rating: "UP" | "DOWN") => void
 }
 
 function MarkdownBlock({ text }: Readonly<{ text: string }>) {
@@ -212,8 +222,54 @@ function ToolActivity({ message }: Readonly<{ message: ChatMessage }>) {
   )
 }
 
+/**
+ * F.9 / T170 — operator thumb-up/down on an assistant turn. The click records a
+ * DPO preference signal; the selected thumb stays highlighted so the operator
+ * sees their rating landed. Only rendered when the list is given an `onFeedback`
+ * handler.
+ */
+function FeedbackButtons({
+  message,
+  onFeedback,
+}: Readonly<{ message: ChatMessage; onFeedback: (m: ChatMessage, r: "UP" | "DOWN") => void }>) {
+  const { t } = useTranslation()
+  const [rated, setRated] = useState<"UP" | "DOWN" | null>(null)
+  const rate = (rating: "UP" | "DOWN") => {
+    setRated(rating)
+    onFeedback(message, rating)
+  }
+  return (
+    <div className="not-prose mt-2 flex items-center gap-1">
+      <button
+        type="button"
+        aria-label={t("chat.feedback.up", { defaultValue: "Good answer" })}
+        title={t("chat.feedback.up", { defaultValue: "Good answer" })}
+        onClick={() => rate("UP")}
+        className={`rounded-md p-1 transition hover:bg-muted/80 ${rated === "UP" ? "text-emerald-500" : "text-muted-foreground/60 hover:text-foreground"}`}
+      >
+        <IconThumbUp className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label={t("chat.feedback.down", { defaultValue: "Bad answer" })}
+        title={t("chat.feedback.down", { defaultValue: "Bad answer" })}
+        onClick={() => rate("DOWN")}
+        className={`rounded-md p-1 transition hover:bg-muted/80 ${rated === "DOWN" ? "text-rose-500" : "text-muted-foreground/60 hover:text-foreground"}`}
+      >
+        <IconThumbDown className="size-3.5" />
+      </button>
+    </div>
+  )
+}
+
 /** The assistant bubble body: copy button, content (cited-aware), and source chips. */
-function AssistantBody({ message }: Readonly<{ message: ChatMessage }>) {
+function AssistantBody({
+  message,
+  onFeedback,
+}: Readonly<{
+  message: ChatMessage
+  onFeedback?: (message: ChatMessage, rating: "UP" | "DOWN") => void
+}>) {
   const { t } = useTranslation()
   const hasCitations = Boolean(message.citations && message.citations.length > 0)
   return (
@@ -233,11 +289,14 @@ function AssistantBody({ message }: Readonly<{ message: ChatMessage }>) {
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
+      {onFeedback && message.content
+        ? <FeedbackButtons message={message} onFeedback={onFeedback} />
+        : null}
     </div>
   )
 }
 
-export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef, onOptionClick }: Readonly<ChatMessageListProps>) {
+export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef, onOptionClick, onFeedback }: Readonly<ChatMessageListProps>) {
   const { t } = useTranslation()
   const { user } = useCurrentUser()
 
@@ -302,7 +361,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
             }}
           >
             {isAssistant ? (
-              <AssistantBody message={message} />
+              <AssistantBody message={message} onFeedback={onFeedback} />
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>
             )}

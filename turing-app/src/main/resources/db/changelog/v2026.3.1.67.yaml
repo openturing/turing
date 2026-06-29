@@ -1,0 +1,64 @@
+databaseChangeLog:
+  # T170 / §X.10.d — Operator preference feedback on assistant turns.
+  #
+  # chat_turn_feedback stores one binary thumb-up/down per rated assistant turn
+  # (the user prompt + the assistant answer + the rating). The DPO dataset is
+  # built incrementally from these rows (TurDpoDatasetBuilder pairs a chosen
+  # UP answer with a rejected DOWN answer for the same prompt). Opt-in: the
+  # thumbs UI / capture endpoint only writes here when an operator rates a turn;
+  # an agent with no ratings simply has no rows and no DPO dataset.
+  #
+  # Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.67-create-chat_turn_feedback
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_turn_feedback
+      changes:
+        - createTable:
+            tableName: chat_turn_feedback
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agentId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: varchar(128)
+              - column:
+                  name: userPrompt
+                  type: longtext
+                  constraints:
+                    nullable: false
+              - column:
+                  name: assistantAnswer
+                  type: longtext
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rating
+                  type: varchar(8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: chat_turn_feedback
+            indexName: ix_chat_turn_feedback_agent
+            columns:
+              - column:
+                  name: agentId

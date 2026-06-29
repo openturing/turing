@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## F.9 — Stored Completions + Evals + Distillation flywheel
-
-- 💭 **T170** (deps: T169) **DPO loop from operator feedback** — operators thumb-up / thumb-down assistant turns; the DPO dataset is built incrementally from the binary preferences. → §X.10.d
-
 ## F.10 — Predicted Outputs + strict structured outputs
 
 - 📋 **T171** (deps: T131) **OpenAI Predicted Outputs (`prediction`)** — 3-5× latency drop when the output mostly overlaps an input string. → §X.11.a
@@ -57,6 +53,44 @@
 - 💭 **T190** (deps: T136, T142, T78) **"Self-installing" enterprise connectors via computer_use** — customer says "connect my company's Notion" → Turing's computer-use agent navigates to Notion → guides them through API token generation → tests the connection → enables the con… → §X.15.d
 - 💭 **T191** (deps: T169, T126) **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if… → §X.15.e
 - 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
+
+## Block F.16 — Gemini native API exploitation + cross-vendor parity
+
+> Block F wired ~30 native features for OpenAI and Anthropic through the
+> `TurNativeProviderClient` seam (T130) + capability matrix (T132); **Gemini got
+> none** — `TurGeminiLlmProvider` is chat-only and `throw`s on embeddings. This
+> block gives Gemini the third native branch and the same capability surface,
+> then exploits primitives the other two lack (task-type embeddings, explicit
+> reusable context caching, 1–2 M-token full-context answering, native video).
+> It also closes three cross-vendor gaps the F-blocks left open (Anthropic
+> `cache_control`, OpenAI background mode, Anthropic extended thinking). Design →
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §X.19 / §X.20 / §X.13.
+
+**Foundation:**
+- 📋 **T489** (deps: T130, T131, T132) **`TurGoogleGenAiNativeService` + Gemini executor branch** — third `TurNativeChatExecutor` branch (Gemini `Client.models().generateContent`/`generateContentStream`) reusing the T131 prompt-assembly fusion; opt-in per the T132 matrix, empty matrix = unchanged Spring AI path. → §X.19
+
+**Server-side built-in tools (parity with F.2/F.3):**
+- 📋 **T490** (deps: T489) **Gemini Google Search grounding** (`google_search`) — analog to T133/T139; grounding metadata decodes onto the T152–T155 `TurChatCitation`/SSE contract; renders the mandatory Search Suggestion chips. cap `gemini-google-search`. → §X.19
+- 📋 **T491** (deps: T489) **Gemini URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog: model pulls a URL/PDF directly. cap `gemini-url-context`. → §X.19
+- 📋 **T492** (deps: T489) **Gemini code execution tool** (`code_execution`) — built-in Python sandbox alongside T135/T141; inline matplotlib images map to the `sandbox:` scheme (T83). cap `gemini-code-execution`. → §X.19
+- 📋 **T493** (deps: T489) **Gemini native image generation** (`gemini-2.5-flash-image`/Imagen) — analog to OpenAI `image_generation` (T137); image part → `sandbox:` artifact. cap `gemini-image-generation`. → §X.19
+- 📋 **T494** (deps: T489, T136) **Gemini Computer Use** (`gemini-2.5-computer-use`) — reuses the vendor-neutral `TurComputerUseDriver` seam (T136); no-op driver default. `ownsTurn`. cap `gemini-computer-use`. → §X.19
+
+**Distinctive Gemini cost/quality primitives:**
+- 📋 **T495** (deps: —) **Gemini embeddings + task-type optimization** — fix the `UnsupportedOperationException`: `gemini-embedding-001` via `embedContent` with **asymmetric** `taskType` (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + Matryoshka `outputDimensionality`. Retrieval-quality win the other providers can't match. → §X.19
+- 📋 **T496** (deps: T156) **Gemini Batch provider** — `TurGeminiBatchProvider` (~50% off) into `TurBatchProviderFactory`, so T157/T158/T159 batches run on Gemini-backed instances instead of falling back to synchronous. → §X.19
+- 📋 **T497** (deps: T175) **Gemini Files bridge** — fold Gemini into `TurFilesApiBridge`: upload binary to the Gemini Files API, reference by URI (48 h) for native PDF/video grounding. → §X.19
+- 💭 **T498** (deps: T489, T178) **Gemini thinking budget + thought summaries** — `thinkingConfig` (`thinkingBudget`/`includeThoughts`) feeds the T178 "Why this answer" panel; Gemini leg of the cross-vendor F.12. → §X.19
+
+**Innovation bets (Gemini-shape-only):**
+- 💭 **T499** (deps: T489) **Explicit context caching — `TurContextCacheProvider` seam + Gemini impl** — named, TTL'd, reusable `cachedContents` cache the stable prefix (system prompt + persona + pinned grounding) once, reuse across turns/users at ~75% off; no-op default keeps OpenAI automatic. The RAG cost lever. → §X.20
+- 💭 **T500** (deps: T499, T383) **Full-context (retrieval-free) answering for small sites** — per-site mode (gated on an index-token budget) that stuffs the whole corpus into Gemini's 1–2 M window instead of top-K retrieval, paired with the T499 cache; measured head-to-head vs T383 HYBRID_RRF. → §X.19
+- 💭 **T501** (deps: T489, T64, T497) **Native video understanding for indexed media** — pass video/audio (incl. YouTube URL) to Gemini for timestamped transcript + scene/visual description written to the SN doc; adds a VIDEO modality to the T64 slots. → §X.19
+
+**Cross-vendor gaps the F-blocks left open:**
+- 📋 **T502** (deps: T131, T499) **Anthropic prompt caching (`cache_control`)** — mark the system prompt + retrieved `search_result` blocks (T153) with ephemeral cache breakpoints behind the T499 seam; opt-in, null → unchanged. → §X.20
+- 💭 **T503** (deps: T131) **OpenAI Responses `background` mode** — submit long reasoning/agentic turns with `background:true` + poll/stream-resume by response id so a slow turn doesn't hold the connection; pairs with T179. → §X.13
+- 📋 **T504** (deps: T178) **Anthropic extended / interleaved thinking** — `thinking` (`budget_tokens`) + interleaved-thinking beta in the F.3 tool loops; thought summaries feed the same T178 panel, making "reasoning budget" one cross-vendor contract. → §X.13
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 

@@ -25,7 +25,8 @@ import {
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
-import { estimateTokens, toAdminMessages } from "../chat.types"
+import { TurChatFeedbackService } from "@/services/agent/chat-feedback.service"
+import { estimateTokens, toAdminMessages, type ChatMessage } from "../chat.types"
 import { ChatEmptyState } from "./chat-empty-state"
 import { ChatInput } from "./chat-input"
 import { ChatMessageList } from "./chat-message-list"
@@ -270,6 +271,28 @@ export function AgentChatTab({
   }, [resetFlow, t])
 
   const adminMessages = useMemo(() => toAdminMessages(messages), [messages])
+
+  // F.9 / T170 — record an operator thumb-up/down as a DPO preference signal.
+  // The rated answer's prompt is the nearest preceding user turn. Direct service
+  // call (this component isn't React-Query-wrapped — same pattern as preflight cost).
+  const handleFeedback = useCallback(
+    (message: ChatMessage, rating: "UP" | "DOWN") => {
+      const idx = adminMessages.findIndex((m) => m.id === message.id)
+      let prompt = ""
+      for (let i = idx - 1; i >= 0; i--) {
+        if (adminMessages[i].role === "user") {
+          prompt = adminMessages[i].content
+          break
+        }
+      }
+      if (!prompt) return
+      new TurChatFeedbackService()
+        .record(agent.id, { conversationId, prompt, answer: message.content, rating })
+        .then(() => toast.success(t("chat.feedback.thanks", { defaultValue: "Thanks for the feedback" })))
+        .catch(() => toast.error(t("chat.feedback.failed", { defaultValue: "Could not save feedback" })))
+    },
+    [adminMessages, agent.id, conversationId, t],
+  )
   const tokens = useMemo(
     () => estimateTokens(messages.map((m) => m.content).join("")),
     [messages],
@@ -295,6 +318,7 @@ export function AgentChatTab({
             assistantIcon={agent.icon}
             endRef={endRef}
             onOptionClick={handleOptionClick}
+            onFeedback={handleFeedback}
           />
         )}
       </div>

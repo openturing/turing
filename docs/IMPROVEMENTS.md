@@ -1467,25 +1467,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.10 Stored Completions + Evals + Distillation flywheel (T167–T170)
-
-This is the **production self-improvement loop**:
-
-1. `storedCompletions=true` per agent → every call stored on OpenAI
-   side with structured metadata (T167).
-2. T126 eval suite + T168 server-side OpenAI graders catch regressions
-   automatically.
-3. T169 distillation: monthly export → fine-tune `gpt-4o-mini` against
-   prod-traffic-quality answers → swap `TurLLMInstance.modelId` if
-   evals pass.
-4. T170 closes the loop: operator thumb-up/down feedback feeds a
-   DPO dataset → next fine-tune incorporates the preferences.
-
-**Compounding effect**: the agent gets cheaper and better every week
-with zero engineering work. T191 explicitly wires the three together
-into "self-improving agent overnight" — the long-shot bet that's a
-genuine moat.
-
 ### X.11 Predicted Outputs + strict structured outputs (T171–T174, T426)
 
 T171 + T172 make the "regenerate-with-tweak" loop in the chat-flow
@@ -1527,6 +1508,23 @@ Elevates trust without exposing reasoning internals. T179 plumbs
 as a per-agent policy. T180 mixes `logprobs` into the T19/T24/T28
 reranker confidence score — fixes the "the LLM hedged but we still
 ranked it #1" failure mode.
+
+**Cross-vendor reasoning (T503, T504) — F.12 was framed OpenAI-only; both
+competitors have caught up.** The "Why this answer" panel and the effort lever
+should be vendor-agnostic levers, not OpenAI features:
+
+- **T503 OpenAI Responses `background` mode** — for long-running reasoning /
+  agentic turns (deep `code_interpreter` runs, computer-use loops), submit the
+  Responses call with `background: true` and resume by polling / streaming the
+  response id, so a slow reasoning turn doesn't hold an HTTP/SSE connection open
+  for minutes. Pairs with T179 (high effort on background stages). Also lets the
+  T156 batch poller pattern apply to single expensive interactive turns.
+- **T504 Anthropic extended / interleaved thinking** — the `thinking` param
+  (`budget_tokens`) plus the interleaved-thinking beta (think *between* tool
+  calls in the F.3 tool loops). Thought summaries feed the **same** T178 panel;
+  together with the Gemini `thinkingConfig` leg (T498) this makes "reasoning
+  budget" and "show the model's thinking" one cross-vendor contract instead of
+  three provider-specific ones.
 
 ### X.14 Safety, compliance, multi-tenant cost (T181–T186)
 
@@ -1642,6 +1640,137 @@ customer value — there is no monolithic "Block F is done" gate.
 > landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
 > source both the agent UI and the future T186 (instance × capability heatmap,
 > §X.14.f) render from. Design detail is recoverable from `git log`.
+
+### X.19 Gemini native API exploitation (T489–T501)
+
+**The gap.** Block F gave OpenAI and Anthropic a native seam
+(`TurNativeProviderClient`, T130) and a per-instance capability matrix (T132),
+then wired ~30 vendor-native features through it. **Gemini got none of it.**
+Today `TurGeminiLlmProvider` is a thin Spring AI `GoogleGenAiChatModel` wrapper:
+chat + streaming only, **no embeddings** (it `throw`s
+`UnsupportedOperationException`), no server-side tools, no Batch (the T156
+changelog explicitly lists "Gemini → no provider"), no Files, no caching,
+no thinking surfacing. Yet the Google GenAI Java SDK (`com.google.genai.Client`,
+already on the classpath) ships a surface as rich as the other two — and a few
+primitives **neither** competitor has. This block closes the parity gap and then
+goes past it.
+
+**Foundation — T489 `TurGoogleGenAiNativeService` + executor branch.**
+`TurNativeChatExecutor` branches by vendor (OpenAI → Responses, Anthropic →
+Messages). Add the third branch: Gemini via
+`Client.models().generateContent(...)` / `generateContentStream(...)`, reusing
+the T131 prompt-assembly fusion (persona + RAG override + MCP instructions +
+chat memory) so the native Gemini path is prompt-identical to the other two.
+The seam stays opt-in per the T132 matrix; empty matrix = the unchanged Spring AI
+`GoogleGenAiChatModel` path. Everything below is a capability row on top of it.
+
+**Parity — server-side built-in tools** (the model executes the tool in Google's
+infra, zero Java callbacks; mirrors F.2/F.3):
+
+- **T490 Google Search grounding** (`google_search` tool) — the Gemini analog of
+  OpenAI `web_search` (T133) / Anthropic `web_search` (T139). Distinctive twist:
+  Gemini returns **grounding metadata** (per-segment support scores + the source
+  spans), which decode straight onto the shipped `TurChatCitation` /
+  `type:"citations"` SSE contract (T152–T155) — grounded web answers reuse the
+  citation-underline UI for free. Google's terms require rendering the returned
+  **Search Suggestion chips**, so the SSE payload carries them and the headless UI
+  shows them (a compliance requirement OpenAI/Anthropic don't impose).
+- **T491 URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog:
+  the model pulls a named URL/PDF directly, no Turing crawler.
+- **T492 Code execution tool** (`code_execution`) — built-in Python sandbox
+  alongside OpenAI `code_interpreter` (T135) / Anthropic `code_execution` (T141);
+  inline matplotlib images map to the `sandbox:` URL scheme already used by T83.
+- **T493 Native image generation** (`gemini-2.5-flash-image` / Imagen) — analog
+  to OpenAI `image_generation` (T137); the inline image part lands as a
+  `sandbox:` artifact.
+- **T494 Computer Use** (`gemini-2.5-computer-use`) — reuses the **vendor-neutral
+  `TurComputerUseDriver` seam** (T136); ships against the no-op driver so it's
+  matrix-selectable without bundling a browser. `ownsTurn`.
+
+**Distinctive Gemini cost/quality primitives** (parity-plus):
+
+- **T495 Embeddings with task-type optimization** — fixes the
+  `UnsupportedOperationException`: wire `gemini-embedding-001` via
+  `Client.models().embedContent(...)`. The differentiator is **asymmetric
+  embeddings** — Turing embeds the query and the document with the *same* model
+  config today; Gemini exposes `taskType` (`RETRIEVAL_DOCUMENT` at index time,
+  `RETRIEVAL_QUERY` at query time, `SEMANTIC_SIMILARITY` for dedup/clustering)
+  plus Matryoshka `outputDimensionality`. Task-type-aware embedding is a measured
+  retrieval-quality win and a capability the OpenAI/Anthropic providers can't
+  match (Anthropic has no embeddings at all).
+- **T496 Batch provider** — closes the T156 gap: `TurGeminiBatchProvider`
+  (Gemini Batch mode, ~50% discount) plugs into the existing
+  `TurBatchProviderFactory`, so re-embedding (T158), nightly summarization
+  (T157) and the LLM-Judge eval batch (T159) all run on Gemini-backed instances
+  instead of falling back to synchronous full price.
+- **T497 Files bridge** — folds Gemini into the F.11 `TurFilesApiBridge` (T175):
+  upload the indexed binary to the Gemini Files API, reference it by URI (48 h
+  retention) so a Gemini-backed agent gets native PDF/video grounding instead of
+  Tika text only.
+- **T498 Thinking budget + thought summaries** — `thinkingConfig`
+  (`thinkingBudget` + `includeThoughts`) surfaces Gemini 2.5's reasoning into the
+  same "Why this answer" panel the OpenAI reasoning summary feeds (T178); this is
+  the Gemini leg of a now-cross-vendor F.12 (see §X.13).
+
+**Innovation bets — things only Gemini's shape makes cheap:**
+
+- **T499 Explicit context caching** (cross-vendor seam, Gemini-led) — see §X.20.
+- **T500 Full-context (retrieval-free) answering for small sites** — Gemini's
+  1–2 M-token window lets a *small* SN index skip top-K retrieval entirely:
+  stuff the whole corpus into context (paired with the T499 cache so it's paid
+  for once) and let the model ground over everything. A new answering mode
+  (per-site, gated on an index-token budget) measured head-to-head against the
+  T383 HYBRID_RRF path — when the corpus fits, recall ceiling is 100% by
+  construction. Distinctive because it inverts the RAG assumption that you must
+  retrieve.
+- **T501 Native video understanding for indexed media** — Gemini ingests video
+  (frames + audio track, including a YouTube URL) natively. Index a video/audio
+  asset by passing it to Gemini for a timestamped transcript + scene/visual
+  description (written to the SN doc), and answer visual questions against it at
+  query time. Extends the T64 multimodal slots with a VIDEO modality and rides
+  the T497 Files bridge. A media-catalog differentiator the text-only retrieval
+  stack can't touch.
+
+**Naming.** Plugin type `gemini` (the native Google GenAI SDK provider; the
+`gemini-openai` OpenAI-compat provider stays Spring-AI-only). Capabilities
+follow the convention: `gemini-google-search`, `gemini-url-context`,
+`gemini-code-execution`, `gemini-image-generation`, `gemini-computer-use`,
+each a `TurNativeCapability` constant auto-surfaced by the T432 registry/picker.
+All strictly opt-in via the two-level gate (instance matrix ∩ agent selection).
+
+### X.20 Context & prompt caching — cross-vendor (T499, T502)
+
+**Why now.** The single largest recurring cost in RAG/agent turns is **re-sending
+the same large prefix** every turn — the system prompt + persona + brand context
++ the retrieved knowledge-base passages. All three vendors now let you avoid
+paying full price for that prefix, but each models it differently, and **Turing
+exploits none of them today**:
+
+- **Gemini** — *explicit, named, TTL'd* cache objects (`client.caches().create`):
+  you cache content once, get back a handle, and reference it by name across
+  turns *and across users* at ~75% off. Uniquely reusable across conversations.
+- **Anthropic** — *ephemeral* `cache_control` breakpoints on message blocks
+  (5 min / 1 h TTL); cache the system prompt + retrieved `search_result` blocks.
+- **OpenAI** — *automatic* prefix caching (no API surface to manage, just a
+  discount when the prefix repeats).
+
+**The seam — T499 `TurContextCacheProvider`.** A vendor-neutral interface that,
+given the agent's stable prefix (assembled system prompt + persona + any large
+pinned grounding doc set), returns a cache reference the native path threads into
+the request. The Gemini implementation creates/reuses a named `cachedContents`
+object keyed by a hash of the prefix (with a configurable TTL); a no-op default
+keeps OpenAI on its automatic path. This is the RAG cost lever — most valuable
+exactly when the grounding context is large and stable (the T500 full-context
+mode, a big pinned manual, a per-site system prompt reused across thousands of
+visitor turns).
+
+**T502 Anthropic `cache_control` mapping** plugs Claude into the same seam:
+mark the system prompt and the retrieved `search_result` blocks (T153) with
+`cache_control` breakpoints so the F.6 citation path and the standard Messages
+path both get the cache discount. Strictly opt-in; null → byte-for-byte
+unchanged requests. Together T499+T502 give every vendor a caching story behind
+one provider-agnostic interface — and finally use a primitive that was sitting
+unclaimed on both Anthropic and Gemini.
 
 ---
 
