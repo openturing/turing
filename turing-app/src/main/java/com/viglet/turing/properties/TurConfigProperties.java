@@ -26,5 +26,6 @@ public class TurConfigProperties {
 	private TurObservabilityProperty observability = new TurObservabilityProperty();
 	private TurBatchProperty batch = new TurBatchProperty();
 	private TurEvalsProperty evals = new TurEvalsProperty();
+	private TurDistillationProperty distillation = new TurDistillationProperty();
 
 }

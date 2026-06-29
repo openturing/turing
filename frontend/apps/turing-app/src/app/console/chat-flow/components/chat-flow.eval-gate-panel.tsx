@@ -1,4 +1,8 @@
-import { useAgentEvalGate, useRunAgentEval } from "@/api/queries/agent-eval.queries";
+import {
+  useAgentEvalGate,
+  useDistillAgent,
+  useRunAgentEval,
+} from "@/api/queries/agent-eval.queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/ui/section-card";
@@ -6,7 +10,7 @@ import type {
   TurAgentEvalGateFinding,
   TurAgentEvalGateStatus,
 } from "@/models/agent/agent-eval.model";
-import { IconShieldCheck } from "@tabler/icons-react";
+import { IconFlask, IconShieldCheck } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 interface ChatFlowEvalGatePanelProps {
@@ -38,6 +42,7 @@ export function ChatFlowEvalGatePanel({
   const { t } = useTranslation();
   const { data: gate } = useAgentEvalGate(agentId);
   const runMutation = useRunAgentEval();
+  const distillMutation = useDistillAgent();
 
   // Not configured (no enabled golden set) → render nothing.
   if (!gate || gate.status === "NOT_CONFIGURED") {
@@ -86,21 +91,56 @@ export function ChatFlowEvalGatePanel({
               </span>
             )}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={runMutation.isPending}
-            onClick={() => runMutation.mutate({ agentId })}
-          >
-            {runMutation.isPending
-              ? t("agentEval.gate.running", { defaultValue: "Running…" })
-              : t("agentEval.gate.run", { defaultValue: "Run gate" })}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={distillMutation.isPending}
+              onClick={() => distillMutation.mutate({ agentId })}
+              title={t("agentEval.distill.hint", {
+                defaultValue:
+                  "Export this agent's stored completions, fine-tune a cheaper model, and swap it in if the eval passes.",
+              })}
+            >
+              <IconFlask className="size-3.5" />
+              {distillMutation.isPending
+                ? t("agentEval.distill.running", { defaultValue: "Distilling…" })
+                : t("agentEval.distill.action", { defaultValue: "Distill" })}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={runMutation.isPending}
+              onClick={() => runMutation.mutate({ agentId })}
+            >
+              {runMutation.isPending
+                ? t("agentEval.gate.running", { defaultValue: "Running…" })
+                : t("agentEval.gate.run", { defaultValue: "Run gate" })}
+            </Button>
+          </div>
         </div>
 
         {runMutation.data?.error && (
           <p className="mt-3 text-xs text-rose-600 dark:text-rose-400">
             {runMutation.data.error}
+          </p>
+        )}
+
+        {distillMutation.data && (
+          <p
+            className={`mt-3 text-xs ${
+              distillMutation.data.started
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-amber-600 dark:text-amber-400"
+            }`}
+          >
+            {distillMutation.data.started
+              ? t("agentEval.distill.started", {
+                  defaultValue:
+                    "Distillation started ({{count}} examples) — the model swaps in automatically if the eval passes.",
+                  count: distillMutation.data.exampleCount ?? 0,
+                })
+              : distillMutation.data.reason}
           </p>
         )}
 

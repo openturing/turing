@@ -1,0 +1,93 @@
+databaseChangeLog:
+  # T169 / §X.10.c — Distillation job registry.
+  #
+  # distillation_job is the durable hand-off between fire-and-forget fine-tuning
+  # submission (TurOpenAiDistillationService.distill — export Stored Completions
+  # → upload training file → create fine-tune job) and deferred completion (hours
+  # later): TurDistillationJobPoller refreshes each row's status on a schedule and,
+  # when the fine-tune job succeeds, runs the agent eval gate against the
+  # fine-tuned candidate and — only if it passes — swaps the LLM instance model.
+  # Without this table a restart would orphan an in-flight fine-tune. Opt-in via
+  # turing.distillation.enabled (default false) — when off no rows are ever written.
+  #
+  # Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.66-create-distillation_job
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: distillation_job
+      changes:
+        - createTable:
+            tableName: distillation_job
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agentId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instanceId
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: baseModel
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: trainingFileId
+                  type: varchar(128)
+              - column:
+                  name: fineTuneJobId
+                  type: varchar(128)
+              - column:
+                  name: fineTunedModel
+                  type: varchar(128)
+              - column:
+                  name: originalModel
+                  type: varchar(128)
+              - column:
+                  name: exampleCount
+                  type: int
+              - column:
+                  name: state
+                  type: varchar(24)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: errorMessage
+                  type: varchar(1024)
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lastPolledAt
+                  type: timestamp
+              - column:
+                  name: completedAt
+                  type: timestamp
+        - createIndex:
+            tableName: distillation_job
+            indexName: ix_distillation_job_open
+            columns:
+              - column:
+                  name: state
+        - createIndex:
+            tableName: distillation_job
+            indexName: ix_distillation_job_agent
+            columns:
+              - column:
+                  name: agentId

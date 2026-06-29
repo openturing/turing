@@ -4,7 +4,10 @@ import type {
   TurAgentEvalReport,
   TurAgentEvalSet,
 } from "@/models/agent/agent-eval.model";
-import { TurAgentEvalService } from "@/services/agent/agent-eval.service";
+import {
+  TurAgentEvalService,
+  type TurAgentDistillResult,
+} from "@/services/agent/agent-eval.service";
 import { queryKeys } from "./keys";
 
 /**
@@ -46,6 +49,13 @@ export function useRunAgentEval() {
   return useMutation<TurAgentEvalReport, Error, { agentId: string }>({
     mutationFn: ({ agentId }) => service.run(agentId),
     onSuccess: (_report, { agentId }) => invalidateAgentEval(queryClient, agentId),
+  });
+}
+
+/** F.9 / T169 — trigger distillation for an agent (fire-and-forget; poller finishes it). */
+export function useDistillAgent() {
+  return useMutation<TurAgentDistillResult, Error, { agentId: string }>({
+    mutationFn: ({ agentId }) => service.distill(agentId),
   });
 }
 
