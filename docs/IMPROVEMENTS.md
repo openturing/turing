@@ -2386,21 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.2 Persona "notebook" source set (T465)
-
-A persona can own a set of evaluation sources — the NotebookLM "notebook". New
-`TurPersonaSource` (persona FK, `type` SN_DOC | ASSET | URL, `ref`, `cachedText`,
-`extractedAt`). Three ingestion paths, all already present:
-
-- **SN_DOC** — reference an indexed document by id (or a query that resolves to one);
-  pull its searchable text.
-- **ASSET** — an uploaded PDF/DOC routed through `TurFileUtils.documentToText(...)`.
-- **URL** — `TurFileUtils.urlContentToText(...)` behind the existing OCR SSRF guard
-  (`isAllowedRemoteUrlString`).
-
-Extracted text is cached on the row so repeated evaluations and the deterministic
-scorer don't re-fetch. CRUD endpoints under the persona API + an admin "Sources" tab.
-
 ### XXVI.3 Pure multilingual readability/complexity scorer (T466)
 
 `TurReadabilityScorer` — a **pure** component (no Spring, no LLM) returning a numeric

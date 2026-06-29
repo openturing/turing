@@ -44,6 +44,16 @@
       "INTERMEDIATE": "Intermediate",
       "ADVANCED": "Advanced",
       "EXPERT": "Expert"
+    },
+    "sourceTypes": {
+      "SN_DOC": "Indexed document",
+      "ASSET": "Uploaded file",
+      "URL": "Web URL"
+    },
+    "sourceStatus": {
+      "PENDING": "Pending",
+      "EXTRACTED": "Extracted",
+      "FAILED": "Failed"
     }
   }
 }

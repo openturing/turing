@@ -52,6 +52,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
+import { PersonaSourcesSection } from "./persona-sources.section"
 import { Button } from "../ui/button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { PromptEditor } from "../ui/prompt-editor"
@@ -670,6 +671,12 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
                       />
                     </SectionCard.Content>
                   </SectionCard>
+                )}
+
+                {/* Evaluation notebook (Block AA / T465) — needs a saved
+                    persona (FK) and only meaningful for audience personas. */}
+                {showAudience && !isNew && value.id && (
+                  <PersonaSourcesSection personaId={value.id} />
                 )}
 
                 {/* Vocabulary */}
