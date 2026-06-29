@@ -2386,67 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.1 Audience-profile facet on `TurPersona` (T464)
-
-Additive, opt-in. **Decision (locked): extend `TurPersona` — do NOT fork a separate
-`TurAudienceProfile` entity — but model the audience attributes as a cohesive
-*value object*, not as a loose pile of columns.** The reasoning:
-
-- **Extend** (vs. a new entity) because the request is explicitly to *reuse existing
-  personas*, because a separate entity would duplicate the entire surface
-  (`TurPersona`'s CRUD, the `turPersonafindAll`/`findById`/`StaticPrompt` caches +
-  eviction conventions, the `/api/persona/chat` authoring, the admin form, the
-  frontend model/queries/form, the agent attachment) for a feature whose adoption is
-  unproven (YAGNI), and because it preserves the real **BOTH** case — a *peer* persona
-  the assistant both speaks **as** and evaluates content **for** (e.g. "Lucas, fellow
-  alumnus"). With two entities that overlap is impossible to express.
-- **As a value object** (vs. flat nullable columns) because a discriminator plus two
-  disjoint column sets on one table is the "two entities in one trench coat"
-  anti-pattern: audience columns sit dead-null on every voice persona and vice-versa.
-
-Concretely:
-
-1. **`personaKind`** — `@Enumerated(STRING)`, default `SPEAKER` (`SPEAKER` | `AUDIENCE`
-   | `BOTH`). It is the discriminator and the UI gate. (It is exactly the pair of
-   booleans `usableAsSpeaker`/`usableAsAudience` encoded as one enum — the enum is
-   simpler for the admin form.)
-2. **`TurPersonaAudience`** — a JPA `@Embeddable` (or an owned, nullable `@OneToOne`
-   component) holding only the audience attributes, populated only when
-   `personaKind ≠ SPEAKER`:
-   - `readingLevel` / education proxy (enum or grade band — ELEMENTARY … GRADUATE),
-     the field that makes the "pouco estudo" example crisp;
-   - `domainExpertise` (NOVICE … EXPERT) for jargon tolerance;
-   - `vocabularyCeiling` (free text or term list — the complexity budget the
-     readability scorer measures against);
-   - comprehension + accessibility notes (free text — e.g. "dyslexia-friendly",
-     "screen reader", "second-language reader");
-   - `primaryLanguage` for the readability metric's language profile.
-
-3. **Guard (the safety the discriminator buys):** the prompt composer
-   (`TurPersonaPromptComposer`) and agent attachment only act on `SPEAKER`/`BOTH`
-   personas; the content-fit evaluator (T467) only acts on `AUDIENCE`/`BOTH`. An
-   `AUDIENCE`-only persona must not resolve as an agent's voice — validate at the agent
-   attachment / `TurAgentPersonaResolver` boundary so a misconfiguration is rejected
-   rather than silently composing an empty voice.
-
-Default-SPEAKER means every existing voice persona, every agent attachment, and every
-prompt-composition path is **byte-for-byte unchanged** — the opt-in-flag /
-default-legacy pattern this project favors, with zero IT revalidation. The audience
-value object is read only by the new evaluation path; the prompt composer never touches
-it.
-
-Liquibase: a new `v2026.3.x.yaml` (lowercase agnostic types; columns match the JPA
-field names exactly — `personaKind` plus the embeddable's columns, e.g. `readingLevel`,
-`domainExpertise`, `vocabularyCeiling`, `primaryLanguage`). The admin persona form gains
-an "Audience" section, shown when `personaKind ≠ SPEAKER`; the existing voice sections
-stay exactly as they are.
-
-**Escape hatch (the trigger to split later):** if operations later show that audience
-personas are owned by a *different team* (content editors) than voice personas (prompt
-engineers), with distinct QA lifecycles, extract `TurPersonaAudience` into its own
-entity then — the value object makes that a mechanical lift-and-shift, not a rewrite.
-Don't build the separate aggregate before that evidence exists.
-
 ### XXVI.2 Persona "notebook" source set (T465)
 
 A persona can own a set of evaluation sources — the NotebookLM "notebook". New
