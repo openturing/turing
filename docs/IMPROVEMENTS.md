@@ -2386,13 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.8 Auto-suggest the best persona variant for content (T471, 💭)
-
-Given a piece of content and a set of audience personas, batch the T467 evaluator and
-rank which persona it best fits. Feeds Block Z A/B persona selection (T69 — "which
-persona variation was preferred" now has a content-side companion: "which persona is
-this content even *for*") and editorial content routing. Open design.
-
 ### XXVI.9 Content-fit as an index-time SN signal (T472, 💭)
 
 Run the evaluator at **index time** against a configured target-audience persona and

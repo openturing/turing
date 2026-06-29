@@ -110,7 +110,6 @@
 > whole block is **opt-in** behind a `personaKind` discriminator (default `SPEAKER` =
 > existing voice personas byte-for-byte unchanged). Rationale → §XXVI.
 
-- 💭 **T471** (deps: T467, T69) **Auto-suggest the best persona variant for a piece of content** — given content + a set of audience personas, batch the T467 evaluator and rank which persona it best fits; feeds Block Z A/B persona selection and editorial routing. → §XXVI.8
 - 💭 **T472** (deps: T467, T388) **Content-fit as an index-time SN signal** — run the evaluator at index time against a configured target-audience persona and store a per-document readability/fit score as an SN field; surface "content too complex for its audience" in the content-gap dashboard (cousin of T252/T388). → §XXVI.9
 
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
