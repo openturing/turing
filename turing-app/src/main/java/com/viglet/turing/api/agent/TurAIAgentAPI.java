@@ -224,6 +224,8 @@ public class TurAIAgentAPI {
             agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
             // T442 — answer-as-an-app generative-UI client tools (opt-in).
             agentEdit.setAnswerAsAppEnabled(turAIAgent.isAnswerAsAppEnabled());
+            // T443 — co-browse: agent drives the host page's real search UI (opt-in).
+            agentEdit.setCoBrowseEnabled(turAIAgent.isCoBrowseEnabled());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());

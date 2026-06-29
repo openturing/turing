@@ -43,10 +43,10 @@ public class TurClientToolService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final TurAnswerAsAppClientTools answerAsAppClientTools;
+    private final List<TurBuiltInClientToolProvider> builtInProviders;
 
-    public TurClientToolService(TurAnswerAsAppClientTools answerAsAppClientTools) {
-        this.answerAsAppClientTools = answerAsAppClientTools;
+    public TurClientToolService(List<TurBuiltInClientToolProvider> builtInProviders) {
+        this.builtInProviders = builtInProviders;
     }
 
     /** True when the agent advertises at least one client tool (custom or built-in). */
@@ -57,11 +57,12 @@ public class TurClientToolService {
     /**
      * Parsed, validated client-tool declarations for the agent (never null).
      *
-     * <p>Built-in answer-as-app tools (T442) are prepended when the agent opts
-     * in via {@code answerAsAppEnabled} — independent of {@code clientToolsEnabled}
-     * — followed by the operator-declared tools from {@code clientToolsJson}.
-     * Names are de-duplicated (first wins), so an operator can override a
-     * built-in by declaring a custom tool of the same name.
+     * <p>Built-in tools (each from a {@link TurBuiltInClientToolProvider} gated by
+     * its own per-agent flag — answer-as-app T442, co-browse T443) are prepended
+     * when the agent opts in — independent of {@code clientToolsEnabled} — followed
+     * by the operator-declared tools from {@code clientToolsJson}. Names are
+     * de-duplicated (first wins), so an operator can override a built-in by
+     * declaring a custom tool of the same name.
      */
     public List<TurClientTool> declarations(TurAIAgent agent) {
         if (agent == null) {
@@ -69,9 +70,13 @@ public class TurClientToolService {
         }
         List<TurClientTool> tools = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        // T442 — built-in answer-as-app generative-UI tools (opt-in, standalone).
-        if (agent.isAnswerAsAppEnabled()) {
-            for (TurClientTool builtIn : answerAsAppClientTools.declarations()) {
+        // Built-in client tools, each gated by its own per-agent flag (opt-in,
+        // standalone — they do not require clientToolsEnabled).
+        for (TurBuiltInClientToolProvider provider : builtInProviders) {
+            if (!provider.appliesTo(agent)) {
+                continue;
+            }
+            for (TurClientTool builtIn : provider.declarations()) {
                 if (seen.add(builtIn.name())) {
                     tools.add(builtIn);
                 }
@@ -100,16 +105,20 @@ public class TurClientToolService {
                     continue; // skip nameless / duplicate declarations
                 }
                 String description = text(node, "description");
-                JsonNode schemaNode = node.get("schema");
-                String schema = schemaNode == null || schemaNode.isNull()
-                        ? null
-                        : (schemaNode.isTextual() ? schemaNode.asString() : schemaNode.toString());
-                tools.add(new TurClientTool(name.trim(), description, schema));
+                tools.add(new TurClientTool(name.trim(), description, schemaOf(node.get("schema"))));
             }
         } catch (RuntimeException e) {
             log.warn("[ClientTool] agent '{}' clientToolsJson parse failed: {}",
                     agent.getId(), e.getMessage());
         }
+    }
+
+    /** A declared schema kept verbatim: a string as-is, an object stringified, else null. */
+    private static String schemaOf(JsonNode schemaNode) {
+        if (schemaNode == null || schemaNode.isNull()) {
+            return null;
+        }
+        return schemaNode.isTextual() ? schemaNode.asString() : schemaNode.toString();
     }
 
     /** Tool callbacks advertising the agent's client tools to the model. */

@@ -99,6 +99,17 @@ public class TurChatPromptAssembler {
 
     private String answerAsAppPrompt = "";
 
+    /**
+     * T443 / §XXIII.2 — co-browse guidance teaching the model the built-in
+     * {@code set_search_query} / {@code toggle_facet} / {@code clear_facets} /
+     * {@code set_sort} / {@code set_page} client tools that drive the host page's
+     * real search UI. Appended only when {@link TurAIAgent#isCoBrowseEnabled()}.
+     */
+    @Value("classpath:prompts/co-browse.md")
+    private Resource coBrowsePromptResource;
+
+    private String coBrowsePrompt = "";
+
     @PostConstruct
     void loadRenderPrompt() {
         try {
@@ -114,6 +125,13 @@ public class TurChatPromptAssembler {
             log.warn("[PromptAssembler] could not load prompts/answer-as-app.md — answer-as-app "
                     + "agents will fall back to prose: {}", e.getMessage());
             answerAsAppPrompt = "";
+        }
+        try {
+            coBrowsePrompt = coBrowsePromptResource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[PromptAssembler] could not load prompts/co-browse.md — co-browse "
+                    + "agents will fall back to prose: {}", e.getMessage());
+            coBrowsePrompt = "";
         }
     }
 
@@ -159,6 +177,12 @@ public class TurChatPromptAssembler {
         // tools are advertised by TurClientToolService when the same flag is on.
         if (agent.isAnswerAsAppEnabled() && !answerAsAppPrompt.isBlank()) {
             augmented = augmented + "\n\n" + answerAsAppPrompt;
+        }
+        // T443 / §XXIII.2 — co-browse opt-in: teach the built-in client tools that
+        // drive the host page's real search UI (query / facets / sort / page). The
+        // tools are advertised by TurClientToolService when the same flag is on.
+        if (agent.isCoBrowseEnabled() && !coBrowsePrompt.isBlank()) {
+            augmented = augmented + "\n\n" + coBrowsePrompt;
         }
         // T323 / §IX.4.d — skill delegation: append the cheap progressive-
         // disclosure block (each enabled skill's name + description) and the

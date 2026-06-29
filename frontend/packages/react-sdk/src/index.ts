@@ -127,6 +127,8 @@ export { useGenerativeUI } from "./hooks/use-turing-generative-ui";
 export type { UseGenerativeUIReturn } from "./hooks/use-turing-generative-ui";
 export { useAnswerAsApp } from "./hooks/use-turing-answer-as-app";
 export type { UseAnswerAsAppReturn } from "./hooks/use-turing-answer-as-app";
+export { useCoBrowseSearch } from "./hooks/use-turing-co-browse";
+export type { UseCoBrowseReturn } from "./hooks/use-turing-co-browse";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,

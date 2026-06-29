@@ -103,6 +103,23 @@ public class TurAIAgent implements Serializable {
     private boolean answerAsAppEnabled = false;
 
     /**
+     * T443 / §XXIII.2 — per-agent opt-in for "co-browse": built-in client tools
+     * ({@code set_search_query}, {@code toggle_facet}, {@code clear_facets},
+     * {@code set_sort}, {@code set_page}) that let the agent drive the host page's
+     * REAL search UI (query, facet checkboxes, sort, page) instead of replying in
+     * a parallel box — "filter to the red ones under R$50" flips the actual
+     * facets and updates the URL. When {@code true} the built-in tools are folded
+     * into the advertised client-tool set (T438 park/resume) and the system
+     * prompt gains {@code prompts/co-browse.md}. Independent of
+     * {@link #clientToolsEnabled}. Default {@code false} keeps existing agents
+     * byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "co_browse_enabled", nullable = false)
+    private boolean coBrowseEnabled = false;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,

@@ -13,6 +13,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
+
 /**
  * T442 / §XXIII.1 — the built-in "answer-as-an-app" generative-UI client tools.
  *
@@ -34,7 +36,12 @@ import org.springframework.stereotype.Component;
  * @since 2026.3.4
  */
 @Component
-public class TurAnswerAsAppClientTools {
+public class TurAnswerAsAppClientTools implements TurBuiltInClientToolProvider {
+
+    @Override
+    public boolean appliesTo(TurAIAgent agent) {
+        return agent != null && agent.isAnswerAsAppEnabled();
+    }
 
     /** Stable tool/component name: a side-by-side comparison table. */
     public static final String COMPARISON_TABLE = "comparison_table";
@@ -159,6 +166,7 @@ public class TurAnswerAsAppClientTools {
                     CONFIGURATOR_SCHEMA));
 
     /** The built-in answer-as-app client-tool declarations (immutable). */
+    @Override
     public List<TurClientTool> declarations() {
         return declarations;
     }

@@ -19,8 +19,8 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 class TurClientToolServiceTest {
 
-    private final TurAnswerAsAppClientTools answerAsAppClientTools = new TurAnswerAsAppClientTools();
-    private final TurClientToolService service = new TurClientToolService(answerAsAppClientTools);
+    private final TurClientToolService service = new TurClientToolService(
+            List.of(new TurAnswerAsAppClientTools(), new TurCoBrowseClientTools()));
 
     private static TurAIAgent agent(boolean enabled, String json) {
         TurAIAgent agent = new TurAIAgent();
@@ -130,6 +130,46 @@ class TurClientToolServiceTest {
     void answerAsAppDisabledByDefault() {
         TurAIAgent a = agent(false, null);
         assertThat(service.isEnabled(a)).isFalse();
+        assertThat(service.declarations(a)).isEmpty();
+    }
+
+    // --- T443 co-browse built-in tools ---
+
+    @Test
+    void coBrowseFlagAdvertisesBuiltInToolsWithoutCustomDeclarations() {
+        TurAIAgent a = agent(false, null);
+        a.setCoBrowseEnabled(true);
+
+        assertThat(service.isEnabled(a)).isTrue();
+        assertThat(service.namesFor(a)).containsExactly(
+                TurCoBrowseClientTools.SET_SEARCH_QUERY,
+                TurCoBrowseClientTools.TOGGLE_FACET,
+                TurCoBrowseClientTools.CLEAR_FACETS,
+                TurCoBrowseClientTools.SET_SORT,
+                TurCoBrowseClientTools.SET_PAGE);
+        assertThat(service.buildToolCallbacks(a)).hasSize(5);
+    }
+
+    @Test
+    void answerAsAppAndCoBrowseComposeIndependently() {
+        TurAIAgent a = agent(false, null);
+        a.setAnswerAsAppEnabled(true);
+        a.setCoBrowseEnabled(true);
+
+        assertThat(service.namesFor(a)).containsExactly(
+                TurAnswerAsAppClientTools.COMPARISON_TABLE,
+                TurAnswerAsAppClientTools.SPEC_CARD,
+                TurAnswerAsAppClientTools.CONFIGURATOR,
+                TurCoBrowseClientTools.SET_SEARCH_QUERY,
+                TurCoBrowseClientTools.TOGGLE_FACET,
+                TurCoBrowseClientTools.CLEAR_FACETS,
+                TurCoBrowseClientTools.SET_SORT,
+                TurCoBrowseClientTools.SET_PAGE);
+    }
+
+    @Test
+    void coBrowseDisabledByDefault() {
+        TurAIAgent a = agent(false, null);
         assertThat(service.declarations(a)).isEmpty();
     }
 }

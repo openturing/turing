@@ -2305,15 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.2 Co-browse the search UI — the agent drives the real page (T443)
-
-Slots already sync agent↔UI state; client tools (T438) let the agent mutate the
-**host page's actual filters**. "filtra pros vermelhos abaixo de R$50" flips the
-real facet checkboxes and updates the URL (`useTuringUrlSearch`). The chat stops
-being a parallel box and becomes a remote control for the page the user is
-already looking at — a demo that instantly explains why search+agent together
-beats either alone. → builds on T438/T439, `useTuringUrlSearch`.
-
 ### XXIII.3 Conversational glass-box ranking (T444)
 
 Ranking explainability (T389) exists as data; make it dialogable. "por que esse
