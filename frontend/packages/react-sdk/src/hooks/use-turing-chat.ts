@@ -15,6 +15,12 @@ import {
   TUR_SESSION_DEFAULT_TTL_SECONDS,
   getOrCreateTurSession,
 } from "../core/session";
+import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../core/analytics";
+import {
+  createAbandonmentWatcher,
+  type AbandonmentOptions,
+  type AbandonmentWatcher,
+} from "../core/analytics-lifecycle";
 import type {
   ClientToolHandler,
   ClientToolRegistration,
@@ -197,6 +203,23 @@ export interface UseTuringChatOptions {
    * @since 2026.3.4
    */
   readonly clientTools?: Record<string, ClientToolRegistration>;
+  /**
+   * T463 (Block Z) — canonical analytics bus (from {@link useTuringAnalytics}).
+   * When set, the hook emits `turing_chat_start` (first user message),
+   * `turing_chat_message_sent` (every send), and — unless disabled via
+   * {@link abandonment} — `turing_chat_abandoned` on tab hide / unload / idle.
+   * A native form submit emits `turing_chat_lead_captured`. No-op when absent.
+   *
+   * @since 2026.3.6
+   */
+  readonly analytics?: TuringAnalytics;
+  /**
+   * T463 — tune (or disable, with `false`) the abandonment watcher. Defaults on
+   * when {@link analytics} is set. See {@link AbandonmentOptions}.
+   *
+   * @since 2026.3.6
+   */
+  readonly abandonment?: AbandonmentOptions | boolean;
 }
 
 export interface UseTuringChatReturn {
@@ -460,7 +483,44 @@ export function useTuringChat(
     locale: localeOverride,
     conversationId: controlledConversationId,
     initialMessages,
+    analytics,
+    abandonment,
   } = options;
+
+  // T463 — analytics lifecycle bookkeeping, ref-based so the stable `send`
+  // callback never rebuilds. `chatStarted` gates the once-per-conversation
+  // start event; `userTurns` rides on every event; the watcher + guards drive
+  // abandonment (T460).
+  const chatStartedRef = useRef(false);
+  const userTurnsRef = useRef(0);
+  const convertedRef = useRef(false);
+  const abandonmentFiredRef = useRef(false);
+  const convStartedAtRef = useRef(0);
+  const watcherRef = useRef<AbandonmentWatcher | null>(null);
+  const analyticsRef = useRef<TuringAnalytics | undefined>(analytics);
+  analyticsRef.current = analytics;
+  const abandonmentEnabledRef = useRef(false);
+  abandonmentEnabledRef.current = Boolean(analytics) && abandonment !== false;
+  const abandonmentOptionsRef = useRef<AbandonmentOptions>({});
+  abandonmentOptionsRef.current = typeof abandonment === "object" ? abandonment : {};
+
+  const fireAbandonment = useCallback((reason: string) => {
+    const bus = analyticsRef.current;
+    if (!bus || abandonmentFiredRef.current || convertedRef.current || userTurnsRef.current < 1) {
+      return;
+    }
+    abandonmentFiredRef.current = true;
+    bus.emit(TURING_ANALYTICS_EVENTS.chatAbandoned, {
+      reason,
+      turns: userTurnsRef.current,
+      last_step: userTurnsRef.current,
+      elapsed_ms: convStartedAtRef.current ? Date.now() - convStartedAtRef.current : undefined,
+    });
+  }, []);
+
+  // Release the watcher on unmount.
+  useEffect(() => () => watcherRef.current?.stop(), []);
+
   // T73: forced A/B variant. Explicit option wins; otherwise auto-detect the
   // `?_ab_variant=<label>` URL param unless the caller opted out.
   const optForcedVariant = options.forcedVariant;
@@ -731,6 +791,26 @@ export function useTuringChat(
         setConversationId(activeConversationId);
       }
 
+      // T463 — emit chat lifecycle events + keep the bus context in sync.
+      const bus = analyticsRef.current;
+      if (bus) {
+        bus.setContext({ conversationId: activeConversationId, sessionId: activeConversationId });
+        userTurnsRef.current += 1;
+        if (!chatStartedRef.current) {
+          chatStartedRef.current = true;
+          convStartedAtRef.current = Date.now();
+          bus.emit(TURING_ANALYTICS_EVENTS.chatStart, { mode: agentId ? "agent" : "site" });
+          if (abandonmentEnabledRef.current && !watcherRef.current) {
+            watcherRef.current = createAbandonmentWatcher(fireAbandonment, abandonmentOptionsRef.current);
+          }
+        }
+        bus.emit(TURING_ANALYTICS_EVENTS.chatMessageSent, {
+          turn: userTurnsRef.current,
+          length: content.length,
+        });
+        watcherRef.current?.ping();
+      }
+
       // A fresh user turn supersedes any pending native form (T107).
       setActiveForm(null);
 
@@ -747,7 +827,7 @@ export function useTuringChat(
       );
     },
     [agentId, agentLlmInstanceId, controlledConversationId, beginSend, commitMessages,
-      messagesRef, runAssistantTurn],
+      messagesRef, runAssistantTurn, fireAbandonment],
   );
 
   const submitForm = useCallback(
@@ -780,6 +860,17 @@ export function useTuringChat(
       }
       if (isStale(requestId)) return result;
 
+      // T463 — a native form capture (T107) is a conversion. Emit once and mark
+      // converted so abandonment never fires afterwards.
+      const bus = analyticsRef.current;
+      if (bus && !convertedRef.current) {
+        convertedRef.current = true;
+        bus.emit(TURING_ANALYTICS_EVENTS.chatLeadCaptured, {
+          reason: "form",
+          turns: userTurnsRef.current,
+        });
+      }
+
       const effectiveLlmInstanceId =
         overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
       const wire: TurChatConversationMessage[] = messagesRef.current.map((m) => ({
@@ -801,6 +892,15 @@ export function useTuringChat(
   // extra cleanup drops any pending native form (T107).
   const reset = useCallback(() => {
     core.reset(() => setActiveForm(null));
+    // T463 — a reset starts a fresh conversation: re-arm the lifecycle so the
+    // start/abandonment events track the new session from scratch.
+    watcherRef.current?.stop();
+    watcherRef.current = null;
+    chatStartedRef.current = false;
+    userTurnsRef.current = 0;
+    convertedRef.current = false;
+    abandonmentFiredRef.current = false;
+    convStartedAtRef.current = 0;
   }, [core]);
 
   // Drop server-side flow state. Site mode clears every flow attached to

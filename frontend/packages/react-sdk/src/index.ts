@@ -102,7 +102,7 @@ export { resolveDocuments, resolveGroups } from "./core/resolve";
 
 // ── Hooks ──
 export { useTuringSearch } from "./hooks/use-turing-search";
-export type { UseTuringSearchReturn } from "./hooks/use-turing-search";
+export type { UseTuringSearchReturn, UseTuringSearchOptions } from "./hooks/use-turing-search";
 export { useTuringAutoComplete } from "./hooks/use-turing-autocomplete";
 export type { UseTuringAutoCompleteReturn } from "./hooks/use-turing-autocomplete";
 export { useTuringSortOptions } from "./hooks/use-turing-sort-options";
@@ -147,6 +147,37 @@ export type {
   UseTuringLlmChatOptions,
   LlmSendOverrides,
 } from "./hooks/use-turing-llm-chat";
+
+// ── Analytics (Block Z, T463) ──
+export { useTuringAnalytics } from "./hooks/use-turing-analytics";
+export type {
+  UseTuringAnalyticsOptions,
+  UseTuringAnalyticsReturn,
+} from "./hooks/use-turing-analytics";
+export {
+  createTuringAnalytics,
+  TURING_ANALYTICS_EVENTS,
+} from "./core/analytics";
+export type {
+  TuringAnalytics,
+  TuringAnalyticsOptions,
+  TuringAnalyticsContext,
+  TuringAnalyticsEvent,
+  TuringAnalyticsEventName,
+  TuringAnalyticsSink,
+  TuringAnalyticsValue,
+} from "./core/analytics";
+export { googleAnalyticsSink, onEventSink, debugSink } from "./core/analytics-sinks";
+export type {
+  GoogleAnalyticsSinkOptions,
+  DebugSinkOptions,
+} from "./core/analytics-sinks";
+export { createAbandonmentWatcher } from "./core/analytics-lifecycle";
+export type {
+  AbandonmentOptions,
+  AbandonmentReason,
+  AbandonmentWatcher,
+} from "./core/analytics-lifecycle";
 export { useTuringSemanticChat } from "./hooks/use-turing-semantic-chat";
 export type {
   UseTuringSemanticChatReturn,

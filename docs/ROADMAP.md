@@ -232,12 +232,16 @@
 > same shape as the AG-UI adapter bet (T441). Keeps the SDK zero-dep / EDS-friendly.
 > → §XXV
 
-- 💭 **T458** (deps: T404) **SDK analytics event bus** — zero-dep `createTuringAnalytics()` emitter + canonical event taxonomy (`turing_chat_start`/`_message_sent`/`_step`/`_lead_captured`/`_abandoned`/`_handoff`, `turing_ab_variant_assigned`, `turing_search`/`_no_results`/`_result_click`); chat/search/slots controllers feed it via an injected `analytics` option. No-op when absent → existing embeds unchanged. → §XXV.1
-- 💭 **T459** (deps: T458) **Pluggable sinks + GA4/GTM adapter** — `googleAnalyticsSink()` mapping canonical events → GA4 `gtag('event', …)` **and** GTM `dataLayer.push`, auto-detecting an existing `window.gtag`/`window.dataLayer` (EDS sites light up with zero config); plus a generic `onEvent` sink (Segment/Matomo/Plausible later) and a `debug` console sink. → §XXV.2
-- 💭 **T460** (deps: T458) **Client-side abandonment & engagement detection** — `visibilitychange`/`beforeunload`/idle-timer + `navigator.sendBeacon`: a started conversation (≥1 user msg) that ends without a conversion emits `turing_chat_abandoned` carrying the **last node/step reached** and turn count — the browser truth the server only infers via TTL. → §XXV.3
-- 💭 **T461** (deps: T458, T69) **Conversion + funnel-step events & A/B attribution** — `turing_chat_step` per flow node reached (client mirror of the T85 funnel); `turing_chat_lead_captured` from configurable **goal slots** + form submit (T107) + server `outcome=CAPTURED`; **expose `personaId`** (and active persona name) on `GET /chat/state` and **stamp `experiment_key`/`variant_label`/`persona_id` on every event** → "which persona variation converted" answered natively in GA4. → §XXV.4
-- 💭 **T462** (deps: T458, T405) **Search / semantic-navigation conversion events** — `turing_search`, `turing_search_no_results` (= client-side content-gap signal, feeds T252), `turing_search_result_click` (mirrors the existing `postClick` CTR in one call), `turing_search_refined`; **cross-surface session stitching** via the `TUR_SESSION` cookie so a chat lead attributes back to the originating search query. → §XXV.5
-- 💭 **T463** (deps: T459, T461, T462) **React hook + showcase/EDS wiring + docs** — `useTuringAnalytics()` in the react-sdk + react-ui passthrough; wire the GA4 search→chat→lead funnel into the Block Y showcase (T455/T456) and an EDS example block (auto-detecting the host `dataLayer`); `docs-turing` page on the event taxonomy + GA4 funnel/audience recipes. → §XXV.6
+> **Block complete (2026-06-29).** All six tasks shipped (T458–T463) — the
+> zero-dep canonical event bus + taxonomy (T458), GA4/GTM + generic + debug
+> sinks with `window.gtag`/`dataLayer` auto-detect (T459), client-side
+> abandonment via `sendBeacon`/`transport_type: 'beacon'` (T460), conversion +
+> funnel-step + A/B attribution with `personaId` on `GET /chat/state` (T461),
+> search/semantic-navigation events + `TUR_SESSION` stitching (T462), and the
+> `useTuringAnalytics()` React hook + `TuringResultList` passthrough + EDS
+> example + docs (T463). See [CHANGELOG.md](CHANGELOG.md) → Block Z. No active
+> backlog remains. (A `docs-turing` taxonomy/funnel-recipes page lives in the
+> sibling `vigletdocs.github.io` repo.)
 
 ## Block AA — Synthetic personas: audience-fit content evaluation & persona synthesis from audio (T464–T472)
 

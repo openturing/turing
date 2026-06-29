@@ -70,6 +70,47 @@ unsubscribe(); // clean up when your component/block tears down
 `createChatController` and `createSlotsController` additionally expose a
 `destroy()` to abort in-flight requests, timers, and SSE subscriptions.
 
+## Analytics & the Google Analytics bridge (Block Z)
+
+Measure conversion, abandonment and "which persona A/B variation was preferred"
+**in the browser**, where it lives next to your acquisition source and audiences.
+The SDK ships a zero-dependency canonical event bus + **pluggable sinks** — GA4
+is the first adapter, not a hard dependency, so the SDK stays EDS-friendly.
+
+```js
+import {
+  createTuringClient, createTuringAnalytics, googleAnalyticsSink,
+  createSearchController, createChatController,
+} from "@viglet/turing-sdk";
+
+const analytics = createTuringAnalytics({
+  sinks: [googleAnalyticsSink()], // auto-detects window.gtag / dataLayer
+  context: { site: "my-site" },
+});
+
+const client = createTuringClient({ baseURL: "/api" });
+createSearchController(client, { site: "my-site" }, undefined, { analytics });
+createChatController(client, { site: "my-site", analytics, goalSlots: ["email"] });
+```
+
+**Canonical events** (vendor-neutral; sinks map them verbatim):
+
+| Event | Fired when |
+|-------|-----------|
+| `turing_chat_start` / `turing_chat_message_sent` | conversation begins / each user turn |
+| `turing_chat_step` | a flow node is reached (client mirror of the server funnel) |
+| `turing_chat_lead_captured` | a goal slot is written or a native form (T107) is submitted |
+| `turing_chat_abandoned` | a started, unconverted conversation ends (tab hide / unload / idle) — the signal the server can't see |
+| `turing_ab_variant_assigned` | the A/B arm resolves; `experiment_key` / `variant_label` / `persona_id` then ride on **every** event |
+| `turing_search` / `_no_results` / `_result_click` / `_refined` | search lifecycle (`_no_results` is a content-gap signal) |
+
+**Sinks**: `googleAnalyticsSink({ measurementId?, transport? })` (GA4 `gtag` +
+GTM `dataLayer`, auto-detected), `onEventSink(fn)` (Segment/Matomo/Plausible),
+`debugSink()` (console). The bus is **no-op when no `analytics` option is
+passed**, so existing embeds are unchanged. Cross-surface `search → chat → lead`
+stitching is automatic via the shared `TUR_SESSION` cookie. In React, use
+`useTuringAnalytics()` from `@viglet/turing-react-sdk`.
+
 ## CSRF & cross-origin
 
 The Turing backend uses Spring Security's `CookieCsrfTokenRepository`, which
