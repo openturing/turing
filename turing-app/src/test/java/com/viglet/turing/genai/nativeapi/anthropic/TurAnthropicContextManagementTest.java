@@ -60,4 +60,31 @@ class TurAnthropicContextManagementTest {
         // Raw form mirrors the typed config for the non-beta Messages builder.
         assertThat(cm.rawConfig(options)).isPresent();
     }
+
+    @Test
+    void compactionAddsCompactEditAndBeta() {
+        Options options = new Options(false, true);
+        BetaContextManagementConfig config = cm.betaConfig(options).orElseThrow();
+        assertThat(config.edits().orElseThrow()).hasSize(1);
+        assertThat(config.edits().orElseThrow().get(0).isCompact20260112()).isTrue();
+
+        // Compaction rides both betas (context-management + compact).
+        assertThat(cm.betas(options)).contains(AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27).hasSize(2);
+        assertThat(cm.rawBetaTokens(options))
+                .containsExactlyInAnyOrder(TurAnthropicContextManagement.CONTEXT_MGMT_BETA_TOKEN,
+                        TurAnthropicContextManagement.COMPACTION_BETA_TOKEN);
+    }
+
+    @Test
+    void turingCompressionPrecedenceDisablesCompactionOnly() {
+        String json = "{\"context-editing\":\"true\",\"compaction\":\"true\"}";
+        // T115 compression off → both levers honored.
+        Options without = cm.resolve(json, false);
+        assertThat(without.contextEditing()).isTrue();
+        assertThat(without.compaction()).isTrue();
+        // T115 compression on → compaction forced off, context editing untouched.
+        Options with = cm.resolve(json, true);
+        assertThat(with.contextEditing()).isTrue();
+        assertThat(with.compaction()).isFalse();
+    }
 }

@@ -264,7 +264,8 @@ public class TurNativeChatExecutor {
             // (context editing / compaction) once; passed to every Anthropic
             // native path so a turn prunes/summarizes server-side identically.
             TurAnthropicContextManagement.Options ctxOptions =
-                    anthropicContextManagement.resolve(agent.getRequestOptionsJson());
+                    anthropicContextManagement.resolve(agent.getRequestOptionsJson(),
+                            agent.isChatMemoryCompressionEnabled());
             // T143 / §X.4.e — computer_use is a multi-turn screenshot/action loop,
             // not a one-shot server tool (and uses the beta Messages API), so it
             // owns the whole turn when enabled — exactly like the OpenAI variant.

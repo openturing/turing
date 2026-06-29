@@ -1467,15 +1467,21 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.9 Memory tool + context editing (T163–T166)
+### X.9 Memory tool + context editing (T166)
 
-Anthropic ships three independent context-management features that
-each solve a different long-conversation pain:
+The shipped half of this block (T163 memory tool, T164 context editing,
+T165 compaction — see CHANGELOG) gives Claude durable per-conversation
+memory plus server-side context pruning/summarization. The one remaining
+idea:
 
-- **Compaction (T165)** — server-side summarization of older turns.
-  Coordinates with Turing's T115 (workspace-stored compression):
-  when both are enabled, Turing wins precedence (audit trail), Anthropic
-  disabled to avoid double-summarization.
+- **Per-user persistent persona memory (T166)** — `memoryScope=user` points
+  the T163 memory tool at a per-Keycloak-`sub` file area instead of the
+  per-conversation workspace, so Claude accumulates stable user preferences
+  ("Alex prefers terse answers", "Alex's locale is pt-BR") across every
+  conversation. Surfaced via a "What this agent remembers about you"
+  disclosure with a "Forget all" button (LGPD-ready). Distinct from the
+  T446 fact store: this is the file-based Anthropic memory tool scoped to
+  the user, not the structured `remember_fact`/`recall_user_memory` tools.
 
 ### X.10 Stored Completions + Evals + Distillation flywheel (T167–T170)
 

@@ -25,6 +25,7 @@ import org.springframework.util.StringUtils;
 import com.anthropic.core.JsonValue;
 import com.anthropic.models.beta.AnthropicBeta;
 import com.anthropic.models.beta.messages.BetaClearToolUses20250919Edit;
+import com.anthropic.models.beta.messages.BetaCompact20260112Edit;
 import com.anthropic.models.beta.messages.BetaContextManagementConfig;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 
@@ -65,6 +66,8 @@ public class TurAnthropicContextManagement {
 
     /** Beta flag that gates {@code context_management} (context editing + compaction). */
     static final String CONTEXT_MGMT_BETA_TOKEN = "context-management-2025-06-27";
+    /** T165 — additional beta flag the {@code compact_20260112} edit requires. */
+    static final String COMPACTION_BETA_TOKEN = "compact-2026-01-12";
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -85,16 +88,30 @@ public class TurAnthropicContextManagement {
 
     /**
      * Resolve the agent's context-management options from its
-     * {@code requestOptionsJson} (values stored as strings by the registry UI).
-     * {@code null}/blank → {@link Options#NONE} (unchanged path).
+     * {@code requestOptionsJson}, with the Turing-side compression off (no T115
+     * precedence to apply).
      */
     public Options resolve(String requestOptionsJson) {
+        return resolve(requestOptionsJson, false);
+    }
+
+    /**
+     * Resolve the agent's context-management options from its
+     * {@code requestOptionsJson} (values stored as strings by the registry UI).
+     * {@code null}/blank → {@link Options#NONE} (unchanged path).
+     *
+     * <p>T165 / §X.9.c — when Turing-side memory compression (T115) is enabled on
+     * the agent, Anthropic compaction is forced <b>off</b> so the two don't
+     * double-summarize; Turing's compression wins (it keeps the audit trail in the
+     * workspace). Context editing is independent and unaffected.
+     */
+    public Options resolve(String requestOptionsJson, boolean turingCompressionEnabled) {
         if (!StringUtils.hasText(requestOptionsJson)) {
             return Options.NONE;
         }
         Map<String, Object> opts = optionsParser.parse(requestOptionsJson);
-        return new Options(truthy(opts.get(CONTEXT_EDITING_OPTION)),
-                truthy(opts.get(COMPACTION_OPTION)));
+        boolean compaction = !turingCompressionEnabled && truthy(opts.get(COMPACTION_OPTION));
+        return new Options(truthy(opts.get(CONTEXT_EDITING_OPTION)), compaction);
     }
 
     /** Typed config for the beta Messages builder ({@code .contextManagement(...)}). */
@@ -106,7 +123,9 @@ public class TurAnthropicContextManagement {
         if (options.contextEditing()) {
             builder.addEdit(BetaClearToolUses20250919Edit.builder().build());
         }
-        // T165 wires the compaction edit here.
+        if (options.compaction()) {
+            builder.addEdit(BetaCompact20260112Edit.builder().build());
+        }
         return Optional.of(builder.build());
     }
 
@@ -115,7 +134,12 @@ public class TurAnthropicContextManagement {
         if (options == null || !options.any()) {
             return Set.of();
         }
-        return Set.of(AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27);
+        Set<AnthropicBeta> betas = new LinkedHashSet<>();
+        betas.add(AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27);
+        if (options.compaction()) {
+            betas.add(AnthropicBeta.of(COMPACTION_BETA_TOKEN));
+        }
+        return betas;
     }
 
     /**
@@ -130,7 +154,9 @@ public class TurAnthropicContextManagement {
         if (options.contextEditing()) {
             edits.add(Map.of("type", "clear_tool_uses_20250919"));
         }
-        // T165 wires the compact edit here.
+        if (options.compaction()) {
+            edits.add(Map.of("type", "compact_20260112"));
+        }
         return Optional.of(JsonValue.from(Map.of("edits", edits)));
     }
 
@@ -139,7 +165,12 @@ public class TurAnthropicContextManagement {
         if (options == null || !options.any()) {
             return Set.of();
         }
-        return new LinkedHashSet<>(List.of(CONTEXT_MGMT_BETA_TOKEN));
+        Set<String> tokens = new LinkedHashSet<>();
+        tokens.add(CONTEXT_MGMT_BETA_TOKEN);
+        if (options.compaction()) {
+            tokens.add(COMPACTION_BETA_TOKEN);
+        }
+        return tokens;
     }
 
     private static boolean truthy(Object value) {

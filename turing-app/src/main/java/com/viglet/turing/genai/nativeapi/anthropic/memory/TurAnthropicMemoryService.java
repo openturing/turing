@@ -13,9 +13,11 @@
 package com.viglet.turing.genai.nativeapi.anthropic.memory;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -165,7 +167,6 @@ public class TurAnthropicMemoryService {
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(config.model())
                 .maxTokens(config.maxTokens())
-                .addBeta(AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27)
                 .addTool(memoryTool)
                 .messages(conversation);
         if (StringUtils.hasText(systemPrompt)) {
@@ -174,8 +175,13 @@ public class TurAnthropicMemoryService {
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
         }
-        // T164/T165 — opt-in context editing / compaction. The memory loop already
-        // sends the context-management beta, so only the config needs attaching.
+        // The memory tool always needs the context-management beta; T164/T165 add
+        // the opt-in context-editing / compaction edits (and the compaction beta)
+        // on top. A LinkedHashSet dedups the shared context-management flag.
+        Set<AnthropicBeta> betas = new LinkedHashSet<>();
+        betas.add(AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27);
+        betas.addAll(contextManagement.betas(contextOptions));
+        betas.forEach(builder::addBeta);
         contextManagement.betaConfig(contextOptions).ifPresent(builder::contextManagement);
         return builder.build();
     }
