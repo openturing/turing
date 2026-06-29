@@ -111,9 +111,13 @@ public class TurNativeChatExecutor {
     private final TurAnthropicContextManagement anthropicContextManagement;
     private final TurAgentMemoryScopeResolver memoryScopeResolver;
     private final TurStoredCompletionsService storedCompletionsService;
+    private final com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService
+            nativeDocumentGroundingService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
+    /** T176 / §X.12.b — request-option key for native PDF grounding. */
+    private static final String REQUEST_OPTION_NATIVE_PDF = "native-pdf";
     /** T152 — how many passages to attach as document blocks when citations are on. */
     private static final int CITATION_TOP_K = 5;
 
@@ -137,7 +141,9 @@ public class TurNativeChatExecutor {
             com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver,
             TurAnthropicContextManagement anthropicContextManagement,
             TurAgentMemoryScopeResolver memoryScopeResolver,
-            TurStoredCompletionsService storedCompletionsService) {
+            TurStoredCompletionsService storedCompletionsService,
+            com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService
+                    nativeDocumentGroundingService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -159,6 +165,7 @@ public class TurNativeChatExecutor {
         this.anthropicContextManagement = anthropicContextManagement;
         this.memoryScopeResolver = memoryScopeResolver;
         this.storedCompletionsService = storedCompletionsService;
+        this.nativeDocumentGroundingService = nativeDocumentGroundingService;
     }
 
     /**
@@ -186,10 +193,15 @@ public class TurNativeChatExecutor {
         // Gated strictly on requestOptionsJson, so it stays opt-in and never
         // changes existing agents (null/false → unchanged).
         boolean citationsEnabled = isAnthropic && isCitationsEnabled(agent);
+        // T176 / §X.12.b — native PDF grounding rides the same Anthropic document
+        // path as citations (and pairs with it). Either option forces the document
+        // path; both stay opt-in (null/false → unchanged).
+        boolean nativePdfEnabled = isAnthropic && isNativePdfEnabled(agent);
+        boolean groundWithDocuments = citationsEnabled || nativePdfEnabled;
 
         List<EnabledCapability> instanceCapabilities =
                 capabilityService.enabledFor(instance.getId(), pluginType);
-        if (instanceCapabilities.isEmpty() && !citationsEnabled) {
+        if (instanceCapabilities.isEmpty() && !groundWithDocuments) {
             return Optional.empty();
         }
 
@@ -201,7 +213,7 @@ public class TurNativeChatExecutor {
         NativeSelection selection = legacy
                 ? null
                 : capabilityResolver.resolve(agent.getNativeCapabilities(), instanceCapabilities);
-        if (selection != null && selection.isEmpty() && !citationsEnabled) {
+        if (selection != null && selection.isEmpty() && !groundWithDocuments) {
             // The agent opted in but none of its picks are enabled on this
             // instance — defer to the Spring AI path (which runs the agent's
             // normal tool set) rather than a native turn with no capabilities.
@@ -330,9 +342,22 @@ public class TurNativeChatExecutor {
             // them so the Messages service attaches them as document blocks and
             // streams per-sentence citations back. Empty (RAG off / no hits) =
             // an uncited turn, identical to the pre-T152 path.
-            List<TurCitationDocument> citationDocuments = citationsEnabled
-                    ? ragSearchToolService.retrievePassagesForCitations(lastUserMessage, CITATION_TOP_K)
-                    : List.of();
+            // T152 — text passages for citations. T176 / §X.12.b — when native PDF
+            // grounding is on, retrieve the raw hits and let the grounding service
+            // swap PDF-backed passages for native base64 PDF document blocks (the
+            // bridge caches the vendor file_id along the way).
+            List<TurCitationDocument> citationDocuments;
+            if (nativePdfEnabled) {
+                List<org.springframework.ai.document.Document> rawDocs =
+                        ragSearchToolService.retrieveRawForCitations(lastUserMessage, CITATION_TOP_K);
+                citationDocuments = nativeDocumentGroundingService
+                        .buildCitationDocuments(rawDocs, instance);
+            } else if (citationsEnabled) {
+                citationDocuments =
+                        ragSearchToolService.retrievePassagesForCitations(lastUserMessage, CITATION_TOP_K);
+            } else {
+                citationDocuments = List.of();
+            }
 
             // The remaining Anthropic server-side tools (web_search, web_fetch,
             // code_execution) execute inside Anthropic's infrastructure and return
@@ -463,11 +488,25 @@ public class TurNativeChatExecutor {
      * options or any other value → disabled.
      */
     private boolean isCitationsEnabled(TurAIAgent agent) {
+        return isRequestOptionTrue(agent, REQUEST_OPTION_CITATIONS);
+    }
+
+    /**
+     * T176 / §X.12.b — read the {@code native-pdf} boolean from the agent's
+     * {@code requestOptionsJson}. Opt-in; {@code null}/any non-true value →
+     * disabled (unchanged text grounding).
+     */
+    private boolean isNativePdfEnabled(TurAIAgent agent) {
+        return isRequestOptionTrue(agent, REQUEST_OPTION_NATIVE_PDF);
+    }
+
+    /** True when {@code requestOptionsJson[key]} stores the string/boolean {@code true}. */
+    private boolean isRequestOptionTrue(TurAIAgent agent, String key) {
         String json = agent.getRequestOptionsJson();
         if (!StringUtils.hasText(json)) {
             return false;
         }
-        Object value = optionsParser.parse(json).get(REQUEST_OPTION_CITATIONS);
+        Object value = optionsParser.parse(json).get(key);
         return value != null && "true".equalsIgnoreCase(value.toString().trim());
     }
 

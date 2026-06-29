@@ -71,6 +71,7 @@ class TurNativeChatExecutorTest {
     @Mock private com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory mcpFederationDirectory;
     @Mock private com.viglet.turing.genai.tool.TurRagSearchToolService ragSearchToolService;
     @Mock private com.viglet.turing.genai.citation.TurCitationDriftService citationDriftService;
+    @Mock private com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService nativeDocumentGroundingService;
     @Mock private com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement anthropicContextManagement;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
@@ -104,7 +105,7 @@ class TurNativeChatExecutorTest {
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
-                memoryScopeResolver, storedCompletionsService);
+                memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService);
     }
 
     @BeforeEach

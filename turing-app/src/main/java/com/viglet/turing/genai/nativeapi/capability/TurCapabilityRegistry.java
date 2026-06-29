@@ -118,6 +118,11 @@ public class TurCapabilityRegistry {
                     TurCapabilityProvider.OPENAI, "Cost & Tier", VALUE_BOOLEAN, List.of()),
             requestOption("citations", "Citations", "Return per-sentence source citations.",
                     TurCapabilityProvider.ANTHROPIC, "Provenance", VALUE_BOOLEAN, List.of()),
+            requestOption("native-pdf", "Native PDF Grounding",
+                    "Send retrieved PDFs to Claude as native documents (tables, layout and "
+                            + "figures preserved) for page-accurate citations, instead of "
+                            + "Tika-extracted text only. Pairs with Citations.",
+                    TurCapabilityProvider.ANTHROPIC, "Provenance", VALUE_BOOLEAN, List.of()),
             requestOption("context-editing", "Context Editing",
                     "Let the provider prune stale context automatically.",
                     TurCapabilityProvider.ANTHROPIC, "Context", VALUE_BOOLEAN, List.of()),

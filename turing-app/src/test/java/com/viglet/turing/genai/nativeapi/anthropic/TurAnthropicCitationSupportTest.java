@@ -75,6 +75,25 @@ class TurAnthropicCitationSupportTest {
     }
 
     @Test
+    void documentBlocksEmitBase64PdfSourceForNativePdf() {
+        // T176 / §X.12.b — a passage carrying a native PDF must become a base64
+        // PDF document block (not the text source), with citations enabled so
+        // Claude returns page-location citations.
+        String base64 = java.util.Base64.getEncoder()
+                .encodeToString("%PDF-1.7".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        List<TurCitationDocument> docs = List.of(
+                new TurCitationDocument("doc-a", "Report", "/u", "tika fallback text")
+                        .withNativePdf(new TurCitationDocument.NativePdf(base64, "application/pdf", "file_1")));
+
+        DocumentBlockParam block = support.documentBlocks(docs).get(0).document().orElseThrow();
+
+        assertThat(block.citations().orElseThrow().enabled()).contains(true);
+        assertThat(block.title()).contains("Report");
+        assertThat(block.source().isBase64()).isTrue();
+        assertThat(block.source().asBase64().data()).isEqualTo(base64);
+    }
+
+    @Test
     void searchResultBlocksEnableCitationsAndCarrySourceTitleContent() {
         List<ContentBlockParam> blocks = support.searchResultBlocks(DOCS);
 

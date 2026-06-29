@@ -368,8 +368,16 @@ public class TurAnthropicMessagesService {
                 continue;
             }
             if (i == lastUserIdx) {
-                List<ContentBlockParam> blocks = new ArrayList<>(
-                        citationSupport.searchResultBlocks(citationDocuments));
+                // T176 / §X.12.b — when any passage carries a native PDF, send the
+                // whole batch as {@code document} blocks (base64 PDF for the
+                // PDF-backed ones, text for the rest) so block types stay uniform
+                // and the citation indices line up; otherwise the T153
+                // {@code search_result} blocks (the default citation path).
+                boolean nativePdf = citationDocuments.stream()
+                        .anyMatch(TurCitationDocument::hasNativePdf);
+                List<ContentBlockParam> blocks = new ArrayList<>(nativePdf
+                        ? citationSupport.documentBlocks(citationDocuments)
+                        : citationSupport.searchResultBlocks(citationDocuments));
                 blocks.add(ContentBlockParam.ofText(
                         TextBlockParam.builder().text(message.content()).build()));
                 conversation.add(MessageParam.builder()

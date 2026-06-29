@@ -104,10 +104,17 @@ public class TurAnthropicCitationSupport {
             return blocks;
         }
         for (TurCitationDocument doc : documents) {
-            String text = doc.text() == null || doc.text().isBlank() ? " " : doc.text();
             DocumentBlockParam.Builder builder = DocumentBlockParam.builder()
-                    .textSource(text)
                     .citations(CitationsConfigParam.builder().enabled(true).build());
+            // T176 / §X.12.b — a PDF-backed passage becomes a native base64 PDF
+            // document block (Claude reads layout/tables/figures and cites by
+            // page); everything else stays a plain text source (pre-T176 path).
+            if (doc.hasNativePdf()) {
+                builder.base64Source(doc.nativePdf().base64());
+            } else {
+                String text = doc.text() == null || doc.text().isBlank() ? " " : doc.text();
+                builder.textSource(text);
+            }
             if (StringUtils.hasText(doc.title())) {
                 builder.title(doc.title());
             }
