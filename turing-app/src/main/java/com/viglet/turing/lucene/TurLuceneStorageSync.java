@@ -58,6 +58,7 @@ public class TurLuceneStorageSync {
 
     private static final String PREFIX = "lucene-indexes/";
     private static final String WRITE_LOCK = "write.lock";
+    private static final String TMP_SUFFIX = ".tmp";
 
     private final TurStorageService storageService;
     private final ConcurrentHashMap<String, CompletableFuture<Void>> pendingSyncs = new ConcurrentHashMap<>();
@@ -268,8 +269,16 @@ public class TurLuceneStorageSync {
         }
     }
 
+    /**
+     * Files eligible for sync. Excludes the {@code write.lock} and Lucene's
+     * transient {@code *.tmp} files: the latter are created during merge/flush
+     * and renamed or deleted once the segment is finalized, so they are gone by
+     * the time the async sync thread tries to upload them (the cause of spurious
+     * "Failed to upload" warnings). Committed index files never end in
+     * {@code .tmp}, so excluding them is safe.
+     */
     private static boolean shouldSync(String fileName) {
-        return !WRITE_LOCK.equals(fileName);
+        return !WRITE_LOCK.equals(fileName) && !fileName.endsWith(TMP_SUFFIX);
     }
 
     @PreDestroy
