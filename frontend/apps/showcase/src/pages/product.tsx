@@ -3,6 +3,7 @@ import { Stars } from "@/components/stars";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/contexts/cart";
 import { resolveSiteName } from "@/lib/resolve-site";
 import { firstValue, formatPrice, toNumber } from "@/lib/format";
 import {
@@ -67,6 +68,7 @@ function SimilarRail({ documentId }: Readonly<{ documentId: string }>) {
 
 function ProductDetail({ doc }: Readonly<{ doc: ResolvedDocument }>) {
   const navigate = useNavigate();
+  const cart = useCart();
   const f = doc.raw.fields;
   const currency = firstValue(f.currency) || "USD";
   const price = toNumber(f.price_amount) ?? toNumber(f.price);
@@ -149,6 +151,15 @@ function ProductDetail({ doc }: Readonly<{ doc: ResolvedDocument }>) {
               size="lg"
               className="mt-2 w-full gap-2 sm:w-auto"
               disabled={availability === "Out of Stock"}
+              onClick={() =>
+                cart.add({
+                  sku: firstValue(f.sku) || documentId,
+                  title: firstValue(f.title) || doc.title,
+                  price: price ?? 0,
+                  currency,
+                  image: doc.image,
+                })
+              }
             >
               <IconShoppingCartPlus className="size-5" />
               {availability === "Out of Stock" ? "Out of stock" : "Add to cart"}

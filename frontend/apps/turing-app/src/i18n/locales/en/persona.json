@@ -25,6 +25,25 @@
       "NARRATIVE": "Narrative",
       "PERSUASIVE": "Persuasive",
       "INSTRUCTIONAL": "Instructional"
+    },
+    "kinds": {
+      "SPEAKER": "Speaker (voice)",
+      "AUDIENCE": "Audience (reader)",
+      "BOTH": "Both (peer)"
+    },
+    "readingLevels": {
+      "ELEMENTARY": "Elementary",
+      "MIDDLE": "Middle school",
+      "SECONDARY": "Secondary / high school",
+      "UNDERGRADUATE": "Undergraduate",
+      "GRADUATE": "Graduate / specialist"
+    },
+    "domainExpertise": {
+      "NOVICE": "Novice",
+      "BEGINNER": "Beginner",
+      "INTERMEDIATE": "Intermediate",
+      "ADVANCED": "Advanced",
+      "EXPERT": "Expert"
     }
   }
 }

@@ -1,5 +1,7 @@
 import { NativeForm } from "@/components/chat/native-form";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/cart";
+import { createCartClientTools } from "@/lib/cart-tools";
 import { MarkdownBlock, D2Block } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 import {
@@ -10,19 +12,23 @@ import {
   IconPaperclip,
   IconRobot,
   IconSparkles,
+  IconTool,
   IconUser,
   IconX,
 } from "@tabler/icons-react";
 import {
+  TuringGenerativeContent,
   TuringRichContent,
   TuringSourceChips,
+  TuringToolActivity,
   TuringWorkspacePanelView,
+  useAnswerAsApp,
   useTuringChat,
   useTuringSlotUpload,
   useTuringSlots,
   useTuringWorkspace,
 } from "@viglet/turing-react-sdk";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const SOURCE_CHIP_CLASSNAMES = {
   container: "not-prose mt-3 border-t border-border/60 pt-2",
@@ -78,6 +84,7 @@ function MessageBubble({
   content,
   sources,
   options,
+  toolCalls,
   isStreaming,
   onPickOption,
 }: Readonly<{
@@ -85,6 +92,7 @@ function MessageBubble({
   content: string;
   sources?: unknown[];
   options?: string[];
+  toolCalls?: unknown[];
   isStreaming: boolean;
   onPickOption: (label: string) => void;
 }>) {
@@ -102,6 +110,13 @@ function MessageBubble({
       <div className="min-w-0 flex-1">
         {isAssistant ? (
           <div className="prose prose-sm dark:prose-invert max-w-none break-words text-sm leading-relaxed prose-p:my-2 prose-pre:my-2">
+            {toolCalls && toolCalls.length > 0 && (
+              <TuringToolActivity
+                toolCalls={toolCalls as Parameters<typeof TuringToolActivity>[0]["toolCalls"]}
+                className="not-prose mb-2 space-y-1 rounded-lg border border-border/60 bg-muted/30 p-2 text-xs"
+                icons={{ tool: <IconTool className="size-3.5 shrink-0" /> }}
+              />
+            )}
             {content ? (
               <TuringRichContent content={content} markdown={MarkdownBlock} d2={D2Block} />
             ) : null}
@@ -138,6 +153,19 @@ function MessageBubble({
 }
 
 export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
+  const cart = useCart();
+  // Answer-as-app generative UI (T442) + cart client tools (T438/T439), merged
+  // into one client-tool map for the chat hook.
+  const app = useAnswerAsApp();
+  const cartTools = useMemo(
+    () => createCartClientTools({ add: cart.add, remove: cart.remove, clear: cart.clear, items: cart.items }),
+    [cart.add, cart.remove, cart.clear, cart.items]
+  );
+  const clientTools = useMemo(
+    () => ({ ...app.clientTools, ...cartTools }),
+    [app.clientTools, cartTools]
+  );
+
   const {
     enabled,
     messages,
@@ -149,7 +177,7 @@ export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
     error,
     reset,
     conversationId,
-  } = useTuringChat({ locale: import.meta.env.VITE_LOCALE });
+  } = useTuringChat({ locale: import.meta.env.VITE_LOCALE, clientTools });
   const { upload, status: uploadStatus } = useTuringSlotUpload({ vision: true });
 
   const [input, setInput] = useState("");
@@ -245,10 +273,22 @@ export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
             content={m.content}
             sources={m.sources}
             options={m.options}
+            toolCalls={m.toolCalls}
             isStreaming={isStreaming}
             onPickOption={ask}
           />
         ))}
+
+        {/* Answer-as-an-app generative UI (T442): comparison table / spec card /
+            configurator rendered from the agent's client-tool calls. */}
+        {app.items.length > 0 && (
+          <TuringGenerativeContent
+            items={app.items}
+            registry={app.registry}
+            onRespond={app.respond}
+            className="space-y-3"
+          />
+        )}
 
         {/* Native form (T107) */}
         {activeForm && (

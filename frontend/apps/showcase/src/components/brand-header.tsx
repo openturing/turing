@@ -1,4 +1,5 @@
 import { IconBuildingStore } from "@tabler/icons-react";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 import { ModeToggle } from "@/components/mode-toggle";
 
 /**
@@ -20,7 +21,10 @@ export function BrandHeader() {
             </span>
           </span>
         </a>
-        <ModeToggle />
+        <div className="flex items-center gap-1">
+          <CartDrawer />
+          <ModeToggle />
+        </div>
       </div>
     </header>
   );

@@ -229,6 +229,12 @@ public class TurPersonaAPI {
         to.setMandatoryTerms(from.getMandatoryTerms());
         to.setForbiddenTerms(from.getForbiddenTerms());
         to.setEnabled(from.getEnabled());
+        // Block AA / §XXVI.1 — audience facet. Default SPEAKER when the client
+        // omits the discriminator so legacy persona forms stay unchanged.
+        to.setPersonaKind(from.getPersonaKind() == null
+                ? com.viglet.turing.persistence.model.persona.TurPersonaKind.SPEAKER
+                : from.getPersonaKind());
+        to.setAudience(from.getAudience());
     }
 
     private com.viglet.turing.persistence.model.store.TurStoreInstance resolveStore(String id) {

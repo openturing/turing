@@ -70,6 +70,31 @@ offline Lucene seed has search only, so the panel shows an honest "chat lights
 up when GenAI is configured" notice. Point the app at a backend with GenAI
 enabled to chat over the catalog.
 
+## Agent power (T454)
+
+The copilot exercises the Block W + skills agent surface:
+
+- **Client tools** (T438/T439) — `add_to_cart` / `get_cart` / `clear_cart`
+  (`src/lib/cart-tools.ts`) run against a real cart context
+  (`src/contexts/cart.tsx`), so the agent acts on the shopper's live basket. The
+  cart drawer (header) and the product page "Add to cart" share the same state.
+- **Code interpreter** (T80) — with `get_cart` exposed, the agent can run
+  Python to "compute my cart total" or "chart the price history" over real data.
+- **Live tool-call activity** (T436) — `TuringToolActivity` renders each
+  `tool_call` SSE event inline in the assistant bubble (`message.toolCalls`).
+- **Answer-as-an-app** (T442) — `useAnswerAsApp` + `TuringGenerativeContent`
+  render the built-in `comparison_table` / `spec_card` / `configurator` widgets
+  the agent emits, parked/resumed over the client-tool protocol.
+- **Bundled returns/RMA skill** — `skills/returns-rma/` is a self-contained
+  Anthropic skill folder (`SKILL.md` + `references/return-policy.md` +
+  `scripts/rma.py`). Copy it into the backend's `turing.skill.skillsPath` (or
+  import it) so the agent can authorize returns and generate RMA ids in chat.
+
+As with search and chat, the agent-side features light up only when the site has
+an AI agent with the relevant capabilities enabled (`clientToolsEnabled`,
+`answerAsAppEnabled`, `toolCallEventsEnabled`, `skillsEnabled`, code interpreter);
+the client wiring is always present.
+
 ### Hybrid ranking + reranker (server toggle)
 
 `HYBRID_RRF` (T383) and the pluggable reranker (Block N) are **site-level

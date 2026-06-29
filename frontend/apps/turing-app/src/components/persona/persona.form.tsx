@@ -44,6 +44,7 @@ import {
   IconSettings,
   IconSparkles,
   IconTrash,
+  IconUsers,
 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -102,6 +103,22 @@ const LANGUAGE_STYLES = [
   "NARRATIVE",
   "PERSUASIVE",
   "INSTRUCTIONAL",
+] as const
+// Block AA / §XXVI.1 — persona kind + audience facet vocabularies.
+const PERSONA_KINDS = ["SPEAKER", "AUDIENCE", "BOTH"] as const
+const READING_LEVELS = [
+  "ELEMENTARY",
+  "MIDDLE",
+  "SECONDARY",
+  "UNDERGRADUATE",
+  "GRADUATE",
+] as const
+const DOMAIN_EXPERTISE = [
+  "NOVICE",
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
+  "EXPERT",
 ] as const
 
 const turStoreInstanceService = new TurStoreInstanceService()
@@ -235,6 +252,8 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
   }
 
   const watchedName = form.watch("name")
+  const watchedKind = form.watch("personaKind") ?? "SPEAKER"
+  const showAudience = watchedKind === "AUDIENCE" || watchedKind === "BOTH"
 
   return (
     <div className="w-full px-0 md:px-4 py-4">
@@ -326,6 +345,35 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
                               checked={Number(field.value) === 1}
                               onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
                             />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="personaKind"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel>{t("forms.persona.kind")}</FormLabel>
+                          <div className="text-muted-foreground text-sm font-normal mt-1">
+                            {t("forms.persona.kindDesc")}
+                          </div>
+                          <FormControl>
+                            <Select
+                              value={field.value ?? "SPEAKER"}
+                              onValueChange={(v) => field.onChange(v)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PERSONA_KINDS.map((kind) => (
+                                  <SelectItem key={kind} value={kind}>
+                                    {t(`persona.kinds.${kind}`)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                         </FormItem>
                       )}
@@ -473,6 +521,156 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
                     />
                   </SectionCard.Content>
                 </SectionCard>
+
+                {/* Audience facet (Block AA) — only for AUDIENCE / BOTH personas */}
+                {showAudience && (
+                  <SectionCard variant="slate">
+                    <SectionCard.Header
+                      icon={IconUsers}
+                      title={t("forms.persona.audience")}
+                      description={t("forms.persona.audienceDesc")}
+                    />
+                    <SectionCard.Content>
+                      <FormField
+                        control={form.control}
+                        name="audience.readingLevel"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.readingLevel")}</FormLabel>
+                            <FormControl>
+                              <Select
+                                value={field.value ?? NONE_VALUE}
+                                onValueChange={(v) =>
+                                  field.onChange(v === NONE_VALUE ? null : v)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue
+                                    placeholder={t("forms.persona.readingLevelPlaceholder")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={NONE_VALUE}>
+                                    {t("forms.persona.readingLevelPlaceholder")}
+                                  </SelectItem>
+                                  {READING_LEVELS.map((level) => (
+                                    <SelectItem key={level} value={level}>
+                                      {t(`persona.readingLevels.${level}`)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="audience.domainExpertise"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.domainExpertise")}</FormLabel>
+                            <FormControl>
+                              <Select
+                                value={field.value ?? NONE_VALUE}
+                                onValueChange={(v) =>
+                                  field.onChange(v === NONE_VALUE ? null : v)
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue
+                                    placeholder={t("forms.persona.domainExpertisePlaceholder")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={NONE_VALUE}>
+                                    {t("forms.persona.domainExpertisePlaceholder")}
+                                  </SelectItem>
+                                  {DOMAIN_EXPERTISE.map((level) => (
+                                    <SelectItem key={level} value={level}>
+                                      {t(`persona.domainExpertise.${level}`)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="audience.primaryLanguage"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.primaryLanguage")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                maxLength={8}
+                                placeholder={t("forms.persona.primaryLanguagePlaceholder")}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="audience.vocabularyCeiling"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.vocabularyCeiling")}</FormLabel>
+                            <div className="text-muted-foreground text-sm font-normal mt-1">
+                              {t("forms.persona.vocabularyCeilingDesc")}
+                            </div>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                value={field.value ?? ""}
+                                rows={2}
+                                placeholder={t("forms.persona.vocabularyCeilingPlaceholder")}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="audience.comprehensionNotes"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.comprehensionNotes")}</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                value={field.value ?? ""}
+                                rows={2}
+                                placeholder={t("forms.persona.comprehensionNotesPlaceholder")}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="audience.accessibilityNotes"
+                        render={({ field }) => (
+                          <FormItem className="w-full">
+                            <FormLabel>{t("forms.persona.accessibilityNotes")}</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                value={field.value ?? ""}
+                                rows={2}
+                                placeholder={t("forms.persona.accessibilityNotesPlaceholder")}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </SectionCard.Content>
+                  </SectionCard>
+                )}
 
                 {/* Vocabulary */}
                 <SectionCard variant="amber">
