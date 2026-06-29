@@ -1,31 +1,22 @@
 import { BrandHeader } from "@/components/brand-header";
+import { Stars } from "@/components/stars";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { firstValue, formatPrice, toNumber, toStars } from "@/lib/format";
+import { resolveSiteName } from "@/lib/resolve-site";
+import { firstValue, formatPrice, toNumber } from "@/lib/format";
 import {
   IconArrowLeft,
   IconShoppingCartPlus,
-  IconStar,
-  IconStarFilled,
-  IconStarHalfFilled,
+  IconSparkles,
   IconTag,
 } from "@tabler/icons-react";
-import type { ResolvedDocument } from "@viglet/turing-react-sdk";
+import {
+  TuringProvider,
+  useTuringSimilar,
+  type ResolvedDocument,
+} from "@viglet/turing-react-sdk";
 import { useLocation, useNavigate } from "react-router-dom";
-
-function Stars({ rating }: Readonly<{ rating: number | undefined }>) {
-  const { full, half } = toStars(rating);
-  return (
-    <span className="flex items-center gap-0.5 text-amber-500">
-      {Array.from({ length: 5 }).map((_, i) => {
-        if (i < full) return <IconStarFilled key={i} className="size-4" />;
-        if (i === full && half) return <IconStarHalfFilled key={i} className="size-4" />;
-        return <IconStar key={i} className="size-4 text-muted-foreground/40" />;
-      })}
-    </span>
-  );
-}
 
 function AttrChips({ label, values }: Readonly<{ label: string; values: unknown }>) {
   const arr = Array.isArray(values) ? values : values ? [String(values)] : [];
@@ -46,23 +37,36 @@ function AttrChips({ label, values }: Readonly<{ label: string; values: unknown 
   );
 }
 
-export default function ProductPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const doc = (location.state as { document?: ResolvedDocument } | null)?.document;
-
-  if (!doc) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <BrandHeader />
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">No product selected.</p>
-          <Button onClick={() => navigate("/")}>Back to store</Button>
-        </div>
+/* ── "You may also like" rail — T400 more-like-this / vector similar ── */
+function SimilarRail({ documentId }: Readonly<{ documentId: string }>) {
+  const { results, loading } = useTuringSimilar({ documentId, rows: 6 });
+  if (loading || results.length === 0) return null;
+  return (
+    <section className="mt-12">
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <IconSparkles className="size-4 text-primary" />
+        You may also like
+      </h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {results.map((r) => (
+          <a
+            key={r.id}
+            href={r.url}
+            className="rounded-lg border border-border/60 bg-card p-3 text-sm transition-colors hover:border-primary/50"
+          >
+            <span className="line-clamp-3 font-medium leading-snug">{r.title}</span>
+            <span className="mt-1 block text-[11px] uppercase tracking-wide text-muted-foreground">
+              {r.type}
+            </span>
+          </a>
+        ))}
       </div>
-    );
-  }
+    </section>
+  );
+}
 
+function ProductDetail({ doc }: Readonly<{ doc: ResolvedDocument }>) {
+  const navigate = useNavigate();
   const f = doc.raw.fields;
   const currency = firstValue(f.currency) || "USD";
   const price = toNumber(f.price_amount) ?? toNumber(f.price);
@@ -74,6 +78,7 @@ export default function ProductPage() {
   const brand = firstValue(f.brand);
   const category = firstValue(f.category);
   const sub = firstValue(f.subcategory);
+  const documentId = firstValue(f.id);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -104,7 +109,7 @@ export default function ProductPage() {
 
             {rating != null && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Stars rating={rating} />
+                <Stars rating={rating} className="size-4" />
                 <span>
                   {rating.toFixed(1)} · {reviews.toLocaleString()} reviews
                 </span>
@@ -140,7 +145,11 @@ export default function ProductPage() {
               />
             )}
 
-            <Button size="lg" className="mt-2 w-full gap-2 sm:w-auto" disabled={availability === "Out of Stock"}>
+            <Button
+              size="lg"
+              className="mt-2 w-full gap-2 sm:w-auto"
+              disabled={availability === "Out of Stock"}
+            >
               <IconShoppingCartPlus className="size-5" />
               {availability === "Out of Stock" ? "Out of stock" : "Add to cart"}
             </Button>
@@ -169,7 +178,34 @@ export default function ProductPage() {
             <p className="text-sm leading-relaxed text-muted-foreground">{firstValue(f.text)}</p>
           </section>
         )}
+
+        {documentId && <SimilarRail documentId={documentId} />}
       </main>
     </div>
+  );
+}
+
+export default function ProductPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const site = resolveSiteName();
+  const doc = (location.state as { document?: ResolvedDocument } | null)?.document;
+
+  if (!doc) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <BrandHeader />
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-muted-foreground">No product selected.</p>
+          <Button onClick={() => navigate("/")}>Back to store</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <TuringProvider config={{ site, locale: import.meta.env.VITE_LOCALE }}>
+      <ProductDetail doc={doc} />
+    </TuringProvider>
   );
 }

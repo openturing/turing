@@ -5,10 +5,12 @@ import { resolveSiteName } from "@/lib/resolve-site";
 import { cn } from "@/lib/utils";
 import {
   IconAdjustmentsHorizontal,
+  IconArrowsSort,
   IconLoader2,
   IconMoodEmpty,
   IconSearch,
   IconSparkles,
+  IconWand,
   IconX,
 } from "@tabler/icons-react";
 import {
@@ -18,15 +20,30 @@ import {
   useTuringClickTracking,
   useTuringFacets,
   useTuringPagination,
+  useTuringSortOptions,
+  useTuringSpellCheck,
+  useTuringTabs,
   type ResolvedDocument,
 } from "@viglet/turing-react-sdk";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-/* ── Facet sidebar ── */
+/* ── Category tabs (T247) — drive the "category" facet from a top bar; the
+   sidebar then hides the category group so the two don't conflict. ── */
+const CATEGORY_TABS = [
+  { label: "All" },
+  { label: "Electronics", filter: "category:Electronics" },
+  { label: "Home & Kitchen", filter: "category:Home & Kitchen" },
+  { label: "Outdoors", filter: "category:Outdoors" },
+  { label: "Fashion", filter: "category:Fashion" },
+  { label: "Toys & Games", filter: "category:Toys & Games" },
+] as const;
+
+/* ── Facet sidebar (category hidden — tabs own it) ── */
 function FacetSidebar() {
   const { facetGroups } = useTuringFacets();
-  if (!facetGroups || facetGroups.length === 0) return null;
+  const groups = (facetGroups ?? []).filter((g) => g.name !== "category");
+  if (groups.length === 0) return null;
 
   return (
     <aside className="space-y-5">
@@ -34,7 +51,7 @@ function FacetSidebar() {
         <IconAdjustmentsHorizontal className="size-4" />
         Filters
       </div>
-      {facetGroups.map((group) => (
+      {groups.map((group) => (
         <div key={group.name} className="space-y-1.5">
           <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground/70">
             {group.label}
@@ -74,6 +91,50 @@ function FacetSidebar() {
   );
 }
 
+function SortSelect() {
+  const store = useSearchStore();
+  const { sortOptions } = useTuringSortOptions();
+  if (!sortOptions || sortOptions.length === 0) return null;
+  return (
+    <label className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm text-muted-foreground">
+      <IconArrowsSort className="size-4" />
+      <span className="sr-only">Sort by</span>
+      <select
+        value={store.params.sort ?? ""}
+        onChange={(e) => store.setSort(e.target.value)}
+        className="cursor-pointer bg-transparent pr-1 text-foreground focus:outline-none"
+      >
+        {sortOptions.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SpellSuggestion() {
+  const store = useSearchStore();
+  const query = store.params.q ?? "*";
+  const enabled = query !== "*" && query.trim().length > 0;
+  const { suggestion } = useTuringSpellCheck({ query: enabled ? query : undefined, enabled });
+  if (!suggestion || suggestion.toLowerCase() === query.toLowerCase()) return null;
+  return (
+    <div className="mb-4 flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
+      <IconWand className="size-4 text-accent-foreground" />
+      <span className="text-muted-foreground">Did you mean</span>
+      <button
+        onClick={() => store.updateParams({ q: suggestion })}
+        className="font-semibold text-primary underline-offset-2 hover:underline"
+      >
+        {suggestion}
+      </button>
+      <span className="text-muted-foreground">?</span>
+    </div>
+  );
+}
+
 function Pagination() {
   const { pages, hasPages } = useTuringPagination();
   if (!hasPages) return null;
@@ -105,6 +166,7 @@ function StorefrontContent() {
   const store = useSearchStore();
   const { totalCount } = useTuringPagination();
   const { trackClick } = useTuringClickTracking();
+  const { tabs } = useTuringTabs({ attribute: "category", items: CATEGORY_TABS });
   const query = store.params.q ?? "*";
   const isLanding = query === "*" && store.status !== "loading";
   const hasResults = store.documents.length > 0;
@@ -188,6 +250,26 @@ function StorefrontContent() {
         </div>
       </section>
 
+      {/* Category tabs */}
+      <div className="border-b border-border/60">
+        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 sm:px-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.index}
+              onClick={tab.select}
+              className={cn(
+                "whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors",
+                tab.isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Content */}
       <main className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 pb-12 sm:px-6 lg:gap-8">
         {store.status === "loading" && (
@@ -222,7 +304,7 @@ function StorefrontContent() {
                 <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] overflow-y-auto border-r border-border bg-background p-4 shadow-2xl">
                   <div className="mb-4 flex items-center justify-between">
                     <span className="text-sm font-semibold">Filters</span>
-                    <button onClick={() => setMobileFiltersOpen(false)}>
+                    <button aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)}>
                       <IconX className="size-5" />
                     </button>
                   </div>
@@ -232,7 +314,7 @@ function StorefrontContent() {
             )}
 
             <div className="min-w-0 flex-1">
-              <div className="mb-5 flex items-center justify-between gap-3">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
                   <span className="font-semibold text-foreground">{totalCount}</span>{" "}
                   product{totalCount === 1 ? "" : "s"}
@@ -244,6 +326,7 @@ function StorefrontContent() {
                   )}
                 </p>
                 <div className="flex items-center gap-2">
+                  <SortSelect />
                   <button
                     onClick={() => setMobileFiltersOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent lg:hidden"
@@ -258,6 +341,8 @@ function StorefrontContent() {
                   )}
                 </div>
               </div>
+
+              <SpellSuggestion />
 
               {hasResults ? (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

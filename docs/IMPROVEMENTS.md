@@ -2334,7 +2334,7 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 ### XXIV.2 Build tasks (T451–T457)
 
 - **T451 — scaffold + seed.** _Shipped — see CHANGELOG → Block Y._
-- **T452 — search surface.** Full faceted + URL-synced search, autocomplete, spell-check, tabs, sort, similar docs, click tracking, with HYBRID_RRF on and the reranker selectable — the "search half" lit end to end.
+- **T452 — search surface.** _Shipped — see CHANGELOG → Block Y._
 - **T453 — chat surface.** RAG agent chat exercising streaming + sources/citations + `TuringSourceChips` + option chips + native forms (T107) + slots (read/write/delta) + multimodal upload + workspace panel + rich content (md/html/d2).
 - **T454 — agent power.** A bundled skill (returns/RMA), code interpreter (a "compute my cart total / chart price history" tool), **live tool-call activity (T436)**, a couple of **client tools (T438/T439)**, and the **answer-as-app comparison widget (T442)** — the Block W + skills surface lit.
 - **T455 — creative bets wiring.** Co-browse filters (T443), glass-box "why #1" (T444), ambient proactive copilot (T445), agent→agent handoff returns↔sales (T448), and an **embeddable action widget (T450)** demonstrated on a mock host page (add-to-cart from outside the app).

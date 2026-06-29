@@ -1,7 +1,8 @@
+import { Stars } from "@/components/stars";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { firstValue, formatPrice, toNumber, toStars } from "@/lib/format";
-import { IconStar, IconStarFilled, IconStarHalfFilled, IconTag } from "@tabler/icons-react";
+import { firstValue, formatPrice, toNumber } from "@/lib/format";
+import { IconTag } from "@tabler/icons-react";
 import type { ResolvedDocument } from "@viglet/turing-react-sdk";
 
 const availabilityStyle: Record<string, string> = {
@@ -11,19 +12,6 @@ const availabilityStyle: Record<string, string> = {
   "Pre-order": "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
   Backorder: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30",
 };
-
-function Stars({ rating }: Readonly<{ rating: number | undefined }>) {
-  const { full, half } = toStars(rating);
-  return (
-    <span className="flex items-center gap-0.5 text-amber-500">
-      {Array.from({ length: 5 }).map((_, i) => {
-        if (i < full) return <IconStarFilled key={i} className="size-3.5" />;
-        if (i === full && half) return <IconStarHalfFilled key={i} className="size-3.5" />;
-        return <IconStar key={i} className="size-3.5 text-muted-foreground/40" />;
-      })}
-    </span>
-  );
-}
 
 export function ProductCard({
   doc,

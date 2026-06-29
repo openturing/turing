@@ -28,7 +28,33 @@ color/material/tags) that stresses the manifest, hybrid ranking and facets.
   data can be imported into a running Turing as a marketplace bundle, and the
   `turing init` / `turing dev` clone-to-running flow works against it.
 - A storefront (faceted search + product grid + click tracking) and a product
-  detail page as the working anchor; the full search surface lands in T452.
+  detail page as the working anchor.
+
+## Search surface (T452)
+
+The storefront lights up the full SDK search half end to end:
+
+- **Faceted + URL-synced** search (`TuringProvider` `urlSync` + `useTuringFacets`).
+- **Autocomplete** suggestions dropdown (`TuringSearchField.Dropdown`).
+- **Spell-check** "did you mean?" banner (`useTuringSpellCheck`).
+- **Category tabs** (`useTuringTabs`, attribute `category`) — the sidebar hides
+  the category facet so the two don't conflict (T247).
+- **Sort** dropdown wired to the site's custom sorts (`useTuringSortOptions` →
+  `store.setSort`): price ↑/↓, top-rated, most-reviewed, newest.
+- **Similar / "you may also like"** rail on the product page
+  (`useTuringSimilar`, T400 — vector / more-like-this).
+- **Click tracking / CTR** (`useTuringClickTracking`) on every result open.
+
+### Hybrid ranking + reranker (server toggle)
+
+`HYBRID_RRF` (T383) and the pluggable reranker (Block N) are **site-level
+backend configuration**, not a client switch — they need an embedding LLM and an
+AI agent attached to the site's GenAI config. They are off in the offline Lucene
+seed (which has no embeddings). To activate against a real backend, set
+`snRankingMode` on the imported site's GenAI config to `HYBRID_RRF` (or
+`HYBRID_RRF_RERANK` to add the Block N reranker) once an embedding instance is
+configured. The search UI above is rank-mode agnostic — it renders whatever
+ordering the backend returns.
 
 ## Develop
 
