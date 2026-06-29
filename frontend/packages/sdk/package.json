@@ -58,10 +58,10 @@
       ".cjs"
     ],
     "strict": true,
-    "total": 23000,
+    "total": 30000,
     "entries": {
-      "turing-sdk.js": 12500,
-      "turing-sdk.umd.cjs": 11000
+      "turing-sdk.js": 16000,
+      "turing-sdk.umd.cjs": 14000
     }
   }
 }

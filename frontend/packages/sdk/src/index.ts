@@ -152,6 +152,12 @@ export type {
   TuringAnalyticsSink,
   TuringAnalyticsValue,
 } from "./analytics";
+// ── Analytics sinks: GA4/GTM, generic, debug (T459) ──
+export { googleAnalyticsSink, onEventSink, debugSink } from "./analytics-sinks";
+export type {
+  GoogleAnalyticsSinkOptions,
+  DebugSinkOptions,
+} from "./analytics-sinks";
 
 // ── Controllers ──
 export { createSearchController } from "./controllers/search";
