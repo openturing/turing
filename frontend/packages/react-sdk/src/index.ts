@@ -129,6 +129,12 @@ export { useAnswerAsApp } from "./hooks/use-turing-answer-as-app";
 export type { UseAnswerAsAppReturn } from "./hooks/use-turing-answer-as-app";
 export { useCoBrowseSearch } from "./hooks/use-turing-co-browse";
 export type { UseCoBrowseReturn } from "./hooks/use-turing-co-browse";
+export { useTuringProactiveCopilot } from "./hooks/use-turing-proactive-copilot";
+export type {
+  TuringProactiveSuggestion,
+  UseTuringProactiveCopilotOptions,
+  UseTuringProactiveCopilotReturn,
+} from "./hooks/use-turing-proactive-copilot";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,
