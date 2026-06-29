@@ -141,6 +141,18 @@ export type {
 export { createStore } from "./store";
 export type { Store, Listener } from "./store";
 
+// ── Analytics event bus (T458, Block Z) ──
+export { createTuringAnalytics, TURING_ANALYTICS_EVENTS } from "./analytics";
+export type {
+  TuringAnalytics,
+  TuringAnalyticsOptions,
+  TuringAnalyticsContext,
+  TuringAnalyticsEvent,
+  TuringAnalyticsEventName,
+  TuringAnalyticsSink,
+  TuringAnalyticsValue,
+} from "./analytics";
+
 // ── Controllers ──
 export { createSearchController } from "./controllers/search";
 export type {

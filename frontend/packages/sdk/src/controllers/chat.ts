@@ -14,6 +14,7 @@ import {
   getOrCreateTurSession,
 } from "../session";
 import { postSiteFormSubmit } from "../api";
+import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../analytics";
 import { createStore, type Store } from "../store";
 import type {
   TurChatCitation,
@@ -189,6 +190,15 @@ export interface ChatControllerOptions {
    * CopilotKit's `useCopilotAction` ergonomics.
    */
   readonly clientTools?: Record<string, ClientToolRegistration>;
+  /**
+   * T458 (Block Z) — canonical analytics bus. When provided, the controller
+   * emits `turing_chat_start` (first user message), `turing_chat_message_sent`
+   * (every send, with the running turn count) and keeps the bus's context
+   * envelope (`conversationId`/`sessionId`) in sync. No-op when absent, so
+   * existing embeds are unchanged. Create it with `createTuringAnalytics()` and
+   * attach a sink (e.g. `googleAnalyticsSink()`).
+   */
+  readonly analytics?: TuringAnalytics;
 }
 
 export interface ChatControllerState {
@@ -346,6 +356,7 @@ export function createChatController(
     conversationId: controlledConversationId,
     initialMessages,
     clientTools,
+    analytics,
   } = options;
 
   // T439 — registered client-tool handlers, seeded from `options.clientTools`
@@ -401,6 +412,14 @@ export function createChatController(
   let abortController: AbortController | null = null;
   let messages = initialPersisted.messages;
   let conversationId: string | null = initialPersisted.conversationId;
+
+  // T458 — analytics lifecycle bookkeeping. `chatStarted` gates the once-per-
+  // conversation `turing_chat_start`; `userTurns` rides along on every event.
+  let chatStarted = false;
+  let userTurns = 0;
+  // Seed the bus envelope with the identity known at construction. The
+  // conversation/session id is stamped lazily in `send` once resolved.
+  analytics?.setContext({ site: site || undefined, agentId });
 
   function commitMessages(next: ChatMessage[], status?: ChatStatus): void {
     messages = next;
@@ -486,6 +505,25 @@ export function createChatController(
       newId();
     if (activeConversationId !== conversationId) {
       setConversationId(activeConversationId);
+    }
+
+    // T458 — keep the analytics envelope in sync, then emit the chat lifecycle
+    // events. `turing_chat_start` fires once per conversation; every send emits
+    // `turing_chat_message_sent` with the running user-turn count.
+    if (analytics) {
+      analytics.setContext({
+        conversationId: activeConversationId,
+        sessionId: activeConversationId,
+      });
+      userTurns += 1;
+      if (!chatStarted) {
+        chatStarted = true;
+        analytics.emit(TURING_ANALYTICS_EVENTS.chatStart, { mode: isAgentMode ? "agent" : "site" });
+      }
+      analytics.emit(TURING_ANALYTICS_EVENTS.chatMessageSent, {
+        turn: userTurns,
+        length: content.length,
+      });
     }
 
     const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
@@ -680,6 +718,9 @@ export function createChatController(
     latestRequestId++;
     abortController?.abort();
     abortController = null;
+    // T458 — a reset starts a fresh conversation; re-arm the start event.
+    chatStarted = false;
+    userTurns = 0;
     commitMessages([]);
     store.setState({ error: null, status: "idle", isStreaming: false, activeForm: null });
   }
