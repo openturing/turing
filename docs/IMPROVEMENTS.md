@@ -2305,14 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.7 Agent-to-agent handoff — a visible team (T448)
-
-Today handoff is to a human, multi-channel (T286). Add **agent→agent** handoff: a
-router agent delegates to specialists (each with its own skills/tools), and the
-UI shows the conversation visibly "passing" between them — the Turing analog of
-AG-UI's subgraph support. The T436 tool-call events already supply the
-visibility surface. → builds on T436, T286, chatflow router.
-
 ### XXIII.8 Skills that ship their own UI (T449)
 
 With generative UI (T440), an Anthropic-standard skill folder can embed its own

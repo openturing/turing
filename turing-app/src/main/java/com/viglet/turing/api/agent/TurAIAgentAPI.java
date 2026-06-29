@@ -233,6 +233,9 @@ public class TurAIAgentAPI {
             agentEdit.setUserMemoryEnabled(turAIAgent.isUserMemoryEnabled());
             // T447 — self-tuning loop (opt-in; opens human-approved suggestions).
             agentEdit.setSelfTuningEnabled(turAIAgent.isSelfTuningEnabled());
+            // T448 — agent-to-agent handoff (opt-in) + the specialist allowlist.
+            agentEdit.setAgentHandoffEnabled(turAIAgent.isAgentHandoffEnabled());
+            agentEdit.setSpecialistAgentIds(turAIAgent.getSpecialistAgentIds());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());

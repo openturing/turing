@@ -69,6 +69,7 @@ public class TurChatToolResolver {
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurSkillRunnerService skillRunnerService;
     private final TurClientToolService clientToolService;
+    private final com.viglet.turing.genai.handoff.TurAgentHandoffService agentHandoffService;
 
     public TurChatToolResolver(TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -78,7 +79,8 @@ public class TurChatToolResolver {
             TurPersonaBrandContextProvider personaBrandContextProvider,
             TurChatPipelineObservation chatPipelineObservation,
             TurSkillRunnerService skillRunnerService,
-            TurClientToolService clientToolService) {
+            TurClientToolService clientToolService,
+            com.viglet.turing.genai.handoff.TurAgentHandoffService agentHandoffService) {
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
@@ -88,6 +90,7 @@ public class TurChatToolResolver {
         this.chatPipelineObservation = chatPipelineObservation;
         this.skillRunnerService = skillRunnerService;
         this.clientToolService = clientToolService;
+        this.agentHandoffService = agentHandoffService;
     }
 
     /**
@@ -321,15 +324,22 @@ public class TurChatToolResolver {
         ToolCallback[] clientCallbacks = clientToolService.isEnabled(agent)
                 ? clientToolService.buildToolCallbacks(agent)
                 : new ToolCallback[0];
+        // T448 — agent-to-agent handoff: the router's delegate_to_agent tool.
+        ToolCallback[] handoffCallbacks = agentHandoffService.buildToolCallbacks(agent);
         ToolCallback[] decorated = toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
-                        skillCallbacks, clientCallbacks)
+                        skillCallbacks, clientCallbacks, handoffCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
         Set<String> alwaysKeep = buildAlwaysKeep(selectedNativeTools, skillCallbacks, activeNode);
         // Client tools are author-declared (not domain-relevance ranked) — keep
         // them past the BM25 pre-filter so the model always sees what it may call.
         alwaysKeep.addAll(clientToolService.namesFor(agent));
+        // T448 — keep delegate_to_agent past the pre-filter so the router always
+        // sees it (it's configured, not domain-relevance ranked).
+        if (handoffCallbacks.length > 0) {
+            alwaysKeep.add(com.viglet.turing.genai.handoff.TurDelegateAgentToolCallback.TOOL_NAME);
+        }
         // T424 / §XXI part (b) — trigger boost: when the user message hits an
         // attached MCP server's declared trigger words (or its title), promote
         // that server's tools into the always-keep set so the pre-filter can

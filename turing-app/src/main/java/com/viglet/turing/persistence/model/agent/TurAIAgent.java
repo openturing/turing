@@ -175,6 +175,30 @@ public class TurAIAgent implements Serializable {
     private boolean selfTuningEnabled = false;
 
     /**
+     * T448 / §XXIII.7 — per-agent opt-in for agent-to-agent handoff. When
+     * {@code true} (and {@link #specialistAgentIds} lists at least one agent), this
+     * agent becomes a router: it gets a {@code delegate_to_agent} tool that runs a
+     * listed specialist agent on a sub-task and returns its answer — the handoff is
+     * visible via the T436 tool-call events. Recursion is bounded by the shared
+     * {@code agent.invoke} depth cap. Default {@code false} keeps existing agents
+     * unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "agent_handoff_enabled", nullable = false)
+    private boolean agentHandoffEnabled = false;
+
+    /**
+     * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
+     * (the allowlist for {@code delegate_to_agent}). Only consulted when
+     * {@link #agentHandoffEnabled}. Null/blank = no delegation.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "specialist_agent_ids", length = 2000)
+    private String specialistAgentIds;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,

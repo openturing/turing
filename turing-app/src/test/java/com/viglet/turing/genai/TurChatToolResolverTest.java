@@ -42,7 +42,7 @@ class TurChatToolResolverTest {
     private final TurMcpToolCallbackService mcpToolCallbackService =
             mock(TurMcpToolCallbackService.class);
     private final TurChatToolResolver resolver = new TurChatToolResolver(
-            null, mcpToolCallbackService, null, null, null, null, null, null, null);
+            null, mcpToolCallbackService, null, null, null, null, null, null, null, null);
 
     private static final String INSPER_INSTRUCTIONS = """
             QUANDO USAR (OBRIGATÓRIO) Sempre que o usuário perguntar sobre a base de
