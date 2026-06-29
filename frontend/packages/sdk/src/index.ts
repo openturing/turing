@@ -171,6 +171,7 @@ export { createSearchController } from "./controllers/search";
 export type {
   SearchController,
   SearchControllerState,
+  SearchControllerOptions,
 } from "./controllers/search";
 export { createChatController } from "./controllers/chat";
 export type {
