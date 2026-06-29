@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * T472 / §XXVI.9 — turns the audience-fit evaluation into an <em>index-time</em>
  * Semantic Navigation signal. When a site opts in
- * ({@link TurSNSiteGenAi#isContentFitIndexingEnabled()} with a resolvable
+ * ({@link TurSNSiteGenAi#contentFitIndexingEnabled} with a resolvable
  * target-audience persona), every document is scored as it is indexed by the
  * pure {@link TurReadabilityScorer} against that persona's audience facet, and
  * the resulting 0–100 readability/fit score is stored in the

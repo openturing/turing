@@ -17,7 +17,7 @@ import lombok.Setter;
  *
  * <p>Off by default: every workload that can use Batch ({@code T157} nightly
  * insights, {@code T158} bulk re-embedding, {@code T159} eval) checks
- * {@link #isEnabled()} and falls back to its existing synchronous path when the
+ * {@link #enabled} and falls back to its existing synchronous path when the
  * tier is disabled, so turning the feature off restores prior behaviour exactly.
  *
  * @author Alexandre Oliveira

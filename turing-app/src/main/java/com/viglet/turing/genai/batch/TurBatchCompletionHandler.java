@@ -21,7 +21,7 @@ import com.viglet.turing.persistence.model.batch.TurBatchJob;
  * tags its job with a {@link #purpose()} and implements this handler; when the
  * {@code TurBatchJobPoller} sees the job end, it fetches the results and invokes
  * the matching handler exactly once. The handler reattaches results to its
- * domain objects via {@link TurBatchJob#getContextJson()}.
+ * domain objects via {@link TurBatchJob#contextJson}.
  *
  * <p>Each {@link #purpose()} must be unique across handler beans; the poller
  * resolves at most one handler per job.
@@ -31,7 +31,7 @@ import com.viglet.turing.persistence.model.batch.TurBatchJob;
  */
 public interface TurBatchCompletionHandler {
 
-    /** The {@link TurBatchJob#getPurpose()} value this handler consumes. */
+    /** The {@link TurBatchJob#purpose} value this handler consumes. */
     String purpose();
 
     /**

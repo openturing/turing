@@ -23,7 +23,7 @@ import com.viglet.turing.persistence.model.batch.TurBatchJob;
  */
 public interface TurBatchEmbeddingCompletionHandler {
 
-    /** The {@link TurBatchJob#getPurpose()} value this handler consumes. */
+    /** The {@link TurBatchJob#purpose} value this handler consumes. */
     String purpose();
 
     void onBatchComplete(TurBatchJob job, List<TurBatchEmbeddingResult> results);

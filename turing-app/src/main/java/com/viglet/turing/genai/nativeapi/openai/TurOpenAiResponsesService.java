@@ -122,7 +122,7 @@ public class TurOpenAiResponsesService {
         return chat(client, instance, history, systemPrompt, capabilities, coexistingTools, null);
     }
 
-    /** F.7 / §X.8.e — chat with an explicit {@link TurServiceTier} (null → provider default). */
+    /** F.7 / §X.8.e — chat with an explicit {@link com.viglet.turing.genai.servicetier.TurServiceTier TurServiceTier} (null → provider default). */
     public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,

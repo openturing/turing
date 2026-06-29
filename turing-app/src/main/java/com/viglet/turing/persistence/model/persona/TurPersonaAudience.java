@@ -23,7 +23,7 @@ import lombok.Setter;
 /**
  * The <em>audience facet</em> of a {@link TurPersona} — the missing half that
  * models the <strong>reader</strong> rather than the speaker. Populated only
- * when {@link TurPersona#getPersonaKind()} is {@code AUDIENCE} or {@code BOTH};
+ * when {@link TurPersona#personaKind} is {@code AUDIENCE} or {@code BOTH};
  * read only by the content-fit evaluation path (Block AA, §XXVI). The prompt
  * composer never touches it, so default {@code SPEAKER} personas keep these
  * columns dead-null and behave exactly as before.

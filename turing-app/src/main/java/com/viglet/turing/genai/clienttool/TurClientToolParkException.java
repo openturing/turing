@@ -17,7 +17,7 @@ import org.springframework.ai.chat.messages.Message;
 /**
  * T438 — signal thrown out of the tool-execution loop when the model requests a
  * frontend ("client") tool. It is <em>not</em> an error: the dispatcher catches
- * it, parks the turn ({@link TurClientToolParkRegistry}), and emits a
+ * it, parks the turn ({@link com.viglet.turing.genai.TurClientToolParkRegistry TurClientToolParkRegistry}), and emits a
  * {@code client_tool_call} SSE event so the browser runs the tool and POSTs the
  * result back to resume the loop.
  *

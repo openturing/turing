@@ -55,7 +55,7 @@ import tools.jackson.databind.node.ObjectNode;
 @Service
 public class TurBatchReEmbeddingService {
 
-    /** Shared purpose tag — must match {@link TurReEmbeddingBatchHandler#PURPOSE}. */
+    /** Shared purpose tag — returned by {@link TurReEmbeddingBatchHandler#purpose()}. */
     public static final String PURPOSE = "re-embedding";
 
     private static final ObjectMapper MAPPER = JsonMapper.builder().build();

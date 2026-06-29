@@ -14,7 +14,8 @@ package com.viglet.turing.genai.clienttool;
  * told the tool exists (name + description + JSON-Schema {@code parameters}) and
  * may "call" it; the server never executes it — instead the turn parks and a
  * {@code client_tool_call} SSE event asks the browser to run it (see
- * {@link TurClientToolCallback} and {@link TurClientToolParkRegistry}).
+ * {@link TurClientToolCallback} and
+ * {@link com.viglet.turing.genai.TurClientToolParkRegistry TurClientToolParkRegistry}).
  *
  * <p>Declared per-agent as a JSON array on {@code TurAIAgent.clientToolsJson}:
  * {@code [{"name":"get_user_location","description":"…","schema":{…}}]}. The
