@@ -2386,27 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.4 Content-fit evaluator (T467)
-
-The LLM is prompted to **role-play the persona as a reader** ("you are this audience:
-{audience facet}; you are reading the following document") and, **grounded strictly in
-the source text**, returns a structured verdict (LlmJudge JSON shape, grounding
-hard-fail borrowed from T385 so it can't hallucinate problems not in the text):
-
-```
-{ "fitScore": 0..100, "summary": "...",
-  "fits":    [ "short bullet of what condiz" ],
-  "misfits": [ { "span": "...", "reason": "too-complex|jargon|tone|missing-context",
-                 "suggestion": "rewrite" } ] }
-```
-
-The final score **fuses** the deterministic T466 readability sub-score (hard signal,
-weighted) with the LLM's grounded judgment (qualitative misfits) — neither alone is
-enough: the scorer catches "too dense" objectively; the LLM catches tone, missing
-context, and audience-inappropriate framing. Results are cached via
-`TurLlmSummaryService` keyed by (personaId, sourceId, contentHash); regenerate honors
-the Global Settings flag.
-
 ### XXVI.5 Persona-fit report API + admin page (T468)
 
 `POST /api/persona/{id}/content-fit` evaluates a single source or the whole notebook
