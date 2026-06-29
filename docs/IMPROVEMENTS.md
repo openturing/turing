@@ -2305,14 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.3 Conversational glass-box ranking (T444)
-
-Ranking explainability (T389) exists as data; make it dialogable. "por que esse
-resultado é o #1?" → the agent narrates the real signals (BM25 vs vector in the
-T383 HYBRID_RRF blend, the Block N reranker score, field boosts). A trust
-feature that sells in regulated/enterprise procurement where "the AI said so" is
-not an acceptable answer. → builds on T389, T383, Block N.
-
 ### XXIII.4 Ambient / proactive copilot (T445)
 
 The inverse direction of slots: user interactions (clicks via

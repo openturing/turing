@@ -209,7 +209,6 @@
 > runtime with generative UI. Every task here is a thin composition of shipped
 > primitives that *only pays off because Turing owns both halves*. Rationale → §XXIII.
 
-- 💭 **T444** (deps: T389, T383) **Conversational glass-box ranking** — "why is this result #1?" → the agent narrates the real signals (BM25 vs vector in HYBRID_RRF, reranker score, field boosts). Trust feature for regulated procurement. → §XXIII.3
 - 💭 **T445** (deps: T63) **Ambient / proactive copilot** — user interactions (clicks, dwell, opened facets) become slots; the agent watches the slot bus and proactively offers help, throttled + opt-in. → §XXIII.4
 - 💭 **T446** (deps: T163) **Cross-conversation personal memory** — per-user long-horizon memory (preferences, role) surviving across sessions, tenant-scoped, with a user-visible "what the assistant remembers" panel + delete (GDPR posture as a feature). → §XXIII.5
 - 💭 **T447** (deps: T285, T427) **Self-tuning agent (eval as continuous improvement)** — a routine mines real conversations for failure signatures, drafts a prompt/flow change, scores it against the Block K golden set, and opens a human-approved "suggested change" in the admin only if it improves. Highest leverage-to-cost — almost pure composition. → §XXIII.6
