@@ -18,7 +18,6 @@
 
 ## F.10 — Predicted Outputs + strict structured outputs
 
-- 📋 **T174** (deps: T131) **Anthropic structured outputs (ZDR-cached schemas)** — analog to T173 on Claude. → §X.11.d
 - 📋 **T426** (deps: T173, T174) **AI Authoring on provider tool-calling/strict schema (retire `BeanOutputConverter`)** — `TurAiAuthoringService` parses free text into `AiAuthoringResponse<T>` via `BeanOutputConverter`, which 500s when the model emits prose-around-JSON or an empty turn (observed on gpt-4o-mini for the Intent authoring chat). Recovery (brace-scan extract + graceful fallback) was added as a band-aid; the durable fix is to bind the response shape as a provider tool / strict `json_schema` so the model returns validated JSON by construction. → §X.11.c
 
 ## F.11 — Files API + native PDF
