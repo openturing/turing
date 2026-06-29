@@ -2465,17 +2465,6 @@ its columns (`getId()` is proxy-safe — the FK is known without initialization)
 This is the same family as the pre-existing `TurSNSite.findByIdNoCache` band-aid.
 Band-aids per site don't scale — Block AC removes the root cause.
 
-### XXVIII.2 T487 — one dedicated cached layer for the hot path
-
-Re-introduce caching **only** for semantic navigation + chat, as an explicit
-cache **service** that caches **immutable read-models / DTOs**, never lazy JPA
-entities: the parsed `ChatFlowGraph` (already an immutable record tree), the SN
-site + field configuration as a flat DTO, router decisions, static prompts.
-Because the cached value has no lazy proxies and no session affinity, it is safe
-to read anywhere, any time — the property the entity cache never had. Keys are
-explicit and invalidated on the matching admin write. This is where the user's
-priority lands: **cache the search/chat path, leave admin uncached.**
-
 ### XXVIII.3 T488 — admin/CRUD = uncached + transactional graph loads
 
 Admin load-mutate-map paths (the ones that currently reach for

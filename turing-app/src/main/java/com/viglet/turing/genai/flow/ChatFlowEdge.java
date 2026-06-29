@@ -9,6 +9,8 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -24,5 +26,5 @@ public record ChatFlowEdge(
         String target,
         String sourceHandle,
         String targetHandle,
-        String label) {
+        String label) implements Serializable {
 }

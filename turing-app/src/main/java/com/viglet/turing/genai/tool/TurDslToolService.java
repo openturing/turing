@@ -47,18 +47,21 @@ public class TurDslToolService {
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurDslSearchService turDslSearchService;
     private final TurSearchEnginePluginFactory pluginFactory;
+    private final TurSNSiteConfigCache configCache;
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     public TurDslToolService(TurSNSiteRepository turSNSiteRepository,
                               TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                               TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                               TurDslSearchService turDslSearchService,
-                              TurSearchEnginePluginFactory pluginFactory) {
+                              TurSearchEnginePluginFactory pluginFactory,
+                              TurSNSiteConfigCache configCache) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turDslSearchService = turDslSearchService;
         this.pluginFactory = pluginFactory;
+        this.configCache = configCache;
     }
 
     // ==================== Tool 1: List Indices ====================
@@ -112,40 +115,63 @@ public class TurDslToolService {
     public String getMappings(String index) {
         log.info("[DSL Tool] dsl_get_mappings called with index={}", index);
 
+        if (index == null || index.isBlank()) {
+            return "Index not found: " + index;
+        }
+        // T487 — memoize the immutable field-config read-model by lowercased
+        // site name; on a hit the site + field queries inside loadFieldConfig
+        // are skipped. Evicted on any SN write by TurSNSiteSnapshotEvictionListener.
+        TurSNSiteFieldConfigModel model = configCache.fieldConfig(index.toLowerCase(),
+                () -> loadFieldConfig(index));
+        if (model == null) {
+            return "Index not found: " + index;
+        }
+
+        Map<String, Object> properties = new LinkedHashMap<>();
+        for (TurSNSiteFieldConfigModel.FieldInfo field : model.fields()) {
+            properties.put(field.name(), buildFieldMapping(field));
+        }
+        Map<String, Object> mappings = new LinkedHashMap<>();
+        mappings.put(model.siteName(), Map.of("mappings", Map.of("properties", properties)));
+
+        try {
+            return objectMapper.writeValueAsString(mappings);
+        } catch (Exception e) {
+            return "Found %d fields for index '%s'.".formatted(model.fields().size(), index);
+        }
+    }
+
+    /**
+     * Loads the enabled-field configuration for {@code index} into the immutable
+     * {@link TurSNSiteFieldConfigModel} read-model, or {@code null} when the site
+     * does not exist. Invoked only on a {@link TurSNSiteConfigCache} miss.
+     */
+    private TurSNSiteFieldConfigModel loadFieldConfig(String index) {
         return turSNSiteRepository.findByNameIgnoreCase(index)
                 .map(site -> {
                     List<TurSNSiteFieldExt> fields = turSNSiteFieldExtRepository
                             .findByTurSNSiteAndEnabled(site, 1);
-
-                    Map<String, Object> mappings = new LinkedHashMap<>();
-                    Map<String, Object> properties = new LinkedHashMap<>();
-
-                    for (TurSNSiteFieldExt field : fields) {
-                        properties.put(field.getName(), buildFieldMapping(field));
-                    }
-
-                    mappings.put(site.getName(), Map.of("mappings",
-                            Map.of("properties", properties)));
-
-                    try {
-                        return objectMapper.writeValueAsString(mappings);
-                    } catch (Exception e) {
-                        return "Found %d fields for index '%s'.".formatted(
-                                fields.size(), index);
-                    }
+                    List<TurSNSiteFieldConfigModel.FieldInfo> infos = fields.stream()
+                            .map(f -> new TurSNSiteFieldConfigModel.FieldInfo(
+                                    f.getName(),
+                                    f.getType() != null ? f.getType().toString().toLowerCase() : "text",
+                                    f.getFacet() == 1,
+                                    f.getMultiValued() == 1,
+                                    f.getDescription()))
+                            .toList();
+                    return new TurSNSiteFieldConfigModel(site.getName(), infos);
                 })
-                .orElse("Index not found: " + index);
+                .orElse(null);
     }
 
     /** Builds the mapping entry (type + optional facet/multi_valued/description) for one field. */
-    private Map<String, Object> buildFieldMapping(TurSNSiteFieldExt field) {
+    private Map<String, Object> buildFieldMapping(TurSNSiteFieldConfigModel.FieldInfo field) {
         Map<String, Object> fieldMapping = new LinkedHashMap<>();
-        fieldMapping.put("type", field.getType() != null
-                ? field.getType().toString().toLowerCase() : "text");
-        if (field.getFacet() == 1) fieldMapping.put("facet", true);
-        if (field.getMultiValued() == 1) fieldMapping.put("multi_valued", true);
-        if (field.getDescription() != null) {
-            fieldMapping.put("description", field.getDescription());
+        fieldMapping.put("type", field.type() != null ? field.type() : "text");
+        if (field.facet()) fieldMapping.put("facet", true);
+        if (field.multiValued()) fieldMapping.put("multi_valued", true);
+        if (field.description() != null) {
+            fieldMapping.put("description", field.description());
         }
         return fieldMapping;
     }

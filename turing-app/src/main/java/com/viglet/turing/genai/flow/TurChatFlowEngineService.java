@@ -156,6 +156,17 @@ public class TurChatFlowEngineService {
     private jakarta.persistence.EntityManagerFactory entityManagerFactory;
 
     /**
+     * T487 / §XXVIII.2 — dedicated read-model cache for the parsed
+     * {@link ChatFlowGraph}. Field-injected (not a constructor param) for the
+     * same reason as {@link #entityManagerFactory}: the unit tests that
+     * {@code new} this service directly compile unchanged and leave it
+     * {@code null}, in which case {@link #parseGraph} falls back to the
+     * uncached parse — behaviour-identical to the pre-T487 path.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private TurChatFlowGraphCache graphCache;
+
+    /**
      * T119 — node types that <em>park</em> the conversation: the engine stops
      * walking and waits for an external resume. {@code suspend} (T121) is
      * resumed via {@code POST /chat/resume}; {@code humanApproval} (T119) via
@@ -231,18 +242,41 @@ public class TurChatFlowEngineService {
         }
     }
 
-    /** Parses the flow's {@code definitionJson} into a {@link ChatFlowGraph}. */
+    /**
+     * Parses the flow's {@code definitionJson} into a {@link ChatFlowGraph}.
+     *
+     * <p>A persisted flow (id present) routes through the
+     * {@link TurChatFlowGraphCache} read-model cache (T487): the parsed graph is
+     * an immutable record tree with no JPA proxies, so a cache hit skips both the
+     * JSON parse and the {@link #resolveFlowForRead} hydration round-trip. The
+     * cache is evicted on any flow write via {@link #evictFlowDerivedCaches()}.
+     * Transient flows (no id) and unit tests that {@code new} the service without
+     * the cache bean fall back to the uncached parse.
+     */
     public Optional<ChatFlowGraph> parseGraph(TurChatFlow flow) {
+        if (graphCache != null && flow != null && flow.getId() != null) {
+            return Optional.ofNullable(graphCache.graph(flow.getId(), () -> parseGraphUncached(flow)));
+        }
+        return Optional.ofNullable(parseGraphUncached(flow));
+    }
+
+    /**
+     * Resolves the flow for out-of-session reads and deserializes its
+     * {@code definitionJson}. Returns {@code null} (rather than throwing) for a
+     * missing / blank / unparseable definition so the {@link TurChatFlowGraphCache}
+     * {@code unless} guard keeps it out of the cache.
+     */
+    private ChatFlowGraph parseGraphUncached(TurChatFlow flow) {
         flow = resolveFlowForRead(flow);
         if (flow == null || flow.getDefinitionJson() == null || flow.getDefinitionJson().isBlank()) {
-            return Optional.empty();
+            return null;
         }
         try {
-            return Optional.of(OBJECT_MAPPER.readValue(flow.getDefinitionJson(), ChatFlowGraph.class));
+            return OBJECT_MAPPER.readValue(flow.getDefinitionJson(), ChatFlowGraph.class);
         } catch (JacksonException e) {
             log.warn("[FlowEngine] Failed to parse definitionJson for flow '{}': {}",
                     flow.getId(), e.getMessage());
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -2067,10 +2101,11 @@ public class TurChatFlowEngineService {
 
     /**
      * Drops every flow-derived cache on a {@link TurChatFlow} write: the
-     * per-agent router index plus the three Spring caches that used to be
-     * evicted by the (now removed, Block AC / T486) {@code @CacheEvict} on
-     * {@code TurChatFlowRepository} — the router-decision cache and the static
-     * head/tail prompt-addendum caches. Invoked by
+     * per-agent router index plus the Spring caches that used to be evicted by
+     * the (now removed, Block AC / T486) {@code @CacheEvict} on
+     * {@code TurChatFlowRepository} — the router-decision cache, the static
+     * head/tail prompt-addendum caches, and the T487 parsed-graph read-model
+     * cache ({@link TurChatFlowGraphCache#CACHE_NAME}). Invoked by
      * {@link TurChatFlowRouterEvictionListener} on persist/update/remove and at
      * the one bulk-DML delete site, so admin flow edits propagate without
      * restart.
@@ -2080,6 +2115,7 @@ public class TurChatFlowEngineService {
         clearCache(CACHE_ROUTER_DECISION);
         clearCache(TurChatFlowStaticPromptCache.HEAD_CACHE);
         clearCache(TurChatFlowStaticPromptCache.TAIL_CACHE);
+        clearCache(TurChatFlowGraphCache.CACHE_NAME);
     }
 
     private void clearCache(String cacheName) {
