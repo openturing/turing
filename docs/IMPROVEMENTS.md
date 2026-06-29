@@ -2333,7 +2333,7 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 
 ### XXIV.2 Build tasks (T451–T457)
 
-- **T451 — scaffold + seed.** New `frontend/apps/showcase` app in the Turborepo; a commerce dataset (≈200 products with typed fields + images); provision the SN site from a manifest (T382/T386), optionally demo derivation from sample docs (T387); ship an import ZIP + the `turing init`/`dev` flow so a clone-to-running path exists. Includes the brand skin of `@viglet/turing-react-ui` (T305 tokens).
+- **T451 — scaffold + seed.** _Shipped — see CHANGELOG → Block Y._
 - **T452 — search surface.** Full faceted + URL-synced search, autocomplete, spell-check, tabs, sort, similar docs, click tracking, with HYBRID_RRF on and the reranker selectable — the "search half" lit end to end.
 - **T453 — chat surface.** RAG agent chat exercising streaming + sources/citations + `TuringSourceChips` + option chips + native forms (T107) + slots (read/write/delta) + multimodal upload + workspace panel + rich content (md/html/d2).
 - **T454 — agent power.** A bundled skill (returns/RMA), code interpreter (a "compute my cart total / chart price history" tool), **live tool-call activity (T436)**, a couple of **client tools (T438/T439)**, and the **answer-as-app comparison widget (T442)** — the Block W + skills surface lit.

@@ -16,105 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## D.12 — Headless React UI library (`@viglet/turing-react-ui`)
-
-> New package for **design-agnostic** React chat/rich-content components shared
-> by the admin console and viglet.com **without** viglet.com depending on
-> `@viglet/turing-react-sdk` (axios). Skin via `classNames`/`labels`/`icons`;
-> pure logic stays in `@viglet/turing-sdk`. Foundation (`TuringHtmlSandbox` +
-> the SDK helpers) shipped — see [CHANGELOG.md](CHANGELOG.md). Rationale → §XII.2.
-
-## E.2 — Agent Workspace (the key differentiator)
-
-
-## E.3 — Skills (Anthropic-standard, portable) (differentiator)
-
-> **Direction (locked 2026-06-10).** A Skill is an **Anthropic-compatible folder**
-> (`SKILL.md` + `references/` + `scripts/` + `assets/`), stored in object storage,
-> edited like a mini-VS-Code, and **executed in a Docker sandbox compatible with
-> Anthropic's skill container** — Turing does **not** port skills into its own
-> entities. Goal: the *same* skill runs in **chat** and **semantic navigation**, and
-> is ZIP import/export-able (one ZIP may carry many skills, each independently
-> activatable). **Docker is a hard requirement** for the feature. This **supersedes**
-> the shipped T116 decomposed-manifest model (→ T317) and **retires** the old
-> T310–T315 attach-to-agent design. Reference bundle: `turing-marketplace/anthropic-skills/`.
-> Rationale → §IX.4.d.
-
-> **Block complete (2026-06-10).** All skill tasks (T316–T326) have shipped;
-> there is no remaining skills backlog. A hosted public registry was considered
-> and **dropped** — it is not a product direction.
-
-## E.4 — Human-in-the-loop (parity, made graph-visible)
-
-> **Block complete.** Both HITL tasks have shipped — the async, graph-declared
-> `humanApproval` node (T119) and the live, in-the-loop Spectator + Co-pilot mode
-> (T120). See [CHANGELOG.md](CHANGELOG.md) §E.4.
-
-## E.6 — Context engineering enforcement
-
-> **Block complete.** Both tasks have shipped — enforceable per-turn token
-> budgets with a working `COMPACT` mode (T123) and the workspace / memory /
-> tool-offload context-engineering metrics (T124). See [CHANGELOG.md](CHANGELOG.md) §E.6.
-
-## E.7 — Developer experience (CLI + eval)
-
-> **Block complete.** All three tasks have shipped — the `turing` CLI
-> (`init`/`dev`/`deploy`/`logs`, T125), the YAML eval regression suite
-> (`turing eval`, T126), and replay-as-test (`turing eval record`, T127) — as
-> the zero-dep `@viglet/turing-cli` package. See [CHANGELOG.md](CHANGELOG.md) §E.7.
-
-## E.8 — Observability interop
-
-> **Block complete.** Both tasks have shipped — the opt-in LangSmith run mirror
-> (T128) and chat-pipeline OpenTelemetry span export (T129) — as the fail-open
-> `turing.observability.*` exports. See [CHANGELOG.md](CHANGELOG.md) §E.8.
-
-## E.9 — Tool-selection quality (MCP / native disambiguation)
-
-> **Block complete.** Both tasks have shipped — trigger/namespace-aware tool
-> prioritization with an anti-starvation quota floor (T424) and the `mcp` binding
-> for Custom Tools (T425). See [CHANGELOG.md](CHANGELOG.md) §E.9.
-
-## F.2 — OpenAI Responses API + built-in tools
-
-> **Block complete.** All built-ins shipped — `web_search` (T133),
-> `file_search` (T134), `code_interpreter` (T135), `image_generation` (T137),
-> remote `mcp` (T138) as one-shot Responses tools, and `computer_use` (T136) as
-> the multi-turn screenshot/action loop over a pluggable `TurComputerUseDriver`.
-> See [CHANGELOG.md](CHANGELOG.md) §X.3.
-
-## F.3 — Anthropic server-side tools
-
-> **Block complete.** All five shipped — one-shot server tools `web_search`
-> (T139), `web_fetch` (T140), `code_execution` (T141) via `TurAnthropicMessagesService`,
-> plus the multi-turn loops `computer_use` (T143, reusing the `TurComputerUseDriver`
-> seam) and `bash` + `text_editor` (T142, against `TurAgentWorkspace`).
-> See [CHANGELOG.md](CHANGELOG.md) §X.4.
-
-## F.4 — MCP Connector (both vendors)
-
-> **Block complete.** All three tasks have shipped — the Anthropic MCP
-> Connector (T144), the cross-vendor MCP federation directory (T145), and the
-> public API-key-gated Turing-as-MCP-Server consumption surface (T146). See
-> [CHANGELOG.md](CHANGELOG.md) §X.5.
-
-## F.5 — Voice agents (Realtime API)
-
-> **Block complete.** All five tasks have shipped — the `TurRealtimeVoiceProvider`
-> seam + OpenAI ephemeral session minting (T147), the `/voice/session` +
-> `/voice/available` endpoints and the full-duplex `useTuringRealtimeVoice` SDK
-> hook (T148), the full-screen voice kiosk (T149), operator spectator
-> translation (T150), and voice authoring of chat-flows (T151). See
-> [CHANGELOG.md](CHANGELOG.md) §X.6.
-
-## F.7 — Batch + token economics
-
-> **Block complete.** All seven tasks have shipped — the unified
-> `TurBatchInferenceService` (T156), nightly batch summarization (T157), bulk
-> re-embedding via Batch (T158), LLM-Judge eval at the batch tier (T159),
-> service-tier routing (T160), Anthropic exact token counting (T161), and the
-> pre-flight cost quote gate (T162). See [CHANGELOG.md](CHANGELOG.md) §X.8.
-
 ## F.8 — Memory tool + context editing
 
 - 📋 **T163** (deps: T131, T111) **Anthropic Memory tool (`memory_20250818`)** — Claude gets six file commands (`view`/`create`/`str_replace`/`insert`/`delete`/`rename`); the implementation is backed by `TurAgentWorkspace` at path `memory/` (per-conversation by default; op… → §X.9.a
@@ -167,37 +68,11 @@
 - 💭 **T191** (deps: T169, T126) **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if… → §X.15.e
 - 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
 
-## F.15 — Capability surfacing & UX (the layer that makes the whole §X usable)
-
-> **Block complete (2026-06-26).** All four tasks shipped — the unified
-> capability registry/taxonomy (T432), the per-agent selection + union execution
-> "capacidade é mutex, resto coexiste" (T433), the capability-first agent picker
-> (T434), and the registry-driven REQUEST_OPTION settings (T435). §X tasks now
-> slot into a consistent home; T186 (heatmap) reads the same registry. See
-> [CHANGELOG.md](CHANGELOG.md) §X.18.
-
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
-> **Why now:** a capability review against CopilotKit's **AG-UI** protocol found
-> Turing's JS SDK at near-parity (token streaming, bi-directional **Slots** ≈
-> state sync, native forms T107, multimodal T401, Workspace T113), with **two**
-> genuine gaps: (1) the agent's tool calls are never put on the live SSE — they
-> run server-side and the client only sees final text; (2) there is no
-> frontend-defined ("client") tool the agent can invoke. This block closes both
-> for Turing's *own* agent runtime (it is **not** a multi-runtime protocol
-> adapter — that stays a 💭 bet, T441). Rationale → §XXII.
->
-> **Shipped so far:** T436 (live `tool_call` SSE events) + its prerequisite
-> **T427** (per-conversation tool-call trace, designed in §IX.8.a but never
-> shipped, built alongside it), T437 (SDK/`useTuringChat` `toolCalls` + headless
-> `TuringToolActivity`), T438 (client-tool protocol backend round-trip —
-> `client_tool_call` event + `POST /api/v2/chat/client-tool-result`, in-memory
-> park MVP), T439 (SDK `registerClientTool`/`clientTools` + the resume
-> round-trip in both SDKs), and T440 (generative UI via client tools —
-> `useGenerativeUI` + headless `TuringGenerativeContent`). See
-> [CHANGELOG.md](CHANGELOG.md) Block W + E.7. **All 📋 tasks shipped**; only
-> **T441** (canonical AG-UI protocol adapter) remains, a 💭 bet held until a
-> named integration asks for it.
+> Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
+> SSE + frontend-defined client tools). All 📋 tasks shipped — see
+> [CHANGELOG.md](CHANGELOG.md) Block W. Only the optional protocol adapter remains.
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
@@ -211,37 +86,13 @@
 > pull in nearly every primitive. Lives at `frontend/apps/showcase`, seeds its
 > own data. **Coverage matrix + per-task feature lists → §XXIV.**
 
-- 💭 **T451** (deps: T382, T386) **Scaffold + seed** — new `frontend/apps/showcase` Turborepo app; ~200-product typed catalog with images; SN site provisioned from a manifest (optionally demo derivation T387); import ZIP + `turing init`/`dev` clone-to-running path; branded skin of `@viglet/turing-react-ui` (T305). → §XXIV.2
+- ✅ **T451** — **Scaffold + seed** — SHIPPED. `frontend/apps/showcase` ("Atlas Store"): deterministic 200-product typed catalog (CURRENCY/FLOAT/INT/BOOL/DATE + multi-valued), hand-authored manifest/`export.json` (typed fields + 9 facets + 5 sorts + spotlight), import ZIP + `turing init`/`dev` path, `@viglet/turing-react-ui` brand skin (T305), faceted storefront + product page. See [CHANGELOG.md](CHANGELOG.md) → Block Y. → §XXIV.2
 - 💭 **T452** (deps: T451) **Search surface** — faceted + URL-synced search, autocomplete, spell-check, tabs (T247), sort, similar docs (T400), click tracking, HYBRID_RRF (T383) on + selectable reranker (Block N). The search half lit end to end. → §XXIV.2
 - 💭 **T453** (deps: T451) **Chat surface** — RAG chat exercising streaming + sources/citations (T152/T292) + `TuringSourceChips` + option chips + native forms (T107) + slots read/write/delta (T63) + multimodal upload (T401) + workspace panel (T113) + rich content md/`html`/`d2` (T295–T298). → §XXIV.2
 - 💭 **T454** (deps: T453, T436, T438, T442, T323, T80) **Agent power** — a bundled returns/RMA skill, code interpreter ("compute cart total / chart price history"), live tool-call activity (T436), client tools (T438/T439), and the answer-as-app comparison widget (T442). Block W + skills surface lit. → §XXIV.2
 - 💭 **T455** (deps: T454, T443, T444, T445, T448, T450) **Creative-bets wiring** — co-browse filters (T443), glass-box "why #1" (T444), ambient proactive copilot (T445), agent→agent returns↔sales handoff (T448), and an embeddable action widget (T450) on a mock host page. → §XXIV.2
 - 💭 **T456** (deps: T454, T446, T147) **Voice, memory & ops tour** — voice agent (T147) + search-by-image; cross-conversation memory panel (T446); admin ops route surfacing analytics (T87/T88/T90), eval + self-tuning (T447), cost governance (Block L); catalog exposed over the MCP server (Block I) for the "drive it from Claude Desktop" demo. → §XXIV.2
 - 💭 **T457** (deps: T455, T456) **Guided tour, tests & docs** — in-app walkthrough narrating each capability; e2e smoke test (SDK-contract IT pattern: boot backend, import showcase ZIP, drive search/chat/SSE/client-tool round-trip); `docs-turing` page + README link. Also the **coverage audit** reconciling the app against the §XXIV.1 matrix. → §XXIV.2
-
-## Block Z — Client-side conversion analytics & the Google Analytics bridge (T458–T463)
-
-> **Why:** the platform measures conversion/abandonment/A/B **server-side**
-> (`TurChatSessionEvent` outcome + experimentKey/variantLabel/personaId, T67–T75,
-> T85/T86). But customers run **GA4 in the browser**, where they already own
-> acquisition, media and audiences. Lead conversion in chat & semantic navigation,
-> drop-off/abandonment, and *which persona A/B variation was preferred* must be
-> emitted **client-side at the right lifecycle moments** (the server can't see a
-> tab close). Architecture: a zero-dep **canonical analytics event bus** in the
-> vanilla SDK + **pluggable sinks** (GA4 is the first adapter, not a hard dep) —
-> same shape as the AG-UI adapter bet (T441). Keeps the SDK zero-dep / EDS-friendly.
-> → §XXV
-
-> **Block complete (2026-06-29).** All six tasks shipped (T458–T463) — the
-> zero-dep canonical event bus + taxonomy (T458), GA4/GTM + generic + debug
-> sinks with `window.gtag`/`dataLayer` auto-detect (T459), client-side
-> abandonment via `sendBeacon`/`transport_type: 'beacon'` (T460), conversion +
-> funnel-step + A/B attribution with `personaId` on `GET /chat/state` (T461),
-> search/semantic-navigation events + `TUR_SESSION` stitching (T462), and the
-> `useTuringAnalytics()` React hook + `TuringResultList` passthrough + EDS
-> example + docs (T463). See [CHANGELOG.md](CHANGELOG.md) → Block Z. No active
-> backlog remains. (A `docs-turing` taxonomy/funnel-recipes page lives in the
-> sibling `vigletdocs.github.io` repo.)
 
 ## Block AA — Synthetic personas: audience-fit content evaluation & persona synthesis from audio (T464–T472)
 
@@ -284,52 +135,14 @@
 - 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
 - 💭 **T256** (deps: T254) **Federation directory + bold bets** — cross-ref §X.5 T192: opt-in publish a redacted public MCP server to `directory.turing.io`; every publisher makes every subscriber's agents more useful. → §XIII.7
 
-## Block J — Multi-tenancy (T257–T284) ✅ shipped 2026-06-11
+## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
-> Shipped: T257–T284 — one shared JVM, many isolated tenants behind
-> `turing.tenancy.enabled` (default off = legacy). Discriminator-column
-> `@TenantId` + single Keycloak realm + tenant-owned infra with a shared pool;
-> every out-of-band surface (cache, cores, storage, Lucene, secrets, JMS,
-> scheduling, reactive) scoped; self-service signup, switch, platform-admin
-> console, quotas, teardown, and the cross-tenant isolation IT gate. See
-> [CHANGELOG.md](CHANGELOG.md) → Block J and
-> [MULTI_TENANCY.md](MULTI_TENANCY.md). **T333** (auto-provision personal
-> tenant on first login, §XIV.8) shipped 2026-06-12 to wire Viglet Cloud.
-
-### Block J follow-ups — Cloud SaaS hardening (T334–T373)
-
-> Surfaced wiring Block J into Viglet Cloud (one tenant per signed-up user on
-> shared turing/solr/postgres infra). These are the gaps that remain for a
-> *seamless* per-user SaaS; design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIV.8.
+> Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)
+> → Block J and [MULTI_TENANCY.md](MULTI_TENANCY.md)) into Viglet Cloud (one tenant
+> per signed-up user on shared turing/solr/postgres infra). These are the gaps that
+> remain for a *seamless* per-user SaaS; design in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIV.8.
 
 - 📋 **T373** (deps: —) **Ship Cloud default config as a GLOBAL seed ZIP** — `TurExportImportOnStartup` already auto-imports `export/*.zip` once on first boot (guarded by the `EXPORT_AUTO_IMPORT` marker); guarantee the export emits/keeps `tenantId = null` for the 6 BYO-infra types so one seeded default LLM/SE/etc. is visible to every auto-provisioned tenant, and bake the seed ZIP into the Docker image. Closes the "default config for all users with zero post-deploy setup" ask for Viglet Cloud. Caveat: the same `TurSecretCryptoService` key must be set in every container or encrypted API keys won't decrypt. → §XIV.8.7
-## Block K — Agent CI (flow/prompt eval gate) ✅ shipped 2026-06-05
-
-> Shipped: T285–T288 (golden-set model + CRUD, eval runner + judge scoring,
-> pre-publish gate in the flow-editor Lint panel, `-Pagent-eval` CI). See
-> [CHANGELOG.md](CHANGELOG.md) → Block K. No active backlog remains here.
-
-## Block L — Cost & token governance (provider-agnostic) ✅ shipped 2026-06-18
-
-> Shipped: T289–T291 — per-model price table + frozen per-turn USD cost on the
-> always-on relational `llm_token_usage` (agent/stage tagged), a live all-provider
-> AI-spend dashboard (`/console/cost-governance`), and a per-agent turn-time soft
-> budget gate (monthly cap → downgrade/warn). Built on the Spring AI `ChatResponse`
-> usage metadata (local/embedded = $0), **not** the native-SDK seam. See
-> [CHANGELOG.md](CHANGELOG.md) → Block L. No active backlog remains here.
->
-> Implementation note: built on the existing `TurLLMTokenUsage` JPA table (which
-> already captured per-call tokens + tenant) rather than a parallel
-> `TurChatCostSample` in the Mongo/Redis chat-analytics store — the relational
-> path is always on, so cost data survives `turing.logging.engine=none`, matching
-> the "always works / $0 local" design goal.
-
-## Block M — Verifiable answers (provider-agnostic provenance)
-
-> **Shipped 2026-06-12** (T292, T293, T327–T332). See
-> [CHANGELOG.md](CHANGELOG.md) → Block M. No active backlog remains here. T330
-> (groundedness audit) and T331 (follow-up suggestions) shipped as opt-in Global
-> Settings (default off), not per-agent flags.
 
 ## Block O — GEO / LLM discoverability & content distribution
 
@@ -361,43 +174,12 @@
 > Publish the runtime as a public community edition while keeping strategy docs,
 > commit history, and the (future) paid add-on private. **Phase 1 is pure
 > mechanics — no CE/EE module surgery** (§XI.3). Boundary + license → STRATEGY
-> §XI; publish mechanics → IMPROVEMENTS §XIX. No rush; sequence: boundary (T356 ✅,
-> `ce-exclude.txt`) → publish script (T357 ✅, `scripts/publish-ce.sh`) → secret-scan (T358 ✅) → snapshot/history (T359 ✅, `README.ce.adoc`) → CI (T360 ✅, `publish-ce.yml`)
-> (T360) → contribution+CLA (T361) → license decision (T362).
+> §XI; publish mechanics → IMPROVEMENTS §XIX. Mechanics shipped (T356–T361); what
+> remains are strategy decisions.
 
 - 💭 **T362** (deps: T360 ✅) **License posture decision** — keep Apache 2.0 on CE now; revisit FSL (over BSL/SSPL) only if Turing Cloud is real revenue AND a competitor hosts the CE. Strategy decision, not code. → §XI.4
 - 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
 - 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
-
-## Block R — Structured-source indexing & the cursarei reference (with Dumont)
-
-> Surfaced by the **cursarei → Viglet** migration (cursarei `docs/roadmap/ROADMAP.md`
-> track `V##`; Dumont `dumont/docs/ROADMAP.md` tracks A–C). cursarei indexes a
-> structured catalog — ~4,000 Brazilian university courses, 120+ sources — into a
-> Turing SN site, and wants Turing to be the single engine behind faceted search,
-> "similar courses" and a grounded RAG copilot. These tasks are the **indexing/search
-> side** of that; the collection side is Dumont. Design rationale → §XX.
->
-> The recurring constraint is **conservative grounding**: a source field that is
-> absent must stay absent in the index — never coerced to `""` — or facets get
-> polluted and "field present?" logic breaks. This is a public-data catalog, so
-> **ranking must stay objective** (relevance + signals); no "preferred/partner" boost.
-
-> **Amplification (2026-06-16).** T381–T385 are the cursarei migration's indexing half.
-> Read together they are the foundation of a reusable capability — **Turing as a
-> declarative, self-hosted structured-search engine** for public/enterprise catalogs
-> (positioning in [STRATEGY.md](STRATEGY.md) §XIII). T386–T393 productize that, keeping
-> both Block-R invariants (conservative grounding + objective ranking). Design → §XX.6–13.
-
-## Block U — Documentation refresh (`docs-turing`) ✅ shipped 2026-06-25
-
-> Shipped: T411–T423 — brought the public docs at `vigletdocs.github.io/docs-turing`
-> up to parity with what shipped through T410. Six new pages (webhooks, routines,
-> cost-governance, experiments, human-in-the-loop, agent-eval) + rewrites/expansions
-> of chat-flow, chat-analytics, mcp-servers, tool-calling, ai-agents,
-> configuration-reference, token-usage, observability + sidebar wiring. See
-> [CHANGELOG.md](CHANGELOG.md) → Block U. The per-page plan that drove it is
-> archived at `docs-turing/_documentation-update-plan.md`. No active backlog remains.
 
 ## Block AB — Public site & top-of-funnel conversion (`turing.viglet.org`)
 
@@ -405,9 +187,7 @@
 > [STRATEGY.md](STRATEGY.md) §XIV; build rationale in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVII.
 >
 > **Phase 0 shipped (T473–T476)** — the `frontend/apps/site` app, analogy hero
-> ("open-source self-hosted alternative to Algolia + agents") + Search→Ask→Automate→Run
-> pillars + "Why Turing" comparison + sample-data live demo + GitHub-stars badge +
-> copy-paste quickstart + Roadmap/Changelog links + CLI section/README. See
+> + pillars + comparison + sample-data live demo + quickstart + CLI section. See
 > [CHANGELOG.md](CHANGELOG.md) → Block AB. Remaining (the defining bets):
 
 - ⏳ **T477** (deps: T451–T457) **Public read-only demo instance behind the site** — ⏳ infra **shipped in `viglet/cloud`** (`docker compose --profile demo`: `turing-demo` + isolated `solr-demo`, anonymous/no-Keycloak, ephemeral tmpfs store wiped on reset, hardened, nginx deny-by-default allowlist + per-IP rate limits on `demo.turing.viglet.org`, periodic systemd reset; see `docker/DEMO.md`). **Pending (host):** DNS, real TLS cert, drop a seed export ZIP + confirm the import endpoint/auth, set the demo agent's cheap-model + budget cap. Then it backs the hero + marketplace demos (T478). → §XXVII.2

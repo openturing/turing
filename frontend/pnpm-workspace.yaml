@@ -1,6 +1,7 @@
 packages:
   - "apps/turing-app"
   - "apps/site"
+  - "apps/showcase"
   - "apps/marketplace/*"
   - "packages/*"
 

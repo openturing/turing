@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ── Atlas Store brand palette ──
+   Retail identity: indigo primary (shared with Turing brand) + a warm amber
+   accent reserved for price / sale highlights. Distinct from the admin console
+   yet recognisably part of the Viglet Turing ES family. */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.003 260);
+  --foreground: oklch(0.18 0.02 270);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 270);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 270);
+  --primary: oklch(0.51 0.21 274);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.01 270);
+  --secondary-foreground: oklch(0.28 0.05 274);
+  --muted: oklch(0.96 0.008 270);
+  --muted-foreground: oklch(0.52 0.03 270);
+  --accent: oklch(0.81 0.16 78);
+  --accent-foreground: oklch(0.26 0.06 60);
+  --destructive: oklch(0.58 0.24 27);
+  --border: oklch(0.9 0.012 270);
+  --input: oklch(0.9 0.012 270);
+  --ring: oklch(0.55 0.18 274);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 270);
+  --foreground: oklch(0.94 0.01 270);
+  --card: oklch(0.2 0.025 270);
+  --card-foreground: oklch(0.94 0.01 270);
+  --popover: oklch(0.2 0.025 270);
+  --popover-foreground: oklch(0.94 0.01 270);
+  --primary: oklch(0.66 0.19 274);
+  --primary-foreground: oklch(0.14 0.02 270);
+  --secondary: oklch(0.26 0.04 270);
+  --secondary-foreground: oklch(0.9 0.01 270);
+  --muted: oklch(0.26 0.04 270);
+  --muted-foreground: oklch(0.68 0.04 270);
+  --accent: oklch(0.78 0.15 78);
+  --accent-foreground: oklch(0.2 0.04 60);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(0.3 0.04 270);
+  --input: oklch(0.28 0.04 270);
+  --ring: oklch(0.65 0.15 274);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Soft gradient sheen reused by the hero and product cards. */
+.atlas-sheen {
+  background-image: radial-gradient(
+    ellipse at top,
+    var(--tw-gradient-stops, oklch(0.51 0.21 274 / 0.08)),
+    transparent 70%
+  );
+}
