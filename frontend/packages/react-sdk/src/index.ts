@@ -135,6 +135,12 @@ export type {
   UseTuringProactiveCopilotOptions,
   UseTuringProactiveCopilotReturn,
 } from "./hooks/use-turing-proactive-copilot";
+export { useTuringUserMemory } from "./hooks/use-turing-user-memory";
+export type {
+  TuringUserMemory,
+  UseTuringUserMemoryOptions,
+  UseTuringUserMemoryReturn,
+} from "./hooks/use-turing-user-memory";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,
