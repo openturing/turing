@@ -220,6 +220,7 @@ public class TurChatFlowEngineService {
 
     /** Parses the flow's {@code definitionJson} into a {@link ChatFlowGraph}. */
     public Optional<ChatFlowGraph> parseGraph(TurChatFlow flow) {
+        flow = resolveFlowForRead(flow);
         if (flow == null || flow.getDefinitionJson() == null || flow.getDefinitionJson().isBlank()) {
             return Optional.empty();
         }
@@ -230,6 +231,29 @@ public class TurChatFlowEngineService {
                     flow.getId(), e.getMessage());
             return Optional.empty();
         }
+    }
+
+    /**
+     * Returns a flow whose scalar columns ({@code definitionJson}, name, …) are
+     * safe to read outside an open session.
+     *
+     * <p>Spring Data {@code save()} returns a <em>merge</em>-managed state whose
+     * {@code @ManyToOne(LAZY)} flow is a detached proxy. The engine parses the
+     * graph after that save has committed, so dereferencing the proxy would
+     * raise {@code LazyInitializationException} — we deliberately run with
+     * {@code hibernate.enable_lazy_load_no_trans=false}. Reading the
+     * association's <em>id</em> never initializes the proxy (the FK is already
+     * known), so we reload the managed entity through the {@code @Cacheable}
+     * repository finder — the ordinary Spring Data JPA pattern, no Hibernate
+     * internals. A transient flow (no id yet) is returned as-is; a cache miss
+     * falls back to the passed instance so unit tests with a mocked repository
+     * keep working.
+     */
+    private TurChatFlow resolveFlowForRead(TurChatFlow flow) {
+        if (flow == null || flow.getId() == null) {
+            return flow;
+        }
+        return chatFlowRepository.findById(flow.getId()).orElse(flow);
     }
 
     /**

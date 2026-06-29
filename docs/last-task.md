@@ -1,7 +1,7 @@
-# Last task number — `T485`
+# Last task number — `T488`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T486`; after assigning it, bump the number above and the log line below.
+> `T489`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -57,6 +57,9 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 - **T398** — Dumont: audit + adopt the shared tenancy (Block Q / parity) — 2026-06-16
 - **T397** — Shio: adopt the full shared tenancy (Block Q / parity) — 2026-06-16
 - **T396** — Turing: align to the expanded tenancy kernel (Block Q / parity) — 2026-06-16
+- **T488** — Admin/CRUD uncached + transactional graph loads (Block AC) — 2026-06-29
+- **T487** — Dedicated cached read-model layer for semantic navigation + chat (Block AC) — 2026-06-29
+- **T486** — Strip repository-level `@Cacheable`/`@CacheEvict` across the board (Block AC) — 2026-06-29
 - **T408** — Admin wizard: generate SN fields from sample documents (frontend for T387) — 2026-06-17
 - **T395** — Expand `viglet-core-tenancy` to the full shared feature set (Block Q / parity) — 2026-06-16
 - **T394** — Audit + design the canonical shared tenancy surface (Block Q / parity) — 2026-06-16

@@ -2437,3 +2437,68 @@ asset is dead.
 **Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
 not over-claim in the comparison table (keep it defensible + dated).
+
+## XXVIII. JPA caching strategy: decouple cache from entities (Block AC)
+
+### XXVIII.0 The fault line
+
+Turing caches at the **repository** layer — `@Cacheable` on `findById`/`findAll`
+finders so the search and chat hot paths don't hit the database on every turn.
+That is the right instinct (avoid DB round-trips during search/chat) but the
+**wrong object to cache**: the cached value is a **JPA entity**, and JPA entities
+carry **`@ManyToOne(LAZY)` proxies**. A cached entity outlives the session that
+loaded it, so the moment a hot path dereferences one of its lazy associations
+**outside a transaction**, Hibernate throws `LazyInitializationException`.
+
+This was masked for years by `hibernate.enable_lazy_load_no_trans=true`, which
+silently opened a throwaway session on every out-of-session lazy access. That
+flag was turned **off** (2026-06-29) to stop the `@TenantId` always-on filter
+spamming `HHH90030002` warnings — and the latent fault surfaced immediately in
+the chat-flow engine: `stateRepository.save(state)` returns a **merge-managed**
+state whose `@ManyToOne(LAZY) flow` is a detached proxy, and the post-save
+`parseGraph(state.getFlow().getDefinitionJson())` blew up across ~30 flow ITs.
+
+The **stop-gap already shipped** (2026-06-29, not a numbered task): the flow
+engine now (a) `JOIN FETCH`-es the flow on the state finders and (b) resolves a
+possibly-detached flow through the `@Cacheable` `findById` finder before reading
+its columns (`getId()` is proxy-safe — the FK is known without initialization).
+This is the same family as the pre-existing `TurSNSite.findByIdNoCache` band-aid.
+Band-aids per site don't scale — Block AC removes the root cause.
+
+### XXVIII.1 T486 — strip repository-level caching first (make it work)
+
+Remove `@Cacheable`/`@CacheEvict` from **all** repositories and run the
+environment cache-free. This deletes the entire class of cached-entity ↔
+lazy-proxy bug at a stroke, plus the `@CacheEvict` bookkeeping (the convention +
+`TurCacheAnnotationConventionsTest` pairing rule) and the `findByIdNoCache`
+workarounds. The bet: an uncached environment that is **correct** is the right
+baseline to re-introduce caching onto deliberately — and the DB cost of an
+uncached admin + first-load chat is acceptable for the transition window. Flip
+`TurCacheAnnotationConventionsTest` from "every `@Cacheable` must be evicted" to
+"**no `@Cacheable` on repositories**" so the policy is enforced, not aspirational.
+
+### XXVIII.2 T487 — one dedicated cached layer for the hot path
+
+Re-introduce caching **only** for semantic navigation + chat, as an explicit
+cache **service** that caches **immutable read-models / DTOs**, never lazy JPA
+entities: the parsed `ChatFlowGraph` (already an immutable record tree), the SN
+site + field configuration as a flat DTO, router decisions, static prompts.
+Because the cached value has no lazy proxies and no session affinity, it is safe
+to read anywhere, any time — the property the entity cache never had. Keys are
+explicit and invalidated on the matching admin write. This is where the user's
+priority lands: **cache the search/chat path, leave admin uncached.**
+
+### XXVIII.3 T488 — admin/CRUD = uncached + transactional graph loads
+
+Admin load-mutate-map paths (the ones that currently reach for
+`findByIdNoCache`) move to plain `@Transactional` methods that fetch what they
+need with `@Query ... LEFT JOIN FETCH` (the project convention — **not**
+`@EntityGraph`, which emits log warnings), then map inside the session. No cache,
+no proxies escaping, no eviction. Document the standing policy — **cache lives in
+the hot-path read-model service only; repositories and admin are uncached; never
+cache an entity that has a lazy association** — and lint it.
+
+**Non-goals:** do not re-add `@Cacheable` to repositories "just for this one
+finder"; do not cache JPA entities anywhere; do not hold a DB transaction open
+across an LLM call (the read-model cache exists precisely so the hot path needn't
+be transactional).

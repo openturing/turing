@@ -143,7 +143,7 @@ class TurUuidGeneratorTest {
     @Test
     void initializeShouldNotThrow() {
         // initialize is a no-op, but should not throw
-        assertDoesNotThrow(() -> generator.initialize(null, null, null));
+        assertDoesNotThrow(() -> generator.initialize(null, null));
     }
 
     // --- Default constructor ---
