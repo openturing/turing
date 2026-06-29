@@ -2543,3 +2543,147 @@ asset is dead.
 **Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
 GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
 not over-claim in the comparison table (keep it defensible + dated).
+
+## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
+
+Turing already wires 6 chat provider types (`openai`, `anthropic`, `gemini`,
+`gemini-openai`, `ollama`, `embedded`) through `TurGenAiLlmProvider` /
+`TurGenAiLlmProviderFactory`, with embeddings on OpenAI/Azure/Ollama and Cohere
+present **only** as a Block N reranker strategy. Block AD is deliberately *not*
+"add provider X like the others." Block F.16 set the pattern: wiring a vendor is
+table stakes; the value is in the **distinctive primitive each one brings** and
+the **net-new product bridges** built on it. So this block has three layers —
+the seams, the primitive-exploitation tasks, and the cross-vendor bridges — all
+opt-in behind the existing two-level capability gate; empty/legacy config leaves
+every current path byte-for-byte unchanged.
+
+**Why these and not others:** the selection is driven by the product being an
+*enterprise-search / RAG* platform — so the gaps that matter are an enterprise
+gateway (Bedrock), a retrieval-specialist embed/rerank vendor (Voyage), a
+GDPR-native European provider (Mistral), the GCP enterprise path (Vertex), and
+the one-seam unlock of the entire OpenAI-compatible long tail. Pure-chat
+novelty for its own sake is out of scope.
+
+### Foundation — the provider seams
+
+- **§XXVIII.1 — T505 Generic OpenAI-compatible provider.** The `gemini-openai`
+  provider already proves the "OpenAI wire format at a custom `baseUrl`" seam
+  works. Generalize it into a first-class `openai-compatible` provider where the
+  endpoint URL (and optional auth header shape) is per-instance config. One seam
+  then reaches **DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, Together,
+  Fireworks, and a local vLLM/LM-Studio** — chat plus embeddings wherever the
+  endpoint exposes `/embeddings`. Highest ROI in the block: ~8 vendors for one
+  provider. The capability matrix stays conservative (no native server-tools
+  assumed) since these endpoints vary.
+- **§XXVIII.2 — T506 AWS Bedrock provider.** `TurBedrockLlmProvider` over Spring
+  AI's Bedrock Converse API. Distinct from every other provider in that it is a
+  **gateway** (Claude, Llama, Mistral, Nova, Titan on one endpoint) authenticated
+  by **IAM role / region**, not an API key — so `TurLLMInstance` needs an
+  IAM-credential shape alongside the encrypted-key shape. This is the path
+  AWS-standardized enterprises require for data residency and procurement; it
+  also unlocks the Bedrock-only bridges below (Guardrails, Knowledge Bases).
+- **§XXVIII.3 — T507 Voyage AI embeddings + rerank.** Voyage is the retrieval
+  specialist Anthropic itself points customers to (Anthropic has no embedding
+  API). Wire a `voyage` embedding provider — `voyage-3`/`voyage-3-large` with the
+  asymmetric `input_type=document|query` distinction — and a `VOYAGE` strategy in
+  the Block N `TurRagReranker` (`rerank-2.5`). This is the single highest-leverage
+  *quality* move: better embeddings + rerank lift the whole RAG surface without
+  touching prompts.
+- **§XXVIII.4 — T508 Cohere full provider.** Cohere is already half-integrated
+  (rerank). Promote it: `Command` chat (notable for **built-in citation mode** —
+  see §XXVIII.15) + `Embed v4` (multilingual + multimodal + Matryoshka). Reuses
+  the credentials the reranker already stores. Strong specifically for
+  multilingual enterprise search.
+- **§XXVIII.5 — T509 Mistral AI provider.** Spring-AI-native. Chat (Mistral
+  Large/Small, Codestral for code), Mistral embeddings, and a `MISTRAL` reranker
+  strategy. The reason to prioritize it is non-technical: a **European,
+  GDPR-native** option matters to EU customers and to Viglet's own positioning.
+  Also the gateway to `mistral-ocr` (§XXVIII.11).
+- **§XXVIII.6 — T510 Google Vertex AI provider.** The current Gemini integration
+  hits the *public* `generativelanguage.googleapis.com`, which cannot serve a
+  GCP-regulated tenant. `vertex-ai` is the enterprise path: IAM, VPC-SC, CMEK,
+  regional endpoints, provisioned throughput, and Model Garden (Gemini **and**
+  Claude/Llama on GCP). Shares prompt-assembly with the T489 native Gemini
+  branch; differs only in transport + auth. Also the gateway to Vertex AI Search
+  / Ranking (§XXVIII.16/.17).
+
+### Exploit distinctive primitives — net-new retrieval capabilities
+
+- **§XXVIII.7 — T511 Multimodal embeddings retrieval mode.** `voyage-multimodal-3`,
+  Cohere `Embed v4` and Bedrock Titan multimodal embed *text and images into one
+  vector space*. That lets Turing index PDF page-images, diagrams, charts and
+  screenshots and have a plain-text query match them — visual document search the
+  current text-only embed path can't do. Bridges three existing pieces: the T64
+  multimodal slots, the Lucene embedded vector store, and the indexer write path
+  (render page → embed image → store vector). New surface, not parity.
+- **§XXVIII.8 — T512 Contextualized chunk embeddings.** `voyage-context-3` embeds
+  a chunk *together with* its surrounding document context, directly attacking the
+  most common RAG failure (a chunk that's meaningless without the section it came
+  from). Per-site opt-in at index time; query time is unchanged. A measurable
+  retrieval-quality lift with zero prompt changes.
+- **§XXVIII.9 — T513 Domain-specialized embedding model per SN site.** Voyage
+  ships `voyage-finance`, `voyage-law`, `voyage-code`; Cohere has domain variants.
+  Surface an embedding-model choice in the site manifest / field config (T386) so
+  a legal-docs site and a code-search site each index + query through the right
+  embedder. Reuses the manifest-as-schema plumbing; no new query path.
+- **§XXVIII.10 — T514 Quantized / Matryoshka embeddings for the Lucene store.**
+  Voyage/Cohere/Gemini expose `outputDimensionality` truncation (Matryoshka) and
+  int8/binary output. Storing shorter, quantized vectors shrinks the embedded
+  Lucene vector store and speeds KNN, at a measured recall cost — opt-in per
+  store with the trade-off documented. Pure infra win for self-hosters.
+- **§XXVIII.11 — T515 Mistral OCR / Document-AI extraction bridge.** Today the
+  indexer/connector path relies on Tika, which is weak on scanned PDFs and
+  image-only documents. `mistral-ocr` is best-in-class document understanding;
+  wire it as an *augmentation* (not replacement) on the write path for
+  image/scanned inputs. Its structured bbox annotations are a second payoff: they
+  feed T387 manifest derivation and field extraction with layout-aware structure.
+
+### Cross-vendor bridges — the bold bets
+
+- **§XXVIII.12 — T516 Pluggable answer-grounding guardrail.** A new
+  `TurAnswerGuardrail` seam that checks a streamed RAG answer is actually grounded
+  in the retrieved context (and redacts PII) before/while it reaches the user.
+  First adapter: **Bedrock Guardrails** contextual-grounding + PII; further
+  adapters wrap Mistral moderation and the existing OpenAI omni-moderation (T182).
+  This is a managed, provider-backed complement to the T155 citation-drift scan —
+  catching hallucination at answer time, not the next day.
+- **§XXVIII.13 — T517 Cross-provider per-stage model "lanes".** The platform runs
+  many LLM stages (autocomplete, spell, query-rewrite, router, rerank, judge,
+  background summarization). Different stages want different vendors: a **fast
+  lane** (Groq/Cerebras, sub-100ms) for interactive micro-calls, a **reasoning
+  lane** (DeepSeek R1 / o-series) for rerank/judge/router, a **cheap lane** for
+  background. Expose a declarative per-stage → instance binding over the existing
+  router so this is config, not code. The multi-provider seam is what makes it
+  possible; this is the task that *monetizes* having many providers.
+- **§XXVIII.14 — T518 Cost-aware cross-provider fallback / meta-provider.** An
+  OpenRouter-style layer: automatic failover when a provider errors/rate-limits,
+  and cheapest-capable routing for a given capability requirement, with per-tenant
+  cost attribution (Bedrock application-inference-profile tags map cleanly to the
+  tenant model). Feeds the F.13 cost-governance widgets (T183/T184).
+- **§XXVIII.15 — T519 Native-citation RAG across vendors.** Cohere `Command`
+  citation mode and Bedrock Knowledge Base responses return grounded citations
+  *natively*. Decode them onto the existing T152–T155 `TurChatCitation`/SSE
+  contract so they render exactly like the Gemini/Anthropic/OpenAI native
+  grounding already does. A cross-vendor citation source, no new UI.
+- **§XXVIII.16 — T520 Managed-RAG retrieval backend seam.** The biggest
+  architectural bet: a `TurRetrievalBackend` interface so a tenant can point
+  retrieval at **Bedrock Knowledge Bases**, **Vertex AI Search**, or **Vertex RAG
+  Engine** instead of the built-in index — for organizations that have already
+  standardized on a cloud RAG stack and want Turing as the agent/chat/eval layer
+  on top. Kept a 💭 because it touches the retrieval core; scope carefully.
+- **§XXVIII.17 — T521 Managed reranker strategies.** Vertex AI Ranking API and
+  Bedrock rerank as additional Block N `TurRagReranker` strategies, for
+  cloud-native deployments that don't want to self-host a cross-encoder. Pure
+  additive strategy, fail-open like the rest of Block N.
+- **§XXVIII.18 — T522 Multi-provider "second opinion" cross-check.** For
+  high-stakes answers, run a cheap model from a *different vendor* as a critic of
+  the primary answer (cross-vendor LlmJudge), and surface the agreement as a
+  confidence signal beside the answer. Composes the existing LlmJudge with the
+  T180 logprobs confidence signal; only meaningful once multiple vendors are
+  wired — another payoff of breadth.
+
+**Non-goals:** don't add a provider with no distinctive primitive or enterprise
+reason just to lengthen the list (pure-chat clones belong behind T505's generic
+seam, not as bespoke providers); don't make any new capability default-on (every
+one is gated); don't let the managed-RAG seam (T520) fork the retrieval core —
+it's an alternative backend, not a rewrite.
