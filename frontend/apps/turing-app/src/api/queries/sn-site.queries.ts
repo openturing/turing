@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TurSNSite } from '@/models/sn/sn-site.model';
 import type { TurSNSiteListItem } from '@/models/sn/sn-site-list-item.model.ts';
 import type { TurSNFieldCoverageReport } from '@/models/sn/sn-field-coverage.model.ts';
+import type { TurSNContentFitReport } from '@/models/sn/sn-content-fit.model.ts';
 import { TurSNSiteService } from '@/services/sn/sn.service';
 import { queryKeys } from './keys';
 
@@ -14,6 +15,17 @@ export function useSnSiteFieldCoverage(siteId: string | undefined) {
       ? queryKeys.snSiteFieldCoverage.bySite(siteId)
       : ['sn-site-field-coverage', 'pending'],
     queryFn: () => service.getFieldCoverage(siteId as string),
+    enabled: Boolean(siteId),
+  });
+}
+
+/** T472 — index-time audience content-fit coverage report for an SN site. */
+export function useSnSiteContentFit(siteId: string | undefined) {
+  return useQuery<TurSNContentFitReport>({
+    queryKey: siteId
+      ? queryKeys.snSiteContentFit.bySite(siteId)
+      : ['sn-site-content-fit', 'pending'],
+    queryFn: () => service.getContentFit(siteId as string),
     enabled: Boolean(siteId),
   });
 }

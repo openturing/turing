@@ -1,4 +1,4 @@
-import { useSnSiteFieldCoverage } from "@/api/queries/sn-site.queries";
+import { useSnSiteContentFit, useSnSiteFieldCoverage } from "@/api/queries/sn-site.queries";
 import { BlankSlate } from "@/components/blank-slate";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSNFieldCoverage } from "@/models/sn/sn-field-coverage.model";
-import { IconChartBar, IconDatabase } from "@tabler/icons-react";
+import { IconChartBar, IconDatabase, IconUserSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
@@ -41,6 +41,108 @@ function CoverageBar({ field }: { field: TurSNFieldCoverage }) {
         {field.coveragePercent.toFixed(1)}%
       </span>
     </div>
+  );
+}
+
+/**
+ * T472 — index-time audience content-fit. Shows the share of indexed documents
+ * that are "too complex for their audience" (red / amber / green buckets).
+ */
+function ContentFitCard({ siteId }: { siteId: string }) {
+  const { t } = useTranslation();
+  const { data: fit, isLoading } = useSnSiteContentFit(siteId);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+  if (!fit) return null;
+
+  const renderBody = () => {
+    if (!fit.enabled) {
+      return (
+        <div className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">{t("sn.contentFit.disabledTitle")}</p>
+          <p>{t("sn.contentFit.disabledHint")}</p>
+        </div>
+      );
+    }
+    if (!fit.supported) {
+      return <p className="text-sm text-muted-foreground">{t("sn.contentFit.unsupported")}</p>;
+    }
+    if (fit.scoredDocuments <= 0) {
+      return <p className="text-sm text-muted-foreground">{t("sn.contentFit.notScored")}</p>;
+    }
+    const pct = (n: number) => (fit.scoredDocuments > 0 ? (n * 100) / fit.scoredDocuments : 0);
+    const summary = fit.personaName
+      ? t("sn.contentFit.tooComplexSummary", {
+          percent: fit.tooComplexPercent.toFixed(1),
+          persona: fit.personaName,
+        })
+      : t("sn.contentFit.tooComplexSummaryNoPersona", {
+          percent: fit.tooComplexPercent.toFixed(1),
+        });
+    return (
+      <div className="space-y-3">
+        <p className="text-sm">
+          <span className="font-semibold tabular-nums text-red-600 dark:text-red-400">
+            {fit.tooComplexPercent.toFixed(1)}%
+          </span>{" "}
+          <span className="text-muted-foreground">{summary}</span>
+        </p>
+        {/* Stacked red/amber/green bar over the scored documents. */}
+        <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full bg-red-500" style={{ width: `${pct(fit.tooComplex)}%` }} />
+          <div className="h-full bg-amber-500" style={{ width: `${pct(fit.borderline)}%` }} />
+          <div className="h-full bg-emerald-500" style={{ width: `${pct(fit.good)}%` }} />
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm tabular-nums">
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-red-500" />
+            {t("sn.contentFit.tooComplex")}: <strong>{fit.tooComplex.toLocaleString()}</strong>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-amber-500" />
+            {t("sn.contentFit.borderline")}: <strong>{fit.borderline.toLocaleString()}</strong>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-emerald-500" />
+            {t("sn.contentFit.good")}: <strong>{fit.good.toLocaleString()}</strong>
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <strong>{fit.scoredDocuments.toLocaleString()}</strong> {t("sn.contentFit.scored")}{" "}
+          {t("sn.contentFit.ofTotal", { total: fit.totalDocuments.toLocaleString() })}
+          {fit.personaName && (
+            <>
+              {" · "}
+              {t("sn.contentFit.persona")}: <strong>{fit.personaName}</strong>
+            </>
+          )}
+        </p>
+      </div>
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <IconUserSearch className="h-5 w-5 text-muted-foreground" />
+          {t("sn.contentFit.title")}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">{t("sn.contentFit.description")}</p>
+      </CardHeader>
+      <CardContent>{renderBody()}</CardContent>
+    </Card>
   );
 }
 
@@ -168,7 +270,10 @@ export default function SNSiteFieldCoverageListPage() {
         feature={t("sn.fieldCoverage.title")}
         description={t("sn.fieldCoverage.description")}
       />
-      <div className="px-6">{renderContent()}</div>
+      <div className="space-y-6 px-6">
+        <ContentFitCard siteId={id} />
+        {renderContent()}
+      </div>
     </>
   );
 }

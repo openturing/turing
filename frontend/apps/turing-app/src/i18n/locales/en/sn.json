@@ -343,6 +343,22 @@
       "unsupported": "This search engine cannot report field presence, so coverage is unavailable.",
       "empty": "No fields to measure yet.",
       "emptyDescription": "Enable fields and index documents — completeness will show up here."
+    },
+    "contentFit": {
+      "title": "Audience Content Fit",
+      "description": "How well indexed content matches its target-audience persona, scored at index time.",
+      "disabledTitle": "Content-fit scoring is off",
+      "disabledHint": "Turn on \"Audience Content Fit\" in the GenAI settings and pick an audience persona, then re-index to populate scores.",
+      "persona": "Audience persona",
+      "tooComplex": "Too complex",
+      "borderline": "Borderline",
+      "good": "Good fit",
+      "scored": "documents scored",
+      "ofTotal": "of {{total}} indexed",
+      "tooComplexSummary": "{{percent}}% of scored content is too complex for {{persona}}",
+      "tooComplexSummaryNoPersona": "{{percent}}% of scored content is too complex for its audience",
+      "unsupported": "This search engine cannot range-count the score, so the breakdown is unavailable.",
+      "notScored": "No documents scored yet — re-index after enabling content-fit scoring."
     }
   }
 }

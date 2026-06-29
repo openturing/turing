@@ -262,6 +262,33 @@ public class TurElasticsearch {
         }
     }
 
+    /**
+     * T472 — counts documents whose numeric {@code fieldName} value is strictly
+     * below {@code threshold} via an Elasticsearch {@code range lt} query.
+     * Returns {@code -1} on error so coverage callers can treat it as "unknown".
+     */
+    public long getDocumentTotalWithFieldBelow(TurElasticsearchInstance instance, String fieldName,
+            int threshold) {
+        try {
+            return instance.getClient().count(c -> c.index(instance.getIndex())
+                    .query(q -> q.range(r -> r.untyped(u -> u.field(fieldName)
+                            .lt(co.elastic.clients.json.JsonData.of(threshold)))))).count();
+        } catch (co.elastic.clients.elasticsearch._types.ElasticsearchException e) {
+            if (INDEX_NOT_FOUND_EXCEPTION.equals(e.error().type())) {
+                log.debug("Index '{}' not found, returning -1 for field '{}' range",
+                        instance.getIndex(), fieldName);
+            } else {
+                log.error("Error range-counting field '{}' in Elasticsearch index '{}'",
+                        fieldName, instance.getIndex(), e);
+            }
+            return -1L;
+        } catch (IOException e) {
+            log.error("Error range-counting field '{}' in Elasticsearch index '{}'",
+                    fieldName, instance.getIndex(), e);
+            return -1L;
+        }
+    }
+
     public void deIndexing(TurElasticsearchInstance instance, String id) {
         log.debug("Elasticsearch deIndexing id={}", id);
         try {

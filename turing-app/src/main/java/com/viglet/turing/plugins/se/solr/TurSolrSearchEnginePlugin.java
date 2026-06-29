@@ -789,6 +789,14 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .orElse(-1L);
     }
 
+    @Override
+    public long getDocumentCountWithFieldBelow(TurSNSiteLocale turSNSiteLocale, String fieldName,
+            int threshold) {
+        return turSolrInstanceProcess.initSolrInstance(turSNSiteLocale)
+                .map(instance -> turSolr.getDocumentTotalWithFieldBelow(instance, fieldName, threshold))
+                .orElse(-1L);
+    }
+
     // ---- Copy field ------------------------------------------------------
 
     @Override

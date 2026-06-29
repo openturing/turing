@@ -30,6 +30,7 @@ import type {
     TurSNSiteGenAi,
 } from "@/models/sn/sn-site-genai.model"
 import { useUpdateSnSite } from "@/api/queries/sn-site.queries"
+import { usePersonas } from "@/api/queries/persona.queries"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
@@ -38,7 +39,7 @@ import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -68,6 +69,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             ...snSite.turSNSiteGenAi
         },
     });
+    // T472 — audience personas (kind AUDIENCE/BOTH) selectable as the
+    // index-time content-fit reader proxy.
+    const { data: personas } = usePersonas();
+    const audiencePersonas = (personas ?? []).filter(
+        (p) => p.personaKind === "AUDIENCE" || p.personaKind === "BOTH",
+    );
     const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
     const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
     const [ragCores, setRagCores] = useState<TurRagBm25CoreStatus[]>([]);
@@ -119,6 +126,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             // T383 — public SN search ranking mode; LEGACY keeps the historical
             // lexical-only ranking so a pre-T383 binding renders the legacy state.
             snRankingMode: snSite.turSNSiteGenAi?.snRankingMode ?? "LEGACY",
+            // T472 — index-time content-fit signal; off by default so a pre-T472
+            // binding renders the disabled state and the indexing path is unchanged.
+            contentFitIndexingEnabled: snSite.turSNSiteGenAi?.contentFitIndexingEnabled ?? false,
+            contentFitPersonaId: snSite.turSNSiteGenAi?.contentFitPersonaId ?? null,
         });
     }, [snSite]);
 
@@ -832,6 +843,97 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                         {t("forms.snGenai.snRankingRerank")}
                                                     </GradientButton>
                                                 </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                            </SectionCard.Content>
+                        </SectionCard>
+
+                        {/* T472 / §XXVI.9 — index-time audience content-fit signal.
+                            Scores each document's readability against an AUDIENCE
+                            persona as it is indexed and stores content_fit_score;
+                            surfaced in the Field Coverage dashboard. Independent of
+                            the RAG / ranking cards above. */}
+                        <SectionCard variant="emerald">
+                            <SectionCard.Header
+                                icon={IconUserSearch}
+                                title={t("forms.snGenai.contentFitTitle")}
+                                description={t("forms.snGenai.contentFitDesc")}
+                            />
+                            <SectionCard.Content>
+                                <FormField
+                                    control={form.control}
+                                    name="contentFitIndexingEnabled"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.contentFitEnable")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.contentFitEnableDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === true ? "default" : "outline"}
+                                                        onClick={() => field.onChange(field.value !== true)}
+                                                    >
+                                                        {field.value === true
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="contentFitPersonaId"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.contentFitPersona")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.contentFitPersonaDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <Select
+                                                    value={field.value ?? NONE_VALUE}
+                                                    onValueChange={(val) =>
+                                                        field.onChange(val === NONE_VALUE ? null : val)
+                                                    }
+                                                    disabled={
+                                                        form.watch("contentFitIndexingEnabled") !== true
+                                                        || audiencePersonas.length === 0
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={t("forms.snGenai.contentFitPersonaNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value={NONE_VALUE}>
+                                                            {t("forms.snGenai.contentFitPersonaNone")}
+                                                        </SelectItem>
+                                                        {audiencePersonas.map((persona) => (
+                                                            <SelectItem key={persona.id} value={persona.id}>
+                                                                {persona.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                {audiencePersonas.length === 0 && (
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {t("forms.snGenai.contentFitNoPersonas")}
+                                                    </p>
+                                                )}
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>
                                     )}

@@ -213,6 +213,11 @@ public class TurSNSiteAPI {
                 turSNSiteGenAi.setSnRankingMode(
                         Optional.ofNullable(genAi.getSnRankingMode())
                                 .orElse(com.viglet.turing.persistence.model.sn.genai.TurSNRankingMode.LEGACY));
+                // T472 / §XXVI.9 — index-time content-fit signal (opt-in). The
+                // master switch + target-audience persona id drive the
+                // deterministic readability scorer at index time.
+                turSNSiteGenAi.setContentFitIndexingEnabled(genAi.isContentFitIndexingEnabled());
+                turSNSiteGenAi.setContentFitPersonaId(genAi.getContentFitPersonaId());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });

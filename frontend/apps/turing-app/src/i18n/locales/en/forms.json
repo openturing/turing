@@ -516,7 +516,15 @@
       "siteUpdated": "{{name}} semantic navigation site was updated.",
       "updateFailed": "Failed to update site. Please try again.",
       "promptGenerated": "Site prompt generated successfully.",
-      "promptGenerateFailed": "Failed to generate site prompt. Check the default LLM configuration."
+      "promptGenerateFailed": "Failed to generate site prompt. Check the default LLM configuration.",
+      "contentFitTitle": "Audience Content Fit",
+      "contentFitDesc": "Score each document's readability against a target-audience persona at index time, then surface \"too complex for its audience\" in the Field Coverage dashboard.",
+      "contentFitEnable": "Score content fit at index time",
+      "contentFitEnableDesc": "When on, every document is scored against the audience persona below as it is indexed (deterministic readability only — no LLM call, no credits) and the 0–100 score is stored as the content_fit_score field. Off keeps the indexing path unchanged.",
+      "contentFitPersona": "Audience persona",
+      "contentFitPersonaDesc": "The AUDIENCE (or BOTH) persona used as the reader proxy. Re-index after changing this to refresh scores.",
+      "contentFitPersonaNone": "Select an audience persona",
+      "contentFitNoPersonas": "No audience personas yet — create one in Personas (kind AUDIENCE or BOTH)."
     },
     "snSpotlight": {
       "details": "Spotlight Details",

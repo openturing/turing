@@ -175,4 +175,39 @@ public class TurSNSiteGenAi implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "snRankingMode", nullable = false, length = 32)
     private TurSNRankingMode snRankingMode = TurSNRankingMode.LEGACY;
+
+    /**
+     * T472 / §XXVI.9 — opt-in for the index-time content-fit signal. When
+     * {@code true} (and {@link #contentFitPersonaId} resolves to an
+     * {@code AUDIENCE}/{@code BOTH} persona), each document is scored at index
+     * time by the deterministic
+     * {@link com.viglet.turing.genai.persona.readability.TurReadabilityScorer}
+     * against that audience and the 0–100 fit score is stored as the
+     * {@code content_fit_score} SN field. The
+     * {@code GET /api/sn/{id}/content-fit} coverage report then surfaces "content
+     * too complex for its audience" alongside the T388 field-coverage dashboard.
+     *
+     * <p>Default {@code false} keeps the indexing path byte-for-byte unchanged —
+     * the field is never provisioned and no scorer runs. Deterministic-only at
+     * index time on purpose: no LLM call per document (the on-demand LLM verdict
+     * stays the T467 {@code /content-fit} report), so indexing stays fast and
+     * spends no credits.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "contentFitIndexingEnabled", nullable = false)
+    private boolean contentFitIndexingEnabled = false;
+
+    /**
+     * T472 / §XXVI.9 — the target-audience persona ({@code TurPersona} id) the
+     * index-time scorer reads as the reader proxy. Plain id column (not a
+     * {@code @ManyToOne}) so the indexing path resolves it via the cached
+     * {@code TurPersonaRepository.findById} without dragging a LAZY association
+     * across the queue-consumer transaction boundary. Null / blank disables the
+     * signal even when {@link #contentFitIndexingEnabled} is {@code true}.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "contentFitPersonaId", length = 40)
+    private String contentFitPersonaId;
 }

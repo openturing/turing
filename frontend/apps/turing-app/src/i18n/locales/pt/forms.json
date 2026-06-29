@@ -516,7 +516,15 @@
       "siteUpdated": "O site de navegação semântica {{name}} foi atualizado.",
       "updateFailed": "Falha ao atualizar o site. Tente novamente.",
       "promptGenerated": "Prompt do site gerado com sucesso.",
-      "promptGenerateFailed": "Falha ao gerar prompt do site. Verifique a configuração do LLM padrão."
+      "promptGenerateFailed": "Falha ao gerar prompt do site. Verifique a configuração do LLM padrão.",
+      "contentFitTitle": "Adequação ao Público",
+      "contentFitDesc": "Avalie a legibilidade de cada documento em relação a uma persona de público-alvo no momento da indexação e exiba \"muito complexo para seu público\" no painel de Cobertura de Campos.",
+      "contentFitEnable": "Avaliar adequação na indexação",
+      "contentFitEnableDesc": "Quando ativo, cada documento é avaliado em relação à persona de público abaixo durante a indexação (apenas legibilidade determinística — sem chamada de LLM, sem créditos) e a pontuação de 0 a 100 é armazenada no campo content_fit_score. Desativado mantém a indexação inalterada.",
+      "contentFitPersona": "Persona de público",
+      "contentFitPersonaDesc": "A persona AUDIENCE (ou BOTH) usada como leitor de referência. Reindexe após alterar para atualizar as pontuações.",
+      "contentFitPersonaNone": "Selecione uma persona de público",
+      "contentFitNoPersonas": "Nenhuma persona de público ainda — crie uma em Personas (tipo AUDIENCE ou BOTH)."
     },
     "snSpotlight": {
       "details": "Detalhes do Destaque",

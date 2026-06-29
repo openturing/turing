@@ -52,6 +52,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNConstants;
+import com.viglet.turing.sn.contentfit.TurSNContentFitIndexer;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
@@ -73,6 +74,7 @@ public class TurSNProcessQueue {
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
     private final TurSNHybridRankingService turSNHybridRankingService;
+    private final TurSNContentFitIndexer turSNContentFitIndexer;
     private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
@@ -84,6 +86,7 @@ public class TurSNProcessQueue {
             TurSEInstanceRepository turSEInstanceRepository,
             com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
             TurSNHybridRankingService turSNHybridRankingService,
+            TurSNContentFitIndexer turSNContentFitIndexer,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
@@ -94,6 +97,7 @@ public class TurSNProcessQueue {
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turJmsTenantPropagation = turJmsTenantPropagation;
         this.turSNHybridRankingService = turSNHybridRankingService;
+        this.turSNContentFitIndexer = turSNContentFitIndexer;
         this.self = self;
     }
 
@@ -245,6 +249,9 @@ public class TurSNProcessQueue {
         Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        // T472 / §XXVI.9 — attach the index-time audience content-fit score (opt-in,
+        // no-op otherwise). Provisions its own field; never throws.
+        turSNContentFitIndexer.enrich(turSNSite, attributes);
         boolean indexed = pluginFactory.getPluginForSite(turSNSite)
                 .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
         if (indexed) {

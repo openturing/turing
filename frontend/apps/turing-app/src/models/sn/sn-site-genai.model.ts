@@ -69,6 +69,21 @@ export interface TurSNSiteGenAi {
    * Independent of the `rag*` flags above. @since 2026.3.1
    */
   snRankingMode?: TurSNRankingMode;
+  /**
+   * T472 / §XXVI.9 — opt-in for the index-time content-fit (readability)
+   * signal. When `true` and {@link contentFitPersonaId} resolves to an
+   * AUDIENCE/BOTH persona, each document is scored against that audience as it
+   * is indexed and the 0–100 fit score is stored as the `content_fit_score`
+   * SN field, surfaced by the content-fit coverage report. Default `false`
+   * keeps the indexing path unchanged. @since 2026.3.4
+   */
+  contentFitIndexingEnabled?: boolean;
+  /**
+   * T472 / §XXVI.9 — target-audience `TurPersona` id read as the reader proxy
+   * by the index-time scorer. Null/blank disables the signal even when
+   * {@link contentFitIndexingEnabled} is `true`. @since 2026.3.4
+   */
+  contentFitPersonaId?: string | null;
 }
 
 /**
