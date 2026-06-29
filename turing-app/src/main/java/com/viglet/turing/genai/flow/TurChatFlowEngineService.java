@@ -49,6 +49,7 @@ import com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog;
 import com.viglet.turing.genai.flow.router.TurChatFlowRouterMethod;
 import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
@@ -846,7 +847,16 @@ public class TurChatFlowEngineService {
              * the portal can render a "Waiting for external system..."
              * banner. {@code null} means the conversation is not parked.
              */
-            String suspendedReason) {
+            String suspendedReason,
+            /**
+             * T461 (Block Z) — the active persona id resolved for this
+             * conversation (the {@code __activePersonaId} flow variable set by a
+             * persona node / override), or {@code null} when none is active.
+             * Exposed so the client analytics bus can stamp {@code persona_id}
+             * on every event and GA4 can answer "which persona variation
+             * converted" natively.
+             */
+            String personaId) {
     }
 
     /**
@@ -893,11 +903,11 @@ public class TurChatFlowEngineService {
 
     public ConversationStateDto getConversationState(String conversationId) {
         if (conversationId == null || conversationId.isBlank()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null, null);
         }
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         if (states.isEmpty()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null, null);
         }
         // Skip rows that point at other rows as parent — we want the leaf.
         TurChatFlowState leaf = findLeafState(states);
@@ -905,6 +915,11 @@ public class TurChatFlowEngineService {
         // T121 — surface the parked reason when the leaf cursor sits on a
         // suspend node. The portal renders this as a "Waiting..." banner.
         String suspendedReason = resolveLeafSuspendedReason(flow, leaf);
+        // T461 — the active persona id (the reserved __activePersonaId variable)
+        // for client-side A/B attribution. Blank-safe; null when no persona node
+        // ran in this conversation.
+        String personaId = ChatFlowOps.readVariablesJson(leaf.getVariablesJson())
+                .get(TurAgentPersonaResolver.ACTIVE_PERSONA_VAR);
         return new ConversationStateDto(
                 conversationId,
                 flow == null ? null : flow.getId(),
@@ -914,7 +929,8 @@ public class TurChatFlowEngineService {
                         ? null : flow.getGuardrailMethod().name(),
                 flow == null ? null : flow.getExperimentKey(),
                 flow == null ? null : flow.getVariantLabel(),
-                suspendedReason);
+                suspendedReason,
+                (personaId == null || personaId.isBlank()) ? null : personaId);
     }
 
     /**

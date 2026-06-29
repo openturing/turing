@@ -1045,6 +1045,14 @@ export interface TurChatConversationState {
   readonly guardrailMethod: string | null;
   readonly experimentKey: string | null;
   readonly variantLabel: string | null;
+  /** T121 — parked-reason label when the leaf cursor sits on a suspend node. */
+  readonly suspendedReason?: string | null;
+  /**
+   * T461 — the active persona id resolved for this conversation (the
+   * `__activePersonaId` flow variable), or `null` when none is active. Used by
+   * the analytics bus to stamp `persona_id` for GA4 A/B attribution.
+   */
+  readonly personaId?: string | null;
 }
 
 /**

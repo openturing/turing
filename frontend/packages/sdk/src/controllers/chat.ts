@@ -3,6 +3,8 @@ import {
   deleteAgentFlowState,
   deleteSiteConversationState,
   fetchChatEnabled,
+  fetchSiteChatSlots,
+  fetchSiteChatState,
   postAgentChat,
   postChatConversation,
   postClientToolResult,
@@ -213,6 +215,14 @@ export interface ChatControllerOptions {
    * `onUnload`. No effect without `analytics` or outside a browser.
    */
   readonly abandonment?: AbandonmentOptions | boolean;
+  /**
+   * T461 (Block Z) — slot names that count as a conversion (e.g. `["email",
+   * "phone"]`). When any is written during the conversation, the controller
+   * emits a single `turing_chat_lead_captured`. A native form submit (T107) is
+   * always treated as a lead when this list is empty, or when it writes one of
+   * these slots. No effect without `analytics`.
+   */
+  readonly goalSlots?: ReadonlyArray<string>;
 }
 
 export interface ChatControllerState {
@@ -372,6 +382,7 @@ export function createChatController(
     clientTools,
     analytics,
     abandonment,
+    goalSlots = [],
   } = options;
 
   // T439 — registered client-tool handlers, seeded from `options.clientTools`
@@ -459,6 +470,72 @@ export function createChatController(
       last_node_id: lastNodeId ?? undefined,
       elapsed_ms: convStartedAt ? Date.now() - convStartedAt : undefined,
     });
+  }
+
+  // T461 — A/B attribution fires once per conversation, then every event
+  // carries the stamped experiment/variant/persona via the bus context.
+  let abAssigned = false;
+
+  /**
+   * Emits a single `turing_chat_lead_captured` and marks the conversation
+   * converted (so abandonment never fires afterwards). Idempotent.
+   */
+  function emitLeadCaptured(reason: string, extra?: Record<string, string | number>): void {
+    if (!analytics || converted) return;
+    converted = true;
+    analytics.emit(TURING_ANALYTICS_EVENTS.chatLeadCaptured, {
+      reason,
+      turns: userTurns,
+      ...extra,
+    });
+  }
+
+  /**
+   * T461 — best-effort, fire-and-forget post-turn analytics (site mode only,
+   * where `/chat/state` + `/chat/slots` are scoped). Resolves A/B attribution
+   * (stamps the bus context + emits `turing_ab_variant_assigned` once), emits a
+   * `turing_chat_step` when the flow cursor advances, and emits
+   * `turing_chat_lead_captured` when a configured goal slot is written. Never
+   * throws into the UI — analytics is additive.
+   */
+  async function runAnalyticsPostTurn(cid: string): Promise<void> {
+    if (!analytics || !site) return;
+    try {
+      const state = await fetchSiteChatState(client, site, cid);
+      const hasAb = Boolean(state.experimentKey || state.variantLabel || state.personaId);
+      if (!abAssigned && hasAb) {
+        abAssigned = true;
+        analytics.setContext({
+          experimentKey: state.experimentKey ?? undefined,
+          variantLabel: state.variantLabel ?? undefined,
+          personaId: state.personaId ?? undefined,
+        });
+        analytics.emit(TURING_ANALYTICS_EVENTS.abVariantAssigned);
+      } else if (state.personaId && analytics.getContext().personaId !== state.personaId) {
+        // Persona can switch mid-conversation — keep the stamp current.
+        analytics.setContext({ personaId: state.personaId });
+      }
+      if (state.currentNodeId && state.currentNodeId !== lastNodeId) {
+        lastNodeId = state.currentNodeId;
+        analytics.emit(TURING_ANALYTICS_EVENTS.chatStep, {
+          node_id: state.currentNodeId,
+          flow_id: state.flowId ?? undefined,
+          flow_name: state.flowName ?? undefined,
+          step: userTurns,
+        });
+      }
+      if (goalSlots.length > 0 && !converted) {
+        const slotsRes = await fetchSiteChatSlots(client, site, cid);
+        const slots = slotsRes?.slots ?? {};
+        const hit = goalSlots.find((name) => {
+          const value = slots[name];
+          return typeof value === "string" && value.trim() !== "";
+        });
+        if (hit) emitLeadCaptured("goal_slot", { goal_slot: hit });
+      }
+    } catch {
+      // best-effort — a failed state/slots read must not break analytics
+    }
   }
 
   function commitMessages(next: ChatMessage[], status?: ChatStatus): void {
@@ -698,6 +775,9 @@ export function createChatController(
         "success",
       );
       store.setState({ activeForm: finalForm ?? null });
+      // T461 — fire-and-forget funnel-step / A/B attribution / goal-slot
+      // conversion off the freshly-updated server state. Site mode only.
+      if (analytics && site) void runAnalyticsPostTurn(activeConversationId);
     } catch (err) {
       handleSendError(err, requestId);
     }
@@ -742,6 +822,14 @@ export function createChatController(
     }
     if (requestId !== latestRequestId || aborted) return result;
 
+    // T461 — a native form capture (T107) is a conversion: when no goal slots
+    // are configured, any submit counts; otherwise only one that writes a goal
+    // slot does.
+    if (analytics) {
+      const isLead = goalSlots.length === 0 || goalSlots.some((name) => name in values);
+      if (isLead) emitLeadCaptured("form");
+    }
+
     const effectiveLlmInstanceId =
       overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
     const wire: TurChatConversationMessage[] = messages.map((m) => ({
@@ -774,6 +862,7 @@ export function createChatController(
     abandonmentWatcher = null;
     abandonmentFired = false;
     converted = false;
+    abAssigned = false;
     convStartedAt = 0;
     lastNodeId = null;
     commitMessages([]);
