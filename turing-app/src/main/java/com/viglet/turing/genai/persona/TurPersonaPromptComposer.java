@@ -62,9 +62,8 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
  * from {@code systemInstruction} through {@code Brand Context}) is built
  * by {@link TurPersonaStaticPromptCache#composeStaticBlock(TurPersona)},
  * which is a Spring {@code @Cacheable} method keyed by persona id. Persona
- * edits invalidate that cache via the existing
- * {@link com.viglet.turing.persistence.repository.persona.TurPersonaRepository}
- * {@code @CacheEvict} chain. The few-shot block stays uncached — it
+ * edits invalidate that cache via
+ * {@link TurPersonaStaticPromptEvictionListener}. The few-shot block stays uncached — it
  * depends on the user query (vector store retrieval) — and so does the
  * base-prompt suffix (per-turn RAG context).
  *

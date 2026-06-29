@@ -243,11 +243,10 @@ public class TurChatFlowEngineService {
      * raise {@code LazyInitializationException} — we deliberately run with
      * {@code hibernate.enable_lazy_load_no_trans=false}. Reading the
      * association's <em>id</em> never initializes the proxy (the FK is already
-     * known), so we reload the managed entity through the {@code @Cacheable}
-     * repository finder — the ordinary Spring Data JPA pattern, no Hibernate
-     * internals. A transient flow (no id yet) is returned as-is; a cache miss
-     * falls back to the passed instance so unit tests with a mocked repository
-     * keep working.
+     * known), so we reload the managed entity through the repository finder —
+     * the ordinary Spring Data JPA pattern, no Hibernate internals. A transient
+     * flow (no id yet) is returned as-is; a missing row falls back to the passed
+     * instance so unit tests with a mocked repository keep working.
      */
     private TurChatFlow resolveFlowForRead(TurChatFlow flow) {
         if (flow == null || flow.getId() == null) {
@@ -2024,12 +2023,27 @@ public class TurChatFlowEngineService {
     }
 
     /**
-     * Drops every cached per-agent router index. Invoked by
-     * {@link TurChatFlowRouterEvictionListener} on {@link TurChatFlow}
-     * persist/update/remove and at the one bulk-DML delete site.
+     * Drops every flow-derived cache on a {@link TurChatFlow} write: the
+     * per-agent router index plus the three Spring caches that used to be
+     * evicted by the (now removed, Block AC / T486) {@code @CacheEvict} on
+     * {@code TurChatFlowRepository} — the router-decision cache and the static
+     * head/tail prompt-addendum caches. Invoked by
+     * {@link TurChatFlowRouterEvictionListener} on persist/update/remove and at
+     * the one bulk-DML delete site, so admin flow edits propagate without
+     * restart.
      */
-    public void evictRouterIndexes() {
+    public void evictFlowDerivedCaches() {
         triggerRouter.evictRouterIndexes();
+        clearCache(CACHE_ROUTER_DECISION);
+        clearCache(TurChatFlowStaticPromptCache.HEAD_CACHE);
+        clearCache(TurChatFlowStaticPromptCache.TAIL_CACHE);
+    }
+
+    private void clearCache(String cacheName) {
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     /** Test-visible accessor for the per-agent index cache size. */
@@ -2045,8 +2059,8 @@ public class TurChatFlowEngineService {
      * repeated "off-topic" messages don't burn LLM calls.
      *
      * <p>The cache is evicted on any {@link TurChatFlow} save/delete via the
-     * {@code @CacheEvict} annotations on {@link TurChatFlowRepository}, so
-     * admin edits to {@code triggerDescription} propagate without restart.
+     * {@code TurChatFlowRouterEvictionListener} JPA callback, so admin edits to
+     * {@code triggerDescription} propagate without restart.
      *
      * @since 2026.2.8
      */

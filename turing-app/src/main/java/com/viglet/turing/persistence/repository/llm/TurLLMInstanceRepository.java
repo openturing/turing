@@ -21,12 +21,8 @@
 
 package com.viglet.turing.persistence.repository.llm;
 
-import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,15 +31,6 @@ import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 public interface TurLLMInstanceRepository extends JpaRepository<TurLLMInstance, String> {
-
-	@Override
-	@Cacheable("turLLMInstancefindAll")
-	List<TurLLMInstance> findAll();
-
-	@Override
-	@Cacheable("turLLMInstancefindById")
-	@NotNull
-	Optional<TurLLMInstance> findById(@NotNull String id);
 
 	/**
 	 * Agent-import fallback: resolves a referenced LLM by title when the
@@ -54,14 +41,8 @@ public interface TurLLMInstanceRepository extends JpaRepository<TurLLMInstance, 
 	 */
 	Optional<TurLLMInstance> findByTitleIgnoreCase(String title);
 
-	@CacheEvict(value = { "turLLMInstancefindAll", "turLLMInstancefindById" }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurLLMInstance> S save(@NotNull S entity);
-
 	@Modifying
 	@Query("delete from  TurLLMInstance li where li.id = ?1")
-	@CacheEvict(value = { "turLLMInstancefindAll", "turLLMInstancefindById" }, allEntries = true)
 	void delete(String id);
 
     /**

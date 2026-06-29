@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -78,7 +77,6 @@ public class TurSNSiteFacetedFieldAPI {
 
         @Operation(summary = "Update a Semantic Navigation Site Faceted Field Ordering")
         @PutMapping("/ordering")
-        @CacheEvict(value = { "findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition" }, allEntries = true)
         public List<TurSNSiteFacetOrderingDto> turSNSiteFieldUpdate(@PathVariable String snSiteId,
                         @RequestBody List<TurSNSiteFacetOrderingDto> turSNSiteFacetOrderings) {
                 return turSNSiteRepository.findById(snSiteId)

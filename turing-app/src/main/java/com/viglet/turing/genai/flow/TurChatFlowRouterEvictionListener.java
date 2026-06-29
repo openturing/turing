@@ -22,14 +22,12 @@ import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
 
 /**
- * T27 / §II.2.3 — JPA entity callback that wipes the
- * {@link TurChatFlowEngineService#evictRouterIndexes() per-agent router
- * index cache} whenever any {@link TurChatFlow} is persisted, updated, or
- * removed via JPA. Mirrors the existing {@code @CacheEvict} chain on
- * {@link com.viglet.turing.persistence.repository.agent.TurChatFlowRepository}
- * that already wipes {@code turChatFlowRouterDecision} on the same events;
- * the router index cache, being non-serializable Lucene state, can't ride
- * the same Spring cache and gets its own JPA-driven hook.
+ * T27 / §II.2.3 — JPA entity callback that wipes every flow-derived cache via
+ * {@link TurChatFlowEngineService#evictFlowDerivedCaches()} whenever any
+ * {@link TurChatFlow} is persisted, updated, or removed via JPA: the per-agent
+ * router index plus the router-decision and static head/tail prompt caches.
+ * Since Block AC / T486 removed the repository-level {@code @CacheEvict}, this
+ * JPA callback is the single eviction point for those flow-derived caches.
  *
  * <p>Hibernate (via Spring Boot's {@code SpringBeanContainer}) resolves
  * this listener through the application context, so constructor injection
@@ -41,7 +39,7 @@ import jakarta.persistence.PostUpdate;
  * <p>Bulk-DML deletes on the repository
  * ({@code @Query("delete from TurChatFlow f where f.id = ?1")}) bypass JPA
  * entity callbacks by design; the one API endpoint that uses that path
- * calls {@link TurChatFlowEngineService#evictRouterIndexes()} explicitly
+ * calls {@link TurChatFlowEngineService#evictFlowDerivedCaches()} explicitly
  * so eviction stays consistent.
  *
  * @author Alexandre Oliveira
@@ -70,7 +68,7 @@ public class TurChatFlowRouterEvictionListener {
     public void onChange(TurChatFlow entity) {
         TurChatFlowEngineService target = engine != null ? engine : engineStatic.get();
         if (target != null) {
-            target.evictRouterIndexes();
+            target.evictFlowDerivedCaches();
         }
     }
 }

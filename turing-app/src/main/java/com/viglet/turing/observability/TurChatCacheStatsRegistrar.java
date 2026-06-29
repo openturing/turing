@@ -95,13 +95,7 @@ public class TurChatCacheStatsRegistrar {
      * Lucene-bucket caches last).
      */
     static final List<String> CHAT_CACHE_NAMES = List.of(
-            // Catalog reads — every chat turn pulls the agent, its
-            // attached personas / chat flows, and the per-instance
-            // analytics intent index.
-            "turAIAgentfindById",
-            "turChatFlowFindById",
-            "turChatFlowFindByAgentId",
-            "turPersonafindById",
+            // Per-instance analytics intent MLT index.
             "turAnalyticsIntentMLTIndex",
             // Router decision cache — T26 LLM-route memoization keyed
             // by (agentId, hash(userMessage)).

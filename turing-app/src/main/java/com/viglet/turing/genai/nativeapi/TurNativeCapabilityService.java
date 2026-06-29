@@ -25,9 +25,11 @@ import com.viglet.turing.persistence.repository.llm.TurLLMInstanceCapabilityRepo
  * T130/T132 / §X.2 — read/write façade over the per-LLM-instance native
  * capability matrix.
  *
- * <p>The per-turn lookup ({@link #enabledFor(String, String)}) is backed by the
- * {@code turNativeCapability} cache on the repository, so consulting the matrix
- * on every native chat turn is effectively free.
+ * <p>The per-turn lookup ({@link #enabledFor(String, String)}) reads the matrix
+ * directly from the repository. The capability matrix is small (a handful of
+ * rows per instance) and the read is a single indexed query. (Block AC / T486
+ * removed the former repository-level cache — repositories no longer cache
+ * entities; reintroduce a read-model cache here if profiling ever warrants it.)
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1

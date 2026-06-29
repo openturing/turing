@@ -739,9 +739,9 @@ public class TurChatFlowAPI {
                 .map(flow -> {
                     turChatFlowRepository.delete(id);
                     // Bulk-DML delete in the repository bypasses JPA entity
-                    // callbacks; wipe the router index cache here so the
-                    // engine doesn't keep scoring against a stale flow.
-                    chatFlowEngineService.evictRouterIndexes();
+                    // callbacks; wipe the flow-derived caches here so the engine
+                    // doesn't keep scoring against (or prompting from) a stale flow.
+                    chatFlowEngineService.evictFlowDerivedCaches();
                     return true;
                 }).orElse(false);
     }

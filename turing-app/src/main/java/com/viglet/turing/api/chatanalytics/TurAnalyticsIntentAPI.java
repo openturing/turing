@@ -52,11 +52,11 @@ import lombok.RequiredArgsConstructor;
  *   <li>{@code DELETE /api/ai-agent/{agentId}/analytics-intent/{id}}</li>
  * </ul>
  *
- * <p>Write endpoints rely on the repository's {@code @CacheEvict}
- * chain + the JPA {@code @EntityListeners} on {@link TurAnalyticsIntent}
- * to wipe both the Spring catalog cache and the Lucene MLT index cache
- * — admins see edits reflected on the next classifier cycle without a
- * restart, same hook pattern T27 uses for the chat-flow router cache.
+ * <p>Write endpoints rely on the JPA {@code @EntityListeners} on
+ * {@link TurAnalyticsIntent} to wipe the Lucene MLT index cache and push the
+ * row to the SE index — admins see edits reflected on the next classifier
+ * cycle without a restart, the same hook pattern T27 uses for the chat-flow
+ * router cache.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1

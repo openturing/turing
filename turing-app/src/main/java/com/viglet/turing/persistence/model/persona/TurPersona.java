@@ -12,6 +12,7 @@ package com.viglet.turing.persistence.model.persona;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.viglet.turing.genai.persona.TurPersonaStaticPromptEvictionListener;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
@@ -19,6 +20,7 @@ import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
@@ -53,6 +55,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "ai_persona")
+@EntityListeners(TurPersonaStaticPromptEvictionListener.class)
 public class TurPersona implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

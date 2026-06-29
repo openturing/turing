@@ -24,9 +24,6 @@ package com.viglet.turing.persistence.repository.sn.locale;
 import java.util.List;
 import java.util.Locale;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -39,44 +36,18 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
  */
 public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale, String> {
 
-	String FIND_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteLocaleFindByTurSNSiteAndLanguage";
-	String EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteLocaleExistsByTurSNSiteAndLanguage";
-	String FIND_BY_TUR_SN_SITE_SORT = "turSNSiteLocaleFindByTurSNSiteSort";
-	String FIND_BY_TUR_SN_SITE = "turSNSiteLocaleFindByTurSNSite";
-	String FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION = "turSNSiteLocaleFindByTurSNSiteOrderByPosition";
-	String FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION = "turSNSiteLocaleFindFirstByTurSNSiteOrderByPosition";
-
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_LANGUAGE)
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 
-	@Cacheable(EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE)
 	boolean existsByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_SORT)
 	List<TurSNSiteLocale> findByTurSNSite(Sort name, TurSNSite turSNSite);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION)
 	List<TurSNSiteLocale> findByTurSNSiteOrderByPositionAsc(TurSNSite turSNSite);
 
-	@Cacheable(FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION)
 	TurSNSiteLocale findFirstByTurSNSiteOrderByPositionAsc(TurSNSite turSNSite);
 
 	List<TurSNSiteLocale> findByCore(String core);
-
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE,
-			FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION, FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNSiteLocale> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE,
-			FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION, FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION }, allEntries = true)
-	void delete(@NotNull TurSNSiteLocale turSNSiteLocale);
 
 }

@@ -21,12 +21,8 @@
 
 package com.viglet.turing.persistence.repository.store;
 
-import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,26 +31,12 @@ import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
 public interface TurStoreInstanceRepository extends JpaRepository<TurStoreInstance, String> {
-	@Override
-	@Cacheable("turStoreInstancefindAll")
-	List<TurStoreInstance> findAll();
-
-	@Override
-	@Cacheable("turStoreInstancefindById")
-	@NotNull
-	Optional<TurStoreInstance> findById(@NotNull String id);
 
 	/** Agent-import fallback by title. @since 2026.2.8 */
 	Optional<TurStoreInstance> findByTitleIgnoreCase(String title);
 
-	@CacheEvict(value = { "turStoreInstancefindAll", "turStoreInstancefindById" }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurStoreInstance> S save(@NotNull S entity);
-
 	@Modifying
 	@Query("delete from  TurStoreInstance si where si.id = ?1")
-	@CacheEvict(value = { "turStoreInstancefindAll", "turStoreInstancefindById" }, allEntries = true)
 	void delete(String id);
 
     /**

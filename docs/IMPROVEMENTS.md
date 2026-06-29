@@ -2465,18 +2465,6 @@ its columns (`getId()` is proxy-safe — the FK is known without initialization)
 This is the same family as the pre-existing `TurSNSite.findByIdNoCache` band-aid.
 Band-aids per site don't scale — Block AC removes the root cause.
 
-### XXVIII.1 T486 — strip repository-level caching first (make it work)
-
-Remove `@Cacheable`/`@CacheEvict` from **all** repositories and run the
-environment cache-free. This deletes the entire class of cached-entity ↔
-lazy-proxy bug at a stroke, plus the `@CacheEvict` bookkeeping (the convention +
-`TurCacheAnnotationConventionsTest` pairing rule) and the `findByIdNoCache`
-workarounds. The bet: an uncached environment that is **correct** is the right
-baseline to re-introduce caching onto deliberately — and the DB cost of an
-uncached admin + first-load chat is acceptable for the transition window. Flip
-`TurCacheAnnotationConventionsTest` from "every `@Cacheable` must be evicted" to
-"**no `@Cacheable` on repositories**" so the policy is enforced, not aspirational.
-
 ### XXVIII.2 T487 — one dedicated cached layer for the hot path
 
 Re-introduce caching **only** for semantic navigation + chat, as an explicit

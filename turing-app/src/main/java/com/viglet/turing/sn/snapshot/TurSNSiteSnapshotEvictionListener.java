@@ -41,9 +41,7 @@ import jakarta.persistence.PostUpdate;
  * <p>The eviction is intentionally coarse (clear the whole snapshot cache):
  * {@code (siteId, locale)} entries cannot be selectively dropped without
  * inspecting each entity's relationship graph, and the snapshot rebuilds in a
- * single round-trip on the next search. The trade-off matches the existing
- * {@code allEntries = true} pattern used by the per-method
- * {@code @CacheEvict} annotations on the SN repositories.
+ * single round-trip on the next search.
  *
  * <p>Hibernate (via Spring Boot's auto-configured {@code SpringBeanContainer})
  * resolves the listener through the application context, so constructor

@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -40,33 +37,13 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
  */
 public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpotlight, String> {
 
-	String FIND_BY_UNMANAGED_ID_AND_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteSpotlightFindByUnmanagedIdAndTurSNSiteAndLanguage";
-	String FIND_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteSpotlightFindByTurSNSiteAndLanguage";
-	String FIND_BY_TUR_SN_SITE = "turSNSiteSpotlightFindByTurSNSite";
-	String FIND_BY_PROVIDER = "turSNSiteSpotlightFindByProvider";
-
-	@Cacheable(FIND_BY_UNMANAGED_ID_AND_TUR_SN_SITE_AND_LANGUAGE)
 	Set<TurSNSiteSpotlight> findByUnmanagedIdAndTurSNSiteAndLanguage(String unmanagedId, TurSNSite turSNSite,
 			Locale language);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_LANGUAGE)
 	List<TurSNSiteSpotlight> findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteSpotlight> findByTurSNSite(Sort orders, TurSNSite turSNSite);
 
-	@Cacheable(FIND_BY_PROVIDER)
 	Set<TurSNSiteSpotlight> findByProvider(String provider);
-
-	@CacheEvict(value = { FIND_BY_UNMANAGED_ID_AND_TUR_SN_SITE_AND_LANGUAGE, FIND_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE, FIND_BY_PROVIDER }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNSiteSpotlight> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { FIND_BY_UNMANAGED_ID_AND_TUR_SN_SITE_AND_LANGUAGE, FIND_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE, FIND_BY_PROVIDER }, allEntries = true)
-	void delete(@NotNull TurSNSiteSpotlight turSNSiteSpotlight);
 
 }

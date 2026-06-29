@@ -65,7 +65,7 @@ class TurChatCacheStatsRegistrarTest {
 
         // Spot-check one of the cache names — hits gauge reads 100, misses
         // is derived as 150 - 100 = 50, size is 42.
-        String sampleCache = "turAIAgentfindById";
+        String sampleCache = "turChatFlowRouterDecision";
         Gauge hits = registry.find(TurMeterNames.CHAT_CACHE_HITS)
                 .tags(Tags.of(TurMeterNames.TAG_CACHE, sampleCache)).gauge();
         Gauge misses = registry.find(TurMeterNames.CHAT_CACHE_MISSES)
@@ -146,12 +146,10 @@ class TurChatCacheStatsRegistrarTest {
         // Pin the catalog — any future cache added to the chat pipeline
         // SHOULD be added to this list. The test fails when someone ships
         // a new @Cacheable backing chat without registering it, so the
-        // dashboard doesn't silently lose visibility.
+        // dashboard doesn't silently lose visibility. The repository finder
+        // caches were removed in Block AC / T486 (repositories are uncached),
+        // leaving only the service-level read-model caches here.
         assertThat(TurChatCacheStatsRegistrar.CHAT_CACHE_NAMES).containsExactlyInAnyOrder(
-                "turAIAgentfindById",
-                "turChatFlowFindById",
-                "turChatFlowFindByAgentId",
-                "turPersonafindById",
                 "turAnalyticsIntentMLTIndex",
                 "turChatFlowRouterDecision",
                 "turPersonaStaticPrompt",

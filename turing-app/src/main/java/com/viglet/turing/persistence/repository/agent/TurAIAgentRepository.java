@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,16 +12,12 @@ import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> {
-    @Override
-    @Cacheable("turAIAgentfindAll")
-    List<TurAIAgent> findAll();
 
     /**
      * Loads an agent with its 4 {@code @ManyToMany(LAZY)} catalogs and 3
      * {@code @ManyToOne(LAZY)} singletons eagerly via LEFT JOIN FETCH.
-     * Required because the associations are LAZY but the cached entity
-     * (Spring {@code @Cacheable}) is returned detached on cache hits, and
-     * accessing a lazy proxy on a detached entity throws
+     * Required because the associations are LAZY and accessing a lazy proxy
+     * on a detached entity throws
      * {@code LazyInitializationException (no session)} even with
      * {@code hibernate.enable_lazy_load_no_trans=true} when the session has
      * already closed. Joining at load time materializes everything as
@@ -42,7 +36,6 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
      * row count further (single row per association) so they're safe to add.
      */
     @Override
-    @Cacheable("turAIAgentfindById")
     @Query("SELECT DISTINCT a FROM TurAIAgent a"
             + " LEFT JOIN FETCH a.llmInstances"
             + " LEFT JOIN FETCH a.mcpServers"
@@ -80,13 +73,7 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
     @Query("SELECT a FROM TurAIAgent a JOIN a.personas p WHERE p.id = ?1")
     List<TurAIAgent> findByPersonaId(String personaId);
 
-    @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" }, allEntries = true)
-    @NotNull
-    @Override
-    <S extends TurAIAgent> S save(@NotNull S entity);
-
     @Modifying
     @Query("delete from TurAIAgent a where a.id = ?1")
-    @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" }, allEntries = true)
     void delete(String id);
 }

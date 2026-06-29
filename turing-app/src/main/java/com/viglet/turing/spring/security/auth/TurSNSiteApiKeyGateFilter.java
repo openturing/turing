@@ -50,9 +50,8 @@ import lombok.extern.slf4j.Slf4j;
  * explicit key check only adds the {@code apiKey} query-parameter convenience
  * for plain {@code <script>} / EDS GET usage.
  *
- * <p>The {@code findByName} lookup is {@code @Cacheable} and is the same call
- * the controllers make to resolve the site, so this adds no extra DB round-trip
- * on a warm cache.
+ * <p>The {@code findByName} lookup is the same call the controllers make to
+ * resolve the site, so it reuses the work the request already needs.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1

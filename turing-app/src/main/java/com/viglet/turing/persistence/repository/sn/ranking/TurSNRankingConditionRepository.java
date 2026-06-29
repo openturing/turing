@@ -22,9 +22,6 @@ package com.viglet.turing.persistence.repository.sn.ranking;
 
 import java.util.Set;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
@@ -36,17 +33,5 @@ import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
  */
 public interface TurSNRankingConditionRepository extends JpaRepository<TurSNRankingCondition, String> {
 
-	String FIND_BY_TUR_SN_RANKING_EXPRESSION = "turSNRankingConditionFindByTurSNRankingExpression";
-
-	@Cacheable(FIND_BY_TUR_SN_RANKING_EXPRESSION)
 	Set<TurSNRankingCondition> findByTurSNRankingExpression(TurSNRankingExpression turSNRankingExpression);
-
-	@CacheEvict(value = { FIND_BY_TUR_SN_RANKING_EXPRESSION }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNRankingCondition> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { FIND_BY_TUR_SN_RANKING_EXPRESSION }, allEntries = true)
-	void delete(@NotNull TurSNRankingCondition turSNRankingCondition);
 }

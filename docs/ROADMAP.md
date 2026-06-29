@@ -205,9 +205,8 @@
 > class of bug. The durable fix is **don't cache JPA entities** — cache immutable
 > read-models. Two-phase transition so each step lands cleanly. → §XXVIII
 
-- 📋 **T486** (deps: —) **Phase 1: strip repository-level `@Cacheable`/`@CacheEvict` across the board** — make the environment run cache-free first. Removes the cached-entity ↔ lazy-proxy coupling (today's flow `LazyInit`, the `findByIdNoCache` workaround) and the `@CacheEvict` bookkeeping. Flip `TurCacheAnnotationConventionsTest` to **forbid** `@Cacheable` on repositories. → §XXVIII.1
-- 📋 **T487** (deps: T486) **Phase 2: one dedicated cached read-model layer for the hot path (semantic navigation + chat)** — a cache service over **immutable DTOs / parsed read-models** (parsed `ChatFlowGraph`, SN site + field config), explicit keys, never lazy entities. Admin area stays uncached. → §XXVIII.2
-- 📋 **T488** (deps: T486) **Admin/CRUD = uncached + transactional graph loads** — load-mutate-map paths use `@Transactional` + `@Query ... JOIN FETCH` (retire `findByIdNoCache`; **not** `@EntityGraph` — it triggers log warnings, and `JOIN FETCH` is the project convention); document + lint the policy "cache = hot path only, DTOs not entities". → §XXVIII.3
+- 📋 **T487** (deps: T486 ✅) **Phase 2: one dedicated cached read-model layer for the hot path (semantic navigation + chat)** — a cache service over **immutable DTOs / parsed read-models** (parsed `ChatFlowGraph`, SN site + field config), explicit keys, never lazy entities. Admin area stays uncached. → §XXVIII.2
+- 📋 **T488** (deps: T486 ✅) **Admin/CRUD = uncached + transactional graph loads** — load-mutate-map paths use `@Transactional` + `@Query ... JOIN FETCH` (retire `findByIdNoCache`; **not** `@EntityGraph` — it triggers log warnings, and `JOIN FETCH` is the project convention); document + lint the policy "cache = hot path only, DTOs not entities". → §XXVIII.3
 
 ## Non-goals (do NOT add as tasks)
 

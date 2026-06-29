@@ -24,9 +24,6 @@ package com.viglet.turing.persistence.repository.sn;
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,23 +31,11 @@ import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
-	@Override
-	@Cacheable("turSNSitefindAll")
-	@NotNull
-	List<TurSNSite> findAll(@NotNull Sort name);
 
-	@Cacheable("turSNSitefindAByCreatedBy")
 	List<TurSNSite> findByCreatedBy(Sort name, String createdBy);
 
-	@Override
-	@Cacheable("turSNSitefindById")
-	@NotNull
-	Optional<TurSNSite> findById(@NotNull String id);
-
-	@Cacheable("turSNSitefindByName")
 	Optional<TurSNSite> findByName(String name);
 
-	@Cacheable("turSNSitefindByNameIgnoreCase")
 	Optional<TurSNSite> findByNameIgnoreCase(String name);
 
 	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
@@ -63,24 +48,10 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	 * Hibernate session closes. Only the locale association is fetched — all
 	 * other {@code @OneToMany} collections remain lazy and untouched.
 	 */
-	@Cacheable("turSNSitefindAllForListing")
 	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales ORDER BY LOWER(s.name)")
 	List<TurSNSite> findAllForListing();
 
 	// T262 / §XIV.2.6 — findAllForListingByCreatedBy (the legacy createdBy
 	// pseudo-tenant filter) is retired; isolation is the Hibernate @TenantId
 	// discriminator, applied automatically to findAllForListing().
-
-	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing" }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNSite> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing" }, allEntries = true)
-	void delete(@NotNull TurSNSite turSNSite);
 }

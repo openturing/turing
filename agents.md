@@ -449,41 +449,40 @@ The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `ove
 - Cluster-wide-once `@Scheduled` jobs should use ShedLock via
   `@SchedulerLock`; `TurSchedulerLockConfig` provides the Hazelcast-backed
   `LockProvider`.
-- New queries on `TurSNSiteRepository` should follow the repository cache
-  convention: add `@Cacheable` and include the cache name in save/delete
-  `@CacheEvict` lists.
-- Write endpoints that load, mutate, save, and map `TurSNSite` should use
-  `findByIdNoCache`; cached entities can trigger lazy-init issues in mappers.
+#### Caching policy: never on repositories (Block AC / T486)
 
-#### Adding a `@Cacheable` query
+**Repositories are uncached.** `@Cacheable`/`@CacheEvict`/`@Caching` must not
+appear on any repository — `TurCacheAnnotationConventionsTest` (under
+`turing-app/src/test/java/com/viglet/turing/db/`) fails the build if they do.
+The reason: a repository finder caches a **JPA entity**, and entities carry
+lazy `@ManyToOne` proxies. A cached entity outlives its session, so any hot-path
+read that dereferences a lazy association outside a transaction throws
+`LazyInitializationException` (the bug that surfaced when
+`hibernate.enable_lazy_load_no_trans` was turned off). T486 removed the whole
+class — including the per-finder cache-name constants. The now-redundant
+`findByIdNoCache` band-aid is retired separately in T488.
 
-When you introduce a new `@Cacheable` method, four things must line up
-or the cache will silently misbehave. `TurCacheAnnotationConventionsTest`
-(under `turing-app/src/test/java/com/viglet/turing/db/`) lints the first
-rule on every build; the rest are conventions:
+When you do need to cache for the search/chat hot path:
 
-1. **Pair every cache name with an eviction.** Add the cache name to the
-   `@CacheEvict` list on the owning repository's `save(...)` and
-   `delete(...)` methods (and any bulk-DML write paths that bypass JPA
-   callbacks). The lint test fails when a `@Cacheable` name is never
-   evicted anywhere. If the data truly never changes at runtime, add the
-   name to `EVICTION_EXEMPT` inside the test with a comment explaining
-   why.
+1. **Cache an immutable read-model / DTO in a service-level cache, never a JPA
+   entity.** The parsed `ChatFlowGraph`, an SN site + field-config DTO, router
+   decisions, static prompts, rerank scores, prices — values with no lazy
+   proxies and no session affinity, safe to read anywhere. Admin/CRUD stays
+   uncached and uses `@Transactional` + `@Query ... LEFT JOIN FETCH` to load the
+   graph it needs (see T488).
 2. **`@Cacheable` is proxy-based — never call it via `this`.** A
-   `this.cacheableMethod()` from the same class bypasses the Spring
-   proxy and silently no-ops the cache (and the eviction). For
-   intra-class calls, inject the bean into itself with `@Lazy` and route
-   through that reference. See
+   `this.cacheableMethod()` from the same class bypasses the Spring proxy and
+   silently no-ops the cache (and its eviction). For intra-class calls, inject
+   the bean into itself with `@Lazy` and route through that reference. See
    [`TurChatFlowStaticPromptCache`](turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCache.java)
    for the canonical pattern.
-3. **Cache names follow lowerCamelCase.** Match the established
-   prefixes: `turXxxfindAll` / `turXxxfindById` for repository queries,
-   `turXxx<Purpose>` for service-level caches (e.g.
-   `turChatFlowRouterDecision`, `turPersonaStaticPrompt`). Lowercase
-   first letter, no separators.
-4. **Hazelcast vs in-process is a deploy-time concern.** The cache
-   topology is decided by whether `com.hazelcast:hazelcast-spring` is on
-   the classpath; the `@Cacheable` site stays identical either way.
+3. **Pair every service cache name with an eviction.** Evict on the matching
+   admin write (e.g. the reranker-config setters evict `turRagRerankScore`).
+4. **Cache names follow lowerCamelCase** — `turXxx<Purpose>` for service-level
+   caches (e.g. `turChatFlowRouterDecision`, `turPersonaStaticPrompt`).
+5. **Hazelcast vs in-process is a deploy-time concern.** The cache topology is
+   decided by whether `com.hazelcast:hazelcast-spring` is on the classpath; the
+   `@Cacheable` site stays identical either way.
 
 ### Agent Operational Memory (Repository)
 
