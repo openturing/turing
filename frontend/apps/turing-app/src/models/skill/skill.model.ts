@@ -28,3 +28,17 @@ export interface TurSkillFileContent {
   path: string;
   content: string;
 }
+
+/**
+ * T449 — a UI component a skill ships in its `ui/components.json`. The host
+ * registers a renderer keyed by `toolName` into `useGenerativeUI`, so when the
+ * agent calls that generative client tool the skill's own component renders.
+ */
+export interface TurSkillUiComponent {
+  skillId: string;
+  skillName: string;
+  componentName: string;
+  toolName: string;
+  description: string | null;
+  schema: string | null;
+}

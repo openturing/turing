@@ -165,9 +165,9 @@ public class TurAnswerAsAppClientTools implements TurBuiltInClientToolProvider {
                             + "The chosen values are returned for a follow-up search.",
                     CONFIGURATOR_SCHEMA));
 
-    /** The built-in answer-as-app client-tool declarations (immutable). */
+    /** The built-in answer-as-app client-tool declarations (static — agent-independent). */
     @Override
-    public List<TurClientTool> declarations() {
+    public List<TurClientTool> declarations(TurAIAgent agent) {
         return declarations;
     }
 }

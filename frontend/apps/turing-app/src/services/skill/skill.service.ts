@@ -3,6 +3,7 @@ import type {
   TurSkillFileContent,
   TurSkillFileNode,
   TurSkillSummary,
+  TurSkillUiComponent,
 } from "@/models/skill/skill.model";
 
 /**
@@ -18,6 +19,12 @@ export class TurSkillService {
 
   async get(id: string): Promise<TurSkillSummary> {
     const response = await axios.get<TurSkillSummary>(`/skill/${id}`);
+    return response.data;
+  }
+
+  /** T449 — the UI components this skill ships (from its `ui/components.json`). */
+  async uiComponents(id: string): Promise<TurSkillUiComponent[]> {
+    const response = await axios.get<TurSkillUiComponent[]>(`/skill/${id}/ui-components`);
     return response.data;
   }
 

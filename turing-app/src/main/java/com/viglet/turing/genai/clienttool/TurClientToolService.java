@@ -76,7 +76,7 @@ public class TurClientToolService {
             if (!provider.appliesTo(agent)) {
                 continue;
             }
-            for (TurClientTool builtIn : provider.declarations()) {
+            for (TurClientTool builtIn : provider.declarations(agent)) {
                 if (seen.add(builtIn.name())) {
                     tools.add(builtIn);
                 }

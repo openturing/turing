@@ -101,7 +101,7 @@ public class TurCoBrowseClientTools implements TurBuiltInClientToolProvider {
     }
 
     @Override
-    public List<TurClientTool> declarations() {
+    public List<TurClientTool> declarations(TurAIAgent agent) {
         return declarations;
     }
 }

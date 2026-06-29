@@ -23,6 +23,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.skills.all(), 'detail', id] as const,
     files: (id: string) => [...queryKeys.skills.all(), 'files', id] as const,
     file: (id: string, path: string) => [...queryKeys.skills.all(), 'file', id, path] as const,
+    uiComponents: (id: string) => [...queryKeys.skills.all(), 'ui-components', id] as const,
   },
   snSites: {
     all: () => ['sn-sites'] as const,

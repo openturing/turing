@@ -35,6 +35,10 @@ public interface TurBuiltInClientToolProvider {
     /** Whether this provider's tools should be advertised for the given agent. */
     boolean appliesTo(TurAIAgent agent);
 
-    /** The built-in client-tool declarations this provider contributes (immutable). */
-    List<TurClientTool> declarations();
+    /**
+     * The built-in client-tool declarations this provider contributes for the
+     * given agent. Static providers ignore {@code agent} and return a fixed list;
+     * dynamic ones (e.g. skill-UI, T449) vary by the agent's configuration.
+     */
+    List<TurClientTool> declarations(TurAIAgent agent);
 }

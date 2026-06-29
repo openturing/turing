@@ -209,7 +209,6 @@
 > runtime with generative UI. Every task here is a thin composition of shipped
 > primitives that *only pays off because Turing owns both halves*. Rationale → §XXIII.
 
-- 💭 **T449** (deps: T440, T323) **Skills that ship their own UI** — an Anthropic-standard skill folder embeds its own React components (a `ui/` convention + activation-harness registration); skills graduate from prompt+scripts to full vertical apps. → §XXIII.8
 - 💭 **T450** (deps: T438, T439) **Embeddable action widget (Turing as an action layer)** — the vanilla SDK widget acts on the host site (add-to-cart, fill form, navigate) via client tools; Turing stops being "a search box you embed" and becomes an action layer over any website, no browser extension. → §XXIII.9
 
 ## Block Y — Reference showcase app (stress every feature)

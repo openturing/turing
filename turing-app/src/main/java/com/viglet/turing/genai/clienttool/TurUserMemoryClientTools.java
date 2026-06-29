@@ -63,7 +63,7 @@ public class TurUserMemoryClientTools implements TurBuiltInClientToolProvider {
     }
 
     @Override
-    public List<TurClientTool> declarations() {
+    public List<TurClientTool> declarations(TurAIAgent agent) {
         return declarations;
     }
 }

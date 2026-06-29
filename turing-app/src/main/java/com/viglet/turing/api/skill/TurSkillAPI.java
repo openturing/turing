@@ -53,10 +53,13 @@ public class TurSkillAPI {
 
     private final TurSkillCatalogService catalogService;
     private final TurSkillFileService fileService;
+    private final com.viglet.turing.genai.skill.ui.TurSkillUiService skillUiService;
 
-    public TurSkillAPI(TurSkillCatalogService catalogService, TurSkillFileService fileService) {
+    public TurSkillAPI(TurSkillCatalogService catalogService, TurSkillFileService fileService,
+            com.viglet.turing.genai.skill.ui.TurSkillUiService skillUiService) {
         this.catalogService = catalogService;
         this.fileService = fileService;
+        this.skillUiService = skillUiService;
     }
 
     /** Compact view of an indexed skill — enough to render a catalog card. */
@@ -84,6 +87,13 @@ public class TurSkillAPI {
                 .map(TurSkillSummary::of)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "T449 — list the UI components a skill ships (ui/components.json)")
+    @GetMapping("/{id}/ui-components")
+    public List<com.viglet.turing.genai.skill.ui.TurSkillUiComponent> uiComponents(
+            @PathVariable String id) {
+        return skillUiService.listComponents(id);
     }
 
     @Operation(summary = "Get the raw SKILL.md of an indexed skill")

@@ -2305,15 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.8 Skills that ship their own UI (T449)
-
-With generative UI (T440), an Anthropic-standard skill folder can embed its own
-React components: the "travel-booking" skill ships its date-picker, the
-"returns" skill ships its RMA form. Skills graduate from prompt+scripts to
-**full vertical apps**, reinforcing the marketplace moat. A `ui/` convention in
-the skill folder + a registration step in the activation harness. → builds on
-T440, T323/T322 (skill activation).
-
 ### XXIII.9 Embeddable action widget — Turing as an action layer (T450)
 
 The vanilla SDK already runs in EDS / plain `<script>`. With client tools
