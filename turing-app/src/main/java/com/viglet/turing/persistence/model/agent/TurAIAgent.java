@@ -147,6 +147,20 @@ public class TurAIAgent implements Serializable {
     private int proactiveThresholdSignals = 3;
 
     /**
+     * T446 / §XXIII.5 — per-agent opt-in for cross-conversation personal memory.
+     * When {@code true}, the built-in {@code recall_user_memory} / {@code
+     * remember_fact} client tools are advertised and {@code prompts/user-memory.md}
+     * is injected, so the agent can persist and recall durable facts about a user
+     * across sessions (the host SDK supplies the stable userId and calls the
+     * {@code /sn/{site}/user-memory} endpoints). Default {@code false} keeps
+     * existing agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "user_memory_enabled", nullable = false)
+    private boolean userMemoryEnabled = false;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,

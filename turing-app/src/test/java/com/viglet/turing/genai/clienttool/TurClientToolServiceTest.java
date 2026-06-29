@@ -20,7 +20,8 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 class TurClientToolServiceTest {
 
     private final TurClientToolService service = new TurClientToolService(
-            List.of(new TurAnswerAsAppClientTools(), new TurCoBrowseClientTools()));
+            List.of(new TurAnswerAsAppClientTools(), new TurCoBrowseClientTools(),
+                    new TurUserMemoryClientTools()));
 
     private static TurAIAgent agent(boolean enabled, String json) {
         TurAIAgent agent = new TurAIAgent();
@@ -171,5 +172,17 @@ class TurClientToolServiceTest {
     void coBrowseDisabledByDefault() {
         TurAIAgent a = agent(false, null);
         assertThat(service.declarations(a)).isEmpty();
+    }
+
+    // --- T446 user-memory built-in tools ---
+
+    @Test
+    void userMemoryFlagAdvertisesBuiltInTools() {
+        TurAIAgent a = agent(false, null);
+        a.setUserMemoryEnabled(true);
+        assertThat(service.isEnabled(a)).isTrue();
+        assertThat(service.namesFor(a)).containsExactly(
+                TurUserMemoryClientTools.RECALL_USER_MEMORY,
+                TurUserMemoryClientTools.REMEMBER_FACT);
     }
 }

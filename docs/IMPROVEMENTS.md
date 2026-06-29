@@ -2305,14 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.5 Cross-conversation personal memory (T446)
-
-The memory tool (F.8 / T163) is per-conversation. Add a **per-user, long-horizon
-memory** ("voa econômica", "prefere docs em PT", "trabalha no time fiscal") that
-survives across sessions, tenant-scoped for isolation, with a user-visible
-"what the assistant remembers about me" panel + delete (privacy/GDPR posture is
-a feature, not an afterthought). → builds on T163/T164, multi-tenancy.
-
 ### XXIII.6 Self-tuning agent — eval as continuous improvement (T447)
 
 The highest leverage-to-cost bet: it is **almost entirely composition of shipped

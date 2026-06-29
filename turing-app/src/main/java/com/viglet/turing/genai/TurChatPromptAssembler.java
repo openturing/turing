@@ -110,6 +110,16 @@ public class TurChatPromptAssembler {
 
     private String coBrowsePrompt = "";
 
+    /**
+     * T446 / §XXIII.5 — cross-conversation personal-memory guidance teaching the
+     * model the {@code recall_user_memory} / {@code remember_fact} client tools.
+     * Appended only when {@link TurAIAgent#isUserMemoryEnabled()}.
+     */
+    @Value("classpath:prompts/user-memory.md")
+    private Resource userMemoryPromptResource;
+
+    private String userMemoryPrompt = "";
+
     @PostConstruct
     void loadRenderPrompt() {
         try {
@@ -132,6 +142,13 @@ public class TurChatPromptAssembler {
             log.warn("[PromptAssembler] could not load prompts/co-browse.md — co-browse "
                     + "agents will fall back to prose: {}", e.getMessage());
             coBrowsePrompt = "";
+        }
+        try {
+            userMemoryPrompt = userMemoryPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[PromptAssembler] could not load prompts/user-memory.md — user-memory "
+                    + "agents will skip recall/remember guidance: {}", e.getMessage());
+            userMemoryPrompt = "";
         }
     }
 
@@ -183,6 +200,12 @@ public class TurChatPromptAssembler {
         // tools are advertised by TurClientToolService when the same flag is on.
         if (agent.isCoBrowseEnabled() && !coBrowsePrompt.isBlank()) {
             augmented = augmented + "\n\n" + coBrowsePrompt;
+        }
+        // T446 / §XXIII.5 — cross-conversation personal memory opt-in: teach the
+        // recall_user_memory / remember_fact client tools (advertised by
+        // TurUserMemoryClientTools when the same flag is on).
+        if (agent.isUserMemoryEnabled() && !userMemoryPrompt.isBlank()) {
+            augmented = augmented + "\n\n" + userMemoryPrompt;
         }
         // T323 / §IX.4.d — skill delegation: append the cheap progressive-
         // disclosure block (each enabled skill's name + description) and the

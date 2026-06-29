@@ -1,0 +1,99 @@
+databaseChangeLog:
+  # T446 / §XXIII.5 — cross-conversation personal memory: per-agent opt-in flag +
+  # the user_memory table. Default off keeps existing agents unchanged.
+  # Idempotent: gated by columnExists / tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.58-add-ai_agent-user_memory_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: user_memory_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: user_memory_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: user_memory_enabled
+                  valueBoolean: false
+            where: user_memory_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.58-create-user_memory-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: user_memory
+      changes:
+        - createTable:
+            tableName: user_memory
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+              - column:
+                  name: userId
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: agentId
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: memoryKey
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content
+                  type: longtext
+              - column:
+                  name: createdAt
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updatedAt
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.58-index-user_memory-user-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_user_memory_user_agent
+      changes:
+        - createIndex:
+            indexName: idx_user_memory_user_agent
+            tableName: user_memory
+            columns:
+              - column:
+                  name: userId
+              - column:
+                  name: agentId

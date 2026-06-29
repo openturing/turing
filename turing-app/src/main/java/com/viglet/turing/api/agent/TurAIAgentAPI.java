@@ -229,6 +229,8 @@ public class TurAIAgentAPI {
             // T445 — ambient / proactive copilot (opt-in) + its signal threshold.
             agentEdit.setProactiveEnabled(turAIAgent.isProactiveEnabled());
             agentEdit.setProactiveThresholdSignals(turAIAgent.getProactiveThresholdSignals());
+            // T446 — cross-conversation personal memory (opt-in).
+            agentEdit.setUserMemoryEnabled(turAIAgent.isUserMemoryEnabled());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());

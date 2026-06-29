@@ -209,7 +209,6 @@
 > runtime with generative UI. Every task here is a thin composition of shipped
 > primitives that *only pays off because Turing owns both halves*. Rationale → §XXIII.
 
-- 💭 **T446** (deps: T163) **Cross-conversation personal memory** — per-user long-horizon memory (preferences, role) surviving across sessions, tenant-scoped, with a user-visible "what the assistant remembers" panel + delete (GDPR posture as a feature). → §XXIII.5
 - 💭 **T447** (deps: T285, T427) **Self-tuning agent (eval as continuous improvement)** — a routine mines real conversations for failure signatures, drafts a prompt/flow change, scores it against the Block K golden set, and opens a human-approved "suggested change" in the admin only if it improves. Highest leverage-to-cost — almost pure composition. → §XXIII.6
 - 💭 **T448** (deps: T436, T286) **Agent-to-agent handoff (a visible team)** — a router agent delegates to specialists (own skills/tools); the UI shows the conversation visibly passing between them (Turing analog of AG-UI subgraphs), using the T436 tool-call events as the visibility surface. → §XXIII.7
 - 💭 **T449** (deps: T440, T323) **Skills that ship their own UI** — an Anthropic-standard skill folder embeds its own React components (a `ui/` convention + activation-harness registration); skills graduate from prompt+scripts to full vertical apps. → §XXIII.8
