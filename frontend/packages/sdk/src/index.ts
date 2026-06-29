@@ -159,6 +159,9 @@ export type {
   ClientToolHandler,
   ClientToolRegistration,
 } from "./controllers/chat";
+// T450 — embeddable action widget: default host-action client tools.
+export { createHostActions } from "./host-actions";
+export type { HostActions, HostActionsOptions } from "./host-actions";
 export { createAutoComplete } from "./controllers/autocomplete";
 export type {
   AutoCompleteController,

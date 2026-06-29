@@ -2296,24 +2296,6 @@ zero Turing-SDK code. This is a distribution play (meet developers in the
 ecosystem they already use), not core parity — depends on T436+T438 existing
 first, and should only be promoted from 💭 if a named integration asks for it.
 
-## XXIII. Creative experiences at the search × agent intersection (Block X)
-
-> **The thesis.** Once Block W lands (live tool calls + client tools + generative
-> UI), Turing holds a combination **neither side of the market has together**:
-> agent frameworks (CopilotKit/LangGraph) have no enterprise search engine, and
-> search engines have no agent runtime with generative UI. Every idea below is a
-> bet that *only pays off because Turing owns both*. They are deliberately built
-> as thin compositions of shipped primitives — none is a new subsystem.
-
-### XXIII.9 Embeddable action widget — Turing as an action layer (T450)
-
-The vanilla SDK already runs in EDS / plain `<script>`. With client tools
-(T438/T439), the embedded widget **acts on the host site** — add-to-cart, fill a
-form, navigate. Turing stops being "a search box you embed" and becomes an
-**action layer over any website**, an entirely new sales proposition that
-competes with browser-agent products without a browser extension. → builds on
-T438/T439, vanilla SDK.
-
 ## XXIV. Reference showcase app — stress every feature (Block Y)
 
 > **Goal.** One installable reference app that **exercises the maximum surface of

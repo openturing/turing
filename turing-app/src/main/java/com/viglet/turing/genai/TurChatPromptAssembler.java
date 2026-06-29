@@ -120,6 +120,17 @@ public class TurChatPromptAssembler {
 
     private String userMemoryPrompt = "";
 
+    /**
+     * T450 / §XXIII.9 — action-widget guidance teaching the model the built-in
+     * {@code navigate} / {@code fill_form} / {@code click_element} /
+     * {@code add_to_cart} host-action client tools. Appended only when
+     * {@link TurAIAgent#isActionWidgetEnabled()}.
+     */
+    @Value("classpath:prompts/action-widget.md")
+    private Resource actionWidgetPromptResource;
+
+    private String actionWidgetPrompt = "";
+
     @PostConstruct
     void loadRenderPrompt() {
         try {
@@ -149,6 +160,13 @@ public class TurChatPromptAssembler {
             log.warn("[PromptAssembler] could not load prompts/user-memory.md — user-memory "
                     + "agents will skip recall/remember guidance: {}", e.getMessage());
             userMemoryPrompt = "";
+        }
+        try {
+            actionWidgetPrompt = actionWidgetPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.warn("[PromptAssembler] could not load prompts/action-widget.md — action-widget "
+                    + "agents will fall back to prose: {}", e.getMessage());
+            actionWidgetPrompt = "";
         }
     }
 
@@ -206,6 +224,12 @@ public class TurChatPromptAssembler {
         // TurUserMemoryClientTools when the same flag is on).
         if (agent.isUserMemoryEnabled() && !userMemoryPrompt.isBlank()) {
             augmented = augmented + "\n\n" + userMemoryPrompt;
+        }
+        // T450 / §XXIII.9 — action-widget opt-in: teach the host-action client
+        // tools (navigate / fill_form / click_element / add_to_cart) advertised by
+        // TurActionWidgetClientTools when the same flag is on.
+        if (agent.isActionWidgetEnabled() && !actionWidgetPrompt.isBlank()) {
+            augmented = augmented + "\n\n" + actionWidgetPrompt;
         }
         // T323 / §IX.4.d — skill delegation: append the cheap progressive-
         // disclosure block (each enabled skill's name + description) and the

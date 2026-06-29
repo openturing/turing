@@ -201,16 +201,6 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block X — Creative experiences at the search × agent intersection
-
-> **Why now:** with Block W (live tool calls + client tools + generative UI),
-> Turing owns a combination neither side of the market has together — agent
-> frameworks have no enterprise search engine, search engines have no agent
-> runtime with generative UI. Every task here is a thin composition of shipped
-> primitives that *only pays off because Turing owns both halves*. Rationale → §XXIII.
-
-- 💭 **T450** (deps: T438, T439) **Embeddable action widget (Turing as an action layer)** — the vanilla SDK widget acts on the host site (add-to-cart, fill form, navigate) via client tools; Turing stops being "a search box you embed" and becomes an action layer over any website, no browser extension. → §XXIII.9
-
 ## Block Y — Reference showcase app (stress every feature)
 
 > **Why now:** one installable reference app that exercises the **maximum surface

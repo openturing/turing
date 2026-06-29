@@ -189,6 +189,20 @@ public class TurAIAgent implements Serializable {
     private boolean agentHandoffEnabled = false;
 
     /**
+     * T450 / §XXIII.9 — per-agent opt-in for the embeddable "action widget". When
+     * {@code true} the built-in host-action client tools ({@code navigate},
+     * {@code fill_form}, {@code click_element}, {@code add_to_cart}) are advertised,
+     * so the embedded SDK widget can ACT on the host page (an action layer over any
+     * website, no browser extension) — the host wires the matching handlers via the
+     * vanilla SDK's {@code createHostActions}. Default {@code false} keeps existing
+     * agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "action_widget_enabled", nullable = false)
+    private boolean actionWidgetEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.

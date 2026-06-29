@@ -236,6 +236,8 @@ public class TurAIAgentAPI {
             // T448 — agent-to-agent handoff (opt-in) + the specialist allowlist.
             agentEdit.setAgentHandoffEnabled(turAIAgent.isAgentHandoffEnabled());
             agentEdit.setSpecialistAgentIds(turAIAgent.getSpecialistAgentIds());
+            // T450 — embeddable action widget (opt-in host-action client tools).
+            agentEdit.setActionWidgetEnabled(turAIAgent.isActionWidgetEnabled());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());
