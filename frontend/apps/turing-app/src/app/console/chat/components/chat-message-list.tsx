@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { IconAlertTriangle, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
+import { IconAlertTriangle, IconArrowsMinimize, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
 import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, TuringToolActivity, type TuringCitedMark } from "@viglet/turing-react-sdk"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useTranslation } from "react-i18next"
@@ -35,6 +35,16 @@ interface ChatMessageListProps {
    * @since 2026.3.4
    */
   onFeedback?: (message: ChatMessage, rating: "UP" | "DOWN") => void
+  /**
+   * F.10 / T172 — optional "rephrase" handler. When provided, assistant bubbles
+   * render a "Shorter" action that asks the backend to rewrite the answer
+   * (accelerated by OpenAI Predicted Outputs when the agent opted in). The
+   * caller resolves the prompt the answer responded to and applies the rewrite.
+   * Omitted → no rephrase action renders.
+   *
+   * @since 2026.3.4
+   */
+  onRephrase?: (message: ChatMessage, style: string) => void | Promise<void>
 }
 
 function MarkdownBlock({ text }: Readonly<{ text: string }>) {
@@ -239,7 +249,7 @@ function FeedbackButtons({
     onFeedback(message, rating)
   }
   return (
-    <div className="not-prose mt-2 flex items-center gap-1">
+    <>
       <button
         type="button"
         aria-label={t("chat.feedback.up", { defaultValue: "Good answer" })}
@@ -258,7 +268,46 @@ function FeedbackButtons({
       >
         <IconThumbDown className="size-3.5" />
       </button>
-    </div>
+    </>
+  )
+}
+
+/**
+ * F.10 / T172 — "Rephrase shorter" action on an assistant turn. The click asks
+ * the backend to rewrite the answer more concisely; when the agent's LLM is
+ * OpenAI-backed with Predicted Outputs (T171) enabled, the previous answer is
+ * the prediction so the rewrite is near-instant. Disabled while in flight.
+ */
+function RephraseButton({
+  message,
+  onRephrase,
+}: Readonly<{
+  message: ChatMessage
+  onRephrase: (m: ChatMessage, style: string) => void | Promise<void>
+}>) {
+  const { t } = useTranslation()
+  const [busy, setBusy] = useState(false)
+  const run = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await onRephrase(message, "shorter")
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      aria-label={t("chat.rephrase.shorter", { defaultValue: "Rephrase shorter" })}
+      title={t("chat.rephrase.shorter", { defaultValue: "Rephrase shorter" })}
+      onClick={() => void run()}
+      className="ml-0.5 inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-muted-foreground/60 transition hover:bg-muted/80 hover:text-foreground disabled:opacity-60"
+    >
+      {busy ? <IconLoader2 className="size-3.5 animate-spin" /> : <IconArrowsMinimize className="size-3.5" />}
+      <span>{t("chat.rephrase.shorterLabel", { defaultValue: "Shorter" })}</span>
+    </button>
   )
 }
 
@@ -266,9 +315,11 @@ function FeedbackButtons({
 function AssistantBody({
   message,
   onFeedback,
+  onRephrase,
 }: Readonly<{
   message: ChatMessage
   onFeedback?: (message: ChatMessage, rating: "UP" | "DOWN") => void
+  onRephrase?: (message: ChatMessage, style: string) => void | Promise<void>
 }>) {
   const { t } = useTranslation()
   const hasCitations = Boolean(message.citations && message.citations.length > 0)
@@ -289,14 +340,17 @@ function AssistantBody({
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
-      {onFeedback && message.content
-        ? <FeedbackButtons message={message} onFeedback={onFeedback} />
-        : null}
+      {(onFeedback || onRephrase) && message.content ? (
+        <div className="not-prose mt-2 flex items-center gap-1">
+          {onFeedback ? <FeedbackButtons message={message} onFeedback={onFeedback} /> : null}
+          {onRephrase ? <RephraseButton message={message} onRephrase={onRephrase} /> : null}
+        </div>
+      ) : null}
     </div>
   )
 }
 
-export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef, onOptionClick, onFeedback }: Readonly<ChatMessageListProps>) {
+export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef, onOptionClick, onFeedback, onRephrase }: Readonly<ChatMessageListProps>) {
   const { t } = useTranslation()
   const { user } = useCurrentUser()
 
@@ -361,7 +415,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
             }}
           >
             {isAssistant ? (
-              <AssistantBody message={message} onFeedback={onFeedback} />
+              <AssistantBody message={message} onFeedback={onFeedback} onRephrase={onRephrase} />
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>
             )}

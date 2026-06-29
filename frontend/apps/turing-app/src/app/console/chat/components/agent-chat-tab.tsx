@@ -26,6 +26,7 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
 import { TurChatFeedbackService } from "@/services/agent/chat-feedback.service"
+import { TurChatRephraseService } from "@/services/agent/chat-rephrase.service"
 import { estimateTokens, toAdminMessages, type ChatMessage } from "../chat.types"
 import { ChatEmptyState } from "./chat-empty-state"
 import { ChatInput } from "./chat-input"
@@ -270,7 +271,17 @@ export function AgentChatTab({
     }
   }, [resetFlow, t])
 
-  const adminMessages = useMemo(() => toAdminMessages(messages), [messages])
+  // F.10 / T172 — local presentational overrides for answers the operator
+  // asked to rephrase (keyed by message id). Kept out of the SDK-managed
+  // transcript so it never affects what's sent on the next turn.
+  const [rephrasedById, setRephrasedById] = useState<Record<string, string>>({})
+  const adminMessages = useMemo(
+    () =>
+      toAdminMessages(messages).map((m) =>
+        rephrasedById[m.id] ? { ...m, content: rephrasedById[m.id] } : m,
+      ),
+    [messages, rephrasedById],
+  )
 
   // F.9 / T170 — record an operator thumb-up/down as a DPO preference signal.
   // The rated answer's prompt is the nearest preceding user turn. Direct service
@@ -293,6 +304,41 @@ export function AgentChatTab({
     },
     [adminMessages, agent.id, conversationId, t],
   )
+
+  // F.10 / T172 — rewrite an assistant answer in place (shorter/…). Resolves the
+  // prompt as the nearest preceding user turn, asks the backend (Predicted
+  // Outputs fast-path when the agent opted in), and applies the rewrite as a
+  // local override on that message.
+  const handleRephrase = useCallback(
+    async (message: ChatMessage, style: string) => {
+      const idx = adminMessages.findIndex((m) => m.id === message.id)
+      let prompt = ""
+      for (let i = idx - 1; i >= 0; i--) {
+        if (adminMessages[i].role === "user") {
+          prompt = adminMessages[i].content
+          break
+        }
+      }
+      try {
+        const result = await new TurChatRephraseService().rephrase(agent.id, {
+          conversationId,
+          llmInstanceId,
+          prompt,
+          answer: message.content,
+          style,
+        })
+        if (result.success && result.rephrased) {
+          setRephrasedById((prev) => ({ ...prev, [message.id]: result.rephrased as string }))
+        } else {
+          toast.error(result.error ?? t("chat.rephrase.failed", { defaultValue: "Could not rephrase" }))
+        }
+      } catch {
+        toast.error(t("chat.rephrase.failed", { defaultValue: "Could not rephrase" }))
+      }
+    },
+    [adminMessages, agent.id, conversationId, llmInstanceId, t],
+  )
+
   const tokens = useMemo(
     () => estimateTokens(messages.map((m) => m.content).join("")),
     [messages],
@@ -319,6 +365,7 @@ export function AgentChatTab({
             endRef={endRef}
             onOptionClick={handleOptionClick}
             onFeedback={handleFeedback}
+            onRephrase={handleRephrase}
           />
         )}
       </div>

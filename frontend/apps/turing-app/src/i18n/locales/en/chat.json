@@ -45,6 +45,11 @@
       "done": "done",
       "error": "failed"
     },
+    "rephrase": {
+      "shorter": "Rephrase shorter",
+      "shorterLabel": "Shorter",
+      "failed": "Could not rephrase"
+    },
     "selectModelToStart": "Select a model to start...",
     "selectModelToChat": "Select a language model to start chatting.",
     "selectModelToExplore": "Select a language model to start exploring.",
