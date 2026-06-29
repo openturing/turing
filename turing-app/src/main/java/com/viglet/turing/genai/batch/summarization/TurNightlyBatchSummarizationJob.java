@@ -15,6 +15,8 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.batch.TurBatchChatRequest;
@@ -59,19 +61,23 @@ public class TurNightlyBatchSummarizationJob {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurSNSiteRepository snSiteRepository;
     private final TurSNSiteInsightsPromptBuilder insightsPromptBuilder;
+    private final TransactionTemplate readOnlyTransactionTemplate;
 
     public TurNightlyBatchSummarizationJob(TurConfigProperties configProperties,
             TurBatchInferenceService batchInferenceService,
             TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurSNSiteRepository snSiteRepository,
-            TurSNSiteInsightsPromptBuilder insightsPromptBuilder) {
+            TurSNSiteInsightsPromptBuilder insightsPromptBuilder,
+            PlatformTransactionManager transactionManager) {
         this.configProperties = configProperties;
         this.batchInferenceService = batchInferenceService;
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.snSiteRepository = snSiteRepository;
         this.insightsPromptBuilder = insightsPromptBuilder;
+        this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
+        this.readOnlyTransactionTemplate.setReadOnly(true);
     }
 
     @Scheduled(cron = "${turing.batch.summarization.cron:0 30 3 * * *}")
@@ -101,12 +107,14 @@ public class TurNightlyBatchSummarizationJob {
 
         List<TurBatchChatRequest> requests = new ArrayList<>(siteIds.size());
         for (String siteId : siteIds) {
-            TurSNSite site = snSiteRepository.findByIdNoCache(siteId).orElse(null);
-            if (site == null) {
-                continue;
-            }
-            TurSNSiteInsightsPromptBuilder.InsightsPrompt prompt = insightsPromptBuilder.build(site);
-            if (StringUtils.hasText(prompt.userData())) {
+            // T488 / §XXVIII.3 — build inside a read-only transaction so the prompt
+            // builder can dereference the site's lazy associations (GenAI graph,
+            // fieldExts, locales) through the open session; repositories are uncached.
+            TurSNSiteInsightsPromptBuilder.InsightsPrompt prompt = readOnlyTransactionTemplate.execute(status ->
+                    snSiteRepository.findByIdWithGenAi(siteId)
+                            .map(insightsPromptBuilder::build)
+                            .orElse(null));
+            if (prompt != null && StringUtils.hasText(prompt.userData())) {
                 requests.add(new TurBatchChatRequest(prompt.cacheKey(), prompt.systemPrompt(),
                         prompt.userData(), null, null, null));
             }

@@ -38,8 +38,27 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 
 	Optional<TurSNSite> findByNameIgnoreCase(String name);
 
-	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
-	Optional<TurSNSite> findByIdNoCache(@Param("id") String id);
+	/**
+	 * Loads a site with its <em>to-one</em> GenAI graph fetched in one query —
+	 * {@code turSEInstance}, {@code turSNSiteGenAi}, and the GenAI's
+	 * {@code turAIAgent} + {@code ragSeInstance}. Intended for the admin
+	 * load-mutate-map paths (T488 / §XXVIII.3) that map the site to a DTO or
+	 * build an insights prompt: the mapper/prompt-builder dereferences these
+	 * associations, so fetching them up front avoids the N+1 round-trips a plain
+	 * {@code findById} would incur inside the transaction. Only {@code @ManyToOne}/
+	 * {@code @OneToOne} associations are fetched — the {@code @OneToMany}
+	 * collections stay lazy (multiple-bag fetch would throw) and resolve through
+	 * the open session of the calling {@code @Transactional} method.
+	 */
+	@Query("""
+			SELECT s FROM TurSNSite s
+			LEFT JOIN FETCH s.turSEInstance
+			LEFT JOIN FETCH s.turSNSiteGenAi genAi
+			LEFT JOIN FETCH genAi.turAIAgent
+			LEFT JOIN FETCH genAi.ragSeInstance
+			WHERE s.id = :id
+			""")
+	Optional<TurSNSite> findByIdWithGenAi(@Param("id") String id);
 
 	/**
 	 * Returns every site eagerly loaded with its locales, intended for the

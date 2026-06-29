@@ -73,7 +73,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnBadRequestWhenNoDefaultLlm() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
         when(insightsPromptBuilder.build(site)).thenReturn(
                 new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
@@ -91,7 +91,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnSuccessWithContent() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
         when(insightsPromptBuilder.build(site)).thenReturn(
                 new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
@@ -110,7 +110,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldPassRegenerateFlag() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
         when(insightsPromptBuilder.build(site)).thenReturn(
                 new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(true)))
@@ -126,7 +126,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnErrorOnFailure() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
         when(insightsPromptBuilder.build(site)).thenReturn(
                 new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))

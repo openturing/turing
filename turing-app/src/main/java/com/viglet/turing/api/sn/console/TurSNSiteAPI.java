@@ -129,7 +129,7 @@ public class TurSNSiteAPI {
     @Transactional(readOnly = true)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public TurSNSiteDto turSNSiteGet(@PathVariable String id) {
-        return turSNSiteMapper.toDto(this.turSNSiteRepository.findByIdNoCache(id).orElse(new TurSNSite()));
+        return turSNSiteMapper.toDto(this.turSNSiteRepository.findByIdWithGenAi(id).orElse(new TurSNSite()));
     }
 
     @Operation(summary = "Update a Semantic Navigation Site")
@@ -144,7 +144,7 @@ public class TurSNSiteAPI {
                     .body(Map.of(ERROR, "A site with this name already exists."));
         }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
-        return ResponseEntity.ok(this.turSNSiteRepository.findByIdNoCache(id).map(turSNSiteEdit -> {
+        return ResponseEntity.ok(this.turSNSiteRepository.findByIdWithGenAi(id).map(turSNSiteEdit -> {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
             turSNSiteEdit.setIcon(turSNSite.getIcon());
@@ -233,7 +233,7 @@ public class TurSNSiteAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "SN_DELETE"})
     public boolean turSNSiteDelete(@PathVariable String id) {
-        Optional<TurSNSite> turSNSite = turSNSiteRepository.findByIdNoCache(id);
+        Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site -> {
             TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
             site.getTurSNSiteFields().clear();

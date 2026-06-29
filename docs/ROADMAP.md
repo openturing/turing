@@ -194,19 +194,6 @@
 - 📋 **T484** (deps: T477, T478) **Real facets + autocomplete + spell-check in the hero search** — swap the sample facets for live facet groups + `createAutoComplete` + `fetchSpellCheck` via the SDK, showing production search depth. → §XXVII.3
 - 💭 **T485** (deps: T477) **"Similar documents" in the demo** — `createSimilarController` "related by AI" on a result click. → §XXVII.3
 
-## Block AC — JPA caching strategy: decouple cache from entities
-
-> **Trigger (2026-06-29):** turning `hibernate.enable_lazy_load_no_trans` **off**
-> (to kill the `@TenantId` `HHH90030002` WARN spam) exposed a latent fault: the
-> hot paths read **`@Cacheable`-cached JPA entities** out of session, and a
-> cached entity's `@ManyToOne(LAZY)` proxy then throws `LazyInitializationException`.
-> The chat-flow engine hit this (`TurChatFlow.getDefinitionJson()` after
-> `save()`); `TurSNSite` already carries a `findByIdNoCache` band-aid for the same
-> class of bug. The durable fix is **don't cache JPA entities** — cache immutable
-> read-models. Two-phase transition so each step lands cleanly. → §XXVIII
-
-- 📋 **T488** (deps: T486 ✅) **Admin/CRUD = uncached + transactional graph loads** — load-mutate-map paths use `@Transactional` + `@Query ... JOIN FETCH` (retire `findByIdNoCache`; **not** `@EntityGraph` — it triggers log warnings, and `JOIN FETCH` is the project convention); document + lint the policy "cache = hot path only, DTOs not entities". → §XXVIII.3
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

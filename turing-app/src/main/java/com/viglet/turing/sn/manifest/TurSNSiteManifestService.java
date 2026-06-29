@@ -112,9 +112,10 @@ public class TurSNSiteManifestService {
         TurSNSite site;
         boolean siteCreated;
         if (existing.isPresent()) {
-            // Re-read uncached: the converge path mutates and reads lazy
-            // associations, which a cached entity can break in mappers.
-            site = turSNSiteRepository.findByIdNoCache(existing.get().getId())
+            // Re-read with the GenAI graph: the converge path mutates and reads
+            // lazy associations, fetched here in one query (T488 / §XXVIII.3 —
+            // repositories are uncached, so findById is already session-attached).
+            site = turSNSiteRepository.findByIdWithGenAi(existing.get().getId())
                     .orElseThrow(() -> new IllegalStateException("Site vanished mid-provision"));
             siteCreated = false;
         } else {

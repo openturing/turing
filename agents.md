@@ -459,8 +459,11 @@ lazy `@ManyToOne` proxies. A cached entity outlives its session, so any hot-path
 read that dereferences a lazy association outside a transaction throws
 `LazyInitializationException` (the bug that surfaced when
 `hibernate.enable_lazy_load_no_trans` was turned off). T486 removed the whole
-class — including the per-finder cache-name constants. The now-redundant
-`findByIdNoCache` band-aid is retired separately in T488.
+class — including the per-finder cache-name constants. T488 then retired the
+now-redundant `findByIdNoCache` band-aid: admin/CRUD callers use plain
+`findById`, and load-mutate-map paths run `@Transactional` (with a
+`LEFT JOIN FETCH` finder — e.g. `TurSNSiteRepository.findByIdWithGenAi` — for the
+to-one graph the mapper/prompt-builder touches, never `@EntityGraph`).
 
 When you do need to cache for the search/chat hot path:
 

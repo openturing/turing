@@ -112,7 +112,7 @@ class TurSNSiteManifestServiceTest {
                 "courses", null, null, null, List.of(field("mensalidade")));
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
-        when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
         when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(cleanDiff());
         when(turSNFieldProvisioner.ensureField(eq(existing), named("mensalidade")))
                 .thenReturn(false);
@@ -161,7 +161,7 @@ class TurSNSiteManifestServiceTest {
                 "2", true, List.of(), List.of(breaking), List.of(), List.of());
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
-        when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
         when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(diff);
 
         assertThrows(TurSNManifestMigrationRequiredException.class, () -> service.provision(manifest));
@@ -185,7 +185,7 @@ class TurSNSiteManifestServiceTest {
                 "2", true, List.of(), List.of(breaking), List.of(), List.of());
 
         when(turSNSiteRepository.findByNameIgnoreCase("courses")).thenReturn(Optional.of(existing));
-        when(turSNSiteRepository.findByIdNoCache(any())).thenReturn(Optional.of(existing));
+        when(turSNSiteRepository.findByIdWithGenAi(any())).thenReturn(Optional.of(existing));
         when(turSNManifestPlanner.diff(manifest, existing)).thenReturn(diff);
         when(turSNFieldProvisioner.recreateField(eq(existing), named("mensalidade"))).thenReturn(true);
 

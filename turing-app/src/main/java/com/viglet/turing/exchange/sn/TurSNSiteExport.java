@@ -99,9 +99,10 @@ public class TurSNSiteExport {
 	public StreamingResponseBody exportBySiteId(String siteId, boolean includeContent,
 			boolean includeTemplate, String taskId, HttpServletResponse response) {
 		List<TurSNSite> turSNSites = readOnlyTransactionTemplate.execute(status -> {
-			// findByIdNoCache: the cached findById returns a detached entity, so
-			// lazy associations cannot be initialized even inside this transaction.
-			List<TurSNSite> sites = turSNSiteRepository.findByIdNoCache(siteId).map(List::of).orElse(List.of());
+			// Loaded inside this read-only transaction so lazy associations
+			// initialize through the open session (T488 / §XXVIII.3 — repositories
+			// are uncached, so a plain findById returns a session-attached entity).
+			List<TurSNSite> sites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
 			sites.forEach(site -> {
 				hydrateExportCollections(site);
 				initializeLazyAssociations(site);
@@ -185,7 +186,7 @@ public class TurSNSiteExport {
 
 	public void exportBySiteIdAsync(String siteId, boolean includeContent, boolean includeTemplate, String taskId) {
 		List<TurSNSite> turSNSites = readOnlyTransactionTemplate.execute(status -> {
-			List<TurSNSite> sites = turSNSiteRepository.findByIdNoCache(siteId).map(List::of).orElse(List.of());
+			List<TurSNSite> sites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
 			sites.forEach(site -> {
 				hydrateExportCollections(site);
 				initializeLazyAssociations(site);

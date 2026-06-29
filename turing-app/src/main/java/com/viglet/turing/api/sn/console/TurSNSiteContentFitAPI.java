@@ -17,6 +17,7 @@
 package com.viglet.turing.api.sn.console;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,8 +53,11 @@ public class TurSNSiteContentFitAPI {
 
     @Operation(summary = "Audience content-fit coverage report for a Semantic Navigation site")
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<TurSNContentFitReport> coverage(@PathVariable String snSiteId) {
-        TurSNSite site = snSiteRepository.findByIdNoCache(snSiteId).orElse(null);
+        // T488 / §XXVIII.3 — read inside a transaction so the coverage service can
+        // resolve the site's lazy associations through the open session.
+        TurSNSite site = snSiteRepository.findById(snSiteId).orElse(null);
         if (site == null) {
             return ResponseEntity.notFound().build();
         }

@@ -1,6 +1,7 @@
 package com.viglet.turing.api.sn.console;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,11 +35,15 @@ public class TurSNSiteSummaryAPI {
 
     @Operation(summary = "Generate AI summary for a Semantic Navigation Site")
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<TurLlmSummaryService.SummaryResult> generateSummary(
             @PathVariable String snSiteId,
             @RequestParam(defaultValue = "false") boolean regenerate) {
 
-        TurSNSite site = snSiteRepository.findByIdNoCache(snSiteId).orElse(null);
+        // T488 / §XXVIII.3 — read inside a transaction so the insights prompt
+        // builder can dereference the site's lazy associations (GenAI graph,
+        // fieldExts, locales) through the open session.
+        TurSNSite site = snSiteRepository.findByIdWithGenAi(snSiteId).orElse(null);
         if (site == null) {
             return ResponseEntity.notFound().build();
         }
