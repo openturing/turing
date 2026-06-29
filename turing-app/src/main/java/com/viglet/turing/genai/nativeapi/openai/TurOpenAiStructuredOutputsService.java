@@ -80,6 +80,20 @@ public class TurOpenAiStructuredOutputsService {
      */
     public Optional<String> complete(TurLLMInstance instance, String systemPrompt, String userInput,
             String schemaName, Map<String, Object> schema) {
+        return complete(instance, systemPrompt, userInput, schemaName, schema, true);
+    }
+
+    /**
+     * As {@link #complete(TurLLMInstance, String, String, String, Map)} but with
+     * an explicit {@code strict} flag. {@code strict=true} (T173 default)
+     * guarantees schema conformance but requires a strict-mode schema
+     * ({@code additionalProperties:false} + all properties {@code required}).
+     * {@code strict=false} still forces a JSON-object reply matching the
+     * schema's shape (no prose, no fences) but tolerates arbitrary
+     * (e.g. converter-generated) schemas — used by the AI Authoring path (T426).
+     */
+    public Optional<String> complete(TurLLMInstance instance, String systemPrompt, String userInput,
+            String schemaName, Map<String, Object> schema, boolean strict) {
         Optional<OpenAIClient> client = providerClient.openAi(instance);
         if (client.isEmpty()) {
             log.debug("[Native][OpenAI-Structured] instance '{}' is not OpenAI — skipping structured path",
@@ -87,7 +101,7 @@ public class TurOpenAiStructuredOutputsService {
             return Optional.empty();
         }
         long t0 = System.currentTimeMillis();
-        ResponseCreateParams params = buildParams(instance, systemPrompt, userInput, schemaName, schema);
+        ResponseCreateParams params = buildParams(instance, systemPrompt, userInput, schemaName, schema, strict);
         Response response = client.get().responses().create(params);
         Optional<String> text = extractText(response);
         log.info("[Native][OpenAI-Structured] instance '{}' model '{}' schema '{}' -> {} chars in {} ms",
@@ -98,10 +112,15 @@ public class TurOpenAiStructuredOutputsService {
 
     ResponseCreateParams buildParams(TurLLMInstance instance, String systemPrompt, String userInput,
             String schemaName, Map<String, Object> schema) {
+        return buildParams(instance, systemPrompt, userInput, schemaName, schema, true);
+    }
+
+    ResponseCreateParams buildParams(TurLLMInstance instance, String systemPrompt, String userInput,
+            String schemaName, Map<String, Object> schema, boolean strict) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance))
                 .input(userInput == null ? "" : userInput)
-                .text(jsonSchemaText(schemaName, schema));
+                .text(jsonSchemaText(schemaName, schema, strict));
         if (StringUtils.hasText(systemPrompt)) {
             builder.instructions(systemPrompt);
         }
@@ -111,8 +130,8 @@ public class TurOpenAiStructuredOutputsService {
         return builder.build();
     }
 
-    /** Build the {@code text} config carrying a strict {@code json_schema} format. */
-    ResponseTextConfig jsonSchemaText(String schemaName, Map<String, Object> schema) {
+    /** Build the {@code text} config carrying a {@code json_schema} format. */
+    ResponseTextConfig jsonSchemaText(String schemaName, Map<String, Object> schema, boolean strict) {
         ResponseFormatTextJsonSchemaConfig.Schema.Builder schemaBuilder =
                 ResponseFormatTextJsonSchemaConfig.Schema.builder();
         if (schema != null) {
@@ -121,7 +140,7 @@ public class TurOpenAiStructuredOutputsService {
         ResponseFormatTextJsonSchemaConfig config = ResponseFormatTextJsonSchemaConfig.builder()
                 .name(StringUtils.hasText(schemaName) ? schemaName : "response")
                 .schema(schemaBuilder.build())
-                .strict(true)
+                .strict(strict)
                 .build();
         return ResponseTextConfig.builder().format(config).build();
     }

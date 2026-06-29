@@ -11,6 +11,8 @@ package com.viglet.turing.genai.authoring;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -26,6 +28,8 @@ import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.genai.TurChatToolOptions;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicStructuredOutputsService;
+import com.viglet.turing.genai.nativeapi.openai.TurOpenAiStructuredOutputsService;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -33,6 +37,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Generic AI Authoring orchestrator. Each entity that wants to be authored
@@ -64,18 +69,25 @@ public class TurAiAuthoringService {
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop;
+    private final TurOpenAiStructuredOutputsService openAiStructured;
+    private final TurAnthropicStructuredOutputsService anthropicStructured;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final JsonMapper SCHEMA_JSON = JsonMapper.builder().build();
 
     public TurAiAuthoringService(TurGlobalSettingsService globalSettings,
             TurLLMInstanceRepository llmRepository,
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService,
-            com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop) {
+            com.viglet.turing.genai.TurToolExecutionLoop toolExecutionLoop,
+            TurOpenAiStructuredOutputsService openAiStructured,
+            TurAnthropicStructuredOutputsService anthropicStructured) {
         this.globalSettings = globalSettings;
         this.llmRepository = llmRepository;
         this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
         this.toolExecutionLoop = toolExecutionLoop;
+        this.openAiStructured = openAiStructured;
+        this.anthropicStructured = anthropicStructured;
     }
 
     /**
@@ -114,8 +126,25 @@ public class TurAiAuthoringService {
             ParameterizedTypeReference<AiAuthoringResponse<T>> responseTypeRef,
             ToolCallback[] tools) {
 
-        ChatModel chatModel = resolveDefaultChatModel();
+        TurLLMInstance instance = resolveDefaultInstance();
         BeanOutputConverter<AiAuthoringResponse<T>> converter = new BeanOutputConverter<>(responseTypeRef);
+
+        // T426 / §X.11.c — durable structured-output path. For a no-tool turn on
+        // an OpenAI/Anthropic default LLM, bind AiAuthoringResponse<T>'s shape to
+        // the provider (strict json_schema, T173 / forced tool, T174) so the reply
+        // is validated JSON by construction — no more prose-around-JSON / empty-turn
+        // failures that the BeanOutputConverter free-text path falls over on. Any
+        // miss (tools present, other provider, structured call empty/unparseable)
+        // falls through to the legacy converter path below, unchanged.
+        if (tools == null || tools.length == 0) {
+            AiAuthoringResponse<T> structured = tryStructuredAuthoring(instance, request, systemPrompt,
+                    converter);
+            if (structured != null) {
+                return structured;
+            }
+        }
+
+        ChatModel chatModel = chatModelFor(instance);
 
         String stateJson = serializeState(request == null ? null : request.currentState());
         String fullSystem = systemPrompt
@@ -315,16 +344,103 @@ public class TurAiAuthoringService {
         return s.substring(0, max) + "…[truncated " + (s.length() - max) + " more chars]";
     }
 
-    private ChatModel resolveDefaultChatModel() {
+    private TurLLMInstance resolveDefaultInstance() {
         String defaultLlmId = globalSettings.getDefaultLlmId();
         if (!StringUtils.hasText(defaultLlmId)) {
             throw new IllegalStateException("No default LLM configured in Global Settings");
         }
-        TurLLMInstance llmInstance = llmRepository.findById(defaultLlmId)
+        return llmRepository.findById(defaultLlmId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Default LLM instance not found: " + defaultLlmId));
+    }
+
+    private ChatModel chatModelFor(TurLLMInstance llmInstance) {
         String key = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         return llmModelFactory.createChatModel(llmInstance, key);
+    }
+
+    /**
+     * T426 / §X.11.c — try the provider-bound structured-output path. Returns a
+     * parsed {@link AiAuthoringResponse} when the default LLM is OpenAI/Anthropic
+     * and the call yields schema-valid JSON; returns {@code null} (so the caller
+     * falls back to the legacy converter path) for any other provider, an empty
+     * provider reply, or JSON that doesn't parse. Never throws — a provider error
+     * is logged and degrades to the legacy path.
+     */
+    private <T> AiAuthoringResponse<T> tryStructuredAuthoring(TurLLMInstance instance,
+            AiAuthoringRequest<T> request, String systemPrompt,
+            BeanOutputConverter<AiAuthoringResponse<T>> converter) {
+        Map<String, Object> schema = parseSchema(converter.getJsonSchema());
+        if (schema == null) {
+            return null;
+        }
+        String stateJson = serializeState(request == null ? null : request.currentState());
+        String system = systemPrompt
+                + "\n\nCURRENT FORM STATE (JSON snapshot — may be empty for a brand-new entity):\n"
+                + stateJson;
+        String input = flattenConversation(request);
+        try {
+            // strict:false on OpenAI — the converter-generated schema isn't authored
+            // to the strict-mode subset, but json_schema still forces a JSON-object
+            // reply (no prose, no fences). Anthropic forces a single tool whose input
+            // is the object. First non-empty wins; both empty → not OpenAI/Anthropic.
+            Optional<String> json = openAiStructured.complete(instance, system, input,
+                    "authoring_response", schema, false);
+            if (json.isEmpty()) {
+                json = anthropicStructured.complete(instance, system, input, "authoring_response", schema);
+            }
+            if (json.isEmpty() || json.get().isBlank()) {
+                return null;
+            }
+            return converter.convert(json.get());
+        } catch (RuntimeException e) {
+            log.warn("[AiAuthoring] Structured-output path failed ({}); falling back to legacy converter path",
+                    e.getMessage());
+            return null;
+        }
+    }
+
+    /** Parse the converter's JSON-Schema string into a map; null on failure. */
+    private Map<String, Object> parseSchema(String jsonSchema) {
+        if (!StringUtils.hasText(jsonSchema)) {
+            return null;
+        }
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = SCHEMA_JSON.readValue(jsonSchema, Map.class);
+            return map;
+        } catch (RuntimeException e) {
+            log.warn("[AiAuthoring] Could not parse response JSON schema: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Flatten the authoring conversation into one user input for the one-shot
+     * structured call (the form state — the real working memory — already rides
+     * in the system prompt). When there is no user turn yet, seed the same
+     * introductory instruction the legacy path uses.
+     */
+    private String flattenConversation(AiAuthoringRequest<?> request) {
+        StringBuilder sb = new StringBuilder();
+        if (request != null && request.messages() != null) {
+            for (AiAuthoringMessage m : request.messages()) {
+                if (m == null || m.content() == null) {
+                    continue;
+                }
+                String role = m.role() == null ? "user" : m.role();
+                if ("system".equalsIgnoreCase(role)) {
+                    continue;
+                }
+                sb.append("assistant".equalsIgnoreCase(role) ? "Assistant: " : "User: ")
+                        .append(m.content()).append("\n\n");
+            }
+        }
+        if (sb.length() == 0) {
+            return "Greet the user briefly (in their language when known, otherwise English) "
+                    + "and offer to start. Also return the current form state unchanged.";
+        }
+        return sb.toString().strip();
     }
 
     private String serializeState(Object state) {
