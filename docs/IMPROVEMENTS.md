@@ -1472,13 +1472,6 @@ moat.
 Anthropic ships three independent context-management features that
 each solve a different long-conversation pain:
 
-- **Memory tool (T163)** — Claude gets a six-command file API
-  (view/create/str_replace/insert/delete/rename) backed by
-  `TurAgentWorkspace`. Persistent **per-conversation** memory by
-  default; per-user via `memoryScope=user` (T166). The agent learns
-  stable preferences ("Alex prefers terse answers") and surfaces them
-  via "What this agent remembers about you" disclosure with a "Forget
-  all" button (LGPD ready).
 - **Context editing (T164)** — server-side auto-evicts old tool
   results when the window saturates, replacing them with placeholders.
   84% token savings on long agent loops. Composes with T29

@@ -67,6 +67,10 @@ public final class TurCapabilityFunctions {
     /** Run shell commands via the Anthropic {@code bash} client tool. */
     public static final String BASH = "bash";
 
+    /** Persist/recall files across turns via the Anthropic {@code memory} client
+     *  tool (T163), executed against the per-conversation workspace. */
+    public static final String MEMORY = "memory";
+
     /** Real-time bidirectional speech (speech-in / speech-out). OpenAI Realtime
      *  ({@code gpt-realtime}); an {@code ownsTurn} capability — a voice session
      *  takes over the whole conversation transport. */

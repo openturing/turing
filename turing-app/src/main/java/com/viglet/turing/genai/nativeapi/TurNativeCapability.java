@@ -18,6 +18,7 @@ import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunction
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.FILE_SEARCH;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.IMAGE_GEN;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.MCP;
+import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.MEMORY;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.TEXT_EDITOR;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.VOICE;
 import static com.viglet.turing.genai.nativeapi.capability.TurCapabilityFunctions.WEB_FETCH;
@@ -105,6 +106,14 @@ public enum TurNativeCapability {
     /** T142 / §X.4.d — Anthropic {@code bash_20250124} client tool, executed via the
      *  pluggable {@code TurAgentBashExecutor} seam (no-op default). */
     ANTHROPIC_BASH("anthropic-bash", "anthropic", TOOL, BASH, "Code", false),
+    /** T163 / §X.9.a — Anthropic {@code memory_20250818} client tool (beta
+     *  {@code context-management-2025-06-27}). The six file commands
+     *  ({@code view}/{@code create}/{@code str_replace}/{@code insert}/
+     *  {@code delete}/{@code rename}) are executed against the per-conversation
+     *  {@code TurAgentWorkspace} under the {@code memory/} subpath, so Claude
+     *  keeps a durable scratchpad across turns. Client-executed multi-turn loop —
+     *  owns the turn like the editor tool. */
+    ANTHROPIC_MEMORY("anthropic-memory", "anthropic", TOOL, MEMORY, "Memory", false),
     /** T144 / §X.5.a — Anthropic MCP Connector (beta {@code mcp-client-2025-11-20}).
      *  Wired as the {@code mcp_servers} request parameter on the Messages API, so
      *  Claude calls any remote MCP server with no client-side tool code — the

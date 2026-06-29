@@ -44,6 +44,7 @@ import com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory.Federated
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
+import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -94,6 +95,7 @@ public class TurNativeChatExecutor {
     private final TurAnthropicMessagesService anthropicMessagesService;
     private final TurAnthropicComputerUseService anthropicComputerUseService;
     private final TurAnthropicEditorService anthropicEditorService;
+    private final TurAnthropicMemoryService anthropicMemoryService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
@@ -117,6 +119,7 @@ public class TurNativeChatExecutor {
             TurAnthropicMessagesService anthropicMessagesService,
             TurAnthropicComputerUseService anthropicComputerUseService,
             TurAnthropicEditorService anthropicEditorService,
+            TurAnthropicMemoryService anthropicMemoryService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
@@ -134,6 +137,7 @@ public class TurNativeChatExecutor {
         this.anthropicMessagesService = anthropicMessagesService;
         this.anthropicComputerUseService = anthropicComputerUseService;
         this.anthropicEditorService = anthropicEditorService;
+        this.anthropicMemoryService = anthropicMemoryService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
@@ -270,6 +274,19 @@ public class TurNativeChatExecutor {
                         activePersona == null ? "none" : activePersona.getName());
                 return Optional.of(anthropicComputerUseService.chat(anthropicClient.get(), instance,
                         turn.history(), turn.systemPrompt(), computerUse.get()));
+            }
+
+            // T163 / §X.9.a — the memory tool is a client-executed multi-turn loop
+            // (Claude reads/writes its memory/ scratchpad in TurAgentWorkspace), so
+            // it owns the turn when enabled, like the editor below.
+            boolean hasMemoryTool = capabilities.stream()
+                    .anyMatch(c -> c.capability() == TurNativeCapability.ANTHROPIC_MEMORY);
+            if (hasMemoryTool) {
+                log.info("[Native] agent '{}' instance '{}' handled by Anthropic memory loop "
+                        + "(persona '{}')", agent.getTitle(), instance.getId(),
+                        activePersona == null ? "none" : activePersona.getName());
+                return Optional.of(anthropicMemoryService.chat(anthropicClient.get(), instance,
+                        agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities));
             }
 
             // T142 / §X.4.d — text_editor / bash are client-executed multi-turn

@@ -63,6 +63,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurAnthropicMessagesService anthropicMessagesService;
     @Mock private TurAnthropicComputerUseService anthropicComputerUseService;
     @Mock private TurAnthropicEditorService anthropicEditorService;
+    @Mock private com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService anthropicMemoryService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
@@ -86,7 +87,8 @@ class TurNativeChatExecutorTest {
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
-                anthropicComputerUseService, anthropicEditorService, promptAssembler, personaResolver,
+                anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
+                promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver);
     }
@@ -219,6 +221,32 @@ class TurNativeChatExecutorTest {
         assertThat(result.get().blockFirst().content()).isEqualTo("authored");
         verifyNoInteractions(anthropicMessagesService, anthropicComputerUseService,
                 openAiResponsesService);
+    }
+
+    @Test
+    void routesToAnthropicMemoryLoopWhenMemoryEnabled() {
+        // T163 / §X.9.a — the memory tool is a client-executed multi-turn loop, so
+        // it owns the turn (like the editor) when enabled.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("anthropic");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.ANTHROPIC_MEMORY, null));
+        when(capabilityService.enabledFor("inst-1", "anthropic")).thenReturn(caps);
+        when(nativeClient.anthropic(instance)).thenReturn(Optional.of(anthropicClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(anthropicMemoryService.chat(eq(anthropicClient), eq(instance), any(), eq("conv-1"),
+                anyList(), any(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "remembered")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("remembered");
+        verifyNoInteractions(anthropicMessagesService, anthropicComputerUseService,
+                anthropicEditorService, openAiResponsesService);
     }
 
     @Test
