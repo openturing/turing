@@ -2305,16 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.6 Self-tuning agent — eval as continuous improvement (T447)
-
-The highest leverage-to-cost bet: it is **almost entirely composition of shipped
-parts**. A scheduled routine mines real conversations (via the T427 tool-call
-trace + chat analytics) for failure signatures, drafts a prompt/flow change,
-runs it against the Block K golden set, and — only if it scores better — opens a
-**"suggested change" in the admin** (PR-style, human-approved). The eval loop
-stops being a CI gate and becomes a self-improvement flywheel. → builds on
-Block K (T285–T288), T427, routines.
-
 ### XXIII.7 Agent-to-agent handoff — a visible team (T448)
 
 Today handoff is to a human, multi-channel (T286). Add **agent→agent** handoff: a

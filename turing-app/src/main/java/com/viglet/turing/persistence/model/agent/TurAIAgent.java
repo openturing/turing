@@ -161,6 +161,20 @@ public class TurAIAgent implements Serializable {
     private boolean userMemoryEnabled = false;
 
     /**
+     * T447 / §XXIII.6 — per-agent opt-in for the self-tuning loop. When
+     * {@code true}, a scheduled job mines recent failed conversations, drafts a
+     * revised system prompt, scores it against the agent's golden sets (Block K),
+     * and — only if it scores better — opens a PR-style "suggested change" in the
+     * admin for human approval (never auto-applied). Requires at least one enabled
+     * golden set + a usable LLM. Default {@code false} keeps existing agents
+     * unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "self_tuning_enabled", nullable = false)
+    private boolean selfTuningEnabled = false;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,

@@ -100,6 +100,11 @@ public class TurAgentEvalRunnerService {
     private final com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService;
     private final com.viglet.turing.properties.TurConfigProperties configProperties;
 
+    /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
+     *  in-memory prompt swap, so a trial run can never flush to the DB. */
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     public TurAgentEvalRunnerService(TurAIAgentRepository agentRepository,
             TurAgentEvalSetRepository evalSetRepository,
             TurAgentEvalReportRepository reportRepository,
@@ -165,6 +170,54 @@ public class TurAgentEvalRunnerService {
             }
         }
         return persistReport(agent, results);
+    }
+
+    /** Negative sentinel returned by {@link #scoreWithSystemPrompt} when the
+     *  agent can't be evaluated (missing agent / no enabled set / no LLM). */
+    public static final double SCORE_UNAVAILABLE = -1d;
+
+    /**
+     * T447 / §XXIII.6 — score the agent's enabled golden sets under an IN-MEMORY
+     * {@code systemPromptOverride}, WITHOUT persisting a report or touching the
+     * green baseline. Used by the self-tuning loop to compare a proposed prompt
+     * against the current one (call with {@code null} for the current prompt, then
+     * with the proposal). The agent is detached before the swap so a trial can
+     * never flush to the DB.
+     *
+     * @return the aggregate score in [0,1], or {@link #SCORE_UNAVAILABLE}.
+     */
+    public double scoreWithSystemPrompt(String agentId, String systemPromptOverride) {
+        TurAIAgent agent = agentRepository.findById(agentId).orElse(null);
+        if (agent == null) {
+            return SCORE_UNAVAILABLE;
+        }
+        List<TurAgentEvalSet> sets = evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(agentId)
+                .stream().filter(s -> s.getEnabled() == 1).toList();
+        if (sets.isEmpty()) {
+            return SCORE_UNAVAILABLE;
+        }
+        TurLLMInstance llmInstance = resolveLlm(agent);
+        if (llmInstance == null) {
+            return SCORE_UNAVAILABLE;
+        }
+        // Detach so the in-memory prompt swap is never dirty-checked / flushed.
+        entityManager.detach(agent);
+        if (systemPromptOverride != null) {
+            agent.setSystemPrompt(systemPromptOverride);
+        }
+        ChatModel judgeModel = createChatModel(llmInstance);
+        List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
+        for (TurAgentEvalSet set : sets) {
+            for (TurAgentEvalCase evalCase : orderedCases(set)) {
+                results.add(runCase(agent, llmInstance, judgeModel, evalCase));
+            }
+        }
+        return aggregateScore(results);
+    }
+
+    private static double aggregateScore(List<TurAgentEvalCaseResultDto> results) {
+        return results.isEmpty() ? 0d
+                : results.stream().mapToDouble(TurAgentEvalCaseResultDto::score).average().orElse(0d);
     }
 
     /**
@@ -424,8 +477,7 @@ public class TurAgentEvalRunnerService {
         int caseCount = results.size();
         int passedCount = (int) results.stream().filter(TurAgentEvalCaseResultDto::passed).count();
         boolean passed = caseCount > 0 && passedCount == caseCount;
-        double score = results.isEmpty() ? 0d
-                : results.stream().mapToDouble(TurAgentEvalCaseResultDto::score).average().orElse(0d);
+        double score = aggregateScore(results);
 
         // Compare to the green baseline to detect regressions.
         Optional<TurAgentEvalReport> baseline =

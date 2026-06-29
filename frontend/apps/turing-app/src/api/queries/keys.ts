@@ -65,6 +65,12 @@ export const queryKeys = {
     list: () => [...queryKeys.personas.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.personas.all(), 'detail', id] as const,
   },
+  // T447 — self-tuning suggestions, scoped per agent.
+  agentSuggestions: {
+    all: () => ['agent-suggestions'] as const,
+    list: (agentId: string) =>
+      [...queryKeys.agentSuggestions.all(), 'list', agentId] as const,
+  },
   seInstances: {
     all: () => ['se-instances'] as const,
     list: () => [...queryKeys.seInstances.all(), 'list'] as const,
