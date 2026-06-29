@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 
@@ -31,6 +32,18 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
     @Modifying
     @Query("delete from TurChatFlow f where f.id = ?1")
     void delete(String id);
+
+    /**
+     * Re-fetches a flow as a fully-initialized entity by id. Unlike
+     * {@code findById} (which delegates to {@code EntityManager.find} and can
+     * return the same uninitialized {@code LAZY} proxy already present in the
+     * persistence context — e.g. the proxy on a merge-managed {@code save(...)}
+     * result), a JPQL query hydrates the entity, so its {@code definitionJson}
+     * is safe to read. Used by {@code TurChatFlowEngineService.resolveFlowForRead}.
+     * (Block AC / T486: the repository is uncached.)
+     */
+    @Query("select f from TurChatFlow f where f.id = :id")
+    Optional<TurChatFlow> findByIdInitialized(@Param("id") String id);
 
     /**
      * Called once per chat turn from {@code TurAgentChatExecutor.resolveFlowContext}

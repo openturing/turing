@@ -128,8 +128,15 @@ class TurChatFlowSubFlowEngineIT extends AbstractTuringSpringIT {
         if (state.getFlow() == null) {
             return "?";
         }
-        String name = state.getFlow().getName();
-        return name == null ? "?" : name;
+        // Diagnostic only: use the flow id, which is safe to read on a
+        // @ManyToOne(LAZY) proxy (the FK is known without initialization). The
+        // states traced here include rows loaded via a raw
+        // stateRepository.findById(...) (no JOIN FETCH), whose flow is an
+        // uninitialized proxy — reading getName() on it would throw outside the
+        // session. Production never does that: it reads flows through the
+        // engine's parseGraph/resolveFlowForRead.
+        String id = state.getFlow().getId();
+        return id == null ? "?" : id;
     }
 
     // ─────────────────────────── Tests ───────────────────────────
