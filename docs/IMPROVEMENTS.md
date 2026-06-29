@@ -2386,22 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.3 Pure multilingual readability/complexity scorer (T466)
-
-`TurReadabilityScorer` — a **pure** component (no Spring, no LLM) returning a numeric
-fit sub-score plus the raw metrics behind it:
-
-- Flesch Reading Ease / Flesch–Kincaid grade, **adapted per language** (PT/ES use the
-  known coefficient variants, not the EN constants);
-- average sentence length and average syllables/word;
-- **complex-word ratio** measured against the persona's `vocabularyCeiling`
-  (the heart of the low-education example);
-- a passive-voice / nominalization heuristic.
-
-Because it is pure, its tests are deterministic and free — the same discipline as the
-T385 `TurNLFacetEvalScorer`. It produces a hard, explainable signal that does **not**
-depend on the LLM agreeing.
-
 ### XXVI.4 Content-fit evaluator (T467)
 
 The LLM is prompted to **role-play the persona as a reader** ("you are this audience:
