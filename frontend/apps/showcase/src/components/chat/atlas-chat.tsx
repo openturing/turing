@@ -1,0 +1,329 @@
+import { NativeForm } from "@/components/chat/native-form";
+import { Button } from "@/components/ui/button";
+import { MarkdownBlock, D2Block } from "@/lib/markdown";
+import { cn } from "@/lib/utils";
+import {
+  IconAlertTriangle,
+  IconArrowUp,
+  IconFileText,
+  IconLoader2,
+  IconPaperclip,
+  IconRobot,
+  IconSparkles,
+  IconUser,
+  IconX,
+} from "@tabler/icons-react";
+import {
+  TuringRichContent,
+  TuringSourceChips,
+  TuringWorkspacePanelView,
+  useTuringChat,
+  useTuringSlotUpload,
+  useTuringSlots,
+  useTuringWorkspace,
+} from "@viglet/turing-react-sdk";
+import { useEffect, useRef, useState } from "react";
+
+const SOURCE_CHIP_CLASSNAMES = {
+  container: "not-prose mt-3 border-t border-border/60 pt-2",
+  heading: "mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70",
+  list: "flex flex-wrap gap-1.5",
+  chip: "inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-muted",
+  panel: "mt-1.5 w-full space-y-1 rounded-lg border border-border/60 bg-muted/20 p-2.5",
+  link: "text-primary hover:underline shrink-0",
+} as const;
+
+/** Collected slots (T63) — shows the structured data captured this conversation. */
+function SlotsStrip() {
+  const { slots } = useTuringSlots();
+  const entries = Object.entries(slots).filter(([, v]) => v);
+  if (entries.length === 0) return null;
+  return (
+    <div className="border-t border-border/60 px-4 py-2">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        Collected
+      </p>
+      <div className="flex flex-wrap gap-1">
+        {entries.map(([k, v]) => (
+          <span
+            key={k}
+            className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+          >
+            <span className="font-medium text-foreground/80">{k}</span>: {v}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Workspace artifacts (T113) the agent produced this conversation. */
+function WorkspaceStrip() {
+  const { artifacts, status } = useTuringWorkspace();
+  if (artifacts.length === 0) return null;
+  return (
+    <div className="border-t border-border/60 px-4 py-2">
+      <TuringWorkspacePanelView
+        artifacts={artifacts}
+        status={status}
+        title="Workspace"
+        className="text-sm"
+      />
+    </div>
+  );
+}
+
+function MessageBubble({
+  role,
+  content,
+  sources,
+  options,
+  isStreaming,
+  onPickOption,
+}: Readonly<{
+  role: "user" | "assistant";
+  content: string;
+  sources?: unknown[];
+  options?: string[];
+  isStreaming: boolean;
+  onPickOption: (label: string) => void;
+}>) {
+  const isAssistant = role === "assistant";
+  return (
+    <div className="flex gap-2.5">
+      <div
+        className={cn(
+          "grid size-7 shrink-0 place-items-center rounded-full",
+          isAssistant ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+        )}
+      >
+        {isAssistant ? <IconRobot className="size-4" /> : <IconUser className="size-4" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        {isAssistant ? (
+          <div className="prose prose-sm dark:prose-invert max-w-none break-words text-sm leading-relaxed prose-p:my-2 prose-pre:my-2">
+            {content ? (
+              <TuringRichContent content={content} markdown={MarkdownBlock} d2={D2Block} />
+            ) : null}
+            {sources && sources.length > 0 && (
+              <TuringSourceChips
+                sources={sources as Parameters<typeof TuringSourceChips>[0]["sources"]}
+                classNames={SOURCE_CHIP_CLASSNAMES}
+                icons={{ source: <IconFileText className="size-3.5 shrink-0" /> }}
+              />
+            )}
+            {options && options.length > 0 && (
+              <div className="not-prose mt-3 flex flex-wrap gap-1.5">
+                {options.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => onPickOption(q)}
+                    disabled={isStreaming}
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/5 px-3 py-1 text-xs font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    <IconSparkles className="size-3 shrink-0" />
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{content}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function AtlasChatPanel({ onClose }: Readonly<{ onClose: () => void }>) {
+  const {
+    enabled,
+    messages,
+    send,
+    submitForm,
+    activeForm,
+    isStreaming,
+    status,
+    error,
+    reset,
+    conversationId,
+  } = useTuringChat({ locale: import.meta.env.VITE_LOCALE });
+  const { upload, status: uploadStatus } = useTuringSlotUpload({ vision: true });
+
+  const [input, setInput] = useState("");
+  const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, isStreaming]);
+
+  const ask = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed || isStreaming) return;
+    setInput("");
+    void send(trimmed);
+  };
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    // Multimodal slot upload (T401) — fills an "image" slot with vision on.
+    await upload("image", file, { vision: true });
+  };
+
+  const lastMessage = messages.at(-1);
+  const showPlaceholder =
+    messages.length > 0 &&
+    lastMessage?.role === "user" &&
+    (isStreaming || status === "error");
+
+  return (
+    <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-background shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="grid size-8 place-items-center rounded-lg bg-linear-to-br from-primary to-indigo-700 text-primary-foreground">
+            <IconSparkles className="size-4" />
+          </span>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold">Ask Atlas</p>
+            <p className="text-[11px] text-muted-foreground">Shopping copilot</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {messages.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={reset} disabled={isStreaming} className="text-xs">
+              New chat
+            </Button>
+          )}
+          <button aria-label="Close chat" onClick={onClose} className="rounded-md p-1.5 hover:bg-accent">
+            <IconX className="size-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Disabled (no agent) notice — honest offline-seed state */}
+      {enabled === false && (
+        <div className="m-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+          <IconAlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <span className="text-muted-foreground">
+            The RAG copilot lights up when this site has an AI agent + LLM configured. The offline
+            sample has search only — import Atlas Store into a Turing backend with GenAI enabled to
+            chat over the catalog.
+          </span>
+        </div>
+      )}
+
+      {/* Messages */}
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+        {messages.length === 0 && enabled !== false && (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+            <IconRobot className="size-8 text-primary/50" />
+            <p>Ask about products, compare options, or get a recommendation.</p>
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+              {["Best wireless headphones under $200?", "Compare the top 3 coffee makers", "What's on sale in Outdoors?"].map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => ask(s)}
+                    className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent"
+                  >
+                    {s}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
+
+        {messages.filter((m) => m.role !== "system").map((m) => (
+          <MessageBubble
+            key={m.id}
+            role={m.role as "user" | "assistant"}
+            content={m.content}
+            sources={m.sources}
+            options={m.options}
+            isStreaming={isStreaming}
+            onPickOption={ask}
+          />
+        ))}
+
+        {/* Native form (T107) */}
+        {activeForm && (
+          <NativeForm
+            form={activeForm}
+            disabled={isStreaming}
+            onSubmit={(values) => void submitForm(values)}
+          />
+        )}
+
+        {showPlaceholder && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {isStreaming ? (
+              <>
+                <IconLoader2 className="size-4 animate-spin" /> Thinking…
+              </>
+            ) : (
+              <span className="text-destructive">{error}</span>
+            )}
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <SlotsStrip />
+      <WorkspaceStrip />
+
+      {/* Composer */}
+      <div className="border-t border-border p-3">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => void onFile(e.target.files?.[0])}
+        />
+        <div className="flex items-end gap-2 rounded-xl border border-border bg-muted/40 p-2">
+          <button
+            type="button"
+            aria-label="Attach image"
+            onClick={() => fileRef.current?.click()}
+            disabled={isStreaming || uploadStatus === "uploading" || !conversationId}
+            title={conversationId ? "Attach an image (vision)" : "Start the chat first"}
+            className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-40"
+          >
+            {uploadStatus === "uploading" ? (
+              <IconLoader2 className="size-5 animate-spin" />
+            ) : (
+              <IconPaperclip className="size-5" />
+            )}
+          </button>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ask(input);
+              }
+            }}
+            rows={1}
+            disabled={isStreaming || enabled === false || Boolean(activeForm)}
+            placeholder={activeForm ? "Complete the form above…" : "Ask about products…"}
+            className="max-h-32 min-h-[32px] flex-1 resize-none bg-transparent px-1 py-1.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={() => ask(input)}
+            disabled={!input.trim() || isStreaming || enabled === false}
+            className="shrink-0 rounded-lg bg-primary p-1.5 text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+          >
+            {isStreaming ? <IconLoader2 className="size-4 animate-spin" /> : <IconArrowUp className="size-4" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

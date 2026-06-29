@@ -248,6 +248,9 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.44.0
         version: 3.44.0(react@19.2.7)
+      '@terrastruct/d2':
+        specifier: ^0.1.33
+        version: 0.1.33
       '@viglet/turing-react-sdk':
         specifier: workspace:*
         version: link:../../packages/react-sdk
@@ -275,9 +278,18 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.17)(react@19.2.7)
       react-router-dom:
         specifier: ^7.17.0
         version: 7.17.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      rehype-highlight:
+        specifier: ^7.0.2
+        version: 7.0.2
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0

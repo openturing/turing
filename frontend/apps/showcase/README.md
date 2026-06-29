@@ -45,6 +45,31 @@ The storefront lights up the full SDK search half end to end:
   (`useTuringSimilar`, T400 — vector / more-like-this).
 - **Click tracking / CTR** (`useTuringClickTracking`) on every result open.
 
+## Chat surface (T453)
+
+A floating **"Ask Atlas"** copilot (slide-over panel) exercises the RAG chat
+half end to end via `useTuringChat`:
+
+- **Token streaming** with a thinking indicator.
+- **RAG sources / citations** rendered as `TuringSourceChips` (T152/T292).
+- **Option chips** for the next turn (chat-flow `options` event).
+- **Native multi-field forms** (T107) — `activeForm` → `submitForm`, with
+  per-field types (text/email/tel/number/date/textarea/select).
+- **Slots** (T63) — a "Collected" strip shows the structured data captured so
+  far (`useTuringSlots`).
+- **Multimodal upload** (T401) — a paperclip attaches an image to a slot with
+  vision extraction (`useTuringSlotUpload`).
+- **Workspace panel** (T113) — artifacts the agent produced
+  (`useTuringWorkspace` → `TuringWorkspacePanelView`).
+- **Rich content** (T295–T298) — `TuringRichContent` dispatches markdown /
+  sandboxed `html` / `d2` diagrams; the `@terrastruct/d2` engine is **lazy /
+  code-split** (only fetched when an answer contains a diagram).
+
+Like hybrid ranking, the copilot needs an AI agent + LLM on the site: the
+offline Lucene seed has search only, so the panel shows an honest "chat lights
+up when GenAI is configured" notice. Point the app at a backend with GenAI
+enabled to chat over the catalog.
+
 ### Hybrid ranking + reranker (server toggle)
 
 `HYBRID_RRF` (T383) and the pluggable reranker (Block N) are **site-level

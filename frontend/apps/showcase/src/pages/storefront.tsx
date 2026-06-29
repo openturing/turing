@@ -1,4 +1,5 @@
 import { BrandHeader } from "@/components/brand-header";
+import { ChatLauncher } from "@/components/chat/chat-launcher";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { resolveSiteName } from "@/lib/resolve-site";
@@ -376,6 +377,8 @@ function StorefrontContent() {
           <span>Sample data · {totalCount} products indexed</span>
         </div>
       </footer>
+
+      <ChatLauncher />
     </div>
   );
 }
