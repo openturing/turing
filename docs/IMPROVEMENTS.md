@@ -2386,14 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.5 Persona-fit report API + admin page (T468)
-
-`POST /api/persona/{id}/content-fit` evaluates a single source or the whole notebook
-and returns an aggregated report. The admin page renders, per source, a red/amber/green
-fit bar (the visual language already used by T388 field coverage), the flagged spans
-inline, and the rewrite suggestions — with a regenerate button when caching allows it.
-This is the NotebookLM-style "condiz / não condiz" deliverable the request asked for.
-
 ### XXVI.6 Transcription seam — `TurTranscriptionProvider` (T469)
 
 The one new piece of infrastructure. `AUDIO` slots exist (`TurAIAgentSlotType.AUDIO`,
