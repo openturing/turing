@@ -54,6 +54,12 @@
       "PENDING": "Pending",
       "EXTRACTED": "Extracted",
       "FAILED": "Failed"
+    },
+    "misfitReason": {
+      "too-complex": "too complex",
+      "jargon": "jargon",
+      "tone": "tone",
+      "missing-context": "missing context"
     }
   }
 }

@@ -53,6 +53,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
 import { PersonaSourcesSection } from "./persona-sources.section"
+import { PersonaFitReportSection } from "./persona-fit-report.section"
 import { Button } from "../ui/button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { PromptEditor } from "../ui/prompt-editor"
@@ -677,6 +678,11 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
                     persona (FK) and only meaningful for audience personas. */}
                 {showAudience && !isNew && value.id && (
                   <PersonaSourcesSection personaId={value.id} />
+                )}
+
+                {/* Content-fit report (Block AA / T468) */}
+                {showAudience && !isNew && value.id && (
+                  <PersonaFitReportSection personaId={value.id} />
                 )}
 
                 {/* Vocabulary */}

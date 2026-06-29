@@ -1412,6 +1412,19 @@
         "sitePlaceholder": "Nome do site de Navegação Semântica",
         "namePlaceholder": "Nome de exibição (opcional)"
       },
+      "fit": {
+        "title": "Relatório de adequação à audiência",
+        "desc": "Avalie o quanto cada fonte do caderno é adequada a esta audiência — um relatório condiz / não condiz no estilo NotebookLM.",
+        "evaluate": "Avaliar adequação",
+        "evaluating": "Avaliando…",
+        "regenerate": "Regenerar",
+        "overall": "Adequação geral",
+        "evaluatedOf": "{{evaluated}} de {{total}} fontes avaliadas",
+        "untitled": "Fonte sem nome",
+        "readabilityOnly": "Nenhum LLM padrão configurado — exibindo apenas a pontuação determinística de legibilidade.",
+        "noEvaluable": "Ainda não há fontes com texto extraído para avaliar.",
+        "failed": "Não foi possível avaliar a adequação do conteúdo"
+      },
       "systemInstruction": "Instrução de Sistema",
       "systemInstructionDesc": "A personalidade base que o LLM adota. Descreva papel, público, perspectiva e regras específicas da persona.",
       "systemInstructionPlaceholder": "Você é um analista sênior de produto numa empresa SaaS de médio porte...",

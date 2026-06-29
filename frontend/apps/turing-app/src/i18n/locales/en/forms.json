@@ -1412,6 +1412,19 @@
         "sitePlaceholder": "Semantic Navigation site name",
         "namePlaceholder": "Display name (optional)"
       },
+      "fit": {
+        "title": "Audience-fit report",
+        "desc": "Evaluate how well each notebook source fits this audience — a NotebookLM-style condiz / não condiz report.",
+        "evaluate": "Evaluate audience fit",
+        "evaluating": "Evaluating…",
+        "regenerate": "Regenerate",
+        "overall": "Overall fit",
+        "evaluatedOf": "{{evaluated}} of {{total}} sources evaluated",
+        "untitled": "Untitled source",
+        "readabilityOnly": "No default LLM configured — showing the deterministic readability score only.",
+        "noEvaluable": "No sources with extracted text to evaluate yet.",
+        "failed": "Could not evaluate content fit"
+      },
       "systemInstruction": "System Instruction",
       "systemInstructionDesc": "The core personality the LLM adopts. Describe role, audience, perspective and any persona-specific rules.",
       "systemInstructionPlaceholder": "You are a senior product analyst at a mid-market SaaS company...",

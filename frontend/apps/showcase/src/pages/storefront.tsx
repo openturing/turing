@@ -1,5 +1,6 @@
 import { BrandHeader } from "@/components/brand-header";
 import { ChatLauncher } from "@/components/chat/chat-launcher";
+import { GuidedTour } from "@/components/guided-tour";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { askAtlas } from "@/lib/ask-atlas";
@@ -449,6 +450,7 @@ function StorefrontContent() {
 
       <ProactiveToast />
       <ChatLauncher />
+      <GuidedTour />
     </div>
   );
 }

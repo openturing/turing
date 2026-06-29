@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
@@ -37,7 +38,12 @@ public class TurAgentHandoffService {
     private final TurAIAgentRepository agentRepository;
     private final TurLLMInstanceRepository llmRepository;
 
-    public TurAgentHandoffService(TurAgentChatExecutor executor,
+    // @Lazy breaks the constructor cycle TurAgentChatExecutor → TurChatToolResolver
+    // → TurAgentHandoffService → TurAgentChatExecutor (introduced with T448). The
+    // executor is only needed at delegation time, so a lazy proxy is correct and
+    // lets the full application context start (otherwise Spring Boot 4 fails fast
+    // on the circular reference). Surfaced by TurShowcaseSmokeIT (T457).
+    public TurAgentHandoffService(@Lazy TurAgentChatExecutor executor,
             TurAIAgentRepository agentRepository, TurLLMInstanceRepository llmRepository) {
         this.executor = executor;
         this.agentRepository = agentRepository;
