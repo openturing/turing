@@ -34,6 +34,16 @@ export type TurSubmissionRetention =
   | "RETAIN_DAYS"
   | "DELETE_AFTER_EXPORT";
 
+/**
+ * T166 / §X.9.d — scope for the Anthropic memory tool (T163) file area.
+ * - "CONVERSATION" — memory isolated per conversation (default).
+ * - "USER"         — memory shared across every conversation an authenticated
+ *                    end user has with the agent (per-Keycloak-`sub`); falls
+ *                    back to per-conversation when no stable identity exists.
+ * @since 2026.3.4
+ */
+export type TurMemoryScope = "CONVERSATION" | "USER";
+
 export interface TurAIAgent {
   id: string;
   title: string;
@@ -148,6 +158,11 @@ export interface TurAIAgent {
    * @since 2026.3.1
    */
   submissionRetentionDays?: number | null;
+  /**
+   * T166 / §X.9.d — scope for the Anthropic memory tool (T163). Defaults to
+   * `CONVERSATION`. @since 2026.3.4
+   */
+  memoryScope?: TurMemoryScope;
   // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
   // moved from TurAIAgent to TurSNSiteGenAi — see sn-site-genai.model.ts.
   /**

@@ -511,6 +511,20 @@ public class TurAIAgent implements Serializable {
     private TurSubmissionRetention submissionRetention = TurSubmissionRetention.RETAIN_FOREVER;
 
     /**
+     * T166 / §X.9.d — scope for the Anthropic memory tool (T163) file area.
+     * {@code CONVERSATION} (default) keeps the {@code memory/} scratchpad isolated
+     * per conversation; {@code USER} shares it across every conversation a given
+     * authenticated end user has with the agent (per-Keycloak-{@code sub}), so the
+     * agent remembers stable preferences. Falls back to per-conversation when no
+     * stable user identity is resolvable. Stored as a string to avoid ordinal drift.
+     *
+     * @since 2026.3.4
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "memory_scope", length = 20, nullable = false)
+    private TurMemoryScope memoryScope = TurMemoryScope.CONVERSATION;
+
+    /**
      * T66 / §VII.6.g — age threshold in days used only when
      * {@link #submissionRetention} is {@code RETAIN_DAYS}. Null or
      * non-positive disables the time-based purge (effectively

@@ -157,6 +157,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
       chatMode: value.chatMode ?? "CALL",
+      // T166 / §X.9.d — CONVERSATION matches the backend enum default (memory
+      // tool scoped per conversation until the operator opts into per-user).
+      memoryScope: value.memoryScope ?? "CONVERSATION",
       // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
       // moved from agent to TurSNSiteGenAi (RAG only runs in SN site
       // context; locale-aware retrieval needs SN site's locale config).
@@ -1258,6 +1261,49 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           <SelectContent>
                             <SelectItem value="CALL">{t("forms.agentSettings.chatModeCall")}</SelectItem>
                             <SelectItem value="STREAM">{t("forms.agentSettings.chatModeStream")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconBrain}
+              title={t("forms.agentSettings.memoryScope")}
+              description={t("forms.agentSettings.memoryScopeDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="memoryScope"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.memoryScope")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {field.value === "USER"
+                          ? t("forms.agentSettings.memoryScopeUserDesc")
+                          : t("forms.agentSettings.memoryScopeConversationDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={(v) => field.onChange(v)}
+                          value={field.value ?? "CONVERSATION"}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CONVERSATION">{t("forms.agentSettings.memoryScopeConversation")}</SelectItem>
+                            <SelectItem value="USER">{t("forms.agentSettings.memoryScopeUser")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>

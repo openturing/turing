@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## F.8 — Memory tool + context editing
-
-- 💭 **T166** (deps: T163) **Per-user persistent persona memory** — `memoryScope=user` + the Memory tool gives Claude a per-Keycloak-`sub` file area where it stores stable user preferences ("Alex prefers terse answers", "Alex's preferred locale is pt-BR"). → §X.9.d
-
 ## F.9 — Stored Completions + Evals + Distillation flywheel
 
 - 📋 **T167** (deps: T131) **`TurStoredCompletionsService`** — when an agent has `storedCompletions=true`, every Responses API call sets `store: true` + structured `metadata` (`agentId`, `conversationId`, `flowId`, `nodeId`, `experimentKey`, `variantLabel`). → §X.10.a

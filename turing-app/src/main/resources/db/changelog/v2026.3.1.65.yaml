@@ -1,0 +1,34 @@
+databaseChangeLog:
+  # T166 / §X.9.d — per-agent memory scope for the Anthropic memory tool (T163).
+  #
+  #   - memory_scope VARCHAR(20)
+  #       (CONVERSATION | USER, default CONVERSATION)
+  #
+  # CONVERSATION preserves the T163 behaviour (memory isolated per conversation).
+  # USER points the memory/ scratchpad at a per-Keycloak-sub workspace scope so
+  # the agent accumulates stable user preferences across conversations; it falls
+  # back to per-conversation when no stable user identity is resolvable.
+  #
+  # Idempotent: gated by columnExists.
+
+  - changeSet:
+      id: v2026.3.1.65-add-memory-scope
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: memory_scope
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: memory_scope
+                  type: varchar(20)
+                  defaultValue: CONVERSATION
+                  constraints:
+                    nullable: false

@@ -85,13 +85,20 @@ class TurNativeChatExecutorTest {
             new com.viglet.turing.genai.servicetier.TurServiceTierResolver(
                     optionsParser, new com.viglet.turing.properties.TurConfigProperties());
 
+    // Real resolver (dependency-free); a default-scope agent returns the
+    // conversation id verbatim, so the existing routing assertions are unchanged.
+    private final com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver
+            memoryScopeResolver =
+            new com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver();
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
-                optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement);
+                optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
+                memoryScopeResolver);
     }
 
     @BeforeEach

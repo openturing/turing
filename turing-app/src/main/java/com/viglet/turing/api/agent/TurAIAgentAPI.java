@@ -277,6 +277,12 @@ public class TurAIAgentAPI {
                 agentEdit.setSubmissionRetention(turAIAgent.getSubmissionRetention());
             }
             agentEdit.setSubmissionRetentionDays(turAIAgent.getSubmissionRetentionDays());
+            // T166 / §X.9.d — memory tool scope (CONVERSATION / USER). Same
+            // field-by-field copy contract: a null DTO value keeps the
+            // previously-persisted scope (older clients).
+            if (turAIAgent.getMemoryScope() != null) {
+                agentEdit.setMemoryScope(turAIAgent.getMemoryScope());
+            }
             // T19/T24 reposition (2026.2.7) — ragBm25Fallback and
             // ragHybridSearch moved to TurSNSiteGenAi; no longer copied
             // here. See TurSNSiteGenAi field javadoc + TurSNSiteAPI for

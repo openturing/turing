@@ -45,6 +45,7 @@ import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
+import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver;
 import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
@@ -107,6 +108,7 @@ public class TurNativeChatExecutor {
     private final TurCitationDriftService citationDriftService;
     private final com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver;
     private final TurAnthropicContextManagement anthropicContextManagement;
+    private final TurAgentMemoryScopeResolver memoryScopeResolver;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -131,7 +133,8 @@ public class TurNativeChatExecutor {
             TurProviderOptionsParser optionsParser,
             TurCitationDriftService citationDriftService,
             com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver,
-            TurAnthropicContextManagement anthropicContextManagement) {
+            TurAnthropicContextManagement anthropicContextManagement,
+            TurAgentMemoryScopeResolver memoryScopeResolver) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -151,6 +154,7 @@ public class TurNativeChatExecutor {
         this.citationDriftService = citationDriftService;
         this.serviceTierResolver = serviceTierResolver;
         this.anthropicContextManagement = anthropicContextManagement;
+        this.memoryScopeResolver = memoryScopeResolver;
     }
 
     /**
@@ -292,11 +296,14 @@ public class TurNativeChatExecutor {
             boolean hasMemoryTool = capabilities.stream()
                     .anyMatch(c -> c.capability() == TurNativeCapability.ANTHROPIC_MEMORY);
             if (hasMemoryTool) {
+                // T166 / §X.9.d — point the memory tool at a per-user store when the
+                // agent's memoryScope is USER (else the live conversation scope).
+                String memoryScopeId = memoryScopeResolver.resolveScopeId(agent, conversationId);
                 log.info("[Native] agent '{}' instance '{}' handled by Anthropic memory loop "
-                        + "(persona '{}')", agent.getTitle(), instance.getId(),
-                        activePersona == null ? "none" : activePersona.getName());
+                        + "(scope '{}', persona '{}')", agent.getTitle(), instance.getId(),
+                        agent.getMemoryScope(), activePersona == null ? "none" : activePersona.getName());
                 return Optional.of(anthropicMemoryService.chat(anthropicClient.get(), instance,
-                        agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities,
+                        agent.getId(), memoryScopeId, turn.history(), turn.systemPrompt(), capabilities,
                         ctxOptions));
             }
 
