@@ -48,6 +48,7 @@ import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorServ
 import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver;
 import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
+import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -109,6 +110,7 @@ public class TurNativeChatExecutor {
     private final com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver;
     private final TurAnthropicContextManagement anthropicContextManagement;
     private final TurAgentMemoryScopeResolver memoryScopeResolver;
+    private final TurStoredCompletionsService storedCompletionsService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -134,7 +136,8 @@ public class TurNativeChatExecutor {
             TurCitationDriftService citationDriftService,
             com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver,
             TurAnthropicContextManagement anthropicContextManagement,
-            TurAgentMemoryScopeResolver memoryScopeResolver) {
+            TurAgentMemoryScopeResolver memoryScopeResolver,
+            TurStoredCompletionsService storedCompletionsService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -155,6 +158,7 @@ public class TurNativeChatExecutor {
         this.serviceTierResolver = serviceTierResolver;
         this.anthropicContextManagement = anthropicContextManagement;
         this.memoryScopeResolver = memoryScopeResolver;
+        this.storedCompletionsService = storedCompletionsService;
     }
 
     /**
@@ -373,14 +377,20 @@ public class TurNativeChatExecutor {
                     turn.systemPrompt(), computerUse.get()));
         }
 
+        // F.9 / §X.10.a — when the agent opted into stored completions, persist
+        // this Responses turn on OpenAI's side tagged with structured metadata
+        // (agentId/conversationId) so the T168 Evals / T169 distillation export
+        // can slice it later. Disabled → byte-for-byte unchanged request.
+        TurStoredCompletionsService.StoredCompletionsDirective storedCompletions =
+                storedCompletionsService.resolveForChat(agent, conversationId);
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "
-                + "({} capability/ies, persona '{}')",
+                + "({} capability/ies, persona '{}', storedCompletions={})",
                 agent.getTitle(), instance.getId(), capabilities.size(),
-                activePersona == null ? "none" : activePersona.getName());
+                activePersona == null ? "none" : activePersona.getName(), storedCompletions.store());
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
                 serviceTierResolver.resolveForChat(agent, instance).orElse(null),
-                agent.getId(), conversationId));
+                agent.getId(), conversationId, storedCompletions));
     }
 
     /**

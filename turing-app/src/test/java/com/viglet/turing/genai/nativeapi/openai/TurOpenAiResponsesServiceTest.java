@@ -12,13 +12,17 @@ package com.viglet.turing.genai.nativeapi.openai;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.openai.models.responses.ResponseCreateParams;
 import com.openai.models.responses.Tool;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService.StoredCompletionsDirective;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 class TurOpenAiResponsesServiceTest {
 
@@ -112,6 +116,36 @@ class TurOpenAiResponsesServiceTest {
     @Test
     void buildFunctionToolsToleratesNull() {
         assertThat(service.buildFunctionTools(null)).isEmpty();
+    }
+
+    @Test
+    void storedCompletionsDirectiveSetsStoreAndMetadata() {
+        // F.9 / T167 — an enabled directive flips store:true and tags the request
+        // with the metadata map.
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("gpt-4o-mini");
+        StoredCompletionsDirective directive = new StoredCompletionsDirective(true,
+                Map.of("agentId", "agent-7", "conversationId", "conv-9"));
+
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "You are helpful.",
+                List.of(), directive);
+
+        assertThat(params.store()).contains(true);
+        assertThat(params.metadata()).isPresent();
+        assertThat(params.metadata().get()._additionalProperties().keySet())
+                .containsExactlyInAnyOrder("agentId", "conversationId");
+    }
+
+    @Test
+    void disabledStoredCompletionsLeavesStoreUnset() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("gpt-4o-mini");
+
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                StoredCompletionsDirective.DISABLED);
+
+        assertThat(params.store()).isEmpty();
+        assertThat(params.metadata()).isEmpty();
     }
 
     @Test

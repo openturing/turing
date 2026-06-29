@@ -43,6 +43,7 @@ import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport.ToolOutcome;
+import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService.StoredCompletionsDirective;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -144,8 +145,25 @@ public class TurOpenAiResponsesService {
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                serviceTier, agentId, conversationId, StoredCompletionsDirective.DISABLED);
+    }
+
+    /**
+     * F.9 / §X.10.a — chat with an explicit {@link StoredCompletionsDirective}.
+     * When {@link StoredCompletionsDirective#store()} is true the turn is
+     * persisted on OpenAI's side with the directive's structured metadata, so
+     * the T168 Evals / T169 distillation export can slice it later. Disabled →
+     * the request leaves {@code store}/{@code metadata} unset (unchanged path).
+     */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools, serviceTier, agentId, conversationId))
+                        capabilities, coexistingTools, serviceTier, agentId, conversationId,
+                        storedCompletions))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
                         StringUtils.hasText(text) ? text : "")))
@@ -156,7 +174,7 @@ public class TurOpenAiResponsesService {
     String runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            String agentId, String conversationId) {
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
@@ -167,7 +185,7 @@ public class TurOpenAiResponsesService {
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
-                    serverTools, functionTools, serviceTier);
+                    serverTools, functionTools, serviceTier, storedCompletions);
             Response response = client.responses().create(params);
             text.append(extractText(response));
             appendGeneratedImages(text, response, agentId, conversationId);
@@ -209,13 +227,22 @@ public class TurOpenAiResponsesService {
     ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
-                buildTools(capabilities), List.of(), null);
+                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED);
+    }
+
+    /** Test/builder overload with an explicit stored-completions directive. */
+    ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities,
+            StoredCompletionsDirective storedCompletions) {
+        return buildParamsFromItems(instance, seedItems(history), systemPrompt,
+                buildTools(capabilities), List.of(), null, storedCompletions);
     }
 
     private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
             List<ResponseInputItem> items, String systemPrompt, List<Tool> serverTools,
             List<Tool> functionTools,
-            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            StoredCompletionsDirective storedCompletions) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
@@ -231,6 +258,7 @@ public class TurOpenAiResponsesService {
             builder.serviceTier(com.openai.models.responses.ResponseCreateParams.ServiceTier
                     .of(serviceTier.openAiValue()));
         }
+        applyStoredCompletions(builder, storedCompletions);
         for (Tool tool : serverTools) {
             builder.addTool(tool);
         }
@@ -238,6 +266,26 @@ public class TurOpenAiResponsesService {
             builder.addTool(tool);
         }
         return builder.build();
+    }
+
+    /**
+     * F.9 / §X.10.a — when the agent opted into stored completions, persist this
+     * turn on OpenAI's side ({@code store: true}) tagged with the structured
+     * metadata so T168 Evals / T169 distillation can slice it. No-op when the
+     * directive is null/disabled, leaving the request unchanged.
+     */
+    private void applyStoredCompletions(ResponseCreateParams.Builder builder,
+            StoredCompletionsDirective storedCompletions) {
+        if (storedCompletions == null || !storedCompletions.store()) {
+            return;
+        }
+        builder.store(true);
+        if (!storedCompletions.metadata().isEmpty()) {
+            ResponseCreateParams.Metadata.Builder metadata = ResponseCreateParams.Metadata.builder();
+            storedCompletions.metadata().forEach(
+                    (key, value) -> metadata.putAdditionalProperty(key, JsonValue.from(value)));
+            builder.metadata(metadata.build());
+        }
     }
 
     private List<ResponseInputItem> seedItems(List<ChatMessageItem> history) {

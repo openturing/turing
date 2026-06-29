@@ -91,6 +91,12 @@ class TurNativeChatExecutorTest {
             memoryScopeResolver =
             new com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver();
 
+    // F.9 / T167 — real, dependency-free; a default agent has no stored-completions
+    // option, so the directive is DISABLED and the existing routing/assertions hold.
+    private final com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService
+            storedCompletionsService =
+            new com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService(optionsParser);
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
@@ -98,7 +104,7 @@ class TurNativeChatExecutorTest {
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
-                memoryScopeResolver);
+                memoryScopeResolver, storedCompletionsService);
     }
 
     @BeforeEach
@@ -335,7 +341,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any()))
+                any(), anyList(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -363,7 +369,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList(), any(), any(), any(), any()))
+                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()
