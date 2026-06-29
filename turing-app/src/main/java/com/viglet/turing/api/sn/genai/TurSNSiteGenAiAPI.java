@@ -100,6 +100,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurConfigProperties configProperties;
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
+	private final com.viglet.turing.service.chatslots.TurProactiveCopilotService proactiveCopilotService;
 	private final com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
 	private final TurChatSlotExtractionService slotExtractionService;
 	private final TurChatMultiModalSlotService multiModalSlotService;
@@ -120,6 +121,7 @@ public class TurSNSiteGenAiAPI {
 			TurConfigProperties configProperties,
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
+			com.viglet.turing.service.chatslots.TurProactiveCopilotService proactiveCopilotService,
 			com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry,
 			TurChatSlotExtractionService slotExtractionService,
 			TurChatMultiModalSlotService multiModalSlotService,
@@ -139,6 +141,7 @@ public class TurSNSiteGenAiAPI {
 		this.configProperties = configProperties;
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
+		this.proactiveCopilotService = proactiveCopilotService;
 		this.slotSseRegistry = slotSseRegistry;
 		this.slotExtractionService = slotExtractionService;
 		this.multiModalSlotService = multiModalSlotService;
@@ -659,6 +662,54 @@ public class TurSNSiteGenAiAPI {
 						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA))
 				.doFinally(sig -> slotSseRegistry.release(conversationId,
 						com.viglet.turing.service.chatslots.TurChatSlotSseRegistry.Mode.DELTA));
+	}
+
+	/**
+	 * T445 / §XXIII.4 — ambient / proactive copilot stream. Opt-in per agent
+	 * ({@code proactiveEnabled}); when off the stream is empty. Subscribes to the
+	 * conversation's slot bus and runs each post-write slot map through
+	 * {@link com.viglet.turing.service.chatslots.TurProactiveCopilotService}: when
+	 * an ambient signal ({@code signal.<kind>} slot) crosses the agent's threshold
+	 * it pushes ONE throttled proactive offer. The host writes those signal slots
+	 * from real interactions (clicks/dwell/opened facets) via the existing
+	 * {@code /chat/slots} endpoint. Same 25s heartbeat + single-node caveat as the
+	 * slot streams.
+	 *
+	 * @since 2026.3.4
+	 */
+	@GetMapping(value = "/proactive/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> streamProactive(
+			@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		if (conversationId == null || conversationId.isBlank()) {
+			return Flux.empty();
+		}
+		TurAIAgent agent = turSNSearchProcess.getSNSite(siteName)
+				.map(site -> site.getTurSNSiteGenAi())
+				.map(genAi -> genAi == null ? null : genAi.getTurAIAgent())
+				.orElse(null);
+		if (agent == null || !agent.isProactiveEnabled()) {
+			// Not opted in — nothing to stream (the client closes/ignores it).
+			return Flux.empty();
+		}
+		final int threshold = agent.getProactiveThresholdSignals();
+		final long throttleMillis =
+				com.viglet.turing.service.chatslots.TurProactiveCopilotService.DEFAULT_THROTTLE_MILLIS;
+		final var state = proactiveCopilotService.newState();
+		TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> data =
+				Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId))
+						.flatMap(snapshot -> proactiveCopilotService.evaluate(state, conversationId,
+								snapshot.slots(), threshold, throttleMillis, System.currentTimeMillis())
+								.map(Flux::just).orElseGet(Flux::empty))
+						.map(suggestion -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>builder(suggestion)
+								.event("proactive-suggestion").build());
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> heartbeats =
+				Flux.interval(java.time.Duration.ofSeconds(25))
+						.map(tick -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>builder().comment(HEARTBEAT).build());
+		return Flux.merge(data, heartbeats);
 	}
 
 	/**

@@ -2305,15 +2305,6 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 > bet that *only pays off because Turing owns both*. They are deliberately built
 > as thin compositions of shipped primitives — none is a new subsystem.
 
-### XXIII.4 Ambient / proactive copilot (T445)
-
-The inverse direction of slots: user interactions (clicks via
-`useTuringClickTracking`, dwell, opened facets) are written as slots, the agent
-watches the slot bus (T63) and **proactively offers help** without being
-prompted — "vi que você abriu 5 políticas de devolução, quer que eu inicie
-uma?". Throttled and opt-in (a proactive agent that interrupts constantly is
-worse than none). → builds on T63, click tracking, slots.
-
 ### XXIII.5 Cross-conversation personal memory (T446)
 
 The memory tool (F.8 / T163) is per-conversation. Add a **per-user, long-horizon

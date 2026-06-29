@@ -226,6 +226,9 @@ public class TurAIAgentAPI {
             agentEdit.setAnswerAsAppEnabled(turAIAgent.isAnswerAsAppEnabled());
             // T443 — co-browse: agent drives the host page's real search UI (opt-in).
             agentEdit.setCoBrowseEnabled(turAIAgent.isCoBrowseEnabled());
+            // T445 — ambient / proactive copilot (opt-in) + its signal threshold.
+            agentEdit.setProactiveEnabled(turAIAgent.isProactiveEnabled());
+            agentEdit.setProactiveThresholdSignals(turAIAgent.getProactiveThresholdSignals());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());

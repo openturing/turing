@@ -1,0 +1,58 @@
+databaseChangeLog:
+  # T445 / §XXIII.4 — ambient / proactive copilot: per-agent opt-in flag +
+  # signal threshold. Default off / 3 keeps existing agents unchanged (no
+  # proactive stream). Idempotent: each column gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.57-add-ai_agent-proactive_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: proactive_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: proactive_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: proactive_enabled
+                  valueBoolean: false
+            where: proactive_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.57-add-ai_agent-proactive_threshold_signals
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: proactive_threshold_signals
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: proactive_threshold_signals
+                  type: int
+                  defaultValueNumeric: 3
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: proactive_threshold_signals
+                  valueNumeric: 3
+            where: proactive_threshold_signals IS NULL

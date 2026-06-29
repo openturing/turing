@@ -120,6 +120,33 @@ public class TurAIAgent implements Serializable {
     private boolean coBrowseEnabled = false;
 
     /**
+     * T445 / §XXIII.4 — per-agent opt-in for the "ambient / proactive copilot".
+     * When {@code true}, a server-sent {@code /chat/proactive/stream} watches the
+     * conversation's slot bus (T63) for ambient interaction signals (slots named
+     * {@code signal.<kind>} carrying an interaction count, written by the host via
+     * {@code useTuringClickTracking}/dwell) and, once a signal count crosses
+     * {@link #proactiveThresholdSignals}, pushes ONE throttled proactive offer
+     * ("I noticed you've looked at several return-policy items — want help?").
+     * Default {@code false}: no proactive stream, existing behaviour unchanged. A
+     * proactive agent that interrupts constantly is worse than none, hence opt-in
+     * + threshold + throttle.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "proactive_enabled", nullable = false)
+    private boolean proactiveEnabled = false;
+
+    /**
+     * T445 / §XXIII.4 — how many ambient interaction signals of one kind must
+     * accumulate before the proactive copilot offers help. Default 3. Only used
+     * when {@link #proactiveEnabled}.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "proactive_threshold_signals", nullable = false)
+    private int proactiveThresholdSignals = 3;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,
