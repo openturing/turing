@@ -2338,7 +2338,7 @@ first, and should only be promoted from 💭 if a named integration asks for it.
 - **T453 — chat surface.** _Shipped — see CHANGELOG → Block Y._
 - **T454 — agent power.** _Shipped — see CHANGELOG → Block Y._
 - **T455 — creative bets wiring.** _Shipped — see CHANGELOG → Block Y._
-- **T456 — voice, memory & ops tour.** Voice agent (T147) + search-by-image; cross-conversation personal memory panel (T446); an admin "ops tour" route surfacing analytics (T87/T88/T90), eval + self-tuning suggestions (T447), and cost governance (Block L). Also expose the catalog over the MCP server (Block I) for the "drive it from Claude Desktop" demo.
+- **T456 — voice, memory & ops tour.** _Shipped — see CHANGELOG → Block Y._
 - **T457 — guided tour, tests & docs.** An in-app guided walkthrough that narrates each capability as it's demonstrated; an e2e smoke test (the SDK-contract IT pattern — boot backend, import the showcase ZIP, drive search/chat/SSE/client-tool round-trip); a `docs-turing` page + README link so the showcase is discoverable. This task is also the **coverage audit**: reconcile the app against §XXIV.1 and file any uncovered feature as a follow-up.
 
 ## XXVI. Synthetic personas — audience-fit content evaluation & persona synthesis from audio (Block AA)

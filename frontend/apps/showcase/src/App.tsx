@@ -4,6 +4,7 @@ import { CartProvider } from "./contexts/cart";
 import StorefrontPage from "./pages/storefront";
 import ProductPage from "./pages/product";
 import EmbedDemoPage from "./pages/embed-demo";
+import OpsPage from "./pages/ops";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
           <Route path="/" element={<StorefrontPage />} />
           <Route path="/product" element={<ProductPage />} />
           <Route path="/embed-demo" element={<EmbedDemoPage />} />
+          <Route path="/ops" element={<OpsPage />} />
         </Routes>
       </CartProvider>
     </ThemeProvider>

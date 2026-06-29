@@ -1,0 +1,13 @@
+{
+  "//": "T456 — drive the Atlas Store catalog from Claude Desktop over Turing's MCP server (Block I). Turing publishes its decorated tool catalog (list_sites / get_site_fields / search_site) over Streamable HTTP at https://<host>/mcp when turing.mcp-server.enabled=true. Claude Desktop speaks stdio MCP, so bridge to the HTTP endpoint with mcp-remote. Merge this into ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%/Claude/claude_desktop_config.json (Windows), set your host, and restart Claude Desktop. Then ask: \"search the atlas-store site for wireless headphones under $200\".",
+  "mcpServers": {
+    "atlas-store": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://YOUR-TURING-HOST/mcp"
+      ]
+    }
+  }
+}

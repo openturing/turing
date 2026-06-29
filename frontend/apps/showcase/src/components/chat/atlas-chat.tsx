@@ -4,15 +4,19 @@ import { useCart } from "@/contexts/cart";
 import { createCartClientTools } from "@/lib/cart-tools";
 import { MarkdownBlock, D2Block } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { getVisitorId } from "@/lib/visitor";
 import {
   IconAlertTriangle,
   IconArrowUp,
+  IconBrain,
   IconFileText,
   IconLoader2,
+  IconMicrophone,
   IconPaperclip,
   IconRobot,
   IconSparkles,
   IconTool,
+  IconTrash,
   IconUser,
   IconX,
 } from "@tabler/icons-react";
@@ -28,6 +32,8 @@ import {
   useTuringChat,
   useTuringSlotUpload,
   useTuringSlots,
+  useTuringUserMemory,
+  useTuringVoice,
   useTuringWorkspace,
 } from "@viglet/turing-react-sdk";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -165,18 +171,23 @@ export function AtlasChatPanel({
 }>) {
   const cart = useCart();
   const store = useSearchStore();
+  const visitorId = useMemo(getVisitorId, []);
   // Answer-as-app generative UI (T442) + cart client tools (T438/T439) +
-  // co-browse search-driving tools (T443), merged into one client-tool map.
+  // co-browse search-driving tools (T443) + cross-conversation memory tools
+  // (T446), merged into one client-tool map.
   const app = useAnswerAsApp();
   const coBrowse = useCoBrowseSearch(store);
+  const memory = useTuringUserMemory({ userId: visitorId });
   const cartTools = useMemo(
     () => createCartClientTools({ add: cart.add, remove: cart.remove, clear: cart.clear, items: cart.items }),
     [cart.add, cart.remove, cart.clear, cart.items]
   );
   const clientTools = useMemo(
-    () => ({ ...app.clientTools, ...coBrowse.clientTools, ...cartTools }),
-    [app.clientTools, coBrowse.clientTools, cartTools]
+    () => ({ ...app.clientTools, ...coBrowse.clientTools, ...memory.clientTools, ...cartTools }),
+    [app.clientTools, coBrowse.clientTools, memory.clientTools, cartTools]
   );
+  const [showMemory, setShowMemory] = useState(false);
+  const voice = useTuringVoice({ lang: "en-US" });
 
   const {
     enabled,
@@ -218,6 +229,23 @@ export function AtlasChatPanel({
     onInitialConsumed?.();
   }, [initialMessage, enabled, isStreaming, send, onInitialConsumed]);
 
+  // Voice dictation (T147) — mirror the live transcript into the input box and
+  // auto-send once the utterance is final.
+  const lastFinalRef = useRef("");
+  useEffect(() => {
+    if (voice.transcript) setInput(voice.transcript);
+    if (voice.isFinal && voice.transcript.trim() && voice.transcript !== lastFinalRef.current) {
+      lastFinalRef.current = voice.transcript;
+      const t = voice.transcript.trim();
+      if (t && !isStreaming) {
+        setInput("");
+        void send(t);
+      }
+    }
+    // `send`/`isStreaming` are read fresh each render; transcript drives this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.transcript, voice.isFinal]);
+
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     // Multimodal slot upload (T401) — fills an "image" slot with vision on.
@@ -244,6 +272,17 @@ export function AtlasChatPanel({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            aria-label="What Atlas remembers about you"
+            title="What Atlas remembers about you"
+            onClick={() => setShowMemory((v) => !v)}
+            className={cn(
+              "rounded-md p-1.5 hover:bg-accent",
+              showMemory && "bg-accent text-primary"
+            )}
+          >
+            <IconBrain className="size-5" />
+          </button>
           {messages.length > 0 && (
             <Button variant="ghost" size="sm" onClick={reset} disabled={isStreaming} className="text-xs">
               New chat
@@ -254,6 +293,47 @@ export function AtlasChatPanel({
           </button>
         </div>
       </div>
+
+      {/* Cross-conversation personal memory panel (T446) */}
+      {showMemory && (
+        <div className="border-b border-border bg-muted/30 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What Atlas remembers
+            </span>
+            {memory.memories.length > 0 && (
+              <button
+                onClick={() => void memory.clear()}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+              >
+                <IconTrash className="size-3.5" /> Forget me
+              </button>
+            )}
+          </div>
+          {memory.memories.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Nothing yet. As you chat, Atlas remembers preferences across sessions.
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {memory.memories.map((m) => (
+                <li key={m.id} className="flex items-start justify-between gap-2 text-xs">
+                  <span>
+                    <span className="font-medium text-foreground/80">{m.key}</span>: {m.content}
+                  </span>
+                  <button
+                    aria-label={`Forget ${m.key}`}
+                    onClick={() => void memory.remove(m.id)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <IconX className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Disabled (no agent) notice — honest offline-seed state */}
       {enabled === false && (
@@ -363,6 +443,21 @@ export function AtlasChatPanel({
               <IconPaperclip className="size-5" />
             )}
           </button>
+          {voice.sttSupported && (
+            <button
+              type="button"
+              aria-label={voice.isListening ? "Stop voice input" : "Voice input"}
+              onClick={() => (voice.isListening ? voice.stopListening() : voice.startListening())}
+              disabled={isStreaming || enabled === false}
+              title="Dictate your question (T147 voice)"
+              className={cn(
+                "shrink-0 rounded-lg p-1.5 hover:bg-accent disabled:opacity-40",
+                voice.isListening ? "bg-red-500/15 text-red-600" : "text-muted-foreground"
+              )}
+            >
+              <IconMicrophone className={cn("size-5", voice.isListening && "animate-pulse")} />
+            </button>
+          )}
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}

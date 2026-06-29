@@ -1,0 +1,71 @@
+databaseChangeLog:
+  # Block AA / T465 / §XXVI.2 — persona "notebook" evaluation sources.
+  # New ai_persona_source child table (SN_DOC | ASSET | URL) with cached
+  # extracted text. Idempotent: gated by tableExists not present.
+
+  - changeSet:
+      id: v2026.3.1.63-create-ai_persona_source
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona_source
+      changes:
+        - createTable:
+            tableName: ai_persona_source
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: persona_id
+                  type: varchar(40)
+              - column:
+                  name: type
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_name
+                  type: varchar(200)
+              - column:
+                  name: ref
+                  type: varchar(1000)
+              - column:
+                  name: site_name
+                  type: varchar(100)
+              - column:
+                  name: cached_text
+                  type: longtext
+              - column:
+                  name: extracted_at
+                  type: timestamp
+              - column:
+                  name: extraction_status
+                  type: varchar(16)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: extraction_error
+                  type: varchar(500)
+        - addForeignKeyConstraint:
+            constraintName: fk_persona_source_persona
+            baseTableName: ai_persona_source
+            baseColumnNames: persona_id
+            referencedTableName: ai_persona
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_persona_source_persona
+            tableName: ai_persona_source
+            columns:
+              - column:
+                  name: persona_id

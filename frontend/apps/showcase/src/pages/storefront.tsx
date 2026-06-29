@@ -10,6 +10,7 @@ import {
   IconAdjustmentsHorizontal,
   IconArrowsSort,
   IconBolt,
+  IconCamera,
   IconLoader2,
   IconMoodEmpty,
   IconSearch,
@@ -283,6 +284,19 @@ function StorefrontContent() {
               />
             </div>
           </TuringSearchField>
+
+          {/* Search by image (T456) — hands off to the copilot's multimodal
+              upload (vision → "find similar products"). */}
+          <button
+            type="button"
+            onClick={() =>
+              askAtlas("I'd like to find products similar to a photo — I'll attach an image.")
+            }
+            className="mx-auto mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <IconCamera className="size-4" />
+            Search by image
+          </button>
         </div>
       </section>
 
@@ -425,7 +439,11 @@ function StorefrontContent() {
       <footer className="border-t border-border/60 bg-card/40">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:px-6">
           <span>Atlas Store — a Viglet Turing ES reference showcase</span>
-          <span>Sample data · {totalCount} products indexed</span>
+          <span className="flex items-center gap-3">
+            <a href="#/ops" className="hover:text-foreground">Ops tour</a>
+            <a href="#/embed-demo" className="hover:text-foreground">Embed demo</a>
+            <span>· {totalCount} products</span>
+          </span>
         </div>
       </footer>
 

@@ -120,6 +120,26 @@ The thin compositions that only pay off because Turing owns search **and** agent
 The glass-box / proactive / co-browse / handoff behaviors are gated by the
 matching per-agent flags server-side; the client wiring is always present.
 
+## Voice, memory & ops (T456)
+
+- **Voice agent** (T147) — a mic button in the chat composer (`useTuringVoice`,
+  Web Speech STT) dictates the question and auto-sends on a final utterance.
+- **Search by image** — a hero affordance hands off to the copilot's multimodal
+  upload (vision → "find similar products").
+- **Cross-conversation memory** (T446) — a "brain" toggle in the chat header
+  opens a panel of what Atlas remembers about the visitor (`useTuringUserMemory`,
+  keyed on a stable localStorage visitor id); `remember_fact`/`recall_user_memory`
+  client tools are merged into the chat, and a "Forget me" button is GDPR delete.
+- **Ops tour** — [`/ops`](src/pages/ops.tsx) maps the operational surfaces:
+  chat analytics (sentiment trajectory T87, tool-latency p95 T88, SSE channels
+  T90), agent eval + golden sets (Block K), self-tuning suggestions (T447), and
+  cost governance (Block L). These are admin-console endpoints, so the tour
+  documents each with its endpoint rather than faking dashboards.
+- **MCP exposure** (Block I) — [`mcp/claude-desktop.json`](mcp/claude-desktop.json)
+  bridges Claude Desktop to Turing's MCP server (`/mcp`, Streamable HTTP) via
+  `mcp-remote`, so you can drive the Atlas catalog (`search_site`, …) from Claude
+  Desktop.
+
 ### Hybrid ranking + reranker (server toggle)
 
 `HYBRID_RRF` (T383) and the pluggable reranker (Block N) are **site-level
