@@ -112,13 +112,16 @@ public class TurAnthropicMessagesService {
     private final TurProviderOptionsParser optionsParser;
     private final TurNativeFunctionToolSupport toolSupport;
     private final TurAnthropicCitationSupport citationSupport;
+    private final TurAnthropicContextManagement contextManagement;
 
     public TurAnthropicMessagesService(TurProviderOptionsParser optionsParser,
             TurNativeFunctionToolSupport toolSupport,
-            TurAnthropicCitationSupport citationSupport) {
+            TurAnthropicCitationSupport citationSupport,
+            TurAnthropicContextManagement contextManagement) {
         this.optionsParser = optionsParser;
         this.toolSupport = toolSupport;
         this.citationSupport = citationSupport;
+        this.contextManagement = contextManagement;
     }
 
     /**
@@ -165,8 +168,27 @@ public class TurAnthropicMessagesService {
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             List<TurCitationDocument> citationDocuments,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                citationDocuments, serviceTier, TurAnthropicContextManagement.Options.NONE);
+    }
+
+    /**
+     * T164/T165 / §X.9 — context-management-aware overload. When the agent enabled
+     * the {@code context-editing} or {@code compaction} Request Option, the turn
+     * carries the matching {@code context_management.edits} + beta header so Claude
+     * prunes/summarizes the conversation server-side. {@link TurAnthropicContextManagement.Options#NONE}
+     * is the unchanged path (no body property, no beta).
+     */
+    public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            List<TurCitationDocument> citationDocuments,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            TurAnthropicContextManagement.Options contextOptions) {
+        TurAnthropicContextManagement.Options options =
+                contextOptions == null ? TurAnthropicContextManagement.Options.NONE : contextOptions;
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools, citationDocuments, serviceTier))
+                        capabilities, coexistingTools, citationDocuments, serviceTier, options))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(TurAnthropicMessagesService::emitTurn)
                 .doOnError(err -> log.error("[Native][Anthropic-Messages] instance '{}' error: {}",
@@ -207,7 +229,8 @@ public class TurAnthropicMessagesService {
     TurnResult runLoop(AnthropicClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             List<TurCitationDocument> citationDocuments,
-            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            TurAnthropicContextManagement.Options contextOptions) {
         long t0 = System.currentTimeMillis();
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> serverTools = buildTools(capabilities, betas);
@@ -224,7 +247,8 @@ public class TurAnthropicMessagesService {
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             MessageCreateParams params = buildParamsFromConversation(
-                    instance, conversation, systemPrompt, tools, betas, mcpServers, serviceTier);
+                    instance, conversation, systemPrompt, tools, betas, mcpServers, serviceTier,
+                    contextOptions);
             Message response = client.messages().create(params);
             // T154 / §X.7.c — append text and decode citations in one pass so each
             // citation carries its answer-span offsets (for inline underlining).
@@ -269,13 +293,14 @@ public class TurAnthropicMessagesService {
         List<ToolUnion> tools = buildTools(capabilities, betas);
         List<Object> mcpServers = buildMcpServers(capabilities, betas);
         return buildParamsFromConversation(instance, seedConversation(history), systemPrompt, tools,
-                betas, mcpServers, null);
+                betas, mcpServers, null, TurAnthropicContextManagement.Options.NONE);
     }
 
     private MessageCreateParams buildParamsFromConversation(TurLLMInstance instance,
             List<MessageParam> conversation, String systemPrompt, List<ToolUnion> tools,
             Set<String> betas, List<Object> mcpServers,
-            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier) {
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            TurAnthropicContextManagement.Options contextOptions) {
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(resolveModel(instance))
                 .maxTokens(resolveMaxTokens(instance))
@@ -301,8 +326,16 @@ public class TurAnthropicMessagesService {
         if (mcpServers != null && !mcpServers.isEmpty()) {
             builder.putAdditionalBodyProperty("mcp_servers", JsonValue.from(mcpServers));
         }
-        if (betas != null && !betas.isEmpty()) {
-            builder.putAdditionalHeader("anthropic-beta", String.join(",", betas));
+        // T164/T165 / §X.9 — opt-in context editing / compaction. The standard
+        // Messages builder has no typed context_management setter, so inject the
+        // raw body property + the context-management beta token (added to the same
+        // anthropic-beta header below). Options.NONE → nothing attached (unchanged).
+        Set<String> allBetas = new LinkedHashSet<>(betas == null ? Set.of() : betas);
+        contextManagement.rawConfig(contextOptions).ifPresent(config ->
+                builder.putAdditionalBodyProperty("context_management", config));
+        allBetas.addAll(contextManagement.rawBetaTokens(contextOptions));
+        if (!allBetas.isEmpty()) {
+            builder.putAdditionalHeader("anthropic-beta", String.join(",", allBetas));
         }
         return builder.build();
     }

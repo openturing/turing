@@ -41,6 +41,7 @@ import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver;
 import com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver.NativeSelection;
 import com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory;
 import com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory.FederatedMcp;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement;
 import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicMessagesService;
 import com.viglet.turing.genai.nativeapi.anthropic.computeruse.TurAnthropicComputerUseService;
 import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorService;
@@ -105,6 +106,7 @@ public class TurNativeChatExecutor {
     private final TurProviderOptionsParser optionsParser;
     private final TurCitationDriftService citationDriftService;
     private final com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver;
+    private final TurAnthropicContextManagement anthropicContextManagement;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -128,7 +130,8 @@ public class TurNativeChatExecutor {
             TurRagSearchToolService ragSearchToolService,
             TurProviderOptionsParser optionsParser,
             TurCitationDriftService citationDriftService,
-            com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver) {
+            com.viglet.turing.genai.servicetier.TurServiceTierResolver serviceTierResolver,
+            TurAnthropicContextManagement anthropicContextManagement) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -147,6 +150,7 @@ public class TurNativeChatExecutor {
         this.optionsParser = optionsParser;
         this.citationDriftService = citationDriftService;
         this.serviceTierResolver = serviceTierResolver;
+        this.anthropicContextManagement = anthropicContextManagement;
     }
 
     /**
@@ -256,6 +260,11 @@ public class TurNativeChatExecutor {
 
         // F.3 / §X.4 — Anthropic path.
         if (isAnthropic) {
+            // T164/T165 / §X.9 — resolve the agent's opt-in context-management
+            // (context editing / compaction) once; passed to every Anthropic
+            // native path so a turn prunes/summarizes server-side identically.
+            TurAnthropicContextManagement.Options ctxOptions =
+                    anthropicContextManagement.resolve(agent.getRequestOptionsJson());
             // T143 / §X.4.e — computer_use is a multi-turn screenshot/action loop,
             // not a one-shot server tool (and uses the beta Messages API), so it
             // owns the whole turn when enabled — exactly like the OpenAI variant.
@@ -286,7 +295,8 @@ public class TurNativeChatExecutor {
                         + "(persona '{}')", agent.getTitle(), instance.getId(),
                         activePersona == null ? "none" : activePersona.getName());
                 return Optional.of(anthropicMemoryService.chat(anthropicClient.get(), instance,
-                        agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities));
+                        agent.getId(), conversationId, turn.history(), turn.systemPrompt(), capabilities,
+                        ctxOptions));
             }
 
             // T142 / §X.4.d — text_editor / bash are client-executed multi-turn
@@ -323,7 +333,7 @@ public class TurNativeChatExecutor {
             Flux<ChatResponse> messages = anthropicMessagesService.chat(anthropicClient.get(), instance,
                     turn.history(), turn.systemPrompt(), capabilities, coexistingTools,
                     citationDocuments,
-                    serviceTierResolver.resolveForChat(agent, instance).orElse(null));
+                    serviceTierResolver.resolveForChat(agent, instance).orElse(null), ctxOptions);
             // T155 / §X.7.d — when citations are on and drift detection is
             // enabled, persist the per-sentence citations as they stream so the
             // daily scan can later re-resolve them. No-op pass-through otherwise.

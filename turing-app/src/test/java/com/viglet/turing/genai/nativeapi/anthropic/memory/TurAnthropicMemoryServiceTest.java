@@ -31,8 +31,9 @@ class TurAnthropicMemoryServiceTest {
     void setUp() {
         // The handler isn't exercised by parseConfig/buildParams, so a null-backed
         // handler over an in-memory workspace stand-in is unnecessary here.
-        service = new TurAnthropicMemoryService(new TurProviderOptionsParser(),
-                new TurWorkspaceMemoryHandler(null));
+        TurProviderOptionsParser parser = new TurProviderOptionsParser();
+        service = new TurAnthropicMemoryService(parser, new TurWorkspaceMemoryHandler(null),
+                new com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement(parser));
     }
 
     @Test
@@ -60,12 +61,31 @@ class TurAnthropicMemoryServiceTest {
         MessageCreateParams params = service.buildParams(instance, config,
                 BetaMemoryTool20250818.builder().build(), "system prompt",
                 List.of(BetaMessageParam.builder()
-                        .role(BetaMessageParam.Role.USER).content("hi").build()));
+                        .role(BetaMessageParam.Role.USER).content("hi").build()),
+                com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement.Options.NONE);
 
         assertThat(params.betas().orElseThrow())
                 .contains(com.anthropic.models.beta.AnthropicBeta.CONTEXT_MANAGEMENT_2025_06_27);
         assertThat(params.tools()).isPresent();
         assertThat(params.tools().orElseThrow())
                 .anyMatch(t -> t.isMemoryTool20250818());
+        // T164 off by default → no context_management config attached.
+        assertThat(params.contextManagement()).isEmpty();
+    }
+
+    @Test
+    void buildParamsAttachesContextEditingWhenEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        Config config = service.parseConfig(instance);
+        MessageCreateParams params = service.buildParams(instance, config,
+                BetaMemoryTool20250818.builder().build(), "system prompt",
+                List.of(BetaMessageParam.builder()
+                        .role(BetaMessageParam.Role.USER).content("hi").build()),
+                new com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement.Options(
+                        true, false));
+
+        assertThat(params.contextManagement()).isPresent();
+        assertThat(params.contextManagement().orElseThrow().edits().orElseThrow().get(0)
+                .isClearToolUses20250919()).isTrue();
     }
 }

@@ -71,6 +71,7 @@ class TurNativeChatExecutorTest {
     @Mock private com.viglet.turing.genai.nativeapi.mcp.TurMcpFederationDirectory mcpFederationDirectory;
     @Mock private com.viglet.turing.genai.tool.TurRagSearchToolService ragSearchToolService;
     @Mock private com.viglet.turing.genai.citation.TurCitationDriftService citationDriftService;
+    @Mock private com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement anthropicContextManagement;
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
@@ -90,7 +91,7 @@ class TurNativeChatExecutorTest {
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
-                optionsParser, citationDriftService, serviceTierResolver);
+                optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement);
     }
 
     @BeforeEach
@@ -98,6 +99,9 @@ class TurNativeChatExecutorTest {
         // T145 — no MCP federation unless a test opts in; keeps the existing
         // routing tests unchanged (the directory is consulted on every native turn).
         lenient().when(mcpFederationDirectory.federate(any(), any())).thenReturn(List.of());
+        // T164/T165 — default to no context-management opt-in on every Anthropic turn.
+        lenient().when(anthropicContextManagement.resolve(any())).thenReturn(
+                com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement.Options.NONE);
     }
 
     private static TurLLMInstance instance() {
@@ -140,7 +144,7 @@ class TurNativeChatExecutorTest {
         when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
                 .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(),
-                any(), anyList(), any(), anyList(), any()))
+                any(), anyList(), any(), anyList(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "claude")));
 
         Optional<Flux<ChatResponse>> result =
@@ -168,7 +172,7 @@ class TurNativeChatExecutorTest {
                 new com.viglet.turing.genai.citation.TurCitationDocument("doc-a", "Doc A", "/u", "text"));
         when(ragSearchToolService.retrievePassagesForCitations(eq("hello"), anyInt())).thenReturn(docs);
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(), any(),
-                anyList(), any(), eq(docs), any()))
+                anyList(), any(), eq(docs), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "cited")));
         // T155 — with citations on, the flux is routed through drift persistence;
         // the no-op pass-through (disabled) returns the source unchanged.
@@ -237,7 +241,7 @@ class TurNativeChatExecutorTest {
         when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
                 .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
         when(anthropicMemoryService.chat(eq(anthropicClient), eq(instance), any(), eq("conv-1"),
-                anyList(), any(), anyList()))
+                anyList(), any(), anyList(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "remembered")));
 
         Optional<Flux<ChatResponse>> result =

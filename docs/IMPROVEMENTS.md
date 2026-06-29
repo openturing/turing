@@ -1472,12 +1472,6 @@ moat.
 Anthropic ships three independent context-management features that
 each solve a different long-conversation pain:
 
-- **Context editing (T164)** — server-side auto-evicts old tool
-  results when the window saturates, replacing them with placeholders.
-  84% token savings on long agent loops. Composes with T29
-  (Turing-side tool pre-filter) and T30 (BM25 memory retrieval) —
-  Anthropic trims inline tool outputs, Turing surfaces the right
-  retrievable older turn.
 - **Compaction (T165)** — server-side summarization of older turns.
   Coordinates with Turing's T115 (workspace-stored compression):
   when both are enabled, Turing wins precedence (audit trail), Anthropic

@@ -33,6 +33,8 @@ import com.anthropic.models.beta.messages.MessageCreateParams;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement;
+import com.viglet.turing.genai.nativeapi.anthropic.TurAnthropicContextManagement.Options;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -77,11 +79,14 @@ public class TurAnthropicMemoryService {
 
     private final TurProviderOptionsParser optionsParser;
     private final TurWorkspaceMemoryHandler memoryHandler;
+    private final TurAnthropicContextManagement contextManagement;
 
     public TurAnthropicMemoryService(TurProviderOptionsParser optionsParser,
-            TurWorkspaceMemoryHandler memoryHandler) {
+            TurWorkspaceMemoryHandler memoryHandler,
+            TurAnthropicContextManagement contextManagement) {
         this.optionsParser = optionsParser;
         this.memoryHandler = memoryHandler;
+        this.contextManagement = contextManagement;
     }
 
     /**
@@ -90,10 +95,11 @@ public class TurAnthropicMemoryService {
      */
     public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance, String agentId,
             String conversationId, List<ChatMessageItem> history, String systemPrompt,
-            List<EnabledCapability> capabilities) {
+            List<EnabledCapability> capabilities, Options contextOptions) {
         Config config = parseConfig(instance);
+        Options options = contextOptions == null ? Options.NONE : contextOptions;
         return Mono.fromCallable(() -> runLoop(client, instance, agentId, conversationId, history,
-                        systemPrompt, config))
+                        systemPrompt, config, options))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
                         StringUtils.hasText(text) ? text : "")))
@@ -102,7 +108,8 @@ public class TurAnthropicMemoryService {
     }
 
     String runLoop(AnthropicClient client, TurLLMInstance instance, String agentId,
-            String conversationId, List<ChatMessageItem> history, String systemPrompt, Config config) {
+            String conversationId, List<ChatMessageItem> history, String systemPrompt, Config config,
+            Options contextOptions) {
         long t0 = System.currentTimeMillis();
         BetaMemoryTool20250818 memoryTool = BetaMemoryTool20250818.builder().build();
         List<BetaMessageParam> conversation = seedConversation(history);
@@ -111,7 +118,7 @@ public class TurAnthropicMemoryService {
 
         for (int iteration = 0; iteration < config.maxIterations(); iteration++) {
             MessageCreateParams params = buildParams(instance, config, memoryTool, systemPrompt,
-                    conversation);
+                    conversation, contextOptions);
             BetaMessage response = client.beta().messages().create(params);
             appendMessageText(response, finalText);
 
@@ -153,7 +160,8 @@ public class TurAnthropicMemoryService {
     }
 
     MessageCreateParams buildParams(TurLLMInstance instance, Config config,
-            BetaMemoryTool20250818 memoryTool, String systemPrompt, List<BetaMessageParam> conversation) {
+            BetaMemoryTool20250818 memoryTool, String systemPrompt, List<BetaMessageParam> conversation,
+            Options contextOptions) {
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(config.model())
                 .maxTokens(config.maxTokens())
@@ -166,6 +174,9 @@ public class TurAnthropicMemoryService {
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
         }
+        // T164/T165 — opt-in context editing / compaction. The memory loop already
+        // sends the context-management beta, so only the config needs attaching.
+        contextManagement.betaConfig(contextOptions).ifPresent(builder::contextManagement);
         return builder.build();
     }
 
