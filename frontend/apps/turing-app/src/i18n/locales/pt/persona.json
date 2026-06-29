@@ -60,6 +60,12 @@
       "jargon": "jargão",
       "tone": "tom",
       "missing-context": "falta contexto"
+    },
+    "fromAudio": {
+      "trigger": "Criar a partir de áudio",
+      "working": "Transcrevendo…",
+      "drafted": "Rascunho de persona pronto — revise e salve",
+      "failed": "Não foi possível criar uma persona a partir do áudio"
     }
   }
 }

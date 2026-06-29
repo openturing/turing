@@ -1,6 +1,7 @@
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { AiAuthoringTrigger } from "@/components/ai-authoring/ai-authoring-trigger";
+import { PersonaFromAudioTrigger } from "@/components/persona/persona-from-audio-trigger";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
@@ -32,6 +33,7 @@ export default function PersonaListPage() {
           buttonText={t("persona.newInstance")}
           urlNew={`${ROUTES.PERSONA_INSTANCE}/new`} />
       )}
+      <PersonaFromAudioTrigger />
       <AiAuthoringTrigger to={aiChatUrl} />
     </LoadProvider>
   )

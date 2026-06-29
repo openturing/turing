@@ -2386,34 +2386,6 @@ LLM verdicts via the `LlmJudgeGuardrailStrategy` JSON pattern; and the T385
 without spending LLM credits. The one genuinely new seam is transcription (no STT
 exists today; the `AUDIO` slot only stores a URL).
 
-### XXVI.6 Transcription seam — `TurTranscriptionProvider` (T469)
-
-The one new piece of infrastructure. `AUDIO` slots exist (`TurAIAgentSlotType.AUDIO`,
-`isMultiModal()`), but they only store a storage URL — there is **no speech-to-text**.
-Introduce a pluggable `TurTranscriptionProvider { String transcribe(bytes, mimeType,
-languageHint) }`:
-
-- default implementation calls OpenAI Whisper (or a provider-native STT) using an
-  existing `TurLLMInstance` credential;
-- air-gapped installs plug a local STT (the same pluggable-seam discipline as the
-  storage and reranker abstractions).
-
-It wires into the existing `/chat/slot-upload` AUDIO path and **partially unblocks F.5
-(voice agents)**, which needs the same capability. Provider/default choice is left open
-(hence 💭).
-
-### XXVI.7 Persona-from-audio authoring (T470)
-
-`POST /api/persona/derive-from-audio`: upload an audio recording → transcribe (T469) →
-an LLM **behavioral-analysis** prompt extracts both **voice** traits (tone, verbosity,
-languageStyle, characteristic vocabulary) **and** **audience** descriptors (apparent
-education level, domain familiarity, language) from the conversation → a **draft**
-persona. Critically, the draft is **never auto-saved** — it opens the existing
-AI-authoring review form (the T426 provider-tool / strict-`json_schema` path, so the
-draft is validated JSON by construction, not brace-scanned free text) for a human to
-review and save. This mirrors the established "derive, never auto-apply" discipline of
-the T387 manifest deriver.
-
 ### XXVI.8 Auto-suggest the best persona variant for content (T471, 💭)
 
 Given a piece of content and a set of audience personas, batch the T467 evaluator and

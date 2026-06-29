@@ -110,8 +110,6 @@
 > whole block is **opt-in** behind a `personaKind` discriminator (default `SPEAKER` =
 > existing voice personas byte-for-byte unchanged). Rationale → §XXVI.
 
-- 💭 **T469** (deps: T64) **Transcription seam (`TurTranscriptionProvider`)** — a pluggable speech-to-text interface (default: OpenAI Whisper / provider-native via an existing LLM instance; air-gapped installs plug a local STT) wired to the existing `AUDIO` slot upload path. Provider choice open; also partially unblocks F.5 voice agents. → §XXVI.6
-- 📋 **T470** (deps: T469, T426) **Persona-from-audio authoring** — `POST /api/persona/derive-from-audio`: upload audio → transcribe (T469) → LLM behavioral analysis extracts voice traits (tone/verbosity/languageStyle/vocabulary) **and** audience descriptors → **draft** persona that is never auto-saved; it opens the existing AI-authoring review form (T426 strict-schema path) for human approval. → §XXVI.7
 - 💭 **T471** (deps: T467, T69) **Auto-suggest the best persona variant for a piece of content** — given content + a set of audience personas, batch the T467 evaluator and rank which persona it best fits; feeds Block Z A/B persona selection and editorial routing. → §XXVI.8
 - 💭 **T472** (deps: T467, T388) **Content-fit as an index-time SN signal** — run the evaluator at index time against a configured target-audience persona and store a per-document readability/fit score as an SN field; surface "content too complex for its audience" in the content-gap dashboard (cousin of T252/T388). → §XXVI.9
 

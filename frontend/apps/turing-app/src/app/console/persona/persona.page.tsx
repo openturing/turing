@@ -7,12 +7,15 @@ import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { TurPersonaService } from "@/services/persona/persona.service";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const turPersonaService = new TurPersonaService();
 
 export default function PersonaPage() {
   const { id } = useParams() as { id: string };
+  const location = useLocation();
+  // Block AA / T470 — a persona-from-audio draft handed over via router state.
+  const draft = (location.state as { draft?: TurPersona } | null)?.draft;
   const { t } = useTranslation();
   const [persona, setPersona] = useState<TurPersona>();
   const [isNew, setIsNew] = useState<boolean>(true);
@@ -27,11 +30,15 @@ export default function PersonaPage() {
       // Don't pre-set `id` — TurUuidGenerator only assigns a UUID when the
       // value is null; an empty string is treated as a pre-assigned id and
       // gets persisted as-is, breaking the detail-page link afterwards.
-      setPersona({
-        name: "",
-        verbosity: 3,
-        enabled: 1,
-      } as TurPersona);
+      // A persona-from-audio draft (T470), if present, seeds the form for review.
+      if (draft) {
+        // Drop any id so the UuidGenerator assigns one on the real save.
+        const seeded = { ...draft };
+        delete (seeded as Partial<TurPersona>).id;
+        setPersona(seeded as TurPersona);
+      } else {
+        setPersona({ name: "", verbosity: 3, enabled: 1 } as TurPersona);
+      }
     } else {
       turPersonaService.get(id)
         .then((p) => {
@@ -41,7 +48,7 @@ export default function PersonaPage() {
         .catch(() => setError(t("common.connectionError", { resource: t("persona.title") })));
       setIsNew(false);
     }
-  }, [id, t]);
+  }, [id, t, draft]);
 
   return (
     <LoadProvider checkIsNotUndefined={persona} error={error} tryAgainUrl={`${ROUTES.PERSONA_INSTANCE}/${id}`}>

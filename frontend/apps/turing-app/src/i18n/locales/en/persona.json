@@ -60,6 +60,12 @@
       "jargon": "jargon",
       "tone": "tone",
       "missing-context": "missing context"
+    },
+    "fromAudio": {
+      "trigger": "Derive from audio",
+      "working": "Transcribing…",
+      "drafted": "Draft persona ready — review and save",
+      "failed": "Could not derive a persona from the audio"
     }
   }
 }
