@@ -227,4 +227,64 @@ class TurOpenAiResponsesServiceTest {
         assertThat(TurOpenAiResponsesService.safeImageId("   ", 5)).isEqualTo("image-5");
         assertThat(TurOpenAiResponsesService.safeImageId("///", 3)).isEqualTo("image-3");
     }
+
+    // ----- T503 background mode -----
+
+    @Test
+    void backgroundDisabledByDefault() {
+        TurLLMInstance instance = new TurLLMInstance();
+        assertThat(service.resolveBackground(instance).enabled()).isFalse();
+        instance.setProviderOptionsJson("{\"backgroundEnabled\":false}");
+        assertThat(service.resolveBackground(instance).enabled()).isFalse();
+    }
+
+    @Test
+    void backgroundResolvesDefaultsWhenEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson("{\"backgroundEnabled\":true}");
+        var bg = service.resolveBackground(instance);
+        assertThat(bg.enabled()).isTrue();
+        assertThat(bg.pollIntervalMs()).isEqualTo(TurOpenAiResponsesService.DEFAULT_BG_POLL_MS);
+        assertThat(bg.maxWaitMs()).isEqualTo(TurOpenAiResponsesService.DEFAULT_BG_MAX_WAIT_MS);
+    }
+
+    @Test
+    void backgroundHonorsCustomPollAndMaxWait() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson(
+                "{\"backgroundEnabled\":true,\"backgroundPollIntervalMs\":250,\"backgroundMaxWaitMs\":5000}");
+        var bg = service.resolveBackground(instance);
+        assertThat(bg.pollIntervalMs()).isEqualTo(250L);
+        assertThat(bg.maxWaitMs()).isEqualTo(5000L);
+    }
+
+    @Test
+    void buildParamsSetsBackgroundAndStoreWhenEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson("{\"backgroundEnabled\":true}");
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of());
+        assertThat(params.background()).contains(true);
+        // Background responses must be stored so retrieve() can resume them.
+        assertThat(params.store()).contains(true);
+    }
+
+    @Test
+    void buildParamsLeavesBackgroundUnsetByDefault() {
+        TurLLMInstance instance = new TurLLMInstance();
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of());
+        assertThat(params.background()).isEmpty();
+    }
+
+    @Test
+    void isTerminalStopsOnlyOnNonPendingStatus() {
+        assertThat(TurOpenAiResponsesService.isTerminal(
+                com.openai.models.responses.ResponseStatus.QUEUED)).isFalse();
+        assertThat(TurOpenAiResponsesService.isTerminal(
+                com.openai.models.responses.ResponseStatus.IN_PROGRESS)).isFalse();
+        assertThat(TurOpenAiResponsesService.isTerminal(
+                com.openai.models.responses.ResponseStatus.COMPLETED)).isTrue();
+        assertThat(TurOpenAiResponsesService.isTerminal(
+                com.openai.models.responses.ResponseStatus.FAILED)).isTrue();
+        assertThat(TurOpenAiResponsesService.isTerminal(null)).isTrue();
+    }
 }

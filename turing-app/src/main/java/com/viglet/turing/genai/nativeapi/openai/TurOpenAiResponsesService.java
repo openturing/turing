@@ -40,6 +40,7 @@ import com.openai.models.responses.ResponseOutputItem;
 import com.openai.models.responses.ResponseOutputMessage;
 import com.openai.models.responses.ResponseOutputText;
 import com.openai.models.responses.ResponseReasoningItem;
+import com.openai.models.responses.ResponseStatus;
 import com.openai.models.responses.Tool;
 import com.openai.models.responses.WebSearchTool;
 import com.viglet.turing.genai.rag.rerank.TurLogprobConfidence;
@@ -260,6 +261,80 @@ public class TurOpenAiResponsesService {
         }
     }
 
+    /**
+     * T503 / §X.13 — resolved background-mode knobs for a turn. {@code enabled}
+     * submits the Responses call with {@code background: true}; {@code pollIntervalMs}
+     * / {@code maxWaitMs} bound the retrieve-poll loop. Disabled → unchanged
+     * synchronous create.
+     */
+    public record BackgroundOptions(boolean enabled, long pollIntervalMs, long maxWaitMs) {
+        public static final BackgroundOptions DISABLED = new BackgroundOptions(false, 0, 0);
+    }
+
+    /** Default poll cadence + ceiling when the instance opts in without naming them. */
+    static final long DEFAULT_BG_POLL_MS = 1000L;
+    static final long DEFAULT_BG_MAX_WAIT_MS = 120_000L;
+
+    /**
+     * T503 — read the per-instance background knobs from provider options:
+     * {@code backgroundEnabled} (gate), {@code backgroundPollIntervalMs},
+     * {@code backgroundMaxWaitMs}. Absent / false → {@link BackgroundOptions#DISABLED}.
+     */
+    BackgroundOptions resolveBackground(TurLLMInstance instance) {
+        Map<String, Object> options = optionsParser.parse(instance.getProviderOptionsJson());
+        Object enabled = options == null ? null : options.get("backgroundEnabled");
+        if (enabled == null || !"true".equalsIgnoreCase(enabled.toString().trim())) {
+            return BackgroundOptions.DISABLED;
+        }
+        long poll = positiveOr(optionsParser.intValue(options, "backgroundPollIntervalMs"),
+                DEFAULT_BG_POLL_MS);
+        long maxWait = positiveOr(optionsParser.intValue(options, "backgroundMaxWaitMs"),
+                DEFAULT_BG_MAX_WAIT_MS);
+        return new BackgroundOptions(true, poll, maxWait);
+    }
+
+    private static long positiveOr(Integer value, long fallback) {
+        return value != null && value > 0 ? value : fallback;
+    }
+
+    /**
+     * T503 — a background create returns immediately as {@code queued}/{@code in_progress};
+     * poll {@code responses.retrieve(id)} until a terminal status (or the wait
+     * ceiling) and return the final response. Fail-open: a retrieve error, or
+     * exhausting the budget, returns the latest response seen so the caller still
+     * extracts whatever text exists. No-op for an already-terminal response.
+     */
+    Response awaitBackground(OpenAIClient client, Response response, BackgroundOptions options) {
+        long deadline = System.currentTimeMillis() + options.maxWaitMs();
+        Response current = response;
+        while (!isTerminal(current.status().orElse(null))) {
+            if (System.currentTimeMillis() >= deadline) {
+                log.warn("[Native][OpenAI-Responses] background response '{}' still {} after {} ms "
+                        + "— returning partial", current.id(),
+                        current.status().map(Object::toString).orElse("unknown"), options.maxWaitMs());
+                return current;
+            }
+            try {
+                Thread.sleep(options.pollIntervalMs());
+                current = client.responses().retrieve(current.id());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return current;
+            } catch (RuntimeException e) {
+                log.warn("[Native][OpenAI-Responses] background retrieve for '{}' failed ({}) "
+                        + "— returning latest", current.id(), e.getMessage());
+                return current;
+            }
+        }
+        return current;
+    }
+
+    /** A response status the poll loop should stop on (anything but queued/in_progress). */
+    static boolean isTerminal(ResponseStatus status) {
+        return status == null
+                || !(status.equals(ResponseStatus.QUEUED) || status.equals(ResponseStatus.IN_PROGRESS));
+    }
+
     LoopResult runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
@@ -273,12 +348,18 @@ public class TurOpenAiResponsesService {
         StringBuilder text = new StringBuilder();
         String reasoningSummary = "";
         int toolCalls = 0;
+        // T503 — resolve once; when enabled, each round's create is submitted in
+        // background and awaited via retrieve-polling instead of a long blocking call.
+        BackgroundOptions background = resolveBackground(instance);
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
                     serverTools, functionTools, serviceTier, storedCompletions, reasoning,
                     safetyIdentifier);
             Response response = client.responses().create(params);
+            if (background.enabled()) {
+                response = awaitBackground(client, response, background);
+            }
             text.append(extractText(response));
             appendGeneratedImages(text, response, agentId, conversationId);
             // Keep the latest non-blank reasoning summary — the final (answer)
@@ -384,6 +465,13 @@ public class TurOpenAiResponsesService {
         }
         applyStoredCompletions(builder, storedCompletions);
         applyReasoning(builder, instance, reasoning);
+        // T503 / §X.13 — background mode: submit long reasoning/agentic turns
+        // asynchronously (the create returns a queued id; runLoop then polls
+        // retrieve) so a slow turn doesn't hold the connection. OpenAI requires a
+        // background response to be stored, so force store(true) when enabled.
+        if (resolveBackground(instance).enabled()) {
+            builder.background(true).store(true);
+        }
         for (Tool tool : serverTools) {
             builder.addTool(tool);
         }

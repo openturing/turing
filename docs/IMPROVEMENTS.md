@@ -1478,12 +1478,10 @@ moat.
 competitors have caught up.** The "Why this answer" panel and the effort lever
 should be vendor-agnostic levers, not OpenAI features:
 
-- **T503 OpenAI Responses `background` mode** — for long-running reasoning /
-  agentic turns (deep `code_interpreter` runs, computer-use loops), submit the
-  Responses call with `background: true` and resume by polling / streaming the
-  response id, so a slow reasoning turn doesn't hold an HTTP/SSE connection open
-  for minutes. Pairs with T179 (high effort on background stages). Also lets the
-  T156 batch poller pattern apply to single expensive interactive turns.
+- **T503 OpenAI Responses `background` mode** — ✅ shipped (see CHANGELOG Block
+  F.16). Opt-in `background:true` submit + retrieve-poll resume in
+  `TurOpenAiResponsesService`, so a slow reasoning/agentic turn doesn't hold the
+  connection. Pairs with T179 (high effort on background stages).
 - **T504 Anthropic extended / interleaved thinking** — the `thinking` param
   (`budget_tokens`) plus the interleaved-thinking beta (think *between* tool
   calls in the F.3 tool loops). Thought summaries feed the **same** T178 panel;

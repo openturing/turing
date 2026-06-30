@@ -139,7 +139,12 @@ public class TurCapabilityRegistry {
                     "Cache the stable prefix (system prompt + pinned grounding) as a named, "
                             + "TTL'd Gemini cachedContents object and reuse it across turns and "
                             + "users at a steep discount. The RAG cost lever; off by default.",
-                    TurCapabilityProvider.GEMINI, "Cost & Tier", VALUE_BOOLEAN, List.of()));
+                    TurCapabilityProvider.GEMINI, "Cost & Tier", VALUE_BOOLEAN, List.of()),
+            requestOption("openai-background", "Background Mode",
+                    "Submit long reasoning/agentic turns asynchronously (background:true) and "
+                            + "resume by polling the response id, so a slow turn doesn't hold the "
+                            + "connection open. Off by default.",
+                    TurCapabilityProvider.OPENAI, "Cost & Tier", VALUE_BOOLEAN, List.of()));
 
     private static TurCapabilityDescriptor requestOption(String key, String label, String description,
             TurCapabilityProvider provider, String category, String valueType, List<String> options) {
