@@ -4,22 +4,31 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # 🔍 Turing React SDK — Storybook
 
-Welcome to the **@viglet/turing-react-sdk** component library! This Storybook provides
-interactive documentation and live examples for every hook and UI component in the SDK.
+Welcome to the **@viglet/turing-react-sdk** component library! This Storybook is an
+**interactive, runnable map** of every hook and UI component in the SDK — from classic
+faceted search all the way to streaming **RAG chat**, **agentic tool-calling**,
+**generative UI**, **realtime voice**, and **co-browsing copilots**.
+
+> 💡 **Every story runs offline.** Each demo *simulates* its hook with local state
+> and the marketplace fixtures — no backend, no API keys, no network. So you can
+> click, type, stream, and fill slots right here to feel exactly how a hook behaves
+> before wiring it to a live Turing instance.
 
 ---
 
 ## What is Turing React SDK?
 
 The Turing React SDK provides **headless hooks** and **unstyled UI components** for building
-custom search experiences on top of the **Viglet Turing ES** Semantic Navigation API.
+custom search _and_ conversational AI experiences on top of the **Viglet Turing ES**
+Semantic Navigation API. You bring the design; the SDK brings the data, the streaming,
+the state machines, and the AI plumbing.
 
 ### Architecture
 
 <div
   style={{
     fontFamily: "system-ui, sans-serif",
-    maxWidth: 520,
+    maxWidth: 560,
     margin: "1.5rem 0",
   }}
 >
@@ -68,7 +77,7 @@ custom search experiences on top of the **Viglet Turing ES** Semantic Navigation
           marginBottom: 12,
         }}
       >
-        config &middot; URL sync &middot; search state
+        config &middot; URL sync &middot; search store &middot; chat session
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         <div
@@ -88,16 +97,45 @@ custom search experiences on top of the **Viglet Turing ES** Semantic Navigation
               color: "#4338ca",
             }}
           >
-            Hooks
+            Search &amp; Discovery
           </div>
           <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.7 }}>
             useTuringSearch
             <br />
             useTuringFacets
             <br />
-            useTuringPagination
+            useTuringSimilar
             <br />
-            useTuringAutoComplete
+            useTuringSpellCheck
+          </div>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            border: "1.5px solid #6366f1",
+            borderRadius: 6,
+            padding: 10,
+            background: "#fff",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: 13,
+              marginBottom: 6,
+              color: "#4338ca",
+            }}
+          >
+            AI &amp; Chat
+          </div>
+          <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.7 }}>
+            useTuringChat
+            <br />
+            useGenerativeUI
+            <br />
+            useTuringSlots
+            <br />
+            useTuringWorkspace
           </div>
         </div>
         <div
@@ -124,9 +162,9 @@ custom search experiences on top of the **Viglet Turing ES** Semantic Navigation
             <br />
             ResultList
             <br />
-            Pagination
+            ChatMessage
             <br />
-            SearchField
+            CitedAnswer
           </div>
         </div>
       </div>
@@ -152,38 +190,91 @@ custom search experiences on top of the **Viglet Turing ES** Semantic Navigation
         padding: "8px 0",
       }}
     >
-      Turing REST API
+      Turing REST &amp; SSE API
     </div>
   </div>
 </div>
 
 ---
 
+## 🧭 Choose your path
+
+Not sure where to start? Pick the experience you're building:
+
+| I want to build…                                  | Reach for                                                         | Find it under   |
+| ------------------------------------------------- | ----------------------------------------------------------------- | --------------- |
+| A **search page** with facets &amp; pagination    | `useTuringSearch`, `useTuringFacets`, `useTuringPagination`        | **Hooks**       |
+| **"Did you mean?"** &amp; **"More like this"**     | `useTuringSpellCheck`, `useTuringSimilar`                          | **Discovery**   |
+| A **structured / filtered** query builder          | `useTuringDslSearch`                                              | **Discovery**   |
+| A **RAG chat** that cites its sources              | `useTuringChat`                                                   | **AI & Chat**   |
+| A chat that **navigates the site via tools**       | `useTuringSemanticChat`                                           | **AI & Chat**   |
+| Answers rendered as **rich cards / mini-apps**     | `useGenerativeUI`, `useAnswerAsApp`                               | **AI & Chat**   |
+| **Guided forms** filled through conversation       | `useTuringSlots`, `useTuringSlot*`, `useTuringSlotUpload`         | **AI & Chat**   |
+| An **agent workspace** of generated files          | `useTuringWorkspace`                                             | **AI & Chat**   |
+| A **proactive copilot** that anticipates intent    | `useTuringProactiveCopilot`, `useTuringIntents`                  | **AI & Chat**   |
+| **Memory** that personalises across sessions       | `useTuringUserMemory`                                            | **AI & Chat**   |
+| **Voice** — turn-based or full-duplex realtime      | `useTuringVoice`, `useTuringRealtimeVoice`                       | **AI & Chat**   |
+| **Co-browsing** — agent drives the user's view      | `useCoBrowseSearch`                                              | **Platform**    |
+| **Analytics**, **model picker**, **feature flags**  | `useTuringAnalytics`, `useTuringLlmInstances`, `useTuringPlatformInfo` | **Platform** |
+
+---
+
 ## 📚 Storybook Sections
 
-### UI Components
+### 🔎 Hooks — Search foundations
 
-- **TuringSearchBar** — Simple search bar with customizable input/button render props
-- **TuringSearchField** — Advanced compound component with autocomplete, history, and dropdown
-- **TuringResultList** — Renders search results via slot/render-prop pattern
-- **TuringPagination** — Renders Turing pagination items with navigation actions
+- **useTuringSearch** — core search hook for programmatic (non-URL) mode
+- **useTuringFacets** — facet data with toggle / clear actions
+- **useTuringPagination** — pagination data with navigation helpers
+- **useTuringTabs** — tab-based search navigation
+- **useTuringSortOptions** — available sort options for a site
+- **useTuringAutoComplete** — autocomplete with debouncing
+- **useTuringDocument** — typed field access for custom document fields
+- **useTuringSearchHistory** — persisted search history (IndexedDB)
+- …plus experiment, flow-state, flow-chooser, handoff and single-slot hooks
 
-### Hooks (Interactive Demos)
+### 🧠 Discovery — Smarter retrieval
 
-- **useTuringSearch** — Core search hook for programmatic (non-URL) mode
-- **useTuringFacets** — Facet data with toggle/clear actions
-- **useTuringPagination** — Pagination data with navigation helpers
-- **useTuringDocument** — Typed field access for custom document fields
-- **useTuringAutoComplete** — Autocomplete with debouncing
-- **useTuringTabs** — Tab-based search navigation
-- **useTuringSortOptions** — Available sort options for a site
-- **useTuringSearchHistory** — Persisted search history (IndexedDB)
+- **useTuringSimilar** — "more like this" / related-items with a similarity score
+- **useTuringSpellCheck** — "did you mean?" corrected-query suggestions
+- **useTuringDslSearch** — structured DSL queries (typed filters &amp; expressions)
 
-### Showcases (Inspired by turing-marketplace)
+### 💬 AI &amp; Chat — Conversational &amp; agentic
 
-- **🐉 Mythical Creatures** — Fantasy bestiary with element badges and danger bars
-- **🚀 Space Missions** — Space exploration with agency/outcome facets and HUD cards
-- **🎵 Vinyl Records** — Record store with album art, star ratings, and condition grading
+- **useTuringChat** — streaming RAG chat grounded in search results, with sources &amp; citations
+- **useTuringSemanticChat** — tool-calling navigation chat (`search_site`, `get_site_fields`, …)
+- **useGenerativeUI** — the LLM emits structured UI items rendered from a component registry
+- **useAnswerAsApp** — answers rendered as interactive mini-apps / tool widgets
+- **useTuringSlots** — read the live, aggregated slot board of a guided conversation
+- **useTuringSlotUpload** — upload files (image / audio / doc) into a chat slot
+- **useTuringWorkspace** — per-conversation agent workspace of generated artifacts (SSE)
+- **useTuringProactiveCopilot** — anticipatory suggestions based on what the user is doing
+- **useTuringUserMemory** — persistent per-user memory that personalises replies
+- **useTuringRealtimeVoice** — full-duplex realtime voice agent with realtime tool calls
+- **useTuringVoice** — turn-based Web Speech STT / TTS wrapper
+
+### 🛠️ Platform — Ops, info &amp; co-browsing
+
+- **useTuringAnalytics** — typed search / chat analytics events to pluggable sinks
+- **useTuringLlmInstances** — list configured LLM models / vendors (build a model picker)
+- **useTuringPlatformInfo** — backend capabilities &amp; feature flags for UI gating
+- **useTuringResume** — restore a previous conversation and continue it
+- **useTuringIntents** — intent detection → action shortcuts
+- **useCoBrowseSearch** — synchronized search view the agent can drive alongside chat
+
+### 🎨 UI Components
+
+- **TuringSearchBar** / **TuringSearchField** — search inputs (simple &amp; compound w/ autocomplete)
+- **TuringResultList** / **TuringPagination** — render results &amp; pagination via render props
+- **TuringChatMessage** / **TuringCitedAnswer** / **TuringSourceChips** — chat &amp; citation primitives
+- **TuringToolActivity** / **TuringGenerativeContent** / **TuringCodeBlock** / **TuringMarkdown** / **TuringD2Diagram** — rich-content renderers
+- All are **headless &amp; design-agnostic** — skin them via `classNames`, `labels`, `icons`, or CSS tokens
+
+### 🎭 Showcases (Inspired by turing-marketplace)
+
+- **🐉 Mythical Creatures** — fantasy bestiary with element badges and danger bars
+- **🚀 Space Missions** — space exploration with agency / outcome facets and HUD cards
+- **🎵 Vinyl Records** — record store with album art, star ratings, and condition grading
 
 ---
 
@@ -195,7 +286,7 @@ npm install @viglet/turing-react-sdk
 
 ---
 
-## Quick Start
+## Quick Start — Search
 
 ```tsx
 import { TuringProvider, useTuringSearch } from "@viglet/turing-react-sdk";
@@ -233,9 +324,49 @@ function SearchPage() {
 
 ---
 
+## Quick Start — RAG Chat
+
+```tsx
+import { TuringProvider, useTuringChat } from "@viglet/turing-react-sdk";
+
+function ChatPage() {
+  const { messages, send, isStreaming } = useTuringChat();
+
+  return (
+    <div>
+      {messages.map((m) => (
+        <article key={m.id} data-role={m.role}>
+          <p>{m.content}</p>
+          {/* sources stream in alongside the answer */}
+          {m.sources?.map((s) => (
+            <a key={s.url} href={s.url}>{s.title}</a>
+          ))}
+        </article>
+      ))}
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const input = e.currentTarget.elements.namedItem("q") as HTMLInputElement;
+          send(input.value);
+          input.value = "";
+        }}
+      >
+        <input name="q" placeholder="Ask anything…" disabled={isStreaming} />
+      </form>
+    </div>
+  );
+}
+```
+
+> The hook surfaces exact signatures may vary — open each hook's **Docs** tab in the
+> sidebar for its real return shape, options, and a copy-pasteable `Usage` snippet.
+
+---
+
 ## Links
 
 - [React SDK Documentation](https://docs.viglet.org/turing/react-sdk)
-- [GitHub Repository](https://github.com/openviglet/turing)
+- [GitHub Repository](https://github.com/openviglet/turing-ce)
 - [npm Package](https://www.npmjs.com/package/@viglet/turing-react-sdk)
 - [Viglet Turing Documentation](https://docs.viglet.org/turing/)
