@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconInfoCircle, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
+import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -125,6 +125,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       liveAnswersEnabled: value.liveAnswersEnabled ?? false,
       callCenterEnabled: value.callCenterEnabled ?? false,
       connectorSetupEnabled: value.connectorSetupEnabled ?? false,
+      overnightImprovementEnabled: value.overnightImprovementEnabled ?? false,
       toolCallEventsEnabled: value.toolCallEventsEnabled ?? false,
       skillsEnabled: value.skillsEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
@@ -623,6 +624,38 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.enableConnectorSetup")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
                         {t("forms.agentSettings.enableConnectorSetupDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconMoon}
+              title={t("forms.agentSettings.overnightImprovement")}
+              description={t("forms.agentSettings.overnightImprovementDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="overnightImprovementEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableOvernightImprovement")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enableOvernightImprovementDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

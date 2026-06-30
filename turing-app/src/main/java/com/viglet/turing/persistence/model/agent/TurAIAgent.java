@@ -254,6 +254,20 @@ public class TurAIAgent implements Serializable {
     private boolean connectorSetupEnabled = false;
 
     /**
+     * T191 / §X.15.e — per-agent opt-in for "self-improvement overnight". When
+     * {@code true} (and the distillation tier is enabled), a nightly job distills
+     * the agent's recent production traffic (T167 stored completions) into a
+     * fine-tuned candidate, scores it against the agent's eval golden sets, and —
+     * only if it beats the incumbent — opens a {@code DISTILLATION_CANDIDATE}
+     * suggestion for human approval (never auto-applied). Default {@code false}
+     * keeps existing agents out of the nightly loop.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "overnight_improvement_enabled", nullable = false)
+    private boolean overnightImprovementEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.

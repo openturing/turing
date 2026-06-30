@@ -45,11 +45,14 @@ public class TurAgentSuggestionAPI {
 
     private final TurAgentSuggestionRepository suggestionRepository;
     private final TurAIAgentRepository agentRepository;
+    private final com.viglet.turing.genai.distillation.TurDistillationProposalService proposalService;
 
     public TurAgentSuggestionAPI(TurAgentSuggestionRepository suggestionRepository,
-            TurAIAgentRepository agentRepository) {
+            TurAIAgentRepository agentRepository,
+            com.viglet.turing.genai.distillation.TurDistillationProposalService proposalService) {
         this.suggestionRepository = suggestionRepository;
         this.agentRepository = agentRepository;
+        this.proposalService = proposalService;
     }
 
     @GetMapping
@@ -91,14 +94,28 @@ public class TurAgentSuggestionAPI {
     }
 
     private void applyToAgent(String agentId, TurAgentSuggestion suggestion) {
-        if (suggestion.getKind() != TurAgentSuggestion.Kind.SYSTEM_PROMPT) {
-            return;
+        switch (suggestion.getKind()) {
+            case SYSTEM_PROMPT -> {
+                TurAIAgent agent = agentRepository.findById(agentId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(HttpStatus.NOT_FOUND, "Agent not found"));
+                agent.setSystemPrompt(suggestion.getProposedValue());
+                agentRepository.save(agent);
+                log.info("[SelfTuning] applied prompt suggestion {} to agent {}",
+                        suggestion.getId(), agentId);
+            }
+            // T191 / §X.15.e — swap the agent's eval LLM instance model to the
+            // overnight-distilled candidate (resolved the same way distillation did).
+            case DISTILLATION_CANDIDATE -> {
+                boolean applied = proposalService.applyCandidate(agentId, suggestion.getProposedValue());
+                if (!applied) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Could not apply the distilled model — no eval LLM instance resolved");
+                }
+                log.info("[Overnight] applied distillation suggestion {} to agent {}",
+                        suggestion.getId(), agentId);
+            }
         }
-        TurAIAgent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agent not found"));
-        agent.setSystemPrompt(suggestion.getProposedValue());
-        agentRepository.save(agent);
-        log.info("[SelfTuning] applied suggestion {} to agent {}", suggestion.getId(), agentId);
     }
 
     private TurAgentSuggestion require(String agentId, String id) {

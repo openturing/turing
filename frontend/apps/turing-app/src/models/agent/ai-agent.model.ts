@@ -61,6 +61,8 @@ export interface TurAIAgent {
   callCenterEnabled?: boolean;
   /** T190: opt-in self-installing connectors. Enables the `/connector` catalog/guide/test endpoints so the agent can walk a customer through connecting a third-party system (token-generation steps + connection test before save/enable). When a real computer-use driver is deployed the steps can be driven in a browser; otherwise guided. Default false (endpoints return 403). */
   connectorSetupEnabled?: boolean;
+  /** T191: opt-in overnight self-improvement. A nightly job distills the agent's recent production traffic into a fine-tuned candidate, scores it against the eval golden sets, and — only if it beats the incumbent — opens a DISTILLATION_CANDIDATE suggestion for human approval (never auto-applied). Requires the distillation tier enabled + an OpenAI-backed eval LLM. Default false. */
+  overnightImprovementEnabled?: boolean;
   /** T436: opt-in to live `tool_call` events on the chat SSE so the UI can show the agent's tool activity ("calling search_knowledge_base…") while the tool loop runs. Applies to CALL-mode turns. Default false (streams stay byte-identical). */
   toolCallEventsEnabled?: boolean;
   /** T323: opt-in to Anthropic-compatible skills. When enabled (and the skill sandbox + a Default LLM are available), every enabled skill is offered to the agent's chat turns via the `run_skill` tool; the skill always runs on the Global Settings Default LLM. Default false. */

@@ -50,7 +50,14 @@ public class TurAgentSuggestion implements Serializable {
 
     /** What the suggestion proposes to change. */
     public enum Kind {
-        SYSTEM_PROMPT
+        SYSTEM_PROMPT,
+        /**
+         * T191 / §X.15.e — an overnight-distilled fine-tuned model that beat the
+         * baseline on the eval gate. {@code proposedValue} is the candidate model
+         * id, {@code currentValue} the incumbent; approval swaps the agent's LLM
+         * instance model to the candidate.
+         */
+        DISTILLATION_CANDIDATE
     }
 
     @Id
