@@ -24,11 +24,6 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block I — Turing as an MCP Server (T192, T245–T255)
-
-- 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
-- 💭 **T192** (deps: T254) **Inter-tenant MCP federation directory** — opt-in directory at `directory.turing.io` where a tenant publishes a redacted public MCP server exposing **only public knowledge** (its docs, its public catalog); subscribers add it to their agent's allow-list, so every publisher makes every subscriber's agents more useful. The network-effect moat on top of the shipped T146 public `/mcp` surface + T254 per-tenant endpoints. (Unifies the former Block F.14 T192 + the duplicate T256.) → §XIII.7 / §X.5
-
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
 > Surfaced wiring Block J (multi-tenancy, shipped — see [CHANGELOG.md](CHANGELOG.md)
@@ -62,18 +57,6 @@
 **Off-domain footprint (the strongest lever — X.1 #1):**
 - 📋 **T354** (deps: —) **Seed independent mentions** — answer relevant SO/Reddit/AEM-forum threads; republish A/B posts to Dev.to/Medium (canonical → docs); list on AlternativeTo + `awesome-*` lists + G2. No code dep; pairs with T346. → §X.1
 - 💭 **T355** (deps: T354) **Monthly model-prompt audit** — prompt ChatGPT/Claude/Gemini with the target queries, log whether Turing appears and where; the actual KPI for this block. → §X.4
-
-## Block P — Open-core source split (`turing` → `turing-ce`)
-
-> Publish the runtime as a public community edition while keeping strategy docs,
-> commit history, and the (future) paid add-on private. **Phase 1 is pure
-> mechanics — no CE/EE module surgery** (§XI.3). Boundary + license → STRATEGY
-> §XI; publish mechanics → IMPROVEMENTS §XIX. Mechanics shipped (T356–T361); what
-> remains are strategy decisions.
-
-- 💭 **T362** (deps: T360 ✅) **License posture decision** — keep Apache 2.0 on CE now; revisit FSL (over BSL/SSPL) only if Turing Cloud is real revenue AND a competitor hosts the CE. Strategy decision, not code. → §XI.4
-- 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
-- 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
 
 ## Block AB — Public site & top-of-funnel conversion (`turing.viglet.org`)
 
