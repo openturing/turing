@@ -223,4 +223,42 @@ class TurAnthropicMessagesServiceTest {
         assertThat(cc).isPresent();
         assertThat(cc.get().ttl()).contains(CacheControlEphemeral.Ttl.TTL_1H);
     }
+
+    // ----- T504 extended / interleaved thinking -----
+
+    @Test
+    void thinkingDisabledByDefaultAndForNonPositiveBudget() {
+        assertThat(service.resolveThinking(anthropicInstance(null)).enabled()).isFalse();
+        assertThat(service.resolveThinking(anthropicInstance("{\"thinkingBudget\":0}")).enabled())
+                .isFalse();
+    }
+
+    @Test
+    void thinkingResolvesBudgetAndInterleavedFlag() {
+        var t = service.resolveThinking(anthropicInstance(
+                "{\"thinkingBudget\":4096,\"interleavedThinking\":true}"));
+        assertThat(t.enabled()).isTrue();
+        assertThat(t.budgetTokens()).isEqualTo(4096L);
+        assertThat(t.interleaved()).isTrue();
+    }
+
+    @Test
+    void buildParamsEnablesThinkingAndDropsTemperatureWhenBudgetSet() {
+        TurLLMInstance instance = anthropicInstance("{\"thinkingBudget\":2048}");
+        instance.setTemperature(0.3);
+        var params = service.buildParams(instance, List.of(), "hi", List.of());
+        assertThat(params.thinking()).isPresent();
+        assertThat(params.thinking().get().isEnabled()).isTrue();
+        // Anthropic requires temperature = 1 with thinking, so ours is not applied.
+        assertThat(params.temperature()).isEmpty();
+    }
+
+    @Test
+    void buildParamsKeepsTemperatureWhenThinkingOff() {
+        TurLLMInstance instance = anthropicInstance(null);
+        instance.setTemperature(0.3);
+        var params = service.buildParams(instance, List.of(), "hi", List.of());
+        assertThat(params.thinking()).isEmpty();
+        assertThat(params.temperature()).contains(0.3);
+    }
 }

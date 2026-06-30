@@ -1467,27 +1467,16 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.13 Cross-vendor reasoning (T503, T504)
+### X.13 Cross-vendor reasoning (T503, T504) — ✅ shipped
 
-> The OpenAI F.12 leg (T178 reasoning summary, T179 effort budget, T180 logprobs
-> reranker) has shipped — see [CHANGELOG.md](CHANGELOG.md) §X.13. What remains is
-> making "show the model's thinking" and "reasoning budget" one cross-vendor
-> contract rather than three provider-specific ones.
-
-**Cross-vendor reasoning (T503, T504) — F.12 was framed OpenAI-only; both
-competitors have caught up.** The "Why this answer" panel and the effort lever
-should be vendor-agnostic levers, not OpenAI features:
-
-- **T503 OpenAI Responses `background` mode** — ✅ shipped (see CHANGELOG Block
-  F.16). Opt-in `background:true` submit + retrieve-poll resume in
-  `TurOpenAiResponsesService`, so a slow reasoning/agentic turn doesn't hold the
-  connection. Pairs with T179 (high effort on background stages).
-- **T504 Anthropic extended / interleaved thinking** — the `thinking` param
-  (`budget_tokens`) plus the interleaved-thinking beta (think *between* tool
-  calls in the F.3 tool loops). Thought summaries feed the **same** T178 panel;
-  together with the Gemini `thinkingConfig` leg (T498) this makes "reasoning
-  budget" and "show the model's thinking" one cross-vendor contract instead of
-  three provider-specific ones.
+> The cross-vendor reasoning contract is complete (see CHANGELOG §X.13 / Block
+> F.16). "Show the model's thinking" (the T178 `reasoning` panel) and the
+> "reasoning budget" lever are now one vendor-agnostic contract across all three
+> providers: OpenAI (T178/T179/T503), Gemini `thinkingConfig` (T498), and
+> Anthropic extended/interleaved thinking (T504). T503 added OpenAI Responses
+> `background` mode (async submit + retrieve-poll); T504 added Anthropic
+> `thinking` `budget_tokens` + the interleaved-thinking beta, with thought
+> summaries feeding the same panel. Nothing outstanding in this section.
 
 ### X.15 The bold creative bets (T192)
 
