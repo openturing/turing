@@ -114,6 +114,14 @@ public class TurLLMVendorOnStartup {
 			cohere.setWebsite("https://cohere.com");
 			turLLMVendorRepository.save(cohere);
 
+			TurLLMVendor mistral = new TurLLMVendor();
+			mistral.setId("MISTRAL");
+			mistral.setDescription("Mistral AI — European/GDPR-native chat + embeddings (OpenAI-compatible)");
+			mistral.setPlugin("mistral");
+			mistral.setTitle("Mistral AI");
+			mistral.setWebsite("https://mistral.ai");
+			turLLMVendorRepository.save(mistral);
+
 		}
 	}
 }

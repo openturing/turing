@@ -49,7 +49,8 @@ public record LlmProviderType(String value) {
             "openai-compatible",
             "bedrock",
             "voyage",
-            "cohere");
+            "cohere",
+            "mistral");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

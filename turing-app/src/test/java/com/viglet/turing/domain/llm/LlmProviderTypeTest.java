@@ -49,6 +49,7 @@ class LlmProviderTypeTest {
         assertThat(LlmProviderType.of("bedrock").isKnown()).isTrue();
         assertThat(LlmProviderType.of("voyage").isKnown()).isTrue();
         assertThat(LlmProviderType.of("cohere").isKnown()).isTrue();
+        assertThat(LlmProviderType.of("mistral").isKnown()).isTrue();
     }
 
     @Test

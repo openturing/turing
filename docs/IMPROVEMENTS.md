@@ -1888,11 +1888,6 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.5 — T509 Mistral AI provider.** Spring-AI-native. Chat (Mistral
-  Large/Small, Codestral for code), Mistral embeddings, and a `MISTRAL` reranker
-  strategy. The reason to prioritize it is non-technical: a **European,
-  GDPR-native** option matters to EU customers and to Viglet's own positioning.
-  Also the gateway to `mistral-ocr` (§XXVIII.11).
 - **§XXVIII.6 — T510 Google Vertex AI provider.** The current Gemini integration
   hits the *public* `generativelanguage.googleapis.com`, which cannot serve a
   GCP-regulated tenant. `vertex-ai` is the enterprise path: IAM, VPC-SC, CMEK,

@@ -92,7 +92,6 @@
 > Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVIII.
 
 **Foundation — the provider seams (ROI-ordered):**
-- 📋 **T509** (deps: §XXVIII, T337–T340) **Mistral AI provider** (`mistral`) — Spring-AI-native chat (Mistral Large/Small/Codestral) + Mistral embeddings + a `MISTRAL` reranker strategy. European/GDPR-friendly origin (EU customers). → §XXVIII.5
 - 📋 **T510** (deps: §XXVIII, T489) **Google Vertex AI provider** (`vertex-ai`) — enterprise Gemini via Vertex (IAM, VPC-SC, CMEK, regional endpoints, provisioned throughput) + Claude/Llama-on-Vertex via Model Garden, distinct from the public `generativelanguage.googleapis.com` path that can't serve GCP-regulated tenants. → §XXVIII.6
 
 **Exploit distinctive primitives (net-new retrieval capabilities):**

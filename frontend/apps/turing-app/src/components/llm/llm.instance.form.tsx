@@ -235,6 +235,15 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("1024")
     }
+    if (vendorId === "MISTRAL") {
+      // Mistral via its OpenAI-compatible endpoint: chat + mistral-embed.
+      form.setValue("url", "https://api.mistral.ai/v1", { shouldDirty: true });
+      form.setValue("modelName", "mistral-large-latest", { shouldDirty: true });
+      form.setValue("temperature", 0.7, { shouldDirty: true });
+      form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {
