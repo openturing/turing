@@ -103,6 +103,33 @@ class TurResilientEmbeddingModelTest {
         verify(asMultimodal).embedImage(png, "image/png");
     }
 
+    @Test
+    void embedDocumentChunks_textOnlyDelegate_unsupported() {
+        assertFalse(resilient.supportsContextualChunks());
+        assertThrows(UnsupportedOperationException.class,
+                () -> resilient.embedDocumentChunks(List.of("a", "b")));
+    }
+
+    @Test
+    void embedDocumentChunks_contextualDelegate_delegatesThroughResilience() {
+        EmbeddingModel contextualDelegate = mock(EmbeddingModel.class,
+                withSettings().extraInterfaces(
+                        com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel.class));
+        var asContextual =
+                (com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel) contextualDelegate;
+        List<float[]> expected = List.of(new float[] { 0.1f }, new float[] { 0.2f });
+        when(asContextual.supportsContextualChunks()).thenReturn(true);
+        when(asContextual.embedDocumentChunks(any())).thenReturn(expected);
+
+        TurResilientEmbeddingModel ctxResilient = new TurResilientEmbeddingModel(
+                contextualDelegate, resilientExecutor(), noopObservation(), "voyage");
+
+        assertTrue(ctxResilient.supportsContextualChunks());
+        List<String> chunks = List.of("chunk1", "chunk2");
+        assertArrayEquals(expected.get(0), ctxResilient.embedDocumentChunks(chunks).get(0));
+        verify(asContextual).embedDocumentChunks(chunks);
+    }
+
     private TurResilienceExecutor resilientExecutor() {
         TurResilienceProperties properties = new TurResilienceProperties();
         properties.setEnabled(true);

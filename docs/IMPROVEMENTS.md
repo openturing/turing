@@ -1892,11 +1892,6 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 
-- **§XXVIII.8 — T512 Contextualized chunk embeddings.** `voyage-context-3` embeds
-  a chunk *together with* its surrounding document context, directly attacking the
-  most common RAG failure (a chunk that's meaningless without the section it came
-  from). Per-site opt-in at index time; query time is unchanged. A measurable
-  retrieval-quality lift with zero prompt changes.
 - **§XXVIII.9 — T513 Domain-specialized embedding model per SN site.** Voyage
   ships `voyage-finance`, `voyage-law`, `voyage-code`; Cohere has domain variants.
   Surface an embedding-model choice in the site manifest / field config (T386) so

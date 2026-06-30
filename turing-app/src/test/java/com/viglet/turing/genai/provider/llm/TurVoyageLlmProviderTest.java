@@ -90,4 +90,29 @@ class TurVoyageLlmProviderTest {
         var model = provider.createEmbeddingModel(instance, "voyage-key");
         assertEquals(TurVoyageMultimodalEmbeddingModel.class, model.getClass());
     }
+
+    @Test
+    void testCreateEmbeddingModel_contextualByModelName() {
+        instance.setModelName("voyage-context-3");
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+        when(optionsParser.stringValue(any(), any())).thenReturn(null);
+        when(optionsParser.intValue(any(), any())).thenReturn(null);
+
+        var model = provider.createEmbeddingModel(instance, "voyage-key");
+        assertEquals(TurVoyageContextualEmbeddingModel.class, model.getClass());
+        assertEquals(true, ((TurContextualEmbeddingModel) model).supportsContextualChunks());
+    }
+
+    @Test
+    void testCreateEmbeddingModel_contextualByOption() {
+        instance.setModelName("voyage-3");
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+        when(optionsParser.stringValue(any(), any())).thenReturn(null);
+        when(optionsParser.intValue(any(), any())).thenReturn(null);
+        when(optionsParser.booleanValue(any(), eq("multimodal"))).thenReturn(null);
+        when(optionsParser.booleanValue(any(), eq("contextual"))).thenReturn(Boolean.TRUE);
+
+        var model = provider.createEmbeddingModel(instance, "voyage-key");
+        assertEquals(TurVoyageContextualEmbeddingModel.class, model.getClass());
+    }
 }

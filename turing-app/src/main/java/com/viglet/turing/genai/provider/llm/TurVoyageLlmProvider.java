@@ -73,6 +73,12 @@ public class TurVoyageLlmProvider implements TurGenAiLlmProvider {
         if (isMultimodal(options, modelName)) {
             return new TurVoyageMultimodalEmbeddingModel(decryptedApiKey, modelName, outputDimensionality);
         }
+        // T512 / §XXVIII.8 — opt into the contextualized model (each chunk embedded
+        // with its sibling chunks) when the model is a voyage-context-* variant or
+        // the explicit {@code contextual} option is set. Query time is unchanged.
+        if (isContextual(options, modelName)) {
+            return new TurVoyageContextualEmbeddingModel(decryptedApiKey, modelName, outputDimensionality);
+        }
         return new TurVoyageEmbeddingModel(decryptedApiKey, modelName, outputDimensionality);
     }
 
@@ -87,6 +93,19 @@ public class TurVoyageLlmProvider implements TurGenAiLlmProvider {
             return true;
         }
         return modelName != null && modelName.toLowerCase(java.util.Locale.ROOT).contains("multimodal");
+    }
+
+    /**
+     * T512 — true when the configured embedding model is a Voyage contextual
+     * variant (model name contains {@code context}) or the explicit
+     * {@code contextual} provider option is enabled.
+     */
+    private boolean isContextual(Map<String, Object> options, String modelName) {
+        Boolean flag = optionsParser.booleanValue(options, "contextual");
+        if (Boolean.TRUE.equals(flag)) {
+            return true;
+        }
+        return modelName != null && modelName.toLowerCase(java.util.Locale.ROOT).contains("context");
     }
 
     private String firstNonBlank(String... values) {

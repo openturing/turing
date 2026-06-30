@@ -21,6 +21,9 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
+import java.util.List;
+
+import com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel;
 import com.viglet.turing.genai.provider.llm.TurMultimodalEmbeddingModel;
 import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.observability.TurMeterNames;
@@ -42,7 +45,8 @@ import com.viglet.turing.resilience.TurResilienceRegistry.Kind;
  * @author Alexandre Oliveira
  * @since 2026.2.6
  */
-public class TurResilientEmbeddingModel implements EmbeddingModel, TurMultimodalEmbeddingModel {
+public class TurResilientEmbeddingModel
+        implements EmbeddingModel, TurMultimodalEmbeddingModel, TurContextualEmbeddingModel {
 
     private final EmbeddingModel delegate;
     private final TurResilienceExecutor executor;
@@ -90,5 +94,23 @@ public class TurResilientEmbeddingModel implements EmbeddingModel, TurMultimodal
         }
         return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
                 () -> executor.execute(Kind.LLM, providerType, () -> multimodal.embedImage(imageBytes, mimeType)));
+    }
+
+    // --- T512 contextual chunk pass-through --------------------------------
+
+    @Override
+    public boolean supportsContextualChunks() {
+        return TurContextualEmbeddingModel.of(delegate) != null;
+    }
+
+    @Override
+    public List<float[]> embedDocumentChunks(List<String> chunks) {
+        TurContextualEmbeddingModel contextual = TurContextualEmbeddingModel.of(delegate);
+        if (contextual == null) {
+            throw new UnsupportedOperationException(
+                    "Embedding provider '" + providerType + "' does not support contextualized chunk embedding");
+        }
+        return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
+                () -> executor.execute(Kind.LLM, providerType, () -> contextual.embedDocumentChunks(chunks)));
     }
 }

@@ -203,8 +203,14 @@ public class TurAssetTrainingService {
 
             log.info("[AssetTraining] Reindexing {} chunks for: {} (replaces previous embeddings)",
                     documents.size(), objectName);
-            ragContextBuilder.reindexByMetadata(infra, documents, OBJECT_NAME_FIELD, objectName);
-            log.info("[AssetTraining] Successfully stored {} chunks for: {}", documents.size(), objectName);
+            // T512 / §XXVIII.8 — when the configured embedding model is a
+            // contextualized model (voyage-context-3), embed all chunks of this
+            // document together so each vector carries the surrounding context;
+            // otherwise this is identical to reindexByMetadata (per-chunk embed).
+            boolean contextual = ragContextBuilder.reindexByMetadataContextual(
+                    infra, documents, OBJECT_NAME_FIELD, objectName);
+            log.info("[AssetTraining] Successfully stored {} chunks for: {} (contextual={})",
+                    documents.size(), objectName, contextual);
 
             // Upsert training record
             TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
