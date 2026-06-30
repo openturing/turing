@@ -158,6 +158,25 @@ class TurGoogleGenAiNativeServiceTest {
     }
 
     @Test
+    void buildConfigRequestsImageModalityWhenImageGenerationEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys",
+                List.of(new EnabledCapability(TurNativeCapability.GEMINI_IMAGE_GENERATION, null)));
+
+        assertThat(config.responseModalities()).isPresent();
+        assertThat(config.responseModalities().get()).containsExactly("TEXT", "IMAGE");
+        // Image generation is a modality, not a tool entry.
+        assertThat(config.tools()).isEmpty();
+    }
+
+    @Test
+    void buildConfigOmitsImageModalityByDefault() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of());
+        assertThat(config.responseModalities()).isEmpty();
+    }
+
+    @Test
     void buildConfigCombinesGoogleSearchAndUrlContext() {
         TurLLMInstance instance = new TurLLMInstance();
         GenerateContentConfig config = service.buildConfig(instance, "sys", List.of(

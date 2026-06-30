@@ -38,7 +38,7 @@
 - ✅ T490 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T491 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T492 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- 📋 **T493** (deps: T489) **Gemini native image generation** (`gemini-2.5-flash-image`/Imagen) — analog to OpenAI `image_generation` (T137); image part → `sandbox:` artifact. cap `gemini-image-generation`. → §X.19
+- ✅ T493 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - 📋 **T494** (deps: T489, T136) **Gemini Computer Use** (`gemini-2.5-computer-use`) — reuses the vendor-neutral `TurComputerUseDriver` seam (T136); no-op driver default. `ownsTurn`. cap `gemini-computer-use`. → §X.19
 
 **Distinctive Gemini cost/quality primitives:**

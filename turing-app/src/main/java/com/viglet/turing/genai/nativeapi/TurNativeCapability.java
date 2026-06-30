@@ -142,6 +142,13 @@ public enum TurNativeCapability {
      *  {@code TurGeminiCodeExecutionDecoder} renders into the answer markdown
      *  (images as inline {@code data:} URIs). */
     GEMINI_CODE_EXECUTION("gemini-code-execution", "gemini", TOOL, CODE_EXEC, "Code", false),
+    /** T493 / §X.19 — Gemini native image generation (the Gemini analog of
+     *  OpenAI {@code image_generation}, T137). Not a {@code tools} entry: it sets
+     *  the request's {@code responseModalities} to include {@code IMAGE}, so an
+     *  image-capable model ({@code gemini-2.5-flash-image} / Imagen) returns the
+     *  generated image as an inline data part, rendered into the answer as a
+     *  {@code data:} URI by {@code TurGeminiCodeExecutionDecoder}. */
+    GEMINI_IMAGE_GENERATION("gemini-image-generation", "gemini", TOOL, IMAGE_GEN, "Media", false),
 
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat

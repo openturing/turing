@@ -1612,9 +1612,7 @@ infra, zero Java callbacks; mirrors F.2/F.3):
   CHANGELOG Block F.16).
 - **T491 URL Context tool** (`url_context`) — ✅ shipped (see CHANGELOG Block F.16).
 - **T492 Code execution tool** (`code_execution`) — ✅ shipped (see CHANGELOG Block F.16).
-- **T493 Native image generation** (`gemini-2.5-flash-image` / Imagen) — analog
-  to OpenAI `image_generation` (T137); the inline image part lands as a
-  `sandbox:` artifact.
+- **T493 Native image generation** (`gemini-2.5-flash-image` / Imagen) — ✅ shipped (see CHANGELOG Block F.16).
 - **T494 Computer Use** (`gemini-2.5-computer-use`) — reuses the **vendor-neutral
   `TurComputerUseDriver` seam** (T136); ships against the no-op driver so it's
   matrix-selectable without bundling a browser. `ownsTurn`.

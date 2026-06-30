@@ -243,7 +243,20 @@ public class TurGoogleGenAiNativeService {
         if (!tools.isEmpty()) {
             builder.tools(tools);
         }
+        // T493 — native image generation is not a tool: request the IMAGE
+        // response modality (alongside TEXT) so an image-capable model
+        // (gemini-2.5-flash-image / Imagen) returns the generated image as an
+        // inline data part, rendered into the answer as a data: URI.
+        if (hasCapability(capabilities, TurNativeCapability.GEMINI_IMAGE_GENERATION)) {
+            builder.responseModalities("TEXT", "IMAGE");
+        }
         return builder.build();
+    }
+
+    private static boolean hasCapability(List<EnabledCapability> capabilities,
+            TurNativeCapability capability) {
+        return capabilities != null && capabilities.stream()
+                .anyMatch(c -> c.capability() == capability);
     }
 
     /**
@@ -256,24 +269,18 @@ public class TurGoogleGenAiNativeService {
         if (capabilities == null) {
             return tools;
         }
-        boolean googleSearch = capabilities.stream()
-                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_GOOGLE_SEARCH);
-        if (googleSearch) {
+        if (hasCapability(capabilities, TurNativeCapability.GEMINI_GOOGLE_SEARCH)) {
             tools.add(Tool.builder().googleSearch(GoogleSearch.builder().build()).build());
         }
         // T491 — url_context lets the model pull a URL/PDF named in the prompt
         // directly (Anthropic web_fetch analog); coexists with google_search.
-        boolean urlContext = capabilities.stream()
-                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_URL_CONTEXT);
-        if (urlContext) {
+        if (hasCapability(capabilities, TurNativeCapability.GEMINI_URL_CONTEXT)) {
             tools.add(Tool.builder().urlContext(UrlContext.builder().build()).build());
         }
         // T492 — code_execution: a built-in Python sandbox; the generated code,
         // output and inline images return as response parts (rendered by
         // TurGeminiCodeExecutionDecoder).
-        boolean codeExecution = capabilities.stream()
-                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_CODE_EXECUTION);
-        if (codeExecution) {
+        if (hasCapability(capabilities, TurNativeCapability.GEMINI_CODE_EXECUTION)) {
             tools.add(Tool.builder().codeExecution(ToolCodeExecution.builder().build()).build());
         }
         return tools;
