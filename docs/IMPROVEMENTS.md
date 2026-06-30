@@ -1892,12 +1892,7 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 
-- **§XXVIII.11 — T515 Mistral OCR / Document-AI extraction bridge.** Today the
-  indexer/connector path relies on Tika, which is weak on scanned PDFs and
-  image-only documents. `mistral-ocr` is best-in-class document understanding;
-  wire it as an *augmentation* (not replacement) on the write path for
-  image/scanned inputs. Its structured bbox annotations are a second payoff: they
-  feed T387 manifest derivation and field extraction with layout-aware structure.
+_Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
 

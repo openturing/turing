@@ -96,8 +96,8 @@ see [CHANGELOG.md](CHANGELOG.md) Block AD. (T509's `MISTRAL` reranker was
 dropped: Mistral has no managed rerank API; use the `LLM` strategy on a Mistral
 instance.)
 
-**Exploit distinctive primitives (net-new retrieval capabilities):**
-- 💭 **T515** (deps: T509, T175) **Mistral OCR / Document-AI extraction bridge** — augment Tika on the indexer/connector write path for scanned PDFs and images via `mistral-ocr`; its structured (bbox) annotations also feed T387 manifest derivation and field extraction. → §XXVIII.11
+**Exploit distinctive primitives (net-new retrieval capabilities):** ✅ shipped
+(T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD.
 
 **Cross-vendor bridges (the bold bets):**
 - 💭 **T516** (deps: T506, T155, T182) **Pluggable answer-grounding guardrail** (`TurAnswerGuardrail` seam) — validate that a streamed RAG answer is actually grounded in the retrieved context before/while it streams; first adapter = Bedrock Guardrails contextual-grounding + PII redaction, with Mistral/OpenAI moderation adapters. Ties into T155 citation-drift + T182 moderation. → §XXVIII.12
