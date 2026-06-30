@@ -78,6 +78,8 @@ class TurMcpServerIT extends AbstractTuringSpringIT {
         ToolCallback[] callbacks = turingMcpToolCallbackProvider.getToolCallbacks();
         assertNotNull(callbacks);
         Set<String> names = toolNames(List.of(callbacks));
+        assertTrue(names.contains("describe_backbone"),
+                () -> "expected T188 describe_backbone discovery tool in MCP catalog, got " + names);
         assertTrue(names.contains("list_sites"),
                 () -> "expected list_sites in MCP catalog, got " + names);
         assertTrue(names.contains("search_site"),
