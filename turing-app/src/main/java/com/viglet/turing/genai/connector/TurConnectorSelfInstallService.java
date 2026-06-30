@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -115,6 +116,7 @@ public class TurConnectorSelfInstallService {
     private final TurComputerUseDriver computerUseDriver;
     private final RestClient restClient;
 
+    @Autowired
     public TurConnectorSelfInstallService(TurComputerUseDriver computerUseDriver) {
         this(computerUseDriver, defaultClient());
     }
