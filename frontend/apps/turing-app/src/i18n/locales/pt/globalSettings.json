@@ -81,6 +81,7 @@
     "rerankStrategy": "Estratégia",
     "rerankStrategyDesc": "Qual backend ordena os candidatos.",
     "rerankStrategyLlm": "LLM (usa o modelo de chat)",
+    "rerankStrategyLlmLogprobs": "Confiança por logprobs do LLM (OpenAI)",
     "rerankStrategyCrossEncoder": "Cross-encoder (auto-hospedado)",
     "rerankStrategyCohere": "Cohere Rerank (gerenciado)",
     "rerankTopN": "Top-K mantidos",

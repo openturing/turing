@@ -854,6 +854,7 @@ export default function GlobalSettingsPage() {
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="LLM">{t("globalSettings.rerankStrategyLlm")}</SelectItem>
+                                                                <SelectItem value="LLM_LOGPROBS">{t("globalSettings.rerankStrategyLlmLogprobs")}</SelectItem>
                                                                 <SelectItem value="CROSS_ENCODER">{t("globalSettings.rerankStrategyCrossEncoder")}</SelectItem>
                                                                 <SelectItem value="COHERE">{t("globalSettings.rerankStrategyCohere")}</SelectItem>
                                                             </SelectContent>

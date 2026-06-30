@@ -11,10 +11,16 @@ export type TurCodeInterpreterExecutionMode = "NATIVE" | "DOCKER";
 
 /**
  * T337 — SN RAG reranker backend. `LLM` borrows a chat model to rank snippet
- * numbers (legacy default); `CROSS_ENCODER` calls a self-hosted `/rerank`
- * endpoint; `COHERE` uses the managed Cohere Rerank API.
+ * numbers (legacy default); `LLM_LOGPROBS` (T180) is an OpenAI-only confidence
+ * reranker that blends per-candidate yes/no `top_logprobs` into the retrieval
+ * order; `CROSS_ENCODER` calls a self-hosted `/rerank` endpoint; `COHERE` uses
+ * the managed Cohere Rerank API.
  */
-export type TurRagRerankStrategy = "LLM" | "CROSS_ENCODER" | "COHERE";
+export type TurRagRerankStrategy =
+  | "LLM"
+  | "LLM_LOGPROBS"
+  | "CROSS_ENCODER"
+  | "COHERE";
 
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
