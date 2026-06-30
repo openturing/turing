@@ -1469,13 +1469,11 @@ moat.
 
 ### X.13 Reasoning surfacing + logprobs (T178–T180)
 
-T179 plumbs `reasoning.effort` per-stage (live=low, background=high,
-judge=medium) as a per-agent policy — riding the same
-`TurOpenAiResponsesService.ReasoningOptions` seam T178 shipped (the
-`effort` field is already plumbed into the request builder; T179 is the
-per-stage policy that populates it). T180 mixes `logprobs` into the
-T19/T24/T28 reranker confidence score — fixes the "the LLM hedged but we
-still ranked it #1" failure mode.
+T180 mixes `logprobs` into the T19/T24/T28 reranker confidence score —
+fixes the "the LLM hedged but we still ranked it #1" failure mode. It
+captures `logprobs` + `top_logprobs` on the Responses call and folds the
+LLM's token-level confidence into the existing BM25 / vector scores, so a
+hedged top answer is demoted rather than trusted.
 
 **Cross-vendor reasoning (T503, T504) — F.12 was framed OpenAI-only; both
 competitors have caught up.** The "Why this answer" panel and the effort lever

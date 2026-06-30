@@ -98,6 +98,11 @@ class TurNativeChatExecutorTest {
             storedCompletionsService =
             new com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService(optionsParser);
 
+    // T179 — real, dependency-free per-stage reasoning-effort policy.
+    private final com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
+            reasoningEffortResolver =
+            new com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver();
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
@@ -105,7 +110,8 @@ class TurNativeChatExecutorTest {
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
-                memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService);
+                memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
+                reasoningEffortResolver);
     }
 
     @BeforeEach
@@ -380,6 +386,37 @@ class TurNativeChatExecutorTest {
 
         assertThat(result).isPresent();
         assertThat(reasoningCaptor.getValue().summary()).isEqualTo("detailed");
+        // T179 — summary-only opt-in still gets the LIVE-stage effort default (low).
+        assertThat(reasoningCaptor.getValue().effort()).isEqualTo("low");
+    }
+
+    @Test
+    void reasoningEffortRequestOptionForcesResponsesPathAndOverridesDefault() {
+        // T179 / §X.13.b — the reasoning-effort option alone forces the native
+        // Responses path on a reasoning model and its explicit value overrides
+        // the LIVE-stage default; no summary mode means no summary event.
+        TurLLMInstance instance = instance();
+        instance.setModelName("o4-mini");
+        TurAIAgent agent = agent();
+        agent.setRequestOptionsJson("{\"reasoning-effort\":\"high\"}");
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(List.of());
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        ArgumentCaptor<TurOpenAiResponsesService.ReasoningOptions> reasoningCaptor =
+                ArgumentCaptor.captor();
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
+                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent, instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(reasoningCaptor.getValue().effort()).isEqualTo("high");
+        assertThat(reasoningCaptor.getValue().hasSummary()).isFalse();
     }
 
     @Test

@@ -48,6 +48,7 @@ import com.viglet.turing.genai.nativeapi.anthropic.editor.TurAnthropicEditorServ
 import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAgentMemoryScopeResolver;
 import com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService;
 import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
+import com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
@@ -113,6 +114,8 @@ public class TurNativeChatExecutor {
     private final TurStoredCompletionsService storedCompletionsService;
     private final com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService
             nativeDocumentGroundingService;
+    private final com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
+            reasoningEffortResolver;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -120,6 +123,8 @@ public class TurNativeChatExecutor {
     private static final String REQUEST_OPTION_NATIVE_PDF = "native-pdf";
     /** T178 / §X.13.a — request-option key for the OpenAI reasoning summary mode. */
     private static final String REQUEST_OPTION_REASONING_SUMMARY = "reasoning-summary";
+    /** T179 / §X.13.b — request-option key for the OpenAI reasoning effort budget. */
+    private static final String REQUEST_OPTION_REASONING_EFFORT = "reasoning-effort";
     /** T152 — how many passages to attach as document blocks when citations are on. */
     private static final int CITATION_TOP_K = 5;
 
@@ -145,7 +150,9 @@ public class TurNativeChatExecutor {
             TurAgentMemoryScopeResolver memoryScopeResolver,
             TurStoredCompletionsService storedCompletionsService,
             com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService
-                    nativeDocumentGroundingService) {
+                    nativeDocumentGroundingService,
+            com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
+                    reasoningEffortResolver) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -168,6 +175,7 @@ public class TurNativeChatExecutor {
         this.memoryScopeResolver = memoryScopeResolver;
         this.storedCompletionsService = storedCompletionsService;
         this.nativeDocumentGroundingService = nativeDocumentGroundingService;
+        this.reasoningEffortResolver = reasoningEffortResolver;
     }
 
     /**
@@ -201,14 +209,19 @@ public class TurNativeChatExecutor {
         boolean nativePdfEnabled = isAnthropic && isNativePdfEnabled(agent);
         boolean groundWithDocuments = citationsEnabled || nativePdfEnabled;
 
-        // T178 / §X.13.a — the OpenAI reasoning-summary request option forces the
-        // native Responses path on its own (the Spring AI chat-completions path
-        // can't surface a reasoning summary), exactly like citations force the
-        // Anthropic path. Gated on a reasoning model: on a chat model (gpt-4o…)
-        // the option is a no-op and the turn stays on the unchanged Spring AI path.
+        // T178 / §X.13.a + T179 / §X.13.b — the OpenAI reasoning request options
+        // (summary mode and/or effort budget) force the native Responses path on
+        // their own (the Spring AI chat-completions path can't surface a reasoning
+        // summary nor shape effort), exactly like citations force the Anthropic
+        // path. Gated on a reasoning model: on a chat model (gpt-4o…) the options
+        // are a no-op and the turn stays on the unchanged Spring AI path.
         String reasoningSummaryMode = isOpenAi
                 ? requestOptionValue(agent, REQUEST_OPTION_REASONING_SUMMARY) : null;
-        boolean openAiReasoningForced = isOpenAi && StringUtils.hasText(reasoningSummaryMode)
+        String reasoningEffortMode = isOpenAi
+                ? requestOptionValue(agent, REQUEST_OPTION_REASONING_EFFORT) : null;
+        boolean reasoningOptedIn = StringUtils.hasText(reasoningSummaryMode)
+                || StringUtils.hasText(reasoningEffortMode);
+        boolean openAiReasoningForced = isOpenAi && reasoningOptedIn
                 && TurOpenAiResponsesService.isReasoningModel(instance);
 
         List<EnabledCapability> instanceCapabilities =
@@ -421,19 +434,26 @@ public class TurNativeChatExecutor {
         // can slice it later. Disabled → byte-for-byte unchanged request.
         TurStoredCompletionsService.StoredCompletionsDirective storedCompletions =
                 storedCompletionsService.resolveForChat(agent, conversationId);
-        // T178 / §X.13.a — carry the reasoning summary mode (when set on a
-        // reasoning model) so the Responses turn requests it and surfaces the
-        // summary as the "Why this answer" SSE event. NONE on a chat model →
-        // unchanged request.
-        TurOpenAiResponsesService.ReasoningOptions reasoningOptions =
-                StringUtils.hasText(reasoningSummaryMode)
-                        ? new TurOpenAiResponsesService.ReasoningOptions(reasoningSummaryMode, null)
-                        : TurOpenAiResponsesService.ReasoningOptions.NONE;
+        // T178 / §X.13.a + T179 / §X.13.b — carry the reasoning shape (when the
+        // agent opted in on a reasoning model): the summary mode surfaces the
+        // "Why this answer" SSE event, and the effort budget is resolved for the
+        // LIVE stage — the agent's explicit reasoning-effort SELECT, or the
+        // live-stage default (low) when only the summary was enabled. NONE on a
+        // chat model / no opt-in → unchanged request.
+        String liveEffort = reasoningOptedIn
+                ? reasoningEffortResolver.resolve(
+                        TurReasoningEffortResolver.Stage.LIVE, reasoningEffortMode)
+                : null;
+        TurOpenAiResponsesService.ReasoningOptions reasoningOptions = reasoningOptedIn
+                ? new TurOpenAiResponsesService.ReasoningOptions(reasoningSummaryMode, liveEffort)
+                : TurOpenAiResponsesService.ReasoningOptions.NONE;
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "
-                + "({} capability/ies, persona '{}', storedCompletions={}, reasoningSummary={})",
+                + "({} capability/ies, persona '{}', storedCompletions={}, reasoningSummary={}, "
+                + "reasoningEffort={})",
                 agent.getTitle(), instance.getId(), capabilities.size(),
                 activePersona == null ? "none" : activePersona.getName(), storedCompletions.store(),
-                reasoningOptions.hasSummary() ? reasoningSummaryMode : "off");
+                reasoningOptions.hasSummary() ? reasoningSummaryMode : "off",
+                reasoningOptions.hasEffort() ? liveEffort : "off");
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
                 serviceTierResolver.resolveForChat(agent, instance).orElse(null),
