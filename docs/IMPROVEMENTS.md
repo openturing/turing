@@ -1958,7 +1958,6 @@ it's an alternative backend, not a rewrite.
 
 | Feature cluster | Shipped | Today in docs-turing | Action | Task |
 |---|---|---|---|---|
-| **Cross-vendor native parity** — OpenAI Responses background mode, Anthropic `cache_control` + extended/interleaved thinking, reusable context-cache seam | T499, T502–T504 | none | Expand `tool-calling.md` + `ai-agents.md` | **T527** |
 | **Personas → audience-fit** — audience/reader personas, notebook sources, readability scorer, content-fit eval + report, persona-from-audio, transcription seam | T464–T470 | speaker-only (stale) | Expand `personas.md` | **T533** |
 | **Reference showcase ("Atlas Store")** — the maximum-surface end-to-end demo | T451–T457 | thin `showcase.md` | Expand into the canonical didactic walkthrough | **T534** |
 
