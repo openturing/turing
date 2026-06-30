@@ -33,7 +33,6 @@ moved — verify against `git ls-files` before acting.
 - [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
 - [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
 - [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
-- [XI. Embedded LLM (Jlama) — downgraded to a spike](#xi-embedded-llm-jlama--downgraded-to-a-spike)
 - [XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped](#xii-admin-chat--vigletturing-react-sdk-convergence--shipped)
 - [XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform](#xiii-turing-as-an-mcp-server--let-claude-and-any-agent-drive-the-platform)
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
@@ -1561,26 +1560,6 @@ customer value — there is no monolithic "Block F is done" gate.
 > landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
 > source both the agent UI and the T186 instance × capability heatmap (shipped,
 > CHANGELOG §X.14.f) render from. Design detail is recoverable from `git log`.
-
-## XI. Embedded LLM (Jlama) — downgraded to a spike
-
-> **Status (2026-06-03): cut from a committed program to a 2-3 day spike
-> (ROADMAP Block G, T193-spike).** The original §XI was a 26-task pure-Java
-> in-process inference plan (provider + per-instance model cache + Panama vector
-> bootstrap + tool-calling bridge). It is shelved because:
->
-> - Jlama upstream is stagnant — last release 2025-01-01, single maintainer.
-> - **Ollama-as-sidecar already delivers the same outcomes** (air-gapped, no API
->   key, working tool calling) in the same docker-compose, with far less risk and
->   clean Windows/CUDA support — and it is already a supported provider.
-> - Committing 8 weeks to it contradicted the "courage to deprecate" principle
->   (STRATEGY §VIII.6/§VIII.7).
->
-> **The spike's job** (T193-spike): benchmark Jlama vs Ollama-sidecar vs
-> `de.kherud:llama` for the zero-egress story (tool calling, RAM, tok/s, Windows,
-> ops burden) and pick **one** engine — only then consider re-opening a build,
-> and only for a *named* customer requirement. Default assumption: Ollama-sidecar.
-> The detailed Jlama design (former §XI.1-§XI.10) is recoverable from `git log`.
 
 ## XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped
 

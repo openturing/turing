@@ -167,12 +167,14 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    any bank/hospital conversation; also seeds Agent CI's anonymized
    golden sets.
 
-**Downgraded (courage to deprecate, applied to our own roadmap):**
-- **Jlama (former Block G, T193–T218) → a 2–3 day spike (T193-spike).**
-  Upstream is stagnant (last release 2025-01-01); **Ollama-as-sidecar**
-  already delivers air-gapped + tool-calling with far less risk. Do not
-  commit an 8-week pure-Java inference build before a spike beats that
-  default for a *named* customer requirement.
+**Cancelled (courage to deprecate, applied to our own roadmap):**
+- **Embedded LLM / Jlama (former Block G, T193–T218, then the T193 spike)
+  — cancelled, not on the roadmap.** Upstream is stagnant (last release
+  2025-01-01) and **Ollama-as-sidecar** already delivers the air-gapped +
+  tool-calling story in the same docker-compose with far less risk, so the
+  zero-egress deployment need is already met. Revisit only if a *named*
+  customer requires a pure-Java in-process engine that Ollama cannot serve.
+  Jlama design detail remains in `git log` (former §XI).
 
 **Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining
 Block D/F items wait on a customer to ask for them twice before

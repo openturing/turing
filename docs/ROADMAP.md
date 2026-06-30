@@ -24,17 +24,6 @@
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
 
-## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
-
-> **Decision:** the 26-task committed Jlama program (was T193–T218) is cut to a
-> single time-boxed spike. Rationale: Jlama upstream is stagnant (last release
-> 2025-01-01, single maintainer), and **Ollama-as-sidecar already delivers the
-> air-gapped + tool-calling story** in the same docker-compose with far less risk.
-> The committed 8-week build was the roadmap violating its own "courage to
-> deprecate" principle. Detailed Jlama design is in `git log` (former §XI).
-
-- 💭 **T193 (spike)** (deps: —) **Embedded inference engine evaluation** — 2–3 day spike: benchmark Jlama (pure-Java, Panama) vs Ollama-sidecar vs `de.kherud:llama` for the zero-egress deployment story (tool calling, RAM, tok/s, Windows, ops). Decide ONE engine before committing any build. Default assumption: **Ollama-sidecar**. Promote to a real block only if the spike beats that default for a named customer requirement. → STRATEGY §VIII (deprecations)
-
 ## Block I — Turing as an MCP Server (T192, T245–T255)
 
 - 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
