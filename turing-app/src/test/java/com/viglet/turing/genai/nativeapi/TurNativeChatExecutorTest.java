@@ -65,6 +65,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurAnthropicEditorService anthropicEditorService;
     @Mock private com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService anthropicMemoryService;
     @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService googleGenAiNativeService;
+    @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGeminiComputerUseService geminiComputerUseService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
@@ -117,7 +118,7 @@ class TurNativeChatExecutorTest {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
-                googleGenAiNativeService, promptAssembler, personaResolver,
+                googleGenAiNativeService, geminiComputerUseService, promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
@@ -560,6 +561,28 @@ class TurNativeChatExecutorTest {
         assertThat(promptCaptor.getValue()).isEqualTo("FUSED");
         assertThat(historyCaptor.getValue()).containsExactly(new ChatMessageItem("user", "hello"));
         verifyNoInteractions(openAiResponsesService, anthropicMessagesService);
+    }
+
+    @Test
+    void routesToGeminiComputerUseLoopWhenComputerUseEnabled() {
+        // T494 / §X.19 — Gemini computer_use is a multi-turn loop that owns the turn.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        EnabledCapability cap = new EnabledCapability(TurNativeCapability.GEMINI_COMPUTER_USE, null);
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(List.of(cap));
+        when(nativeClient.gemini(instance)).thenReturn(Optional.of(geminiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(geminiComputerUseService.chat(eq(geminiClient), eq(instance), anyList(), any(), eq(cap)))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "operated")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("operated");
+        verifyNoInteractions(googleGenAiNativeService);
     }
 
     @Test

@@ -39,7 +39,7 @@
 - ✅ T491 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T492 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T493 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- 📋 **T494** (deps: T489, T136) **Gemini Computer Use** (`gemini-2.5-computer-use`) — reuses the vendor-neutral `TurComputerUseDriver` seam (T136); no-op driver default. `ownsTurn`. cap `gemini-computer-use`. → §X.19
+- ✅ T494 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Distinctive Gemini cost/quality primitives:**
 - 📋 **T495** (deps: —) **Gemini embeddings + task-type optimization** — fix the `UnsupportedOperationException`: `gemini-embedding-001` via `embedContent` with **asymmetric** `taskType` (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + Matryoshka `outputDimensionality`. Retrieval-quality win the other providers can't match. → §X.19

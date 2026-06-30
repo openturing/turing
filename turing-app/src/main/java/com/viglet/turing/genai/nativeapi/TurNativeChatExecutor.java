@@ -52,6 +52,7 @@ import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiComputerUseService;
 import com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -103,6 +104,7 @@ public class TurNativeChatExecutor {
     private final TurAnthropicEditorService anthropicEditorService;
     private final TurAnthropicMemoryService anthropicMemoryService;
     private final TurGoogleGenAiNativeService googleGenAiNativeService;
+    private final TurGeminiComputerUseService geminiComputerUseService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
@@ -143,6 +145,7 @@ public class TurNativeChatExecutor {
             TurAnthropicEditorService anthropicEditorService,
             TurAnthropicMemoryService anthropicMemoryService,
             TurGoogleGenAiNativeService googleGenAiNativeService,
+            TurGeminiComputerUseService geminiComputerUseService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
@@ -171,6 +174,7 @@ public class TurNativeChatExecutor {
         this.anthropicEditorService = anthropicEditorService;
         this.anthropicMemoryService = anthropicMemoryService;
         this.googleGenAiNativeService = googleGenAiNativeService;
+        this.geminiComputerUseService = geminiComputerUseService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
@@ -332,6 +336,25 @@ public class TurNativeChatExecutor {
         // loop on the foundation path (Gemini built-in tools are one-shot, like
         // the other vendors' server-side tools).
         if (isGemini) {
+            // T494 / §X.19 — computer_use is a multi-turn screenshot/action loop
+            // (not a one-shot tool), so it owns the whole turn when enabled, like
+            // the OpenAI/Anthropic computer-use variants.
+            Optional<EnabledCapability> geminiComputerUse = capabilities.stream()
+                    .filter(c -> c.capability() == TurNativeCapability.GEMINI_COMPUTER_USE)
+                    .findFirst();
+            if (geminiComputerUse.isPresent()) {
+                if (capabilities.size() > 1) {
+                    log.info("[Native] agent '{}' instance '{}' has Gemini computer_use enabled "
+                            + "alongside {} other native capability/ies — driving the computer-use "
+                            + "loop only this turn", agent.getTitle(), instance.getId(),
+                            capabilities.size() - 1);
+                }
+                log.info("[Native] agent '{}' instance '{}' handled by Gemini computer-use loop "
+                        + "(persona '{}')", agent.getTitle(), instance.getId(),
+                        activePersona == null ? "none" : activePersona.getName());
+                return Optional.of(geminiComputerUseService.chat(geminiClient.get(), instance,
+                        turn.history(), turn.systemPrompt(), geminiComputerUse.get()));
+            }
             log.info("[Native] agent '{}' instance '{}' handled by Gemini native path "
                     + "({} capability/ies, persona '{}')", agent.getTitle(), instance.getId(),
                     capabilities.size(), activePersona == null ? "none" : activePersona.getName());

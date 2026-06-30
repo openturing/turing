@@ -149,6 +149,13 @@ public enum TurNativeCapability {
      *  generated image as an inline data part, rendered into the answer as a
      *  {@code data:} URI by {@code TurGeminiCodeExecutionDecoder}. */
     GEMINI_IMAGE_GENERATION("gemini-image-generation", "gemini", TOOL, IMAGE_GEN, "Media", false),
+    /** T494 / §X.19 — Gemini Computer Use ({@code gemini-2.5-computer-use-*}). The
+     *  multi-turn screenshot/action loop driving the same vendor-neutral
+     *  {@link com.viglet.turing.genai.nativeapi.openai.computeruse.TurComputerUseDriver}
+     *  seam (T136) as the OpenAI/Anthropic variants; ships against the no-op
+     *  driver, so it's matrix-selectable without bundling a browser. Owns the
+     *  whole turn. */
+    GEMINI_COMPUTER_USE("gemini-computer-use", "gemini", TOOL, COMPUTER_USE, "Automation", true),
 
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat
