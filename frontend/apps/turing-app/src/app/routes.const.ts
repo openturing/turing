@@ -32,6 +32,7 @@ export const ROUTES = {
   COST_GOVERNANCE: `${consolePath}/ai-analytics/cost-governance`,
   CHAT_ANALYTICS: `${consolePath}/ai-analytics/chat-analytics`,
   PARKED_CONVERSATIONS: `${consolePath}/ai-analytics/parked-conversations`,
+  CAPABILITY_MATRIX: `${consolePath}/ai-analytics/capability-matrix`,
   CONVERSATION_DETAIL: `${consolePath}/conversation`,
   MCP_ROOT: `${consolePath}/mcp`,
   MCP_INSTANCE: `${consolePath}/mcp/instance`,

@@ -3,6 +3,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import type { Icon } from "@tabler/icons-react";
 import {
   IconCoin,
+  IconGridDots,
   IconMessageCircle2,
   IconPlayerPause,
 } from "@tabler/icons-react";
@@ -50,6 +51,7 @@ export function useAiAnalyticsNav(): { items: AiAnalyticsNavItem[]; loaded: bool
       { title: t("home.features.costGovernance.title"), url: "/cost-governance", icon: IconCoin, visible: hasEnabledLlm },
       { title: t("home.features.chatAnalytics.title"), url: "/chat-analytics", icon: IconMessageCircle2, visible: true },
       { title: t("home.features.parkedConversations.title"), url: "/parked-conversations", icon: IconPlayerPause, visible: hasPrivilege("AI_AGENT_VIEW") },
+      { title: t("capabilityMatrix.title"), url: "/capability-matrix", icon: IconGridDots, visible: isAdmin && hasEnabledLlm },
     ]
       .filter((item) => item.visible)
       .map(({ title, url, icon }) => ({ title, url, icon }));

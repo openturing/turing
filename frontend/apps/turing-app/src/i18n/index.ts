@@ -11,6 +11,7 @@ import enAiAuthoring from "./locales/en/aiAuthoring.json";
 import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
 import enChatFlow from "./locales/en/chatFlow.json";
+import enCapabilityMatrix from "./locales/en/capabilityMatrix.json";
 import enCommon from "./locales/en/common.json";
 import enCostGovernance from "./locales/en/costGovernance.json";
 import enCustomTool from "./locales/en/customTool.json";
@@ -57,6 +58,7 @@ import ptAiAuthoring from "./locales/pt/aiAuthoring.json";
 import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
 import ptChatFlow from "./locales/pt/chatFlow.json";
+import ptCapabilityMatrix from "./locales/pt/capabilityMatrix.json";
 import ptCommon from "./locales/pt/common.json";
 import ptCostGovernance from "./locales/pt/costGovernance.json";
 import ptCustomTool from "./locales/pt/customTool.json";
@@ -101,7 +103,7 @@ const en = {
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
-  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
+  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
   ...enVoiceKiosk,
 };
@@ -112,7 +114,7 @@ const pt = {
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
-  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
+  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
   ...ptVoiceKiosk,
 };

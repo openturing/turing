@@ -8,6 +8,7 @@ const AiAnalyticsIndexRedirect = lazy(() => import("../console/ai-analytics/ai-a
 const CostGovernanceSubPage = lazy(() => import("../console/cost-governance/cost-governance.sub.page"))
 const ChatAnalyticsSubPage = lazy(() => import("../console/chat-analytics/chat-analytics.sub.page"))
 const ParkedConversationsSubPage = lazy(() => import("../console/parked-conversations/parked-conversations.sub.page"))
+const CapabilityMatrixSubPage = lazy(() => import("../console/capability-matrix/capability-matrix.sub.page"))
 
 export const AiAnalyticsRoutes = (
     <Route path={ROUTES.AI_ANALYTICS_ROOT} element={<AiAnalyticsRootPage />}>
@@ -16,6 +17,7 @@ export const AiAnalyticsRoutes = (
             <Route path="cost-governance" element={<CostGovernanceSubPage />} />
             <Route path="chat-analytics" element={<ChatAnalyticsSubPage />} />
             <Route path="parked-conversations" element={<ParkedConversationsSubPage />} />
+            <Route path="capability-matrix" element={<CapabilityMatrixSubPage />} />
         </Route>
     </Route>
 )

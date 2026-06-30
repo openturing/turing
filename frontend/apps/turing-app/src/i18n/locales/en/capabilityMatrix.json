@@ -1,0 +1,13 @@
+{
+  "capabilityMatrix": {
+    "title": "Capability Matrix",
+    "description": "Which native provider capabilities are wired on each LLM instance.",
+    "instance": "LLM Instance",
+    "disabled": "disabled",
+    "legendWired": "Wired",
+    "legendCapable": "Available (not wired)",
+    "legendNa": "Not applicable",
+    "empty": "No LLM instances or native capabilities to display.",
+    "loadFailed": "Failed to load the capability matrix."
+  }
+}

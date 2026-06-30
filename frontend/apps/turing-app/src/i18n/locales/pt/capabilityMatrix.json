@@ -1,0 +1,13 @@
+{
+  "capabilityMatrix": {
+    "title": "Matriz de Capacidades",
+    "description": "Quais capacidades nativas de cada provedor estão configuradas em cada instância de LLM.",
+    "instance": "Instância de LLM",
+    "disabled": "desabilitada",
+    "legendWired": "Configurada",
+    "legendCapable": "Disponível (não configurada)",
+    "legendNa": "Não aplicável",
+    "empty": "Nenhuma instância de LLM ou capacidade nativa para exibir.",
+    "loadFailed": "Falha ao carregar a matriz de capacidades."
+  }
+}

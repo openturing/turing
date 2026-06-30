@@ -30,3 +30,18 @@ export interface TurCapabilityDescriptor {
   /** T435 — for a SELECT request option, the allowed values (first is the conventional default). */
   options?: string[];
 }
+
+/**
+ * T186 / §X.14.f — one LLM instance's row in the (instance × capability)
+ * heatmap, as returned by `GET /api/capability/matrix`. The page cross-
+ * references `enabledCapabilityKeys` + `pluginType` against the registry to
+ * colour each cell wired / capable-not-wired / not-applicable.
+ */
+export interface TurInstanceCapabilityRow {
+  instanceId: string;
+  title: string;
+  /** Vendor plugin type, lowercased (e.g. "openai", "anthropic"). */
+  pluginType: string;
+  enabled: boolean;
+  enabledCapabilityKeys: string[];
+}

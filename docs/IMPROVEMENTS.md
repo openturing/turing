@@ -1491,19 +1491,6 @@ should be vendor-agnostic levers, not OpenAI features:
   budget" and "show the model's thinking" one cross-vendor contract instead of
   three provider-specific ones.
 
-### X.14 Safety, compliance, multi-tenant cost (T181–T186)
-
-`safety_identifier` (T181) outsources abuse detection to OpenAI's
-edge — Turing carries less compliance burden per tenant. T182
-omni-moderation pre-filter blocks bad queries / bad indexed content
-at the multimodal level (text + image), **free at the API tier**.
-T183 + T184 + T185 build the per-tenant AI Spend dashboard backed
-by both vendors' Usage APIs, with soft budget caps that
-auto-downgrade to cheaper tiers when projections breach. **Compliance
-+ FinOps + governance, packaged as part of the chat platform** —
-the kind of "platform" attribute Deep Agents fundamentally can't
-match because it's an SDK harness.
-
 ### X.15 The bold creative bets (T187–T192)
 
 Six long-shot tasks that, taken together, redefine what an
@@ -1603,8 +1590,8 @@ customer value — there is no monolithic "Block F is done" gate.
 > per-agent selection + union execution (T433), the capability-first agent
 > picker (T434), and the registry-driven REQUEST_OPTION settings (T435) all
 > landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
-> source both the agent UI and the future T186 (instance × capability heatmap,
-> §X.14.f) render from. Design detail is recoverable from `git log`.
+> source both the agent UI and the T186 instance × capability heatmap (shipped,
+> CHANGELOG §X.14.f) render from. Design detail is recoverable from `git log`.
 
 ### X.19 Gemini native API exploitation (T489–T501)
 
@@ -2041,7 +2028,7 @@ This is where the deal is won or lost in an enterprise review.
   tenant's content.
 - **Rate limiting & cost**: a public MCP surface is a new attack/cost
   surface. Per-token rate limits + the existing multi-tenant cost
-  controls (§X.14) apply here too.
+  controls (F.13, shipped — CHANGELOG §X.14) apply here too.
 - **Auditability**: every MCP tool call is attributable to a token →
   user → tenant, and lands in the same audit trail as internal tool
   calls. This is the line that closes regulated verticals.
