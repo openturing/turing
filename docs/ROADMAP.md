@@ -92,7 +92,6 @@
 > Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVIII.
 
 **Foundation — the provider seams (ROI-ordered):**
-- 📋 **T506** (deps: §XXVIII) **AWS Bedrock provider** (`bedrock`) — `TurBedrockLlmProvider` via Spring AI Bedrock Converse: Claude/Llama/Mistral/Nova on one gateway, IAM/region credentials (not an API key), Titan/Cohere embeddings. The enterprise compliance/data-residency path AWS-standardized customers require. → §XXVIII.2
 - 📋 **T507** (deps: §XXVIII, T337–T340) **Voyage AI embeddings + rerank** — `voyage` embedding provider (`voyage-3` family, asymmetric `input_type` doc/query) + a `VOYAGE` `TurRagReranker` strategy (`rerank-2.5`). The specialist retrieval vendor Anthropic itself recommends; directly lifts RAG quality. → §XXVIII.3
 - 📋 **T508** (deps: §XXVIII, T337–T340) **Cohere full provider** (`cohere`) — promote Cohere beyond the existing reranker: `Command` chat (built-in citation mode) + `Embed v4` multilingual/multimodal embeddings, reusing the wired Cohere credentials. → §XXVIII.4
 - 📋 **T509** (deps: §XXVIII, T337–T340) **Mistral AI provider** (`mistral`) — Spring-AI-native chat (Mistral Large/Small/Codestral) + Mistral embeddings + a `MISTRAL` reranker strategy. European/GDPR-friendly origin (EU customers). → §XXVIII.5

@@ -1888,13 +1888,6 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.2 — T506 AWS Bedrock provider.** `TurBedrockLlmProvider` over Spring
-  AI's Bedrock Converse API. Distinct from every other provider in that it is a
-  **gateway** (Claude, Llama, Mistral, Nova, Titan on one endpoint) authenticated
-  by **IAM role / region**, not an API key — so `TurLLMInstance` needs an
-  IAM-credential shape alongside the encrypted-key shape. This is the path
-  AWS-standardized enterprises require for data residency and procurement; it
-  also unlocks the Bedrock-only bridges below (Guardrails, Knowledge Bases).
 - **§XXVIII.3 — T507 Voyage AI embeddings + rerank.** Voyage is the retrieval
   specialist Anthropic itself points customers to (Anthropic has no embedding
   API). Wire a `voyage` embedding provider — `voyage-3`/`voyage-3-large` with the

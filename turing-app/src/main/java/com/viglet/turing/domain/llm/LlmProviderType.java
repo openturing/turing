@@ -46,7 +46,8 @@ public record LlmProviderType(String value) {
             "ollama",
             "gemini",
             "gemini-openai",
-            "openai-compatible");
+            "openai-compatible",
+            "bedrock");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

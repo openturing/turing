@@ -567,6 +567,17 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-google-genai</artifactId>
         </dependency>
+        <!--
+            T506 / §XXVIII.2 — AWS Bedrock Converse provider. A gateway over
+            Claude/Llama/Mistral/Nova on one endpoint, authenticated by IAM
+            (region + credentials provider chain), not an API key. Pulls the AWS
+            SDK bedrockruntime client transitively. Version managed by
+            spring-ai-bom.
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-bedrock-converse</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-chroma-store</artifactId>

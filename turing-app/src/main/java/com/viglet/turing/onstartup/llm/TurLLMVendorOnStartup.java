@@ -89,6 +89,15 @@ public class TurLLMVendorOnStartup {
 			openAiCompatible.setWebsite("https://platform.openai.com/docs/api-reference");
 			turLLMVendorRepository.save(openAiCompatible);
 
+			TurLLMVendor bedrock = new TurLLMVendor();
+			bedrock.setId("BEDROCK");
+			bedrock.setDescription(
+					"AWS Bedrock — Claude/Llama/Mistral/Nova/Titan on one IAM-authenticated gateway");
+			bedrock.setPlugin("bedrock");
+			bedrock.setTitle("AWS Bedrock");
+			bedrock.setWebsite("https://aws.amazon.com/bedrock");
+			turLLMVendorRepository.save(bedrock);
+
 		}
 	}
 }

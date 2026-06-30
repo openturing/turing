@@ -207,6 +207,17 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("1024")
     }
+    if (vendorId === "BEDROCK") {
+      // Bedrock is IAM-authenticated (region + credentials), not URL-based: the
+      // region + optional accessKeyId/secretAccessKey go in provider options; the
+      // model name is the Bedrock id or inference-profile ARN.
+      form.setValue("url", "", { shouldDirty: true });
+      form.setValue("modelName", "anthropic.claude-3-5-sonnet-20241022-v2:0", { shouldDirty: true });
+      form.setValue("temperature", 0.7, { shouldDirty: true });
+      form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {
