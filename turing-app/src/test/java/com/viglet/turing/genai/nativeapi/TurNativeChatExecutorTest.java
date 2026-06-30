@@ -107,6 +107,10 @@ class TurNativeChatExecutorTest {
     // the existing routing tests (currentSafetyIdentifier() returns empty).
     @Mock private com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
 
+    // T187 — mock; default agent has liveAnswersEnabled=false so isEnabled() returns
+    // false (Mockito boolean default) and the existing routing assertions are unchanged.
+    @Mock private com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
@@ -115,7 +119,7 @@ class TurNativeChatExecutorTest {
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
-                reasoningEffortResolver, safetyIdentifierService);
+                reasoningEffortResolver, safetyIdentifierService, liveAnswersService);
     }
 
     @BeforeEach
@@ -362,6 +366,41 @@ class TurNativeChatExecutorTest {
         List<ChatResponse> emitted = result.get().collectList().block();
         assertThat(emitted).hasSize(1);
         assertThat(emitted.get(0).content()).isEqualTo("hi");
+    }
+
+    @Test
+    void liveAnswersAugmentsSystemPromptOnOpenAiPath() {
+        // T187 / §X.15.a — when live-answers is on, the executor runs the assembled
+        // system prompt through TurLiveAnswersService.augment and passes the
+        // grounded prompt to the Responses service. groundWithDocuments is false on
+        // the OpenAI path, so the [KB-n] block is injected here (the leg the
+        // Responses path otherwise lacks) rather than as Anthropic citation blocks.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null));
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(caps);
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("BASE"), new UserMessage("hello")));
+        TurAIAgent agent = agent();
+        agent.setLiveAnswersEnabled(true);
+        when(liveAnswersService.isEnabled(agent)).thenReturn(true);
+        when(liveAnswersService.augment("BASE", "hello", false)).thenReturn("BASE + GROUNDED");
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.captor();
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
+                systemPromptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(),
+                any()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "fused")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent, instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("fused");
+        assertThat(systemPromptCaptor.getValue()).isEqualTo("BASE + GROUNDED");
+        verify(liveAnswersService).augment("BASE", "hello", false);
     }
 
     @Test

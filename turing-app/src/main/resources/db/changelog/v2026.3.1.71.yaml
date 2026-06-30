@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T187 / §X.15.a — "Live answers" hybrid mode: per-agent opt-in flag that fuses
+  # the indexed knowledge base + web_search + web_fetch + code_execution into one
+  # native turn. Default off keeps existing agents unchanged. Idempotent: gated by
+  # columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.71-add-ai_agent-live_answers_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: live_answers_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: live_answers_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: live_answers_enabled
+                  valueBoolean: false
+            where: live_answers_enabled IS NULL

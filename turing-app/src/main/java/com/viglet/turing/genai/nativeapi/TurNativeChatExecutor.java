@@ -117,6 +117,7 @@ public class TurNativeChatExecutor {
     private final com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
             reasoningEffortResolver;
     private final com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
+    private final com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -154,7 +155,8 @@ public class TurNativeChatExecutor {
                     nativeDocumentGroundingService,
             com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
                     reasoningEffortResolver,
-            com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService) {
+            com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService,
+            com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -179,6 +181,7 @@ public class TurNativeChatExecutor {
         this.nativeDocumentGroundingService = nativeDocumentGroundingService;
         this.reasoningEffortResolver = reasoningEffortResolver;
         this.safetyIdentifierService = safetyIdentifierService;
+        this.liveAnswersService = liveAnswersService;
     }
 
     /**
@@ -297,6 +300,19 @@ public class TurNativeChatExecutor {
                 new TurChatPromptRequest(agent, history, conversationId,
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
+
+        // T187 / §X.15.a — "Live answers" hybrid mode. When the agent opted in,
+        // fuse the indexed knowledge base + web_search + web_fetch + code_execution
+        // into one turn: append the [KB-n] grounding block (the leg the OpenAI
+        // Responses path otherwise lacks) + the fusion-guidance prompt. Skip the
+        // grounding block when the Anthropic citations / native-PDF path already
+        // attaches the passages as document blocks (groundWithDocuments), to avoid
+        // double-grounding. No-op (unchanged turn) for every non-live agent.
+        if (liveAnswersService.isEnabled(agent)) {
+            String groundedPrompt = liveAnswersService.augment(
+                    turn.systemPrompt(), lastUserMessage, groundWithDocuments);
+            turn = new AssembledTurn(groundedPrompt, turn.history());
+        }
 
         // T433 / §X.18.b — "capacidade é mutex, resto coexiste". For an explicit
         // (non-legacy) selection whose picks don't own the turn, attach the

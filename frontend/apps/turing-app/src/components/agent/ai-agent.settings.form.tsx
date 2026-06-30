@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconInfoCircle, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -122,6 +122,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
       richContentEnabled: value.richContentEnabled ?? false,
+      liveAnswersEnabled: value.liveAnswersEnabled ?? false,
       toolCallEventsEnabled: value.toolCallEventsEnabled ?? false,
       skillsEnabled: value.skillsEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
@@ -524,6 +525,38 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.enableRichContent")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
                         {t("forms.agentSettings.enableRichContentDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconWorldSearch}
+              title={t("forms.agentSettings.liveAnswers")}
+              description={t("forms.agentSettings.liveAnswersDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="liveAnswersEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableLiveAnswers")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enableLiveAnswersDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

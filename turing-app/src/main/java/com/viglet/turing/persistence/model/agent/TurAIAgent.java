@@ -203,6 +203,26 @@ public class TurAIAgent implements Serializable {
     private boolean actionWidgetEnabled = false;
 
     /**
+     * T187 / §X.15.a — per-agent opt-in for "Live answers" hybrid mode. When
+     * {@code true} on a native OpenAI/Anthropic turn, the executor fuses four
+     * information sources into ONE answer: (a) the indexed knowledge base (top-K
+     * SN/RAG passages injected as grounding context, the leg the OpenAI Responses
+     * path otherwise lacks), (b) {@code web_search} citations, (c) live data via
+     * {@code web_fetch}, and (d) computed analytics via {@code code_execution}.
+     * It is a composition layer over the two-level capability gate: it injects the
+     * knowledge-base grounding + a fusion-guidance prompt ({@code prompts/live-answers.md})
+     * and instructs the model to weave whichever of its admin-selected native tools
+     * are relevant into a single cited reply — it does NOT force-enable a capability
+     * the instance doesn't support. To avoid double-grounding it skips the grounding
+     * block when the Anthropic citations / native-PDF document path is already
+     * attaching passages. Default {@code false} keeps existing agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "live_answers_enabled", nullable = false)
+    private boolean liveAnswersEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.
