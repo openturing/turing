@@ -1618,11 +1618,13 @@ infra, zero Java callbacks; mirrors F.2/F.3):
 **Distinctive Gemini cost/quality primitives** (parity-plus):
 
 - **T495 Embeddings with task-type optimization** — ✅ shipped (see CHANGELOG Block F.16).
-- **T496 Batch provider** — closes the T156 gap: `TurGeminiBatchProvider`
-  (Gemini Batch mode, ~50% discount) plugs into the existing
-  `TurBatchProviderFactory`, so re-embedding (T158), nightly summarization
-  (T157) and the LLM-Judge eval batch (T159) all run on Gemini-backed instances
-  instead of falling back to synchronous full price.
+- **T496 Batch provider** — ⏳ chat leg shipped (T157/T159 on Gemini; see
+  CHANGELOG Block F.16). Remaining: the **embeddings** batch leg —
+  `TurBatchEmbeddingProvider` via `client.batches.createEmbeddings(...)` /
+  `EmbeddingsBatchJobSource` — so re-embedding (T158) also runs on Gemini-backed
+  instances at the Batch discount instead of falling back to synchronous full
+  price. (The keyed-JSONL `key` round-trips the `customId` exactly as the chat
+  leg does.)
 - **T497 Files bridge** — folds Gemini into the F.11 `TurFilesApiBridge` (T175):
   upload the indexed binary to the Gemini Files API, reference it by URI (48 h
   retention) so a Gemini-backed agent gets native PDF/video grounding instead of

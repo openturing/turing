@@ -30,10 +30,10 @@ export const PILLARS: Pillar[] = [
     icon: Sparkles,
     iconClass: "from-[#059669] to-[#10b981]",
     step: "Ask it",
-    title: "RAG & chat that cite their sources",
+    title: "RAG & chat with answers you can audit",
     description:
-      "Retrieval-augmented generation with a pluggable reranker (LLM, cross-encoder or Cohere) and an embedded vector store — grounded answers that stream token-by-token with citations.",
-    tags: ["RAG", "Reranker", "Citations", "SSE streaming"],
+      "Retrieval-augmented generation with a pluggable reranker (LLM, cross-encoder or Cohere) and an embedded vector store. Answers stream token-by-token with inline citations you trace back to the source passage — plus an optional groundedness check and a deterministic “not in this site” refusal.",
+    tags: ["RAG", "Reranker", "Citations", "Groundedness"],
   },
   {
     icon: Bot,
@@ -41,8 +41,8 @@ export const PILLARS: Pillar[] = [
     step: "Automate it",
     title: "Agents with tools, skills & MCP",
     description:
-      "Configurable AI agents that call tools, run Anthropic-standard skills in a Docker sandbox, query MCP servers (with cross-vendor federation) and use native provider tools.",
-    tags: ["Tool calling", "Skills", "MCP Server", "Code interpreter"],
+      "Configurable AI agents that call your tools, run Anthropic-standard skills in a Docker sandbox and federate across MCP servers — plus each provider's own server-side tools (web search, code execution, computer use, image generation), opt-in per agent.",
+    tags: ["Tool calling", "Skills", "MCP", "Native tools"],
   },
   {
     icon: ServerCog,
@@ -52,6 +52,57 @@ export const PILLARS: Pillar[] = [
     description:
       "Open source under Apache 2.0. Bring any LLM (OpenAI, Anthropic, Gemini, Ollama, Azure), your own search engine and storage. Multi-tenant, observable, your infrastructure.",
     tags: ["Apache 2.0", "Self-host", "Multi-tenant", "Any LLM"],
+  },
+];
+
+export interface NativeTool {
+  name: string;
+  description: string;
+  /** Provider names that expose this tool server-side. */
+  providers: string[];
+}
+
+/**
+ * Server-side built-in tools each provider runs in its own infrastructure —
+ * Turing wires them into the agent loop with per-agent opt-in (no glue code,
+ * no extra crawler). Verify provider availability — as of 2026.3.
+ */
+export const NATIVE_TOOLS: NativeTool[] = [
+  {
+    name: "Web search & grounding",
+    description:
+      "The model searches the live web (and Google grounding on Gemini) and grounds its answer — citations flow into the same source-chip UI as your own RAG.",
+    providers: ["OpenAI", "Anthropic", "Gemini"],
+  },
+  {
+    name: "Code execution",
+    description:
+      "A managed Python sandbox runs alongside your own code interpreter — charts, data wrangling and computed answers, rendered inline.",
+    providers: ["OpenAI", "Anthropic", "Gemini"],
+  },
+  {
+    name: "Computer use",
+    description:
+      "A multi-turn screenshot/action loop behind a pluggable driver seam — browse and operate a UI to complete a task, the same contract across all three vendors.",
+    providers: ["OpenAI", "Anthropic", "Gemini"],
+  },
+  {
+    name: "URL / web fetch",
+    description:
+      "The model pulls a URL or PDF named in the prompt directly in the provider's infrastructure — no Turing crawler in the path.",
+    providers: ["Anthropic", "Gemini"],
+  },
+  {
+    name: "Image generation",
+    description:
+      "Generate images inline in the answer as self-contained data URIs — no separate artifact endpoint to host.",
+    providers: ["OpenAI", "Gemini"],
+  },
+  {
+    name: "File search",
+    description:
+      "Retrieval over a provider-hosted vector store, available as a built-in tool right next to Turing's own search.",
+    providers: ["OpenAI"],
   },
 ];
 
@@ -75,7 +126,9 @@ export const COMPARISON: ComparisonRow[] = [
   { feature: "Self-host — data stays in your infra", turing: "yes", saas: "no", diy: "yes" },
   { feature: "Faceted enterprise search", turing: "yes", saas: "yes", diy: "build it" },
   { feature: "RAG + pluggable reranker", turing: "yes", saas: "partial", diy: "build it" },
+  { feature: "Cited answers you can audit", turing: "yes", saas: "partial", diy: "build it" },
   { feature: "AI agents, tools & skills built in", turing: "yes", saas: "partial", diy: "build it" },
+  { feature: "Native provider tools (web search, code, computer use)", turing: "yes", saas: "no", diy: "build it" },
   { feature: "Any LLM provider", turing: "yes", saas: "partial", diy: "yes" },
   { feature: "Bring your own search engine", turing: "yes", saas: "no", diy: "partial" },
   { feature: "Time to first result", turing: "minutes", saas: "minutes", diy: "weeks" },
@@ -225,7 +278,7 @@ export const RESOURCES: LinkCard[] = [
     title: "Source Code",
     description:
       "Apache 2.0. Spring Boot 4 backend, React 19 frontend and pluggable AI providers.",
-    href: "https://github.com/openviglet/turing",
+    href: "https://github.com/openviglet/turing-ce",
     tag: "GitHub",
   },
   {

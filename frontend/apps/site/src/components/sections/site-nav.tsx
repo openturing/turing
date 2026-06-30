@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Capabilities", href: "#features" },
+  { label: "Native tools", href: "#native-tools" },
   { label: "Why Turing", href: "#why" },
   { label: "Developers", href: "#developers" },
   { label: "Marketplace", href: "#marketplace" },

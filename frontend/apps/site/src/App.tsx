@@ -2,6 +2,7 @@ import { SiteNav } from "@/components/sections/site-nav";
 import { Hero } from "@/components/sections/hero";
 import { Providers } from "@/components/sections/providers";
 import { Pillars } from "@/components/sections/pillars";
+import { NativeTools } from "@/components/sections/native-tools";
 import { Comparison } from "@/components/sections/comparison";
 import { HowItWorks } from "@/components/sections/how-it-works";
 import { LiveDemo } from "@/components/sections/live-demo";
@@ -20,6 +21,7 @@ export default function App() {
         <Hero />
         <Providers />
         <Pillars />
+        <NativeTools />
         <Comparison />
         <HowItWorks />
         <LiveDemo />
