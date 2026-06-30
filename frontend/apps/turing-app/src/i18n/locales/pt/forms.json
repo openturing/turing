@@ -524,7 +524,11 @@
       "contentFitPersona": "Persona de público",
       "contentFitPersonaDesc": "A persona AUDIENCE (ou BOTH) usada como leitor de referência. Reindexe após alterar para atualizar as pontuações.",
       "contentFitPersonaNone": "Selecione uma persona de público",
-      "contentFitNoPersonas": "Nenhuma persona de público ainda — crie uma em Personas (tipo AUDIENCE ou BOTH)."
+      "contentFitNoPersonas": "Nenhuma persona de público ainda — crie uma em Personas (tipo AUDIENCE ou BOTH).",
+      "mediaUnderstandingTitle": "Entendimento de Vídeo e Áudio",
+      "mediaUnderstandingDesc": "Na indexação, transcreve e descreve as cenas do ativo de vídeo/áudio de um documento com o Gemini e anexa o resultado ao texto, tornando o conteúdo do clipe pesquisável.",
+      "mediaUnderstandingEnable": "Entender mídia na indexação",
+      "mediaUnderstandingEnableDesc": "Quando ativo, um documento que referencia um ativo de vídeo/áudio (um atributo media_url, ou uma url de mídia — incluindo links do YouTube) é processado pelo entendimento do Gemini durante a indexação, e a transcrição com marcação de tempo + descrição de cenas é anexada ao campo de texto. Apenas Gemini e fail-open; gasta uma chamada de LLM por documento de mídia. Desativado mantém a indexação inalterada."
     },
     "snSpotlight": {
       "details": "Detalhes do Destaque",

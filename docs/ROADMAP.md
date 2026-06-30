@@ -48,7 +48,7 @@
 - ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Innovation bets (Gemini-shape-only):**
-- ⏳ **T501** (deps: T489, T64, T497) **Native video understanding** — engine + VIDEO slot modality + chat-slot consumer **shipped** (Block F.16); the remaining leg is wiring the same engine into index-time SN-doc enrichment (write the transcript/scene description to the indexed media doc). → §X.19
+- ✅ T501 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Cross-vendor gaps the F-blocks left open:**
 

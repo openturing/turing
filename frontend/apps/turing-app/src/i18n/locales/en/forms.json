@@ -524,7 +524,11 @@
       "contentFitPersona": "Audience persona",
       "contentFitPersonaDesc": "The AUDIENCE (or BOTH) persona used as the reader proxy. Re-index after changing this to refresh scores.",
       "contentFitPersonaNone": "Select an audience persona",
-      "contentFitNoPersonas": "No audience personas yet — create one in Personas (kind AUDIENCE or BOTH)."
+      "contentFitNoPersonas": "No audience personas yet — create one in Personas (kind AUDIENCE or BOTH).",
+      "mediaUnderstandingTitle": "Video & Audio Understanding",
+      "mediaUnderstandingDesc": "At index time, transcribe and scene-describe a document's video/audio asset with Gemini, then append the result to its text so the clip's content becomes searchable.",
+      "mediaUnderstandingEnable": "Understand media at index time",
+      "mediaUnderstandingEnableDesc": "When on, a document that references a video/audio asset (a media_url attribute, or a media-typed url — including YouTube links) is run through Gemini understanding as it is indexed, and the timestamped transcript + scene description is appended to the text field. Gemini-only and fail-open; spends one LLM call per media document. Off keeps the indexing path unchanged."
     },
     "snSpotlight": {
       "details": "Spotlight Details",

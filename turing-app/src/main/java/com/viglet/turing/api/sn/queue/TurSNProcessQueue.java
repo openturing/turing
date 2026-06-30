@@ -53,6 +53,7 @@ import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.contentfit.TurSNContentFitIndexer;
+import com.viglet.turing.sn.media.TurSNGeminiMediaIndexer;
 import com.viglet.turing.sn.field.TurSNFieldProvisioner;
 import com.viglet.turing.sn.ranking.TurSNHybridRankingService;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
@@ -75,6 +76,7 @@ public class TurSNProcessQueue {
     private final com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation;
     private final TurSNHybridRankingService turSNHybridRankingService;
     private final TurSNContentFitIndexer turSNContentFitIndexer;
+    private final TurSNGeminiMediaIndexer turSNGeminiMediaIndexer;
     private final TurSNProcessQueue self;
 
     public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
@@ -87,6 +89,7 @@ public class TurSNProcessQueue {
             com.viglet.turing.tenant.TurJmsTenantPropagation turJmsTenantPropagation,
             TurSNHybridRankingService turSNHybridRankingService,
             TurSNContentFitIndexer turSNContentFitIndexer,
+            TurSNGeminiMediaIndexer turSNGeminiMediaIndexer,
             @org.springframework.context.annotation.Lazy TurSNProcessQueue self) {
         this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
@@ -98,6 +101,7 @@ public class TurSNProcessQueue {
         this.turJmsTenantPropagation = turJmsTenantPropagation;
         this.turSNHybridRankingService = turSNHybridRankingService;
         this.turSNContentFitIndexer = turSNContentFitIndexer;
+        this.turSNGeminiMediaIndexer = turSNGeminiMediaIndexer;
         this.self = self;
     }
 
@@ -252,6 +256,9 @@ public class TurSNProcessQueue {
         // T472 / §XXVI.9 — attach the index-time audience content-fit score (opt-in,
         // no-op otherwise). Provisions its own field; never throws.
         turSNContentFitIndexer.enrich(turSNSite, attributes);
+        // T501 / §X.19 — append native Gemini video/audio understanding for a media
+        // document's transcript/scenes (opt-in, Gemini-only; no-op otherwise). Never throws.
+        turSNGeminiMediaIndexer.enrich(turSNSite, attributes);
         boolean indexed = pluginFactory.getPluginForSite(turSNSite)
                 .indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
         if (indexed) {

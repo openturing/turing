@@ -238,4 +238,27 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "fullContextTokenBudget", nullable = false)
     private int fullContextTokenBudget = 800_000;
+
+    /**
+     * T501 / §X.19 — opt-in for index-time native video/audio understanding. When
+     * {@code true} and the site's GenAI agent resolves to a <em>Gemini</em> LLM
+     * instance, a document that references a video or audio asset (a media URL in
+     * its {@code media_url} attribute, or a media-typed {@code url}) is run through
+     * {@link com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService}
+     * at index time and the resulting timestamped transcript + scene description is
+     * appended to the document's text field — so the spoken/visual content of the
+     * clip becomes searchable through the normal full-text path. A media-catalog
+     * differentiator OpenAI/Anthropic can't match.
+     *
+     * <p>Default {@code false} keeps the indexing path byte-for-byte unchanged — no
+     * understanding call runs. Gemini-only and <strong>fail-open</strong>: a
+     * non-Gemini agent, a non-media document, or any understanding error simply
+     * skips the enrichment and never blocks the document from being indexed. Unlike
+     * the deterministic {@link #contentFitIndexingEnabled} signal, this <em>does</em>
+     * spend an LLM call per media document, so it is off by default.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "mediaUnderstandingIndexingEnabled", nullable = false)
+    private boolean mediaUnderstandingIndexingEnabled = false;
 }
