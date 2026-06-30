@@ -64,6 +64,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurAnthropicComputerUseService anthropicComputerUseService;
     @Mock private TurAnthropicEditorService anthropicEditorService;
     @Mock private com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService anthropicMemoryService;
+    @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService googleGenAiNativeService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
@@ -76,6 +77,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
+    @Mock private com.google.genai.Client geminiClient;
 
     private final com.viglet.turing.genai.provider.TurProviderOptionsParser optionsParser =
             new com.viglet.turing.genai.provider.TurProviderOptionsParser();
@@ -115,7 +117,7 @@ class TurNativeChatExecutorTest {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
-                promptAssembler, personaResolver,
+                googleGenAiNativeService, promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
@@ -526,6 +528,65 @@ class TurNativeChatExecutorTest {
         assertThat(result).isPresent();
         assertThat(result.get().blockFirst().content()).isEqualTo("done");
         verifyNoInteractions(openAiResponsesService);
+    }
+
+    @Test
+    void routesToGeminiNativeServiceWhenGeminiAndCapabilityEnabled() {
+        // T489 / §X.19 — a gemini instance with an enabled native capability
+        // routes the turn to the Gemini native service with the fused prompt +
+        // history. (The real gemini capabilities arrive in T490; here any
+        // non-empty matrix list flips the branch on — the executor passes the
+        // list straight through to the native service.)
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null));
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(caps);
+        when(nativeClient.gemini(instance)).thenReturn(Optional.of(geminiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
+        when(googleGenAiNativeService.chat(eq(geminiClient), eq(instance), historyCaptor.capture(),
+                promptCaptor.capture(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "gemini")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("gemini");
+        assertThat(promptCaptor.getValue()).isEqualTo("FUSED");
+        assertThat(historyCaptor.getValue()).containsExactly(new ChatMessageItem("user", "hello"));
+        verifyNoInteractions(openAiResponsesService, anthropicMessagesService);
+    }
+
+    @Test
+    void emptyWhenGeminiHasNoCapabilityEnabled() {
+        // Foundation behaviour: a gemini instance with an empty capability matrix
+        // falls through to the Spring AI path — unchanged for every existing
+        // Gemini agent.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(List.of());
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(googleGenAiNativeService);
+    }
+
+    @Test
+    void emptyWhenGeminiClientUnavailable() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        when(capabilityService.enabledFor("inst-1", "gemini"))
+                .thenReturn(List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null)));
+        when(nativeClient.gemini(instance)).thenReturn(Optional.empty());
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(googleGenAiNativeService);
     }
 
     @Test

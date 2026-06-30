@@ -1600,14 +1600,10 @@ already on the classpath) ships a surface as rich as the other two — and a few
 primitives **neither** competitor has. This block closes the parity gap and then
 goes past it.
 
-**Foundation — T489 `TurGoogleGenAiNativeService` + executor branch.**
-`TurNativeChatExecutor` branches by vendor (OpenAI → Responses, Anthropic →
-Messages). Add the third branch: Gemini via
-`Client.models().generateContent(...)` / `generateContentStream(...)`, reusing
-the T131 prompt-assembly fusion (persona + RAG override + MCP instructions +
-chat memory) so the native Gemini path is prompt-identical to the other two.
-The seam stays opt-in per the T132 matrix; empty matrix = the unchanged Spring AI
-`GoogleGenAiChatModel` path. Everything below is a capability row on top of it.
+**Foundation — T489 `TurGoogleGenAiNativeService` + executor branch.** ✅ Shipped
+(see CHANGELOG Block F.16). The third `TurNativeChatExecutor` branch (Gemini via
+`Client.models().generateContentStream`) is in place; everything below is a
+capability row on top of it.
 
 **Parity — server-side built-in tools** (the model executes the tool in Google's
 infra, zero Java callbacks; mirrors F.2/F.3):

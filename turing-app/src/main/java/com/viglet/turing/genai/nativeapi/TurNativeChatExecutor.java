@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.anthropic.client.AnthropicClient;
+import com.google.genai.Client;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurChatPromptRequest;
@@ -51,6 +52,7 @@ import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -100,6 +102,7 @@ public class TurNativeChatExecutor {
     private final TurAnthropicComputerUseService anthropicComputerUseService;
     private final TurAnthropicEditorService anthropicEditorService;
     private final TurAnthropicMemoryService anthropicMemoryService;
+    private final TurGoogleGenAiNativeService googleGenAiNativeService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
@@ -139,6 +142,7 @@ public class TurNativeChatExecutor {
             TurAnthropicComputerUseService anthropicComputerUseService,
             TurAnthropicEditorService anthropicEditorService,
             TurAnthropicMemoryService anthropicMemoryService,
+            TurGoogleGenAiNativeService googleGenAiNativeService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
@@ -166,6 +170,7 @@ public class TurNativeChatExecutor {
         this.anthropicComputerUseService = anthropicComputerUseService;
         this.anthropicEditorService = anthropicEditorService;
         this.anthropicMemoryService = anthropicMemoryService;
+        this.googleGenAiNativeService = googleGenAiNativeService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
@@ -197,9 +202,11 @@ public class TurNativeChatExecutor {
         String pluginType = resolvePluginType(instance);
         boolean isOpenAi = "openai".equals(pluginType);
         boolean isAnthropic = "anthropic".equals(pluginType);
-        if (!isOpenAi && !isAnthropic) {
-            // Only OpenAI (F.2) and Anthropic (F.3) have a native path; other
-            // vendors always fall through to the Spring AI executor.
+        boolean isGemini = "gemini".equals(pluginType);
+        if (!isOpenAi && !isAnthropic && !isGemini) {
+            // Only OpenAI (F.2), Anthropic (F.3) and Gemini (T489 / F.16) have a
+            // native path; other vendors always fall through to the Spring AI
+            // executor.
             return Optional.empty();
         }
 
@@ -277,10 +284,14 @@ public class TurNativeChatExecutor {
         Optional<OpenAIClient> openAiClient = isOpenAi ? nativeClient.openAi(instance) : Optional.empty();
         Optional<AnthropicClient> anthropicClient = isAnthropic
                 ? nativeClient.anthropic(instance) : Optional.empty();
+        Optional<Client> geminiClient = isGemini ? nativeClient.gemini(instance) : Optional.empty();
         if (isOpenAi && openAiClient.isEmpty()) {
             return Optional.empty();
         }
         if (isAnthropic && anthropicClient.isEmpty()) {
+            return Optional.empty();
+        }
+        if (isGemini && geminiClient.isEmpty()) {
             return Optional.empty();
         }
 
@@ -312,6 +323,20 @@ public class TurNativeChatExecutor {
             String groundedPrompt = liveAnswersService.augment(
                     turn.systemPrompt(), lastUserMessage, groundWithDocuments);
             turn = new AssembledTurn(groundedPrompt, turn.history());
+        }
+
+        // T489 / §X.19 — Gemini native branch. The base path streams a turn
+        // through the Google GenAI SDK's generateContentStream with the fused
+        // system prompt + history; the enabled capabilities are threaded through
+        // for the server-side built-in tools (T490+) to wire. No coexisting-tool
+        // loop on the foundation path (Gemini built-in tools are one-shot, like
+        // the other vendors' server-side tools).
+        if (isGemini) {
+            log.info("[Native] agent '{}' instance '{}' handled by Gemini native path "
+                    + "({} capability/ies, persona '{}')", agent.getTitle(), instance.getId(),
+                    capabilities.size(), activePersona == null ? "none" : activePersona.getName());
+            return Optional.of(googleGenAiNativeService.chat(geminiClient.get(), instance,
+                    turn.history(), turn.systemPrompt(), capabilities));
         }
 
         // T433 / §X.18.b — "capacidade é mutex, resto coexiste". For an explicit

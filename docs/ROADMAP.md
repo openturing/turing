@@ -32,8 +32,7 @@
 > `cache_control`, OpenAI background mode, Anthropic extended thinking). Design →
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §X.19 / §X.20 / §X.13.
 
-**Foundation:**
-- 📋 **T489** (deps: T130, T131, T132) **`TurGoogleGenAiNativeService` + Gemini executor branch** — third `TurNativeChatExecutor` branch (Gemini `Client.models().generateContent`/`generateContentStream`) reusing the T131 prompt-assembly fusion; opt-in per the T132 matrix, empty matrix = unchanged Spring AI path. → §X.19
+**Foundation:** ✅ T489 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Server-side built-in tools (parity with F.2/F.3):**
 - 📋 **T490** (deps: T489) **Gemini Google Search grounding** (`google_search`) — analog to T133/T139; grounding metadata decodes onto the T152–T155 `TurChatCitation`/SSE contract; renders the mandatory Search Suggestion chips. cap `gemini-google-search`. → §X.19

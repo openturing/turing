@@ -15,6 +15,7 @@ package com.viglet.turing.genai.nativeapi;
 import java.util.Optional;
 
 import com.anthropic.client.AnthropicClient;
+import com.google.genai.Client;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -41,6 +42,16 @@ public interface TurNativeProviderClient {
 
     /** The native Anthropic SDK client for an {@code anthropic} instance, else empty. */
     Optional<AnthropicClient> anthropic(TurLLMInstance instance);
+
+    /**
+     * T489 / §X.19 — the native Google GenAI SDK client
+     * ({@code com.google.genai.Client}) for a {@code gemini} instance, else empty.
+     * This is the third native branch alongside {@link #openAi(TurLLMInstance)}
+     * and {@link #anthropic(TurLLMInstance)}; the Gemini native path
+     * ({@code TurGoogleGenAiNativeService}) uses it for {@code generateContent} /
+     * {@code generateContentStream}, embeddings, batch, files and context caching.
+     */
+    Optional<Client> gemini(TurLLMInstance instance);
 
     /** Capability lookup for the instance. */
     boolean hasCapability(String instanceId, TurNativeCapability capability);
