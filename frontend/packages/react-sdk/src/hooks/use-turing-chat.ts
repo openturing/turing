@@ -737,6 +737,8 @@ export function useTuringChat(
         // T516 — the answer-grounding guardrail verdict, when the guardrail
         // flagged the answer (clean answers emit no event → undefined).
         const finalGrounding = res?.grounding ?? undefined;
+        // T522 — the cross-vendor second-opinion verdict, when enabled.
+        const finalSecondOpinion = res?.secondOpinion ?? undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
           content: aggregatedContent || m.content,
@@ -748,6 +750,7 @@ export function useTuringChat(
           reasoning: finalReasoning,
           toolCalls: finalToolCalls ?? m.toolCalls,
           grounding: finalGrounding,
+          secondOpinion: finalSecondOpinion,
         }));
         setActiveForm(finalForm ?? null);
         setStatus("success");

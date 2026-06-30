@@ -73,6 +73,15 @@ public class TurGlobalSettingsBean {
      */
     private java.util.List<String> llmFallbackChainIds;
     private com.viglet.turing.resilience.llm.TurLlmFallbackMode llmFallbackMode;
+    /**
+     * T522 — multi-provider "second opinion": when enabled, a different-vendor
+     * critic LLM judges the primary answer; the agreement is surfaced as a
+     * confidence signal. {@code secondOpinionLlmId} is the critic instance.
+     *
+     * @since 2026.3.4
+     */
+    private boolean secondOpinionEnabled;
+    private String secondOpinionLlmId;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;
     private boolean llmCacheRegenerate;
@@ -107,8 +116,14 @@ public class TurGlobalSettingsBean {
     private TurRagRerankStrategyType ragSnRerankStrategy;
     /** T338 — self-hosted cross-encoder {@code /rerank} endpoint URL. */
     private String ragSnRerankEndpoint;
-    /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
+    /** T338 — rerank model name (cross-encoder / Cohere / Bedrock ARN / Vertex model); blank = backend default. */
     private String ragSnRerankModel;
+    /** T521 — AWS region for the managed Bedrock Rerank API ({@code BEDROCK}). */
+    private String ragSnRerankRegion;
+    /** T521 — GCP project for the managed Vertex AI Ranking API ({@code VERTEX_AI}). */
+    private String ragSnRerankVertexProject;
+    /** T521 — GCP location for Vertex AI Ranking (default {@code global}). */
+    private String ragSnRerankVertexLocation;
     /**
      * T339 — Cohere API key, <b>write-only</b>: accepted on update, never echoed
      * back on read (always blank in GET responses). A blank value on update

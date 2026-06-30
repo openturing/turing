@@ -49,6 +49,11 @@
       "flagged": "Sinalizada pela proteção",
       "tooltip": "Veredito da proteção de fundamentação da resposta"
     },
+    "secondOpinion": {
+      "agree": "Segunda opinião concorda",
+      "disagree": "Segunda opinião discorda",
+      "tooltip": "Um modelo de outro fornecedor revisou esta resposta"
+    },
     "tools": {
       "heading": "Ferramentas",
       "calling": "Chamando",

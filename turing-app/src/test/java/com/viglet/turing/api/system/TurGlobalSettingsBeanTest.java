@@ -35,11 +35,15 @@ class TurGlobalSettingsBeanTest {
                 null,  // modelLaneCheapId (T517)
                 null,  // llmFallbackChainIds (T518)
                 null,  // llmFallbackMode (T518)
+                false, // secondOpinionEnabled (T522)
+                null,  // secondOpinionLlmId (T522)
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
                 false, null, null, null,
                 24,  // piiSlotTtlHours (T61)
-                false, 20, null, null, null, null, false,  // rag SN rerank (T337–T339)
+                false, 20, null, null, null,  // rag SN rerank enabled/topN/strategy/endpoint/model
+                null, null, null,  // ragSnRerank region / vertexProject / vertexLocation (T521)
+                null, false,  // ragSnRerankApiKey / apiKeySet (T339)
                 false);  // ragSnRerankCacheEnabled (T341)
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);

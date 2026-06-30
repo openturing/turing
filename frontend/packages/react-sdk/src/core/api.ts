@@ -7,6 +7,7 @@ import type {
   TurChatFormSubmitResponse,
   TurChatGrounding,
   TurChatResponse,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatStreamEvent,
   TurChatToolCall,
@@ -264,6 +265,19 @@ function parseGroundingEvent(content: string): TurChatGrounding | null {
   return null;
 }
 
+/** Parses a `"secondOpinion"` SSE event payload (T522) into a verdict, or `null`. */
+function parseSecondOpinionEvent(content: string): TurChatSecondOpinion | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatSecondOpinion;
+    if (parsed && typeof parsed.agree === "boolean") {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 /** Parses a `"citations"` SSE event payload (T152) into per-sentence citations, or `null`. */
 function parseCitationsEvent(content: string): TurChatCitation[] | null {
   try {
@@ -340,6 +354,7 @@ async function consumeAssistantStream(
   onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
   onReasoning?: (reasoning: string) => void,
   onGrounding?: (grounding: TurChatGrounding) => void,
+  onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void,
 ): Promise<{
   text: string;
   options: string[];
@@ -351,6 +366,7 @@ async function consumeAssistantStream(
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
   grounding?: TurChatGrounding;
+  secondOpinion?: TurChatSecondOpinion;
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -368,6 +384,7 @@ async function consumeAssistantStream(
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
   let grounding: TurChatGrounding | undefined;
+  let secondOpinion: TurChatSecondOpinion | undefined;
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -442,6 +459,14 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "secondOpinion") {
+      const parsedSecondOpinion = parseSecondOpinionEvent(parsed.content);
+      if (parsedSecondOpinion) {
+        secondOpinion = parsedSecondOpinion;
+        onSecondOpinion?.(parsedSecondOpinion);
+      }
+      return true;
+    }
     return false;
   }
 
@@ -488,6 +513,7 @@ async function consumeAssistantStream(
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -563,6 +589,7 @@ export async function postChatConversation(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -573,6 +600,7 @@ export async function postChatConversation(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -586,6 +614,7 @@ export async function postChatConversation(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -660,6 +689,7 @@ export async function postAgentChat(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -670,6 +700,7 @@ export async function postAgentChat(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -683,6 +714,7 @@ export async function postAgentChat(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -731,6 +763,7 @@ export async function postClientToolResult(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -741,6 +774,7 @@ export async function postClientToolResult(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -754,6 +788,7 @@ export async function postClientToolResult(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 

@@ -434,6 +434,7 @@ export type {
   TurChatSource,
   TurChatCitation,
   TurChatGrounding,
+  TurChatSecondOpinion,
   TurSearchSuggestions,
   TurChatToolCall,
   TurChatForm,

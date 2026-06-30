@@ -290,6 +290,24 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    /** T522 — whether the multi-provider "second opinion" cross-check runs. */
+    public boolean isSecondOpinionEnabled() {
+        return configVars.getBoolean(TurConfigVarOnStartup.SECOND_OPINION_ENABLED, false);
+    }
+
+    public boolean updateSecondOpinionEnabled(boolean enabled) {
+        return configVars.setBoolean(TurConfigVarOnStartup.SECOND_OPINION_ENABLED, enabled);
+    }
+
+    /** T522 — the critic {@code TurLLMInstance} id (a different vendor than the answerer). */
+    public String getSecondOpinionLlmId() {
+        return configVars.getString(TurConfigVarOnStartup.SECOND_OPINION_LLM, "");
+    }
+
+    public String updateSecondOpinionLlmId(String llmId) {
+        return configVars.setString(TurConfigVarOnStartup.SECOND_OPINION_LLM, llmId);
+    }
+
     public TurEmailProviderType getEmailProvider() {
         return configVars.getEnum(TurEmailProviderType.class, TurConfigVarOnStartup.EMAIL_PROVIDER,
                 TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));
@@ -437,6 +455,38 @@ public class TurGlobalSettingsService {
     @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public String updateRagSnRerankModel(String model) {
         return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, model);
+    }
+
+    /** T521 — AWS region for the managed Bedrock Rerank API ({@code BEDROCK}). */
+    public String getRagSnRerankRegion() {
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.RAG_SN_RERANK_REGION,
+                TurConfigVarOnStartup.RAG_SN_RERANK_REGION_DEFAULT_VALUE);
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankRegion(String region) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_REGION, region);
+    }
+
+    /** T521 — GCP project for the managed Vertex AI Ranking API ({@code VERTEX_AI}). */
+    public String getRagSnRerankVertexProject() {
+        return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_PROJECT, "");
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankVertexProject(String project) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_PROJECT, project);
+    }
+
+    /** T521 — GCP location for Vertex AI Ranking (default {@code global}). */
+    public String getRagSnRerankVertexLocation() {
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION,
+                TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION_DEFAULT_VALUE);
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankVertexLocation(String location) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION, location);
     }
 
     /**

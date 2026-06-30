@@ -99,9 +99,10 @@ instance.)
 **Exploit distinctive primitives (net-new retrieval capabilities):** ✅ shipped
 (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD.
 
-**Cross-vendor bridges (the bold bets):**
-- 💭 **T521** (deps: T510, T506, T337–T340) **Managed reranker strategies** — Vertex AI Ranking API + Bedrock rerank as additional Block N `TurRagReranker` strategies for cloud-native deployments (no self-hosted cross-encoder). → §XXVIII.17
-- 💭 **T522** (deps: T505, T180) **Multi-provider "second opinion" answer cross-check** — for high-stakes answers, a cheap *different-vendor* model critiques the primary answer (cross-vendor LlmJudge), surfaced as a confidence signal next to the answer; composes the existing LlmJudge + T180 logprobs. → §XXVIII.18
+**Cross-vendor bridges (the bold bets):** ✅ shipped (T516–T522) — see
+[CHANGELOG.md](CHANGELOG.md) Block AD. (T519's Bedrock-KB-citation half landed
+with T520, where the `bedrockagentruntime` dependency lives.) **Block AD is now
+fully shipped.**
 
 ## Non-goals (do NOT add as tasks)
 

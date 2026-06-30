@@ -40,6 +40,7 @@ export type {
   TurChatToolCall,
   TurClientToolCall,
   TurChatGrounding,
+  TurChatSecondOpinion,
   ClientToolHandler,
   ClientToolRegistration,
   TurChatConversationResponse,

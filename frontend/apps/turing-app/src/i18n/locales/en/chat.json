@@ -49,6 +49,11 @@
       "flagged": "Flagged by guardrail",
       "tooltip": "Answer-grounding guardrail verdict"
     },
+    "secondOpinion": {
+      "agree": "Second opinion agrees",
+      "disagree": "Second opinion disagrees",
+      "tooltip": "A different-vendor model reviewed this answer"
+    },
     "tools": {
       "heading": "Tools",
       "calling": "Calling",

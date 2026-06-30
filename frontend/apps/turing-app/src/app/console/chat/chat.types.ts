@@ -2,6 +2,7 @@ import type {
   TurChatCitation,
   TurChatConversationMessage,
   TurChatGrounding,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatToolCall,
   TurSearchSuggestions,
@@ -80,6 +81,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.6
    */
   grounding?: TurChatGrounding
+  /**
+   * Cross-vendor "second opinion" verdict behind the assistant answer (T522).
+   * When present (the check is enabled), the message list renders an
+   * agrees/disagrees confidence badge beside the bubble.
+   *
+   * @since 2026.3.6
+   */
+  secondOpinion?: TurChatSecondOpinion
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -102,6 +111,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
     grounding: m.grounding,
+    secondOpinion: m.secondOpinion,
   }))
 }
 
@@ -118,6 +128,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
     grounding: m.grounding,
+    secondOpinion: m.secondOpinion,
   }))
 }
 

@@ -356,6 +356,47 @@ function GroundingBadge({ message }: Readonly<{ message: ChatMessage }>) {
 }
 
 /**
+ * T522 / §XXVIII.18 — the cross-vendor "second opinion" badge. Present only when
+ * the check is enabled and a different-vendor critic returned a verdict. A green
+ * "agrees" chip or an amber "disagrees" chip (with the critic's reason), plus the
+ * critic vendor and optional confidence.
+ */
+function SecondOpinionBadge({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const opinion = message.secondOpinion
+  if (!opinion) return null
+  const agree = opinion.agree === true
+  const tone = agree
+    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+    : "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+  const label = agree
+    ? t("chat.secondOpinion.agree", { defaultValue: "Second opinion agrees" })
+    : t("chat.secondOpinion.disagree", { defaultValue: "Second opinion disagrees" })
+  const vendor = opinion.criticVendor ? ` · ${opinion.criticVendor}` : ""
+  const confidence =
+    typeof opinion.confidence === "number" ? ` · ${Math.round(opinion.confidence * 100)}%` : ""
+  return (
+    <div
+      className={`not-prose mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${tone}`}
+      title={opinion.rationale ?? t("chat.secondOpinion.tooltip", {
+        defaultValue: "A different-vendor model reviewed this answer",
+      })}
+    >
+      {agree ? (
+        <IconThumbUp className="size-3.5 shrink-0" />
+      ) : (
+        <IconAlertTriangle className="size-3.5 shrink-0" />
+      )}
+      <span className="font-medium">
+        {label}
+        {vendor}
+        {confidence}
+      </span>
+    </div>
+  )
+}
+
+/**
  * F.9 / T170 — operator thumb-up/down on an assistant turn. The click records a
  * DPO preference signal; the selected thumb stays highlighted so the operator
  * sees their rating landed. Only rendered when the list is given an `onFeedback`
@@ -464,6 +505,7 @@ function AssistantBody({
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
       <GroundingBadge message={message} />
+      <SecondOpinionBadge message={message} />
       <SearchSuggestions message={message} />
       <ReasoningPanel message={message} />
       {(onFeedback || onRephrase) && message.content ? (

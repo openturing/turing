@@ -1895,16 +1895,8 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 _Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
-- **§XXVIII.17 — T521 Managed reranker strategies.** Vertex AI Ranking API and
-  Bedrock rerank as additional Block N `TurRagReranker` strategies, for
-  cloud-native deployments that don't want to self-host a cross-encoder. Pure
-  additive strategy, fail-open like the rest of Block N.
-- **§XXVIII.18 — T522 Multi-provider "second opinion" cross-check.** For
-  high-stakes answers, run a cheap model from a *different vendor* as a critic of
-  the primary answer (cross-vendor LlmJudge), and surface the agreement as a
-  confidence signal beside the answer. Composes the existing LlmJudge with the
-  T180 logprobs confidence signal; only meaningful once multiple vendors are
-  wired — another payoff of breadth.
+
+_Shipped (T516–T522) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 **Non-goals:** don't add a provider with no distinctive primitive or enterprise
 reason just to lengthen the list (pure-chat clones belong behind T505's generic

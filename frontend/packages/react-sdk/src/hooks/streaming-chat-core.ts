@@ -4,6 +4,7 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatGrounding,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatToolCall,
   TurSearchSuggestions,
@@ -92,6 +93,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.6
    */
   grounding?: TurChatGrounding;
+  /**
+   * Cross-vendor "second opinion" verdict behind this assistant answer (T522),
+   * emitted as a `"secondOpinion"` SSE event when the check is enabled. The host
+   * renders an agrees/disagrees confidence badge beside the bubble.
+   *
+   * @since 2026.3.6
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 /** Auto-generated, collision-resistant id for React keys and turn tracking. */

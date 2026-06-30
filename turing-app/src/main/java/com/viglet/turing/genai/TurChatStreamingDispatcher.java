@@ -36,6 +36,8 @@ import com.viglet.turing.genai.rag.TurRagSourceCollector;
 import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailAction;
 import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailService;
 import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailVerdict;
+import com.viglet.turing.genai.secondopinion.TurSecondOpinion;
+import com.viglet.turing.genai.secondopinion.TurSecondOpinionService;
 import com.viglet.turing.genai.spectator.TurChatMessageEvent;
 import com.viglet.turing.genai.spectator.TurChatMessageEventBus;
 import com.viglet.turing.observability.TurChatPipelineObservation;
@@ -103,6 +105,7 @@ public class TurChatStreamingDispatcher {
     private final com.viglet.turing.genai.clienttool.TurClientToolService clientToolService;
     private final TurClientToolParkRegistry clientToolParkRegistry;
     private final TurAnswerGuardrailService answerGuardrailService;
+    private final TurSecondOpinionService secondOpinionService;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -116,7 +119,8 @@ public class TurChatStreamingDispatcher {
             com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService,
             com.viglet.turing.genai.clienttool.TurClientToolService clientToolService,
             TurClientToolParkRegistry clientToolParkRegistry,
-            TurAnswerGuardrailService answerGuardrailService) {
+            TurAnswerGuardrailService answerGuardrailService,
+            TurSecondOpinionService secondOpinionService) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -130,6 +134,7 @@ public class TurChatStreamingDispatcher {
         this.clientToolService = clientToolService;
         this.clientToolParkRegistry = clientToolParkRegistry;
         this.answerGuardrailService = answerGuardrailService;
+        this.secondOpinionService = secondOpinionService;
     }
 
     /**
@@ -445,6 +450,15 @@ public class TurChatStreamingDispatcher {
             text = guarded.text();
             TurAnswerGuardrailVerdict guardrailVerdict = guarded.verdict();
 
+            // T522 — multi-provider "second opinion": a different-vendor critic
+            // judges the answer; the agreement is surfaced beside it as a
+            // confidence signal. Opt-in + fail-open (null when disabled). Uses the
+            // final (possibly redacted) text + the retrieved RAG context.
+            TurSecondOpinion secondOpinion = secondOpinionService.isEnabled()
+                    ? secondOpinionService.evaluate(lastUserMessage, text,
+                            drainRagContext(initialOptions), llmInstance).orElse(null)
+                    : null;
+
             // Telemetry: increment turn count + accumulate tokens for the
             // session, and append the turn to chat memory (NoOp when either
             // is disabled; safe to call unconditionally).
@@ -484,7 +498,8 @@ public class TurChatStreamingDispatcher {
             log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={} regen_ms={})",
                     tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
                     tAdvanceMs, tRegenMs);
-            return new AssistantTurn(text, suggestedOptions, formJson, sources, guardrailVerdict, null);
+            return new AssistantTurn(text, suggestedOptions, formJson, sources, guardrailVerdict,
+                    secondOpinion, null);
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
@@ -677,11 +692,11 @@ public class TurChatStreamingDispatcher {
      */
     private record AssistantTurn(String text, List<String> options, String formJson,
             List<TurRagSource> sources, TurAnswerGuardrailVerdict grounding,
-            ClientToolCall clientToolCall) {
+            TurSecondOpinion secondOpinion, ClientToolCall clientToolCall) {
 
         /** T438 — a turn that parked on a frontend tool instead of answering. */
         static AssistantTurn parked(ClientToolCall call) {
-            return new AssistantTurn("", List.of(), null, List.of(), null, call);
+            return new AssistantTurn("", List.of(), null, List.of(), null, null, call);
         }
     }
 
@@ -793,6 +808,8 @@ public class TurChatStreamingDispatcher {
         // T516 — guardrail verdict badge (present only when the guardrail is
         // enabled and flagged something), then T292 provenance chips, then chips.
         events = appendJsonEvent(events, turn.grounding(), "grounding");
+        // T522 — cross-vendor second-opinion verdict (present only when enabled).
+        events = appendJsonEvent(events, turn.secondOpinion(), "secondOpinion");
         events = appendJsonEvent(events,
                 turn.sources() == null || turn.sources().isEmpty() ? null : turn.sources(), "sources");
         events = appendJsonEvent(events,
