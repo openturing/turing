@@ -1888,11 +1888,6 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.4 — T508 Cohere full provider.** Cohere is already half-integrated
-  (rerank). Promote it: `Command` chat (notable for **built-in citation mode** —
-  see §XXVIII.15) + `Embed v4` (multilingual + multimodal + Matryoshka). Reuses
-  the credentials the reranker already stores. Strong specifically for
-  multilingual enterprise search.
 - **§XXVIII.5 — T509 Mistral AI provider.** Spring-AI-native. Chat (Mistral
   Large/Small, Codestral for code), Mistral embeddings, and a `MISTRAL` reranker
   strategy. The reason to prioritize it is non-technical: a **European,

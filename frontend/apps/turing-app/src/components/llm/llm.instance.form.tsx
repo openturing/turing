@@ -226,6 +226,15 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("")
     }
+    if (vendorId === "COHERE") {
+      // Cohere via its OpenAI-compatible endpoint: Command chat + Embed v4.
+      form.setValue("url", "https://api.cohere.ai/compatibility/v1", { shouldDirty: true });
+      form.setValue("modelName", "command-r-plus", { shouldDirty: true });
+      form.setValue("temperature", 0.7, { shouldDirty: true });
+      form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {

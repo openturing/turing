@@ -106,6 +106,14 @@ public class TurLLMVendorOnStartup {
 			voyage.setWebsite("https://www.voyageai.com");
 			turLLMVendorRepository.save(voyage);
 
+			TurLLMVendor cohere = new TurLLMVendor();
+			cohere.setId("COHERE");
+			cohere.setDescription("Cohere — Command chat + Embed v4 (OpenAI-compatible endpoint)");
+			cohere.setPlugin("cohere");
+			cohere.setTitle("Cohere");
+			cohere.setWebsite("https://cohere.com");
+			turLLMVendorRepository.save(cohere);
+
 		}
 	}
 }
