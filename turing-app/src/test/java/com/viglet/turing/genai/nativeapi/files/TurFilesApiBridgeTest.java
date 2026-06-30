@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,7 @@ import com.openai.client.OpenAIClient;
 import com.openai.models.files.FileCreateParams;
 import com.openai.models.files.FileObject;
 import com.viglet.turing.genai.nativeapi.TurNativeProviderClient;
+import com.viglet.turing.genai.nativeapi.TurNativeProviderClient.NativeCredentials;
 import com.viglet.turing.genai.nativeapi.files.TurFilesApiBridge.TurVendorFileRef;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -69,20 +71,28 @@ class TurFilesApiBridgeTest {
     private TurFilesApiBridge bridge;
 
     private TurLLMInstance instance(String id, String pluginType) {
+        return instance(id, pluginType, "sk-shared-key");
+    }
+
+    private TurLLMInstance instance(String id, String pluginType, String apiKey) {
         TurLLMInstance instance = mock(TurLLMInstance.class);
         // lenient: the non-native-vendor test returns before the id is read.
         org.mockito.Mockito.lenient().when(instance.getId()).thenReturn(id);
         TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
         when(provider.getPluginType()).thenReturn(pluginType);
         when(providerFactory.getProvider(instance)).thenReturn(provider);
+        // lenient: the non-native and empty-data paths return before the
+        // account fingerprint (and thus credentials) is computed.
+        org.mockito.Mockito.lenient().when(nativeClient.credentials(instance))
+                .thenReturn(new NativeCredentials(apiKey, "https://api.vendor.test"));
         return instance;
     }
 
     @Test
     void uploadsToOpenAiOnCacheMissAndPersists() {
         TurLLMInstance instance = instance("inst-openai", "openai");
-        when(vendorFileRepository.findByPluginTypeAndInstanceIdAndContentHash(
-                eq("openai"), eq("inst-openai"), anyString())).thenReturn(Optional.empty());
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.empty());
 
         OpenAIClient client = mock(OpenAIClient.class);
         com.openai.services.blocking.FileService files = mock(com.openai.services.blocking.FileService.class);
@@ -107,13 +117,15 @@ class TurFilesApiBridgeTest {
         assertThat(saved.getValue().getVendorFileId()).isEqualTo("file_openai_1");
         assertThat(saved.getValue().getContentHash()).hasSize(64);
         assertThat(saved.getValue().getFileName()).isEqualTo("report.pdf");
+        // T177 — the row carries the account fingerprint that other instances dedup against.
+        assertThat(saved.getValue().getAccountKey()).hasSize(64);
     }
 
     @Test
     void uploadsToAnthropicOnCacheMiss() {
         TurLLMInstance instance = instance("inst-anthropic", "anthropic");
-        when(vendorFileRepository.findByPluginTypeAndInstanceIdAndContentHash(
-                eq("anthropic"), eq("inst-anthropic"), anyString())).thenReturn(Optional.empty());
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("anthropic"), anyString(), anyString())).thenReturn(Optional.empty());
 
         AnthropicClient client = mock(AnthropicClient.class);
         com.anthropic.services.blocking.BetaService beta =
@@ -148,8 +160,8 @@ class TurFilesApiBridgeTest {
         cached.setContentType("application/pdf");
         cached.setSizeBytes(PDF_BYTES.length);
         cached.setCreatedAt(OffsetDateTime.now());
-        when(vendorFileRepository.findByPluginTypeAndInstanceIdAndContentHash(
-                eq("openai"), eq("inst-openai"), anyString())).thenReturn(Optional.of(cached));
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.of(cached));
 
         Optional<TurVendorFileRef> ref = bridge.ensureUploaded(instance, PDF_BYTES, "report.pdf",
                 "application/pdf");
@@ -168,8 +180,8 @@ class TurFilesApiBridgeTest {
         expired.setInstanceId("inst-openai");
         expired.setVendorFileId("file_stale");
         expired.setExpiresAt(OffsetDateTime.now().minusHours(1));
-        when(vendorFileRepository.findByPluginTypeAndInstanceIdAndContentHash(
-                eq("openai"), eq("inst-openai"), anyString())).thenReturn(Optional.of(expired));
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.of(expired));
 
         OpenAIClient client = mock(OpenAIClient.class);
         com.openai.services.blocking.FileService files = mock(com.openai.services.blocking.FileService.class);
@@ -195,15 +207,15 @@ class TurFilesApiBridgeTest {
 
         assertThat(ref).isEmpty();
         verify(vendorFileRepository, never())
-                .findByPluginTypeAndInstanceIdAndContentHash(anyString(), anyString(), anyString());
+                .findByPluginTypeAndAccountKeyAndContentHash(anyString(), anyString(), anyString());
         verify(vendorFileRepository, never()).save(any());
     }
 
     @Test
     void failsOpenWhenUploadThrows() {
         TurLLMInstance instance = instance("inst-openai", "openai");
-        when(vendorFileRepository.findByPluginTypeAndInstanceIdAndContentHash(
-                eq("openai"), eq("inst-openai"), anyString())).thenReturn(Optional.empty());
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.empty());
 
         OpenAIClient client = mock(OpenAIClient.class);
         com.openai.services.blocking.FileService files = mock(com.openai.services.blocking.FileService.class);
@@ -223,5 +235,58 @@ class TurFilesApiBridgeTest {
     void returnsEmptyForEmptyData() {
         assertThat(bridge.ensureUploaded(mock(TurLLMInstance.class), new byte[0], "x", "x")).isEmpty();
         assertThat(bridge.ensureUploaded(mock(TurLLMInstance.class), null, "x", "x")).isEmpty();
+    }
+
+    /**
+     * T177 — two different instances pointing at the <em>same</em> vendor account
+     * resolve to the same {@code accountKey}, so the second one's cache lookup
+     * targets exactly the row the first one uploaded: one upload, many references.
+     */
+    @Test
+    void sharesUploadAcrossInstancesWithSameVendorAccount() {
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.empty());
+
+        TurLLMInstance instanceA = instance("inst-a", "openai", "sk-shared");
+        OpenAIClient client = mock(OpenAIClient.class);
+        com.openai.services.blocking.FileService files = mock(com.openai.services.blocking.FileService.class);
+        FileObject fileObject = mock(FileObject.class);
+        when(nativeClient.openAi(instanceA)).thenReturn(Optional.of(client));
+        when(client.files()).thenReturn(files);
+        when(files.create(any(FileCreateParams.class))).thenReturn(fileObject);
+        when(fileObject.id()).thenReturn("file_shared");
+
+        bridge.ensureUploaded(instanceA, PDF_BYTES, "report.pdf", "application/pdf");
+
+        ArgumentCaptor<TurVendorFile> saved = ArgumentCaptor.forClass(TurVendorFile.class);
+        verify(vendorFileRepository).save(saved.capture());
+        String accountKey = saved.getValue().getAccountKey();
+        assertThat(accountKey).hasSize(64);
+
+        // A second instance sharing the credential — its lookup uses the same account key.
+        TurLLMInstance instanceB = instance("inst-b", "openai", "sk-shared");
+        bridge.ensureUploaded(instanceB, PDF_BYTES, "report.pdf", "application/pdf");
+
+        ArgumentCaptor<String> lookupKeys = ArgumentCaptor.forClass(String.class);
+        verify(vendorFileRepository, times(2)).findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), lookupKeys.capture(), anyString());
+        assertThat(lookupKeys.getAllValues()).containsExactly(accountKey, accountKey);
+    }
+
+    /** T177 — instances with distinct credentials stay isolated (distinct account keys). */
+    @Test
+    void distinctCredentialsProduceDistinctAccountKeys() {
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), anyString(), anyString())).thenReturn(Optional.empty());
+
+        bridge.ensureUploaded(instance("inst-a", "openai", "sk-aaa"), PDF_BYTES, "r.pdf",
+                "application/pdf");
+        bridge.ensureUploaded(instance("inst-b", "openai", "sk-bbb"), PDF_BYTES, "r.pdf",
+                "application/pdf");
+
+        ArgumentCaptor<String> keys = ArgumentCaptor.forClass(String.class);
+        verify(vendorFileRepository, times(2)).findByPluginTypeAndAccountKeyAndContentHash(
+                eq("openai"), keys.capture(), anyString());
+        assertThat(keys.getAllValues().get(0)).isNotEqualTo(keys.getAllValues().get(1));
     }
 }

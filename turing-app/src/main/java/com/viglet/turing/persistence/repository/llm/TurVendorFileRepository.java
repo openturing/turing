@@ -28,13 +28,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.viglet.turing.persistence.model.llm.TurVendorFile;
 
 /**
- * T175 / §X.12.a — repository for the vendor Files-API upload cache.
+ * T175 / §X.12.a — repository for the vendor Files-API upload cache. T177
+ * broadens the dedup lookup from per-instance to per-account.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
 public interface TurVendorFileRepository extends JpaRepository<TurVendorFile, String> {
 
-    Optional<TurVendorFile> findByPluginTypeAndInstanceIdAndContentHash(String pluginType,
-            String instanceId, String contentHash);
+    /**
+     * T177 — the cross-instance dedup lookup: any instance sharing the vendor
+     * account ({@code accountKey}) reuses a file already uploaded under it.
+     */
+    Optional<TurVendorFile> findByPluginTypeAndAccountKeyAndContentHash(String pluginType,
+            String accountKey, String contentHash);
 }

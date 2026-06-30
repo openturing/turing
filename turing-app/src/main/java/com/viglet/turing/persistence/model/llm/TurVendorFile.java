@@ -48,11 +48,27 @@ import lombok.Setter;
  * tenant) builds on.
  *
  * <p>The vendor {@code fileId} is account-scoped (it lives under the API key),
- * so the natural cache key is {@code (pluginType, instanceId, contentHash)}:
- * two agents pointing at the same instance reuse the upload; two instances with
- * distinct keys each get their own. {@code expiresAt} is null for OpenAI /
- * Anthropic (their files persist) and is reserved for providers whose uploads
- * expire (Gemini's 48 h Files API, T497) — a stale row is treated as a miss.
+ * so T175 keyed the cache on {@code (pluginType, instanceId, contentHash)}: two
+ * agents pointing at the same instance reuse the upload; two instances each got
+ * their own — even when they pointed at the <em>same</em> vendor account, so the
+ * same PDF re-uploaded once per instance.
+ *
+ * <p><b>T177 / §X.12.c — vendor-side reuse across agents in one tenant.</b> The
+ * real validity boundary of a {@code file_id} is the vendor <em>account</em>
+ * (the credential it was uploaded under), not the Turing instance. So the cache
+ * now also carries {@link #accountKey} — a stable fingerprint of
+ * {@code (pluginType, baseUrl, apiKey)} — and the lookup key broadens to
+ * {@code (pluginType, accountKey, contentHash)}. N agents on instances that
+ * share one vendor account (a tenant's own key, or a platform GLOBAL instance)
+ * now share a single {@code file_id}: one upload, many references. Instances
+ * with distinct keys produce distinct {@code accountKey}s and stay isolated, and
+ * dedup only ever fires on byte-identical content, so nothing crosses an account
+ * that did not already hold those exact bytes. {@link #instanceId} is retained as
+ * the provenance of the instance that triggered the upload.
+ *
+ * <p>{@code expiresAt} is null for OpenAI / Anthropic (their files persist) and
+ * is reserved for providers whose uploads expire (Gemini's 48 h Files API,
+ * T497) — a stale row is treated as a miss.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -61,8 +77,12 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "llm_vendor_file",
-        uniqueConstraints = @UniqueConstraint(name = "uq_llm_vendor_file",
-                columnNames = {"pluginType", "instanceId", "contentHash"}))
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_llm_vendor_file",
+                        columnNames = {"pluginType", "instanceId", "contentHash"}),
+                @UniqueConstraint(name = "uq_llm_vendor_file_acct",
+                        columnNames = {"pluginType", "accountKey", "contentHash"})
+        })
 public class TurVendorFile implements Serializable {
 
     @Serial
@@ -77,9 +97,18 @@ public class TurVendorFile implements Serializable {
     @Column(name = "pluginType", length = 32, nullable = false)
     private String pluginType;
 
-    /** FK-by-value to {@code llm_instance.id} — the account whose key owns the upload. */
+    /** FK-by-value to {@code llm_instance.id} — provenance of the instance that triggered the upload. */
     @Column(name = "instanceId", length = 40, nullable = false)
     private String instanceId;
+
+    /**
+     * T177 — hex SHA-256 fingerprint of the vendor account the file lives under
+     * ({@code pluginType + baseUrl + apiKey}). The cross-instance dedup key:
+     * instances sharing one credential share this value and thus the upload.
+     * Nullable only for legacy T175 rows written before this column existed.
+     */
+    @Column(name = "accountKey", length = 64)
+    private String accountKey;
 
     /** Hex SHA-256 of the uploaded bytes — the dedup key. */
     @Column(name = "contentHash", length = 64, nullable = false)

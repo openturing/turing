@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## F.11 — Files API + native PDF
-
-- 💭 **T177** (deps: T175) **Vendor-side chunk reuse across agents in the same tenant** — when N agents on the same tenant cite the same PDF, reuse the one cached `file_id` (the `llm_vendor_file` content-hash key already supports this; broaden the key from per-instance to per-tenant). → §X.12.c
-
 ## F.12 — Reasoning summary + observability hardening
 
 - 📋 **T178** (deps: T131) **Reasoning summary surfacing** — for o1 / o3 / o4-mini / GPT-5 reasoning models, capture `reasoning.summary` from the Responses API and render as a collapsible "Why this answer" panel in the chat UI. → §X.13.a

@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # T177 / §X.12.c — vendor-side file reuse across agents in one tenant.
+  #
+  # The vendor file_id is account-scoped (it lives under the API key), so T175's
+  # per-instance key re-uploaded the same PDF once per instance even when the
+  # instances shared a vendor account. This adds accountKey — a SHA-256
+  # fingerprint of (pluginType, baseUrl, apiKey) — and an account-scoped unique
+  # constraint, so instances sharing one credential share a single upload.
+  #
+  # Additive: the legacy (pluginType, instanceId, contentHash) constraint stays;
+  # dedup correctness comes from the new accountKey lookup. accountKey is
+  # nullable for the T175 rows that predate it (new rows always populate it).
+  # Idempotent: a single changeset gated by "accountKey column not present", so
+  # the column and its unique constraint are added together or not at all
+  # (no uniqueConstraintExists precondition — unsupported on H2).
+
+  - changeSet:
+      id: v2026.3.1.69-add-accountKey
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_vendor_file
+                columnName: accountKey
+      changes:
+        - addColumn:
+            tableName: llm_vendor_file
+            columns:
+              - column:
+                  name: accountKey
+                  type: varchar(64)
+        - addUniqueConstraint:
+            tableName: llm_vendor_file
+            columnNames: pluginType, accountKey, contentHash
+            constraintName: uq_llm_vendor_file_acct

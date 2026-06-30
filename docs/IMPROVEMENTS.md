@@ -1467,20 +1467,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.12 Files API + native PDF (T177)
-
-T175 (the `TurFilesApiBridge` content-hash upload cache) and T176 (native
-PDF grounding for Claude agents, paired with T152 citations for page-level
-provenance) have shipped — see CHANGELOG §X.12. What remains:
-
-**T177 Vendor-side chunk reuse across agents in one tenant.** The
-`llm_vendor_file` cache already keys on `SHA-256(bytes)`, but scoped to
-`(pluginType, instanceId)` — so two agents on the *same* tenant pointing at
-*different* instances re-upload the same PDF. T177 broadens the key from
-per-instance to per-tenant (when the instances share a vendor account /
-credential), so N agents citing the same document share one `file_id`: one
-upload, many references.
-
 ### X.13 Reasoning surfacing + logprobs (T178–T180)
 
 T178's "Why this answer" panel surfaces `reasoning.summary` (not raw

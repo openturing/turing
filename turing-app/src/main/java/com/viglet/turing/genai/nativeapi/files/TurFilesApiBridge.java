@@ -49,11 +49,15 @@ import lombok.extern.slf4j.Slf4j;
  * text only.
  *
  * <p>The upload is content-addressed: {@link #ensureUploaded} hashes the bytes
- * (SHA-256) and consults {@link TurVendorFileRepository} keyed by
- * {@code (pluginType, instanceId, contentHash)} before calling the vendor, so
- * the same binary uploads exactly once per vendor account no matter how many
- * agents or turns reference it. The {@code file_id} is account-scoped (it lives
- * under the API key), which is why the instance is part of the key.
+ * (SHA-256) and consults {@link TurVendorFileRepository} before calling the
+ * vendor, so the same binary uploads exactly once per vendor account no matter
+ * how many agents or turns reference it. The {@code file_id} is account-scoped
+ * (it lives under the API key), so <b>T177 / §X.12.c</b> keys the cache on
+ * {@code (pluginType, accountKey, contentHash)} — where {@code accountKey} is a
+ * SHA-256 fingerprint of {@code (pluginType, baseUrl, apiKey)}. N agents on
+ * different instances that share one vendor account (a tenant's own key, or a
+ * platform GLOBAL instance) therefore share one upload; instances with distinct
+ * credentials stay isolated, and dedup only fires on byte-identical content.
  *
  * <p><b>Fail-open by design.</b> Every failure mode — a non-native vendor, a
  * missing key, an HTTP error from the vendor — returns {@link Optional#empty()}
@@ -133,8 +137,16 @@ public class TurFilesApiBridge {
             return Optional.empty();
         }
 
+        // T177 — dedup key is the vendor account (credential), not the instance:
+        // instances sharing one key/endpoint share the upload. No usable
+        // credential ⇒ the native upload could not run anyway, so fail open.
+        String accountKey = accountKey(instance, pluginType);
+        if (accountKey == null) {
+            return Optional.empty();
+        }
+
         Optional<TurVendorFile> cached = vendorFileRepository
-                .findByPluginTypeAndInstanceIdAndContentHash(pluginType, instance.getId(), hash)
+                .findByPluginTypeAndAccountKeyAndContentHash(pluginType, accountKey, hash)
                 .filter(this::notExpired);
         if (cached.isPresent()) {
             return cached.map(TurFilesApiBridge::toRef);
@@ -147,8 +159,9 @@ public class TurFilesApiBridge {
             if (!StringUtils.hasText(fileId)) {
                 return Optional.empty();
             }
-            persist(pluginType, instance.getId(), hash, fileId, name, type, data.length);
-            return Optional.of(new TurVendorFileRef(fileId, pluginType, name, type, data.length));
+            TurVendorFileRef ref = new TurVendorFileRef(fileId, pluginType, name, type, data.length);
+            persist(ref, instance.getId(), accountKey, hash);
+            return Optional.of(ref);
         } catch (RuntimeException e) {
             log.warn("[Files-API] upload to '{}' for instance '{}' failed — falling back to text: {}",
                     pluginType, instance.getId(), e.getMessage());
@@ -189,16 +202,16 @@ public class TurFilesApiBridge {
     }
 
     /** Persist the cache row, tolerating a concurrent insert that already won the unique key. */
-    private void persist(String pluginType, String instanceId, String hash, String fileId,
-            String name, String type, long size) {
+    private void persist(TurVendorFileRef ref, String instanceId, String accountKey, String hash) {
         TurVendorFile row = new TurVendorFile();
-        row.setPluginType(pluginType);
+        row.setPluginType(ref.pluginType());
         row.setInstanceId(instanceId);
+        row.setAccountKey(accountKey);
         row.setContentHash(hash);
-        row.setVendorFileId(fileId);
-        row.setFileName(name);
-        row.setContentType(type);
-        row.setSizeBytes(size);
+        row.setVendorFileId(ref.vendorFileId());
+        row.setFileName(ref.fileName());
+        row.setContentType(ref.contentType());
+        row.setSizeBytes(ref.sizeBytes());
         row.setCreatedAt(OffsetDateTime.now());
         try {
             vendorFileRepository.save(row);
@@ -206,6 +219,22 @@ public class TurFilesApiBridge {
             log.debug("[Files-API] cache row for instance '{}' already present (race) — keeping it",
                     instanceId);
         }
+    }
+
+    /**
+     * T177 — a stable fingerprint of the vendor account the upload lives under,
+     * so instances sharing one credential share the cache. Built from the
+     * decrypted credentials ({@code pluginType + baseUrl + apiKey}); returns
+     * {@code null} when no API key is available (the native upload could not run
+     * anyway). The plaintext key never leaves this method — only its digest.
+     */
+    private String accountKey(TurLLMInstance instance, String pluginType) {
+        TurNativeProviderClient.NativeCredentials creds = nativeClient.credentials(instance);
+        if (creds == null || !StringUtils.hasText(creds.apiKey())) {
+            return null;
+        }
+        String baseUrl = StringUtils.hasText(creds.baseUrl()) ? creds.baseUrl().strip() : "";
+        return sha256Utf8(pluginType + "\n" + baseUrl + "\n" + creds.apiKey());
     }
 
     private boolean notExpired(TurVendorFile row) {
@@ -240,7 +269,7 @@ public class TurFilesApiBridge {
         return trimmed.length() <= max ? trimmed : trimmed.substring(0, max);
     }
 
-    /** Reserved for tests/diagnostics: the UTF-8 SHA-256 of a string. */
+    /** The UTF-8 SHA-256 of a string — backs the T177 account fingerprint and test helpers. */
     static String sha256Utf8(String value) {
         return sha256(value.getBytes(StandardCharsets.UTF_8));
     }
