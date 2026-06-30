@@ -124,7 +124,7 @@ fully shipped.**
 - ✅ **T525** shipped — see CHANGELOG.
 - ✅ **T528** shipped — see CHANGELOG.
 - ✅ **T529** shipped — see CHANGELOG.
-- 📋 **T530** (deps: T529) **New `reranking.md`** — Block N pluggable reranker (LLM / CROSS_ENCODER / COHERE, T337–T341, fail-open) + managed strategies (Vertex AI Ranking / Bedrock Rerank, T521); fold in `docs/RAG_HYBRID_CONFIG.md`. → §XXIX.3
+- ✅ **T530** shipped — see CHANGELOG. (Documented all **7** strategies: LLM / LLM_LOGPROBS / CROSS_ENCODER / COHERE / VOYAGE / BEDROCK / VERTEX_AI.)
 
 **Phase 2 — net-new pages & native exploitation:**
 - 📋 **T531** (deps: —) **New `manifest.md` (+ `search-engine.md` cross-link)** — field-manifest provisioning (T382), schema-as-code + planner/migration (T386), LLM-assisted derivation + wizard (T387/T408), hybrid RRF ranking (T383), field coverage / content-gap observability (T388). → §XXIX.3
