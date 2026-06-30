@@ -56,6 +56,22 @@ export interface TurDailyCostPoint {
   requestCount: number;
 }
 
+/**
+ * T184 / §X.14.d — per-agent budget status for the AI-Spend card's alert
+ * thresholds. Mirrors {@code TurLLMCostAPI.AgentBudgetStatus}.
+ */
+export interface TurAgentBudgetStatus {
+  agentId: string;
+  agentTitle: string;
+  monthlyBudgetUsd: number;
+  monthToDateSpendUsd: number;
+  projectedMonthEndUsd: number;
+  overBudget: boolean;
+  projectedOverBudget: boolean;
+  perTurnSoftCapUsd: number | null;
+  downgradeConfigured: boolean;
+}
+
 /** Row in the admin-editable per-model price table ({@code tur_llm_price}). */
 export interface TurLLMPrice {
   id?: string;

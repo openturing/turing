@@ -169,6 +169,46 @@ public class TurLLMCostAPI {
         return points;
     }
 
+    /**
+     * T184 / §X.14.d — per-agent budget status for the AI-Spend card's alert
+     * thresholds: month-to-date spend vs the agent's {@code monthlyBudgetUsd}
+     * plus a linear projection to month-end. Only agents with a positive monthly
+     * budget are returned (the gate is off otherwise). Mirrors the read the
+     * T291 turn-time {@code TurChatCostBudgetGate} does, surfaced for the UI.
+     */
+    public record AgentBudgetStatus(String agentId, String agentTitle,
+            double monthlyBudgetUsd, double monthToDateSpendUsd, double projectedMonthEndUsd,
+            boolean overBudget, boolean projectedOverBudget,
+            Double perTurnSoftCapUsd, boolean downgradeConfigured) {
+    }
+
+    @GetMapping("/budget-status")
+    public List<AgentBudgetStatus> budgetStatus() {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        LocalDateTime monthStart = today.withDayOfMonth(1).atStartOfDay();
+        int dayOfMonth = today.getDayOfMonth();
+        int daysInMonth = today.lengthOfMonth();
+
+        List<AgentBudgetStatus> out = new ArrayList<>();
+        for (TurAIAgent agent : agentRepository.findAll()) {
+            Double budget = agent.getMonthlyBudgetUsd();
+            if (budget == null || budget <= 0) {
+                continue;
+            }
+            double spent = tokenUsageRepository.sumCostByAgentSince(agent.getId(), monthStart);
+            double projected = dayOfMonth > 0 ? spent / dayOfMonth * daysInMonth : spent;
+            String downgradeId = agent.getBudgetDowngradeLlmId();
+            out.add(new AgentBudgetStatus(agent.getId(),
+                    agent.getTitle() == null ? agent.getId() : agent.getTitle(),
+                    budget, spent, projected,
+                    spent >= budget, projected >= budget,
+                    agent.getPerTurnSoftCapUsd(),
+                    downgradeId != null && !downgradeId.isBlank()));
+        }
+        out.sort((a, b) -> Double.compare(b.monthToDateSpendUsd(), a.monthToDateSpendUsd()));
+        return out;
+    }
+
     private LocalDateTime parseFrom(String from) {
         if (from != null && !from.isBlank()) {
             return LocalDate.parse(from, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();

@@ -12,8 +12,17 @@ import {
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSystemInfo } from "@/models/system/system-info.model";
 import { TurSystemInfoService } from "@/services/system/system-info.service";
+import type {
+    TurAgentBudgetStatus,
+    TurCostReport,
+} from "@/models/cost-governance/cost-governance.model";
+import { TurCostGovernanceService } from "@/services/cost-governance/cost-governance.service";
+import { ROUTES } from "@/app/routes.const";
 import {
+    IconAlertTriangle,
+    IconArrowRight,
     IconBucket,
+    IconCoin,
     IconCpu,
     IconDatabase,
     IconDeviceDesktop,
@@ -30,12 +39,26 @@ import {
 } from "@tabler/icons-react";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const turSystemInfoService = new TurSystemInfoService();
+const turCostGovernanceService = new TurCostGovernanceService();
+
+function formatUsd(n: number): string {
+    if (n === 0) return "$0.00";
+    if (Math.abs(n) < 1) return `$${n.toFixed(4)}`;
+    return `$${n.toFixed(2)}`;
+}
+
+function formatTokens(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return n.toLocaleString();
+}
 
 interface InsightsResponse {
     success: boolean;
@@ -113,6 +136,10 @@ export default function SystemInfoPage() {
     const [insightsLoading, setInsightsLoading] = useState(false);
     const [canRegenerate, setCanRegenerate] = useState(false);
 
+    // T184 / §X.14.d — AI Spend card data (30-day cost report + budget alerts).
+    const [costReport, setCostReport] = useState<TurCostReport | null>(null);
+    const [budgetStatus, setBudgetStatus] = useState<TurAgentBudgetStatus[]>([]);
+
     useEffect(() => {
         Promise.all([
             turSystemInfoService.getInfo(),
@@ -128,6 +155,17 @@ export default function SystemInfoPage() {
                 toast.error(t("systemInfo.loadFailed"));
             })
             .finally(() => setIsLoading(false));
+    }, []);
+
+    // Fail-soft: a cost API error just hides the AI Spend card, it never blocks
+    // the System Info page (the full dashboard lives at Cost Governance).
+    useEffect(() => {
+        turCostGovernanceService.getSummary()
+            .then(setCostReport)
+            .catch(() => setCostReport(null));
+        turCostGovernanceService.getBudgetStatus()
+            .then(setBudgetStatus)
+            .catch(() => setBudgetStatus([]));
     }, []);
 
     const filteredVariables = useMemo(() => {
@@ -228,6 +266,73 @@ export default function SystemInfoPage() {
                     </div>
 
                     <TabsContent value="overview" className="space-y-4 mt-4">
+                        {/* T184 — AI Spend (30 days) */}
+                        {costReport && (
+                            <SectionCard variant="emerald">
+                                <SectionCard.StaticHeader
+                                    icon={IconCoin}
+                                    title={t("systemInfo.aiSpend")}
+                                    description={t("systemInfo.aiSpendDesc")}
+                                />
+                                <SectionCard.Content>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <div className="rounded-lg border p-3">
+                                            <div className="text-xs text-muted-foreground">{t("systemInfo.aiSpendTotal")}</div>
+                                            <div className="text-lg font-semibold font-mono">{formatUsd(costReport.totalCostUsd)}</div>
+                                        </div>
+                                        <div className="rounded-lg border p-3">
+                                            <div className="text-xs text-muted-foreground">{t("systemInfo.aiSpendTokens")}</div>
+                                            <div className="text-lg font-semibold font-mono">{formatTokens(costReport.totalTokens)}</div>
+                                        </div>
+                                        <div className="rounded-lg border p-3">
+                                            <div className="text-xs text-muted-foreground">{t("systemInfo.aiSpendRequests")}</div>
+                                            <div className="text-lg font-semibold font-mono">{costReport.totalRequests.toLocaleString()}</div>
+                                        </div>
+                                        <div className="rounded-lg border p-3">
+                                            <div className="text-xs text-muted-foreground">{t("systemInfo.aiSpendPeriod")}</div>
+                                            <div className="text-sm font-medium">{costReport.periodStart} → {costReport.periodEnd}</div>
+                                        </div>
+                                    </div>
+
+                                    {costReport.byStage.length > 0 && (
+                                        <div className="pt-3">
+                                            <div className="text-xs font-medium text-muted-foreground mb-1">{t("systemInfo.aiSpendByStage")}</div>
+                                            {costReport.byStage.slice(0, 4).map((s) => (
+                                                <InfoRow key={s.stage ?? "other"} label={s.stage ?? t("systemInfo.aiSpendOther")} value={formatUsd(s.costUsd)} />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {budgetStatus.length > 0 && (
+                                        <div className="pt-3 space-y-1.5">
+                                            <div className="text-xs font-medium text-muted-foreground">{t("systemInfo.aiSpendBudgets")}</div>
+                                            {budgetStatus.slice(0, 5).map((b) => {
+                                                const alert = b.overBudget || b.projectedOverBudget;
+                                                return (
+                                                    <div key={b.agentId} className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm">
+                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                            {alert && <IconAlertTriangle className="size-4 text-amber-500 shrink-0" />}
+                                                            <span className="truncate">{b.agentTitle}</span>
+                                                        </span>
+                                                        <span className={`font-mono shrink-0 ${b.overBudget ? "text-red-600 dark:text-red-400" : alert ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                                                            {formatUsd(b.monthToDateSpendUsd)} / {formatUsd(b.monthlyBudgetUsd)}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    <div className="pt-3">
+                                        <Link to={ROUTES.COST_GOVERNANCE} className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                            {t("systemInfo.aiSpendViewFull")}
+                                            <IconArrowRight className="size-4" />
+                                        </Link>
+                                    </div>
+                                </SectionCard.Content>
+                            </SectionCard>
+                        )}
+
                         {/* Application */}
                         <SectionCard variant="blue">
                             <SectionCard.StaticHeader
