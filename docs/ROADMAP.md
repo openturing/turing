@@ -32,25 +32,8 @@
 > `cache_control`, OpenAI background mode, Anthropic extended thinking). Design →
 > [IMPROVEMENTS.md](IMPROVEMENTS.md) §X.19 / §X.20 / §X.13.
 
-**Foundation:** ✅ T489 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-
-**Server-side built-in tools (parity with F.2/F.3):**
-- ✅ T490 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T491 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T492 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T493 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T494 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-
-**Distinctive Gemini cost/quality primitives:**
-- ✅ T495 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T496 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T497 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-
-**Innovation bets (Gemini-shape-only):**
-- ✅ T501 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-
-**Cross-vendor gaps the F-blocks left open:**
+> **Block F.16 is fully shipped** (T489–T501 + the cross-vendor gaps T502–T504)
+> — see [CHANGELOG.md](CHANGELOG.md) → Block F.16. No active backlog remains.
 
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
