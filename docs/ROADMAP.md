@@ -122,7 +122,7 @@ fully shipped.**
 **Phase 1 — provider & retrieval parity (highest drift first):**
 - ✅ **T524** shipped — see CHANGELOG. (Real set is **11** vendors, not 12: `AZURE_OPENAI` was removed in v2026.2.5.0.)
 - ✅ **T525** shipped — see CHANGELOG.
-- 📋 **T528** (deps: T524) **Expand `embedding-models.md` + `embedding-stores.md`** — Voyage + Cohere Embed v4, multimodal embeddings (text→image, T511), contextualized chunks (T512), per-SN-site domain model (T513), quantized/Matryoshka for the Lucene store (T514), Mistral-OCR extraction bridge (T515), Gemini asymmetric task-type embeddings (T495). → §XXIX.3
+- ✅ **T528** shipped — see CHANGELOG.
 - 📋 **T529** (deps: T524, T528) **Expand `rag.md`** — managed-RAG backends (Bedrock KB / Vertex AI Search, T520), native-citation RAG across vendors + Block M provenance/citation-drift (T519/T155), answer-grounding guardrail (T516), per-stage model "lanes" (T517), cost-aware fallback meta-provider (T518), multi-provider second-opinion cross-check (T522). → §XXIX.3
 - 📋 **T530** (deps: T529) **New `reranking.md`** — Block N pluggable reranker (LLM / CROSS_ENCODER / COHERE, T337–T341, fail-open) + managed strategies (Vertex AI Ranking / Bedrock Rerank, T521); fold in `docs/RAG_HYBRID_CONFIG.md`. → §XXIX.3
 
