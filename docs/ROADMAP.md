@@ -104,6 +104,44 @@ instance.)
 with T520, where the `bedrockagentruntime` dependency lives.) **Block AD is now
 fully shipped.**
 
+## Block AE — Documentation parity & didactic refresh (post-T410)
+
+> **Second documentation round.** Block U (T411–T423, shipped) brought
+> `docs-turing` to parity with **T410**; the product then shipped **T424 → T523**
+> (Blocks W, Y, Z, AA, AD, F.15, F.16 + the Block N reranker, Block R
+> manifest/structured-indexing, Block M verifiable answers). A CHANGELOG-vs-docs
+> confrontation found whole subsystems with **no page at all** — and `llm-instances.md`
+> still says "six vendor types" when Block AD made it twelve. This block does two
+> things: **(1) parity** — give every shipped capability a sidebar home; **(2) didactics**
+> — a zero→first-agent learning-path spine + a per-pillar review so every page (new
+> *and* old) explains the feature *from the beginning*. Full per-page plan + house-style
+> checklist in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXIX. Work lands in the
+> `vigletdocs.github.io/docs-turing` repo. Rule: verify every class/endpoint/config-key/vendor-enum
+> name against source before publishing; never document 💭 ideas as shipped.
+
+**Phase 1 — provider & retrieval parity (highest drift first):**
+- ✅ **T524** shipped — see CHANGELOG. (Real set is **11** vendors, not 12: `AZURE_OPENAI` was removed in v2026.2.5.0.)
+- 📋 **T525** (deps: T524) **New `capabilities.md`** — the F.15 capability registry/taxonomy (`kind`/`function`/`provider`/`ownsTurn`) + the **two-level gate** (instance matrix `llm_instance_capability` ∧ per-agent picker), REQUEST_OPTION knobs, and the union tool loop (native server tools + non-conflicting Turing/MCP/custom in one loop). Didactic: what a capability is, why two gates. → §XXIX.3
+- 📋 **T528** (deps: T524) **Expand `embedding-models.md` + `embedding-stores.md`** — Voyage + Cohere Embed v4, multimodal embeddings (text→image, T511), contextualized chunks (T512), per-SN-site domain model (T513), quantized/Matryoshka for the Lucene store (T514), Mistral-OCR extraction bridge (T515), Gemini asymmetric task-type embeddings (T495). → §XXIX.3
+- 📋 **T529** (deps: T524, T528) **Expand `rag.md`** — managed-RAG backends (Bedrock KB / Vertex AI Search, T520), native-citation RAG across vendors + Block M provenance/citation-drift (T519/T155), answer-grounding guardrail (T516), per-stage model "lanes" (T517), cost-aware fallback meta-provider (T518), multi-provider second-opinion cross-check (T522). → §XXIX.3
+- 📋 **T530** (deps: T529) **New `reranking.md`** — Block N pluggable reranker (LLM / CROSS_ENCODER / COHERE, T337–T341, fail-open) + managed strategies (Vertex AI Ranking / Bedrock Rerank, T521); fold in `docs/RAG_HYBRID_CONFIG.md`. → §XXIX.3
+
+**Phase 2 — net-new pages & native exploitation:**
+- 📋 **T531** (deps: —) **New `manifest.md` (+ `search-engine.md` cross-link)** — field-manifest provisioning (T382), schema-as-code + planner/migration (T386), LLM-assisted derivation + wizard (T387/T408), hybrid RRF ranking (T383), field coverage / content-gap observability (T388). → §XXIX.3
+- 📋 **T532** (deps: —) **New `client-tools.md` (AG-UI)** — live `tool_call` SSE events (T436), headless `TuringToolActivity` (T437), the client-tool park/resume protocol (T438, like `humanApproval`), `registerClientTool`/`clientTools` (T439), generative UI via client tools (T440); cross-link `react-sdk.md` / `developer-guide.md` / `ai-agents.md`. → §XXIX.3
+- 📋 **T526** (deps: T524) **Expand `genai-llm.md` + `tool-calling.md` for Gemini native primitives (F.16)** — native `gemini` vs `gemini-openai`; Google Search grounding, URL Context, code execution, native image gen, Computer Use, thinking budget/thought summaries, explicit context caching, Batch, Files, full-context retrieval-free answering, native video understanding (T489–T501). → §XXIX.3
+- 📋 **T527** (deps: T526) **Expand `tool-calling.md` + `ai-agents.md` for cross-vendor native parity** — OpenAI Responses `background` mode (T503), Anthropic `cache_control` + extended/interleaved thinking (T502/T504), the reusable `TurContextCacheProvider` seam (T499). → §XXIX.3
+- 📋 **T533** (deps: —) **Expand `personas.md` for audience-fit (Block AA)** — audience/reader personas (`personaKind` SPEAKER/AUDIENCE/BOTH, T464), notebook source set (T465), multilingual readability/complexity scorer (T466), content-fit evaluator + red/amber/green report (T467/T468), persona-from-audio authoring (T470), the `TurTranscriptionProvider` seam (T469). → §XXIX.3
+- 📋 **T534** (deps: T532) **Expand `showcase.md` into the canonical end-to-end walkthrough** — the Block Y "Atlas Store" maximum-surface tour (T451–T457) as the didactic "see it all wired together" page; mark Block X creative bets it demos as previews, not shipped features. → §XXIX.3
+
+**Phase 3 — didactic "from-the-beginning" layer (new + old pages):**
+- 📋 **T535** (deps: —) **Learning-path spine** — rewrite `getting-started/intro` + `getting-started/core-concepts` + `index.mdx` into one guided narrative (what Turing is → first search → first RAG answer → first agent → first automation), each step linking its deep page. → §XXIX.4
+- 📋 **T536** (deps: T535) **Didactic pass — "Search it" + "Ask it" pillars** — apply the §XXIX.2 checklist (concept-first opener, from-zero example, Related Pages) to every page in both categories, old pages included. → §XXIX.4
+- 📋 **T537** (deps: T535) **Didactic pass — "Automate it" + "Run it" + Developers + Security pillars** — same checklist across the remaining categories. → §XXIX.4
+
+**Phase 4 — coverage gate (nothing lost):**
+- 📋 **T538** (deps: T524–T537) **Coverage audit + sidebar wiring** — author `docs-turing/COVERAGE.md` (every CHANGELOG block/feature → doc page + anchor; orphan = red row), refresh/retire `_documentation-update-plan.md` to Block AE scope, wire all new pages into `sidebars-turing.ts`, and sweep older blocks (M / Q-internal / R / S) for orphans. Closes Block AE. → §XXIX.5
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
