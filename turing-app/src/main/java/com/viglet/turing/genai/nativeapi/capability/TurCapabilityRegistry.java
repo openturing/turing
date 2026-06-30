@@ -134,7 +134,12 @@ public class TurCapabilityRegistry {
                     TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()),
             requestOption("safety-identifier", "Safety Identifier",
                     "Send a hashed end-user id for abuse monitoring.",
-                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()));
+                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()),
+            requestOption("gemini-context-cache", "Context Caching",
+                    "Cache the stable prefix (system prompt + pinned grounding) as a named, "
+                            + "TTL'd Gemini cachedContents object and reuse it across turns and "
+                            + "users at a steep discount. The RAG cost lever; off by default.",
+                    TurCapabilityProvider.GEMINI, "Cost & Tier", VALUE_BOOLEAN, List.of()));
 
     private static TurCapabilityDescriptor requestOption(String key, String label, String description,
             TurCapabilityProvider provider, String category, String valueType, List<String> options) {

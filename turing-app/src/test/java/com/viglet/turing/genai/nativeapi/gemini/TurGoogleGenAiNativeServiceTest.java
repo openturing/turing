@@ -12,6 +12,7 @@ package com.viglet.turing.genai.nativeapi.gemini;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,9 @@ import com.google.genai.types.GenerateContentConfig;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory;
+import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRef;
+import com.viglet.turing.genai.nativeapi.cache.TurNoOpContextCacheProvider;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -30,8 +34,16 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
  */
 class TurGoogleGenAiNativeServiceTest {
 
+    /** A factory wired only with the no-op provider — every instance resolves uncached. */
+    private static final TurContextCacheProviderFactory NO_OP_CACHE = noOpCacheFactory();
+
     private final TurGoogleGenAiNativeService service =
-            new TurGoogleGenAiNativeService(new TurProviderOptionsParser());
+            new TurGoogleGenAiNativeService(new TurProviderOptionsParser(), NO_OP_CACHE);
+
+    private static TurContextCacheProviderFactory noOpCacheFactory() {
+        TurNoOpContextCacheProvider noOp = new TurNoOpContextCacheProvider();
+        return new TurContextCacheProviderFactory(List.of(noOp), noOp);
+    }
 
     @Test
     void mapsHistoryToContentsWithGeminiRoles() {
@@ -220,5 +232,58 @@ class TurGoogleGenAiNativeServiceTest {
         assertThat(config.tools().get()).hasSize(2);
         assertThat(config.tools().get().get(0).googleSearch()).isPresent();
         assertThat(config.tools().get().get(1).urlContext()).isPresent();
+    }
+
+    // ----- T499 context caching -----
+
+    @Test
+    void buildConfigUsesCachedContentAndOmitsSystemInstructionWhenCacheRefPresent() {
+        TurLLMInstance instance = new TurLLMInstance();
+        TurContextCacheRef ref = new TurContextCacheRef(
+                "gemini", "cachedContents/abc123", 4096, null, false);
+        GenerateContentConfig config = service.buildConfig(instance, "You are helpful.",
+                List.of(), Optional.of(ref));
+
+        assertThat(config.cachedContent()).contains("cachedContents/abc123");
+        // The prefix lives in the cache, so it must NOT also be on the request.
+        assertThat(config.systemInstruction()).isEmpty();
+    }
+
+    @Test
+    void buildConfigBypassesToolsWhenCacheRefPresent() {
+        TurLLMInstance instance = new TurLLMInstance();
+        TurContextCacheRef ref = new TurContextCacheRef(
+                "gemini", "cachedContents/abc123", null, null, true);
+        GenerateContentConfig config = service.buildConfig(instance, "sys",
+                List.of(new EnabledCapability(TurNativeCapability.GEMINI_GOOGLE_SEARCH, null)),
+                Optional.of(ref));
+
+        // Server-side tools belong to the cache; they can't be re-declared.
+        assertThat(config.cachedContent()).contains("cachedContents/abc123");
+        assertThat(config.tools()).isEmpty();
+    }
+
+    @Test
+    void resolveContextCacheReturnsEmptyWhenNotEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        assertThat(service.resolveContextCache(instance, "gemini-2.0-flash", "sys")).isEmpty();
+    }
+
+    @Test
+    void resolveContextCacheReturnsEmptyWhenPromptBlankEvenIfEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson("{\"contextCacheEnabled\":true}");
+        assertThat(service.resolveContextCache(instance, "gemini-2.0-flash", "  ")).isEmpty();
+    }
+
+    @Test
+    void resolveContextCacheStaysEmptyForNoOpProviderEvenWhenEnabled() {
+        // The no-op factory resolves every instance to "no cache" — the OpenAI /
+        // unconfigured-vendor guarantee. So even an opted-in instance gets empty.
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson(
+                "{\"contextCacheEnabled\":true,\"contextCacheTtlSeconds\":600}");
+        assertThat(service.resolveContextCache(instance, "gemini-2.0-flash", "big stable prompt"))
+                .isEmpty();
     }
 }

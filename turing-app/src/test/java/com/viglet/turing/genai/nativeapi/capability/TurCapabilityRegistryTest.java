@@ -56,7 +56,9 @@ class TurCapabilityRegistryTest {
                 .map(d -> d.provider().name())
                 .sorted()
                 .toList();
-        assertThat(webSearchProviders).containsExactly("ANTHROPIC", "OPENAI");
+        // OpenAI web_search ↔ Anthropic web_search ↔ Gemini google_search (T490)
+        // all share the WEB_SEARCH function, so they form one mutex group.
+        assertThat(webSearchProviders).containsExactly("ANTHROPIC", "GEMINI", "OPENAI");
     }
 
     @Test

@@ -12,9 +12,11 @@
  */
 package com.viglet.turing.genai.nativeapi.gemini;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -36,6 +38,9 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory;
+import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRef;
+import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRequest;
 import com.viglet.turing.genai.nativeapi.gemini.TurGeminiGroundingDecoder.GroundingResult;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -87,9 +92,12 @@ public class TurGoogleGenAiNativeService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurProviderOptionsParser optionsParser;
+    private final TurContextCacheProviderFactory contextCacheFactory;
 
-    public TurGoogleGenAiNativeService(TurProviderOptionsParser optionsParser) {
+    public TurGoogleGenAiNativeService(TurProviderOptionsParser optionsParser,
+            TurContextCacheProviderFactory contextCacheFactory) {
         this.optionsParser = optionsParser;
+        this.contextCacheFactory = contextCacheFactory;
     }
 
     /**
@@ -106,7 +114,12 @@ public class TurGoogleGenAiNativeService {
             List<EnabledCapability> capabilities) {
         String model = resolveModelName(instance);
         List<Content> contents = toContents(history);
-        GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities);
+        // T499 / §X.20 — when context caching is opted in, cache the stable prefix
+        // (the system instruction) once and thread its handle into the config; the
+        // no-op default returns empty for every other vendor, leaving the request
+        // byte-for-byte unchanged.
+        Optional<TurContextCacheRef> cacheRef = resolveContextCache(instance, model, systemPrompt);
+        GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities, cacheRef);
         boolean surfaceThoughts = isThinkingSurfaced(instance);
         return Flux.<ChatResponse>create(sink -> {
             StringBuilder answer = new StringBuilder();
@@ -256,14 +269,33 @@ public class TurGoogleGenAiNativeService {
 
     /**
      * Build the generation config from the fused system prompt + per-instance
-     * sampling options. T490+ extend this with {@code tools(...)} for the native
-     * server-side capabilities.
+     * sampling options (no context cache). Retained for callers/tests that don't
+     * exercise caching; delegates to the cache-aware overload with no ref.
      */
     GenerateContentConfig buildConfig(TurLLMInstance instance, String systemPrompt,
             List<EnabledCapability> capabilities) {
+        return buildConfig(instance, systemPrompt, capabilities, Optional.empty());
+    }
+
+    /**
+     * Build the generation config from the fused system prompt + per-instance
+     * sampling options. T490+ extend this with {@code tools(...)} for the native
+     * server-side capabilities.
+     *
+     * <p>T499 / §X.20 — when {@code cacheRef} is present the stable prefix lives
+     * in a Gemini {@code cachedContents} object referenced by
+     * {@link GenerateContentConfig.Builder#cachedContent(String)}; the Gemini API
+     * forbids also sending {@code systemInstruction}/{@code tools} on the request
+     * (they belong to the cache), so both are omitted in that case.
+     */
+    GenerateContentConfig buildConfig(TurLLMInstance instance, String systemPrompt,
+            List<EnabledCapability> capabilities, Optional<TurContextCacheRef> cacheRef) {
         Map<String, Object> options = optionsParser.parse(instance.getProviderOptionsJson());
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
-        if (StringUtils.hasText(systemPrompt)) {
+        boolean cached = cacheRef != null && cacheRef.isPresent();
+        if (cached) {
+            builder.cachedContent(cacheRef.get().handle());
+        } else if (StringUtils.hasText(systemPrompt)) {
             builder.systemInstruction(Content.fromParts(Part.fromText(systemPrompt)));
         }
         Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
@@ -284,7 +316,13 @@ public class TurGoogleGenAiNativeService {
             builder.maxOutputTokens(maxTokens);
         }
         List<Tool> tools = buildTools(capabilities);
-        if (!tools.isEmpty()) {
+        if (!tools.isEmpty() && cached) {
+            // The cache owns systemInstruction + tools; server-side tools can't be
+            // re-declared on a cached request. Skip them (logged) this turn.
+            log.warn("[Native][Gemini] instance '{}' has context caching active alongside {} "
+                    + "server-side tool(s); tools are bypassed this turn (they belong to the cache)",
+                    instance.getId(), tools.size());
+        } else if (!tools.isEmpty()) {
             builder.tools(tools);
         }
         // T493 — native image generation is not a tool: request the IMAGE
@@ -302,6 +340,32 @@ public class TurGoogleGenAiNativeService {
             builder.thinkingConfig(thinking);
         }
         return builder.build();
+    }
+
+    /**
+     * T499 / §X.20 — resolve (creating/reusing) the explicit context cache for the
+     * instance's stable prefix, or {@link Optional#empty()} when context caching
+     * is not opted in, the prefix is blank, or the provider declines/fails
+     * (fail-open). Gated by the {@code contextCacheEnabled} provider option, with
+     * an optional {@code contextCacheTtlSeconds} lifetime; only the Gemini
+     * provider implements a real cache (every other vendor resolves to the no-op).
+     */
+    Optional<TurContextCacheRef> resolveContextCache(TurLLMInstance instance, String model,
+            String systemPrompt) {
+        Map<String, Object> options = optionsParser.parse(instance.getProviderOptionsJson());
+        if (!isContextCacheEnabled(options) || !StringUtils.hasText(systemPrompt)) {
+            return Optional.empty();
+        }
+        Integer ttlSeconds = optionsParser.intValue(options, "contextCacheTtlSeconds");
+        Duration ttl = ttlSeconds != null && ttlSeconds > 0 ? Duration.ofSeconds(ttlSeconds) : null;
+        TurContextCacheRequest request =
+                TurContextCacheRequest.ofSystemInstruction(instance, model, systemPrompt, ttl);
+        return contextCacheFactory.resolve(instance).ensureCache(request);
+    }
+
+    private boolean isContextCacheEnabled(Map<String, Object> options) {
+        Object value = options == null ? null : options.get("contextCacheEnabled");
+        return value != null && "true".equalsIgnoreCase(value.toString().trim());
     }
 
     /**

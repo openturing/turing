@@ -1670,15 +1670,12 @@ exploits none of them today**:
 - **OpenAI** — *automatic* prefix caching (no API surface to manage, just a
   discount when the prefix repeats).
 
-**The seam — T499 `TurContextCacheProvider`.** A vendor-neutral interface that,
-given the agent's stable prefix (assembled system prompt + persona + any large
-pinned grounding doc set), returns a cache reference the native path threads into
-the request. The Gemini implementation creates/reuses a named `cachedContents`
-object keyed by a hash of the prefix (with a configurable TTL); a no-op default
-keeps OpenAI on its automatic path. This is the RAG cost lever — most valuable
-exactly when the grounding context is large and stable (the T500 full-context
-mode, a big pinned manual, a per-site system prompt reused across thousands of
-visitor turns).
+**The seam — T499 `TurContextCacheProvider`.** ✅ Shipped (see CHANGELOG Block
+F.16). A vendor-neutral interface that, given the agent's stable prefix, returns
+a cache reference the native path threads into the request; the Gemini
+implementation creates/reuses a named, TTL'd `cachedContents` object keyed by a
+prefix hash and a no-op default keeps OpenAI on its automatic path. This is the
+seam T500 (full-context answering) and T502 (Anthropic `cache_control`) build on.
 
 **T502 Anthropic `cache_control` mapping** plugs Claude into the same seam:
 mark the system prompt and the retrieved `search_result` blocks (T153) with
