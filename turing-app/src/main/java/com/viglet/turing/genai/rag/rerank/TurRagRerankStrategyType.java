@@ -17,6 +17,9 @@ import java.util.Locale;
  * <ul>
  *   <li>{@link #LLM} — the legacy LLM-as-reranker (one chat call ranks snippet
  *       numbers). Default; preserves T328 behavior exactly.</li>
+ *   <li>{@link #LLM_LOGPROBS} — OpenAI-only confidence reranker (T180): a per-
+ *       candidate yes/no relevance classification with {@code top_logprobs}, whose
+ *       calibrated P(relevant) is blended with the retrieval rank.</li>
  *   <li>{@link #CROSS_ENCODER} — a self-hosted cross-encoder over an HTTP
  *       {@code /rerank} endpoint (TEI / Infinity / Jina-compatible).</li>
  *   <li>{@link #COHERE} — the managed Cohere Rerank API.</li>
@@ -27,6 +30,7 @@ import java.util.Locale;
  */
 public enum TurRagRerankStrategyType {
     LLM,
+    LLM_LOGPROBS,
     CROSS_ENCODER,
     COHERE;
 

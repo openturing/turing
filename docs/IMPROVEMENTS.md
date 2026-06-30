@@ -1467,13 +1467,12 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.13 Reasoning surfacing + logprobs (T178–T180)
+### X.13 Cross-vendor reasoning (T503, T504)
 
-T180 mixes `logprobs` into the T19/T24/T28 reranker confidence score —
-fixes the "the LLM hedged but we still ranked it #1" failure mode. It
-captures `logprobs` + `top_logprobs` on the Responses call and folds the
-LLM's token-level confidence into the existing BM25 / vector scores, so a
-hedged top answer is demoted rather than trusted.
+> The OpenAI F.12 leg (T178 reasoning summary, T179 effort budget, T180 logprobs
+> reranker) has shipped — see [CHANGELOG.md](CHANGELOG.md) §X.13. What remains is
+> making "show the model's thinking" and "reasoning budget" one cross-vendor
+> contract rather than three provider-specific ones.
 
 **Cross-vendor reasoning (T503, T504) — F.12 was framed OpenAI-only; both
 competitors have caught up.** The "Why this answer" panel and the effort lever
