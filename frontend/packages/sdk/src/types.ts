@@ -253,7 +253,28 @@ export interface TurChatStreamEvent {
     | "reasoning"
     | "tool_call"
     | "client_tool_call"
-    | "grounding";
+    | "grounding"
+    | "secondOpinion";
+}
+
+/**
+ * T522 / §XXVIII.18 — the multi-provider "second opinion" verdict carried by the
+ * `"secondOpinion"` SSE event, emitted only when the cross-check is enabled. A
+ * cheap model from a DIFFERENT vendor critiqued the answer; the chat UI renders
+ * an "agrees / disagrees" confidence badge beside the bubble. Mirrors the backend
+ * `TurSecondOpinion`.
+ */
+export interface TurChatSecondOpinion {
+  /** `true` when the cross-vendor critic judged the answer accurate + supported. */
+  agree: boolean;
+  /** Optional calibrated confidence in `[0,1]`, when available. */
+  confidence?: number | null;
+  /** The critic's one-line reason (for the hover/tooltip). */
+  rationale?: string | null;
+  /** The critic model name. */
+  criticModel?: string | null;
+  /** The critic's vendor/plugin type (always different from the answerer's). */
+  criticVendor?: string | null;
 }
 
 /**
@@ -470,6 +491,12 @@ export interface TurChatConversationResponse {
    * leaves this undefined.
    */
   grounding?: TurChatGrounding;
+  /**
+   * T522 / §XXVIII.18 — the cross-vendor "second opinion" verdict, present only
+   * when the check is enabled and produced a signal. The UI renders an
+   * agrees/disagrees confidence badge beside the answer.
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

@@ -235,6 +235,7 @@ export type {
   TurChatSource,
   TurChatCitation,
   TurChatGrounding,
+  TurChatSecondOpinion,
   TurSearchSuggestions,
   TurChatToolCall,
   TurClientToolCall,

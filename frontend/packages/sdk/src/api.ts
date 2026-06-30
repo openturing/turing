@@ -7,6 +7,7 @@ import type {
   TurChatFormSubmitResponse,
   TurChatGrounding,
   TurChatResponse,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatStreamEvent,
   TurChatToolCall,
@@ -196,6 +197,8 @@ export interface PostChatConversationOptions {
   readonly onCitations?: (citations: TurChatCitation[]) => void;
   /** Fired when the answer-grounding guardrail flags the answer (T516). */
   readonly onGrounding?: (grounding: TurChatGrounding) => void;
+  /** Fired when the cross-vendor second-opinion check returns a verdict (T522). */
+  readonly onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void;
   /**
    * Fired on each live tool-call lifecycle event (T436): `call` is the just-
    * received `start`/`end`, `all` is the merged-by-`callId` list so far.
@@ -260,6 +263,19 @@ function parseGroundingEvent(content: string): TurChatGrounding | null {
   try {
     const parsed = JSON.parse(content) as TurChatGrounding;
     if (parsed && typeof parsed.action === "string") {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"secondOpinion"` SSE event payload (T522) into a verdict, or `null`. */
+function parseSecondOpinionEvent(content: string): TurChatSecondOpinion | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatSecondOpinion;
+    if (parsed && typeof parsed.agree === "boolean") {
       return parsed;
     }
   } catch {
@@ -356,6 +372,7 @@ async function consumeAssistantStream(
   onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
   onReasoning?: (reasoning: string) => void,
   onGrounding?: (grounding: TurChatGrounding) => void,
+  onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void,
 ): Promise<{
   text: string;
   options: string[];
@@ -367,6 +384,7 @@ async function consumeAssistantStream(
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
   grounding?: TurChatGrounding;
+  secondOpinion?: TurChatSecondOpinion;
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -384,6 +402,7 @@ async function consumeAssistantStream(
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
   let grounding: TurChatGrounding | undefined;
+  let secondOpinion: TurChatSecondOpinion | undefined;
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -458,6 +477,14 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "secondOpinion") {
+      const parsedSecondOpinion = parseSecondOpinionEvent(parsed.content);
+      if (parsedSecondOpinion) {
+        secondOpinion = parsedSecondOpinion;
+        onSecondOpinion?.(parsedSecondOpinion);
+      }
+      return true;
+    }
     return false;
   }
 
@@ -504,6 +531,7 @@ async function consumeAssistantStream(
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -550,6 +578,7 @@ export async function postChatConversation(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -560,6 +589,7 @@ export async function postChatConversation(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -573,6 +603,7 @@ export async function postChatConversation(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -587,6 +618,8 @@ export interface PostAgentChatOptions {
   readonly onCitations?: (citations: TurChatCitation[]) => void;
   /** Fired when the answer-grounding guardrail flags the answer (T516). */
   readonly onGrounding?: (grounding: TurChatGrounding) => void;
+  /** Fired when the cross-vendor second-opinion check returns a verdict (T522). */
+  readonly onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void;
   /**
    * Fired on each live tool-call lifecycle event (T436): `call` is the just-
    * received `start`/`end`, `all` is the merged-by-`callId` list so far.
@@ -675,6 +708,7 @@ export async function postAgentChat(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -685,6 +719,7 @@ export async function postAgentChat(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -698,6 +733,7 @@ export async function postAgentChat(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 
@@ -709,6 +745,8 @@ export interface PostClientToolResultOptions {
   readonly onCitations?: (citations: TurChatCitation[]) => void;
   /** Fired when the answer-grounding guardrail flags the answer (T516). */
   readonly onGrounding?: (grounding: TurChatGrounding) => void;
+  /** Fired when the cross-vendor second-opinion check returns a verdict (T522). */
+  readonly onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void;
   readonly onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
   /** Fired when an OpenAI reasoning model returns its "Why this answer" summary (T178). */
   readonly onReasoning?: (reasoning: string) => void;
@@ -760,6 +798,7 @@ export async function postClientToolResult(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -770,6 +809,7 @@ export async function postClientToolResult(
     options?.onToolCall,
     options?.onReasoning,
     options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -783,6 +823,7 @@ export async function postClientToolResult(
     toolCalls,
     clientToolCall,
     grounding,
+    secondOpinion,
   };
 }
 

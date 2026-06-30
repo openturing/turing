@@ -29,6 +29,7 @@ import type {
   TurChatForm,
   TurChatFormSubmitResponse,
   TurChatGrounding,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatToolCall,
   TurClientToolCall,
@@ -151,6 +152,11 @@ export interface ChatMessage extends TurChatConversationMessage {
    * renders a confidence badge beside the bubble.
    */
   grounding?: TurChatGrounding;
+  /**
+   * T522 / §XXVIII.18 — the cross-vendor "second opinion" verdict for this turn,
+   * present only when the check is enabled and produced a signal.
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 export interface ChatControllerAgent {
@@ -738,6 +744,8 @@ export function createChatController(
 
       // T516 — carry the last leg's guardrail verdict (set just below).
       let aggregatedGrounding: TurChatGrounding | undefined = res?.grounding;
+      // T522 — carry the last leg's second-opinion verdict.
+      let aggregatedSecondOpinion: TurChatSecondOpinion | undefined = res?.secondOpinion;
 
       if (requestId !== latestRequestId || aborted) return;
 
@@ -766,6 +774,9 @@ export function createChatController(
         if (res?.grounding) {
           aggregatedGrounding = res.grounding;
         }
+        if (res?.secondOpinion) {
+          aggregatedSecondOpinion = res.secondOpinion;
+        }
       }
 
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
@@ -785,6 +796,7 @@ export function createChatController(
           // keep the live-accumulated toolCalls if the final response omitted them
           toolCalls: finalToolCalls ?? m.toolCalls,
           grounding: aggregatedGrounding,
+          secondOpinion: aggregatedSecondOpinion,
         })),
         "success",
       );
