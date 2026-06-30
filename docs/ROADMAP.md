@@ -131,7 +131,7 @@ fully shipped.**
 - ✅ **T532** shipped — see CHANGELOG.
 - ✅ **T526** shipped — see CHANGELOG.
 - ✅ **T527** shipped — see CHANGELOG.
-- 📋 **T533** (deps: —) **Expand `personas.md` for audience-fit (Block AA)** — audience/reader personas (`personaKind` SPEAKER/AUDIENCE/BOTH, T464), notebook source set (T465), multilingual readability/complexity scorer (T466), content-fit evaluator + red/amber/green report (T467/T468), persona-from-audio authoring (T470), the `TurTranscriptionProvider` seam (T469). → §XXIX.3
+- ✅ **T533** shipped — see CHANGELOG.
 - 📋 **T534** (deps: T532) **Expand `showcase.md` into the canonical end-to-end walkthrough** — the Block Y "Atlas Store" maximum-surface tour (T451–T457) as the didactic "see it all wired together" page; mark Block X creative bets it demos as previews, not shipped features. → §XXIX.3
 
 **Phase 3 — didactic "from-the-beginning" layer (new + old pages):**

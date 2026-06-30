@@ -1958,7 +1958,6 @@ it's an alternative backend, not a rewrite.
 
 | Feature cluster | Shipped | Today in docs-turing | Action | Task |
 |---|---|---|---|---|
-| **Personas → audience-fit** — audience/reader personas, notebook sources, readability scorer, content-fit eval + report, persona-from-audio, transcription seam | T464–T470 | speaker-only (stale) | Expand `personas.md` | **T533** |
 | **Reference showcase ("Atlas Store")** — the maximum-surface end-to-end demo | T451–T457 | thin `showcase.md` | Expand into the canonical didactic walkthrough | **T534** |
 
 > Already at parity (no task): `conversion-analytics.md` (Block Z, T458–T463) is
