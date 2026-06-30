@@ -19,16 +19,38 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import com.anthropic.models.messages.ToolUnion;
+import com.anthropic.models.messages.CacheControlEphemeral;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 class TurAnthropicMessagesServiceTest {
 
     private final TurProviderOptionsParser optionsParser = new TurProviderOptionsParser();
     private final TurAnthropicMessagesService service = new TurAnthropicMessagesService(
             optionsParser, new com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport(optionsParser),
-            new TurAnthropicCitationSupport(), new TurAnthropicContextManagement(optionsParser));
+            new TurAnthropicCitationSupport(), new TurAnthropicContextManagement(optionsParser),
+            anthropicCacheFactory());
+
+    private static com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory anthropicCacheFactory() {
+        var noOp = new com.viglet.turing.genai.nativeapi.cache.TurNoOpContextCacheProvider();
+        var anthropic = new com.viglet.turing.genai.nativeapi.cache.TurAnthropicContextCacheProvider(
+                new TurProviderOptionsParser());
+        return new com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory(
+                List.of(noOp, anthropic), noOp);
+    }
+
+    private static TurLLMInstance anthropicInstance(String providerOptionsJson) {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setId("anthropic-1");
+        var vendor = new com.viglet.turing.persistence.model.llm.TurLLMVendor();
+        vendor.setId("anthropic");
+        vendor.setPlugin("anthropic");
+        instance.setTurLLMVendor(vendor);
+        instance.setProviderOptionsJson(providerOptionsJson);
+        return instance;
+    }
 
     private static EnabledCapability cap(TurNativeCapability capability, String configJson) {
         return new EnabledCapability(capability, configJson);
@@ -176,5 +198,29 @@ class TurAnthropicMessagesServiceTest {
     void buildMcpServersToleratesNullAndEmpty() {
         assertThat(service.buildMcpServers(null, new LinkedHashSet<>())).isEmpty();
         assertThat(service.buildMcpServers(List.of(), new LinkedHashSet<>())).isEmpty();
+    }
+
+    // ----- T502 context caching (cache_control) -----
+
+    @Test
+    void cacheControlAbsentWhenNotOptedIn() {
+        assertThat(service.resolveCacheControl(anthropicInstance(null))).isEmpty();
+        assertThat(service.resolveCacheControl(anthropicInstance("{\"cacheControlEnabled\":false}")))
+                .isEmpty();
+    }
+
+    @Test
+    void cacheControlPresentWithDefault5mWhenOptedIn() {
+        var cc = service.resolveCacheControl(anthropicInstance("{\"cacheControlEnabled\":true}"));
+        assertThat(cc).isPresent();
+        assertThat(cc.get().ttl()).contains(CacheControlEphemeral.Ttl.TTL_5M);
+    }
+
+    @Test
+    void cacheControlHonorsOneHourTtl() {
+        var cc = service.resolveCacheControl(anthropicInstance(
+                "{\"cacheControlEnabled\":true,\"cacheControlTtl\":\"1h\"}"));
+        assertThat(cc).isPresent();
+        assertThat(cc.get().ttl()).contains(CacheControlEphemeral.Ttl.TTL_1H);
     }
 }

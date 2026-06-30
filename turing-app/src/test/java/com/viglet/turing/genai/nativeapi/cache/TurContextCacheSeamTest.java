@@ -145,6 +145,36 @@ class TurContextCacheSeamTest {
         assertThat(withPinned.isEmpty()).isFalse();
     }
 
+    // ----- T502 Anthropic provider (inline cache_control) -----
+
+    @Test
+    void anthropicProviderGatesOnOptInAndCarriesTtlInHandle() {
+        TurAnthropicContextCacheProvider anthropic =
+                new TurAnthropicContextCacheProvider(new TurProviderOptionsParser());
+        assertThat(anthropic.getPluginType()).isEqualTo("anthropic");
+        assertThat(anthropic.supports(instance("anthropic"))).isTrue();
+        assertThat(anthropic.supports(instance("gemini"))).isFalse();
+
+        TurLLMInstance off = instance("anthropic");
+        assertThat(anthropic.ensureCache(request(off))).isEmpty();
+
+        TurLLMInstance on = instance("anthropic");
+        on.setProviderOptionsJson("{\"cacheControlEnabled\":true,\"cacheControlTtl\":\"1h\"}");
+        Optional<TurContextCacheRef> ref = anthropic.ensureCache(request(on));
+        assertThat(ref).isPresent();
+        assertThat(ref.get().pluginType()).isEqualTo("anthropic");
+        assertThat(ref.get().handle()).isEqualTo("1h");
+    }
+
+    @Test
+    void factoryRoutesAnthropicInstanceToAnthropicProvider() {
+        TurAnthropicContextCacheProvider anthropic =
+                new TurAnthropicContextCacheProvider(new TurProviderOptionsParser());
+        TurContextCacheProviderFactory factory =
+                new TurContextCacheProviderFactory(List.of(noOp, anthropic), noOp);
+        assertThat(factory.resolve(instance("anthropic"))).isSameAs(anthropic);
+    }
+
     @Test
     void resolveTtlPrefersConfiguredSecondsElseDefault() {
         TurGeminiContextCacheProvider gemini = geminiProvider();

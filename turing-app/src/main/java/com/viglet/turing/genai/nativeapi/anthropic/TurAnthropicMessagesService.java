@@ -34,6 +34,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.CodeExecutionTool20250522;
+import com.anthropic.models.messages.CacheControlEphemeral;
 import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolResultBlockParam;
@@ -113,15 +114,18 @@ public class TurAnthropicMessagesService {
     private final TurNativeFunctionToolSupport toolSupport;
     private final TurAnthropicCitationSupport citationSupport;
     private final TurAnthropicContextManagement contextManagement;
+    private final com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory contextCacheFactory;
 
     public TurAnthropicMessagesService(TurProviderOptionsParser optionsParser,
             TurNativeFunctionToolSupport toolSupport,
             TurAnthropicCitationSupport citationSupport,
-            TurAnthropicContextManagement contextManagement) {
+            TurAnthropicContextManagement contextManagement,
+            com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory contextCacheFactory) {
         this.optionsParser = optionsParser;
         this.toolSupport = toolSupport;
         this.citationSupport = citationSupport;
         this.contextManagement = contextManagement;
+        this.contextCacheFactory = contextCacheFactory;
     }
 
     /**
@@ -240,7 +244,10 @@ public class TurAnthropicMessagesService {
         List<ToolUnion> tools = new ArrayList<>(serverTools);
         tools.addAll(functionTools);
 
-        List<MessageParam> conversation = seedConversation(history, citationDocuments);
+        // T502 — one ephemeral cache_control breakpoint (when opted in) stamps the
+        // last retrieved search_result block here and the system prompt below.
+        CacheControlEphemeral cacheControl = resolveCacheControl(instance).orElse(null);
+        List<MessageParam> conversation = seedConversation(history, citationDocuments, cacheControl);
         StringBuilder text = new StringBuilder();
         List<TurChatCitation> citations = new ArrayList<>();
         int toolCalls = 0;
@@ -307,7 +314,19 @@ public class TurAnthropicMessagesService {
                 .messages(conversation);
 
         if (StringUtils.hasText(systemPrompt)) {
-            builder.system(systemPrompt);
+            // T502 / §X.20 — when context caching is opted in (the T499 seam),
+            // carry the system prompt as a single text block with an ephemeral
+            // cache_control breakpoint so Anthropic serves the repeated prefix at a
+            // discount. Default (no ref) → the plain string, byte-for-byte unchanged.
+            Optional<CacheControlEphemeral> cacheControl = resolveCacheControl(instance);
+            if (cacheControl.isPresent()) {
+                builder.systemOfTextBlockParams(List.of(TextBlockParam.builder()
+                        .text(systemPrompt)
+                        .cacheControl(cacheControl.get())
+                        .build()));
+            } else {
+                builder.system(systemPrompt);
+            }
         }
         if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
@@ -340,8 +359,27 @@ public class TurAnthropicMessagesService {
         return builder.build();
     }
 
+    /**
+     * T502 / §X.20 — resolve the ephemeral {@code cache_control} breakpoint for an
+     * instance through the T499 {@link com.viglet.turing.genai.nativeapi.cache.TurContextCacheProvider}
+     * seam, or empty when context caching is not opted in. The Anthropic provider
+     * returns a ref whose {@code handle} is the TTL token ({@code 5m} / {@code 1h});
+     * any other vendor's ref (or none) leaves the request uncached here.
+     */
+    Optional<CacheControlEphemeral> resolveCacheControl(TurLLMInstance instance) {
+        return contextCacheFactory.resolve(instance)
+                .ensureCache(com.viglet.turing.genai.nativeapi.cache.TurContextCacheRequest
+                        .ofSystemInstruction(instance, resolveModel(instance), "x", null))
+                .filter(ref -> "anthropic".equals(ref.pluginType()))
+                .map(ref -> CacheControlEphemeral.builder()
+                        .ttl("1h".equals(ref.handle())
+                                ? CacheControlEphemeral.Ttl.TTL_1H
+                                : CacheControlEphemeral.Ttl.TTL_5M)
+                        .build());
+    }
+
     private List<MessageParam> seedConversation(List<ChatMessageItem> history) {
-        return seedConversation(history, List.of());
+        return seedConversation(history, List.of(), null);
     }
 
     /**
@@ -355,7 +393,7 @@ public class TurAnthropicMessagesService {
      * turns are plain text, identical to the pre-T152 path.
      */
     private List<MessageParam> seedConversation(List<ChatMessageItem> history,
-            List<TurCitationDocument> citationDocuments) {
+            List<TurCitationDocument> citationDocuments, CacheControlEphemeral cacheControl) {
         List<MessageParam> conversation = new ArrayList<>();
         if (history == null) {
             return conversation;
@@ -375,9 +413,12 @@ public class TurAnthropicMessagesService {
                 // {@code search_result} blocks (the default citation path).
                 boolean nativePdf = citationDocuments.stream()
                         .anyMatch(TurCitationDocument::hasNativePdf);
+                // T502 — stamp the last search_result block with cache_control when
+                // caching is opted in (the native-PDF document path is left uncached
+                // for now — base64 PDFs aren't a stable cross-turn prefix).
                 List<ContentBlockParam> blocks = new ArrayList<>(nativePdf
                         ? citationSupport.documentBlocks(citationDocuments)
-                        : citationSupport.searchResultBlocks(citationDocuments));
+                        : citationSupport.searchResultBlocks(citationDocuments, cacheControl));
                 blocks.add(ContentBlockParam.ofText(
                         TextBlockParam.builder().text(message.content()).build()));
                 conversation.add(MessageParam.builder()

@@ -1673,13 +1673,11 @@ implementation creates/reuses a named, TTL'd `cachedContents` object keyed by a
 prefix hash and a no-op default keeps OpenAI on its automatic path. This is the
 seam T500 (full-context answering) and T502 (Anthropic `cache_control`) build on.
 
-**T502 Anthropic `cache_control` mapping** plugs Claude into the same seam:
-mark the system prompt and the retrieved `search_result` blocks (T153) with
-`cache_control` breakpoints so the F.6 citation path and the standard Messages
-path both get the cache discount. Strictly opt-in; null → byte-for-byte
-unchanged requests. Together T499+T502 give every vendor a caching story behind
-one provider-agnostic interface — and finally use a primitive that was sitting
-unclaimed on both Anthropic and Gemini.
+**T502 Anthropic `cache_control` mapping** — ✅ shipped (see CHANGELOG Block
+F.16). Plugs Claude into the same seam: the system prompt + the last retrieved
+`search_result` block carry ephemeral `cache_control` breakpoints (opt-in, null →
+unchanged). Together T499+T502 give every vendor a caching story behind one
+provider-agnostic interface.
 
 ---
 
