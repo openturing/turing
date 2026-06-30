@@ -383,7 +383,7 @@ export const FEATURE_DETAILS: Record<string, FeatureDetail> = {
     "_setlocale": "en_US"
   }'`,
     },
-    docs: { label: "Search & connectors docs", href: "https://docs.viglet.org/turing/" },
+    docs: { label: "Search & connectors docs", href: "https://docs.viglet.org/turing/category/enterprise-search" },
     demo: { label: "Try a live faceted demo", href: "/marketplace/mythical-creatures/" },
     metaTitle: "Enterprise Search — Solr, Elasticsearch & Lucene | Viglet Turing ES",
     metaDescription:
@@ -428,7 +428,7 @@ function Assistant() {
   return <ChatThread messages={messages} onSend={send} />;
 }`,
     },
-    docs: { label: "RAG & chat docs", href: "https://docs.viglet.org/turing/" },
+    docs: { label: "RAG & chat docs", href: "https://docs.viglet.org/turing/category/rag-chat" },
     metaTitle: "RAG & Cited AI Chat over Your Content | Viglet Turing ES",
     metaDescription:
       "Retrieval-augmented generation with inline citations, a pluggable reranker (LLM, cross-encoder or Cohere), relevance gating, groundedness checks and SSE streaming — self-hosted RAG you can audit.",
@@ -466,7 +466,7 @@ cd my-search
 npx @viglet/turing-cli dev      # local stack
 npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
     },
-    docs: { label: "Agents, tools & skills docs", href: "https://docs.viglet.org/turing/" },
+    docs: { label: "Agents, tools & skills docs", href: "https://docs.viglet.org/turing/category/agents" },
     metaTitle: "AI Agents with Tools, Skills, MCP & Native Tools | Viglet Turing ES",
     metaDescription:
       "Build AI agents that call custom tools, run Anthropic-standard skills in a Docker sandbox, federate over MCP, and use OpenAI/Anthropic/Gemini native server-side tools — opt-in per agent, self-hosted.",
@@ -510,7 +510,7 @@ npx @viglet/turing-cli deploy   # push agents, flows, tools & skills`,
   tenancy:
     enabled: false          # flip on for multi-tenant`,
     },
-    docs: { label: "Deployment & configuration docs", href: "https://docs.viglet.org/turing/" },
+    docs: { label: "Deployment & configuration docs", href: "https://docs.viglet.org/turing/category/deploy-operate" },
     metaTitle: "Self-Hosted, Any LLM, Open Source (Apache 2.0) | Viglet Turing ES",
     metaDescription:
       "Self-host enterprise AI search on your own infrastructure: any LLM provider, any search engine, pluggable storage, multi-tenant, observable, with a CLI and SDKs. Open source under Apache 2.0.",
