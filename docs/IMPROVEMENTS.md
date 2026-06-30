@@ -1617,15 +1617,7 @@ infra, zero Java callbacks; mirrors F.2/F.3):
 
 **Distinctive Gemini cost/quality primitives** (parity-plus):
 
-- **T495 Embeddings with task-type optimization** — fixes the
-  `UnsupportedOperationException`: wire `gemini-embedding-001` via
-  `Client.models().embedContent(...)`. The differentiator is **asymmetric
-  embeddings** — Turing embeds the query and the document with the *same* model
-  config today; Gemini exposes `taskType` (`RETRIEVAL_DOCUMENT` at index time,
-  `RETRIEVAL_QUERY` at query time, `SEMANTIC_SIMILARITY` for dedup/clustering)
-  plus Matryoshka `outputDimensionality`. Task-type-aware embedding is a measured
-  retrieval-quality win and a capability the OpenAI/Anthropic providers can't
-  match (Anthropic has no embeddings at all).
+- **T495 Embeddings with task-type optimization** — ✅ shipped (see CHANGELOG Block F.16).
 - **T496 Batch provider** — closes the T156 gap: `TurGeminiBatchProvider`
   (Gemini Batch mode, ~50% discount) plugs into the existing
   `TurBatchProviderFactory`, so re-embedding (T158), nightly summarization

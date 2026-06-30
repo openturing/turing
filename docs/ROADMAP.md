@@ -42,7 +42,7 @@
 - ✅ T494 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Distinctive Gemini cost/quality primitives:**
-- 📋 **T495** (deps: —) **Gemini embeddings + task-type optimization** — fix the `UnsupportedOperationException`: `gemini-embedding-001` via `embedContent` with **asymmetric** `taskType` (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + Matryoshka `outputDimensionality`. Retrieval-quality win the other providers can't match. → §X.19
+- ✅ T495 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - 📋 **T496** (deps: T156) **Gemini Batch provider** — `TurGeminiBatchProvider` (~50% off) into `TurBatchProviderFactory`, so T157/T158/T159 batches run on Gemini-backed instances instead of falling back to synchronous. → §X.19
 - 📋 **T497** (deps: T175) **Gemini Files bridge** — fold Gemini into `TurFilesApiBridge`: upload binary to the Gemini Files API, reference by URI (48 h) for native PDF/video grounding. → §X.19
 - 💭 **T498** (deps: T489, T178) **Gemini thinking budget + thought summaries** — `thinkingConfig` (`thinkingBudget`/`includeThoughts`) feeds the T178 "Why this answer" panel; Gemini leg of the cross-vendor F.12. → §X.19

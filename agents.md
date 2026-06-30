@@ -335,7 +335,7 @@ Stack: **vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb**.
 - `@Column(length=N)` must accommodate all enum/ID values (e.g., "AZURE_OPENAI" = 12 chars)
 - **MySQL primary key limit**: Max key length is 3072 bytes. With `utf8mb4` (4 bytes/char), `VARCHAR` PKs must be ≤ 768 chars. Example: `VARCHAR(1024)` PK fails on MySQL — use `VARCHAR(768)` instead
 - Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
-- Anthropic and Gemini providers don't support embedding — throw `UnsupportedOperationException`
+- Anthropic provider doesn't support embedding — throws `UnsupportedOperationException`. Gemini **does** (T495): `TurGeminiEmbeddingModel` over `embedContent` with asymmetric task types (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + optional Matryoshka `outputDimensionality`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
 
 ### Search Engine & Lucene Notes
@@ -668,7 +668,7 @@ UserMessage.builder()
 | OpenAI          | Yes  | Yes       | Full support                                                                                    |
 | Ollama          | Yes  | Yes       | Local models                                                                                    |
 | Anthropic       | Yes  | No        | No embedding API — throws `UnsupportedOperationException`                                       |
-| Gemini (native) | Yes  | No        | Uses `GoogleGenAiChatModel` with `com.google.genai.Client`; plugin type `gemini`                |
+| Gemini (native) | Yes  | Yes       | Native chat/streaming + server-side tools via `com.google.genai.Client` (T489–T494); embeddings via `embedContent` with asymmetric task types + Matryoshka dims (T495); plugin type `gemini` |
 | Gemini (OpenAI) | Yes  | No        | Uses OpenAI-compat endpoint at `generativelanguage.googleapis.com`; plugin type `gemini-openai` |
 | Azure OpenAI    | Yes  | Yes       | `AzureOpenAiEmbeddingModel` uses constructor (no builder)                                       |
 
