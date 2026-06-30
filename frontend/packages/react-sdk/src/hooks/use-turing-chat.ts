@@ -723,6 +723,13 @@ export function useTuringChat(
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         const finalCitations =
           res?.citations && res.citations.length > 0 ? res.citations : undefined;
+        // T490 — Gemini google_search Search Suggestion chips, when present.
+        const finalSearchSuggestions =
+          res?.searchSuggestions &&
+          (res.searchSuggestions.renderedContent ||
+            (res.searchSuggestions.queries?.length ?? 0) > 0)
+            ? res.searchSuggestions
+            : undefined;
         // T178 — the OpenAI reasoning summary ("Why this answer"), when present.
         const finalReasoning =
           res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined;
@@ -734,6 +741,7 @@ export function useTuringChat(
           form: finalForm,
           sources: finalSources,
           citations: finalCitations,
+          searchSuggestions: finalSearchSuggestions,
           reasoning: finalReasoning,
           toolCalls: finalToolCalls ?? m.toolCalls,
         }));

@@ -433,6 +433,7 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurChatCitation,
+  TurSearchSuggestions,
   TurChatToolCall,
   TurChatForm,
   TurChatFormField,

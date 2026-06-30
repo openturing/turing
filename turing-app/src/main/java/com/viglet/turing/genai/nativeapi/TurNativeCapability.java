@@ -122,6 +122,15 @@ public enum TurNativeCapability {
      *  (server name) plus optional {@code authToken} and {@code allowedTools}. */
     ANTHROPIC_MCP("anthropic-mcp", "anthropic", TOOL, MCP, "Integrations", false),
 
+    /** T490 / §X.19 — Gemini {@code google_search} grounding tool (the Gemini
+     *  analog of OpenAI {@code web_search} / Anthropic {@code web_search}). The
+     *  model runs Google Search in Google's infrastructure and returns grounding
+     *  metadata (per-segment support + source spans) that decodes onto the
+     *  shipped {@code TurChatCitation} / {@code type:"citations"} SSE contract
+     *  (T152–T155); Google's terms require rendering the returned Search
+     *  Suggestion chips, streamed as a {@code type:"searchSuggestions"} event. */
+    GEMINI_GOOGLE_SEARCH("gemini-google-search", "gemini", TOOL, WEB_SEARCH, "Web", false),
+
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat
      *  {@code TurNativeChatExecutor} turn: a voice session is minted out-of-band

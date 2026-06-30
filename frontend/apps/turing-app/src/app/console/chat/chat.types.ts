@@ -3,6 +3,7 @@ import type {
   TurChatConversationMessage,
   TurChatSource,
   TurChatToolCall,
+  TurSearchSuggestions,
   ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 
@@ -46,6 +47,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    */
   citations?: TurChatCitation[]
   /**
+   * Google Search Suggestion chips behind the assistant answer (T490). When
+   * present (a Gemini turn used the `google_search` grounding tool), the
+   * message list renders the Google-mandated chips below the bubble.
+   *
+   * @since 2026.3.4
+   */
+  searchSuggestions?: TurSearchSuggestions
+  /**
    * Live tool-call activity behind the assistant answer (T436/T437). When
    * present (agent has `toolCallEventsEnabled`), the message list renders the
    * running/finished tools above the bubble via {@code TuringToolActivity}.
@@ -80,6 +89,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     options: m.suggestedOptions,
     sources: m.sources,
     citations: m.citations,
+    searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
   }))
@@ -94,6 +104,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     suggestedOptions: m.options,
     sources: m.sources,
     citations: m.citations,
+    searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
   }))

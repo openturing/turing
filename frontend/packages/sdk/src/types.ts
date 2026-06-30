@@ -249,9 +249,25 @@ export interface TurChatStreamEvent {
     | "form"
     | "sources"
     | "citations"
+    | "searchSuggestions"
     | "reasoning"
     | "tool_call"
     | "client_tool_call";
+}
+
+/**
+ * T490 / §X.19 — Google Search Suggestion chips carried by the
+ * `"searchSuggestions"` SSE event, emitted when a Gemini turn used the
+ * `google_search` grounding tool. Google's terms of service **require**
+ * rendering these chips whenever a grounded answer is shown; the headless UI
+ * renders `renderedContent` (a self-contained HTML/CSS fragment) verbatim.
+ * Mirrors the backend `TurGeminiGroundingDecoder.SearchSuggestions` record.
+ */
+export interface TurSearchSuggestions {
+  /** Self-contained HTML/CSS fragment for the Google-mandated chips (render as-is). */
+  renderedContent?: string | null;
+  /** The web-search queries the model ran (a textual fallback / debug aid). */
+  queries?: string[];
 }
 
 /**
@@ -397,6 +413,12 @@ export interface TurChatConversationResponse {
   sources?: TurChatSource[];
   /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
   citations?: TurChatCitation[];
+  /**
+   * T490 / §X.19 — Google Search Suggestion chips for a Gemini `google_search`
+   * grounded answer, if any. Google's ToS require rendering these whenever the
+   * grounded answer is shown.
+   */
+  searchSuggestions?: TurSearchSuggestions;
   /**
    * T178 / §X.13.a — the OpenAI reasoning model's summary of how it reached the
    * answer (the `"reasoning"` SSE event), if the agent opted into the

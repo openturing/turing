@@ -21,19 +21,27 @@ import org.springframework.util.StringUtils;
 
 import com.google.genai.Client;
 import com.google.genai.ResponseStream;
+import com.google.genai.types.Candidate;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.GoogleSearch;
+import com.google.genai.types.GroundingMetadata;
 import com.google.genai.types.Part;
+import com.google.genai.types.Tool;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
+import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiGroundingDecoder.GroundingResult;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * T489 / §X.19 — the third native chat branch: Google Gemini via the Google
@@ -70,6 +78,10 @@ public class TurGoogleGenAiNativeService {
     /** Gemini conversation roles: the user turn and the model (assistant) turn. */
     private static final String ROLE_USER = "user";
     private static final String ROLE_MODEL = "model";
+    /** The role on every emitted {@link ChatResponse} (the shared SSE contract). */
+    private static final String ASSISTANT = "assistant";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -93,14 +105,27 @@ public class TurGoogleGenAiNativeService {
         List<Content> contents = toContents(history);
         GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities);
         return Flux.<ChatResponse>create(sink -> {
+            StringBuilder answer = new StringBuilder();
+            GroundingMetadata grounding = null;
             try (ResponseStream<GenerateContentResponse> stream =
                     client.models.generateContentStream(model, contents, config)) {
                 for (GenerateContentResponse response : stream) {
                     String text = safeText(response);
                     if (StringUtils.hasText(text)) {
-                        sink.next(new ChatResponse("assistant", text));
+                        answer.append(text);
+                        sink.next(new ChatResponse(ASSISTANT, text));
+                    }
+                    // T490 — the grounding metadata rides the candidate; keep the
+                    // latest non-empty one (it arrives on the final aggregated chunk).
+                    GroundingMetadata chunkGrounding = extractGrounding(response);
+                    if (chunkGrounding != null) {
+                        grounding = chunkGrounding;
                     }
                 }
+                // T490 — decode google_search grounding onto the citation + Search
+                // Suggestion contracts once the full answer text is known (segment
+                // offsets are byte offsets into the complete answer).
+                emitGrounding(sink, grounding, answer.toString());
                 sink.complete();
             } catch (RuntimeException e) {
                 sink.error(e);
@@ -109,6 +134,43 @@ public class TurGoogleGenAiNativeService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[Native][Gemini] instance '{}' error: {}",
                         instance.getId(), err.getMessage(), err));
+    }
+
+    /** The grounding metadata on the first candidate of a chunk, or {@code null}. */
+    private static GroundingMetadata extractGrounding(GenerateContentResponse response) {
+        return response.candidates()
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .flatMap(Candidate::groundingMetadata)
+                .orElse(null);
+    }
+
+    /**
+     * Emit the decoded grounding as a {@code "citations"} event (reusing the
+     * T152–T155 contract) and a {@code "searchSuggestions"} event (Google's
+     * mandatory Search Suggestion chips). No-op when there is no grounding.
+     */
+    private static void emitGrounding(reactor.core.publisher.FluxSink<ChatResponse> sink,
+            GroundingMetadata grounding, String answerText) {
+        if (grounding == null) {
+            return;
+        }
+        GroundingResult result = TurGeminiGroundingDecoder.decode(grounding, answerText);
+        if (!result.citations().isEmpty()) {
+            writeEvent(sink, result.citations(), "citations");
+        }
+        if (!result.suggestions().isEmpty()) {
+            writeEvent(sink, result.suggestions(), "searchSuggestions");
+        }
+    }
+
+    private static void writeEvent(reactor.core.publisher.FluxSink<ChatResponse> sink,
+            Object payload, String type) {
+        try {
+            sink.next(new ChatResponse(ASSISTANT, OBJECT_MAPPER.writeValueAsString(payload), type));
+        } catch (JacksonException e) {
+            log.warn("[Native][Gemini] could not serialize {} event: {}", type, e.getMessage());
+        }
     }
 
     /**
@@ -153,7 +215,29 @@ public class TurGoogleGenAiNativeService {
         if (maxTokens != null) {
             builder.maxOutputTokens(maxTokens);
         }
+        List<Tool> tools = buildTools(capabilities);
+        if (!tools.isEmpty()) {
+            builder.tools(tools);
+        }
         return builder.build();
+    }
+
+    /**
+     * Map the enabled Gemini native capabilities to the SDK's server-side
+     * built-in {@link Tool}s. T490 wires {@code google_search} grounding; later
+     * tasks (T491 url_context, T492 code_execution) extend this list.
+     */
+    private static List<Tool> buildTools(List<EnabledCapability> capabilities) {
+        List<Tool> tools = new ArrayList<>();
+        if (capabilities == null) {
+            return tools;
+        }
+        boolean googleSearch = capabilities.stream()
+                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_GOOGLE_SEARCH);
+        if (googleSearch) {
+            tools.add(Tool.builder().googleSearch(GoogleSearch.builder().build()).build());
+        }
+        return tools;
     }
 
     /**

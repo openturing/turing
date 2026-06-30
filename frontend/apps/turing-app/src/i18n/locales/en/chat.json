@@ -38,6 +38,9 @@
       "page": "p.",
       "open": "Open source"
     },
+    "searchSuggestions": {
+      "heading": "Google Search"
+    },
     "reasoning": {
       "heading": "Why this answer"
     },

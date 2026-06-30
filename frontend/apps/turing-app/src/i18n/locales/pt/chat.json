@@ -38,6 +38,9 @@
       "page": "p.",
       "open": "Abrir fonte"
     },
+    "searchSuggestions": {
+      "heading": "Pesquisa Google"
+    },
     "reasoning": {
       "heading": "Por que esta resposta"
     },

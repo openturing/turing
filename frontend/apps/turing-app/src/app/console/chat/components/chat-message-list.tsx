@@ -193,6 +193,51 @@ function SourceChips({ message }: Readonly<{ message: ChatMessage }>) {
 }
 
 /**
+ * T490 / §X.19 — Google Search Suggestion chips for a Gemini `google_search`
+ * grounded answer. Google's terms of service **require** rendering these chips
+ * whenever the grounded answer is shown; `renderedContent` is a self-contained
+ * HTML/CSS fragment returned by the API and rendered verbatim. When the API
+ * omits the rendered fragment we fall back to plain query chips.
+ */
+function SearchSuggestions({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const suggestions = message.searchSuggestions
+  if (!suggestions) return null
+  const rendered = suggestions.renderedContent?.trim()
+  const queries = suggestions.queries ?? []
+  if (!rendered && queries.length === 0) return null
+  return (
+    <div className="not-prose mt-3 border-t border-border/60 pt-2">
+      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+        {t("chat.searchSuggestions.heading")}
+      </div>
+      {rendered ? (
+        // Google-mandated chips: a self-contained HTML/CSS fragment rendered as-is.
+        // eslint-disable-next-line react/no-danger
+        <div
+          className="overflow-x-auto"
+          dangerouslySetInnerHTML={{ __html: rendered }}
+        />
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {queries.map((q: string) => (
+            <a
+              key={q}
+              href={`https://www.google.com/search?q=${encodeURIComponent(q)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-muted hover:border-border/80"
+            >
+              {q}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
  * Admin skin over the shared headless {@code TuringToolActivity} (T437). Renders
  * the agent's live tool calls (running → done/failed) above the answer when the
  * agent has `toolCallEventsEnabled`. The `data-status` attribute drives row
@@ -376,6 +421,7 @@ function AssistantBody({
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
+      <SearchSuggestions message={message} />
       <ReasoningPanel message={message} />
       {(onFeedback || onRephrase) && message.content ? (
         <div className="not-prose mt-2 flex items-center gap-1">

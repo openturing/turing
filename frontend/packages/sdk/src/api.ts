@@ -15,6 +15,7 @@ import type {
   TurLlmInstance,
   TurLlmVendor,
   TurSearchResponse,
+  TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
 } from "./types";
@@ -310,6 +311,19 @@ function parseCitationsEvent(content: string): TurChatCitation[] | null {
   return null;
 }
 
+/** Parses a `"searchSuggestions"` SSE event payload (T490) into the Gemini chips, or `null`. */
+function parseSearchSuggestionsEvent(content: string): TurSearchSuggestions | null {
+  try {
+    const parsed = JSON.parse(content) as TurSearchSuggestions;
+    if (parsed && (parsed.renderedContent || (parsed.queries?.length ?? 0) > 0)) {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 /**
  * Drains a Spring `Flux<ChatResponse>` SSE stream and returns the
  * concatenated assistant text, any chip labels (`type === "options"`), any
@@ -331,6 +345,7 @@ async function consumeAssistantStream(
   form?: TurChatForm;
   sources?: TurChatSource[];
   citations?: TurChatCitation[];
+  searchSuggestions?: TurSearchSuggestions;
   reasoning?: string;
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
@@ -346,6 +361,7 @@ async function consumeAssistantStream(
   let form: TurChatForm | undefined;
   let sources: TurChatSource[] | undefined;
   let citations: TurChatCitation[] | undefined;
+  let searchSuggestions: TurSearchSuggestions | undefined;
   let reasoning: string | undefined;
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
@@ -381,6 +397,13 @@ async function consumeAssistantStream(
       if (parsedCitations) {
         citations = parsedCitations;
         onCitations?.(parsedCitations);
+      }
+      return true;
+    }
+    if (parsed.type === "searchSuggestions") {
+      const parsedSuggestions = parseSearchSuggestionsEvent(parsed.content);
+      if (parsedSuggestions) {
+        searchSuggestions = parsedSuggestions;
       }
       return true;
     }
@@ -449,6 +472,7 @@ async function consumeAssistantStream(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
@@ -493,6 +517,7 @@ export async function postChatConversation(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
@@ -513,6 +538,7 @@ export async function postChatConversation(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
@@ -611,6 +637,7 @@ export async function postAgentChat(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
@@ -631,6 +658,7 @@ export async function postAgentChat(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
@@ -689,6 +717,7 @@ export async function postClientToolResult(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
@@ -709,6 +738,7 @@ export async function postClientToolResult(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,

@@ -36,6 +36,7 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurChatCitation,
+  TurSearchSuggestions,
   TurChatToolCall,
   TurClientToolCall,
   ClientToolHandler,

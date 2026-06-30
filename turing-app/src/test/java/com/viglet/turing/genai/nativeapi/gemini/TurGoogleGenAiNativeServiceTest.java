@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
+import com.viglet.turing.genai.nativeapi.TurNativeCapability;
+import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -111,5 +113,25 @@ class TurGoogleGenAiNativeServiceTest {
         assertThat(config.temperature()).contains(0.4f);
         assertThat(config.topP()).contains(0.8f);
         assertThat(config.maxOutputTokens()).contains(256);
+    }
+
+    @Test
+    void buildConfigAddsGoogleSearchToolWhenCapabilityEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys",
+                List.of(new EnabledCapability(TurNativeCapability.GEMINI_GOOGLE_SEARCH, null)));
+
+        assertThat(config.tools()).isPresent();
+        assertThat(config.tools().get()).hasSize(1);
+        assertThat(config.tools().get().get(0).googleSearch()).isPresent();
+    }
+
+    @Test
+    void buildConfigAddsNoToolsWhenNoToolCapability() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of());
+
+        // No tools configured → the Optional is empty (unchanged base path).
+        assertThat(config.tools()).isEmpty();
     }
 }

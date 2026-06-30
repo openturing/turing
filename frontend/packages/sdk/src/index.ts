@@ -234,6 +234,7 @@ export type {
   TurChatStreamEvent,
   TurChatSource,
   TurChatCitation,
+  TurSearchSuggestions,
   TurChatToolCall,
   TurClientToolCall,
   TurChatForm,

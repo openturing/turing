@@ -5,6 +5,7 @@ import type {
   TurChatForm,
   TurChatSource,
   TurChatToolCall,
+  TurSearchSuggestions,
 } from "../core/types";
 
 /**
@@ -53,6 +54,15 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   citations?: TurChatCitation[];
+  /**
+   * Google Search Suggestion chips behind this assistant answer (T490),
+   * emitted as a `"searchSuggestions"` SSE event when a Gemini turn used the
+   * `google_search` grounding tool. Google's ToS require rendering these chips
+   * (`renderedContent`) whenever the grounded answer is shown.
+   *
+   * @since 2026.3.4
+   */
+  searchSuggestions?: TurSearchSuggestions;
   /**
    * Live tool-call activity behind this assistant answer (T436), emitted as
    * `"tool_call"` SSE events and merged by `callId`. Populated incrementally

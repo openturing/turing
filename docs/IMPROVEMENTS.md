@@ -1608,14 +1608,8 @@ capability row on top of it.
 **Parity — server-side built-in tools** (the model executes the tool in Google's
 infra, zero Java callbacks; mirrors F.2/F.3):
 
-- **T490 Google Search grounding** (`google_search` tool) — the Gemini analog of
-  OpenAI `web_search` (T133) / Anthropic `web_search` (T139). Distinctive twist:
-  Gemini returns **grounding metadata** (per-segment support scores + the source
-  spans), which decode straight onto the shipped `TurChatCitation` /
-  `type:"citations"` SSE contract (T152–T155) — grounded web answers reuse the
-  citation-underline UI for free. Google's terms require rendering the returned
-  **Search Suggestion chips**, so the SSE payload carries them and the headless UI
-  shows them (a compliance requirement OpenAI/Anthropic don't impose).
+- **T490 Google Search grounding** (`google_search` tool) — ✅ shipped (see
+  CHANGELOG Block F.16).
 - **T491 URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog:
   the model pulls a named URL/PDF directly, no Turing crawler.
 - **T492 Code execution tool** (`code_execution`) — built-in Python sandbox
