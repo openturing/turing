@@ -1892,11 +1892,6 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 
-- **§XXVIII.10 — T514 Quantized / Matryoshka embeddings for the Lucene store.**
-  Voyage/Cohere/Gemini expose `outputDimensionality` truncation (Matryoshka) and
-  int8/binary output. Storing shorter, quantized vectors shrinks the embedded
-  Lucene vector store and speeds KNN, at a measured recall cost — opt-in per
-  store with the trade-off documented. Pure infra win for self-hosters.
 - **§XXVIII.11 — T515 Mistral OCR / Document-AI extraction bridge.** Today the
   indexer/connector path relies on Tika, which is weak on scanned PDFs and
   image-only documents. `mistral-ocr` is best-in-class document understanding;

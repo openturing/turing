@@ -97,7 +97,6 @@ dropped: Mistral has no managed rerank API; use the `LLM` strategy on a Mistral
 instance.)
 
 **Exploit distinctive primitives (net-new retrieval capabilities):**
-- 💭 **T514** (deps: T507) **Quantized / Matryoshka embeddings for the Lucene vector store** — int8/binary vectors + `outputDimensionality` truncation to shrink the embedded vector store (cheaper, faster KNN) with a measured recall trade-off, opt-in per store. → §XXVIII.10
 - 💭 **T515** (deps: T509, T175) **Mistral OCR / Document-AI extraction bridge** — augment Tika on the indexer/connector write path for scanned PDFs and images via `mistral-ocr`; its structured (bbox) annotations also feed T387 manifest derivation and field extraction. → §XXVIII.11
 
 **Cross-vendor bridges (the bold bets):**
