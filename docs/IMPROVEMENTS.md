@@ -1958,7 +1958,6 @@ it's an alternative backend, not a rewrite.
 
 | Feature cluster | Shipped | Today in docs-turing | Action | Task |
 |---|---|---|---|---|
-| **Capabilities** — registry/taxonomy, two-level gate (instance matrix ∧ agent picker), REQUEST_OPTION knobs, union tool loop | T432–T435, T132 | none | **New** `capabilities.md` | **T525** |
 | **Gemini native primitives** — Search grounding, URL Context, code exec, image gen, Computer Use, thinking budget, context caching, batch, files, asymmetric embeddings, full-context, video | T489–T504 | none | Expand `genai-llm.md` + `tool-calling.md` | **T526** |
 | **Cross-vendor native parity** — OpenAI Responses background mode, Anthropic `cache_control` + extended/interleaved thinking, reusable context-cache seam | T499, T502–T504 | none | Expand `tool-calling.md` + `ai-agents.md` | **T527** |
 | **Embeddings** — Voyage, Cohere Embed v4, multimodal (text→image), contextualized chunks, per-site domain model, quantized/Matryoshka, Mistral-OCR bridge | T507/T508, T511–T515, T495 | "six vendors" + ChromaDB/PgVector/Milvus only | Expand `embedding-models.md` + `embedding-stores.md` | **T528** |
