@@ -1610,8 +1610,7 @@ infra, zero Java callbacks; mirrors F.2/F.3):
 
 - **T490 Google Search grounding** (`google_search` tool) — ✅ shipped (see
   CHANGELOG Block F.16).
-- **T491 URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog:
-  the model pulls a named URL/PDF directly, no Turing crawler.
+- **T491 URL Context tool** (`url_context`) — ✅ shipped (see CHANGELOG Block F.16).
 - **T492 Code execution tool** (`code_execution`) — built-in Python sandbox
   alongside OpenAI `code_interpreter` (T135) / Anthropic `code_execution` (T141);
   inline matplotlib images map to the `sandbox:` URL scheme already used by T83.

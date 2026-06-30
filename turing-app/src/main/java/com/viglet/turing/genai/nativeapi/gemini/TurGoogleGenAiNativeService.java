@@ -29,6 +29,7 @@ import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GroundingMetadata;
 import com.google.genai.types.Part;
 import com.google.genai.types.Tool;
+import com.google.genai.types.UrlContext;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
@@ -236,6 +237,13 @@ public class TurGoogleGenAiNativeService {
                 .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_GOOGLE_SEARCH);
         if (googleSearch) {
             tools.add(Tool.builder().googleSearch(GoogleSearch.builder().build()).build());
+        }
+        // T491 — url_context lets the model pull a URL/PDF named in the prompt
+        // directly (Anthropic web_fetch analog); coexists with google_search.
+        boolean urlContext = capabilities.stream()
+                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_URL_CONTEXT);
+        if (urlContext) {
+            tools.add(Tool.builder().urlContext(UrlContext.builder().build()).build());
         }
         return tools;
     }

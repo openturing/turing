@@ -36,7 +36,7 @@
 
 **Server-side built-in tools (parity with F.2/F.3):**
 - ✅ T490 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- 📋 **T491** (deps: T489) **Gemini URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog: model pulls a URL/PDF directly. cap `gemini-url-context`. → §X.19
+- ✅ T491 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - 📋 **T492** (deps: T489) **Gemini code execution tool** (`code_execution`) — built-in Python sandbox alongside T135/T141; inline matplotlib images map to the `sandbox:` scheme (T83). cap `gemini-code-execution`. → §X.19
 - 📋 **T493** (deps: T489) **Gemini native image generation** (`gemini-2.5-flash-image`/Imagen) — analog to OpenAI `image_generation` (T137); image part → `sandbox:` artifact. cap `gemini-image-generation`. → §X.19
 - 📋 **T494** (deps: T489, T136) **Gemini Computer Use** (`gemini-2.5-computer-use`) — reuses the vendor-neutral `TurComputerUseDriver` seam (T136); no-op driver default. `ownsTurn`. cap `gemini-computer-use`. → §X.19

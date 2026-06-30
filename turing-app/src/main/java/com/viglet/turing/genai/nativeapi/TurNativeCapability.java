@@ -130,6 +130,11 @@ public enum TurNativeCapability {
      *  (T152–T155); Google's terms require rendering the returned Search
      *  Suggestion chips, streamed as a {@code type:"searchSuggestions"} event. */
     GEMINI_GOOGLE_SEARCH("gemini-google-search", "gemini", TOOL, WEB_SEARCH, "Web", false),
+    /** T491 / §X.19 — Gemini {@code url_context} tool (the Gemini analog of
+     *  Anthropic {@code web_fetch}, T140): the model pulls a URL/PDF named in the
+     *  prompt directly in Google's infrastructure, no Turing crawler. Coexists
+     *  with {@link #GEMINI_GOOGLE_SEARCH} in the same turn. */
+    GEMINI_URL_CONTEXT("gemini-url-context", "gemini", TOOL, WEB_FETCH, "Web", false),
 
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat

@@ -134,4 +134,28 @@ class TurGoogleGenAiNativeServiceTest {
         // No tools configured → the Optional is empty (unchanged base path).
         assertThat(config.tools()).isEmpty();
     }
+
+    @Test
+    void buildConfigAddsUrlContextToolWhenCapabilityEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys",
+                List.of(new EnabledCapability(TurNativeCapability.GEMINI_URL_CONTEXT, null)));
+
+        assertThat(config.tools()).isPresent();
+        assertThat(config.tools().get()).hasSize(1);
+        assertThat(config.tools().get().get(0).urlContext()).isPresent();
+    }
+
+    @Test
+    void buildConfigCombinesGoogleSearchAndUrlContext() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of(
+                new EnabledCapability(TurNativeCapability.GEMINI_GOOGLE_SEARCH, null),
+                new EnabledCapability(TurNativeCapability.GEMINI_URL_CONTEXT, null)));
+
+        assertThat(config.tools()).isPresent();
+        assertThat(config.tools().get()).hasSize(2);
+        assertThat(config.tools().get().get(0).googleSearch()).isPresent();
+        assertThat(config.tools().get().get(1).urlContext()).isPresent();
+    }
 }
