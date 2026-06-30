@@ -129,7 +129,7 @@ fully shipped.**
 **Phase 2 — net-new pages & native exploitation:**
 - ✅ **T531** shipped — see CHANGELOG.
 - ✅ **T532** shipped — see CHANGELOG.
-- 📋 **T526** (deps: T524) **Expand `genai-llm.md` + `tool-calling.md` for Gemini native primitives (F.16)** — native `gemini` vs `gemini-openai`; Google Search grounding, URL Context, code execution, native image gen, Computer Use, thinking budget/thought summaries, explicit context caching, Batch, Files, full-context retrieval-free answering, native video understanding (T489–T501). → §XXIX.3
+- ✅ **T526** shipped — see CHANGELOG.
 - 📋 **T527** (deps: T526) **Expand `tool-calling.md` + `ai-agents.md` for cross-vendor native parity** — OpenAI Responses `background` mode (T503), Anthropic `cache_control` + extended/interleaved thinking (T502/T504), the reusable `TurContextCacheProvider` seam (T499). → §XXIX.3
 - 📋 **T533** (deps: —) **Expand `personas.md` for audience-fit (Block AA)** — audience/reader personas (`personaKind` SPEAKER/AUDIENCE/BOTH, T464), notebook source set (T465), multilingual readability/complexity scorer (T466), content-fit evaluator + red/amber/green report (T467/T468), persona-from-audio authoring (T470), the `TurTranscriptionProvider` seam (T469). → §XXIX.3
 - 📋 **T534** (deps: T532) **Expand `showcase.md` into the canonical end-to-end walkthrough** — the Block Y "Atlas Store" maximum-surface tour (T451–T457) as the didactic "see it all wired together" page; mark Block X creative bets it demos as previews, not shipped features. → §XXIX.3
