@@ -332,8 +332,11 @@ public class TurSNHybridRankingService {
      */
     private List<String> rerank(TurRagRerankStrategyType strategy, String query,
             List<Document> fused, Map<String, TurSEResult> byId, List<String> fusedOrder) {
+        // T517 — the LLM reranker rides the REASONING model lane (falls back to
+        // the default LLM when the lane is unbound).
         ChatModel chatModel = strategy == TurRagRerankStrategyType.LLM
-                ? defaultChatModelResolver.resolve().orElse(null)
+                ? defaultChatModelResolver.resolve(
+                        com.viglet.turing.system.lane.TurModelStage.RERANK).orElse(null)
                 : null;
         List<Document> candidates = new ArrayList<>(fused.size());
         for (Document d : fused) {

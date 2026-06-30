@@ -48,6 +48,9 @@ const turAIAgentService = new TurAIAgentService();
 const DEFAULT_SETTINGS: TurGlobalSettings = {
     decimalSeparator: "DOT",
     defaultLlmId: "",
+    modelLaneFastId: "",
+    modelLaneReasoningId: "",
+    modelLaneCheapId: "",
     pythonExecutable: "",
     pythonRequirements: "",
     codeInterpreterExecutionMode: "NATIVE",
@@ -585,6 +588,45 @@ export default function GlobalSettingsPage() {
                                     </FormItemTwoColumns>
                                 )}
                             />
+                            {/* T517 — cross-provider per-stage model lanes */}
+                            {(["modelLaneFastId", "modelLaneReasoningId", "modelLaneCheapId"] as const).map((laneName) => (
+                                <FormField
+                                    key={laneName}
+                                    control={form.control}
+                                    name={laneName}
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>{t(`globalSettings.${laneName}`)}</FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t(`globalSettings.${laneName}Desc`)}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <Select
+                                                        onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                                                        value={field.value || "none"}
+                                                        disabled={isLoading}
+                                                    >
+                                                        <SelectTrigger className="w-full max-w-xs">
+                                                            <SelectValue placeholder={t("globalSettings.modelLaneDefault")} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none">{t("globalSettings.modelLaneDefault")}</SelectItem>
+                                                            {llmInstances.map((instance) => (
+                                                                <SelectItem key={instance.id} value={instance.id}>
+                                                                    {instance.title}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                            ))}
                             <FormField
                                 control={form.control}
                                 name="defaultAiAgentId"

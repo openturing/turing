@@ -1896,14 +1896,6 @@ _Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
 
-- **§XXVIII.13 — T517 Cross-provider per-stage model "lanes".** The platform runs
-  many LLM stages (autocomplete, spell, query-rewrite, router, rerank, judge,
-  background summarization). Different stages want different vendors: a **fast
-  lane** (Groq/Cerebras, sub-100ms) for interactive micro-calls, a **reasoning
-  lane** (DeepSeek R1 / o-series) for rerank/judge/router, a **cheap lane** for
-  background. Expose a declarative per-stage → instance binding over the existing
-  router so this is config, not code. The multi-provider seam is what makes it
-  possible; this is the task that *monetizes* having many providers.
 - **§XXVIII.14 — T518 Cost-aware cross-provider fallback / meta-provider.** An
   OpenRouter-style layer: automatic failover when a provider errors/rate-limits,
   and cheapest-capable routing for a given capability requirement, with per-tenant

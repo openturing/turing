@@ -84,6 +84,14 @@ public class TurConfigVarOnStartup {
 			"GLOBAL_CODE_INTERPRETER_SKILL_IMAGE";
 	public static final String CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
+	/**
+	 * T517 — cross-provider per-stage model "lanes". Each holds an
+	 * {@code TurLLMInstance} id the matching pipeline stages use instead of the
+	 * default LLM; blank = fall back to {@link #DEFAULT_LLM} (legacy behaviour).
+	 */
+	public static final String MODEL_LANE_FAST = "GLOBAL_MODEL_LANE_FAST";
+	public static final String MODEL_LANE_REASONING = "GLOBAL_MODEL_LANE_REASONING";
+	public static final String MODEL_LANE_CHEAP = "GLOBAL_MODEL_LANE_CHEAP";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
 	public static final String SENDER_EMAIL = "GLOBAL_SENDER_EMAIL";
@@ -184,6 +192,9 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(CODE_INTERPRETER_SKILL_IMAGE, GLOBAL_PATH,
 				CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_FAST, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_REASONING, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_CHEAP, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");

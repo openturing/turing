@@ -53,6 +53,17 @@ public class TurGlobalSettingsBean {
      */
     private String codeInterpreterSkillImage;
     private String defaultLlmId;
+    /**
+     * T517 — cross-provider per-stage model "lanes". Each holds an LLM instance
+     * id (blank = fall back to {@link #defaultLlmId}): {@code FAST} for
+     * interactive micro-calls (autocomplete/spell/query-rewrite), {@code
+     * REASONING} for router/rerank/judge, {@code CHEAP} for background work.
+     *
+     * @since 2026.3.4
+     */
+    private String modelLaneFastId;
+    private String modelLaneReasoningId;
+    private String modelLaneCheapId;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;
     private boolean llmCacheRegenerate;

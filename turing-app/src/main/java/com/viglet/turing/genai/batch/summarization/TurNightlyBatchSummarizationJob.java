@@ -27,7 +27,6 @@ import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNSiteInsightsPromptBuilder;
-import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -57,25 +56,25 @@ public class TurNightlyBatchSummarizationJob {
 
     private final TurConfigProperties configProperties;
     private final TurBatchInferenceService batchInferenceService;
-    private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurSNSiteRepository snSiteRepository;
     private final TurSNSiteInsightsPromptBuilder insightsPromptBuilder;
+    private final com.viglet.turing.system.lane.TurModelLaneService modelLaneService;
     private final TransactionTemplate readOnlyTransactionTemplate;
 
     public TurNightlyBatchSummarizationJob(TurConfigProperties configProperties,
             TurBatchInferenceService batchInferenceService,
-            TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurSNSiteRepository snSiteRepository,
             TurSNSiteInsightsPromptBuilder insightsPromptBuilder,
+            com.viglet.turing.system.lane.TurModelLaneService modelLaneService,
             PlatformTransactionManager transactionManager) {
         this.configProperties = configProperties;
         this.batchInferenceService = batchInferenceService;
-        this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.snSiteRepository = snSiteRepository;
         this.insightsPromptBuilder = insightsPromptBuilder;
+        this.modelLaneService = modelLaneService;
         this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
         this.readOnlyTransactionTemplate.setReadOnly(true);
     }
@@ -133,7 +132,10 @@ public class TurNightlyBatchSummarizationJob {
     }
 
     private TurLLMInstance resolveDefaultInstance() {
-        String llmId = globalSettingsService.getDefaultLlmId();
+        // T517 — nightly insights are background work: ride the CHEAP model lane
+        // (resolves to the default LLM when the lane is unbound).
+        String llmId = modelLaneService.resolveInstanceId(
+                com.viglet.turing.system.lane.TurModelStage.BACKGROUND_SUMMARIZATION);
         if (!StringUtils.hasText(llmId)) {
             return null;
         }

@@ -30,6 +30,9 @@ class TurGlobalSettingsBeanTest {
                 null,  // codeInterpreterDockerImage (T80)
                 null,  // codeInterpreterSkillImage (T321)
                 null,  // defaultLlmId
+                null,  // modelLaneFastId (T517)
+                null,  // modelLaneReasoningId (T517)
+                null,  // modelLaneCheapId (T517)
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
                 false, null, null, null,

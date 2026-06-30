@@ -230,6 +230,27 @@ public class TurGlobalSettingsService {
         return configVars.setString(TurConfigVarOnStartup.DEFAULT_LLM, defaultLlmId);
     }
 
+    /**
+     * T517 — the {@code TurLLMInstance} id bound to {@code lane} (blank when the
+     * lane falls back to the default LLM).
+     */
+    public String getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane lane) {
+        return configVars.getString(modelLaneConfigVar(lane), "");
+    }
+
+    public String updateModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane lane,
+            String instanceId) {
+        return configVars.setString(modelLaneConfigVar(lane), instanceId == null ? "" : instanceId);
+    }
+
+    private static String modelLaneConfigVar(com.viglet.turing.system.lane.TurModelLane lane) {
+        return switch (lane) {
+            case FAST -> TurConfigVarOnStartup.MODEL_LANE_FAST;
+            case REASONING -> TurConfigVarOnStartup.MODEL_LANE_REASONING;
+            case CHEAP -> TurConfigVarOnStartup.MODEL_LANE_CHEAP;
+        };
+    }
+
     public TurEmailProviderType getEmailProvider() {
         return configVars.getEnum(TurEmailProviderType.class, TurConfigVarOnStartup.EMAIL_PROVIDER,
                 TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));

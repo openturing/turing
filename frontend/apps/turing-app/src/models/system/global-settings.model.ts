@@ -54,6 +54,15 @@ export interface TurGlobalSettings {
    */
   codeInterpreterSkillImage?: string;
   defaultLlmId?: string;
+  /**
+   * T517 — cross-provider per-stage model "lanes". Each holds an LLM instance
+   * id (blank = fall back to `defaultLlmId`): `FAST` for interactive micro-calls
+   * (autocomplete / spell / query-rewrite), `REASONING` for router / rerank /
+   * judge, `CHEAP` for background work (nightly summarization / insights).
+   */
+  modelLaneFastId?: string;
+  modelLaneReasoningId?: string;
+  modelLaneCheapId?: string;
   llmCacheEnabled?: boolean;
   llmCacheTtlMs?: number;
   llmCacheRegenerate?: boolean;

@@ -45,6 +45,12 @@ public class TurGlobalSettingsAPI {
                 .codeInterpreterDockerImage(turGlobalSettingsService.getCodeInterpreterDockerImage())
                 .codeInterpreterSkillImage(turGlobalSettingsService.getCodeInterpreterSkillImage())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
+                .modelLaneFastId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.FAST))
+                .modelLaneReasoningId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.REASONING))
+                .modelLaneCheapId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.CHEAP))
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
                 .llmCacheRegenerate(turGlobalSettingsService.isLlmCacheRegenerate())
@@ -88,6 +94,15 @@ public class TurGlobalSettingsAPI {
                         .updateCodeInterpreterSkillImage(globalSettings.getCodeInterpreterSkillImage()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
+                .modelLaneFastId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.FAST,
+                        globalSettings.getModelLaneFastId()))
+                .modelLaneReasoningId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.REASONING,
+                        globalSettings.getModelLaneReasoningId()))
+                .modelLaneCheapId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.CHEAP,
+                        globalSettings.getModelLaneCheapId()))
                 .llmCacheEnabled(turGlobalSettingsService
                         .updateLlmCacheEnabled(globalSettings.isLlmCacheEnabled()))
                 .llmCacheTtlMs(turGlobalSettingsService
