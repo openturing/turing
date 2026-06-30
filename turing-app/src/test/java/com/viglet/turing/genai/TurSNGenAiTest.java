@@ -68,13 +68,16 @@ class TurSNGenAiTest {
     private com.viglet.turing.genai.rag.TurRagReranker ragReranker;
     @Mock
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+    @Mock
+    private com.viglet.turing.genai.safety.TurModerationService moderationService;
 
     private TurSNGenAi turSNGenAi;
 
     @BeforeEach
     void setUp() {
         turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder,
-                facetExtractor, agentChatExecutor, globalSettingsService, ragReranker, chatFlowEngineService);
+                facetExtractor, agentChatExecutor, globalSettingsService, ragReranker, chatFlowEngineService,
+                moderationService);
     }
 
     @Test

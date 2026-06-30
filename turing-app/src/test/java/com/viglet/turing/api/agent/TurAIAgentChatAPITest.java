@@ -82,6 +82,8 @@ class TurAIAgentChatAPITest {
     private com.viglet.turing.genai.workspace.TurWorkspaceEventBus workspaceEventBus;
     @Mock
     private com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
+    @Mock
+    private com.viglet.turing.genai.safety.TurModerationService moderationService;
 
     private TurAIAgentChatAPI api;
 
@@ -93,7 +95,7 @@ class TurAIAgentChatAPITest {
                 llmProviderFactory, turSecretCryptoService, agentChatExecutor,
                 nativeChatExecutor,
                 turChatFlowRepository, chatFlowEngineService, urlSigner,
-                agentWorkspace, workspaceEventBus, slotSseRegistry);
+                agentWorkspace, workspaceEventBus, slotSseRegistry, moderationService);
     }
 
     private static TurAIAgentDomain agentDomain(String id) {

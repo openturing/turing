@@ -138,6 +138,7 @@ public class TurSNGenAi {
     private final com.viglet.turing.system.TurGlobalSettingsService globalSettingsService;
     private final com.viglet.turing.genai.rag.TurRagReranker ragReranker;
     private final com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+    private final com.viglet.turing.genai.safety.TurModerationService moderationService;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
@@ -147,7 +148,8 @@ public class TurSNGenAi {
             TurAgentChatExecutor agentChatExecutor,
             com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
             com.viglet.turing.genai.rag.TurRagReranker ragReranker,
-            com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService) {
+            com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService,
+            com.viglet.turing.genai.safety.TurModerationService moderationService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -157,6 +159,7 @@ public class TurSNGenAi {
         this.globalSettingsService = globalSettingsService;
         this.ragReranker = ragReranker;
         this.chatFlowEngineService = chatFlowEngineService;
+        this.moderationService = moderationService;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -993,6 +996,10 @@ public class TurSNGenAi {
         Object sourceId = metadata.get(SOURCE_ID);
         String idPrefix = sourceId == null ? null : sourceId.toString();
         List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata, idPrefix);
+        // T182 / §X.14.b — moderate crawler-discovered chunks (over a configurable
+        // size) before they reach the index; flagged chunks are dropped. No-op +
+        // fail-open when moderation is disabled (see TurModerationService).
+        documents = moderationService.filterModeratedChunks(documents, Document::getText);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
         if (log.isDebugEnabled()) {
             log.debug("RAG indexing metadata for Object ID '{}': {}", sourceId, metadata);
