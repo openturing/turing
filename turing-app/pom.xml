@@ -578,6 +578,18 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bedrock-converse</artifactId>
         </dependency>
+        <!--
+            T520 / §XXVIII.16 — AWS Bedrock Knowledge Bases as a managed retrieval
+            backend (the `Retrieve` API). Not pulled by spring-ai (only the
+            bedrockruntime Converse client is), so the agent-runtime client is
+            declared explicitly, pinned to the same AWS SDK version spring-ai-bom
+            resolves for bedrockruntime (2.41.22).
+        -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockagentruntime</artifactId>
+            <version>2.41.22</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-chroma-store</artifactId>
