@@ -147,6 +147,17 @@ class TurGoogleGenAiNativeServiceTest {
     }
 
     @Test
+    void buildConfigAddsCodeExecutionToolWhenCapabilityEnabled() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys",
+                List.of(new EnabledCapability(TurNativeCapability.GEMINI_CODE_EXECUTION, null)));
+
+        assertThat(config.tools()).isPresent();
+        assertThat(config.tools().get()).hasSize(1);
+        assertThat(config.tools().get().get(0).codeExecution()).isPresent();
+    }
+
+    @Test
     void buildConfigCombinesGoogleSearchAndUrlContext() {
         TurLLMInstance instance = new TurLLMInstance();
         GenerateContentConfig config = service.buildConfig(instance, "sys", List.of(

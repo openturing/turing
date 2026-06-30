@@ -135,6 +135,13 @@ public enum TurNativeCapability {
      *  prompt directly in Google's infrastructure, no Turing crawler. Coexists
      *  with {@link #GEMINI_GOOGLE_SEARCH} in the same turn. */
     GEMINI_URL_CONTEXT("gemini-url-context", "gemini", TOOL, WEB_FETCH, "Web", false),
+    /** T492 / §X.19 — Gemini {@code code_execution} tool: a built-in Python
+     *  sandbox (the Gemini analog of OpenAI {@code code_interpreter} (T135) /
+     *  Anthropic {@code code_execution} (T141)). The generated code, its output
+     *  and inline matplotlib images come back as response parts that
+     *  {@code TurGeminiCodeExecutionDecoder} renders into the answer markdown
+     *  (images as inline {@code data:} URIs). */
+    GEMINI_CODE_EXECUTION("gemini-code-execution", "gemini", TOOL, CODE_EXEC, "Code", false),
 
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat

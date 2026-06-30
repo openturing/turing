@@ -29,6 +29,7 @@ import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GroundingMetadata;
 import com.google.genai.types.Part;
 import com.google.genai.types.Tool;
+import com.google.genai.types.ToolCodeExecution;
 import com.google.genai.types.UrlContext;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
@@ -108,6 +109,7 @@ public class TurGoogleGenAiNativeService {
         return Flux.<ChatResponse>create(sink -> {
             StringBuilder answer = new StringBuilder();
             GroundingMetadata grounding = null;
+            List<Part> codeParts = new ArrayList<>();
             try (ResponseStream<GenerateContentResponse> stream =
                     client.models.generateContentStream(model, contents, config)) {
                 for (GenerateContentResponse response : stream) {
@@ -122,6 +124,15 @@ public class TurGoogleGenAiNativeService {
                     if (chunkGrounding != null) {
                         grounding = chunkGrounding;
                     }
+                    // T492 — collect code_execution parts (code/output/images) so
+                    // they render after the streamed text.
+                    collectCodeParts(response, codeParts);
+                }
+                // T492 — render the collected code/output/images as trailing
+                // markdown (emitted as a token event so it joins the answer).
+                String codeMarkdown = TurGeminiCodeExecutionDecoder.render(codeParts);
+                if (StringUtils.hasText(codeMarkdown)) {
+                    sink.next(new ChatResponse(ASSISTANT, codeMarkdown));
                 }
                 // T490 — decode google_search grounding onto the citation + Search
                 // Suggestion contracts once the full answer text is known (segment
@@ -135,6 +146,18 @@ public class TurGoogleGenAiNativeService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[Native][Gemini] instance '{}' error: {}",
                         instance.getId(), err.getMessage(), err));
+    }
+
+    /** Collect the code-execution parts (code/output/image) of a chunk's first candidate. */
+    private static void collectCodeParts(GenerateContentResponse response, List<Part> sink) {
+        response.candidates()
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .flatMap(c -> c.content())
+                .flatMap(content -> content.parts())
+                .ifPresent(parts -> parts.stream()
+                        .filter(TurGeminiCodeExecutionDecoder::isCodeExecutionPart)
+                        .forEach(sink::add));
     }
 
     /** The grounding metadata on the first candidate of a chunk, or {@code null}. */
@@ -244,6 +267,14 @@ public class TurGoogleGenAiNativeService {
                 .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_URL_CONTEXT);
         if (urlContext) {
             tools.add(Tool.builder().urlContext(UrlContext.builder().build()).build());
+        }
+        // T492 — code_execution: a built-in Python sandbox; the generated code,
+        // output and inline images return as response parts (rendered by
+        // TurGeminiCodeExecutionDecoder).
+        boolean codeExecution = capabilities.stream()
+                .anyMatch(c -> c.capability() == TurNativeCapability.GEMINI_CODE_EXECUTION);
+        if (codeExecution) {
+            tools.add(Tool.builder().codeExecution(ToolCodeExecution.builder().build()).build());
         }
         return tools;
     }
