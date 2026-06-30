@@ -16,21 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## Block F.16 — Gemini native API exploitation + cross-vendor parity
-
-> Block F wired ~30 native features for OpenAI and Anthropic through the
-> `TurNativeProviderClient` seam (T130) + capability matrix (T132); **Gemini got
-> none** — `TurGeminiLlmProvider` is chat-only and `throw`s on embeddings. This
-> block gives Gemini the third native branch and the same capability surface,
-> then exploits primitives the other two lack (task-type embeddings, explicit
-> reusable context caching, 1–2 M-token full-context answering, native video).
-> It also closes three cross-vendor gaps the F-blocks left open (Anthropic
-> `cache_control`, OpenAI background mode, Anthropic extended thinking). Design →
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §X.19 / §X.20 / §X.13.
-
-> **Block F.16 is fully shipped** (T489–T501 + the cross-vendor gaps T502–T504)
-> — see [CHANGELOG.md](CHANGELOG.md) → Block F.16. No active backlog remains.
-
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
 > Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
@@ -38,43 +23,6 @@
 > [CHANGELOG.md](CHANGELOG.md) Block W. Only the optional protocol adapter remains.
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
-
-## Block Y — Reference showcase app (stress every feature)
-
-> **Why now:** one installable reference app that exercises the **maximum surface
-> of the platform** — a living demo, an SDK-vs-real-backend integration test, and
-> the canonical "this is what Turing can do" artifact for sales/docs. Domain: a
-> commerce-catalog copilot ("Atlas Store") — the most feature-dense domain, where
-> a typed catalog + compare + add-to-cart + "why #1?" + returns flow naturally
-> pull in nearly every primitive. Lives at `frontend/apps/showcase`, seeds its
-> own data. **Coverage matrix + per-task feature lists → §XXIV.**
-
-> **Block complete (2026-06-29).** All seven tasks shipped (T451–T457) — see
-> [CHANGELOG.md](CHANGELOG.md) → Block Y. The `frontend/apps/showcase` "Atlas
-> Store" app exercises the maximum platform surface end to end (typed catalog,
-> faceted + hybrid search, RAG chat, agent power, creative bets,
-> voice/memory/ops, MCP) with an in-app guided tour, the `TurShowcaseSmokeIT`
-> e2e test (which uncovered + fixed a T448 circular-dependency context-startup
-> bug), a `docs-turing` page, and the §XXIV.1 coverage audit (`COVERAGE.md`). No
-> active backlog remains.
-
-## Block AA — Synthetic personas: audience-fit content evaluation & persona synthesis from audio (T464–T472)
-
-> **Why:** today `TurPersona` is a **speaker** contract — it controls how the
-> assistant *talks* (tone/verbosity/languageStyle/mandatory+forbidden terms). It
-> models nothing about the *reader*. This block adds the missing half: a persona
-> as an **audience proxy**, so the platform can answer *"is this indexed page / PDF /
-> URL appropriate for this audience?"* (NotebookLM-style condiz/não-condiz report —
-> e.g. a low-education persona rejects dense, jargon-heavy text), and can **synthesize
-> a new persona from a real recorded conversation** (audio → transcript → behavioral
-> traits). Pure composition of shipped primitives: content extraction (`TurFileUtils`/
-> `VigletContentExtractor`), cached LLM reports (`TurLlmSummaryService`), the LlmJudge
-> structured-verdict path, and the T385 *deterministic-scorer + LLM-seam* shape. The
-> whole block is **opt-in** behind a `personaKind` discriminator (default `SPEAKER` =
-> existing voice personas byte-for-byte unchanged). Rationale → §XXVI.
-
-> **Block AA is fully shipped** (T464–T472) — see [CHANGELOG.md](CHANGELOG.md). No
-> active backlog remains.
 
 ## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
 
