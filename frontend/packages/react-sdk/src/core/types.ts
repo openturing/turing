@@ -39,6 +39,7 @@ export type {
   TurSearchSuggestions,
   TurChatToolCall,
   TurClientToolCall,
+  TurChatGrounding,
   ClientToolHandler,
   ClientToolRegistration,
   TurChatConversationResponse,

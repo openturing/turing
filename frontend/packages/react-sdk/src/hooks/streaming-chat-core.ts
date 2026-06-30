@@ -3,6 +3,7 @@ import type {
   TurChatCitation,
   TurChatConversationMessage,
   TurChatForm,
+  TurChatGrounding,
   TurChatSource,
   TurChatToolCall,
   TurSearchSuggestions,
@@ -82,6 +83,15 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   reasoning?: string;
+  /**
+   * Answer-grounding guardrail verdict behind this assistant answer (T516),
+   * emitted as a `"grounding"` SSE event only when the guardrail is enabled and
+   * flagged the answer (ungrounded / unsafe / PII). The host renders a
+   * confidence badge beside the bubble; a clean answer leaves this undefined.
+   *
+   * @since 2026.3.6
+   */
+  grounding?: TurChatGrounding;
 }
 
 /** Auto-generated, collision-resistant id for React keys and turn tracking. */

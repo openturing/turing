@@ -100,7 +100,6 @@ instance.)
 (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD.
 
 **Cross-vendor bridges (the bold bets):**
-- 💭 **T516** (deps: T506, T155, T182) **Pluggable answer-grounding guardrail** (`TurAnswerGuardrail` seam) — validate that a streamed RAG answer is actually grounded in the retrieved context before/while it streams; first adapter = Bedrock Guardrails contextual-grounding + PII redaction, with Mistral/OpenAI moderation adapters. Ties into T155 citation-drift + T182 moderation. → §XXVIII.12
 - 💭 **T517** (deps: T505, T101-router) **Cross-provider per-stage model "lanes"** — declaratively bind pipeline stages to providers: a **fast lane** (Groq/Cerebras) for autocomplete/spell/query-rewrite, a **reasoning lane** (DeepSeek R1 / o-series) for rerank/judge/router, a **cheap lane** for background work — over the existing router, no code per stage. → §XXVIII.13
 - 💭 **T518** (deps: T505, T183) **Cost-aware cross-provider fallback / meta-provider** (OpenRouter-style) — automatic failover + cheapest-capable routing across configured instances, with per-tenant cost attribution (Bedrock application-inference-profile tags); ties to F.13 cost governance. → §XXVIII.14
 - 💭 **T519** (deps: T508, T506, T152–T155) **Native-citation RAG across vendors** — providers that return grounded citations natively (Cohere `Command` citation mode, Bedrock KB citations) decode onto the T152–T155 `TurChatCitation`/SSE contract — parity with the Gemini/Anthropic/OpenAI native grounding already wired. → §XXVIII.15

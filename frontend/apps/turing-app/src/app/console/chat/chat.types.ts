@@ -1,6 +1,7 @@
 import type {
   TurChatCitation,
   TurChatConversationMessage,
+  TurChatGrounding,
   TurChatSource,
   TurChatToolCall,
   TurSearchSuggestions,
@@ -71,6 +72,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   reasoning?: string
+  /**
+   * Answer-grounding guardrail verdict behind the assistant answer (T516).
+   * When present (the guardrail is enabled and flagged the answer), the message
+   * list renders a confidence badge beside the bubble.
+   *
+   * @since 2026.3.6
+   */
+  grounding?: TurChatGrounding
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -92,6 +101,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
+    grounding: m.grounding,
   }))
 }
 
@@ -107,6 +117,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
+    grounding: m.grounding,
   }))
 }
 

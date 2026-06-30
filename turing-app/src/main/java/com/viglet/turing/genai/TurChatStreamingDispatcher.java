@@ -33,6 +33,9 @@ import com.viglet.turing.genai.persona.TurPersonaToneValidator;
 import com.viglet.turing.genai.persona.TurPersonaValidationResult;
 import com.viglet.turing.genai.rag.TurRagSource;
 import com.viglet.turing.genai.rag.TurRagSourceCollector;
+import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailAction;
+import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailService;
+import com.viglet.turing.genai.safety.guardrail.TurAnswerGuardrailVerdict;
 import com.viglet.turing.genai.spectator.TurChatMessageEvent;
 import com.viglet.turing.genai.spectator.TurChatMessageEventBus;
 import com.viglet.turing.observability.TurChatPipelineObservation;
@@ -99,6 +102,7 @@ public class TurChatStreamingDispatcher {
     private final com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService;
     private final com.viglet.turing.genai.clienttool.TurClientToolService clientToolService;
     private final TurClientToolParkRegistry clientToolParkRegistry;
+    private final TurAnswerGuardrailService answerGuardrailService;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -111,7 +115,8 @@ public class TurChatStreamingDispatcher {
             com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
             com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService,
             com.viglet.turing.genai.clienttool.TurClientToolService clientToolService,
-            TurClientToolParkRegistry clientToolParkRegistry) {
+            TurClientToolParkRegistry clientToolParkRegistry,
+            TurAnswerGuardrailService answerGuardrailService) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -124,6 +129,7 @@ public class TurChatStreamingDispatcher {
         this.toolCallTraceService = toolCallTraceService;
         this.clientToolService = clientToolService;
         this.clientToolParkRegistry = clientToolParkRegistry;
+        this.answerGuardrailService = answerGuardrailService;
     }
 
     /**
@@ -431,6 +437,14 @@ public class TurChatStreamingDispatcher {
             // render inline regardless of the client's markdown renderer.
             text = TurChatArtifactUrls.normalize(text);
 
+            // T516 — answer-grounding guardrail (opt-in; no verdict + no event
+            // when disabled, so the legacy path is byte-for-byte unchanged).
+            // Runs before telemetry so a blocked/redacted answer is what gets
+            // recorded in chat memory and seen by the spectator. Fail-open.
+            GuardedAnswer guarded = applyAnswerGuardrail(lastUserMessage, text, initialOptions);
+            text = guarded.text();
+            TurAnswerGuardrailVerdict guardrailVerdict = guarded.verdict();
+
             // Telemetry: increment turn count + accumulate tokens for the
             // session, and append the turn to chat memory (NoOp when either
             // is disabled; safe to call unconditionally).
@@ -470,7 +484,7 @@ public class TurChatStreamingDispatcher {
             log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={} regen_ms={})",
                     tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
                     tAdvanceMs, tRegenMs);
-            return new AssistantTurn(text, suggestedOptions, formJson, sources);
+            return new AssistantTurn(text, suggestedOptions, formJson, sources, guardrailVerdict, null);
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
@@ -662,16 +676,12 @@ public class TurChatStreamingDispatcher {
      * {@link ChatResponse} events.
      */
     private record AssistantTurn(String text, List<String> options, String formJson,
-            List<TurRagSource> sources, ClientToolCall clientToolCall) {
-
-        AssistantTurn(String text, List<String> options, String formJson,
-                List<TurRagSource> sources) {
-            this(text, options, formJson, sources, null);
-        }
+            List<TurRagSource> sources, TurAnswerGuardrailVerdict grounding,
+            ClientToolCall clientToolCall) {
 
         /** T438 — a turn that parked on a frontend tool instead of answering. */
         static AssistantTurn parked(ClientToolCall call) {
-            return new AssistantTurn("", List.of(), null, List.of(), call);
+            return new AssistantTurn("", List.of(), null, List.of(), null, call);
         }
     }
 
@@ -704,6 +714,57 @@ public class TurChatStreamingDispatcher {
     }
 
     /**
+     * T516 — drains the per-turn retrieved chunk <em>texts</em> from the same
+     * {@link TurRagSourceCollector}, used as the grounding context for the
+     * answer guardrail. Empty when no RAG ran this turn (the guardrail then
+     * checks the answer with no context — moderation-only adapters still work).
+     */
+    private static List<String> drainRagContext(ChatOptions options) {
+        if (!(options instanceof org.springframework.ai.model.tool.ToolCallingChatOptions toolOptions)) {
+            return List.of();
+        }
+        var ctx = toolOptions.getToolContext();
+        if (ctx == null) {
+            return List.of();
+        }
+        Object raw = ctx.get(
+                com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_RAG_SOURCES);
+        if (raw instanceof TurRagSourceCollector collector) {
+            return collector.contextSnapshot();
+        }
+        return List.of();
+    }
+
+    /**
+     * T516 — runs the opt-in answer-grounding guardrail and decides what text to
+     * deliver. Returns the (possibly redacted/blocked) answer plus the verdict to
+     * surface (null when the guardrail is off or found nothing). Extracted from
+     * {@link #dispatchCall} to keep that method's complexity in check. Fail-open
+     * lives in {@link TurAnswerGuardrailService#evaluate}.
+     */
+    private GuardedAnswer applyAnswerGuardrail(String userMessage, String text, ChatOptions options) {
+        if (!answerGuardrailService.isEnabled()) {
+            return new GuardedAnswer(text, null);
+        }
+        var verdictOpt = answerGuardrailService.evaluate(userMessage, text, drainRagContext(options));
+        if (verdictOpt.isEmpty()) {
+            return new GuardedAnswer(text, null);
+        }
+        TurAnswerGuardrailVerdict verdict = verdictOpt.get();
+        if (!answerGuardrailService.isBlockOnViolation()) {
+            return new GuardedAnswer(text, verdict);
+        }
+        String replacement = verdict.redactedAnswer() != null
+                ? verdict.redactedAnswer()
+                : answerGuardrailService.getBlockedMessage();
+        return new GuardedAnswer(replacement, verdict.withAction(TurAnswerGuardrailAction.BLOCK));
+    }
+
+    /** The outcome of {@link #applyAnswerGuardrail}: text to deliver + verdict to surface. */
+    private record GuardedAnswer(String text, TurAnswerGuardrailVerdict verdict) {
+    }
+
+    /**
      * Fans an {@link AssistantTurn} out into the SSE stream: always one
      * {@code "token"} event with the text (when non-empty), optionally
      * followed by one {@code "options"} event whose {@code content} is the
@@ -729,34 +790,38 @@ public class TurChatStreamingDispatcher {
         Flux<ChatResponse> events = turn.text() == null || turn.text().isEmpty()
                 ? Flux.empty()
                 : Flux.just(new ChatResponse(ASSISTANT, turn.text()));
-        // T292 — provenance chips render directly under the answer bubble, so
-        // emit the `sources` event right after the text token and before the
-        // chip/form events.
-        if (turn.sources() != null && !turn.sources().isEmpty()) {
-            try {
-                String sourcesJson = OBJECT_MAPPER.writeValueAsString(turn.sources());
-                events = events.concatWith(
-                        Flux.just(new ChatResponse(ASSISTANT, sourcesJson, "sources")));
-            } catch (JacksonException e) {
-                log.warn("[AgentExec] could not serialize {} RAG source(s): {}",
-                        turn.sources().size(), e.getMessage());
-            }
-        }
-        if (turn.options() != null && !turn.options().isEmpty()) {
-            try {
-                String optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());
-                events = events.concatWith(
-                        Flux.just(new ChatResponse(ASSISTANT, optionsJson, "options")));
-            } catch (JacksonException e) {
-                log.warn("[AgentExec] could not serialize {} suggested option(s): {}",
-                        turn.options().size(), e.getMessage());
-            }
-        }
+        // T516 — guardrail verdict badge (present only when the guardrail is
+        // enabled and flagged something), then T292 provenance chips, then chips.
+        events = appendJsonEvent(events, turn.grounding(), "grounding");
+        events = appendJsonEvent(events,
+                turn.sources() == null || turn.sources().isEmpty() ? null : turn.sources(), "sources");
+        events = appendJsonEvent(events,
+                turn.options() == null || turn.options().isEmpty() ? null : turn.options(), "options");
         if (turn.formJson() != null && !turn.formJson().isBlank()) {
             events = events.concatWith(
                     Flux.just(new ChatResponse(ASSISTANT, turn.formJson(), "form")));
         }
         return events;
+    }
+
+    /**
+     * Concatenates one JSON SSE event of {@code type} carrying the serialized
+     * {@code payload} onto {@code events}, or returns {@code events} unchanged
+     * when {@code payload} is {@code null} or serialization fails (best-effort —
+     * a side event must never break the answer stream).
+     */
+    private static Flux<ChatResponse> appendJsonEvent(Flux<ChatResponse> events,
+            Object payload, String type) {
+        if (payload == null) {
+            return events;
+        }
+        try {
+            String json = OBJECT_MAPPER.writeValueAsString(payload);
+            return events.concatWith(Flux.just(new ChatResponse(ASSISTANT, json, type)));
+        } catch (JacksonException e) {
+            log.warn("[AgentExec] could not serialize {} SSE event: {}", type, e.getMessage());
+            return events;
+        }
     }
 
     /**

@@ -734,6 +734,9 @@ export function useTuringChat(
         const finalReasoning =
           res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined;
         const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
+        // T516 — the answer-grounding guardrail verdict, when the guardrail
+        // flagged the answer (clean answers emit no event → undefined).
+        const finalGrounding = res?.grounding ?? undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
           content: aggregatedContent || m.content,
@@ -744,6 +747,7 @@ export function useTuringChat(
           searchSuggestions: finalSearchSuggestions,
           reasoning: finalReasoning,
           toolCalls: finalToolCalls ?? m.toolCalls,
+          grounding: finalGrounding,
         }));
         setActiveForm(finalForm ?? null);
         setStatus("success");

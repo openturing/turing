@@ -44,6 +44,11 @@
     "reasoning": {
       "heading": "Why this answer"
     },
+    "grounding": {
+      "ungrounded": "Not grounded in sources",
+      "flagged": "Flagged by guardrail",
+      "tooltip": "Answer-grounding guardrail verdict"
+    },
     "tools": {
       "heading": "Tools",
       "calling": "Calling",

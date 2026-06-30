@@ -314,6 +314,48 @@ function ReasoningPanel({ message }: Readonly<{ message: ChatMessage }>) {
 }
 
 /**
+ * T516 / §XXVIII.12 — the answer-grounding guardrail verdict badge. Present only
+ * when the guardrail is enabled and flagged the answer (ungrounded / unsafe /
+ * PII); a clean answer emits no `"grounding"` event so this renders nothing.
+ * Surfaced as a compact amber/red chip beside the bubble, with the grounding
+ * score and flagged categories.
+ */
+function GroundingBadge({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const grounding = message.grounding
+  if (!grounding) return null
+  const ungrounded = grounding.grounded === false
+  const tone = ungrounded
+    ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+    : "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+  const label = ungrounded
+    ? t("chat.grounding.ungrounded", { defaultValue: "Not grounded in sources" })
+    : t("chat.grounding.flagged", { defaultValue: "Flagged by guardrail" })
+  const score =
+    typeof grounding.groundingScore === "number"
+      ? ` · ${Math.round(grounding.groundingScore * 100)}%`
+      : ""
+  const categories = (grounding.categories ?? []).filter((c: string) => c !== "ungrounded")
+  return (
+    <div
+      className={`not-prose mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${tone}`}
+      title={t("chat.grounding.tooltip", {
+        defaultValue: "Answer-grounding guardrail verdict",
+      })}
+    >
+      <IconAlertTriangle className="size-3.5 shrink-0" />
+      <span className="font-medium">
+        {label}
+        {score}
+      </span>
+      {categories.length > 0 ? (
+        <span className="opacity-80">({categories.join(", ")})</span>
+      ) : null}
+    </div>
+  )
+}
+
+/**
  * F.9 / T170 — operator thumb-up/down on an assistant turn. The click records a
  * DPO preference signal; the selected thumb stays highlighted so the operator
  * sees their rating landed. Only rendered when the list is given an `onFeedback`
@@ -421,6 +463,7 @@ function AssistantBody({
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
+      <GroundingBadge message={message} />
       <SearchSuggestions message={message} />
       <ReasoningPanel message={message} />
       {(onFeedback || onRephrase) && message.content ? (

@@ -350,6 +350,10 @@ public class TurRagSearchToolService {
 
             if (sourceCollector != null) {
                 sourceCollector.add(TurRagSource.fromDocument(doc));
+                // T516 — also tee the chunk text so the answer-grounding
+                // guardrail can validate the answer against it (server-side
+                // only; the chunk text never rides the sources[] SSE event).
+                sourceCollector.addContext(doc.getText());
             }
 
             sb.append("--- Document ").append(i + 1).append(" ---\n");

@@ -5,6 +5,7 @@ import type {
   TurChatConversationResponse,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatGrounding,
   TurChatResponse,
   TurChatSource,
   TurChatStreamEvent,
@@ -193,6 +194,8 @@ export interface PostChatConversationOptions {
   readonly onSources?: (sources: TurChatSource[]) => void;
   /** Fired when the engine emits per-sentence Anthropic citations (T152). */
   readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /** Fired when the answer-grounding guardrail flags the answer (T516). */
+  readonly onGrounding?: (grounding: TurChatGrounding) => void;
   /**
    * Fired on each live tool-call lifecycle event (T436): `call` is the just-
    * received `start`/`end`, `all` is the merged-by-`callId` list so far.
@@ -245,6 +248,19 @@ function parseSourcesEvent(content: string): TurChatSource[] | null {
     const parsed = JSON.parse(content) as unknown;
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed as TurChatSource[];
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"grounding"` SSE event payload (T516) into a guardrail verdict, or `null`. */
+function parseGroundingEvent(content: string): TurChatGrounding | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatGrounding;
+    if (parsed && typeof parsed.action === "string") {
+      return parsed;
     }
   } catch {
     // ignore malformed payloads
@@ -339,6 +355,7 @@ async function consumeAssistantStream(
   onCitations?: (citations: TurChatCitation[]) => void,
   onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
   onReasoning?: (reasoning: string) => void,
+  onGrounding?: (grounding: TurChatGrounding) => void,
 ): Promise<{
   text: string;
   options: string[];
@@ -349,6 +366,7 @@ async function consumeAssistantStream(
   reasoning?: string;
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
+  grounding?: TurChatGrounding;
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -365,6 +383,7 @@ async function consumeAssistantStream(
   let reasoning: string | undefined;
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
+  let grounding: TurChatGrounding | undefined;
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -431,6 +450,14 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "grounding") {
+      const parsedGrounding = parseGroundingEvent(parsed.content);
+      if (parsedGrounding) {
+        grounding = parsedGrounding;
+        onGrounding?.(parsedGrounding);
+      }
+      return true;
+    }
     return false;
   }
 
@@ -476,6 +503,7 @@ async function consumeAssistantStream(
     reasoning,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
+    grounding,
   };
 }
 
@@ -521,6 +549,7 @@ export async function postChatConversation(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -530,6 +559,7 @@ export async function postChatConversation(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
   );
   return {
     role: "assistant",
@@ -542,6 +572,7 @@ export async function postChatConversation(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   };
 }
 
@@ -554,6 +585,8 @@ export interface PostAgentChatOptions {
   readonly onSources?: (sources: TurChatSource[]) => void;
   /** Fired when the engine emits per-sentence Anthropic citations (T152). */
   readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /** Fired when the answer-grounding guardrail flags the answer (T516). */
+  readonly onGrounding?: (grounding: TurChatGrounding) => void;
   /**
    * Fired on each live tool-call lifecycle event (T436): `call` is the just-
    * received `start`/`end`, `all` is the merged-by-`callId` list so far.
@@ -641,6 +674,7 @@ export async function postAgentChat(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -650,6 +684,7 @@ export async function postAgentChat(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
   );
   return {
     role: "assistant",
@@ -662,6 +697,7 @@ export async function postAgentChat(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   };
 }
 
@@ -671,6 +707,8 @@ export interface PostClientToolResultOptions {
   readonly onForm?: (form: TurChatForm) => void;
   readonly onSources?: (sources: TurChatSource[]) => void;
   readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /** Fired when the answer-grounding guardrail flags the answer (T516). */
+  readonly onGrounding?: (grounding: TurChatGrounding) => void;
   readonly onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
   /** Fired when an OpenAI reasoning model returns its "Why this answer" summary (T178). */
   readonly onReasoning?: (reasoning: string) => void;
@@ -721,6 +759,7 @@ export async function postClientToolResult(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -730,6 +769,7 @@ export async function postClientToolResult(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
   );
   return {
     role: "assistant",
@@ -742,6 +782,7 @@ export async function postClientToolResult(
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
   };
 }
 

@@ -28,6 +28,7 @@ import type {
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatGrounding,
   TurChatSource,
   TurChatToolCall,
   TurClientToolCall,
@@ -144,6 +145,12 @@ export interface ChatMessage extends TurChatConversationMessage {
    * `toolCallEventsEnabled`.
    */
   toolCalls?: TurChatToolCall[];
+  /**
+   * T516 / §XXVIII.12 — the answer-grounding guardrail verdict for this turn,
+   * present only when the guardrail is enabled and flagged the answer. The UI
+   * renders a confidence badge beside the bubble.
+   */
+  grounding?: TurChatGrounding;
 }
 
 export interface ChatControllerAgent {
@@ -729,6 +736,9 @@ export function createChatController(
               signal: controller.signal,
             });
 
+      // T516 — carry the last leg's guardrail verdict (set just below).
+      let aggregatedGrounding: TurChatGrounding | undefined = res?.grounding;
+
       if (requestId !== latestRequestId || aborted) return;
 
       // T438 / T439 — drive any client-tool round-trips. The turn parked with a
@@ -753,6 +763,9 @@ export function createChatController(
         if (res?.toolCalls?.length) {
           aggregatedToolCalls = mergeToolCallLists(aggregatedToolCalls, res.toolCalls);
         }
+        if (res?.grounding) {
+          aggregatedGrounding = res.grounding;
+        }
       }
 
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
@@ -771,6 +784,7 @@ export function createChatController(
           citations: finalCitations,
           // keep the live-accumulated toolCalls if the final response omitted them
           toolCalls: finalToolCalls ?? m.toolCalls,
+          grounding: aggregatedGrounding,
         })),
         "success",
       );

@@ -252,7 +252,32 @@ export interface TurChatStreamEvent {
     | "searchSuggestions"
     | "reasoning"
     | "tool_call"
-    | "client_tool_call";
+    | "client_tool_call"
+    | "grounding";
+}
+
+/**
+ * T516 / §XXVIII.12 — the answer-grounding guardrail verdict carried by the
+ * `"grounding"` SSE event, emitted only when the guardrail is enabled and
+ * flagged something. Mirrors the backend `TurAnswerGuardrailVerdict`. The chat
+ * UI renders a confidence badge beside the answer (e.g. "⚠ not grounded" or a
+ * flagged-category chip); a clean answer emits no event at all.
+ */
+export interface TurChatGrounding {
+  /** `false` when the answer is not supported by the retrieved context. */
+  grounded: boolean;
+  /** Contextual-grounding confidence in `[0,1]`, when assessed. */
+  groundingScore?: number | null;
+  /** Answer↔query relevance confidence in `[0,1]`, when assessed. */
+  relevanceScore?: number | null;
+  /** Recommended action: `"PASS"`, `"FLAG"`, or `"BLOCK"`. */
+  action: "PASS" | "FLAG" | "BLOCK";
+  /** Flagged content/PII categories (e.g. `"ungrounded"`, `"pii:EMAIL"`). */
+  categories: string[];
+  /** Masked answer variant when the guardrail redacted PII, else null. */
+  redactedAnswer?: string | null;
+  /** Which guardrail backend produced this verdict. */
+  strategy: "NONE" | "BEDROCK" | "OPENAI_MODERATION" | "MISTRAL_MODERATION";
 }
 
 /**
@@ -438,6 +463,13 @@ export interface TurChatConversationResponse {
    * runs the registered handler and resumes via `/v2/chat/client-tool-result`.
    */
   clientToolCall?: TurClientToolCall;
+  /**
+   * T516 / §XXVIII.12 — the answer-grounding guardrail verdict, present only
+   * when the guardrail is enabled and flagged the answer (ungrounded / unsafe /
+   * PII). The UI renders a confidence badge beside the answer; a clean answer
+   * leaves this undefined.
+   */
+  grounding?: TurChatGrounding;
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

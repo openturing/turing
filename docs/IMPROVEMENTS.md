@@ -1896,13 +1896,6 @@ _Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
 
-- **§XXVIII.12 — T516 Pluggable answer-grounding guardrail.** A new
-  `TurAnswerGuardrail` seam that checks a streamed RAG answer is actually grounded
-  in the retrieved context (and redacts PII) before/while it reaches the user.
-  First adapter: **Bedrock Guardrails** contextual-grounding + PII; further
-  adapters wrap Mistral moderation and the existing OpenAI omni-moderation (T182).
-  This is a managed, provider-backed complement to the T155 citation-drift scan —
-  catching hallucination at answer time, not the next day.
 - **§XXVIII.13 — T517 Cross-provider per-stage model "lanes".** The platform runs
   many LLM stages (autocomplete, spell, query-rewrite, router, rerank, judge,
   background summarization). Different stages want different vendors: a **fast

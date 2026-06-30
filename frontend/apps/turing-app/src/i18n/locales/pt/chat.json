@@ -44,6 +44,11 @@
     "reasoning": {
       "heading": "Por que esta resposta"
     },
+    "grounding": {
+      "ungrounded": "Não fundamentada nas fontes",
+      "flagged": "Sinalizada pela proteção",
+      "tooltip": "Veredito da proteção de fundamentação da resposta"
+    },
     "tools": {
       "heading": "Ferramentas",
       "calling": "Chamando",

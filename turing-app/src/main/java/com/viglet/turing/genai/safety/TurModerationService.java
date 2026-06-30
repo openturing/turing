@@ -103,6 +103,20 @@ public class TurModerationService {
         if (!enabled || !StringUtils.hasText(text)) {
             return Verdict.clean();
         }
+        return moderateAlways(text);
+    }
+
+    /**
+     * T516 / §XXVIII.12 — moderate {@code text} <strong>regardless</strong> of
+     * the T182 {@code turing.safety.moderation.enabled} switch, used by the
+     * answer-grounding guardrail whose own {@code turing.safety.guardrail.*}
+     * switch decides when it runs. Still fully fail-open: blank text / no OpenAI
+     * client / API error → {@link Verdict#clean()}.
+     */
+    public Verdict moderateAlways(String text) {
+        if (!StringUtils.hasText(text)) {
+            return Verdict.clean();
+        }
         Optional<OpenAIClient> client = resolveOpenAiClient();
         if (client.isEmpty()) {
             log.debug("[Moderation] enabled but no OpenAI instance available — skipping (fail-open)");
