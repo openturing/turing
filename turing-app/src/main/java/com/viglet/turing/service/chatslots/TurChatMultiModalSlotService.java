@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.ai.chat.messages.Message;
@@ -32,6 +33,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.genai.TurChatAttachmentService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService.VideoUnderstanding;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
@@ -87,17 +90,20 @@ public class TurChatMultiModalSlotService {
     private final TurSecretCryptoService cryptoService;
     private final TurChatFlowEngineService engineService;
     private final TurAIAgentSlotRepository slotRepository;
+    private final TurGeminiVideoUnderstandingService videoUnderstanding;
 
     public TurChatMultiModalSlotService(TurStorageService storageService,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService cryptoService,
             TurChatFlowEngineService engineService,
-            TurAIAgentSlotRepository slotRepository) {
+            TurAIAgentSlotRepository slotRepository,
+            TurGeminiVideoUnderstandingService videoUnderstanding) {
         this.storageService = storageService;
         this.llmProviderFactory = llmProviderFactory;
         this.cryptoService = cryptoService;
         this.engineService = engineService;
         this.slotRepository = slotRepository;
+        this.videoUnderstanding = videoUnderstanding;
     }
 
     /**
@@ -190,14 +196,12 @@ public class TurChatMultiModalSlotService {
         engineService.writeSlot(conversationId, slot.getName(), url,
                 TurChatSlotAuditSource.UPLOAD, "agent=" + agent.getId());
 
-        Map<String, String> visionExtracted = Map.of();
-        int visionWritten = 0;
-        if (runVision && slot.getType() == TurAIAgentSlotType.IMAGE && isImage(contentType)) {
-            VisionResult vision = runVisionExtraction(bytes, contentType,
-                    file.getOriginalFilename(), agent, conversationId, visionSlotNames);
-            visionExtracted = vision.extracted();
-            visionWritten = vision.written();
-        }
+        VisionResult extraction = runVision
+                ? runExtraction(slot, bytes, contentType, file.getOriginalFilename(),
+                        agent, conversationId, visionSlotNames)
+                : VisionResult.none();
+        Map<String, String> visionExtracted = extraction.extracted();
+        int visionWritten = extraction.written();
 
         log.info("[MultiModalSlot] conv={} slot='{}' type={} object='{}' ({} bytes) visionWritten={}",
                 conversationId, slot.getName(), slot.getType(), objectName, bytes.length, visionWritten);
@@ -205,7 +209,63 @@ public class TurChatMultiModalSlotService {
                 contentType, bytes.length, visionExtracted, visionWritten, null);
     }
 
-    private record VisionResult(Map<String, String> extracted, int written) { }
+    private record VisionResult(Map<String, String> extracted, int written) {
+        static VisionResult none() {
+            return new VisionResult(Map.of(), 0);
+        }
+    }
+
+    /**
+     * Dispatch the optional extraction pass by slot modality: IMAGE → Vision LLM
+     * (fills scalar slots from a document photo); VIDEO/AUDIO → Gemini native
+     * understanding (T501, transcript + scene description into a target text
+     * slot). Any other modality has no extraction and returns {@link VisionResult#none()}.
+     */
+    private VisionResult runExtraction(TurAIAgentSlot slot, byte[] bytes, String contentType,
+            String filename, TurAIAgent agent, String conversationId, List<String> visionSlotNames) {
+        if (slot.getType() == TurAIAgentSlotType.IMAGE && isImage(contentType)) {
+            return runVisionExtraction(bytes, contentType, filename, agent, conversationId,
+                    visionSlotNames);
+        }
+        if (slot.getType() == TurAIAgentSlotType.VIDEO || slot.getType() == TurAIAgentSlotType.AUDIO) {
+            return runVideoUnderstanding(bytes, contentType, filename, agent, conversationId,
+                    visionSlotNames);
+        }
+        return VisionResult.none();
+    }
+
+    /**
+     * T501 — native video/audio understanding via Gemini: produce a timestamped
+     * transcript + scene description and write it into the first target text slot
+     * (mirrors {@link #runVisionExtraction}'s "fill a slot" contract). Skipped
+     * (and swallowed) when the agent's LLM is not a Gemini instance, when no
+     * target slot is named, or on any understanding error — the binary slot is
+     * already written, so this is strictly additive.
+     */
+    private VisionResult runVideoUnderstanding(byte[] bytes, String contentType, String filename,
+            TurAIAgent agent, String conversationId, List<String> targetSlotNames) {
+        TurLLMInstance llm = resolveLlmInstance(agent);
+        if (llm == null || !videoUnderstanding.supports(llm)) {
+            log.info("[MultiModalSlot] video/audio understanding skipped — agent '{}' LLM is not "
+                    + "a Gemini instance", agent.getId());
+            return VisionResult.none();
+        }
+        List<TurAIAgentSlot> targets = resolveScalarTargetSlots(agent, targetSlotNames);
+        if (targets.isEmpty()) {
+            log.info("[MultiModalSlot] No target text slot for the transcript — understanding skipped");
+            return VisionResult.none();
+        }
+        Optional<VideoUnderstanding> result =
+                videoUnderstanding.understand(llm, bytes, contentType, filename);
+        if (result.isEmpty() || result.get().rawText().isBlank()) {
+            return VisionResult.none();
+        }
+        String targetName = targets.get(0).getName();
+        String text = result.get().rawText();
+        int touched = engineService.writeSlot(conversationId, targetName, text,
+                TurChatSlotAuditSource.EXTRACT, "video-agent=" + agent.getId());
+        return new VisionResult(Map.of(targetName, text), touched > 0 ? 1 : 0);
+    }
 
     /**
      * Vision pass: send the image to the agent's LLM as a {@link Media} block
@@ -291,15 +351,23 @@ public class TurChatMultiModalSlotService {
     }
 
     private ChatModel buildChatModelForAgent(TurAIAgent agent) {
-        TurLLMInstance llm = agent.getLlmInstances().stream()
-                .filter(l -> l.getEnabled() == 1)
-                .findFirst()
-                .orElseGet(() -> agent.getLlmInstances().stream().findFirst().orElse(null));
+        TurLLMInstance llm = resolveLlmInstance(agent);
         if (llm == null) {
             return null;
         }
         String apiKey = cryptoService.decrypt(llm.getApiKeyEncrypted());
         return llmProviderFactory.getProvider(llm).createChatModel(llm, apiKey);
+    }
+
+    /** The agent's active LLM instance (first enabled, else first), or null. */
+    private TurLLMInstance resolveLlmInstance(TurAIAgent agent) {
+        if (agent.getLlmInstances() == null) {
+            return null;
+        }
+        return agent.getLlmInstances().stream()
+                .filter(l -> l.getEnabled() == 1)
+                .findFirst()
+                .orElseGet(() -> agent.getLlmInstances().stream().findFirst().orElse(null));
     }
 
     private String resolveContentType(MultipartFile file) {

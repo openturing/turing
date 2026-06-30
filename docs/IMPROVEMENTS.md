@@ -1635,13 +1635,13 @@ infra, zero Java callbacks; mirrors F.2/F.3):
   (see CHANGELOG Block F.16). Per-site opt-in mode (gated on a corpus token
   budget) that grounds over the whole corpus instead of top-K, paired with the
   T499 cache; inverts the RAG assumption when the index fits the model window.
-- **T501 Native video understanding for indexed media** — Gemini ingests video
-  (frames + audio track, including a YouTube URL) natively. Index a video/audio
-  asset by passing it to Gemini for a timestamped transcript + scene/visual
-  description (written to the SN doc), and answer visual questions against it at
-  query time. Extends the T64 multimodal slots with a VIDEO modality and rides
-  the T497 Files bridge. A media-catalog differentiator the text-only retrieval
-  stack can't touch.
+- **T501 Native video understanding for indexed media** — ⏳ engine + VIDEO slot
+  modality + chat-slot consumer shipped (CHANGELOG Block F.16):
+  `TurGeminiVideoUnderstandingService` turns a clip (bytes / YouTube URL / Files
+  URI) into a timestamped transcript + scene description, riding the T497 Files
+  bridge; the VIDEO slot writes it to a target text slot. **Remaining:** wire the
+  same engine into index-time SN-doc enrichment so an indexed video/audio asset
+  carries its transcript/description for retrieval.
 
 **Naming.** Plugin type `gemini` (the native Google GenAI SDK provider; the
 `gemini-openai` OpenAI-compat provider stays Spring-AI-only). Capabilities

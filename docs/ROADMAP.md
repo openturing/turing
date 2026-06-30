@@ -48,7 +48,7 @@
 - ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Innovation bets (Gemini-shape-only):**
-- 💭 **T501** (deps: T489, T64, T497) **Native video understanding for indexed media** — pass video/audio (incl. YouTube URL) to Gemini for timestamped transcript + scene/visual description written to the SN doc; adds a VIDEO modality to the T64 slots. → §X.19
+- ⏳ **T501** (deps: T489, T64, T497) **Native video understanding** — engine + VIDEO slot modality + chat-slot consumer **shipped** (Block F.16); the remaining leg is wiring the same engine into index-time SN-doc enrichment (write the transcript/scene description to the indexed media doc). → §X.19
 
 **Cross-vendor gaps the F-blocks left open:**
 - 📋 **T502** (deps: T131, T499) **Anthropic prompt caching (`cache_control`)** — mark the system prompt + retrieved `search_result` blocks (T153) with ephemeral cache breakpoints behind the T499 seam; opt-in, null → unchanged. → §X.20
