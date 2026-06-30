@@ -79,6 +79,16 @@ public class TurLLMVendorOnStartup {
 			geminiOpenAI.setWebsite("https://ai.google.dev");
 			turLLMVendorRepository.save(geminiOpenAI);
 
+			TurLLMVendor openAiCompatible = new TurLLMVendor();
+			openAiCompatible.setId("OPENAI_COMPAT");
+			openAiCompatible.setDescription(
+					"Any OpenAI-compatible endpoint (DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, "
+							+ "Together, Fireworks, local vLLM/LM-Studio) — set the base URL");
+			openAiCompatible.setPlugin("openai-compatible");
+			openAiCompatible.setTitle("OpenAI-Compatible");
+			openAiCompatible.setWebsite("https://platform.openai.com/docs/api-reference");
+			turLLMVendorRepository.save(openAiCompatible);
+
 		}
 	}
 }

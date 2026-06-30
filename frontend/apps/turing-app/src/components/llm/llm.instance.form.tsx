@@ -197,6 +197,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("8192")
     }
+    if (vendorId === "OPENAI_COMPAT") {
+      // No default URL — the base URL identifies the actual vendor (DeepSeek,
+      // Groq, OpenRouter, local vLLM, …). The placeholder below shows an example.
+      form.setValue("url", "", { shouldDirty: true });
+      form.setValue("modelName", "", { shouldDirty: true });
+      form.setValue("temperature", 0.7, { shouldDirty: true });
+      form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {

@@ -1,0 +1,37 @@
+databaseChangeLog:
+  # --- T505 / §XXVIII.1: generic OpenAI-compatible LLM vendor ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent: skipped if
+  # the table is empty (fresh install) or the row already exists.
+  - changeSet:
+      id: v2026.3.1.77-01-add-openai-compatible-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'OPENAI_COMPAT'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: OPENAI_COMPAT
+              - column:
+                  name: description
+                  value: "Any OpenAI-compatible endpoint (DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, Together, Fireworks, local vLLM/LM-Studio) — set the base URL"
+              - column:
+                  name: plugin
+                  value: openai-compatible
+              - column:
+                  name: title
+                  value: "OpenAI-Compatible"
+              - column:
+                  name: website
+                  value: "https://platform.openai.com/docs/api-reference"

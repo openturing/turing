@@ -1888,15 +1888,6 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.1 — T505 Generic OpenAI-compatible provider.** The `gemini-openai`
-  provider already proves the "OpenAI wire format at a custom `baseUrl`" seam
-  works. Generalize it into a first-class `openai-compatible` provider where the
-  endpoint URL (and optional auth header shape) is per-instance config. One seam
-  then reaches **DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, Together,
-  Fireworks, and a local vLLM/LM-Studio** — chat plus embeddings wherever the
-  endpoint exposes `/embeddings`. Highest ROI in the block: ~8 vendors for one
-  provider. The capability matrix stays conservative (no native server-tools
-  assumed) since these endpoints vary.
 - **§XXVIII.2 — T506 AWS Bedrock provider.** `TurBedrockLlmProvider` over Spring
   AI's Bedrock Converse API. Distinct from every other provider in that it is a
   **gateway** (Claude, Llama, Mistral, Nova, Titan on one endpoint) authenticated

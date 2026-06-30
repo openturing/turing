@@ -92,7 +92,6 @@
 > Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVIII.
 
 **Foundation — the provider seams (ROI-ordered):**
-- 📋 **T505** (deps: §XXVIII) **Generic OpenAI-compatible provider** (`openai-compatible`) — generalize the `gemini-openai` pattern into a first-class provider with a configurable `baseUrl`, unlocking **DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, Together, Fireworks, and local vLLM** with one seam (chat + embeddings where exposed). Highest ROI: 1 provider → ~8 vendors. → §XXVIII.1
 - 📋 **T506** (deps: §XXVIII) **AWS Bedrock provider** (`bedrock`) — `TurBedrockLlmProvider` via Spring AI Bedrock Converse: Claude/Llama/Mistral/Nova on one gateway, IAM/region credentials (not an API key), Titan/Cohere embeddings. The enterprise compliance/data-residency path AWS-standardized customers require. → §XXVIII.2
 - 📋 **T507** (deps: §XXVIII, T337–T340) **Voyage AI embeddings + rerank** — `voyage` embedding provider (`voyage-3` family, asymmetric `input_type` doc/query) + a `VOYAGE` `TurRagReranker` strategy (`rerank-2.5`). The specialist retrieval vendor Anthropic itself recommends; directly lifts RAG quality. → §XXVIII.3
 - 📋 **T508** (deps: §XXVIII, T337–T340) **Cohere full provider** (`cohere`) — promote Cohere beyond the existing reranker: `Command` chat (built-in citation mode) + `Embed v4` multilingual/multimodal embeddings, reusing the wired Cohere credentials. → §XXVIII.4

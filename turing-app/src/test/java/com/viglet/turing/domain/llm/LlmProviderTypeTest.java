@@ -45,6 +45,7 @@ class LlmProviderTypeTest {
         assertThat(LlmProviderType.of("ollama").isKnown()).isTrue();
         assertThat(LlmProviderType.of("gemini").isKnown()).isTrue();
         assertThat(LlmProviderType.of("gemini-openai").isKnown()).isTrue();
+        assertThat(LlmProviderType.of("openai-compatible").isKnown()).isTrue();
     }
 
     @Test
