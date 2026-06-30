@@ -27,9 +27,10 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
  * {@link TurLLMInstance} by its plugin type, mirroring
  * {@link TurGenAiLlmProviderFactory}.
  *
- * <p>Only OpenAI and Anthropic register a batch provider; an instance on any
- * other vendor resolves to {@link Optional#empty()}, which callers treat as
- * "batch not supported, fall back to the synchronous path".
+ * <p>OpenAI, Anthropic, and Gemini register a chat batch provider; OpenAI and
+ * Gemini also register an embeddings batch provider. An instance on any vendor
+ * without the relevant provider resolves to {@link Optional#empty()}, which
+ * callers treat as "batch not supported, fall back to the synchronous path".
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -58,7 +59,7 @@ public class TurBatchProviderFactory {
         return Optional.ofNullable(providerMap.get(pluginType(instance)));
     }
 
-    /** The embeddings-batch provider for the instance's vendor, if one exists (OpenAI only). */
+    /** The embeddings-batch provider for the instance's vendor, if one exists (OpenAI / Gemini). */
     public Optional<TurBatchEmbeddingProvider> getEmbeddingProvider(TurLLMInstance instance) {
         return Optional.ofNullable(embeddingProviderMap.get(pluginType(instance)));
     }

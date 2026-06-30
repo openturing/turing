@@ -101,7 +101,7 @@ public class TurBatchInferenceService {
         }
     }
 
-    /** True when the instance's vendor exposes an embeddings Batch API (OpenAI only). */
+    /** True when the instance's vendor exposes an embeddings Batch API (OpenAI / Gemini). */
     public boolean isEmbeddingSupported(TurLLMInstance instance) {
         return providerFactory.getEmbeddingProvider(instance).isPresent();
     }

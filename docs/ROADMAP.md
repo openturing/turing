@@ -43,7 +43,7 @@
 
 **Distinctive Gemini cost/quality primitives:**
 - ✅ T495 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- ⏳ **T496** (deps: T156) **Gemini Batch provider** — **chat batch shipped** (T157/T159 run on Gemini; see [CHANGELOG.md](CHANGELOG.md) Block F.16). Remaining: the **embeddings** batch leg (`TurBatchEmbeddingProvider` via `createEmbeddings`) so T158 re-embedding also runs on Gemini instead of synchronous; and live-API confirmation of the batch JSONL wire format. → §X.19
+- ✅ T496 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T497 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 

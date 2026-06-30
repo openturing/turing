@@ -31,8 +31,8 @@ import tools.jackson.databind.node.ObjectNode;
 
 /**
  * F.7 / §X.8.c — schedules in-place re-embedding of a store collection as an
- * OpenAI embeddings Batch job (50% off, 24h SLA) instead of a synchronous
- * re-embed.
+ * embeddings Batch job (50% off, 24h SLA) instead of a synchronous re-embed,
+ * on any vendor with an embeddings Batch API (OpenAI or, since T496, Gemini).
  *
  * <p>When an admin switches the embedding model on a collection, every existing
  * chunk's <em>text and metadata stay the same</em> — only its vector must be
@@ -45,8 +45,9 @@ import tools.jackson.databind.node.ObjectNode;
  *
  * <p>Opt-in + fail-safe: requires {@code turing.batch.enabled} +
  * {@code turing.batch.embedding.enabled} and an embedding model whose linked LLM
- * instance is on a vendor with an embeddings Batch API (OpenAI). Otherwise it
- * submits nothing and the caller falls back to the existing synchronous reindex.
+ * instance is on a vendor with an embeddings Batch API (OpenAI or Gemini).
+ * Otherwise it submits nothing and the caller falls back to the existing
+ * synchronous reindex.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4

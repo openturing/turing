@@ -22,12 +22,17 @@ import com.google.genai.types.BatchJob;
 import com.google.genai.types.BatchJobSource;
 import com.google.genai.types.CancelBatchJobConfig;
 import com.google.genai.types.CreateBatchJobConfig;
+import com.google.genai.types.CreateEmbeddingsBatchJobConfig;
 import com.google.genai.types.DownloadFileConfig;
+import com.google.genai.types.EmbeddingsBatchJobSource;
 import com.google.genai.types.GetBatchJobConfig;
 import com.google.genai.types.JobState;
 import com.google.genai.types.UploadFileConfig;
 import com.viglet.turing.genai.batch.TurBatchChatRequest;
 import com.viglet.turing.genai.batch.TurBatchChatResult;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingProvider;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingRequest;
+import com.viglet.turing.genai.batch.TurBatchEmbeddingResult;
 import com.viglet.turing.genai.batch.TurBatchProvider;
 import com.viglet.turing.genai.batch.TurBatchState;
 import com.viglet.turing.genai.batch.TurBatchStatus;
@@ -49,6 +54,14 @@ import lombok.extern.slf4j.Slf4j;
  * to its Turing {@code customId}. Results download the destination file and parse
  * it symmetrically.
  *
+ * <p>T496 also implements the <em>embeddings</em> batch leg
+ * ({@link TurBatchEmbeddingProvider}) over the same Files dance, but referencing
+ * the keyed JSONL as an {@link EmbeddingsBatchJobSource} on
+ * {@code batches.createEmbeddings}. This lets in-place re-embedding (T158) of a
+ * Gemini-backed store collection run at the Gemini Batch discount instead of
+ * falling back to synchronous full price — closing the last gap the T156 changelog
+ * called out ("Gemini → no provider").
+ *
  * <p>The native SDK client comes from {@link TurNativeProviderClient}, reusing
  * the established decryption/base-URL plumbing.
  *
@@ -57,9 +70,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class TurGeminiBatchProvider implements TurBatchProvider {
+public class TurGeminiBatchProvider implements TurBatchProvider, TurBatchEmbeddingProvider {
 
     private static final String DEFAULT_MODEL = "gemini-2.0-flash";
+    private static final String DEFAULT_EMBEDDING_MODEL = "gemini-embedding-001";
 
     private final TurNativeProviderClient nativeProviderClient;
 
@@ -76,25 +90,72 @@ public class TurGeminiBatchProvider implements TurBatchProvider {
     public String submitChat(TurLLMInstance instance, List<TurBatchChatRequest> requests) {
         Client client = client(instance);
         String jsonl = TurGeminiBatchJsonl.buildInputJsonl(requests);
-        byte[] bytes = jsonl.getBytes(StandardCharsets.UTF_8);
-
-        com.google.genai.types.File inputFile = client.files.upload(bytes,
-                UploadFileConfig.builder()
-                        .mimeType("application/jsonl")
-                        .displayName("turing-batch-input.jsonl")
-                        .build());
+        String fileName = uploadInputJsonl(client, jsonl);
 
         String model = StringUtils.hasText(instance.getModelName())
                 ? instance.getModelName() : DEFAULT_MODEL;
         BatchJob batch = client.batches.create(model,
-                BatchJobSource.builder().fileName(inputFile.name().orElseThrow(() ->
-                        new IllegalStateException("Gemini Files upload returned no name"))).build(),
+                BatchJobSource.builder().fileName(fileName).build(),
                 CreateBatchJobConfig.builder().displayName("turing-batch").build());
         String batchId = batch.name().orElseThrow(() ->
                 new IllegalStateException("Gemini batch create returned no name"));
         log.info("[Batch][Gemini] submitted chat batch {} ({} requests) for instance {}",
                 batchId, requests.size(), instance.getId());
         return batchId;
+    }
+
+    @Override
+    public String submitEmbeddings(TurLLMInstance instance, List<TurBatchEmbeddingRequest> requests) {
+        Client client = client(instance);
+        String jsonl = TurGeminiEmbeddingBatchJsonl.buildInputJsonl(requests);
+        String fileName = uploadInputJsonl(client, jsonl);
+
+        String model = embeddingModel(instance, requests);
+        BatchJob batch = client.batches.createEmbeddings(model,
+                EmbeddingsBatchJobSource.builder().fileName(fileName).build(),
+                CreateEmbeddingsBatchJobConfig.builder().displayName("turing-batch-embeddings").build());
+        String batchId = batch.name().orElseThrow(() ->
+                new IllegalStateException("Gemini embeddings batch create returned no name"));
+        log.info("[Batch][Gemini] submitted embeddings batch {} ({} requests) for instance {}",
+                batchId, requests.size(), instance.getId());
+        return batchId;
+    }
+
+    @Override
+    public List<TurBatchEmbeddingResult> embeddingResults(TurLLMInstance instance, String vendorBatchId) {
+        Client client = client(instance);
+        BatchJob batch = client.batches.get(vendorBatchId, GetBatchJobConfig.builder().build());
+        String destFile = batch.dest().flatMap(d -> d.fileName()).orElse(null);
+        if (!StringUtils.hasText(destFile)) {
+            log.warn("[Batch][Gemini] embeddings batch {} completed with no destination file", vendorBatchId);
+            return List.of();
+        }
+        return TurGeminiEmbeddingBatchJsonl.parseOutputJsonl(downloadToString(client, destFile, vendorBatchId));
+    }
+
+    /** Upload the keyed JSONL through the Files API, returning its resource name. */
+    private String uploadInputJsonl(Client client, String jsonl) {
+        byte[] bytes = jsonl.getBytes(StandardCharsets.UTF_8);
+        com.google.genai.types.File inputFile = client.files.upload(bytes,
+                UploadFileConfig.builder()
+                        .mimeType("application/jsonl")
+                        .displayName("turing-batch-input.jsonl")
+                        .build());
+        return inputFile.name().orElseThrow(() ->
+                new IllegalStateException("Gemini Files upload returned no name"));
+    }
+
+    /**
+     * The embeddings model for the batch — set once at create time (not per line).
+     * Prefers the per-request model id (the embedding model reference threaded by
+     * the re-embedding service), then the instance model, then the default.
+     */
+    private static String embeddingModel(TurLLMInstance instance, List<TurBatchEmbeddingRequest> requests) {
+        if (!requests.isEmpty() && StringUtils.hasText(requests.get(0).model())) {
+            return requests.get(0).model();
+        }
+        return StringUtils.hasText(instance.getModelName())
+                ? instance.getModelName() : DEFAULT_EMBEDDING_MODEL;
     }
 
     @Override
