@@ -118,6 +118,8 @@ public class TurNativeChatExecutor {
     private static final String REQUEST_OPTION_CITATIONS = "citations";
     /** T176 / §X.12.b — request-option key for native PDF grounding. */
     private static final String REQUEST_OPTION_NATIVE_PDF = "native-pdf";
+    /** T178 / §X.13.a — request-option key for the OpenAI reasoning summary mode. */
+    private static final String REQUEST_OPTION_REASONING_SUMMARY = "reasoning-summary";
     /** T152 — how many passages to attach as document blocks when citations are on. */
     private static final int CITATION_TOP_K = 5;
 
@@ -199,9 +201,19 @@ public class TurNativeChatExecutor {
         boolean nativePdfEnabled = isAnthropic && isNativePdfEnabled(agent);
         boolean groundWithDocuments = citationsEnabled || nativePdfEnabled;
 
+        // T178 / §X.13.a — the OpenAI reasoning-summary request option forces the
+        // native Responses path on its own (the Spring AI chat-completions path
+        // can't surface a reasoning summary), exactly like citations force the
+        // Anthropic path. Gated on a reasoning model: on a chat model (gpt-4o…)
+        // the option is a no-op and the turn stays on the unchanged Spring AI path.
+        String reasoningSummaryMode = isOpenAi
+                ? requestOptionValue(agent, REQUEST_OPTION_REASONING_SUMMARY) : null;
+        boolean openAiReasoningForced = isOpenAi && StringUtils.hasText(reasoningSummaryMode)
+                && TurOpenAiResponsesService.isReasoningModel(instance);
+
         List<EnabledCapability> instanceCapabilities =
                 capabilityService.enabledFor(instance.getId(), pluginType);
-        if (instanceCapabilities.isEmpty() && !groundWithDocuments) {
+        if (instanceCapabilities.isEmpty() && !groundWithDocuments && !openAiReasoningForced) {
             return Optional.empty();
         }
 
@@ -213,11 +225,12 @@ public class TurNativeChatExecutor {
         NativeSelection selection = legacy
                 ? null
                 : capabilityResolver.resolve(agent.getNativeCapabilities(), instanceCapabilities);
-        if (selection != null && selection.isEmpty() && !groundWithDocuments) {
+        if (selection != null && selection.isEmpty() && !groundWithDocuments
+                && !openAiReasoningForced) {
             // The agent opted in but none of its picks are enabled on this
             // instance — defer to the Spring AI path (which runs the agent's
             // normal tool set) rather than a native turn with no capabilities.
-            // (Citations still force the native Anthropic path — see below.)
+            // (Citations / reasoning-summary still force the native path — below.)
             return Optional.empty();
         }
         List<EnabledCapability> capabilities = selection == null
@@ -408,14 +421,23 @@ public class TurNativeChatExecutor {
         // can slice it later. Disabled → byte-for-byte unchanged request.
         TurStoredCompletionsService.StoredCompletionsDirective storedCompletions =
                 storedCompletionsService.resolveForChat(agent, conversationId);
+        // T178 / §X.13.a — carry the reasoning summary mode (when set on a
+        // reasoning model) so the Responses turn requests it and surfaces the
+        // summary as the "Why this answer" SSE event. NONE on a chat model →
+        // unchanged request.
+        TurOpenAiResponsesService.ReasoningOptions reasoningOptions =
+                StringUtils.hasText(reasoningSummaryMode)
+                        ? new TurOpenAiResponsesService.ReasoningOptions(reasoningSummaryMode, null)
+                        : TurOpenAiResponsesService.ReasoningOptions.NONE;
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "
-                + "({} capability/ies, persona '{}', storedCompletions={})",
+                + "({} capability/ies, persona '{}', storedCompletions={}, reasoningSummary={})",
                 agent.getTitle(), instance.getId(), capabilities.size(),
-                activePersona == null ? "none" : activePersona.getName(), storedCompletions.store());
+                activePersona == null ? "none" : activePersona.getName(), storedCompletions.store(),
+                reasoningOptions.hasSummary() ? reasoningSummaryMode : "off");
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
                 serviceTierResolver.resolveForChat(agent, instance).orElse(null),
-                agent.getId(), conversationId, storedCompletions));
+                agent.getId(), conversationId, storedCompletions, reasoningOptions));
     }
 
     /**
@@ -508,6 +530,25 @@ public class TurNativeChatExecutor {
         }
         Object value = optionsParser.parse(json).get(key);
         return value != null && "true".equalsIgnoreCase(value.toString().trim());
+    }
+
+    /**
+     * T178/T179 — the raw string value of a request option (e.g. the
+     * {@code reasoning-summary} mode {@code "auto"}/{@code "concise"}/
+     * {@code "detailed"}), or {@code null} when unset/blank. Unlike
+     * {@link #isRequestOptionTrue} these knobs are SELECT values, not booleans.
+     */
+    private String requestOptionValue(TurAIAgent agent, String key) {
+        String json = agent.getRequestOptionsJson();
+        if (!StringUtils.hasText(json)) {
+            return null;
+        }
+        Object value = optionsParser.parse(json).get(key);
+        if (value == null) {
+            return null;
+        }
+        String text = value.toString().trim();
+        return text.isEmpty() ? null : text;
     }
 
     private String resolvePluginType(TurLLMInstance instance) {

@@ -26,6 +26,8 @@ import org.springframework.util.StringUtils;
 
 import com.openai.client.OpenAIClient;
 import com.openai.core.JsonValue;
+import com.openai.models.Reasoning;
+import com.openai.models.ReasoningEffort;
 import com.openai.models.responses.EasyInputMessage;
 import com.openai.models.responses.FileSearchTool;
 import com.openai.models.responses.FunctionTool;
@@ -35,6 +37,7 @@ import com.openai.models.responses.ResponseFunctionToolCall;
 import com.openai.models.responses.ResponseInputItem;
 import com.openai.models.responses.ResponseOutputItem;
 import com.openai.models.responses.ResponseOutputMessage;
+import com.openai.models.responses.ResponseReasoningItem;
 import com.openai.models.responses.Tool;
 import com.openai.models.responses.WebSearchTool;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
@@ -161,34 +164,105 @@ public class TurOpenAiResponsesService {
             List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId, StoredCompletionsDirective storedCompletions) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                serviceTier, agentId, conversationId, storedCompletions, ReasoningOptions.NONE);
+    }
+
+    /**
+     * F.12 / §X.13 — chat with explicit {@link ReasoningOptions}. When the agent
+     * opted into the {@code reasoning-summary} (T178) / {@code reasoning-effort}
+     * (T179) request options <em>and</em> the instance runs a reasoning model
+     * (o-series / GPT-5), the Responses request carries the {@code reasoning}
+     * config and any reasoning summary the model returns is surfaced as a
+     * second {@code "reasoning"} SSE event after the answer token — the chat UI
+     * renders it as the collapsible "Why this answer" panel. {@link
+     * ReasoningOptions#NONE} (or a non-reasoning model) leaves the request and
+     * the emission byte-for-byte unchanged.
+     */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
+            ReasoningOptions reasoning) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
                         capabilities, coexistingTools, serviceTier, agentId, conversationId,
-                        storedCompletions))
+                        storedCompletions, reasoning))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMapMany(text -> Flux.just(new ChatResponse("assistant",
-                        StringUtils.hasText(text) ? text : "")))
+                .flatMapMany(TurOpenAiResponsesService::emitResult)
                 .doOnError(err -> log.error("[Native][OpenAI-Responses] instance '{}' error: {}",
                         instance.getId(), err.getMessage(), err));
     }
 
-    String runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
+    /**
+     * Fan a completed {@link LoopResult} into SSE events: the assistant answer
+     * (token) first, then — only when the model returned a non-blank reasoning
+     * summary — a {@code "reasoning"} event the UI renders as the "Why this
+     * answer" panel.
+     */
+    private static Flux<ChatResponse> emitResult(LoopResult result) {
+        ChatResponse answer = new ChatResponse("assistant",
+                StringUtils.hasText(result.text()) ? result.text() : "");
+        if (!StringUtils.hasText(result.reasoningSummary())) {
+            return Flux.just(answer);
+        }
+        return Flux.just(answer,
+                new ChatResponse("assistant", result.reasoningSummary(), "reasoning"));
+    }
+
+    /** The completed turn: the assistant answer plus any captured reasoning summary. */
+    record LoopResult(String text, String reasoningSummary) {
+    }
+
+    /**
+     * F.12 / §X.13 — the per-turn reasoning request shape resolved from the
+     * agent's request options: {@code summary} ({@code auto}/{@code concise}/
+     * {@code detailed}, T178) and {@code effort} ({@code minimal}/{@code low}/
+     * {@code medium}/{@code high}, T179). Either may be blank/null; {@link #NONE}
+     * is the unset value that leaves the request unchanged.
+     */
+    public record ReasoningOptions(String summary, String effort) {
+        public static final ReasoningOptions NONE = new ReasoningOptions(null, null);
+
+        public boolean hasSummary() {
+            return StringUtils.hasText(summary);
+        }
+
+        public boolean hasEffort() {
+            return StringUtils.hasText(effort);
+        }
+
+        public boolean isEmpty() {
+            return !hasSummary() && !hasEffort();
+        }
+    }
+
+    LoopResult runLoop(OpenAIClient client, TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            String agentId, String conversationId, StoredCompletionsDirective storedCompletions) {
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
+            ReasoningOptions reasoning) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
         Map<String, ToolCallback> toolIndex = toolSupport.indexByName(coexistingTools);
         List<ResponseInputItem> items = seedItems(history);
         StringBuilder text = new StringBuilder();
+        String reasoningSummary = "";
         int toolCalls = 0;
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
-                    serverTools, functionTools, serviceTier, storedCompletions);
+                    serverTools, functionTools, serviceTier, storedCompletions, reasoning);
             Response response = client.responses().create(params);
             text.append(extractText(response));
             appendGeneratedImages(text, response, agentId, conversationId);
+            // Keep the latest non-blank reasoning summary — the final (answer)
+            // round's reasoning is what the "Why this answer" panel should show.
+            String roundSummary = extractReasoningSummary(response);
+            if (StringUtils.hasText(roundSummary)) {
+                reasoningSummary = roundSummary;
+            }
 
             List<ResponseFunctionToolCall> calls = functionCalls(response);
             if (calls.isEmpty()) {
@@ -198,7 +272,7 @@ public class TurOpenAiResponsesService {
                         capabilities.stream().map(c -> c.capability().getKey()).toList(),
                         functionTools.size(), text.length(), toolCalls,
                         System.currentTimeMillis() - t0);
-                return text.toString();
+                return new LoopResult(text.toString(), reasoningSummary);
             }
             for (ResponseFunctionToolCall call : calls) {
                 items.add(ResponseInputItem.ofFunctionCall(call));
@@ -214,7 +288,7 @@ public class TurOpenAiResponsesService {
 
         log.warn("[Native][OpenAI-Responses] instance '{}' hit the {}-round tool-execution cap",
                 instance.getId(), MAX_TOOL_ITERATIONS);
-        return text.toString();
+        return new LoopResult(text.toString(), reasoningSummary);
     }
 
     /** Legacy/test overload — no coexisting client tools (one-shot server-tool turn). */
@@ -227,7 +301,8 @@ public class TurOpenAiResponsesService {
     ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
-                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED);
+                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
+                ReasoningOptions.NONE);
     }
 
     /** Test/builder overload with an explicit stored-completions directive. */
@@ -235,14 +310,22 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities,
             StoredCompletionsDirective storedCompletions) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
-                buildTools(capabilities), List.of(), null, storedCompletions);
+                buildTools(capabilities), List.of(), null, storedCompletions, ReasoningOptions.NONE);
+    }
+
+    /** F.12 / §X.13 — test/builder overload with explicit {@link ReasoningOptions}. */
+    ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, ReasoningOptions reasoning) {
+        return buildParamsFromItems(instance, seedItems(history), systemPrompt,
+                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
+                reasoning);
     }
 
     private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
             List<ResponseInputItem> items, String systemPrompt, List<Tool> serverTools,
             List<Tool> functionTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            StoredCompletionsDirective storedCompletions) {
+            StoredCompletionsDirective storedCompletions, ReasoningOptions reasoning) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
@@ -259,6 +342,7 @@ public class TurOpenAiResponsesService {
                     .of(serviceTier.openAiValue()));
         }
         applyStoredCompletions(builder, storedCompletions);
+        applyReasoning(builder, instance, reasoning);
         for (Tool tool : serverTools) {
             builder.addTool(tool);
         }
@@ -286,6 +370,79 @@ public class TurOpenAiResponsesService {
                     (key, value) -> metadata.putAdditionalProperty(key, JsonValue.from(value)));
             builder.metadata(metadata.build());
         }
+    }
+
+    /**
+     * F.12 / §X.13 (T178/T179) — attach the {@code reasoning} config to the
+     * request when the agent opted into a reasoning request option AND the
+     * instance runs a reasoning model. A no-op for {@link ReasoningOptions#NONE}
+     * or a non-reasoning model (e.g. gpt-4o-mini), which would otherwise reject
+     * the {@code reasoning} parameter with a 400.
+     */
+    private void applyReasoning(ResponseCreateParams.Builder builder, TurLLMInstance instance,
+            ReasoningOptions reasoning) {
+        if (reasoning == null || reasoning.isEmpty() || !isReasoningModel(instance)) {
+            return;
+        }
+        Reasoning.Builder reasoningBuilder = Reasoning.builder();
+        if (reasoning.hasSummary()) {
+            reasoningBuilder.summary(
+                    Reasoning.Summary.of(reasoning.summary().toLowerCase(Locale.ROOT)));
+        }
+        if (reasoning.hasEffort()) {
+            reasoningBuilder.effort(
+                    ReasoningEffort.of(reasoning.effort().toLowerCase(Locale.ROOT)));
+        }
+        builder.reasoning(reasoningBuilder.build());
+    }
+
+    /**
+     * Concatenate the reasoning summary parts the model emitted (one
+     * {@link ResponseReasoningItem} may carry several {@link
+     * ResponseReasoningItem.Summary} segments). Blank when the model returned no
+     * reasoning summary (non-reasoning model, or {@code reasoning.summary} not
+     * requested).
+     */
+    String extractReasoningSummary(Response response) {
+        StringBuilder summary = new StringBuilder();
+        for (ResponseOutputItem item : response.output()) {
+            if (!item.isReasoning()) {
+                continue;
+            }
+            for (ResponseReasoningItem.Summary part : item.asReasoning().summary()) {
+                String partText = part.text();
+                if (StringUtils.hasText(partText)) {
+                    if (!summary.isEmpty()) {
+                        summary.append("\n\n");
+                    }
+                    summary.append(partText);
+                }
+            }
+        }
+        return summary.toString();
+    }
+
+    /** True when the instance's configured model is an OpenAI reasoning model (o-series / GPT-5). */
+    public static boolean isReasoningModel(TurLLMInstance instance) {
+        return isReasoningModelName(instance == null ? null : instance.getModelName());
+    }
+
+    /**
+     * Reasoning models accept the {@code reasoning} parameter; chat models reject
+     * it. Detect by the documented model-name families: {@code o1}/{@code o3}/
+     * {@code o4} (and minis) plus the {@code gpt-5} family. Conservative — an
+     * unknown name is treated as non-reasoning so the request stays unchanged.
+     */
+    static boolean isReasoningModelName(String model) {
+        if (model == null) {
+            return false;
+        }
+        String normalized = model.toLowerCase(Locale.ROOT).trim();
+        return normalized.startsWith("o1")
+                || normalized.startsWith("o3")
+                || normalized.startsWith("o4")
+                || normalized.startsWith("gpt-5")
+                || normalized.startsWith("gpt5");
     }
 
     private List<ResponseInputItem> seedItems(List<ChatMessageItem> history) {

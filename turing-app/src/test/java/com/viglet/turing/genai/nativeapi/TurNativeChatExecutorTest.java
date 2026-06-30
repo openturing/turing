@@ -342,7 +342,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any(), any()))
+                any(), anyList(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -352,6 +352,50 @@ class TurNativeChatExecutorTest {
         List<ChatResponse> emitted = result.get().collectList().block();
         assertThat(emitted).hasSize(1);
         assertThat(emitted.get(0).content()).isEqualTo("hi");
+    }
+
+    @Test
+    void reasoningSummaryRequestOptionForcesResponsesPathOnReasoningModel() {
+        // T178 / §X.13.a — an agent with the "reasoning-summary" request option on
+        // a reasoning model (o3) takes the native Responses path even with no
+        // native capability enabled, and the summary mode rides the request.
+        TurLLMInstance instance = instance();
+        instance.setModelName("o3");
+        TurAIAgent agent = agent();
+        agent.setRequestOptionsJson("{\"reasoning-summary\":\"detailed\"}");
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(List.of());
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        ArgumentCaptor<TurOpenAiResponsesService.ReasoningOptions> reasoningCaptor =
+                ArgumentCaptor.captor();
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
+                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent, instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(reasoningCaptor.getValue().summary()).isEqualTo("detailed");
+    }
+
+    @Test
+    void reasoningSummaryRequestOptionIgnoredOnChatModel() {
+        // T178 — on a non-reasoning model the option does NOT force the native
+        // path; with no capability the turn defers to the Spring AI executor.
+        TurLLMInstance instance = instance();
+        instance.setModelName("gpt-4o-mini");
+        TurAIAgent agent = agent();
+        agent.setRequestOptionsJson("{\"reasoning-summary\":\"auto\"}");
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(List.of());
+
+        assertThat(executor().tryExecute(agent, instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(openAiResponsesService);
     }
 
     @Test
@@ -370,7 +414,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any()))
+                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()

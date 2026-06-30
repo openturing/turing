@@ -63,6 +63,15 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   toolCalls?: TurChatToolCall[];
+  /**
+   * The OpenAI reasoning model's "Why this answer" summary behind this
+   * assistant answer (T178), emitted as a `"reasoning"` SSE event. Present only
+   * when the agent opted into the `reasoning-summary` request option and the
+   * instance runs a reasoning model. The host renders it as a collapsible panel.
+   *
+   * @since 2026.3.4
+   */
+  reasoning?: string;
 }
 
 /** Auto-generated, collision-resistant id for React keys and turn tracking. */

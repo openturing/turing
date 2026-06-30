@@ -310,12 +310,14 @@ async function consumeAssistantStream(
   onSources?: (sources: TurChatSource[]) => void,
   onCitations?: (citations: TurChatCitation[]) => void,
   onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
+  onReasoning?: (reasoning: string) => void,
 ): Promise<{
   text: string;
   options: string[];
   form?: TurChatForm;
   sources?: TurChatSource[];
   citations?: TurChatCitation[];
+  reasoning?: string;
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
 }> {
@@ -330,6 +332,7 @@ async function consumeAssistantStream(
   let form: TurChatForm | undefined;
   let sources: TurChatSource[] | undefined;
   let citations: TurChatCitation[] | undefined;
+  let reasoning: string | undefined;
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
 
@@ -364,6 +367,15 @@ async function consumeAssistantStream(
       if (parsedCitations) {
         citations = parsedCitations;
         onCitations?.(parsedCitations);
+      }
+      return true;
+    }
+    if (parsed.type === "reasoning") {
+      // T178 — the reasoning summary is plain text (one or more parts joined
+      // server-side); accumulate in case the backend emits more than one event.
+      if (parsed.content) {
+        reasoning = (reasoning ?? "") + parsed.content;
+        onReasoning?.(reasoning);
       }
       return true;
     }
@@ -423,6 +435,7 @@ async function consumeAssistantStream(
     form,
     sources,
     citations,
+    reasoning,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
   };
@@ -489,16 +502,25 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
-    await consumeAssistantStream(
-      response,
-      options?.onToken,
-      options?.onOptions,
-      options?.onForm,
-      options?.onSources,
-      options?.onCitations,
-      options?.onToolCall,
-    );
+  const {
+    text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+  } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+    options?.onForm,
+    options?.onSources,
+    options?.onCitations,
+    options?.onToolCall,
+    options?.onReasoning,
+  );
   return {
     role: "assistant",
     content: text,
@@ -506,6 +528,7 @@ export async function postChatConversation(
     form,
     sources,
     citations,
+    reasoning,
     toolCalls,
     clientToolCall,
   };
@@ -571,16 +594,25 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
-    await consumeAssistantStream(
-      response,
-      options?.onToken,
-      options?.onOptions,
-      options?.onForm,
-      options?.onSources,
-      options?.onCitations,
-      options?.onToolCall,
-    );
+  const {
+    text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+  } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+    options?.onForm,
+    options?.onSources,
+    options?.onCitations,
+    options?.onToolCall,
+    options?.onReasoning,
+  );
   return {
     role: "assistant",
     content: text,
@@ -588,6 +620,7 @@ export async function postAgentChat(
     form,
     sources,
     citations,
+    reasoning,
     toolCalls,
     clientToolCall,
   };
@@ -627,16 +660,25 @@ export async function postClientToolResult(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const { text, options: chipOptions, form, sources, citations, toolCalls, clientToolCall } =
-    await consumeAssistantStream(
-      response,
-      options?.onToken,
-      options?.onOptions,
-      options?.onForm,
-      options?.onSources,
-      options?.onCitations,
-      options?.onToolCall,
-    );
+  const {
+    text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+  } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+    options?.onForm,
+    options?.onSources,
+    options?.onCitations,
+    options?.onToolCall,
+    options?.onReasoning,
+  );
   return {
     role: "assistant",
     content: text,
@@ -644,6 +686,7 @@ export async function postClientToolResult(
     form,
     sources,
     citations,
+    reasoning,
     toolCalls,
     clientToolCall,
   };

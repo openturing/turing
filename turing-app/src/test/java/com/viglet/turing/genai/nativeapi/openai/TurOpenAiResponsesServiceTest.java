@@ -149,6 +149,58 @@ class TurOpenAiResponsesServiceTest {
     }
 
     @Test
+    void reasoningOptionsAttachSummaryAndEffortOnReasoningModel() {
+        // T178/T179 — on a reasoning model the reasoning config rides the request.
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("o4-mini");
+
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                new TurOpenAiResponsesService.ReasoningOptions("concise", "high"));
+
+        assertThat(params.reasoning()).isPresent();
+        assertThat(params.reasoning().get().summary())
+                .contains(com.openai.models.Reasoning.Summary.CONCISE);
+        assertThat(params.reasoning().get().effort())
+                .contains(com.openai.models.ReasoningEffort.HIGH);
+    }
+
+    @Test
+    void reasoningOptionsAreIgnoredOnNonReasoningModel() {
+        // T178 — a chat model (gpt-4o-mini) would reject the reasoning param, so
+        // it is never attached even when the agent set the request option.
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("gpt-4o-mini");
+
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                new TurOpenAiResponsesService.ReasoningOptions("auto", null));
+
+        assertThat(params.reasoning()).isEmpty();
+    }
+
+    @Test
+    void noneReasoningOptionsLeaveRequestUnchanged() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("o3");
+
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                TurOpenAiResponsesService.ReasoningOptions.NONE);
+
+        assertThat(params.reasoning()).isEmpty();
+    }
+
+    @Test
+    void reasoningModelDetectionCoversOSeriesAndGpt5() {
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("o1")).isTrue();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("o1-mini")).isTrue();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("o3")).isTrue();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("o4-mini")).isTrue();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("GPT-5")).isTrue();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("gpt-4o-mini")).isFalse();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName("gpt-4.1")).isFalse();
+        assertThat(TurOpenAiResponsesService.isReasoningModelName(null)).isFalse();
+    }
+
+    @Test
     void safeImageIdStripsUnsafeCharsAndFallsBack() {
         // Provider ids are kept verbatim when already filename-safe.
         assertThat(TurOpenAiResponsesService.safeImageId("ig_abc-123", 0)).isEqualTo("ig_abc-123");

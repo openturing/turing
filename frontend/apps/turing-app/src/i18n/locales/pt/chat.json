@@ -38,6 +38,9 @@
       "page": "p.",
       "open": "Abrir fonte"
     },
+    "reasoning": {
+      "heading": "Por que esta resposta"
+    },
     "tools": {
       "heading": "Ferramentas",
       "calling": "Chamando",

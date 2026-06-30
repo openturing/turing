@@ -249,6 +249,7 @@ export interface TurChatStreamEvent {
     | "form"
     | "sources"
     | "citations"
+    | "reasoning"
     | "tool_call"
     | "client_tool_call";
 }
@@ -396,6 +397,13 @@ export interface TurChatConversationResponse {
   sources?: TurChatSource[];
   /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
   citations?: TurChatCitation[];
+  /**
+   * T178 / §X.13.a — the OpenAI reasoning model's summary of how it reached the
+   * answer (the `"reasoning"` SSE event), if the agent opted into the
+   * `reasoning-summary` request option. The UI renders it as the collapsible
+   * "Why this answer" panel.
+   */
+  reasoning?: string;
   /**
    * Tool calls the agent made during the turn (T436), merged by `callId` so
    * each entry carries its latest phase/status/duration. Present only when the

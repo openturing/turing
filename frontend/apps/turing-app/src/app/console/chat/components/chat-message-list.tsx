@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { IconAlertTriangle, IconArrowsMinimize, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
+import { IconAlertTriangle, IconArrowsMinimize, IconBulb, IconCheck, IconChevronDown, IconCopy, IconCpu2, IconFile, IconFileText, IconLoader2, IconThumbDown, IconThumbUp, IconTool, IconUser } from "@tabler/icons-react"
 import { TuringChatMessage, TuringCitedAnswer, TuringCopyButton, TuringD2Diagram, TuringMarkdown, TuringRichContent, TuringSourceChips, TuringToolActivity, type TuringCitedMark } from "@viglet/turing-react-sdk"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { useTranslation } from "react-i18next"
@@ -233,6 +233,42 @@ function ToolActivity({ message }: Readonly<{ message: ChatMessage }>) {
 }
 
 /**
+ * T178 / §X.13.a — collapsible "Why this answer" panel. When an OpenAI
+ * reasoning model (o-series / GPT-5) returns a reasoning summary (the agent
+ * opted into the `reasoning-summary` request option), it streams in as a
+ * `"reasoning"` SSE event and lands on {@code message.reasoning}. The summary is
+ * the model's own gist of its reasoning — never raw chain-of-thought — so it is
+ * safe to surface. Collapsed by default; the markdown body renders on expand.
+ */
+function ReasoningPanel({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(false)
+  const reasoning = message.reasoning?.trim()
+  if (!reasoning) return null
+  return (
+    <div className="not-prose mt-3 border-t border-border/60 pt-2">
+      <button
+        type="button"
+        aria-expanded={expanded ? "true" : "false"}
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 transition hover:text-foreground"
+      >
+        <IconBulb className="size-3.5 shrink-0" />
+        <span>{t("chat.reasoning.heading", { defaultValue: "Why this answer" })}</span>
+        <IconChevronDown
+          className={`size-3 shrink-0 opacity-60 transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded ? (
+        <div className="mt-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5 text-xs leading-relaxed text-muted-foreground prose prose-xs dark:prose-invert max-w-none prose-p:my-1">
+          <TuringMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</TuringMarkdown>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/**
  * F.9 / T170 — operator thumb-up/down on an assistant turn. The click records a
  * DPO preference signal; the selected thumb stays highlighted so the operator
  * sees their rating landed. Only rendered when the list is given an `onFeedback`
@@ -340,6 +376,7 @@ function AssistantBody({
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
+      <ReasoningPanel message={message} />
       {(onFeedback || onRephrase) && message.content ? (
         <div className="not-prose mt-2 flex items-center gap-1">
           {onFeedback ? <FeedbackButtons message={message} onFeedback={onFeedback} /> : null}

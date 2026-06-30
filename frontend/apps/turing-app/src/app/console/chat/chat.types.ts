@@ -53,6 +53,15 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   toolCalls?: TurChatToolCall[]
+  /**
+   * The OpenAI reasoning model's "Why this answer" summary behind the assistant
+   * answer (T178). When present (agent opted into `reasoning-summary` on a
+   * reasoning model), the message list renders a collapsible reasoning panel
+   * below the bubble.
+   *
+   * @since 2026.3.4
+   */
+  reasoning?: string
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -72,6 +81,7 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     sources: m.sources,
     citations: m.citations,
     toolCalls: m.toolCalls,
+    reasoning: m.reasoning,
   }))
 }
 
@@ -85,6 +95,7 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     sources: m.sources,
     citations: m.citations,
     toolCalls: m.toolCalls,
+    reasoning: m.reasoning,
   }))
 }
 

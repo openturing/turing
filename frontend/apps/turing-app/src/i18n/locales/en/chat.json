@@ -38,6 +38,9 @@
       "page": "p.",
       "open": "Open source"
     },
+    "reasoning": {
+      "heading": "Why this answer"
+    },
     "tools": {
       "heading": "Tools",
       "calling": "Calling",

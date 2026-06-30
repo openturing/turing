@@ -1469,13 +1469,13 @@ moat.
 
 ### X.13 Reasoning surfacing + logprobs (T178–T180)
 
-T178's "Why this answer" panel surfaces `reasoning.summary` (not raw
-chain-of-thought) for o1 / o3 / o4-mini / GPT-5 reasoning models.
-Elevates trust without exposing reasoning internals. T179 plumbs
-`reasoning.effort` per-stage (live=low, background=high, judge=medium)
-as a per-agent policy. T180 mixes `logprobs` into the T19/T24/T28
-reranker confidence score — fixes the "the LLM hedged but we still
-ranked it #1" failure mode.
+T179 plumbs `reasoning.effort` per-stage (live=low, background=high,
+judge=medium) as a per-agent policy — riding the same
+`TurOpenAiResponsesService.ReasoningOptions` seam T178 shipped (the
+`effort` field is already plumbed into the request builder; T179 is the
+per-stage policy that populates it). T180 mixes `logprobs` into the
+T19/T24/T28 reranker confidence score — fixes the "the LLM hedged but we
+still ranked it #1" failure mode.
 
 **Cross-vendor reasoning (T503, T504) — F.12 was framed OpenAI-only; both
 competitors have caught up.** The "Why this answer" panel and the effort lever

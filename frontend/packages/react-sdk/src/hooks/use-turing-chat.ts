@@ -723,6 +723,9 @@ export function useTuringChat(
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         const finalCitations =
           res?.citations && res.citations.length > 0 ? res.citations : undefined;
+        // T178 — the OpenAI reasoning summary ("Why this answer"), when present.
+        const finalReasoning =
+          res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined;
         const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
@@ -731,6 +734,7 @@ export function useTuringChat(
           form: finalForm,
           sources: finalSources,
           citations: finalCitations,
+          reasoning: finalReasoning,
           toolCalls: finalToolCalls ?? m.toolCalls,
         }));
         setActiveForm(finalForm ?? null);
