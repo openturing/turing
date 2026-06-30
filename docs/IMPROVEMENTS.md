@@ -1888,13 +1888,7 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.6 — T510 Google Vertex AI provider.** The current Gemini integration
-  hits the *public* `generativelanguage.googleapis.com`, which cannot serve a
-  GCP-regulated tenant. `vertex-ai` is the enterprise path: IAM, VPC-SC, CMEK,
-  regional endpoints, provisioned throughput, and Model Garden (Gemini **and**
-  Claude/Llama on GCP). Shares prompt-assembly with the T489 native Gemini
-  branch; differs only in transport + auth. Also the gateway to Vertex AI Search
-  / Ranking (§XXVIII.16/.17).
+_Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 

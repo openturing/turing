@@ -244,6 +244,17 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("1024")
     }
+    if (vendorId === "VERTEX_AI") {
+      // Vertex AI is IAM-authenticated (project + location + credentials), not
+      // URL-based: set 'project'/'location' (and optional 'credentialsJson') in
+      // provider options; the model is a Vertex Gemini id.
+      form.setValue("url", "", { shouldDirty: true });
+      form.setValue("modelName", "gemini-2.0-flash", { shouldDirty: true });
+      form.setValue("temperature", 0.7, { shouldDirty: true });
+      form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("8192")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {

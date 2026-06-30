@@ -50,7 +50,8 @@ public record LlmProviderType(String value) {
             "bedrock",
             "voyage",
             "cohere",
-            "mistral");
+            "mistral",
+            "vertex-ai");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

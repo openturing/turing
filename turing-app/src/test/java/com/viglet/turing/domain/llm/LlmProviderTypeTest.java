@@ -50,6 +50,7 @@ class LlmProviderTypeTest {
         assertThat(LlmProviderType.of("voyage").isKnown()).isTrue();
         assertThat(LlmProviderType.of("cohere").isKnown()).isTrue();
         assertThat(LlmProviderType.of("mistral").isKnown()).isTrue();
+        assertThat(LlmProviderType.of("vertex-ai").isKnown()).isTrue();
     }
 
     @Test

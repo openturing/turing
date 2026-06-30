@@ -122,6 +122,15 @@ public class TurLLMVendorOnStartup {
 			mistral.setWebsite("https://mistral.ai");
 			turLLMVendorRepository.save(mistral);
 
+			TurLLMVendor vertexAi = new TurLLMVendor();
+			vertexAi.setId("VERTEX_AI");
+			vertexAi.setDescription(
+					"Google Vertex AI — enterprise Gemini on GCP (IAM/VPC-SC/CMEK, regional endpoints)");
+			vertexAi.setPlugin("vertex-ai");
+			vertexAi.setTitle("Google Vertex AI");
+			vertexAi.setWebsite("https://cloud.google.com/vertex-ai");
+			turLLMVendorRepository.save(vertexAi);
+
 		}
 	}
 }

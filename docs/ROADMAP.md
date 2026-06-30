@@ -91,8 +91,10 @@
 > (rerank via Block N `TurRagReranker`); empty/legacy config = unchanged paths.
 > Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVIII.
 
-**Foundation — the provider seams (ROI-ordered):**
-- 📋 **T510** (deps: §XXVIII, T489) **Google Vertex AI provider** (`vertex-ai`) — enterprise Gemini via Vertex (IAM, VPC-SC, CMEK, regional endpoints, provisioned throughput) + Claude/Llama-on-Vertex via Model Garden, distinct from the public `generativelanguage.googleapis.com` path that can't serve GCP-regulated tenants. → §XXVIII.6
+**Foundation — the provider seams (ROI-ordered):** ✅ shipped (T505–T510) —
+see [CHANGELOG.md](CHANGELOG.md) Block AD. (T509's `MISTRAL` reranker was
+dropped: Mistral has no managed rerank API; use the `LLM` strategy on a Mistral
+instance.)
 
 **Exploit distinctive primitives (net-new retrieval capabilities):**
 - 💭 **T511** (deps: T507, T508, T64) **Multimodal embeddings retrieval mode** — index PDF page-images, diagrams and screenshots into the vector store via `voyage-multimodal-3` / Cohere `Embed v4` / Bedrock Titan multimodal, so text queries match *visual* documents. New "search by text → match an image" surface; bridges T64 multimodal slots + the Lucene vector store + the indexer write path. → §XXVIII.7
