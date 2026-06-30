@@ -66,7 +66,27 @@ public class TurVoyageLlmProvider implements TurGenAiLlmProvider {
                 optionsParser.stringValue(options, "model"),
                 turLLMInstance.getModelName());
         Integer outputDimensionality = optionsParser.intValue(options, "outputDimensionality");
+        // T511 / §XXVIII.7 — opt into the multimodal model (text + image in one
+        // vector space) when the model name is a voyage-multimodal-* variant or
+        // the explicit {@code multimodal} option is set. Default stays the
+        // text-only path so legacy embedding configs are byte-for-byte unchanged.
+        if (isMultimodal(options, modelName)) {
+            return new TurVoyageMultimodalEmbeddingModel(decryptedApiKey, modelName, outputDimensionality);
+        }
         return new TurVoyageEmbeddingModel(decryptedApiKey, modelName, outputDimensionality);
+    }
+
+    /**
+     * T511 — true when the configured embedding model is a Voyage multimodal
+     * variant (model name contains {@code multimodal}) or the explicit
+     * {@code multimodal} provider option is enabled.
+     */
+    private boolean isMultimodal(Map<String, Object> options, String modelName) {
+        Boolean flag = optionsParser.booleanValue(options, "multimodal");
+        if (Boolean.TRUE.equals(flag)) {
+            return true;
+        }
+        return modelName != null && modelName.toLowerCase(java.util.Locale.ROOT).contains("multimodal");
     }
 
     private String firstNonBlank(String... values) {

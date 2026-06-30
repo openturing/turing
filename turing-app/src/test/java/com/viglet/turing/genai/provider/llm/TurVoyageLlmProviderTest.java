@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
@@ -59,6 +60,34 @@ class TurVoyageLlmProviderTest {
         when(optionsParser.stringValue(any(), any())).thenReturn(null);
         when(optionsParser.intValue(any(), any())).thenReturn(null);
 
-        assertNotNull(provider.createEmbeddingModel(instance, "voyage-key"));
+        var model = provider.createEmbeddingModel(instance, "voyage-key");
+        assertNotNull(model);
+        // Text-only model name → not the multimodal model (T511).
+        assertEquals(TurVoyageEmbeddingModel.class, model.getClass());
+    }
+
+    @Test
+    void testCreateEmbeddingModel_multimodalByModelName() {
+        instance.setModelName("voyage-multimodal-3");
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+        when(optionsParser.stringValue(any(), any())).thenReturn(null);
+        when(optionsParser.intValue(any(), any())).thenReturn(null);
+
+        var model = provider.createEmbeddingModel(instance, "voyage-key");
+        assertEquals(TurVoyageMultimodalEmbeddingModel.class, model.getClass());
+        // The multimodal model advertises the image-embedding capability.
+        assertEquals(true, ((TurMultimodalEmbeddingModel) model).supportsImageEmbedding());
+    }
+
+    @Test
+    void testCreateEmbeddingModel_multimodalByOption() {
+        instance.setModelName("voyage-3");
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+        when(optionsParser.stringValue(any(), any())).thenReturn(null);
+        when(optionsParser.intValue(any(), any())).thenReturn(null);
+        when(optionsParser.booleanValue(any(), eq("multimodal"))).thenReturn(Boolean.TRUE);
+
+        var model = provider.createEmbeddingModel(instance, "voyage-key");
+        assertEquals(TurVoyageMultimodalEmbeddingModel.class, model.getClass());
     }
 }

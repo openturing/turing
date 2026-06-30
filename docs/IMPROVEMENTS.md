@@ -1892,13 +1892,6 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 
-- **§XXVIII.7 — T511 Multimodal embeddings retrieval mode.** `voyage-multimodal-3`,
-  Cohere `Embed v4` and Bedrock Titan multimodal embed *text and images into one
-  vector space*. That lets Turing index PDF page-images, diagrams, charts and
-  screenshots and have a plain-text query match them — visual document search the
-  current text-only embed path can't do. Bridges three existing pieces: the T64
-  multimodal slots, the Lucene embedded vector store, and the indexer write path
-  (render page → embed image → store vector). New surface, not parity.
 - **§XXVIII.8 — T512 Contextualized chunk embeddings.** `voyage-context-3` embeds
   a chunk *together with* its surrounding document context, directly attacking the
   most common RAG failure (a chunk that's meaningless without the section it came

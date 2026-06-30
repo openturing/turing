@@ -97,7 +97,6 @@ dropped: Mistral has no managed rerank API; use the `LLM` strategy on a Mistral
 instance.)
 
 **Exploit distinctive primitives (net-new retrieval capabilities):**
-- 💭 **T511** (deps: T507, T508, T64) **Multimodal embeddings retrieval mode** — index PDF page-images, diagrams and screenshots into the vector store via `voyage-multimodal-3` / Cohere `Embed v4` / Bedrock Titan multimodal, so text queries match *visual* documents. New "search by text → match an image" surface; bridges T64 multimodal slots + the Lucene vector store + the indexer write path. → §XXVIII.7
 - 💭 **T512** (deps: T507) **Contextualized chunk embeddings** (`voyage-context-3`) — embed each chunk *with* its surrounding document context, fixing the classic chunk-context-loss RAG failure. Per-site opt-in retrieval-quality lift, transparent to query time. → §XXVIII.8
 - 💭 **T513** (deps: T507, T508, T386) **Domain-specialized embedding model per SN site** — let a site pick `voyage-finance`/`voyage-law`/`voyage-code` (or a Cohere domain model) in its manifest/field config; index + query route through the site's chosen embedder. → §XXVIII.9
 - 💭 **T514** (deps: T507) **Quantized / Matryoshka embeddings for the Lucene vector store** — int8/binary vectors + `outputDimensionality` truncation to shrink the embedded vector store (cheaper, faster KNN) with a measured recall trade-off, opt-in per store. → §XXVIII.10
