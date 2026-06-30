@@ -261,4 +261,31 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "mediaUnderstandingIndexingEnabled", nullable = false)
     private boolean mediaUnderstandingIndexingEnabled = false;
+
+    /**
+     * T513 / §XXVIII.9 — per-site domain-specialized embedding model override
+     * ({@code TurEmbeddingModel} id). When set, the public Semantic Navigation
+     * hybrid-ranking path ({@link com.viglet.turing.sn.ranking.TurSNHybridRankingService})
+     * indexes <em>and</em> queries this site's {@code sn_<siteId>} vector
+     * collection through the chosen embedder — so a legal-docs site can pick
+     * {@code voyage-law}, a code-search site {@code voyage-code}, a finance site
+     * {@code voyage-finance} (or a Cohere domain model), each routed to the right
+     * specialist while every other site stays on the platform default.
+     *
+     * <p>Plain id column (not a {@code @ManyToOne}) so the indexing/query path
+     * resolves it via the embedding-model repository without dragging a LAZY
+     * association across the request boundary, mirroring {@link #contentFitPersonaId}.
+     * Null / blank falls back to the Global Settings default embedding model —
+     * existing sites are byte-for-byte unchanged.
+     *
+     * <p><b>Operational note:</b> switching a site's embedding model changes the
+     * vector space (and possibly the dimensionality), so the site's
+     * {@code sn_<siteId>} collection must be cleared and re-indexed after a change;
+     * index and query always use the same resolved model so they never mismatch
+     * within one configuration.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "embeddingModelId", length = 40)
+    private String embeddingModelId;
 }

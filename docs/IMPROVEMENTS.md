@@ -1892,11 +1892,6 @@ _Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Exploit distinctive primitives — net-new retrieval capabilities
 
-- **§XXVIII.9 — T513 Domain-specialized embedding model per SN site.** Voyage
-  ships `voyage-finance`, `voyage-law`, `voyage-code`; Cohere has domain variants.
-  Surface an embedding-model choice in the site manifest / field config (T386) so
-  a legal-docs site and a code-search site each index + query through the right
-  embedder. Reuses the manifest-as-schema plumbing; no new query path.
 - **§XXVIII.10 — T514 Quantized / Matryoshka embeddings for the Lucene store.**
   Voyage/Cohere/Gemini expose `outputDimensionality` truncation (Matryoshka) and
   int8/binary output. Storing shorter, quantized vectors shrinks the embedded
