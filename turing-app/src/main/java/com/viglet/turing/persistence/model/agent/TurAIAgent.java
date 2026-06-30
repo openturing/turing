@@ -223,6 +223,21 @@ public class TurAIAgent implements Serializable {
     private boolean liveAnswersEnabled = false;
 
     /**
+     * T189 / §X.15.c — per-agent opt-in for "Call-center augmentation". When
+     * {@code true}, the {@code /call-center/assist} endpoint is enabled for this
+     * agent: an operator's transcribed customer utterance is translated into the
+     * operator's working language (T150), answered with citations from the
+     * customer's index (T248 cited RAG), and the answer is translated back into
+     * the customer's language so the operator can relay it. Pure composition of
+     * shipped services; default {@code false} keeps the endpoint closed (403) for
+     * existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "call_center_enabled", nullable = false)
+    private boolean callCenterEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.

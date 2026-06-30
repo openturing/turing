@@ -1,0 +1,32 @@
+databaseChangeLog:
+  # T189 / §X.15.c — real-time multilingual call-center augmentation: per-agent
+  # opt-in flag that enables the /call-center/assist endpoint. Default off keeps
+  # the endpoint closed for existing agents. Idempotent: gated by columnExists not
+  # present.
+
+  - changeSet:
+      id: v2026.3.1.72-add-ai_agent-call_center_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: call_center_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: call_center_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: call_center_enabled
+                  valueBoolean: false
+            where: call_center_enabled IS NULL

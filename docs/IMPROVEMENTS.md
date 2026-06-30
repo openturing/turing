@@ -1491,21 +1491,20 @@ should be vendor-agnostic levers, not OpenAI features:
   budget" and "show the model's thinking" one cross-vendor contract instead of
   three provider-specific ones.
 
-### X.15 The bold creative bets (T189–T192)
+### X.15 The bold creative bets (T190–T192)
 
-> T187 "Live answers (hybrid)" and T188 "Headless MCP backbone" shipped —
-> see CHANGELOG §X.15.a / §X.15.b.
+> T187 "Live answers (hybrid)", T188 "Headless MCP backbone", and T189
+> "Real-time multilingual call center" shipped — see CHANGELOG §X.15.a /
+> §X.15.b / §X.15.c.
 
-Four long-shot tasks that, taken together, redefine what an
+Three long-shot tasks that, taken together, redefine what an
 enterprise-search-meets-AI platform looks like:
 
-1. **T189 Real-time multilingual call center** — voice + citations +
-   handoff. Replaces multilingual support staff.
-2. **T190 Self-installing connectors** — `computer_use` agent does
+1. **T190 Self-installing connectors** — `computer_use` agent does
    the integration setup. Long-tail SaaS connectors on demand.
-3. **T191 Self-improving agents overnight** — distillation + evals +
+2. **T191 Self-improving agents overnight** — distillation + evals +
    prod replay. Compounds with usage.
-4. **T192 Inter-tenant MCP federation** — opt-in directory at
+3. **T192 Inter-tenant MCP federation** — opt-in directory at
    `directory.turing.io`. Network effect moat.
 
 ### X.16 Sequencing — what to ship first
