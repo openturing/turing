@@ -84,6 +84,7 @@
     "rerankStrategyLlmLogprobs": "Confiança por logprobs do LLM (OpenAI)",
     "rerankStrategyCrossEncoder": "Cross-encoder (auto-hospedado)",
     "rerankStrategyCohere": "Cohere Rerank (gerenciado)",
+    "rerankStrategyVoyage": "Voyage AI Rerank (gerenciado)",
     "rerankTopN": "Top-K mantidos",
     "rerankTopNDesc": "Quantos dos trechos mais bem ranqueados manter para o prompt (1–100).",
     "rerankTopNOutOfRange": "O Top-K deve estar entre 1 e 100.",

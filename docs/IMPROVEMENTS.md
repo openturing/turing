@@ -1888,13 +1888,6 @@ novelty for its own sake is out of scope.
 
 ### Foundation — the provider seams
 
-- **§XXVIII.3 — T507 Voyage AI embeddings + rerank.** Voyage is the retrieval
-  specialist Anthropic itself points customers to (Anthropic has no embedding
-  API). Wire a `voyage` embedding provider — `voyage-3`/`voyage-3-large` with the
-  asymmetric `input_type=document|query` distinction — and a `VOYAGE` strategy in
-  the Block N `TurRagReranker` (`rerank-2.5`). This is the single highest-leverage
-  *quality* move: better embeddings + rerank lift the whole RAG surface without
-  touching prompts.
 - **§XXVIII.4 — T508 Cohere full provider.** Cohere is already half-integrated
   (rerank). Promote it: `Command` chat (notable for **built-in citation mode** —
   see §XXVIII.15) + `Embed v4` (multilingual + multimodal + Matryoshka). Reuses

@@ -14,13 +14,15 @@ export type TurCodeInterpreterExecutionMode = "NATIVE" | "DOCKER";
  * numbers (legacy default); `LLM_LOGPROBS` (T180) is an OpenAI-only confidence
  * reranker that blends per-candidate yes/no `top_logprobs` into the retrieval
  * order; `CROSS_ENCODER` calls a self-hosted `/rerank` endpoint; `COHERE` uses
- * the managed Cohere Rerank API.
+ * the managed Cohere Rerank API; `VOYAGE` (T507) uses the managed Voyage AI
+ * Rerank API (`rerank-2.5`).
  */
 export type TurRagRerankStrategy =
   | "LLM"
   | "LLM_LOGPROBS"
   | "CROSS_ENCODER"
-  | "COHERE";
+  | "COHERE"
+  | "VOYAGE";
 
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;

@@ -47,6 +47,7 @@ class LlmProviderTypeTest {
         assertThat(LlmProviderType.of("gemini-openai").isKnown()).isTrue();
         assertThat(LlmProviderType.of("openai-compatible").isKnown()).isTrue();
         assertThat(LlmProviderType.of("bedrock").isKnown()).isTrue();
+        assertThat(LlmProviderType.of("voyage").isKnown()).isTrue();
     }
 
     @Test

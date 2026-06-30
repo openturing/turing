@@ -84,6 +84,7 @@
     "rerankStrategyLlmLogprobs": "LLM logprobs confidence (OpenAI)",
     "rerankStrategyCrossEncoder": "Cross-encoder (self-hosted)",
     "rerankStrategyCohere": "Cohere Rerank (managed)",
+    "rerankStrategyVoyage": "Voyage AI Rerank (managed)",
     "rerankTopN": "Top-K kept",
     "rerankTopNDesc": "How many of the highest-ranked chunks to keep for the prompt (1–100).",
     "rerankTopNOutOfRange": "Top-K must be between 1 and 100.",

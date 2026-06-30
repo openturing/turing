@@ -80,7 +80,21 @@ public class TurHttpRerankClient {
      */
     public List<Integer> rankIndices(String endpoint, String apiKey, String model,
             String query, List<String> documents, int topN) {
-        String body = buildRequestBody(model, query, documents, topN);
+        return rankIndices(endpoint, apiKey, model, query, documents, topN, "top_n");
+    }
+
+    /**
+     * Variant that lets the caller pick the result-count parameter name, since
+     * the de-facto contract is not fully uniform: Cohere/TEI use {@code top_n}
+     * while Voyage AI uses {@code top_k} (T507). The response side is already
+     * tolerant of the bare-array, {@code results} and {@code data} shapes.
+     *
+     * @param topParamName the JSON field name for the result count
+     *                     (e.g. {@code "top_n"} or {@code "top_k"})
+     */
+    public List<Integer> rankIndices(String endpoint, String apiKey, String model,
+            String query, List<String> documents, int topN, String topParamName) {
+        String body = buildRequestBody(model, query, documents, topN, topParamName);
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
                 .timeout(TIMEOUT)
@@ -106,13 +120,14 @@ public class TurHttpRerankClient {
         }
     }
 
-    private String buildRequestBody(String model, String query, List<String> documents, int topN) {
+    private String buildRequestBody(String model, String query, List<String> documents, int topN,
+            String topParamName) {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("query", query);
         if (model != null && !model.isBlank()) {
             root.put("model", model.trim());
         }
-        root.put("top_n", topN);
+        root.put((topParamName == null || topParamName.isBlank()) ? "top_n" : topParamName, topN);
         ArrayNode docs = root.putArray("documents");
         for (String doc : documents) {
             docs.add(doc == null ? "" : doc);
@@ -126,9 +141,14 @@ public class TurHttpRerankClient {
      */
     private List<Integer> parseIndices(String responseBody, int count) {
         JsonNode root = objectMapper.readTree(responseBody);
-        JsonNode list = root.isArray() ? root : root.path("results");
+        JsonNode list = root;
+        if (!root.isArray()) {
+            // Cohere/Jina use {results:[…]}; Voyage AI uses {data:[…]}.
+            list = root.has("results") ? root.path("results") : root.path("data");
+        }
         if (!list.isArray()) {
-            throw new IllegalStateException("rerank response has neither a top-level array nor 'results'");
+            throw new IllegalStateException(
+                    "rerank response has neither a top-level array nor 'results'/'data'");
         }
         Set<Integer> ordered = new LinkedHashSet<>();
         for (JsonNode element : list) {

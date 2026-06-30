@@ -857,6 +857,7 @@ export default function GlobalSettingsPage() {
                                                                 <SelectItem value="LLM_LOGPROBS">{t("globalSettings.rerankStrategyLlmLogprobs")}</SelectItem>
                                                                 <SelectItem value="CROSS_ENCODER">{t("globalSettings.rerankStrategyCrossEncoder")}</SelectItem>
                                                                 <SelectItem value="COHERE">{t("globalSettings.rerankStrategyCohere")}</SelectItem>
+                                                                <SelectItem value="VOYAGE">{t("globalSettings.rerankStrategyVoyage")}</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </FormControl>
@@ -894,7 +895,7 @@ export default function GlobalSettingsPage() {
                                             </FormItem>
                                         )}
                                     />
-                                    {(rerankStrategy === "CROSS_ENCODER" || rerankStrategy === "COHERE") && (
+                                    {(rerankStrategy === "CROSS_ENCODER" || rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE") && (
                                         <FormField
                                             control={form.control}
                                             name="ragSnRerankModel"
@@ -907,7 +908,7 @@ export default function GlobalSettingsPage() {
                                                     <FormControl>
                                                         <Input
                                                             className="max-w-md font-mono text-sm"
-                                                            placeholder={rerankStrategy === "COHERE" ? "rerank-v3.5" : "BAAI/bge-reranker-v2-m3"}
+                                                            placeholder={rerankStrategy === "COHERE" ? "rerank-v3.5" : rerankStrategy === "VOYAGE" ? "rerank-2.5" : "BAAI/bge-reranker-v2-m3"}
                                                             autoComplete="off"
                                                             spellCheck={false}
                                                             disabled={isLoading}
@@ -946,7 +947,7 @@ export default function GlobalSettingsPage() {
                                             )}
                                         />
                                     )}
-                                    {rerankStrategy === "COHERE" && (
+                                    {(rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE") && (
                                         <FormField
                                             control={form.control}
                                             name="ragSnRerankApiKey"

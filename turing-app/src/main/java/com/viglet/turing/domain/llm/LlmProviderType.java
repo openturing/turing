@@ -47,7 +47,8 @@ public record LlmProviderType(String value) {
             "gemini",
             "gemini-openai",
             "openai-compatible",
-            "bedrock");
+            "bedrock",
+            "voyage");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

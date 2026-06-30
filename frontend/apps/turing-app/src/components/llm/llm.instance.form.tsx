@@ -218,6 +218,14 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("1024")
     }
+    if (vendorId === "VOYAGE") {
+      // Voyage is an embeddings/rerank specialist with no chat API — only the
+      // API key + embedding model name matter.
+      form.setValue("url", "https://api.voyageai.com/v1", { shouldDirty: true });
+      form.setValue("modelName", "voyage-3", { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("")
+    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {

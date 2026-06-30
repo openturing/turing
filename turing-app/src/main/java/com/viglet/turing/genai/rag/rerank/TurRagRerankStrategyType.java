@@ -23,6 +23,8 @@ import java.util.Locale;
  *   <li>{@link #CROSS_ENCODER} — a self-hosted cross-encoder over an HTTP
  *       {@code /rerank} endpoint (TEI / Infinity / Jina-compatible).</li>
  *   <li>{@link #COHERE} — the managed Cohere Rerank API.</li>
+ *   <li>{@link #VOYAGE} — the managed Voyage AI Rerank API ({@code rerank-2.5}),
+ *       the retrieval specialist Anthropic recommends (T507).</li>
  * </ul>
  *
  * @author Alexandre Oliveira
@@ -32,7 +34,8 @@ public enum TurRagRerankStrategyType {
     LLM,
     LLM_LOGPROBS,
     CROSS_ENCODER,
-    COHERE;
+    COHERE,
+    VOYAGE;
 
     /**
      * Lenient parse used everywhere a stored/config string is turned into a

@@ -98,6 +98,14 @@ public class TurLLMVendorOnStartup {
 			bedrock.setWebsite("https://aws.amazon.com/bedrock");
 			turLLMVendorRepository.save(bedrock);
 
+			TurLLMVendor voyage = new TurLLMVendor();
+			voyage.setId("VOYAGE");
+			voyage.setDescription("Voyage AI — retrieval-specialist embeddings + rerank (no chat API)");
+			voyage.setPlugin("voyage");
+			voyage.setTitle("Voyage AI");
+			voyage.setWebsite("https://www.voyageai.com");
+			turLLMVendorRepository.save(voyage);
+
 		}
 	}
 }
