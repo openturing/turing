@@ -132,7 +132,7 @@ fully shipped.**
 - ✅ **T526** shipped — see CHANGELOG.
 - ✅ **T527** shipped — see CHANGELOG.
 - ✅ **T533** shipped — see CHANGELOG.
-- 📋 **T534** (deps: T532) **Expand `showcase.md` into the canonical end-to-end walkthrough** — the Block Y "Atlas Store" maximum-surface tour (T451–T457) as the didactic "see it all wired together" page; mark Block X creative bets it demos as previews, not shipped features. → §XXIX.3
+- ✅ **T534** shipped — see CHANGELOG. (Block X T442–T450 **shipped**, so documented as opt-in/default-off features, not previews — corrected the §XXIX.2 stale note.)
 
 **Phase 3 — didactic "from-the-beginning" layer (new + old pages):**
 - 📋 **T535** (deps: —) **Learning-path spine** — rewrite `getting-started/intro` + `getting-started/core-concepts` + `index.mdx` into one guided narrative (what Turing is → first search → first RAG answer → first agent → first automation), each step linking its deep page. → §XXIX.4

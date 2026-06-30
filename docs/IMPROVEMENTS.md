@@ -1950,9 +1950,10 @@ it's an alternative backend, not a rewrite.
 - A **"Related pages"** footer cross-linking siblings (and the learning path).
 - Product naming stays **Viglet Turing ES**. Verify every class / endpoint /
   config-key / vendor-enum name against the live source tree before publishing.
-- **Mark unshipped ideas as such** — Block X creative bets (T442–T450) and any
-  💭 task are *not* documented as available features; the showcase may demo them
-  as previews only.
+- **Mark unshipped ideas as such** — any 💭 task is *not* documented as an
+  available feature. (Note: Block X creative bets **T442–T450 shipped** — see
+  CHANGELOG — so T534 documents them as real opt-in/default-off features, not
+  previews. The earlier "previews only" guidance predated Block X shipping.)
 
 ### XXIX.3 Gap summary — shipped (tasks) → action → Block AE task
 
