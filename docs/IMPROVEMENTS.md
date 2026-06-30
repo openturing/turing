@@ -1960,7 +1960,6 @@ it's an alternative backend, not a rewrite.
 |---|---|---|---|---|
 | **Gemini native primitives** — Search grounding, URL Context, code exec, image gen, Computer Use, thinking budget, context caching, batch, files, asymmetric embeddings, full-context, video | T489–T504 | none | Expand `genai-llm.md` + `tool-calling.md` | **T526** |
 | **Cross-vendor native parity** — OpenAI Responses background mode, Anthropic `cache_control` + extended/interleaved thinking, reusable context-cache seam | T499, T502–T504 | none | Expand `tool-calling.md` + `ai-agents.md` | **T527** |
-| **Structured-source indexing** — field-manifest provisioning, schema-as-code + planner/migration, LLM-assisted derivation, hybrid (RRF) ranking, field coverage / content gaps | T382, T386–T388, T383, T408 | none | **New** `manifest.md` (+ `search-engine.md` cross-link) | **T531** |
 | **Agent↔UI / client tools (AG-UI)** — live `tool_call` SSE, `TuringToolActivity`, client-tool park/resume protocol, `registerClientTool`, generative UI | T436–T440 | none | **New** `client-tools.md` | **T532** |
 | **Personas → audience-fit** — audience/reader personas, notebook sources, readability scorer, content-fit eval + report, persona-from-audio, transcription seam | T464–T470 | speaker-only (stale) | Expand `personas.md` | **T533** |
 | **Reference showcase ("Atlas Store")** — the maximum-surface end-to-end demo | T451–T457 | thin `showcase.md` | Expand into the canonical didactic walkthrough | **T534** |

@@ -127,7 +127,7 @@ fully shipped.**
 - ✅ **T530** shipped — see CHANGELOG. (Documented all **7** strategies: LLM / LLM_LOGPROBS / CROSS_ENCODER / COHERE / VOYAGE / BEDROCK / VERTEX_AI.)
 
 **Phase 2 — net-new pages & native exploitation:**
-- 📋 **T531** (deps: —) **New `manifest.md` (+ `search-engine.md` cross-link)** — field-manifest provisioning (T382), schema-as-code + planner/migration (T386), LLM-assisted derivation + wizard (T387/T408), hybrid RRF ranking (T383), field coverage / content-gap observability (T388). → §XXIX.3
+- ✅ **T531** shipped — see CHANGELOG.
 - 📋 **T532** (deps: —) **New `client-tools.md` (AG-UI)** — live `tool_call` SSE events (T436), headless `TuringToolActivity` (T437), the client-tool park/resume protocol (T438, like `humanApproval`), `registerClientTool`/`clientTools` (T439), generative UI via client tools (T440); cross-link `react-sdk.md` / `developer-guide.md` / `ai-agents.md`. → §XXIX.3
 - 📋 **T526** (deps: T524) **Expand `genai-llm.md` + `tool-calling.md` for Gemini native primitives (F.16)** — native `gemini` vs `gemini-openai`; Google Search grounding, URL Context, code execution, native image gen, Computer Use, thinking budget/thought summaries, explicit context caching, Batch, Files, full-context retrieval-free answering, native video understanding (T489–T501). → §XXIX.3
 - 📋 **T527** (deps: T526) **Expand `tool-calling.md` + `ai-agents.md` for cross-vendor native parity** — OpenAI Responses `background` mode (T503), Anthropic `cache_control` + extended/interleaved thinking (T502/T504), the reusable `TurContextCacheProvider` seam (T499). → §XXIX.3
