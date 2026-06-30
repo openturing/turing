@@ -103,6 +103,10 @@ class TurNativeChatExecutorTest {
             reasoningEffortResolver =
             new com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver();
 
+    // T181 — disabled by default so no safety_identifier is resolved/asserted in
+    // the existing routing tests (currentSafetyIdentifier() returns empty).
+    @Mock private com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
@@ -111,7 +115,7 @@ class TurNativeChatExecutorTest {
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
-                reasoningEffortResolver);
+                reasoningEffortResolver, safetyIdentifierService);
     }
 
     @BeforeEach
@@ -348,7 +352,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any(), any(), any()))
+                any(), anyList(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -378,7 +382,8 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<TurOpenAiResponsesService.ReasoningOptions> reasoningCaptor =
                 ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture()))
+                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture(),
+                any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -408,7 +413,8 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<TurOpenAiResponsesService.ReasoningOptions> reasoningCaptor =
                 ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture()))
+                any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture(),
+                any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -451,7 +457,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any()))
+                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()

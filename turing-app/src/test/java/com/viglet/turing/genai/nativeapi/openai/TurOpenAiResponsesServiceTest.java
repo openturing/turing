@@ -149,6 +149,21 @@ class TurOpenAiResponsesServiceTest {
     }
 
     @Test
+    void safetyIdentifierIsSetWhenProvidedAndUnsetWhenBlank() {
+        // T181 / §X.14.a — a non-blank id rides the request; null/blank leaves it unset.
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setModelName("gpt-4o-mini");
+
+        ResponseCreateParams withId = service.buildParams(instance, List.of(), "hi", List.of(),
+                "deadbeef-hash");
+        assertThat(withId.safetyIdentifier()).contains("deadbeef-hash");
+
+        ResponseCreateParams withoutId = service.buildParams(instance, List.of(), "hi", List.of(),
+                (String) null);
+        assertThat(withoutId.safetyIdentifier()).isEmpty();
+    }
+
+    @Test
     void reasoningOptionsAttachSummaryAndEffortOnReasoningModel() {
         // T178/T179 — on a reasoning model the reasoning config rides the request.
         TurLLMInstance instance = new TurLLMInstance();

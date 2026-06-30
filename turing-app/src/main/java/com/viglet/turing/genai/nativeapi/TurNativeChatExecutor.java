@@ -116,6 +116,7 @@ public class TurNativeChatExecutor {
             nativeDocumentGroundingService;
     private final com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
             reasoningEffortResolver;
+    private final com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -152,7 +153,8 @@ public class TurNativeChatExecutor {
             com.viglet.turing.genai.nativeapi.files.TurNativeDocumentGroundingService
                     nativeDocumentGroundingService,
             com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
-                    reasoningEffortResolver) {
+                    reasoningEffortResolver,
+            com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -176,6 +178,7 @@ public class TurNativeChatExecutor {
         this.storedCompletionsService = storedCompletionsService;
         this.nativeDocumentGroundingService = nativeDocumentGroundingService;
         this.reasoningEffortResolver = reasoningEffortResolver;
+        this.safetyIdentifierService = safetyIdentifierService;
     }
 
     /**
@@ -447,17 +450,22 @@ public class TurNativeChatExecutor {
         TurOpenAiResponsesService.ReasoningOptions reasoningOptions = reasoningOptedIn
                 ? new TurOpenAiResponsesService.ReasoningOptions(reasoningSummaryMode, liveEffort)
                 : TurOpenAiResponsesService.ReasoningOptions.NONE;
+        // T181 / §X.14.a — resolve the per-user safety_identifier on THIS (request)
+        // thread; the Responses call runs on a reactive worker with no bound
+        // security context. Blank for anonymous turns / when the feature is off.
+        String safetyIdentifier = safetyIdentifierService.currentSafetyIdentifier().orElse(null);
         log.info("[Native] agent '{}' instance '{}' handled by OpenAI Responses path "
                 + "({} capability/ies, persona '{}', storedCompletions={}, reasoningSummary={}, "
-                + "reasoningEffort={})",
+                + "reasoningEffort={}, safetyIdentifier={})",
                 agent.getTitle(), instance.getId(), capabilities.size(),
                 activePersona == null ? "none" : activePersona.getName(), storedCompletions.store(),
                 reasoningOptions.hasSummary() ? reasoningSummaryMode : "off",
-                reasoningOptions.hasEffort() ? liveEffort : "off");
+                reasoningOptions.hasEffort() ? liveEffort : "off",
+                safetyIdentifier != null ? "on" : "off");
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
                 serviceTierResolver.resolveForChat(agent, instance).orElse(null),
-                agent.getId(), conversationId, storedCompletions, reasoningOptions));
+                agent.getId(), conversationId, storedCompletions, reasoningOptions, safetyIdentifier));
     }
 
     /**

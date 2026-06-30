@@ -189,9 +189,28 @@ public class TurOpenAiResponsesService {
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
             ReasoningOptions reasoning) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                serviceTier, agentId, conversationId, storedCompletions, reasoning, null);
+    }
+
+    /**
+     * T181 / §X.14.a — canonical entry point that also carries the per-user
+     * {@code safety_identifier} (the hashed Keycloak {@code sub}). When non-blank
+     * it is sent on every Responses request so OpenAI can detect and rate-limit
+     * per-user abuse on its edge; {@code null}/blank leaves the request unchanged
+     * (anonymous turns, or the feature opted out). It must be resolved on the
+     * request thread by the caller — this method runs the provider call on a
+     * reactive worker that has no bound security context.
+     */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
+            ReasoningOptions reasoning, String safetyIdentifier) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
                         capabilities, coexistingTools, serviceTier, agentId, conversationId,
-                        storedCompletions, reasoning))
+                        storedCompletions, reasoning, safetyIdentifier))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(TurOpenAiResponsesService::emitResult)
                 .doOnError(err -> log.error("[Native][OpenAI-Responses] instance '{}' error: {}",
@@ -245,7 +264,7 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
-            ReasoningOptions reasoning) {
+            ReasoningOptions reasoning, String safetyIdentifier) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
@@ -257,7 +276,8 @@ public class TurOpenAiResponsesService {
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
-                    serverTools, functionTools, serviceTier, storedCompletions, reasoning);
+                    serverTools, functionTools, serviceTier, storedCompletions, reasoning,
+                    safetyIdentifier);
             Response response = client.responses().create(params);
             text.append(extractText(response));
             appendGeneratedImages(text, response, agentId, conversationId);
@@ -306,7 +326,7 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
-                ReasoningOptions.NONE);
+                ReasoningOptions.NONE, null);
     }
 
     /** Test/builder overload with an explicit stored-completions directive. */
@@ -314,7 +334,8 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities,
             StoredCompletionsDirective storedCompletions) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
-                buildTools(capabilities), List.of(), null, storedCompletions, ReasoningOptions.NONE);
+                buildTools(capabilities), List.of(), null, storedCompletions, ReasoningOptions.NONE,
+                null);
     }
 
     /** F.12 / §X.13 — test/builder overload with explicit {@link ReasoningOptions}. */
@@ -322,14 +343,26 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities, ReasoningOptions reasoning) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
-                reasoning);
+                reasoning, null);
+    }
+
+    /**
+     * T181 / §X.14.a — test/builder overload with an explicit
+     * {@code safetyIdentifier} so a test can assert it lands on the request.
+     */
+    ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, String safetyIdentifier) {
+        return buildParamsFromItems(instance, seedItems(history), systemPrompt,
+                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
+                ReasoningOptions.NONE, safetyIdentifier);
     }
 
     private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
             List<ResponseInputItem> items, String systemPrompt, List<Tool> serverTools,
             List<Tool> functionTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            StoredCompletionsDirective storedCompletions, ReasoningOptions reasoning) {
+            StoredCompletionsDirective storedCompletions, ReasoningOptions reasoning,
+            String safetyIdentifier) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
@@ -344,6 +377,10 @@ public class TurOpenAiResponsesService {
         if (serviceTier != null) {
             builder.serviceTier(com.openai.models.responses.ResponseCreateParams.ServiceTier
                     .of(serviceTier.openAiValue()));
+        }
+        if (StringUtils.hasText(safetyIdentifier)) {
+            // T181 / §X.14.a — hashed per-user id for OpenAI edge abuse detection.
+            builder.safetyIdentifier(safetyIdentifier);
         }
         applyStoredCompletions(builder, storedCompletions);
         applyReasoning(builder, instance, reasoning);
