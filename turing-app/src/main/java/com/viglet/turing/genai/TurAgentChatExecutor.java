@@ -112,6 +112,7 @@ public class TurAgentChatExecutor {
     private final TurChatCohortResolver chatCohortResolver;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate;
+    private final com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -127,7 +128,8 @@ public class TurAgentChatExecutor {
             TurChatAnalyticsService chatAnalyticsService,
             TurChatCohortResolver chatCohortResolver,
             TurChatPipelineObservation chatPipelineObservation,
-            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate) {
+            com.viglet.turing.service.llm.budget.TurChatCostBudgetGate costBudgetGate,
+            com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.toolResolver = toolResolver;
@@ -143,6 +145,7 @@ public class TurAgentChatExecutor {
         this.chatCohortResolver = chatCohortResolver;
         this.chatPipelineObservation = chatPipelineObservation;
         this.costBudgetGate = costBudgetGate;
+        this.metaChatModelResolver = metaChatModelResolver;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -327,7 +330,11 @@ public class TurAgentChatExecutor {
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         final long tAfterDecrypt = System.currentTimeMillis();
 
-        ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
+        // T518 — wrap the (budget-resolved) primary in the cost-aware
+        // cross-provider fallback chain when one is configured; a no-op pass-
+        // through when the chain is empty (legacy single-model path).
+        ChatModel chatModel = metaChatModelResolver.wrapWithFallback(llmInstance,
+                llmModelFactory.createChatModel(llmInstance, decryptedApiKey));
         final long tAfterChatModel = System.currentTimeMillis();
 
         // Note (§I.5 step 2 / T10): persona, tool callbacks, and chat

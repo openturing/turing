@@ -64,6 +64,15 @@ public class TurGlobalSettingsBean {
     private String modelLaneFastId;
     private String modelLaneReasoningId;
     private String modelLaneCheapId;
+    /**
+     * T518 — cost-aware cross-provider fallback chain (ordered LLM instance ids)
+     * + routing mode (`PRIORITY` | `CHEAPEST`). Empty chain = no fallback (legacy
+     * single-model path).
+     *
+     * @since 2026.3.4
+     */
+    private java.util.List<String> llmFallbackChainIds;
+    private com.viglet.turing.resilience.llm.TurLlmFallbackMode llmFallbackMode;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;
     private boolean llmCacheRegenerate;

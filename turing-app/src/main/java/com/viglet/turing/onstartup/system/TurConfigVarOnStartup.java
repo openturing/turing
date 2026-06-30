@@ -92,6 +92,15 @@ public class TurConfigVarOnStartup {
 	public static final String MODEL_LANE_FAST = "GLOBAL_MODEL_LANE_FAST";
 	public static final String MODEL_LANE_REASONING = "GLOBAL_MODEL_LANE_REASONING";
 	public static final String MODEL_LANE_CHEAP = "GLOBAL_MODEL_LANE_CHEAP";
+	/**
+	 * T518 — cost-aware cross-provider fallback chain: a comma-separated, ordered
+	 * list of {@code TurLLMInstance} ids the meta-provider fails over to after the
+	 * primary. Blank = no chain (legacy single-model path).
+	 */
+	public static final String LLM_FALLBACK_CHAIN = "GLOBAL_LLM_FALLBACK_CHAIN";
+	/** T518 — fallback routing mode: {@code PRIORITY} (default) | {@code CHEAPEST}. */
+	public static final String LLM_FALLBACK_MODE = "GLOBAL_LLM_FALLBACK_MODE";
+	public static final String LLM_FALLBACK_MODE_DEFAULT_VALUE = "PRIORITY";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
 	public static final String SENDER_EMAIL = "GLOBAL_SENDER_EMAIL";
@@ -195,6 +204,8 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(MODEL_LANE_FAST, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_REASONING, GLOBAL_PATH, "");
 		ensureConfigVar(MODEL_LANE_CHEAP, GLOBAL_PATH, "");
+		ensureConfigVar(LLM_FALLBACK_CHAIN, GLOBAL_PATH, "");
+		ensureConfigVar(LLM_FALLBACK_MODE, GLOBAL_PATH, LLM_FALLBACK_MODE_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");

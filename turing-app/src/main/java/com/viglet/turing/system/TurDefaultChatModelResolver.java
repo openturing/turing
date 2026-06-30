@@ -49,17 +49,20 @@ public class TurDefaultChatModelResolver {
     private final TurSecretCryptoService secretCryptoService;
     private final TurLlmModelFactory llmModelFactory;
     private final TurModelLaneService modelLaneService;
+    private final com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver;
 
     public TurDefaultChatModelResolver(TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurSecretCryptoService secretCryptoService,
             TurLlmModelFactory llmModelFactory,
-            TurModelLaneService modelLaneService) {
+            TurModelLaneService modelLaneService,
+            com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver) {
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.secretCryptoService = secretCryptoService;
         this.llmModelFactory = llmModelFactory;
         this.modelLaneService = modelLaneService;
+        this.metaChatModelResolver = metaChatModelResolver;
     }
 
     /**
@@ -94,7 +97,10 @@ public class TurDefaultChatModelResolver {
                 return Optional.empty();
             }
             String apiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-            return Optional.ofNullable(llmModelFactory.createChatModel(llmInstance, apiKey));
+            ChatModel model = llmModelFactory.createChatModel(llmInstance, apiKey);
+            // T518 — wrap with the cost-aware cross-provider fallback chain when
+            // one is configured (no-op pass-through when empty).
+            return Optional.ofNullable(metaChatModelResolver.wrapWithFallback(llmInstance, model));
         } catch (RuntimeException e) {
             log.debug("[LLM] chat model unavailable for instance {}: {}", llmId, e.getMessage());
             return Optional.empty();

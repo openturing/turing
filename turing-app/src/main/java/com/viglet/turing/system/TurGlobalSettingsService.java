@@ -251,6 +251,45 @@ public class TurGlobalSettingsService {
         };
     }
 
+    /**
+     * T518 — the ordered cross-provider fallback chain (LLM instance ids). Parsed
+     * from the comma-separated {@code GLOBAL_LLM_FALLBACK_CHAIN}; blank entries
+     * are dropped. Empty list = no chain (legacy single-model path).
+     */
+    public java.util.List<String> getLlmFallbackChainIds() {
+        String raw = configVars.getString(TurConfigVarOnStartup.LLM_FALLBACK_CHAIN, "");
+        if (raw == null || raw.isBlank()) {
+            return java.util.List.of();
+        }
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    /** T518 — persist the fallback chain as a comma-separated id list. */
+    public java.util.List<String> updateLlmFallbackChainIds(java.util.List<String> ids) {
+        java.util.List<String> clean = ids == null ? java.util.List.of()
+                : ids.stream().filter(s -> s != null && !s.isBlank()).map(String::trim).toList();
+        configVars.setRaw(TurConfigVarOnStartup.LLM_FALLBACK_CHAIN, String.join(",", clean));
+        return clean;
+    }
+
+    /** T518 — fallback routing mode; unknown/blank falls back to {@code PRIORITY}. */
+    public com.viglet.turing.resilience.llm.TurLlmFallbackMode getLlmFallbackMode() {
+        return configVars.find(TurConfigVarOnStartup.LLM_FALLBACK_MODE)
+                .map(com.viglet.turing.resilience.llm.TurLlmFallbackMode::fromValue)
+                .orElse(com.viglet.turing.resilience.llm.TurLlmFallbackMode.PRIORITY);
+    }
+
+    public com.viglet.turing.resilience.llm.TurLlmFallbackMode updateLlmFallbackMode(
+            com.viglet.turing.resilience.llm.TurLlmFallbackMode mode) {
+        com.viglet.turing.resilience.llm.TurLlmFallbackMode value =
+                mode == null ? com.viglet.turing.resilience.llm.TurLlmFallbackMode.PRIORITY : mode;
+        configVars.setRaw(TurConfigVarOnStartup.LLM_FALLBACK_MODE, value.name());
+        return value;
+    }
+
     public TurEmailProviderType getEmailProvider() {
         return configVars.getEnum(TurEmailProviderType.class, TurConfigVarOnStartup.EMAIL_PROVIDER,
                 TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));

@@ -33,6 +33,8 @@ class TurGlobalSettingsBeanTest {
                 null,  // modelLaneFastId (T517)
                 null,  // modelLaneReasoningId (T517)
                 null,  // modelLaneCheapId (T517)
+                null,  // llmFallbackChainIds (T518)
+                null,  // llmFallbackMode (T518)
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
                 false, null, null, null,

@@ -1896,11 +1896,6 @@ _Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
 
-- **§XXVIII.14 — T518 Cost-aware cross-provider fallback / meta-provider.** An
-  OpenRouter-style layer: automatic failover when a provider errors/rate-limits,
-  and cheapest-capable routing for a given capability requirement, with per-tenant
-  cost attribution (Bedrock application-inference-profile tags map cleanly to the
-  tenant model). Feeds the F.13 cost-governance widgets (T183/T184).
 - **§XXVIII.15 — T519 Native-citation RAG across vendors.** Cohere `Command`
   citation mode and Bedrock Knowledge Base responses return grounded citations
   *natively*. Decode them onto the existing T152–T155 `TurChatCitation`/SSE

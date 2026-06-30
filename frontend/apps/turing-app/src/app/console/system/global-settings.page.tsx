@@ -51,6 +51,8 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     modelLaneFastId: "",
     modelLaneReasoningId: "",
     modelLaneCheapId: "",
+    llmFallbackChainIds: [],
+    llmFallbackMode: "PRIORITY",
     pythonExecutable: "",
     pythonRequirements: "",
     codeInterpreterExecutionMode: "NATIVE",
@@ -627,6 +629,79 @@ export default function GlobalSettingsPage() {
                                     )}
                                 />
                             ))}
+                            {/* T518 — cost-aware cross-provider fallback chain + routing mode */}
+                            <FormField
+                                control={form.control}
+                                name="llmFallbackMode"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.llmFallbackMode")}</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                {t("globalSettings.llmFallbackModeDesc")}
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <Select
+                                                    onValueChange={(v) => field.onChange(v)}
+                                                    value={field.value || "PRIORITY"}
+                                                    disabled={isLoading}
+                                                >
+                                                    <SelectTrigger className="w-full max-w-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="PRIORITY">{t("globalSettings.llmFallbackModePriority")}</SelectItem>
+                                                        <SelectItem value="CHEAPEST">{t("globalSettings.llmFallbackModeCheapest")}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="llmFallbackChainIds"
+                                render={({ field }) => {
+                                    const chain: string[] = field.value ?? [];
+                                    const toggle = (id: string) =>
+                                        field.onChange(
+                                            chain.includes(id)
+                                                ? chain.filter((x) => x !== id)
+                                                : [...chain, id],
+                                        );
+                                    return (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>{t("globalSettings.llmFallbackChain")}</FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("globalSettings.llmFallbackChainDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <div className="flex flex-col gap-2">
+                                                    {llmInstances.length === 0 ? (
+                                                        <span className="text-sm text-muted-foreground">{t("globalSettings.none")}</span>
+                                                    ) : (
+                                                        llmInstances.map((instance) => (
+                                                            <label key={instance.id} className="flex items-center gap-2 text-sm">
+                                                                <GradientSwitch
+                                                                    checked={chain.includes(instance.id)}
+                                                                    onCheckedChange={() => toggle(instance.id)}
+                                                                    disabled={isLoading}
+                                                                />
+                                                                <span>{instance.title}</span>
+                                                            </label>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    );
+                                }}
+                            />
                             <FormField
                                 control={form.control}
                                 name="defaultAiAgentId"

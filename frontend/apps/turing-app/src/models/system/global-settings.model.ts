@@ -3,6 +3,12 @@ export type TurGlobalDecimalSeparator = "DOT" | "COMMA";
 export type TurEmailProviderType = "BREVO";
 
 /**
+ * T518 — cost-aware fallback routing: `PRIORITY` tries the chain in configured
+ * order; `CHEAPEST` orders candidates by ascending price (cheapest serves first).
+ */
+export type TurLlmFallbackMode = "PRIORITY" | "CHEAPEST";
+
+/**
  * T80 — where the Code Interpreter runs visitor-/agent-generated Python.
  * `NATIVE` = host subprocess (legacy default, no runtime isolation);
  * `DOCKER` = each execution runs in a throwaway hardened container.
@@ -63,6 +69,13 @@ export interface TurGlobalSettings {
   modelLaneFastId?: string;
   modelLaneReasoningId?: string;
   modelLaneCheapId?: string;
+  /**
+   * T518 — cost-aware cross-provider fallback chain (ordered LLM instance ids
+   * the meta-provider fails over to after the primary) + routing mode. Empty
+   * chain = no fallback (legacy single-model path).
+   */
+  llmFallbackChainIds?: string[];
+  llmFallbackMode?: TurLlmFallbackMode;
   llmCacheEnabled?: boolean;
   llmCacheTtlMs?: number;
   llmCacheRegenerate?: boolean;

@@ -51,6 +51,8 @@ public class TurGlobalSettingsAPI {
                         .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.REASONING))
                 .modelLaneCheapId(turGlobalSettingsService
                         .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.CHEAP))
+                .llmFallbackChainIds(turGlobalSettingsService.getLlmFallbackChainIds())
+                .llmFallbackMode(turGlobalSettingsService.getLlmFallbackMode())
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
                 .llmCacheRegenerate(turGlobalSettingsService.isLlmCacheRegenerate())
@@ -103,6 +105,10 @@ public class TurGlobalSettingsAPI {
                 .modelLaneCheapId(turGlobalSettingsService.updateModelLaneInstanceId(
                         com.viglet.turing.system.lane.TurModelLane.CHEAP,
                         globalSettings.getModelLaneCheapId()))
+                .llmFallbackChainIds(turGlobalSettingsService
+                        .updateLlmFallbackChainIds(globalSettings.getLlmFallbackChainIds()))
+                .llmFallbackMode(turGlobalSettingsService
+                        .updateLlmFallbackMode(globalSettings.getLlmFallbackMode()))
                 .llmCacheEnabled(turGlobalSettingsService
                         .updateLlmCacheEnabled(globalSettings.isLlmCacheEnabled()))
                 .llmCacheTtlMs(turGlobalSettingsService
