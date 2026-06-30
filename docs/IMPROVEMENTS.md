@@ -1467,17 +1467,6 @@ Subscribers add it to their agent's allow-list. Every customer that
 publishes makes every other customer's agents more useful. Long-tail
 moat.
 
-### X.13 Cross-vendor reasoning (T503, T504) — ✅ shipped
-
-> The cross-vendor reasoning contract is complete (see CHANGELOG §X.13 / Block
-> F.16). "Show the model's thinking" (the T178 `reasoning` panel) and the
-> "reasoning budget" lever are now one vendor-agnostic contract across all three
-> providers: OpenAI (T178/T179/T503), Gemini `thinkingConfig` (T498), and
-> Anthropic extended/interleaved thinking (T504). T503 added OpenAI Responses
-> `background` mode (async submit + retrieve-poll); T504 added Anthropic
-> `thinking` `budget_tokens` + the interleaved-thinking beta, with thought
-> summaries feeding the same panel. Nothing outstanding in this section.
-
 ### X.15 The bold creative bets (T192)
 
 > T187 "Live answers (hybrid)", T188 "Headless MCP backbone", T189 "Real-time
@@ -1572,90 +1561,6 @@ customer value — there is no monolithic "Block F is done" gate.
 > landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
 > source both the agent UI and the T186 instance × capability heatmap (shipped,
 > CHANGELOG §X.14.f) render from. Design detail is recoverable from `git log`.
-
-### X.19 Gemini native API exploitation (T489–T501)
-
-**The gap.** Block F gave OpenAI and Anthropic a native seam
-(`TurNativeProviderClient`, T130) and a per-instance capability matrix (T132),
-then wired ~30 vendor-native features through it. **Gemini got none of it.**
-Today `TurGeminiLlmProvider` is a thin Spring AI `GoogleGenAiChatModel` wrapper:
-chat + streaming only, **no embeddings** (it `throw`s
-`UnsupportedOperationException`), no server-side tools, no Batch (the T156
-changelog explicitly lists "Gemini → no provider"), no Files, no caching,
-no thinking surfacing. Yet the Google GenAI Java SDK (`com.google.genai.Client`,
-already on the classpath) ships a surface as rich as the other two — and a few
-primitives **neither** competitor has. This block closes the parity gap and then
-goes past it.
-
-**Foundation — T489 `TurGoogleGenAiNativeService` + executor branch.** ✅ Shipped
-(see CHANGELOG Block F.16). The third `TurNativeChatExecutor` branch (Gemini via
-`Client.models().generateContentStream`) is in place; everything below is a
-capability row on top of it.
-
-**Parity — server-side built-in tools** (the model executes the tool in Google's
-infra, zero Java callbacks; mirrors F.2/F.3):
-
-- **T490 Google Search grounding** (`google_search` tool) — ✅ shipped (see
-  CHANGELOG Block F.16).
-- **T491 URL Context tool** (`url_context`) — ✅ shipped (see CHANGELOG Block F.16).
-- **T492 Code execution tool** (`code_execution`) — ✅ shipped (see CHANGELOG Block F.16).
-- **T493 Native image generation** (`gemini-2.5-flash-image` / Imagen) — ✅ shipped (see CHANGELOG Block F.16).
-- **T494 Computer Use** (`gemini-2.5-computer-use`) — ✅ shipped (see CHANGELOG Block F.16).
-
-**Distinctive Gemini cost/quality primitives** (parity-plus):
-
-- **T495 Embeddings with task-type optimization** — ✅ shipped (see CHANGELOG Block F.16).
-- **T496 Batch provider** — ✅ shipped (chat + embeddings; see CHANGELOG Block F.16).
-- **T497 Files bridge** — ✅ shipped (see CHANGELOG Block F.16).
-- **T498 Thinking budget + thought summaries** — ✅ shipped (see CHANGELOG Block F.16).
-
-**Innovation bets — things only Gemini's shape makes cheap:**
-
-- **T499 Explicit context caching** (cross-vendor seam, Gemini-led) — see §X.20.
-- **T500 Full-context (retrieval-free) answering for small sites** — ✅ shipped
-  (see CHANGELOG Block F.16). Per-site opt-in mode (gated on a corpus token
-  budget) that grounds over the whole corpus instead of top-K, paired with the
-  T499 cache; inverts the RAG assumption when the index fits the model window.
-- **T501 Native video understanding for indexed media** — ✅ shipped (chat slots
-  + index-time SN-doc enrichment; see CHANGELOG Block F.16).
-
-**Naming.** Plugin type `gemini` (the native Google GenAI SDK provider; the
-`gemini-openai` OpenAI-compat provider stays Spring-AI-only). Capabilities
-follow the convention: `gemini-google-search`, `gemini-url-context`,
-`gemini-code-execution`, `gemini-image-generation`, `gemini-computer-use`,
-each a `TurNativeCapability` constant auto-surfaced by the T432 registry/picker.
-All strictly opt-in via the two-level gate (instance matrix ∩ agent selection).
-
-### X.20 Context & prompt caching — cross-vendor (T499, T502)
-
-**Why now.** The single largest recurring cost in RAG/agent turns is **re-sending
-the same large prefix** every turn — the system prompt + persona + brand context
-+ the retrieved knowledge-base passages. All three vendors now let you avoid
-paying full price for that prefix, but each models it differently, and **Turing
-exploits none of them today**:
-
-- **Gemini** — *explicit, named, TTL'd* cache objects (`client.caches().create`):
-  you cache content once, get back a handle, and reference it by name across
-  turns *and across users* at ~75% off. Uniquely reusable across conversations.
-- **Anthropic** — *ephemeral* `cache_control` breakpoints on message blocks
-  (5 min / 1 h TTL); cache the system prompt + retrieved `search_result` blocks.
-- **OpenAI** — *automatic* prefix caching (no API surface to manage, just a
-  discount when the prefix repeats).
-
-**The seam — T499 `TurContextCacheProvider`.** ✅ Shipped (see CHANGELOG Block
-F.16). A vendor-neutral interface that, given the agent's stable prefix, returns
-a cache reference the native path threads into the request; the Gemini
-implementation creates/reuses a named, TTL'd `cachedContents` object keyed by a
-prefix hash and a no-op default keeps OpenAI on its automatic path. This is the
-seam T500 (full-context answering) and T502 (Anthropic `cache_control`) build on.
-
-**T502 Anthropic `cache_control` mapping** — ✅ shipped (see CHANGELOG Block
-F.16). Plugs Claude into the same seam: the system prompt + the last retrieved
-`search_result` block carry ephemeral `cache_control` breakpoints (opt-in, null →
-unchanged). Together T499+T502 give every vendor a caching story behind one
-provider-agnostic interface.
-
----
 
 ## XI. Embedded LLM (Jlama) — downgraded to a spike
 
@@ -1970,7 +1875,7 @@ This is where the deal is won or lost in an enterprise review.
   `mcp.json` for Claude Desktop / Claude Code / Cursor — endpoint, auth
   hint, recommended tool subset. The gap between "we bought Turing" and
   "my Claude can search it" should be a copy-paste, not a docs safari.
-- **Federation directory (T256, xref §X.5 T192)**: tenants opt-in to
+- **Federation directory (T192, xref §X.5)**: tenants opt-in to
   publish a *redacted* public MCP server (public docs, public catalog)
   to `directory.turing.io`; subscribers add it to their agent's
   allow-list. Every publisher makes every subscriber's agents more
@@ -1993,7 +1898,7 @@ This is where the deal is won or lost in an enterprise review.
    love.
 6. **T253 + T254** — gated writes + per-tenant SaaS. The monetizable,
    enterprise-grade surface.
-7. **T255 + T256** — DX polish + the federation long-shot.
+7. **T255 + T192** — DX polish + the federation long-shot (the inter-tenant directory, unified here from the former Block F.14).
 
 **Convicted first move**: ship **T245 against loopback** to prove the
 "the tools we already have just *become* an MCP server" thesis in a
@@ -2284,51 +2189,6 @@ CopilotKit's off-the-shelf React/Angular clients connect to a Turing agent with
 zero Turing-SDK code. This is a distribution play (meet developers in the
 ecosystem they already use), not core parity — depends on T436+T438 existing
 first, and should only be promoted from 💭 if a named integration asks for it.
-
-## XXIV. Reference showcase app — stress every feature (Block Y)
-
-> **Goal.** One installable reference app that **exercises the maximum surface of
-> the platform** — a living demo, an integration test of the SDKs against a real
-> backend, and the canonical "this is what Turing can do" artifact for sales and
-> docs. It lives in the monorepo at `frontend/apps/showcase`, seeds its own data,
-> and is the kitchen sink: if a feature isn't visible here, it isn't real to a
-> prospect.
->
-> **Chosen domain: a commerce-catalog copilot** (working title "Atlas Store").
-> Rationale — it is the most feature-dense domain: a typed catalog (price as
-> `CURRENCY`, ratings, availability, images) stresses the manifest + hybrid
-> ranking + facets; "compare these three" stresses answer-as-app; "add the red
-> one to my cart" stresses client tools + co-browse; "why is this first?"
-> stresses glass-box ranking; product images stress multimodal; a returns flow
-> stresses HITL + handoff + skills. A single domain that naturally pulls in
-> nearly every primitive beats a contrived feature-tour.
->
-> **Coverage discipline.** Each showcase task names the exact features it must
-> light up; a feature with no home in the matrix is a gap to flag, not to skip.
-
-### XXIV.1 Coverage matrix — what the sample must stress
-
-| Area | Features the showcase must exercise |
-|---|---|
-| **Indexing/schema** | manifest schema-as-code (T386), field provisioning (T382), LLM-assisted derivation from sample docs (T387), per-field coverage page (T388), import/export ZIP |
-| **Search** | faceted search, URL-synced search (`useTuringUrlSearch`), autocomplete, spell-check, tabs (T247), sort options, similar/"more like this" (T400), click tracking + CTR, hybrid RRF ranking (T383), pluggable reranker (Block N) |
-| **RAG chat** | token streaming SSE, RAG sources/citations (T152/T292), `TuringSourceChips`, option chips, native forms (T107), slots read/subscribe/write (delta SSE T63), multimodal slot upload + vision (T401), workspace panel (T113), rich content markdown/`html` sandbox/`d2` diagrams (T295–T298) |
-| **Agent power** | skills (Anthropic folder, run in chat T323 + semantic nav T324, multi-skill ZIP T325), code interpreter (T80, structured output T83, warm pool T82), **live tool-call activity (T436)**, **client tools (T438/T439)**, **answer-as-app generative UI (T440/T442)** |
-| **Creative bets** | co-browse the search UI (T443), glass-box ranking (T444), ambient copilot (T445), cross-conversation memory (T446), agent→agent handoff (T448), skills-ship-UI (T449), embeddable action widget (T450) |
-| **Voice/multimodal** | voice agent (T147), search-by-image (multimodal upload as a search entry point) |
-| **Ops/admin** | chat analytics (sentiment trajectory T87, tool latency p95 T88, SSE channel debug T90), agent eval + golden sets (Block K), self-tuning suggestions (T447), cost/token governance (Block L), token-budget COMPACT (T123) |
-| **Platform** | multi-tenancy (each demo visitor in an auto-provisioned tenant T333), MCP server exposure (Block I — "drive Atlas Store from Claude Desktop"), webhooks (T62), routines/cron |
-| **SDK surfaces** | vanilla `@viglet/turing-sdk` (an EDS-style embeddable widget build), React SDK hooks, headless `@viglet/turing-react-ui` skinned to the Atlas brand, CLI `turing dev`/`eval` (E.7) wiring the project |
-
-### XXIV.2 Build tasks (T451–T457)
-
-- **T451 — scaffold + seed.** _Shipped — see CHANGELOG → Block Y._
-- **T452 — search surface.** _Shipped — see CHANGELOG → Block Y._
-- **T453 — chat surface.** _Shipped — see CHANGELOG → Block Y._
-- **T454 — agent power.** _Shipped — see CHANGELOG → Block Y._
-- **T455 — creative bets wiring.** _Shipped — see CHANGELOG → Block Y._
-- **T456 — voice, memory & ops tour.** _Shipped — see CHANGELOG → Block Y._
-- **T457 — guided tour, tests & docs.** _Shipped — see CHANGELOG → Block Y; coverage audit in `frontend/apps/showcase/COVERAGE.md`._
 
 ## XXVII. Public site & top-of-funnel conversion (Block AB)
 

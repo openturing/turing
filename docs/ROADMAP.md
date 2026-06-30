@@ -16,10 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## F.14 — Bold creative bets (the long shots)
-
-- 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
-
 ## Block F.16 — Gemini native API exploitation + cross-vendor parity
 
 > Block F wired ~30 native features for OpenAI and Anthropic through the
@@ -91,10 +87,10 @@
 
 - 💭 **T193 (spike)** (deps: —) **Embedded inference engine evaluation** — 2–3 day spike: benchmark Jlama (pure-Java, Panama) vs Ollama-sidecar vs `de.kherud:llama` for the zero-egress deployment story (tool calling, RAM, tok/s, Windows, ops). Decide ONE engine before committing any build. Default assumption: **Ollama-sidecar**. Promote to a real block only if the spike beats that default for a named customer requirement. → STRATEGY §VIII (deprecations)
 
-## Block I — Turing as an MCP Server (T245–T256)
+## Block I — Turing as an MCP Server (T192, T245–T255)
 
 - 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
-- 💭 **T256** (deps: T254) **Federation directory + bold bets** — cross-ref §X.5 T192: opt-in publish a redacted public MCP server to `directory.turing.io`; every publisher makes every subscriber's agents more useful. → §XIII.7
+- 💭 **T192** (deps: T254) **Inter-tenant MCP federation directory** — opt-in directory at `directory.turing.io` where a tenant publishes a redacted public MCP server exposing **only public knowledge** (its docs, its public catalog); subscribers add it to their agent's allow-list, so every publisher makes every subscriber's agents more useful. The network-effect moat on top of the shipped T146 public `/mcp` surface + T254 per-tenant endpoints. (Unifies the former Block F.14 T192 + the duplicate T256.) → §XIII.7 / §X.5
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
