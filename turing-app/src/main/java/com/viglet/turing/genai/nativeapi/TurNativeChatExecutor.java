@@ -105,6 +105,7 @@ public class TurNativeChatExecutor {
     private final TurAnthropicMemoryService anthropicMemoryService;
     private final TurGoogleGenAiNativeService googleGenAiNativeService;
     private final TurGeminiComputerUseService geminiComputerUseService;
+    private final com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
@@ -146,6 +147,7 @@ public class TurNativeChatExecutor {
             TurAnthropicMemoryService anthropicMemoryService,
             TurGoogleGenAiNativeService googleGenAiNativeService,
             TurGeminiComputerUseService geminiComputerUseService,
+            com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
@@ -175,6 +177,7 @@ public class TurNativeChatExecutor {
         this.anthropicMemoryService = anthropicMemoryService;
         this.googleGenAiNativeService = googleGenAiNativeService;
         this.geminiComputerUseService = geminiComputerUseService;
+        this.cohereMessagesService = cohereMessagesService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
@@ -207,10 +210,19 @@ public class TurNativeChatExecutor {
         boolean isOpenAi = "openai".equals(pluginType);
         boolean isAnthropic = "anthropic".equals(pluginType);
         boolean isGemini = "gemini".equals(pluginType);
-        if (!isOpenAi && !isAnthropic && !isGemini) {
-            // Only OpenAI (F.2), Anthropic (F.3) and Gemini (T489 / F.16) have a
-            // native path; other vendors always fall through to the Spring AI
-            // executor.
+        boolean isCohere = "cohere".equals(pluginType);
+        if (!isOpenAi && !isAnthropic && !isGemini && !isCohere) {
+            // Only OpenAI (F.2), Anthropic (F.3), Gemini (T489 / F.16) and — for
+            // native citations only — Cohere (T519 / §XXVIII.15) have a native
+            // path; other vendors always fall through to the Spring AI executor.
+            return Optional.empty();
+        }
+
+        // T519 / §XXVIII.15 — Cohere has a native path ONLY for Command citation
+        // mode (the `citations` Request Option). Without it, a Cohere agent stays
+        // on the OpenAI-compatible Spring AI path — unchanged.
+        boolean cohereCitations = isCohere && isCitationsEnabled(agent);
+        if (isCohere && !cohereCitations) {
             return Optional.empty();
         }
 
@@ -243,7 +255,8 @@ public class TurNativeChatExecutor {
 
         List<EnabledCapability> instanceCapabilities =
                 capabilityService.enabledFor(instance.getId(), pluginType);
-        if (instanceCapabilities.isEmpty() && !groundWithDocuments && !openAiReasoningForced) {
+        if (instanceCapabilities.isEmpty() && !groundWithDocuments && !openAiReasoningForced
+                && !cohereCitations) {
             return Optional.empty();
         }
 
@@ -327,6 +340,24 @@ public class TurNativeChatExecutor {
             String groundedPrompt = liveAnswersService.augment(
                     turn.systemPrompt(), lastUserMessage, groundWithDocuments);
             turn = new AssembledTurn(groundedPrompt, turn.history());
+        }
+
+        // T519 / §XXVIII.15 — Cohere native citation branch. Retrieve the top-K
+        // passages and run Cohere's v2/chat with them as documents; the response's
+        // native citations decode onto the same TurChatCitation/SSE contract as
+        // the Anthropic/Gemini paths. Reached only when the citations option is on
+        // (gated above); persists the citations for the T155 drift scan like the
+        // Anthropic path.
+        if (isCohere) {
+            List<TurCitationDocument> citationDocuments =
+                    ragSearchToolService.retrievePassagesForCitations(lastUserMessage, CITATION_TOP_K);
+            log.info("[Native] agent '{}' instance '{}' handled by Cohere citation path "
+                    + "({} citation doc(s), persona '{}')", agent.getTitle(), instance.getId(),
+                    citationDocuments.size(), activePersona == null ? "none" : activePersona.getName());
+            Flux<ChatResponse> messages = cohereMessagesService.chat(instance, turn.history(),
+                    turn.systemPrompt(), citationDocuments);
+            return Optional.of(citationDriftService.tapForPersistence(messages, agent.getId(),
+                    conversationId, lastUserMessage, CITATION_TOP_K));
         }
 
         // T489 / §X.19 — Gemini native branch. The base path streams a turn

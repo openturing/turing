@@ -1896,17 +1896,16 @@ _Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
 
 ### Cross-vendor bridges — the bold bets
 
-- **§XXVIII.15 — T519 Native-citation RAG across vendors.** Cohere `Command`
-  citation mode and Bedrock Knowledge Base responses return grounded citations
-  *natively*. Decode them onto the existing T152–T155 `TurChatCitation`/SSE
-  contract so they render exactly like the Gemini/Anthropic/OpenAI native
-  grounding already does. A cross-vendor citation source, no new UI.
 - **§XXVIII.16 — T520 Managed-RAG retrieval backend seam.** The biggest
   architectural bet: a `TurRetrievalBackend` interface so a tenant can point
   retrieval at **Bedrock Knowledge Bases**, **Vertex AI Search**, or **Vertex RAG
   Engine** instead of the built-in index — for organizations that have already
   standardized on a cloud RAG stack and want Turing as the agent/chat/eval layer
   on top. Kept a 💭 because it touches the retrieval core; scope carefully.
+  **Also carries the Bedrock-half of T519:** the Bedrock KB `RetrieveAndGenerate`
+  response returns grounded citations natively, so this backend decodes them onto
+  the same T152–T155 `TurChatCitation`/SSE contract the Cohere half (T519) already
+  uses — the `bedrockagentruntime` dependency lands here, not in T519.
 - **§XXVIII.17 — T521 Managed reranker strategies.** Vertex AI Ranking API and
   Bedrock rerank as additional Block N `TurRagReranker` strategies, for
   cloud-native deployments that don't want to self-host a cross-encoder. Pure

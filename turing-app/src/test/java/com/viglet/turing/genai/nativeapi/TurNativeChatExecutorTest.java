@@ -114,11 +114,16 @@ class TurNativeChatExecutorTest {
     // false (Mockito boolean default) and the existing routing assertions are unchanged.
     @Mock private com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
 
+    // T519 — Cohere native citation path mock; default agent has citations off so
+    // the existing routing assertions are unchanged.
+    @Mock private com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService;
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
-                googleGenAiNativeService, geminiComputerUseService, promptAssembler, personaResolver,
+                googleGenAiNativeService, geminiComputerUseService, cohereMessagesService,
+                promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,

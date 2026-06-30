@@ -100,7 +100,6 @@ instance.)
 (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD.
 
 **Cross-vendor bridges (the bold bets):**
-- 💭 **T519** (deps: T508, T506, T152–T155) **Native-citation RAG across vendors** — providers that return grounded citations natively (Cohere `Command` citation mode, Bedrock KB citations) decode onto the T152–T155 `TurChatCitation`/SSE contract — parity with the Gemini/Anthropic/OpenAI native grounding already wired. → §XXVIII.15
 - 💭 **T520** (deps: T506, T510) **Managed-RAG retrieval backend seam** (`TurRetrievalBackend`) — optional alternative to the built-in index: Bedrock Knowledge Bases / Vertex AI Search / Vertex RAG Engine as a pluggable retriever for tenants already standardized on a cloud RAG stack. Larger architectural bet. → §XXVIII.16
 - 💭 **T521** (deps: T510, T506, T337–T340) **Managed reranker strategies** — Vertex AI Ranking API + Bedrock rerank as additional Block N `TurRagReranker` strategies for cloud-native deployments (no self-hosted cross-encoder). → §XXVIII.17
 - 💭 **T522** (deps: T505, T180) **Multi-provider "second opinion" answer cross-check** — for high-stakes answers, a cheap *different-vendor* model critiques the primary answer (cross-vendor LlmJudge), surfaced as a confidence signal next to the answer; composes the existing LlmJudge + T180 logprobs. → §XXVIII.18
