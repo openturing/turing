@@ -238,6 +238,22 @@ public class TurAIAgent implements Serializable {
     private boolean callCenterEnabled = false;
 
     /**
+     * T190 / §X.15.d — per-agent opt-in for "self-installing connectors". When
+     * {@code true}, the {@code /connector} endpoints are enabled for this agent so
+     * it can walk a customer through connecting a third-party system ("connect my
+     * Notion"): surface the vendor's token-generation steps and TEST the supplied
+     * credential before it is saved/enabled through the existing integration /
+     * MCP-server CRUD. When a real computer-use driver (T136) is deployed the
+     * steps can be driven in a browser; with the no-op default it degrades to
+     * guided instructions + the connection probe. Default {@code false} keeps the
+     * endpoints closed (403) for existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "connector_setup_enabled", nullable = false)
+    private boolean connectorSetupEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.
