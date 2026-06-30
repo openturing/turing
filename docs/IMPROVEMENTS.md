@@ -1966,10 +1966,6 @@ it's an alternative backend, not a rewrite.
 
 ### XXIX.4 Didactic layer (the "from-the-beginning" spine)
 
-- **T535 — Learning path.** Turn `getting-started/intro` + `getting-started/core-concepts`
-  + `index.mdx` into a single guided narrative: *what Turing is → first search →
-  first RAG answer → first agent → first automation*, each step linking the deep
-  page. This is the spine every other page's "when you'd reach for it" points back to.
 - **T536 — Didactic pass, "Search it" + "Ask it" pillars.** Apply the §XXIX.2
   checklist to every page in both categories (old pages included) — concept-first
   opener, from-zero example, Related Pages footer.
