@@ -1625,10 +1625,7 @@ infra, zero Java callbacks; mirrors F.2/F.3):
   instances at the Batch discount instead of falling back to synchronous full
   price. (The keyed-JSONL `key` round-trips the `customId` exactly as the chat
   leg does.)
-- **T497 Files bridge** — folds Gemini into the F.11 `TurFilesApiBridge` (T175):
-  upload the indexed binary to the Gemini Files API, reference it by URI (48 h
-  retention) so a Gemini-backed agent gets native PDF/video grounding instead of
-  Tika text only.
+- **T497 Files bridge** — ✅ shipped (see CHANGELOG Block F.16).
 - **T498 Thinking budget + thought summaries** — `thinkingConfig`
   (`thinkingBudget` + `includeThoughts`) surfaces Gemini 2.5's reasoning into the
   same "Why this answer" panel the OpenAI reasoning summary feeds (T178); this is

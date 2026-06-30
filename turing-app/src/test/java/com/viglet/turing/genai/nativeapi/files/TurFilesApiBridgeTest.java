@@ -199,6 +199,33 @@ class TurFilesApiBridgeTest {
     }
 
     @Test
+    void servesGeminiCacheHitWithoutUploading() {
+        // T497 — Gemini is now a native Files-API vendor; a fresh cache row is
+        // served without touching the SDK (the upload path is integration-only).
+        TurLLMInstance instance = instance("inst-gemini", "gemini");
+        TurVendorFile cached = new TurVendorFile();
+        cached.setPluginType("gemini");
+        cached.setInstanceId("inst-gemini");
+        cached.setVendorFileId("https://generativelanguage.googleapis.com/v1beta/files/abc");
+        cached.setFileName("report.pdf");
+        cached.setContentType("application/pdf");
+        cached.setSizeBytes(PDF_BYTES.length);
+        cached.setCreatedAt(OffsetDateTime.now());
+        cached.setExpiresAt(OffsetDateTime.now().plusHours(48));
+        when(vendorFileRepository.findByPluginTypeAndAccountKeyAndContentHash(
+                eq("gemini"), anyString(), anyString())).thenReturn(Optional.of(cached));
+
+        Optional<TurVendorFileRef> ref = bridge.ensureUploaded(instance, PDF_BYTES, "report.pdf",
+                "application/pdf");
+
+        assertThat(ref).isPresent();
+        assertThat(ref.get().pluginType()).isEqualTo("gemini");
+        assertThat(ref.get().vendorFileId()).contains("files/abc");
+        verify(nativeClient, never()).gemini(any());
+        verify(vendorFileRepository, never()).save(any());
+    }
+
+    @Test
     void returnsEmptyForNonNativeVendor() {
         TurLLMInstance instance = instance("inst-ollama", "ollama");
 

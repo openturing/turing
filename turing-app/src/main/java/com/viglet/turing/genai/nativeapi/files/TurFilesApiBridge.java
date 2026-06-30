@@ -78,6 +78,9 @@ public class TurFilesApiBridge {
 
     private static final String OPENAI = "openai";
     private static final String ANTHROPIC = "anthropic";
+    private static final String GEMINI = "gemini";
+    /** T497 — Gemini Files API retention; the cache row expires with the upload. */
+    private static final java.time.Duration GEMINI_RETENTION = java.time.Duration.ofHours(48);
     private static final String DEFAULT_FILE_NAME = "document";
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
     private static final int MAX_FILE_NAME = 512;
@@ -126,7 +129,8 @@ public class TurFilesApiBridge {
             return Optional.empty();
         }
         String pluginType = pluginType(instance);
-        if (!OPENAI.equals(pluginType) && !ANTHROPIC.equals(pluginType)) {
+        if (!OPENAI.equals(pluginType) && !ANTHROPIC.equals(pluginType)
+                && !GEMINI.equals(pluginType)) {
             return Optional.empty();
         }
         String name = clamp(StringUtils.hasText(fileName) ? fileName : DEFAULT_FILE_NAME, MAX_FILE_NAME);
@@ -153,14 +157,17 @@ public class TurFilesApiBridge {
         }
 
         try {
-            String fileId = OPENAI.equals(pluginType)
-                    ? uploadToOpenAi(instance, data, name, type)
-                    : uploadToAnthropic(instance, data, name, type);
+            String fileId = switch (pluginType) {
+                case OPENAI -> uploadToOpenAi(instance, data, name, type);
+                case ANTHROPIC -> uploadToAnthropic(instance, data, name, type);
+                case GEMINI -> uploadToGemini(instance, data, name, type);
+                default -> null;
+            };
             if (!StringUtils.hasText(fileId)) {
                 return Optional.empty();
             }
             TurVendorFileRef ref = new TurVendorFileRef(fileId, pluginType, name, type, data.length);
-            persist(ref, instance.getId(), accountKey, hash);
+            persist(ref, instance.getId(), accountKey, hash, expiryFor(pluginType));
             return Optional.of(ref);
         } catch (RuntimeException e) {
             log.warn("[Files-API] upload to '{}' for instance '{}' failed — falling back to text: {}",
@@ -201,8 +208,33 @@ public class TurFilesApiBridge {
         return file.id();
     }
 
+    /**
+     * T497 — upload to the Gemini Files API and return the file's URI (what a
+     * {@code fileData} part references for native PDF/video grounding), falling
+     * back to its resource name. Gemini files are retained ~48 h (see
+     * {@link #expiryFor}).
+     */
+    private String uploadToGemini(TurLLMInstance instance, byte[] data, String name, String type) {
+        com.google.genai.Client client = nativeClient.gemini(instance).orElse(null);
+        if (client == null) {
+            return null;
+        }
+        com.google.genai.types.File file = client.files.upload(data,
+                com.google.genai.types.UploadFileConfig.builder()
+                        .mimeType(type)
+                        .displayName(name)
+                        .build());
+        return file.uri().or(file::name).orElse(null);
+    }
+
+    /** Files API retention per vendor: Gemini expires after 48 h; OpenAI/Anthropic don't. */
+    private static OffsetDateTime expiryFor(String pluginType) {
+        return GEMINI.equals(pluginType) ? OffsetDateTime.now().plus(GEMINI_RETENTION) : null;
+    }
+
     /** Persist the cache row, tolerating a concurrent insert that already won the unique key. */
-    private void persist(TurVendorFileRef ref, String instanceId, String accountKey, String hash) {
+    private void persist(TurVendorFileRef ref, String instanceId, String accountKey, String hash,
+            OffsetDateTime expiresAt) {
         TurVendorFile row = new TurVendorFile();
         row.setPluginType(ref.pluginType());
         row.setInstanceId(instanceId);
@@ -213,6 +245,7 @@ public class TurFilesApiBridge {
         row.setContentType(ref.contentType());
         row.setSizeBytes(ref.sizeBytes());
         row.setCreatedAt(OffsetDateTime.now());
+        row.setExpiresAt(expiresAt);
         try {
             vendorFileRepository.save(row);
         } catch (DataIntegrityViolationException e) {
