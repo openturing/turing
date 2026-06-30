@@ -48,7 +48,6 @@
 - ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Innovation bets (Gemini-shape-only):**
-- 💭 **T500** (deps: T499, T383) **Full-context (retrieval-free) answering for small sites** — per-site mode (gated on an index-token budget) that stuffs the whole corpus into Gemini's 1–2 M window instead of top-K retrieval, paired with the T499 cache; measured head-to-head vs T383 HYBRID_RRF. → §X.19
 - 💭 **T501** (deps: T489, T64, T497) **Native video understanding for indexed media** — pass video/audio (incl. YouTube URL) to Gemini for timestamped transcript + scene/visual description written to the SN doc; adds a VIDEO modality to the T64 slots. → §X.19
 
 **Cross-vendor gaps the F-blocks left open:**

@@ -86,6 +86,11 @@ public class TurGenAiContextFactory {
                 .enabled(true)
                 .systemPrompt(agent.getSystemPrompt())
                 .ragInfrastructure(infra)
+                // T500 — thread the per-site full-context opt-in + budget through
+                // so TurSNGenAi.retrieveDocuments can bypass top-K when the corpus
+                // fits. Default off → unchanged top-K path.
+                .fullContextEnabled(turSNSiteGenAi.isFullContextAnsweringEnabled())
+                .fullContextTokenBudget(turSNSiteGenAi.getFullContextTokenBudget())
                 .build();
     }
 

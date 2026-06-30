@@ -1631,14 +1631,10 @@ infra, zero Java callbacks; mirrors F.2/F.3):
 **Innovation bets — things only Gemini's shape makes cheap:**
 
 - **T499 Explicit context caching** (cross-vendor seam, Gemini-led) — see §X.20.
-- **T500 Full-context (retrieval-free) answering for small sites** — Gemini's
-  1–2 M-token window lets a *small* SN index skip top-K retrieval entirely:
-  stuff the whole corpus into context (paired with the T499 cache so it's paid
-  for once) and let the model ground over everything. A new answering mode
-  (per-site, gated on an index-token budget) measured head-to-head against the
-  T383 HYBRID_RRF path — when the corpus fits, recall ceiling is 100% by
-  construction. Distinctive because it inverts the RAG assumption that you must
-  retrieve.
+- **T500 Full-context (retrieval-free) answering for small sites** — ✅ shipped
+  (see CHANGELOG Block F.16). Per-site opt-in mode (gated on a corpus token
+  budget) that grounds over the whole corpus instead of top-K, paired with the
+  T499 cache; inverts the RAG assumption when the index fits the model window.
 - **T501 Native video understanding for indexed media** — Gemini ingests video
   (frames + audio track, including a YouTube URL) natively. Index a video/audio
   asset by passing it to Gemini for a timestamped transcript + scene/visual

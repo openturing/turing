@@ -210,4 +210,32 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "contentFitPersonaId", length = 40)
     private String contentFitPersonaId;
+
+    /**
+     * T500 / §X.19 — opt-in for full-context (retrieval-free) answering. When
+     * {@code true} and the whole indexed corpus fits {@link #fullContextTokenBudget}
+     * estimated tokens, the SN RAG path skips top-K retrieval and grounds the
+     * answer over <em>every</em> chunk — inverting the RAG assumption, so recall
+     * is 100% by construction for small sites. Most valuable on a 1–2 M-token
+     * model window (Gemini), paired with the T499 context cache so the corpus is
+     * billed once. When the corpus exceeds the budget the path falls back to the
+     * normal top-K retrieval (and the T383 ranking mode) unchanged.
+     *
+     * <p>Default {@code false} keeps the answering path byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "fullContextAnsweringEnabled", nullable = false)
+    private boolean fullContextAnsweringEnabled = false;
+
+    /**
+     * T500 / §X.19 — the maximum estimated corpus size (in {@code chars/4} tokens)
+     * that still qualifies for full-context answering. Above it the site falls
+     * back to top-K retrieval. Default 800 000 — comfortably inside Gemini's
+     * 1 M-token window with headroom for the system prompt + history + answer.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "fullContextTokenBudget", nullable = false)
+    private int fullContextTokenBudget = 800_000;
 }

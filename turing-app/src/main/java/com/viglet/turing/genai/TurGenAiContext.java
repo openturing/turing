@@ -36,6 +36,14 @@ public class TurGenAiContext {
     private final boolean enabled;
     private final String systemPrompt;
     private final RagInfrastructure ragInfrastructure;
+    /**
+     * T500 / §X.19 — per-site full-context (retrieval-free) answering opt-in.
+     * When {@code true} and the whole corpus fits {@link #fullContextTokenBudget},
+     * the SN RAG path grounds over every chunk instead of top-K retrieval.
+     */
+    private final boolean fullContextEnabled;
+    /** T500 — max estimated corpus tokens that still qualify for full-context. */
+    private final int fullContextTokenBudget;
     public static final String COLLECTION_NAME = "turing";
 
     public static TurGenAiContext disabled() {
