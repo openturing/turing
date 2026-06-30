@@ -136,7 +136,7 @@ fully shipped.**
 
 **Phase 3 — didactic "from-the-beginning" layer (new + old pages):**
 - ✅ **T535** shipped — see CHANGELOG.
-- 📋 **T536** (deps: T535) **Didactic pass — "Search it" + "Ask it" pillars** — apply the §XXIX.2 checklist (concept-first opener, from-zero example, Related Pages) to every page in both categories, old pages included. → §XXIX.4
+- ✅ **T536** shipped — see CHANGELOG.
 - 📋 **T537** (deps: T535) **Didactic pass — "Automate it" + "Run it" + Developers + Security pillars** — same checklist across the remaining categories. → §XXIX.4
 
 **Phase 4 — coverage gate (nothing lost):**

@@ -1966,9 +1966,6 @@ it's an alternative backend, not a rewrite.
 
 ### XXIX.4 Didactic layer (the "from-the-beginning" spine)
 
-- **T536 — Didactic pass, "Search it" + "Ask it" pillars.** Apply the §XXIX.2
-  checklist to every page in both categories (old pages included) — concept-first
-  opener, from-zero example, Related Pages footer.
 - **T537 — Didactic pass, "Automate it" + "Run it" + Developers + Security
   pillars.** Same checklist across the remaining categories.
 
