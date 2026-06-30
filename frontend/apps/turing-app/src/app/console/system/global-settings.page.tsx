@@ -76,6 +76,9 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     ragSnRerankStrategy: "LLM",
     ragSnRerankEndpoint: "",
     ragSnRerankModel: "",
+    ragSnRerankRegion: "us-east-1",
+    ragSnRerankVertexProject: "",
+    ragSnRerankVertexLocation: "global",
     ragSnRerankApiKey: "",
     ragSnRerankApiKeySet: false,
     ragSnRerankCacheEnabled: false,
@@ -975,6 +978,8 @@ export default function GlobalSettingsPage() {
                                                                 <SelectItem value="CROSS_ENCODER">{t("globalSettings.rerankStrategyCrossEncoder")}</SelectItem>
                                                                 <SelectItem value="COHERE">{t("globalSettings.rerankStrategyCohere")}</SelectItem>
                                                                 <SelectItem value="VOYAGE">{t("globalSettings.rerankStrategyVoyage")}</SelectItem>
+                                                                <SelectItem value="BEDROCK">{t("globalSettings.rerankStrategyBedrock")}</SelectItem>
+                                                                <SelectItem value="VERTEX_AI">{t("globalSettings.rerankStrategyVertexAi")}</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </FormControl>
@@ -1012,7 +1017,7 @@ export default function GlobalSettingsPage() {
                                             </FormItem>
                                         )}
                                     />
-                                    {(rerankStrategy === "CROSS_ENCODER" || rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE") && (
+                                    {(rerankStrategy === "CROSS_ENCODER" || rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE" || rerankStrategy === "BEDROCK" || rerankStrategy === "VERTEX_AI") && (
                                         <FormField
                                             control={form.control}
                                             name="ragSnRerankModel"
@@ -1025,7 +1030,7 @@ export default function GlobalSettingsPage() {
                                                     <FormControl>
                                                         <Input
                                                             className="max-w-md font-mono text-sm"
-                                                            placeholder={rerankStrategy === "COHERE" ? "rerank-v3.5" : rerankStrategy === "VOYAGE" ? "rerank-2.5" : "BAAI/bge-reranker-v2-m3"}
+                                                            placeholder={rerankStrategy === "COHERE" ? "rerank-v3.5" : rerankStrategy === "VOYAGE" ? "rerank-2.5" : rerankStrategy === "BEDROCK" ? "amazon.rerank-v1:0" : rerankStrategy === "VERTEX_AI" ? "semantic-ranker-default-004" : "BAAI/bge-reranker-v2-m3"}
                                                             autoComplete="off"
                                                             spellCheck={false}
                                                             disabled={isLoading}
@@ -1064,7 +1069,7 @@ export default function GlobalSettingsPage() {
                                             )}
                                         />
                                     )}
-                                    {(rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE") && (
+                                    {(rerankStrategy === "COHERE" || rerankStrategy === "VOYAGE" || rerankStrategy === "VERTEX_AI") && (
                                         <FormField
                                             control={form.control}
                                             name="ragSnRerankApiKey"
@@ -1074,13 +1079,15 @@ export default function GlobalSettingsPage() {
                                                     <FormDescription>
                                                         {rerankApiKeySet
                                                             ? t("globalSettings.rerankApiKeySetDesc")
-                                                            : t("globalSettings.rerankApiKeyDesc")}
+                                                            : (rerankStrategy === "VERTEX_AI"
+                                                                ? t("globalSettings.rerankVertexCredentialsDesc")
+                                                                : t("globalSettings.rerankApiKeyDesc"))}
                                                     </FormDescription>
                                                     <FormControl>
                                                         <Input
                                                             type="password"
                                                             className="max-w-md font-mono text-sm"
-                                                            placeholder={rerankApiKeySet ? "••••••••" : "co-..."}
+                                                            placeholder={rerankApiKeySet ? "••••••••" : (rerankStrategy === "VERTEX_AI" ? '{"type":"service_account",...}' : "co-...")}
                                                             autoComplete="one-time-code"
                                                             disabled={isLoading}
                                                             {...field}
@@ -1091,6 +1098,84 @@ export default function GlobalSettingsPage() {
                                                 </FormItem>
                                             )}
                                         />
+                                    )}
+                                    {rerankStrategy === "BEDROCK" && (
+                                        <FormField
+                                            control={form.control}
+                                            name="ragSnRerankRegion"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t("globalSettings.rerankRegion")}</FormLabel>
+                                                    <FormDescription>
+                                                        {t("globalSettings.rerankRegionDesc")}
+                                                    </FormDescription>
+                                                    <FormControl>
+                                                        <Input
+                                                            className="max-w-md font-mono text-sm"
+                                                            placeholder="us-east-1"
+                                                            autoComplete="off"
+                                                            spellCheck={false}
+                                                            disabled={isLoading}
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                    {rerankStrategy === "VERTEX_AI" && (
+                                        <>
+                                            <FormField
+                                                control={form.control}
+                                                name="ragSnRerankVertexProject"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>{t("globalSettings.rerankVertexProject")}</FormLabel>
+                                                        <FormDescription>
+                                                            {t("globalSettings.rerankVertexProjectDesc")}
+                                                        </FormDescription>
+                                                        <FormControl>
+                                                            <Input
+                                                                className="max-w-md font-mono text-sm"
+                                                                placeholder="my-gcp-project"
+                                                                autoComplete="off"
+                                                                spellCheck={false}
+                                                                disabled={isLoading}
+                                                                {...field}
+                                                                value={field.value ?? ""}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="ragSnRerankVertexLocation"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>{t("globalSettings.rerankVertexLocation")}</FormLabel>
+                                                        <FormDescription>
+                                                            {t("globalSettings.rerankVertexLocationDesc")}
+                                                        </FormDescription>
+                                                        <FormControl>
+                                                            <Input
+                                                                className="max-w-md font-mono text-sm"
+                                                                placeholder="global"
+                                                                autoComplete="off"
+                                                                spellCheck={false}
+                                                                disabled={isLoading}
+                                                                {...field}
+                                                                value={field.value ?? ""}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </>
                                     )}
                                     {/* T341 — opt-in rerank-score cache. Applies to every
                                         strategy; default off (the win is precision, not

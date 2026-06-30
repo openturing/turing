@@ -28,7 +28,9 @@ export type TurRagRerankStrategy =
   | "LLM_LOGPROBS"
   | "CROSS_ENCODER"
   | "COHERE"
-  | "VOYAGE";
+  | "VOYAGE"
+  | "BEDROCK"
+  | "VERTEX_AI";
 
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
@@ -105,8 +107,14 @@ export interface TurGlobalSettings {
   ragSnRerankStrategy?: TurRagRerankStrategy;
   /** T338 — self-hosted cross-encoder `/rerank` endpoint URL. */
   ragSnRerankEndpoint?: string;
-  /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
+  /** T338 — rerank model name (cross-encoder / Cohere / Bedrock ARN / Vertex model); blank = default. */
   ragSnRerankModel?: string;
+  /** T521 — AWS region for the managed Bedrock Rerank API (`BEDROCK`). */
+  ragSnRerankRegion?: string;
+  /** T521 — GCP project for the managed Vertex AI Ranking API (`VERTEX_AI`). */
+  ragSnRerankVertexProject?: string;
+  /** T521 — GCP location for Vertex AI Ranking (default `global`). */
+  ragSnRerankVertexLocation?: string;
   /**
    * T339 — Cohere API key. Write-only: sent on update, never returned on read
    * (always blank in GET). A blank value on save leaves the stored key intact.
