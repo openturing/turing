@@ -116,6 +116,39 @@ class TurGoogleGenAiNativeServiceTest {
     }
 
     @Test
+    void buildConfigAddsThinkingConfigWhenBudgetOrThoughtsSet() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setProviderOptionsJson("{\"thinkingBudget\":1024,\"includeThoughts\":true}");
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of());
+
+        assertThat(config.thinkingConfig()).isPresent();
+        assertThat(config.thinkingConfig().get().thinkingBudget()).contains(1024);
+        assertThat(config.thinkingConfig().get().includeThoughts()).contains(true);
+    }
+
+    @Test
+    void buildConfigOmitsThinkingConfigByDefault() {
+        TurLLMInstance instance = new TurLLMInstance();
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of());
+        assertThat(config.thinkingConfig()).isEmpty();
+    }
+
+    @Test
+    void thinkingSurfacedReflectsIncludeThoughtsOption() {
+        TurLLMInstance off = new TurLLMInstance();
+        assertThat(service.isThinkingSurfaced(off)).isFalse();
+
+        TurLLMInstance budgetOnly = new TurLLMInstance();
+        budgetOnly.setProviderOptionsJson("{\"thinkingBudget\":512}");
+        // Budget caps reasoning but does not surface the summary.
+        assertThat(service.isThinkingSurfaced(budgetOnly)).isFalse();
+
+        TurLLMInstance on = new TurLLMInstance();
+        on.setProviderOptionsJson("{\"includeThoughts\":true}");
+        assertThat(service.isThinkingSurfaced(on)).isTrue();
+    }
+
+    @Test
     void buildConfigAddsGoogleSearchToolWhenCapabilityEnabled() {
         TurLLMInstance instance = new TurLLMInstance();
         GenerateContentConfig config = service.buildConfig(instance, "sys",

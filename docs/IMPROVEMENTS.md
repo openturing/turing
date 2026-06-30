@@ -1626,10 +1626,7 @@ infra, zero Java callbacks; mirrors F.2/F.3):
   price. (The keyed-JSONL `key` round-trips the `customId` exactly as the chat
   leg does.)
 - **T497 Files bridge** — ✅ shipped (see CHANGELOG Block F.16).
-- **T498 Thinking budget + thought summaries** — `thinkingConfig`
-  (`thinkingBudget` + `includeThoughts`) surfaces Gemini 2.5's reasoning into the
-  same "Why this answer" panel the OpenAI reasoning summary feeds (T178); this is
-  the Gemini leg of a now-cross-vendor F.12 (see §X.13).
+- **T498 Thinking budget + thought summaries** — ✅ shipped (see CHANGELOG Block F.16).
 
 **Innovation bets — things only Gemini's shape makes cheap:**
 

@@ -28,6 +28,7 @@ import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GroundingMetadata;
 import com.google.genai.types.Part;
+import com.google.genai.types.ThinkingConfig;
 import com.google.genai.types.Tool;
 import com.google.genai.types.ToolCodeExecution;
 import com.google.genai.types.UrlContext;
@@ -106,17 +107,26 @@ public class TurGoogleGenAiNativeService {
         String model = resolveModelName(instance);
         List<Content> contents = toContents(history);
         GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities);
+        boolean surfaceThoughts = isThinkingSurfaced(instance);
         return Flux.<ChatResponse>create(sink -> {
             StringBuilder answer = new StringBuilder();
+            StringBuilder thoughts = new StringBuilder();
             GroundingMetadata grounding = null;
             List<Part> codeParts = new ArrayList<>();
             try (ResponseStream<GenerateContentResponse> stream =
                     client.models.generateContentStream(model, contents, config)) {
                 for (GenerateContentResponse response : stream) {
-                    String text = safeText(response);
-                    if (StringUtils.hasText(text)) {
-                        answer.append(text);
-                        sink.next(new ChatResponse(ASSISTANT, text));
+                    // T498 — when thoughts are surfaced, split thought parts from
+                    // answer parts (response.text() would conflate them); otherwise
+                    // keep the fast aggregate path.
+                    if (surfaceThoughts) {
+                        streamSplitByThought(response, sink, answer, thoughts);
+                    } else {
+                        String text = safeText(response);
+                        if (StringUtils.hasText(text)) {
+                            answer.append(text);
+                            sink.next(new ChatResponse(ASSISTANT, text));
+                        }
                     }
                     // T490 — the grounding metadata rides the candidate; keep the
                     // latest non-empty one (it arrives on the final aggregated chunk).
@@ -134,6 +144,11 @@ public class TurGoogleGenAiNativeService {
                 if (StringUtils.hasText(codeMarkdown)) {
                     sink.next(new ChatResponse(ASSISTANT, codeMarkdown));
                 }
+                // T498 — surface the accumulated thought summary as the shared
+                // T178 "reasoning" event (the "Why this answer" panel).
+                if (thoughts.length() > 0) {
+                    sink.next(new ChatResponse(ASSISTANT, thoughts.toString(), "reasoning"));
+                }
                 // T490 — decode google_search grounding onto the citation + Search
                 // Suggestion contracts once the full answer text is known (segment
                 // offsets are byte offsets into the complete answer).
@@ -146,6 +161,35 @@ public class TurGoogleGenAiNativeService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[Native][Gemini] instance '{}' error: {}",
                         instance.getId(), err.getMessage(), err));
+    }
+
+    /**
+     * T498 — walk a chunk's text parts, routing thought-summary parts
+     * ({@code thought == true}) to {@code thoughts} and the rest to the answer
+     * (streamed as tokens). Used only when the instance surfaces thoughts.
+     */
+    private static void streamSplitByThought(GenerateContentResponse response,
+            reactor.core.publisher.FluxSink<ChatResponse> sink, StringBuilder answer,
+            StringBuilder thoughts) {
+        response.candidates()
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .flatMap(Candidate::content)
+                .flatMap(Content::parts)
+                .ifPresent(parts -> {
+                    for (Part part : parts) {
+                        String text = part.text().orElse("");
+                        if (!StringUtils.hasText(text)) {
+                            continue;
+                        }
+                        if (part.thought().orElse(false)) {
+                            thoughts.append(text);
+                        } else {
+                            answer.append(text);
+                            sink.next(new ChatResponse(ASSISTANT, text));
+                        }
+                    }
+                });
     }
 
     /** Collect the code-execution parts (code/output/image) of a chunk's first candidate. */
@@ -250,7 +294,43 @@ public class TurGoogleGenAiNativeService {
         if (hasCapability(capabilities, TurNativeCapability.GEMINI_IMAGE_GENERATION)) {
             builder.responseModalities("TEXT", "IMAGE");
         }
+        // T498 — Gemini 2.5 thinking: a thinkingBudget caps reasoning tokens and
+        // includeThoughts surfaces the thought summary, which streams back as the
+        // shared T178 "reasoning" SSE event ("Why this answer" panel).
+        ThinkingConfig thinking = resolveThinkingConfig(options);
+        if (thinking != null) {
+            builder.thinkingConfig(thinking);
+        }
         return builder.build();
+    }
+
+    /**
+     * Resolve the per-instance thinking config, or {@code null} when neither knob
+     * is set (unchanged request). {@code thinkingBudget} caps reasoning tokens
+     * (0 disables thinking on models that allow it; -1 = dynamic); {@code
+     * includeThoughts} asks the model to return its thought summary.
+     */
+    ThinkingConfig resolveThinkingConfig(Map<String, Object> options) {
+        Integer budget = optionsParser.intValue(options, "thinkingBudget");
+        boolean includeThoughts = isIncludeThoughts(options);
+        if (budget == null && !includeThoughts) {
+            return null;
+        }
+        ThinkingConfig.Builder builder = ThinkingConfig.builder().includeThoughts(includeThoughts);
+        if (budget != null) {
+            builder.thinkingBudget(budget);
+        }
+        return builder.build();
+    }
+
+    /** True when the instance opted into surfacing Gemini's thought summary. */
+    boolean isThinkingSurfaced(TurLLMInstance instance) {
+        return isIncludeThoughts(optionsParser.parse(instance.getProviderOptionsJson()));
+    }
+
+    private boolean isIncludeThoughts(Map<String, Object> options) {
+        Object value = options == null ? null : options.get("includeThoughts");
+        return value != null && "true".equalsIgnoreCase(value.toString().trim());
     }
 
     private static boolean hasCapability(List<EnabledCapability> capabilities,

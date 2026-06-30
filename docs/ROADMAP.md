@@ -45,7 +45,7 @@
 - ✅ T495 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 - ⏳ **T496** (deps: T156) **Gemini Batch provider** — **chat batch shipped** (T157/T159 run on Gemini; see [CHANGELOG.md](CHANGELOG.md) Block F.16). Remaining: the **embeddings** batch leg (`TurBatchEmbeddingProvider` via `createEmbeddings`) so T158 re-embedding also runs on Gemini instead of synchronous; and live-API confirmation of the batch JSONL wire format. → §X.19
 - ✅ T497 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
-- 💭 **T498** (deps: T489, T178) **Gemini thinking budget + thought summaries** — `thinkingConfig` (`thinkingBudget`/`includeThoughts`) feeds the T178 "Why this answer" panel; Gemini leg of the cross-vendor F.12. → §X.19
+- ✅ T498 shipped — see [CHANGELOG.md](CHANGELOG.md) Block F.16.
 
 **Innovation bets (Gemini-shape-only):**
 - 💭 **T499** (deps: T489) **Explicit context caching — `TurContextCacheProvider` seam + Gemini impl** — named, TTL'd, reusable `cachedContents` cache the stable prefix (system prompt + persona + pinned grounding) once, reuse across turns/users at ~75% off; no-op default keeps OpenAI automatic. The RAG cost lever. → §X.20

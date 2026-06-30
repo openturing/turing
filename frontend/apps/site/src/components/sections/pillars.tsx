@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Container, SectionHeader } from "@/components/brand";
 import { PILLARS } from "@/lib/site-content";
@@ -47,6 +48,13 @@ export function Pillars() {
                     </span>
                   ))}
                 </div>
+                <a
+                  href={`/features/${p.slug}`}
+                  className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                >
+                  Learn more
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </a>
               </Card>
             );
           })}

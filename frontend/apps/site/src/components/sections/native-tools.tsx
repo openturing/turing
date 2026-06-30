@@ -1,4 +1,6 @@
+import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Container, SectionHeader } from "@/components/brand";
 import { NATIVE_TOOLS } from "@/lib/site-content";
 
@@ -9,7 +11,12 @@ const PROVIDER_COLOR: Record<string, string> = {
   Gemini: "#4285f4",
 };
 
-export function NativeTools() {
+/**
+ * Native provider tools grid.
+ * `teaser` (landing page) appends a CTA into the full "Automate it" page;
+ * omitted (on that page itself) renders the grid without the CTA.
+ */
+export function NativeTools({ teaser = false }: Readonly<{ teaser?: boolean }>) {
   return (
     <section id="native-tools" className="bg-muted/40 py-20">
       <Container>
@@ -49,6 +56,15 @@ export function NativeTools() {
           Strictly opt-in via a two-level capability gate — your existing agents
           stay byte-for-byte unchanged. Provider availability as of 2026.3.
         </p>
+        {teaser && (
+          <div className="mt-8 flex justify-center">
+            <Button asChild size="lg" variant="outline">
+              <a href="/features/automate">
+                See how agents use these <ArrowRight className="size-4" />
+              </a>
+            </Button>
+          </div>
+        )}
       </Container>
     </section>
   );
