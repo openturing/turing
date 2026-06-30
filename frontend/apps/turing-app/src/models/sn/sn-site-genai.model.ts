@@ -95,6 +95,17 @@ export interface TurSNSiteGenAi {
    * unchanged. @since 2026.3.4
    */
   mediaUnderstandingIndexingEnabled?: boolean;
+  /**
+   * T513 / §XXVIII.9 — per-site domain-specialized embedding model override
+   * (`TurEmbeddingModel` id). When set, the public SN hybrid-ranking path
+   * indexes AND queries this site's `sn_<siteId>` vector collection through the
+   * chosen embedder — so a legal site can pick `voyage-law`, a code site
+   * `voyage-code`, etc., while other sites stay on the platform default.
+   * Null/blank falls back to the Global Settings default embedding model.
+   * Switching the model requires clearing + re-indexing the site's collection
+   * (the vector space changes). @since 2026.3.4
+   */
+  embeddingModelId?: string | null;
 }
 
 /**

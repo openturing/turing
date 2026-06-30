@@ -35,6 +35,8 @@ import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
+import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
@@ -54,6 +56,7 @@ const turSNSiteService = new TurSNSiteService();
 const turAIAgentService = new TurAIAgentService();
 const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
+const turEmbeddingModelService = new TurEmbeddingModelService();
 
 const NONE_VALUE = "__none__";
 
@@ -77,6 +80,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     );
     const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
     const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
+    // T513 — embedding models selectable as a per-site domain embedder override.
+    const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [ragCores, setRagCores] = useState<TurRagBm25CoreStatus[]>([]);
     const [isProvisioning, setIsProvisioning] = useState(false);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
@@ -107,6 +112,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
         });
+        turEmbeddingModelService
+            .query()
+            .then((all) => setEmbeddingModels(all.filter((m) => m.enabled === 1)))
+            .catch((err) => console.error("Failed to load embedding models", err));
     }, []);
 
     useEffect(() => {
@@ -126,6 +135,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             // T383 — public SN search ranking mode; LEGACY keeps the historical
             // lexical-only ranking so a pre-T383 binding renders the legacy state.
             snRankingMode: snSite.turSNSiteGenAi?.snRankingMode ?? "LEGACY",
+            // T513 — per-site domain embedding model override; null = platform default.
+            embeddingModelId: snSite.turSNSiteGenAi?.embeddingModelId ?? null,
             // T472 — index-time content-fit signal; off by default so a pre-T472
             // binding renders the disabled state and the indexing path is unchanged.
             contentFitIndexingEnabled: snSite.turSNSiteGenAi?.contentFitIndexingEnabled ?? false,
@@ -847,6 +858,53 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                         {t("forms.snGenai.snRankingRerank")}
                                                     </GradientButton>
                                                 </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T513 / §XXVIII.9 — per-site domain-specialized
+                                    embedding model. When set, this site indexes AND
+                                    queries its vector collection through the chosen
+                                    embedder (e.g. voyage-law / voyage-code / voyage-finance);
+                                    blank falls back to the Global Settings default.
+                                    Only meaningful when a hybrid ranking mode is on. */}
+                                <FormField
+                                    control={form.control}
+                                    name="embeddingModelId"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.domainEmbeddingModel")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.domainEmbeddingModelDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <Select
+                                                    value={field.value ?? NONE_VALUE}
+                                                    onValueChange={(val) =>
+                                                        field.onChange(val === NONE_VALUE ? null : val)
+                                                    }
+                                                    disabled={(form.watch("snRankingMode") ?? "LEGACY") === "LEGACY"}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={t("forms.snGenai.domainEmbeddingModelNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value={NONE_VALUE}>
+                                                            {t("forms.snGenai.domainEmbeddingModelNone")}
+                                                        </SelectItem>
+                                                        {embeddingModels.map((model) => (
+                                                            <SelectItem key={model.id} value={model.id}>
+                                                                {model.modelName}
+                                                                {model.modelReference ? ` (${model.modelReference})` : ""}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>
                                     )}
