@@ -1904,93 +1904,11 @@ seam, not as bespoke providers); don't make any new capability default-on (every
 one is gated); don't let the managed-RAG seam (T520) fork the retrieval core —
 it's an alternative backend, not a rewrite.
 
-## XXIX. Documentation parity & didactic refresh — post-T410 (Block AE)
+## XXIX. Documentation parity & didactic refresh — post-T410 (Block AE) — ✅ SHIPPED
 
-> **Companion to Block AE (T524–T538) in [`ROADMAP.md`](ROADMAP.md).** This is the
-> design rationale for the second documentation round. The first round —
-> **Block U (T411–T423)** — shipped 13 pages but its source plan
-> (`docs-turing/_documentation-update-plan.md`) was scoped to **what shipped
-> through T410**. Since then the product shipped heavily (**T424 → T523**:
-> Blocks W, Y, Z, AA, AD, F.15, F.16, plus the Block N reranker, the Block R
-> manifest/structured-indexing line, and Block M verifiable answers), and a
-> CHANGELOG-vs-`docs-turing` confrontation found **whole subsystems with no page
-> at all**. This block closes that gap **and** adds the "explain it from zero"
-> didactic layer the existing pages never had.
-
-### XXIX.1 Why this round exists — two distinct goals
-
-1. **Parity (nothing lost).** Every shipped, user-facing capability must have a
-   home a reader can reach from the sidebar. A grep of `docs-turing` for the
-   post-T410 feature vocabulary returned **zero** hits for: Bedrock, Voyage,
-   Vertex AI, the generic OpenAI-compatible seam, Gemini's native primitives
-   (Google Search grounding / URL Context / thinking budget / context caching),
-   the capability registry & two-level gate, AG-UI client tools, audience
-   personas / content-fit, second-opinion cross-check, managed-RAG backends,
-   managed rerankers, the Block N reranker itself, the Block R manifest /
-   schema-as-code / hybrid-ranking / field-coverage line, and Block M verifiable
-   answers / citation drift. Two of the busiest pages — `llm-instances.md` and
-   `genai-llm.md` — still say **"six vendor types"** when Block AD took it to
-   twelve.
-2. **Didactics (understand from the beginning).** The house style is example-led
-   and friendly, but most pages assume the reader already knows *why* the feature
-   exists. This round adds a **learning-path spine** (zero → first search →
-   first RAG answer → first agent) and a per-pillar review pass so every page —
-   new *and* old — opens with **what it is + when you'd reach for it**, carries
-   **one from-zero worked example before the reference tables**, and closes with
-   **Related Pages**.
-
-### XXIX.2 House-style + didactic checklist (apply to every page touched)
-
-- Open with **what it is + when you'd reach for it** (2–4 sentences, no jargon dump).
-- A reader who lands cold should understand the **problem the feature solves**
-  before any config table — one plain-language paragraph, then the walkthrough.
-- One **end-to-end walkthrough** with a realistic scenario before the reference.
-- **Admin/operator first, developer second** — console walkthrough above the REST reference.
-- Tables for **fields, endpoints, config keys**; prose for concepts; Mermaid for flows.
-- A **"Related pages"** footer cross-linking siblings (and the learning path).
-- Product naming stays **Viglet Turing ES**. Verify every class / endpoint /
-  config-key / vendor-enum name against the live source tree before publishing.
-- **Mark unshipped ideas as such** — any 💭 task is *not* documented as an
-  available feature. (Note: Block X creative bets **T442–T450 shipped** — see
-  CHANGELOG — so T534 documents them as real opt-in/default-off features, not
-  previews. The earlier "previews only" guidance predated Block X shipping.)
-
-### XXIX.3 Gap summary — shipped (tasks) → action → Block AE task
-
-| Feature cluster | Shipped | Today in docs-turing | Action | Task |
-|---|---|---|---|---|
-| **Reference showcase ("Atlas Store")** — the maximum-surface end-to-end demo | T451–T457 | thin `showcase.md` | Expand into the canonical didactic walkthrough | **T534** |
-
-> Already at parity (no task): `conversion-analytics.md` (Block Z, T458–T463) is
-> complete; the 13 Block U pages exist (they receive only the didactic pass).
-
-### XXIX.4 Didactic layer (the "from-the-beginning" spine)
-
-
-### XXIX.5 Coverage gate (nothing lost) — T538
-
-A **`docs-turing/COVERAGE.md`** matrix (à la the Block Y showcase coverage audit)
-mapping **every CHANGELOG block / shipped feature → its doc page + section
-anchor**, so an orphaned subsystem is a visible red row, not a silent omission.
-This task also: refreshes `docs-turing/_documentation-update-plan.md` from the
-Block U scope to this Block AE scope (or archives it), wires all new pages into
-`sidebars-turing.ts` (Block AD/F.16 provider content under **Run it**;
-`capabilities`/`client-tools` under **Automate it**; `reranking`/`manifest`
-near their retrieval siblings), and sweeps the older blocks (M provenance, Q
-`viglet-core` — internal, no public page; R manifest — folded into T531; S SDK
-parity → `react-sdk.md`/SDK pages) to confirm each is either documented or
-deliberately internal.
-
-### XXIX.6 Suggested execution order
-
-1. **Parity, highest drift first:** T524 (provider rewrite) → T525 (capabilities)
-   → T528 (embeddings) → T529 (RAG) → T530 (reranking).
-2. **Parity, net-new pages:** T531 (manifest) → T532 (client tools) → T526/T527
-   (Gemini + cross-vendor native) → T533 (personas) → T534 (showcase).
-3. **Didactic layer:** T535 (learning path) → T536 / T537 (per-pillar passes).
-4. **Gate:** T538 (coverage matrix + sidebar wiring + orphan sweep) — closes Block AE.
-
-**Non-goals:** don't document 💭 ideas (Block X T442–T450) as shipped features;
-don't duplicate `git log` detail into pages (the CHANGELOG is the index); don't
-re-accrete shipped implementation reports into this section once a task ships —
-move the one-liner to CHANGELOG and delete its row here, exactly as Block U did.
+> **Block AE (T524–T538) shipped 2026-06-30.** Per the founding rule, the detailed
+> design rationale was removed once the block shipped. What shipped is indexed in
+> [`CHANGELOG.md`](CHANGELOG.md) → Block AE; the living coverage gate is
+> `docs-turing/COVERAGE.md` (every shipped block/feature → its doc page, or an
+> explicit "deliberately internal" row). The house-style + didactic checklist that
+> guided the round now lives on, applied, across the `docs-turing` pages themselves.

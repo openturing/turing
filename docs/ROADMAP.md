@@ -104,43 +104,14 @@ instance.)
 with T520, where the `bedrockagentruntime` dependency lives.) **Block AD is now
 fully shipped.**
 
-## Block AE — Documentation parity & didactic refresh (post-T410)
+## Block AE — Documentation parity & didactic refresh (post-T410) — ✅ COMPLETE
 
-> **Second documentation round.** Block U (T411–T423, shipped) brought
-> `docs-turing` to parity with **T410**; the product then shipped **T424 → T523**
-> (Blocks W, Y, Z, AA, AD, F.15, F.16 + the Block N reranker, Block R
-> manifest/structured-indexing, Block M verifiable answers). A CHANGELOG-vs-docs
-> confrontation found whole subsystems with **no page at all** — and `llm-instances.md`
-> still says "six vendor types" when Block AD made it twelve. This block does two
-> things: **(1) parity** — give every shipped capability a sidebar home; **(2) didactics**
-> — a zero→first-agent learning-path spine + a per-pillar review so every page (new
-> *and* old) explains the feature *from the beginning*. Full per-page plan + house-style
-> checklist in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXIX. Work lands in the
-> `vigletdocs.github.io/docs-turing` repo. Rule: verify every class/endpoint/config-key/vendor-enum
-> name against source before publishing; never document 💭 ideas as shipped.
-
-**Phase 1 — provider & retrieval parity (highest drift first):**
-- ✅ **T524** shipped — see CHANGELOG. (Real set is **11** vendors, not 12: `AZURE_OPENAI` was removed in v2026.2.5.0.)
-- ✅ **T525** shipped — see CHANGELOG.
-- ✅ **T528** shipped — see CHANGELOG.
-- ✅ **T529** shipped — see CHANGELOG.
-- ✅ **T530** shipped — see CHANGELOG. (Documented all **7** strategies: LLM / LLM_LOGPROBS / CROSS_ENCODER / COHERE / VOYAGE / BEDROCK / VERTEX_AI.)
-
-**Phase 2 — net-new pages & native exploitation:**
-- ✅ **T531** shipped — see CHANGELOG.
-- ✅ **T532** shipped — see CHANGELOG.
-- ✅ **T526** shipped — see CHANGELOG.
-- ✅ **T527** shipped — see CHANGELOG.
-- ✅ **T533** shipped — see CHANGELOG.
-- ✅ **T534** shipped — see CHANGELOG. (Block X T442–T450 **shipped**, so documented as opt-in/default-off features, not previews — corrected the §XXIX.2 stale note.)
-
-**Phase 3 — didactic "from-the-beginning" layer (new + old pages):**
-- ✅ **T535** shipped — see CHANGELOG.
-- ✅ **T536** shipped — see CHANGELOG.
-- ✅ **T537** shipped — see CHANGELOG.
-
-**Phase 4 — coverage gate (nothing lost):**
-- 📋 **T538** (deps: T524–T537) **Coverage audit + sidebar wiring** — author `docs-turing/COVERAGE.md` (every CHANGELOG block/feature → doc page + anchor; orphan = red row), refresh/retire `_documentation-update-plan.md` to Block AE scope, wire all new pages into `sidebars-turing.ts`, and sweep older blocks (M / Q-internal / R / S) for orphans. Closes Block AE. → §XXIX.5
+> **Shipped (2026-06-30) — T524–T538.** Second documentation round: brought
+> `docs-turing` to parity with everything shipped T424→T523 and added the
+> zero→first-agent didactic layer. All task detail is in
+> [CHANGELOG.md](CHANGELOG.md) → Block AE; the living coverage gate is
+> `docs-turing/COVERAGE.md`. §XXIX design rationale removed on ship, per the
+> founding rule.
 
 ## Non-goals (do NOT add as tasks)
 
