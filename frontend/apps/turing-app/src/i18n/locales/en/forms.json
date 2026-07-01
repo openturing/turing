@@ -10,6 +10,7 @@
       "name": "Name",
       "icon": "Icon",
       "enabled": "Enabled",
+      "disabled": "Disabled",
       "generalInfo": "General Information",
       "status": "Status",
       "advancedOptions": "Advanced Options",
@@ -1412,6 +1413,8 @@
     "persona": {
       "settings": "General information, voice and brand context.",
       "generalDesc": "A descriptive name and toggle for runtime use.",
+      "statusDesc": "Enable or disable this persona.",
+      "enabledDesc": "When disabled, agents referencing this persona fall back to no persona on the next turn.",
       "nameRequired": "A name is required for this persona.",
       "descriptionPlaceholder": "Short summary of who this persona represents.",
       "kind": "Persona kind",

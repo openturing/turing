@@ -10,6 +10,7 @@
       "name": "Nome",
       "icon": "Ícone",
       "enabled": "Habilitado",
+      "disabled": "Desabilitado",
       "generalInfo": "Informações Gerais",
       "status": "Status",
       "advancedOptions": "Opções Avançadas",
@@ -1412,6 +1413,8 @@
     "persona": {
       "settings": "Informações gerais, voz e contexto de marca.",
       "generalDesc": "Um nome descritivo e o status de ativação em runtime.",
+      "statusDesc": "Ative ou desative esta persona.",
+      "enabledDesc": "Quando desativada, agentes que a referenciam voltam a não usar persona no próximo turn.",
       "nameRequired": "É necessário um nome para esta persona.",
       "descriptionPlaceholder": "Resumo curto de quem esta persona representa.",
       "kind": "Tipo de persona",

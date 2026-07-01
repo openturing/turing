@@ -3,6 +3,7 @@
     "title": "Administração",
     "console": "Console de Administração",
     "settings": "Configurações",
+    "genAi": "IA Generativa",
     "users": {
       "title": "Usuários",
       "description": "Gerencie contas de usuário e acesso.",

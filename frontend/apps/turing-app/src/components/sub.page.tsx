@@ -11,6 +11,9 @@ interface NavMainItem {
   url?: string;
   icon?: React.ElementType;
   children?: NavMainItem[];
+  /** When true, the item stays visible while creating a new entity (`isNew`).
+   *  Defaults to the legacy `url === "/detail"` heuristic when omitted. */
+  showOnNew?: boolean;
 }
 
 interface NavCountItem {
@@ -35,9 +38,13 @@ interface Props {
   setOpen?: Dispatch<SetStateAction<boolean>>
   onDelete?: () => void;
   onExport?: () => void;
+  /** Value passed to the nested `<Outlet context={...}>`; child routes read it
+   *  via `useOutletContext()`. Used to share a single form instance across
+   *  section sub-pages (e.g. the LLM instance editor). */
+  outletContext?: unknown;
 }
 
-export const SubPage: React.FC<Props> = (props) => {
+export const SubPage: React.FC<Props> = ({ outletContext, ...props }) => {
   return (
     <div className="w-full px-0 py-0 min-h-[calc(100svh-10.5rem)]">
       <div className="flex min-h-full w-full md:rounded-xl md:border md:bg-sidebar md:shadow-sm">
@@ -51,9 +58,9 @@ export const SubPage: React.FC<Props> = (props) => {
           } as React.CSSProperties}
         >
           <InternalSidebar {...props} />
-          <SidebarInset className="md:mx-1.5 md:rounded-xl md:border bg-background md:shadow-sm">
+          <SidebarInset className="min-w-0 md:mx-1.5 md:rounded-xl md:border bg-background md:shadow-sm">
             <main className="flex flex-1 flex-col pt-1 md:pt-2 max-md:[&_.px-6]:px-2">
-              <Outlet />
+              <Outlet context={outletContext} />
             </main>
           </SidebarInset>
         </SidebarProvider>
