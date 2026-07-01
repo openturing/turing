@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  * citations, live {@code web_fetch} data, and {@code code_execution} analytics
  * into one cited reply.
  *
- * <p>It does two things, both opt-in via {@link TurAIAgent#isLiveAnswersEnabled()}
+ * <p>It does two things, both opt-in via {@link TurAIAgent}'s {@code isLiveAnswersEnabled()}
  * and both no-ops for every existing agent:
  *
  * <ol>

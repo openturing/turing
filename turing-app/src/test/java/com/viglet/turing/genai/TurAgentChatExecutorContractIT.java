@@ -13,9 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.transaction.ConfigurableTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionExecutionListener;
 
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
 import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
@@ -430,47 +427,71 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
         seeded.setVariablesJson("{\"__force_route\":\"lucas\"}");
         stateRepoSpy.save(seeded);
 
-        // Register a TransactionExecutionListener on the production
-        // transaction manager to count afterCommit events. Removed in
-        // finally so it doesn't leak across tests sharing this context.
-        if (!(txManager instanceof ConfigurableTransactionManager configurable)) {
-            org.junit.jupiter.api.Assertions.fail(
-                    "Expected the production PlatformTransactionManager to implement "
-                            + "ConfigurableTransactionManager (Spring 6.2+) so the test can attach a "
-                            + "TransactionExecutionListener. Got: " + txManager.getClass().getName());
-            return;
-        }
-        java.util.concurrent.atomic.AtomicInteger commitCount =
+        // Instrument stateRepository.save() to record the IDENTITY of the
+        // transaction each save runs in. T13's contract is that all in-walk
+        // saves (strategy mutation + persona/switch landing) coalesce into
+        // advance()'s single @Transactional — so every save must observe the
+        // SAME physical transaction.
+        //
+        // Why not count global afterCommit events (the previous approach)?
+        // Read-only read-model loads on the turn path (T487) also open and
+        // commit transactions, so "global commits < saves" broke without any
+        // coalescing regression (it was seeing 4 commits for 3 saves). And
+        // counting distinct transaction *names* wouldn't detect a regression
+        // either: if the boundary reverted, each save would open its own
+        // implicit transaction, all named after the same repository method.
+        // So we tag each distinct *physical* transaction with a UUID bound as
+        // a transaction-scoped resource (unbound on completion) and assert
+        // exactly one tag was minted across all in-walk saves.
+        java.util.Set<String> savingTxIds =
+                java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+        java.util.concurrent.atomic.AtomicInteger savesOutsideTx =
                 new java.util.concurrent.atomic.AtomicInteger();
-        TransactionExecutionListener listener = new TransactionExecutionListener() {
-            @Override
-            public void afterCommit(org.springframework.transaction.TransactionExecution tx, Throwable error) {
-                if (error == null) {
-                    commitCount.incrementAndGet();
-                }
-            }
-        };
-        java.util.Collection<TransactionExecutionListener> originalListeners =
-                new java.util.ArrayList<>(configurable.getTransactionExecutionListeners());
+        Object txTagKey = new Object();
 
-        // Reset spy counter AFTER the seed save and BEFORE the runTurn so
-        // counts reflect just the executor turn. The afterCommit counter
-        // starts at zero by construction; nothing in the test reset path
-        // commits between here and runTurn.
+        // Reset spy counter AFTER the seed save and BEFORE the runTurn so the
+        // capture reflects just the executor turn.
         org.mockito.Mockito.clearInvocations(stateRepoSpy);
-        configurable.addListener(listener);
+        // @MockitoSpyBean on a Spring Data repository is an INTERFACE spy: its
+        // default answer delegates to the real bean (that's why unstubbed
+        // saves persist), but invocation.callRealMethod() can't be used —
+        // save() is abstract on the interface. Route through the spy's
+        // delegating default answer so our side-effect wrapper still persists.
+        org.mockito.stubbing.Answer<?> delegateToRealSave =
+                org.mockito.Mockito.mockingDetails(stateRepoSpy)
+                        .getMockCreationSettings().getDefaultAnswer();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            if (org.springframework.transaction.support.TransactionSynchronizationManager
+                            .isActualTransactionActive()
+                    && org.springframework.transaction.support.TransactionSynchronizationManager
+                            .isSynchronizationActive()) {
+                if (!org.springframework.transaction.support.TransactionSynchronizationManager
+                        .hasResource(txTagKey)) {
+                    String tag = java.util.UUID.randomUUID().toString();
+                    org.springframework.transaction.support.TransactionSynchronizationManager
+                            .bindResource(txTagKey, tag);
+                    savingTxIds.add(tag);
+                    org.springframework.transaction.support.TransactionSynchronizationManager
+                            .registerSynchronization(
+                                    new org.springframework.transaction.support.TransactionSynchronization() {
+                                        @Override
+                                        public void afterCompletion(int status) {
+                                            org.springframework.transaction.support
+                                                    .TransactionSynchronizationManager
+                                                    .unbindResourceIfPossible(txTagKey);
+                                        }
+                                    });
+                }
+            } else {
+                savesOutsideTx.incrementAndGet();
+            }
+            return delegateToRealSave.answer(invocation);
+        }).when(stateRepoSpy).save(org.mockito.ArgumentMatchers.any());
         harness().queueResponse("Qual é o seu objetivo de carreira?");
 
-        try {
-            runTurn(agent, llm,
-                    java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
-                    null, conv, imp.flow().getId());
-        } finally {
-            // Detach: TransactionExecutionListener has no removeListener,
-            // so we restore the original list to leave the manager clean
-            // for sibling tests.
-            configurable.setTransactionExecutionListeners(originalListeners);
-        }
+        runTurn(agent, llm,
+                java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
+                null, conv, imp.flow().getId());
 
         // 1. The strategy save + the in-walk saves (persona-lucas landing
         //    + switch-route landing) must each have hit stateRepository.save —
@@ -479,17 +500,21 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
                 org.mockito.ArgumentCaptor.forClass(
                         com.viglet.turing.persistence.model.agent.TurChatFlowState.class);
         org.mockito.Mockito.verify(stateRepoSpy, org.mockito.Mockito.atLeast(2)).save(captor.capture());
-        int saveCount = captor.getAllValues().size();
 
-        // 2. The COALESCE invariant: total afterCommit count during the
-        //    turn must be STRICTLY LESS than save count. If T13 reverted,
-        //    each save would commit standalone and commitCount == saveCount.
-        org.assertj.core.api.Assertions.assertThat(commitCount.get())
-                .as("Post-T13 @Transactional advance(...) must coalesce in-walk saves into "
-                        + "fewer commits than saves. Got %d saves but %d commits — if these are "
-                        + "equal, the advance() @Transactional boundary regressed.",
-                        saveCount, commitCount.get())
-                .isLessThan(saveCount);
+        // 2. The COALESCE invariant: every in-walk save ran inside a
+        //    transaction (never standalone) AND all of them shared ONE
+        //    physical transaction — advance()'s @Transactional. If T13
+        //    reverted, each save would open its own implicit transaction and
+        //    savingTxIds would hold more than one tag.
+        org.assertj.core.api.Assertions.assertThat(savesOutsideTx.get())
+                .as("Every in-walk save must run inside advance()'s @Transactional, "
+                        + "never in a standalone implicit transaction")
+                .isZero();
+        org.assertj.core.api.Assertions.assertThat(savingTxIds)
+                .as("Post-T13 advance(...) must coalesce all in-walk saves into a SINGLE "
+                        + "physical transaction; got %d distinct saving transactions",
+                        savingTxIds.size())
+                .hasSize(1);
 
         // 3. The final persisted state must reflect the FULL walk — cursor
         //    landed on ai-objetivo (the post-walk interactive node) and
@@ -513,9 +538,6 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
 
     @MockitoSpyBean
     private TurChatFlowStateRepository stateRepoSpy;
-
-    @Autowired
-    private PlatformTransactionManager txManager;
 
     @Autowired
     private org.springframework.context.ApplicationContext applicationContext;

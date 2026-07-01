@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
  * T501 / §X.19 — the <em>index-time</em> leg of native video/audio understanding.
  * Where the T64 VIDEO/AUDIO chat slot turns an uploaded clip into a transcript on
  * demand, this turns an <strong>indexed</strong> media asset into searchable text:
- * when a site opts in ({@link TurSNSiteGenAi#isMediaUnderstandingIndexingEnabled})
+ * when a site opts in ({@link TurSNSiteGenAi}'s {@code isMediaUnderstandingIndexingEnabled()})
  * and its GenAI agent resolves to a Gemini LLM, every document that references a
  * video/audio asset is run through
  * {@link TurGeminiVideoUnderstandingService#understandUrl} as it is indexed, and the

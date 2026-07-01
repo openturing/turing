@@ -25,7 +25,7 @@ package com.viglet.turing.genai.provider.llm;
  * image" works with the same KNN store the text path already uses.
  *
  * <p>Callers should feature-detect with an {@code instanceof} check (or
- * {@link #isMultimodal(Object)}) before calling {@link #embedImage}, because the
+ * {@link #of(Object)}) before calling {@link #embedImage}, because the
  * configured embedding model may be text-only.
  *
  * @author Alexandre Oliveira

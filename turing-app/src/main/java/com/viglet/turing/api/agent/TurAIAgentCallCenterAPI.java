@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * customer utterance to {@code POST …/call-center/assist} to get back a cited
  * answer in the operator's language plus its back-translation for the customer.
  *
- * <p>Strictly opt-in: both endpoints require {@link TurAIAgent#isCallCenterEnabled()}
+ * <p>Strictly opt-in: both endpoints require {@link TurAIAgent}'s {@code isCallCenterEnabled()}
  * (403 otherwise), so existing agents are unaffected. The actual translate →
  * cited-answer → translate-back composition lives in
  * {@link TurCallCenterAssistService}.

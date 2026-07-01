@@ -33,14 +33,20 @@ class TurLLMVendorOnStartupTest {
         turLLMVendorOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurLLMVendor> captor = ArgumentCaptor.forClass(TurLLMVendor.class);
-        verify(turLLMVendorRepository, org.mockito.Mockito.times(5)).save(captor.capture());
+        verify(turLLMVendorRepository, org.mockito.Mockito.times(11)).save(captor.capture());
         List<TurLLMVendor> vendors = captor.getAllValues();
         assertEquals("OPENAI", vendors.get(0).getId());
         assertEquals("OLLAMA", vendors.get(1).getId());
         assertEquals("ANTHROPIC", vendors.get(2).getId());
         assertEquals("GEMINI", vendors.get(3).getId());
         assertEquals("GEMINI_OPENAI", vendors.get(4).getId());
-
+        // Block AD foundation providers (T505-T510, T521).
+        assertEquals("OPENAI_COMPAT", vendors.get(5).getId());
+        assertEquals("BEDROCK", vendors.get(6).getId());
+        assertEquals("VOYAGE", vendors.get(7).getId());
+        assertEquals("COHERE", vendors.get(8).getId());
+        assertEquals("MISTRAL", vendors.get(9).getId());
+        assertEquals("VERTEX_AI", vendors.get(10).getId());
     }
 
     @Test

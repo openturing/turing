@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * integration / MCP-server CRUD.
  *
  * <p>Strictly opt-in: every endpoint requires
- * {@link TurAIAgent#isConnectorSetupEnabled()} (403 otherwise). The catalogue,
+ * {@link TurAIAgent}'s {@code isConnectorSetupEnabled()} (403 otherwise). The catalogue,
  * guided steps, computer-use availability (T136) and the fail-soft connection
  * probe all live in {@link TurConnectorSelfInstallService}.
  *

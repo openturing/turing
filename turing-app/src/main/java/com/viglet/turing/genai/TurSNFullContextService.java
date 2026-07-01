@@ -36,12 +36,12 @@ import lombok.extern.slf4j.Slf4j;
  * store for the entire collection (a high-{@code topK}, zero-threshold search —
  * the existing {@link VectorStore} API, no new "scan-all" plumbing), estimates
  * its size with the canonical {@code chars/4} heuristic
- * ({@link TurTokenBudgetService#estimateTokens(String)}), and engages full-context
+ * ({@link TurTokenBudgetService}'s {@code estimateTokens}), and engages full-context
  * only when it comfortably fits the per-site budget. Otherwise it declines and the
  * caller proceeds on the normal top-K retrieval path (and the T383 ranking mode)
  * unchanged.
  *
- * <p>Strictly opt-in ({@link TurGenAiContext#isFullContextEnabled()}, default off)
+ * <p>Strictly opt-in ({@link TurGenAiContext}'s {@code isFullContextEnabled()}, default off)
  * and <b>fail-open</b>: a probe error, a cap hit, or an over-budget corpus all
  * yield {@link Optional#empty()} so a turn never fails because of this mode.
  *
