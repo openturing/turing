@@ -137,7 +137,7 @@ fully shipped.**
 **Phase 3 — didactic "from-the-beginning" layer (new + old pages):**
 - ✅ **T535** shipped — see CHANGELOG.
 - ✅ **T536** shipped — see CHANGELOG.
-- 📋 **T537** (deps: T535) **Didactic pass — "Automate it" + "Run it" + Developers + Security pillars** — same checklist across the remaining categories. → §XXIX.4
+- ✅ **T537** shipped — see CHANGELOG.
 
 **Phase 4 — coverage gate (nothing lost):**
 - 📋 **T538** (deps: T524–T537) **Coverage audit + sidebar wiring** — author `docs-turing/COVERAGE.md` (every CHANGELOG block/feature → doc page + anchor; orphan = red row), refresh/retire `_documentation-update-plan.md` to Block AE scope, wire all new pages into `sidebars-turing.ts`, and sweep older blocks (M / Q-internal / R / S) for orphans. Closes Block AE. → §XXIX.5

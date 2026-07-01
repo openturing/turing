@@ -1966,8 +1966,6 @@ it's an alternative backend, not a rewrite.
 
 ### XXIX.4 Didactic layer (the "from-the-beginning" spine)
 
-- **T537 — Didactic pass, "Automate it" + "Run it" + Developers + Security
-  pillars.** Same checklist across the remaining categories.
 
 ### XXIX.5 Coverage gate (nothing lost) — T538
 
