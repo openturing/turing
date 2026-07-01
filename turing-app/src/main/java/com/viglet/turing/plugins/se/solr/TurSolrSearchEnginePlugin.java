@@ -202,6 +202,11 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return TurSolrUtils.existsField(effective(seInstance), indexName, fieldName);
     }
 
+    @Override
+    public void reconcileMultiValued(TurSEInstance seInstance, String indexName, String fieldName) {
+        TurSolrUtils.reconcileMultiValued(effective(seInstance), indexName, fieldName);
+    }
+
     // ---- Document operations ---------------------------------------------
 
     @Override

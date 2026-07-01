@@ -106,6 +106,107 @@ class TurSNProcessQueueTest {
     }
 
     @Test
+    void testReceiveIndexingQueue_ReconcilesMultiValuedFieldInSolr() {
+        TurSNJobAttributeSpec spec = new TurSNJobAttributeSpec();
+        spec.setName("dateOfClassesText");
+
+        TurSNJobItems jobItems = new TurSNJobItems();
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(List.of(spec));
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, "1");
+        item.setAttributes(attrs);
+        jobItems.add(item);
+
+        TurSEInstance seInstance = new TurSEInstance();
+        seInstance.setId("se1");
+        TurSNSite site = new TurSNSite();
+        site.setId("site1-id");
+        site.setName("site1");
+        site.setTurSEInstance(seInstance);
+
+        TurSNSiteField field = TurSNSiteField.builder()
+                .name("dateOfClassesText").type(TurSEFieldType.STRING).multiValued(1).build();
+        TurSNSiteLocale locale = new TurSNSiteLocale();
+        locale.setCore("site1_en");
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenReturn(attrs);
+        when(turSNSiteFieldExtRepository.existsByTurSNSiteAndName(site, "dateOfClassesText"))
+                .thenReturn(true);
+        when(turSNSiteFieldRepository.findByTurSNSite(site)).thenReturn(List.of(field));
+        when(turSNSiteLocaleRepository.findByTurSNSite(site)).thenReturn(List.of(locale));
+        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.receiveIndexingQueue(jobItems);
+
+        // The multiValued Turing field is reconciled in the search engine WITHOUT
+        // changing its type (TurSolrUtils.reconcileMultiValued preserves the Solr type).
+        verify(plugin).reconcileMultiValued(seInstance, "site1_en", "dateOfClassesText");
+    }
+
+    @Test
+    void testReceiveIndexingQueue_PromotesNonConcatenableFieldToMultiValued() {
+        TurSNJobItems jobItems = new TurSNJobItems();
+        TurSNJobItem item = new TurSNJobItem();
+        item.setTurSNJobAction(TurSNJobAction.CREATE);
+        item.setSiteNames(Collections.singletonList("site1"));
+        item.setLocale(Locale.US);
+        item.setSpecs(new ArrayList<>());
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put(TurSNFieldName.ID, "1");
+        attrs.put("endOfClasses", List.of("2026-04-24T06:00:00Z", "2026-04-12T06:00:00Z",
+                "2026-04-30T06:00:00Z"));
+        item.setAttributes(attrs);
+        jobItems.add(item);
+
+        TurSEInstance seInstance = new TurSEInstance();
+        seInstance.setId("se1");
+        TurSNSite site = new TurSNSite();
+        site.setId("site1-id");
+        site.setName("site1");
+        site.setTurSEInstance(seInstance);
+
+        TurSNSiteField endOfClasses = TurSNSiteField.builder()
+                .name("endOfClasses").type(TurSEFieldType.DATE).multiValued(0).build();
+        TurSNSiteLocale locale = new TurSNSiteLocale();
+        locale.setCore("site1_en");
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
+                .thenReturn(attrs);
+        when(turSNSiteFieldRepository.findByTurSNSite(site)).thenReturn(List.of(endOfClasses));
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(Collections.emptyList());
+        when(turSNSiteLocaleRepository.findByTurSNSite(site)).thenReturn(List.of(locale));
+        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
+
+        processQueue.receiveIndexingQueue(jobItems);
+
+        // DATE field carrying multiple values is promoted to multiValued (Turing) and reconciled
+        // (type-preserving) in the engine, instead of being concatenated into an invalid value.
+        org.mockito.ArgumentCaptor<TurSNSiteField> captor =
+                org.mockito.ArgumentCaptor.forClass(TurSNSiteField.class);
+        verify(turSNSiteFieldRepository).save(captor.capture());
+        assertEquals(1, captor.getValue().getMultiValued());
+        verify(plugin).reconcileMultiValued(seInstance, "site1_en", "endOfClasses");
+    }
+
+    @Test
     void testReceiveIndexingQueue_Delete() {
         TurSNJobItems jobItems = new TurSNJobItems();
         TurSNJobItem item = new TurSNJobItem();

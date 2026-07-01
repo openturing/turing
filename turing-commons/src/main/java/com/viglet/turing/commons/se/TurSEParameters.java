@@ -29,6 +29,7 @@ public class TurSEParameters implements Serializable {
     private Set<String> allowedFacets;
     private Set<String> addedFacets;
     private Set<String> removedFacets;
+    private String facetProfile;
 
     public TurSEParameters(TurSNSearchParams turSNSearchParams) {
         this(turSNSearchParams, null);
@@ -49,6 +50,7 @@ public class TurSEParameters implements Serializable {
         this.group = turSNSearchParams.getGroup();
         this.autoCorrectionDisabled = turSNSearchParams.getNfpr();
         this.fieldList = turSNSearchParams.getFl();
+        this.facetProfile = turSNSearchParams.getFacetProfile();
         this.turSNSitePostParamsBean = gTurSNSitePostParamsBean;
         overrideFromPost(gTurSNSitePostParamsBean);
     }
@@ -63,6 +65,7 @@ public class TurSEParameters implements Serializable {
         setCurrentPage(Optional.ofNullable(postParamsBean.getPage()).orElse(currentPage));
         setQuery(Optional.ofNullable(postParamsBean.getQuery()).orElse(query));
         setFieldList(Optional.ofNullable(postParamsBean.getFieldList()).orElse(fieldList));
+        setFacetProfile(Optional.ofNullable(postParamsBean.getFacetProfile()).orElse(facetProfile));
 
         if (turSNFilterParams == null) {
             return;

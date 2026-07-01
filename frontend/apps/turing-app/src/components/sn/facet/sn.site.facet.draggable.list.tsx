@@ -97,9 +97,11 @@ interface SNSiteFacetDraggableListProps {
     tableData: TurSNSiteFacetOrdering[];
     setTableData: React.Dispatch<React.SetStateAction<TurSNSiteFacetOrdering[]>>;
     children?: React.ReactNode;
+    /** Persists the reordered facets. Defaults to the site's default profile ordering. */
+    onSaveOrder?: (items: TurSNSiteFacetOrdering[]) => Promise<unknown>;
 }
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
-export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children }) => {
+export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children, onSaveOrder }) => {
     const { t } = useTranslation();
 
     const sensors = useSensors(useSensor(PointerSensor));
@@ -120,7 +122,11 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
             setTableData(reorderedItems);
 
             try {
-                await turSNFacetedFieldService.saveOrdering(siteId, reorderedItems);
+                if (onSaveOrder) {
+                    await onSaveOrder(reorderedItems);
+                } else {
+                    await turSNFacetedFieldService.saveOrdering(siteId, reorderedItems);
+                }
                 toast.success(t("forms.facetDraggable.orderSaved"));
             } catch (error) {
                 console.error('Failed to save facet ordering', error);

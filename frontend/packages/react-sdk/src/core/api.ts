@@ -29,6 +29,8 @@ export interface SearchParams {
   group?: string;
   /** Number of results per page */
   rows?: string;
+  /** Facet ordering profile name (falls back to the site's default profile when unset/unknown) */
+  facetProfile?: string;
 }
 
 function buildQueryString(params: SearchParams): string {
@@ -45,6 +47,7 @@ function buildQueryString(params: SearchParams): string {
   if (params.nfpr) qs.append("nfpr", params.nfpr);
   if (params.group) qs.append("group", params.group);
   if (params.rows) qs.append("rows", params.rows);
+  if (params.facetProfile) qs.append("facetProfile", params.facetProfile);
 
   return qs.toString().replaceAll("%5B%5D", "[]");
 }
@@ -768,5 +771,6 @@ export function parseHrefToParams(href: string): SearchParams {
     nfpr: usp.get("nfpr") || undefined,
     group: usp.get("group") || undefined,
     rows: usp.get("rows") || undefined,
+    facetProfile: usp.get("facetProfile") || undefined,
   };
 }

@@ -64,7 +64,31 @@
       "deleted": "A Faceta Personalizada {{name}} foi excluída",
       "notDeleted": "A Faceta Personalizada {{name}} não foi excluída",
       "deletionError": "Erro ao excluir",
-      "failedDelete": "Falha ao excluir: {{message}}"
+      "failedDelete": "Falha ao excluir: {{message}}",
+      "profile": {
+        "label": "Perfil de ordenação",
+        "select": "Selecione um perfil",
+        "default": "Padrão",
+        "new": "Novo perfil",
+        "rename": "Renomear",
+        "delete": "Excluir perfil",
+        "setDefault": "Definir como padrão",
+        "namePlaceholder": "Nome do perfil",
+        "descriptionPlaceholder": "Descrição (opcional)",
+        "createTitle": "Novo perfil de ordenação",
+        "editTitle": "Renomear perfil",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "created": "Perfil \"{{name}}\" criado",
+        "updated": "Perfil atualizado",
+        "removed": "Perfil excluído",
+        "defaultSet": "Perfil padrão atualizado",
+        "confirmDelete": "Excluir o perfil \"{{name}}\"?",
+        "cannotDeleteDefault": "O perfil padrão não pode ser excluído",
+        "loadError": "Erro ao carregar perfis",
+        "saveError": "Não foi possível salvar o perfil",
+        "deleteError": "Não foi possível excluir o perfil"
+      }
     },
     "customSort": {
       "title": "Ordenação Personalizada",

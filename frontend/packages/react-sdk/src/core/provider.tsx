@@ -27,6 +27,7 @@ function urlToSearchParams(
     nfpr: url.get("nfpr") || undefined,
     group: url.get("group") || undefined,
     rows: url.get("rows") || undefined,
+    facetProfile: url.get("facetProfile") || undefined,
   };
 }
 
@@ -41,6 +42,7 @@ function searchParamsToUrl(params: SearchParams): string {
   if (params.nfpr) url.set("nfpr", params.nfpr);
   if (params.group) url.set("group", params.group);
   if (params.rows) url.set("rows", params.rows);
+  if (params.facetProfile) url.set("facetProfile", params.facetProfile);
   return url.toString().replaceAll("%5B%5D", "[]");
 }
 

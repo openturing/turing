@@ -64,7 +64,31 @@
       "deleted": "The {{name}} Custom Facet was deleted",
       "notDeleted": "The {{name}} Custom Facet was not deleted",
       "deletionError": "Form deletion error",
-      "failedDelete": "Failed to delete: {{message}}"
+      "failedDelete": "Failed to delete: {{message}}",
+      "profile": {
+        "label": "Ordering profile",
+        "select": "Select a profile",
+        "default": "Default",
+        "new": "New profile",
+        "rename": "Rename",
+        "delete": "Delete profile",
+        "setDefault": "Set as default",
+        "namePlaceholder": "Profile name",
+        "descriptionPlaceholder": "Description (optional)",
+        "createTitle": "New ordering profile",
+        "editTitle": "Rename profile",
+        "save": "Save",
+        "cancel": "Cancel",
+        "created": "Profile \"{{name}}\" created",
+        "updated": "Profile updated",
+        "removed": "Profile deleted",
+        "defaultSet": "Default profile updated",
+        "confirmDelete": "Delete the profile \"{{name}}\"?",
+        "cannotDeleteDefault": "The default profile cannot be deleted",
+        "loadError": "Error loading profiles",
+        "saveError": "Could not save the profile",
+        "deleteError": "Could not delete the profile"
+      }
     },
     "customSort": {
       "title": "Custom Sort",

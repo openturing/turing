@@ -323,7 +323,9 @@ public class TurSolrResultProcessor {
                 if (facetResults.isEmpty()) {
                         return;
                 }
-                turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId()).ifPresent(fields -> {
+                var turSEParameters = queryContext.getTurSEParameters();
+                String facetProfile = turSEParameters != null ? turSEParameters.getFacetProfile() : null;
+                turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId(), facetProfile).ifPresent(fields -> {
                         Map<String, Integer> positionByName = fields.stream()
                                         .filter(f -> f.getFacetPosition() != null)
                                         .collect(Collectors.toMap(

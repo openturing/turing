@@ -1,0 +1,114 @@
+databaseChangeLog:
+  # Facet ordering profiles (spec 001-perfis-ordenacao-facetas).
+  # A site can keep several named facet orderings; the default profile ("Geral")
+  # is seeded at runtime by TurSNSiteFacetProfileOnStartup from the legacy
+  # facetPosition columns. Only DDL lives here (ids are app-assigned UUIDs).
+
+  - changeSet:
+      id: v2026.2.7.8-create-sn-site-facet-profile-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_facet_profile
+      changes:
+        - createTable:
+            tableName: sn_site_facet_profile
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: default_profile
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: sn_site_facet_profile
+            columnNames: id
+            constraintName: pk_sn_site_facet_profile
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_facet_profile
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_sn_site_facet_profile_site
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: sn_site_facet_profile
+            columnNames: sn_site_id, name
+            constraintName: uq_sn_site_facet_profile_site_name
+
+  - changeSet:
+      id: v2026.2.7.8-create-sn-site-facet-profile-item-table
+      author: arthur-nascimento
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_facet_profile_item
+      changes:
+        - createTable:
+            tableName: sn_site_facet_profile_item
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: facet_profile_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: field_ext_id
+                  type: VARCHAR(255)
+              - column:
+                  name: custom_facet_id
+                  type: VARCHAR(255)
+              - column:
+                  name: facet_position
+                  type: INT
+        - addPrimaryKey:
+            tableName: sn_site_facet_profile_item
+            columnNames: id
+            constraintName: pk_sn_site_facet_profile_item
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_facet_profile_item
+            baseColumnNames: facet_profile_id
+            referencedTableName: sn_site_facet_profile
+            referencedColumnNames: id
+            constraintName: fk_sn_facet_profile_item_profile
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_facet_profile_item
+            baseColumnNames: field_ext_id
+            referencedTableName: sn_site_field_ext
+            referencedColumnNames: id
+            constraintName: fk_sn_facet_profile_item_field_ext
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_facet_profile_item
+            baseColumnNames: custom_facet_id
+            referencedTableName: sn_site_custom_facet
+            referencedColumnNames: id
+            constraintName: fk_sn_facet_profile_item_custom_facet
+            onDelete: CASCADE

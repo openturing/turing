@@ -58,6 +58,7 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressio
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreVendorRepository;
+import com.viglet.turing.sn.facet.TurSNSiteFacetProfileService;
 
 @ExtendWith(MockitoExtension.class)
 class TurSNSiteImportTest {
@@ -98,6 +99,8 @@ class TurSNSiteImportTest {
         private CacheManager cacheManager;
         @Mock
         private Cache cache;
+        @Mock
+        private TurSNSiteFacetProfileService turSNSiteFacetProfileService;
 
         @InjectMocks
         private TurSNSiteImport turSNSiteImport;
@@ -421,6 +424,8 @@ class TurSNSiteImportTest {
                 verify(turSNRankingExpressionRepository).save(any(TurSNRankingExpression.class));
                 verify(turSNRankingConditionRepository).save(any(TurSNRankingCondition.class));
                 verify(turSNSiteMergeProvidersRepository).save(any(TurSNSiteMergeProviders.class));
+                // Imported facets must land in the default "Geral" ordering profile.
+                verify(turSNSiteFacetProfileService).ensureDefaultProfile(any(TurSNSite.class));
         }
 
         @Test

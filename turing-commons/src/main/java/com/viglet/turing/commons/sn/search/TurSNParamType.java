@@ -18,5 +18,6 @@ public class TurSNParamType {
 	public static final String LOCALE = "_setlocale";
 	public static final String FIELD_LIST = "fl";
 	public static final String AUTO_CORRECTION_DISABLED = "nfpr";
+	public static final String FACET_PROFILE = "facetProfile";
 
 }
