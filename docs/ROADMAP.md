@@ -113,6 +113,29 @@ fully shipped.**
 > `docs-turing/COVERAGE.md`. §XXIX design rationale removed on ship, per the
 > founding rule.
 
+## Block AF — Domain layer: bounded completion, stop-criteria & enforcement
+
+> A hexagonal (ports & adapters) migration was started at 2026.2.6: ~50
+> annotation-free `*Domain` records + 39 `*RepositoryPort` interfaces + 39
+> MapStruct adapters that delegate to the existing JPA repositories. It is a
+> **read-only pilot** (~18 app files consume ports; ~333 still use JPA repos
+> directly; write paths untouched) with **no ADR**. **Decision: do NOT take it
+> to 100%.** The hexagonal "swap the persistence" payoff is near-zero for this
+> product; the real, bankable value is the *immutable, lazy-proxy-free,
+> cacheable read model* — which pays off only on the hot/cached/cross-aggregate
+> read paths we've already been burned on (the EAGER 200ms→5s incident; the
+> "never cache a JPA entity" rule, Block AC / T486–T488). This block finishes
+> that valuable slice, prunes the ceremony a 100% migration would have created,
+> and makes the boundary self-enforcing. Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXX.
+
+- 📋 **T540** (deps: —) **Benchmark the double-mapping cost on the hot path** — measure entity→MapStruct→record vs. direct entity / projection query on the search + chat/RAG read paths. Decides with numbers whether ports belong on hot paths or whether those callers should get a projection DTO instead. Feeds T541's boundary. → §XXX.1
+- 📋 **T541** (deps: T540) **ADR + stop-criteria for the domain layer** — the decision doc (the layer has none). Codifies the boundary: domain records for hot read paths / cache values / cross-aggregate reads / LazyInit-prone reads; JPA repository stays for admin/CRUD and **all** writes; ports stay read-only by design. Records the explicit "not 100%" decision + the criterion for when a new aggregate earns a domain record. Land the rule in `agents.md` + memory. → §XXX.2
+- 📋 **T542** (deps: T541) **Finish the valuable slice** — migrate the remaining hot read paths (search / chat / RAG) and cache read-models to domain records/ports per the T541 boundary, so the "keep" set is actually complete and consistent (no half-migrated hot path). → §XXX.3
+- 📋 **T543** (deps: T541) **Prune the speculative scaffolding** — remove ports+adapters+mappers+records generated "scaffolding only" for pure admin-CRUD aggregates that never touch a hot path, a cache, or a LazyInit risk. Kills the two-sources-of-truth ceremony a 100% migration would have made permanent. (Dead scaffolding with zero consumers is removed opportunistically ahead of this task; T543 is the systematic pass against the T541 boundary.) → §XXX.4
+- 📋 **T544** (deps: T541) **Close the write-path question** — confirm ports stay read-only; admin/CRUD writes stay on the JPA repo + `@Transactional` + `LEFT JOIN FETCH` (per T488). Rewrite the "future slices will introduce save / delete" Javadoc on the surviving ports to state the final decision, so the layer stops reading as "in progress forever". → §XXX.5
+- 📋 **T545** (deps: T541, T542, T543) **Enforcement convention test** (`TurDomainLayerConventionsTest`) — following the `TurCacheAnnotationConventionsTest` pattern: assert `*Domain` records carry no JPA/Hibernate/Jackson annotations; the designated hot-path packages depend on ports, not JPA repositories; every surviving port has exactly one adapter + mapper. Makes the boundary self-policing so it can't silently drift back toward 100%. → §XXX.6
+- 💭 **T546** (deps: T541) **Collapse port+adapter → mapper-only where the interface is pure ceremony** — for aggregates that will only ever have a single JPA adapter, evaluate dropping the `*RepositoryPort` interface and returning records straight from a mapper-backed reader. Keeps ~90% of the benefit (immutability/caching) without the interface boilerplate the port adds when there's no second implementation and no mocking need. → §XXX.7
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

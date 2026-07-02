@@ -30,7 +30,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
 
 import jakarta.persistence.CascadeType;
@@ -62,7 +62,7 @@ public class TurSNRankingExpression extends TurAuditable<String> implements Seri
 
 	@Setter
 	@Id
-	@TurAssignableUuidGenerator
+	@VigletAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

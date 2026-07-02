@@ -23,7 +23,7 @@ package com.viglet.turing.persistence.model.se;
 import java.io.Serial;
 import java.io.Serializable;
 
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.core.tenancy.VigletTenantOwnedInfra;
 
 import jakarta.persistence.Column;
@@ -48,7 +48,7 @@ public class TurSEInstance implements Serializable, VigletTenantOwnedInfra {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@TurAssignableUuidGenerator
+	@VigletAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

@@ -1912,3 +1912,117 @@ it's an alternative backend, not a rewrite.
 > `docs-turing/COVERAGE.md` (every shipped block/feature → its doc page, or an
 > explicit "deliberately internal" row). The house-style + didactic checklist that
 > guided the round now lives on, applied, across the `docs-turing` pages themselves.
+
+## XXX. Domain layer — bounded completion, stop-criteria & enforcement (Block AF)
+
+**Context.** A hexagonal (ports & adapters) migration was started at 2026.2.6,
+all authored solo. Three coordinated pieces exist under
+`com.viglet.turing.domain.*` and `com.viglet.turing.persistence.adapter.*`:
+
+- **~50 `*Domain` records** — immutable, free of JPA/Hibernate/Jackson
+  annotations, referencing neighbouring aggregates **by ID** (not by object).
+- **39 `*RepositoryPort` interfaces** — what application services depend on.
+- **39 adapters + 39 MapStruct mappers** — `@Component` adapters that delegate
+  to the *existing* JPA repositories and map entity → record.
+
+State on entry: a **read-only pilot**. ~18 app/API files consume ports;
+**~333 files still use the JPA repositories directly**; write paths are
+untouched; several ports were committed "scaffolding only"; there is **no ADR**.
+~39 of 68 entities have a port (~57%).
+
+**The decision: do not take this to 100%.** The reasoning:
+
+1. **The hexagonal anchor benefit is a fantasy here.** "Swap JPA for another
+   persistence" has near-zero probability for this product. Paying the
+   permanent abstraction tax across 68 entities (~270 scaffolding files +
+   migrating ~333 call sites) buys insurance we will never claim.
+2. **The easy 20% was done; the hard 80% wasn't.** Read-only ports are trivial.
+   Writes — save/delete, transactional consistency, cascade, optimistic
+   locking, and the `apiKey`/`credential` secret crypto (`TurSecretCryptoService`)
+   — are where hexagonal actually hurts, and none of it is started.
+3. **Half-migrated is the worst state.** With 18 files on ports and 333 on
+   repos, every contributor must know which pattern applies where. A migration
+   frozen mid-flight, with no written stop-criteria, is worse than either
+   extreme.
+
+**Where the layer genuinely pays off (the "keep" set).** The value is not
+"swap the database" — it's the **immutable, lazy-proxy-free, cacheable read
+model**, which attacks the exact incidents already on record:
+
+- The **EAGER 200ms→5s** search incident (`TurSNSite → TurSNSiteGenAi →
+  TurAIAgent → 4 @ManyToMany`): a domain record referencing neighbours **by ID**
+  structurally cannot trigger that cascade.
+- The **"never cache a JPA entity, cache a DTO"** rule (Block AC / T486–T488):
+  domain records *are* the safe cacheable value.
+- `LazyInitializationException` outside a transaction: a proxy-free record is
+  safe to return, cache, and pass anywhere.
+
+So the layer earns its keep exactly where the project was already obliged to
+build a DTO — hot read paths (search, chat/RAG), cache values, and
+cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
+`agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
+
+### XXX.1 Benchmark the double-mapping cost (T540)
+
+Every migrated read now runs entity → MapStruct → record. On search/chat that
+is extra allocation per request. Measure it against the direct-entity path and
+against a projection query that builds the record without loading the full
+entity. Output = the numbers that decide whether ports go *on* the hot path or
+whether those specific callers should get a projection DTO instead. Cheap,
+gates the rest of the block.
+
+### XXX.2 ADR + stop-criteria (T541)
+
+The layer's one real smell is that a bet this size has no written rationale —
+it lives only in class Javadoc and "scaffolding only" commit messages. Write
+the ADR. It fixes the boundary: **domain records** for hot read paths / cache
+values / cross-aggregate reads / LazyInit-prone reads; **JPA repository** for
+admin/CRUD and all writes; **ports stay read-only by design**. It states the
+explicit "not 100%" decision and the single criterion a *new* aggregate must
+meet to earn a domain record ("is it read on a hot/cached/cross-aggregate path,
+or exposed where a lazy proxy would escape its session?"). Land the rule in
+`agents.md` so it guides future work, and in memory.
+
+### XXX.3 Finish the valuable slice (T542)
+
+Complete the migration of the hot read paths (search / chat / RAG) and the
+cache read-models to records/ports, so the "keep" set is actually consistent —
+no hot path left half on entities, half on records. This is finishing, not
+expanding: scope is bounded by the T541 boundary, not by "all 68 entities".
+
+### XXX.4 Prune the speculative scaffolding (T543)
+
+Remove the ports+adapters+mappers+records generated for pure admin-CRUD
+aggregates that never touch a hot path, a cache, or a LazyInit risk — the
+ceremony a 100% migration would have made permanent, and the source of the
+two-sources-of-truth confusion. Dead scaffolding (a port with **zero**
+consumers outside its own adapter) is unambiguously safe and is removed
+opportunistically ahead of this task; T543 is the systematic pass that applies
+the boundary to the ports that *do* have a consumer but shouldn't (admin-only).
+
+### XXX.5 Close the write-path question (T544)
+
+The Javadoc on every port promises "future slices will introduce save /
+delete". That promise is the decision to reverse: writes stay on the JPA repo +
+`@Transactional` + `LEFT JOIN FETCH` (per T488), because a write path gains
+nothing from an immutable read record and everything from a managed, dirty-
+checked entity. Rewrite that Javadoc to state the final decision so the layer
+stops advertising itself as perpetually in-progress.
+
+### XXX.6 Enforcement convention test (T545)
+
+Follow the `TurCacheAnnotationConventionsTest` / `TurLiquibaseChangelogAgnosticTest`
+precedent: a build-failing convention test that asserts `*Domain` records carry
+no JPA/Hibernate/Jackson annotations, the designated hot-path packages depend
+on ports (not JPA repositories), and every surviving port has exactly one
+adapter + mapper. This is what makes "bounded" durable — without it the layer
+silently drifts back toward the 100% it was told not to reach.
+
+### XXX.7 Collapse the port where it is pure ceremony (T546, 💭)
+
+Even within the keep set, the `*RepositoryPort` interface only pays for itself
+when there will be a second implementation or a mocking need. For an aggregate
+with a single permanent JPA adapter, the interface is redeclaring the repo at a
+cost. Evaluate dropping it and returning records straight from a mapper-backed
+reader — ~90% of the benefit (immutable, cacheable records) without the
+boilerplate. Left as an idea pending the T540 numbers and the T542/T543 shape.

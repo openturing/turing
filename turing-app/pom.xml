@@ -209,6 +209,10 @@
             <artifactId>viglet-core-manifest</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-jpa</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
             <exclusions>
