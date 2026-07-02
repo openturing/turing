@@ -4,19 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Viglet Turing ES — Agentic Enterprise Search</title>
-    <meta
-      name="description"
-      content="Open-source Enterprise Search Intelligence Platform. Bring AI agents, tools, skills, MCP and RAG to your enterprise content — semantic navigation, generative AI and advanced search in one platform."
-    />
+    <meta name="description" content="Open-source Enterprise Search Intelligence Platform. Bring AI agents, tools, skills, MCP and RAG to your enterprise content — semantic navigation, generative AI and advanced search in one platform." />
     <meta name="theme-color" content="#4169E1" />
     <meta property="og:title" content="Viglet Turing ES — Agentic Enterprise Search" />
-    <meta
-      property="og:description"
-      content="Bring AI agents, tools, skills, MCP and RAG to your enterprise content. Open source, Apache 2.0."
-    />
+    <meta property="og:description" content="Bring AI agents, tools, skills, MCP and RAG to your enterprise content. Open source, Apache 2.0." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://turing.viglet.org/" />
+    <link rel="canonical" href="https://turing.viglet.org/" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- anti-FOUC: apply the stored theme class before first paint (prerendered HTML paints before the bundle) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("turing-site-theme") || "system";
+          var dark =
+            t === "dark" ||
+            (t === "system" &&
+              globalThis.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {
+          /* storage blocked — fall back to default (light) theme */
+        }
+      })();
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

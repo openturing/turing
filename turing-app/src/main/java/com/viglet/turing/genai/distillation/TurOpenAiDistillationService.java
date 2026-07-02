@@ -75,6 +75,7 @@ public class TurOpenAiDistillationService {
     private final TurDistillationJobRepository jobRepository;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurAgentEvalRunnerService evalRunnerService;
+    private final TurDistillationProposalService proposalService;
 
     public TurOpenAiDistillationService(TurNativeProviderClient nativeClient,
             TurGenAiLlmProviderFactory providerFactory,
@@ -83,7 +84,8 @@ public class TurOpenAiDistillationService {
             TurLLMInstanceRepository llmInstanceRepository,
             TurDistillationJobRepository jobRepository,
             TurGlobalSettingsService globalSettingsService,
-            TurAgentEvalRunnerService evalRunnerService) {
+            TurAgentEvalRunnerService evalRunnerService,
+            TurDistillationProposalService proposalService) {
         this.nativeClient = nativeClient;
         this.providerFactory = providerFactory;
         this.configProperties = configProperties;
@@ -92,6 +94,7 @@ public class TurOpenAiDistillationService {
         this.jobRepository = jobRepository;
         this.globalSettingsService = globalSettingsService;
         this.evalRunnerService = evalRunnerService;
+        this.proposalService = proposalService;
     }
 
     /** Outcome of a distill request: the job when started, or a reason when not. */
@@ -108,6 +111,21 @@ public class TurOpenAiDistillationService {
      * API surfaces (started + job, or not-started + reason).
      */
     public DistillResult distill(String agentId) {
+        return distill(agentId, false);
+    }
+
+    /**
+     * T191 / §X.15.e — overnight "propose-only" distillation. Identical export +
+     * fine-tune submission as {@link #distill(String)}, but the resulting job is
+     * marked {@code proposeOnly}: when its eval gate later beats the baseline the
+     * candidate is surfaced as a {@code TurAgentSuggestion} for human approval
+     * instead of being swapped in automatically.
+     */
+    public DistillResult distillForReview(String agentId) {
+        return distill(agentId, true);
+    }
+
+    private DistillResult distill(String agentId, boolean proposeOnly) {
         if (!configProperties.getDistillation().isEnabled()) {
             return DistillResult.notStarted("Distillation tier disabled (turing.distillation.enabled)");
         }
@@ -145,9 +163,10 @@ public class TurOpenAiDistillationService {
             job.setFineTuneJobId(jobId);
             job.setExampleCount((int) usable);
             job.setState(TurDistillationState.RUNNING);
+            job.setProposeOnly(proposeOnly);
             job = jobRepository.save(job);
-            log.info("[Distill] agent '{}' submitted fine-tune job '{}' over {} example(s) (base '{}')",
-                    agentId, jobId, usable, baseModel);
+            log.info("[Distill] agent '{}' submitted fine-tune job '{}' over {} example(s) (base '{}'{})",
+                    agentId, jobId, usable, baseModel, proposeOnly ? ", propose-only" : "");
             return new DistillResult(true, null, job);
         } catch (RuntimeException e) {
             log.warn("[Distill] agent '{}' distillation failed: {}", agentId, e.getMessage());
@@ -210,6 +229,15 @@ public class TurOpenAiDistillationService {
         String originalModel = instance.getModelName();
         job.setOriginalModel(originalModel);
         job.setFineTunedModel(fineTunedModel);
+
+        // T191 / §X.15.e — overnight propose-only: score baseline + candidate,
+        // ALWAYS revert, and open a suggestion when the candidate wins. Never
+        // auto-applies, so it's safe to run unattended every night.
+        if (job.isProposeOnly()) {
+            handleProposeOnly(job, instance, originalModel, fineTunedModel);
+            return;
+        }
+
         instance.setModelName(fineTunedModel);
         llmInstanceRepository.save(instance);
 
@@ -226,6 +254,46 @@ public class TurOpenAiDistillationService {
             job.setErrorMessage("Eval gate did not pass on the fine-tuned candidate — model reverted");
             log.info("[Distill] job {} eval FAILED — reverted instance '{}' model to '{}'",
                     job.getId(), instance.getId(), originalModel);
+        }
+        job.setCompletedAt(Instant.now());
+        jobRepository.save(job);
+    }
+
+    /**
+     * T191 / §X.15.e — the propose-only success path. Score the incumbent
+     * (baseline) and the candidate, then ALWAYS revert to the incumbent — the
+     * overnight run never applies a model. When the candidate beat the baseline
+     * (and passed the gate), open a {@code TurAgentSuggestion} for human approval
+     * ({@link TurDistillationState#PROPOSED}); otherwise mark it EVAL_FAILED.
+     */
+    private void handleProposeOnly(TurDistillationJob job, TurLLMInstance instance,
+            String originalModel, String fineTunedModel) {
+        // Baseline: the incumbent model is still set on the instance.
+        TurAgentEvalReportDto baselineReport = evalRunnerService.runAgent(job.getAgentId());
+        double baseline = baselineReport == null ? 0.0 : baselineReport.score();
+
+        // Candidate: swap in, score, then revert unconditionally.
+        instance.setModelName(fineTunedModel);
+        llmInstanceRepository.save(instance);
+        TurAgentEvalReportDto candidateReport = evalRunnerService.runAgent(job.getAgentId());
+        instance.setModelName(originalModel);
+        llmInstanceRepository.save(instance);
+
+        double candidateScore = candidateReport == null ? 0.0 : candidateReport.score();
+        boolean wins = candidateReport != null && candidateReport.passed()
+                && candidateScore > baseline;
+        if (wins) {
+            proposalService.createProposal(job.getAgentId(), originalModel, fineTunedModel,
+                    baseline, candidateScore, job.getExampleCount(), System.currentTimeMillis());
+            job.setState(TurDistillationState.PROPOSED);
+            log.info("[Distill] job {} propose-only candidate WON ({} > {}) — suggestion opened, "
+                    + "model NOT applied", job.getId(), candidateScore, baseline);
+        } else {
+            job.setState(TurDistillationState.EVAL_FAILED);
+            job.setErrorMessage("Candidate did not beat baseline (candidate " + candidateScore
+                    + " vs baseline " + baseline + ") — not proposed");
+            log.info("[Distill] job {} propose-only candidate did NOT beat baseline ({} vs {})",
+                    job.getId(), candidateScore, baseline);
         }
         job.setCompletedAt(Instant.now());
         jobRepository.save(job);

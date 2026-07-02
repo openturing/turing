@@ -13,6 +13,7 @@ export type TurAIAgentSlotType =
   | "TEXT"
   | "IMAGE"
   | "AUDIO"
+  | "VIDEO"
   | "FILE";
 
 export const TUR_AI_AGENT_SLOT_TYPES: TurAIAgentSlotType[] = [
@@ -23,15 +24,17 @@ export const TUR_AI_AGENT_SLOT_TYPES: TurAIAgentSlotType[] = [
   "TEXT",
   "IMAGE",
   "AUDIO",
+  "VIDEO",
   "FILE",
 ];
 
 /**
  * Multi-modal slot types (T64) hold a URL to a binary in object storage
  * rather than an inline scalar value. The chat-flow editor / UI treats them
- * differently (upload widget, image preview) from scalar slots.
+ * differently (upload widget, image preview) from scalar slots. {@code VIDEO}
+ * (T501) additionally supports native Gemini video understanding on upload.
  */
-export const TUR_MULTI_MODAL_SLOT_TYPES: TurAIAgentSlotType[] = ["IMAGE", "AUDIO", "FILE"];
+export const TUR_MULTI_MODAL_SLOT_TYPES: TurAIAgentSlotType[] = ["IMAGE", "AUDIO", "VIDEO", "FILE"];
 
 export function isMultiModalSlotType(type: TurAIAgentSlotType): boolean {
   return TUR_MULTI_MODAL_SLOT_TYPES.includes(type);

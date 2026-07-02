@@ -203,6 +203,71 @@ public class TurAIAgent implements Serializable {
     private boolean actionWidgetEnabled = false;
 
     /**
+     * T187 / §X.15.a — per-agent opt-in for "Live answers" hybrid mode. When
+     * {@code true} on a native OpenAI/Anthropic turn, the executor fuses four
+     * information sources into ONE answer: (a) the indexed knowledge base (top-K
+     * SN/RAG passages injected as grounding context, the leg the OpenAI Responses
+     * path otherwise lacks), (b) {@code web_search} citations, (c) live data via
+     * {@code web_fetch}, and (d) computed analytics via {@code code_execution}.
+     * It is a composition layer over the two-level capability gate: it injects the
+     * knowledge-base grounding + a fusion-guidance prompt ({@code prompts/live-answers.md})
+     * and instructs the model to weave whichever of its admin-selected native tools
+     * are relevant into a single cited reply — it does NOT force-enable a capability
+     * the instance doesn't support. To avoid double-grounding it skips the grounding
+     * block when the Anthropic citations / native-PDF document path is already
+     * attaching passages. Default {@code false} keeps existing agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "live_answers_enabled", nullable = false)
+    private boolean liveAnswersEnabled = false;
+
+    /**
+     * T189 / §X.15.c — per-agent opt-in for "Call-center augmentation". When
+     * {@code true}, the {@code /call-center/assist} endpoint is enabled for this
+     * agent: an operator's transcribed customer utterance is translated into the
+     * operator's working language (T150), answered with citations from the
+     * customer's index (T248 cited RAG), and the answer is translated back into
+     * the customer's language so the operator can relay it. Pure composition of
+     * shipped services; default {@code false} keeps the endpoint closed (403) for
+     * existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "call_center_enabled", nullable = false)
+    private boolean callCenterEnabled = false;
+
+    /**
+     * T190 / §X.15.d — per-agent opt-in for "self-installing connectors". When
+     * {@code true}, the {@code /connector} endpoints are enabled for this agent so
+     * it can walk a customer through connecting a third-party system ("connect my
+     * Notion"): surface the vendor's token-generation steps and TEST the supplied
+     * credential before it is saved/enabled through the existing integration /
+     * MCP-server CRUD. When a real computer-use driver (T136) is deployed the
+     * steps can be driven in a browser; with the no-op default it degrades to
+     * guided instructions + the connection probe. Default {@code false} keeps the
+     * endpoints closed (403) for existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "connector_setup_enabled", nullable = false)
+    private boolean connectorSetupEnabled = false;
+
+    /**
+     * T191 / §X.15.e — per-agent opt-in for "self-improvement overnight". When
+     * {@code true} (and the distillation tier is enabled), a nightly job distills
+     * the agent's recent production traffic (T167 stored completions) into a
+     * fine-tuned candidate, scores it against the agent's eval golden sets, and —
+     * only if it beats the incumbent — opens a {@code DISTILLATION_CANDIDATE}
+     * suggestion for human approval (never auto-applied). Default {@code false}
+     * keeps existing agents out of the nightly loop.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "overnight_improvement_enabled", nullable = false)
+    private boolean overnightImprovementEnabled = false;
+
+    /**
      * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
      * (the allowlist for {@code delegate_to_agent}). Only consulted when
      * {@link #agentHandoffEnabled}. Null/blank = no delegation.

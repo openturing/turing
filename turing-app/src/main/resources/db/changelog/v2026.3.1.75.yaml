@@ -1,0 +1,59 @@
+databaseChangeLog:
+  # T500 / §X.19 — full-context (retrieval-free) answering config on sn_site_genai.
+  #
+  # Two opt-in columns gate the mode that grounds an answer over the WHOLE corpus
+  # instead of top-K retrieval, for small sites on a large-window model (Gemini):
+  #   fullContextAnsweringEnabled — master switch (default false ⇒ answering path
+  #                                 unchanged; the normal top-K + T383 ranking runs).
+  #   fullContextTokenBudget      — max estimated corpus tokens (chars/4) that still
+  #                                 qualify; above it the site falls back to top-K.
+  #                                 Default 800000 ⇒ comfortably inside Gemini's 1M
+  #                                 window with headroom for prompt + history + answer.
+  #
+  # camelCase per the project's literal JPA naming convention; idempotent via
+  # columnExists + onFail:MARK_RAN.
+  - changeSet:
+      id: v2026.3.1.75-add-sn-site-genai-fullContextAnsweringEnabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: fullContextAnsweringEnabled
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: fullContextAnsweringEnabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T500/§X.19 opt-in for full-context (retrieval-free) answering on small sites."
+
+  - changeSet:
+      id: v2026.3.1.75-add-sn-site-genai-fullContextTokenBudget
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: fullContextTokenBudget
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: fullContextTokenBudget
+                  type: int
+                  defaultValueNumeric: 800000
+                  constraints:
+                    nullable: false
+                  remarks: "T500/§X.19 max estimated corpus tokens (chars/4) that still qualify for full-context."

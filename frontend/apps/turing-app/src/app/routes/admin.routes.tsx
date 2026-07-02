@@ -11,6 +11,7 @@ const AdminRolesListPage = lazy(() => import("../console/admin-settings/admin.ro
 const AdminUserPage = lazy(() => import("../console/admin-settings/admin.user.page"))
 const AdminUsersListPage = lazy(() => import("../console/admin-settings/admin.users.list.page"))
 const GlobalSettingsPage = lazy(() => import("../console/system/global-settings.page"))
+const GenAiSettingsPage = lazy(() => import("../console/system/genai-settings.page"))
 const SystemInfoPage = lazy(() => import("../console/system/system-info.page"))
 const TokenInstanceListPage = lazy(() => import("../console/token/token.instance.list.page"))
 const TokenInstancePage = lazy(() => import("../console/token/token.instance.page"))
@@ -23,7 +24,7 @@ const LoggingIndexingPage = lazy(() => import("../console/logging/instance/loggi
 export const AdminRoutes = (
     <Route path={ROUTES.ADMIN_ROOT} element={<AdminSettingsRootPage />}>
         <Route element={<AdminSettingsPage />}>
-            <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/users`} replace />} />
+            <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/settings`} replace />} />
             <Route path="users" element={<AdminUsersListPage />} />
             <Route path="users/:username" element={<AdminUserPage />} />
             <Route path="groups" element={<AdminGroupsListPage />} />
@@ -33,6 +34,7 @@ export const AdminRoutes = (
             <Route path="tokens" element={<TokenInstanceListPage />} />
             <Route path="tokens/:id" element={<TokenInstancePage />} />
             <Route path="settings" element={<GlobalSettingsPage />} />
+            <Route path="genai" element={<GenAiSettingsPage />} />
             <Route path="system-info" element={<SystemInfoPage />} />
             <Route path="import" element={<ExchangeImportSubPage />} />
             <Route path="logging" element={<LoggingInstanceSubPage />} />

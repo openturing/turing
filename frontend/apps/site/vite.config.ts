@@ -13,4 +13,10 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom"],
   },
+  // The SSR prerender (scripts/prerender.mjs) bundles the workspace SDK rather
+  // than externalizing it, so `node` doesn't have to resolve a linked ESM-only
+  // package at prerender time.
+  ssr: {
+    noExternal: ["@viglet/turing-sdk"],
+  },
 });

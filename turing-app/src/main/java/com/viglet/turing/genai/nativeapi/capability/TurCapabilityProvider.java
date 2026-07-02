@@ -29,6 +29,7 @@ public enum TurCapabilityProvider {
     TURING,
     OPENAI,
     ANTHROPIC,
+    GEMINI,
     ANY;
 
     /**
@@ -43,6 +44,7 @@ public enum TurCapabilityProvider {
         return switch (pluginType.trim().toLowerCase(Locale.ROOT)) {
             case "openai" -> OPENAI;
             case "anthropic" -> ANTHROPIC;
+            case "gemini" -> GEMINI;
             case "turing" -> TURING;
             default -> ANY;
         };

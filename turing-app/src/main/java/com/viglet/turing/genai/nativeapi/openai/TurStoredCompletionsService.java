@@ -31,7 +31,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
  * <p>When the agent opts in, every Responses turn is persisted on OpenAI's side,
  * tagged with the metadata so the T168 Evals run and the T169 distillation
  * export can later slice the stored traffic by agent / conversation /
- * experiment. Strictly opt-in: {@code null}/absent/false → {@link #DISABLED},
+ * experiment. Strictly opt-in: {@code null}/absent/false → {@link StoredCompletionsDirective#DISABLED},
  * the Responses builder leaves {@code store}/{@code metadata} unset and the turn
  * is byte-for-byte unchanged.
  *

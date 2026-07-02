@@ -38,8 +38,21 @@
       "page": "p.",
       "open": "Open source"
     },
+    "searchSuggestions": {
+      "heading": "Google Search"
+    },
     "reasoning": {
       "heading": "Why this answer"
+    },
+    "grounding": {
+      "ungrounded": "Not grounded in sources",
+      "flagged": "Flagged by guardrail",
+      "tooltip": "Answer-grounding guardrail verdict"
+    },
+    "secondOpinion": {
+      "agree": "Second opinion agrees",
+      "disagree": "Second opinion disagrees",
+      "tooltip": "A different-vendor model reviewed this answer"
     },
     "tools": {
       "heading": "Tools",

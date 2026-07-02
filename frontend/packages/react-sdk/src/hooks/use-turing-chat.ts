@@ -723,10 +723,22 @@ export function useTuringChat(
         const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
         const finalCitations =
           res?.citations && res.citations.length > 0 ? res.citations : undefined;
+        // T490 — Gemini google_search Search Suggestion chips, when present.
+        const finalSearchSuggestions =
+          res?.searchSuggestions &&
+          (res.searchSuggestions.renderedContent ||
+            (res.searchSuggestions.queries?.length ?? 0) > 0)
+            ? res.searchSuggestions
+            : undefined;
         // T178 — the OpenAI reasoning summary ("Why this answer"), when present.
         const finalReasoning =
           res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined;
         const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
+        // T516 — the answer-grounding guardrail verdict, when the guardrail
+        // flagged the answer (clean answers emit no event → undefined).
+        const finalGrounding = res?.grounding ?? undefined;
+        // T522 — the cross-vendor second-opinion verdict, when enabled.
+        const finalSecondOpinion = res?.secondOpinion ?? undefined;
         patchAssistant(assistantId, (m) => ({
           ...m,
           content: aggregatedContent || m.content,
@@ -734,8 +746,11 @@ export function useTuringChat(
           form: finalForm,
           sources: finalSources,
           citations: finalCitations,
+          searchSuggestions: finalSearchSuggestions,
           reasoning: finalReasoning,
           toolCalls: finalToolCalls ?? m.toolCalls,
+          grounding: finalGrounding,
+          secondOpinion: finalSecondOpinion,
         }));
         setActiveForm(finalForm ?? null);
         setStatus("success");

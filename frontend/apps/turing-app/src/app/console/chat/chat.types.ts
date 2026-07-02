@@ -1,8 +1,11 @@
 import type {
   TurChatCitation,
   TurChatConversationMessage,
+  TurChatGrounding,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatToolCall,
+  TurSearchSuggestions,
   ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 
@@ -46,6 +49,14 @@ export interface ChatMessage extends TurChatConversationMessage {
    */
   citations?: TurChatCitation[]
   /**
+   * Google Search Suggestion chips behind the assistant answer (T490). When
+   * present (a Gemini turn used the `google_search` grounding tool), the
+   * message list renders the Google-mandated chips below the bubble.
+   *
+   * @since 2026.3.4
+   */
+  searchSuggestions?: TurSearchSuggestions
+  /**
    * Live tool-call activity behind the assistant answer (T436/T437). When
    * present (agent has `toolCallEventsEnabled`), the message list renders the
    * running/finished tools above the bubble via {@code TuringToolActivity}.
@@ -62,6 +73,22 @@ export interface ChatMessage extends TurChatConversationMessage {
    * @since 2026.3.4
    */
   reasoning?: string
+  /**
+   * Answer-grounding guardrail verdict behind the assistant answer (T516).
+   * When present (the guardrail is enabled and flagged the answer), the message
+   * list renders a confidence badge beside the bubble.
+   *
+   * @since 2026.3.6
+   */
+  grounding?: TurChatGrounding
+  /**
+   * Cross-vendor "second opinion" verdict behind the assistant answer (T522).
+   * When present (the check is enabled), the message list renders an
+   * agrees/disagrees confidence badge beside the bubble.
+   *
+   * @since 2026.3.6
+   */
+  secondOpinion?: TurChatSecondOpinion
 }
 
 export const generateId = () => crypto.randomUUID()
@@ -80,8 +107,11 @@ export function toTuringMessages(msgs: ChatMessage[]): TuringChatMessage[] {
     options: m.suggestedOptions,
     sources: m.sources,
     citations: m.citations,
+    searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
+    grounding: m.grounding,
+    secondOpinion: m.secondOpinion,
   }))
 }
 
@@ -94,8 +124,11 @@ export function toAdminMessages(msgs: TuringChatMessage[]): ChatMessage[] {
     suggestedOptions: m.options,
     sources: m.sources,
     citations: m.citations,
+    searchSuggestions: m.searchSuggestions,
     toolCalls: m.toolCalls,
     reasoning: m.reasoning,
+    grounding: m.grounding,
+    secondOpinion: m.secondOpinion,
   }))
 }
 

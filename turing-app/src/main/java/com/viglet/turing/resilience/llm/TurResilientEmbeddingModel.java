@@ -21,6 +21,10 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
+import java.util.List;
+
+import com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel;
+import com.viglet.turing.genai.provider.llm.TurMultimodalEmbeddingModel;
 import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.resilience.TurResilienceExecutor;
@@ -33,10 +37,16 @@ import com.viglet.turing.resilience.TurResilienceRegistry.Kind;
  * internally to {@code embed(Document)} and {@code call(EmbeddingRequest)}, both
  * of which we override here, so the resilience pipeline applies transitively.
  *
+ * <p>T511 / §XXVIII.7 — when the wrapped delegate is a
+ * {@link TurMultimodalEmbeddingModel}, this wrapper transparently exposes the
+ * image side too (and applies the same resilience pipeline to it), so the
+ * multimodal capability is not hidden by the resilience boundary.
+ *
  * @author Alexandre Oliveira
  * @since 2026.2.6
  */
-public class TurResilientEmbeddingModel implements EmbeddingModel {
+public class TurResilientEmbeddingModel
+        implements EmbeddingModel, TurMultimodalEmbeddingModel, TurContextualEmbeddingModel {
 
     private final EmbeddingModel delegate;
     private final TurResilienceExecutor executor;
@@ -66,5 +76,41 @@ public class TurResilientEmbeddingModel implements EmbeddingModel {
     @Override
     public int dimensions() {
         return delegate.dimensions();
+    }
+
+    // --- T511 multimodal pass-through --------------------------------------
+
+    @Override
+    public boolean supportsImageEmbedding() {
+        return TurMultimodalEmbeddingModel.of(delegate) != null;
+    }
+
+    @Override
+    public float[] embedImage(byte[] imageBytes, String mimeType) {
+        TurMultimodalEmbeddingModel multimodal = TurMultimodalEmbeddingModel.of(delegate);
+        if (multimodal == null) {
+            throw new UnsupportedOperationException(
+                    "Embedding provider '" + providerType + "' does not support image embedding");
+        }
+        return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
+                () -> executor.execute(Kind.LLM, providerType, () -> multimodal.embedImage(imageBytes, mimeType)));
+    }
+
+    // --- T512 contextual chunk pass-through --------------------------------
+
+    @Override
+    public boolean supportsContextualChunks() {
+        return TurContextualEmbeddingModel.of(delegate) != null;
+    }
+
+    @Override
+    public List<float[]> embedDocumentChunks(List<String> chunks) {
+        TurContextualEmbeddingModel contextual = TurContextualEmbeddingModel.of(delegate);
+        if (contextual == null) {
+            throw new UnsupportedOperationException(
+                    "Embedding provider '" + providerType + "' does not support contextualized chunk embedding");
+        }
+        return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
+                () -> executor.execute(Kind.LLM, providerType, () -> contextual.embedDocumentChunks(chunks)));
     }
 }

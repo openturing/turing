@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T190 / §X.15.d — self-installing enterprise connectors: per-agent opt-in flag
+  # that enables the /connector catalog/guide/test endpoints. Default off keeps
+  # them closed for existing agents. Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.73-add-ai_agent-connector_setup_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: connector_setup_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: connector_setup_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: connector_setup_enabled
+                  valueBoolean: false
+            where: connector_setup_enabled IS NULL

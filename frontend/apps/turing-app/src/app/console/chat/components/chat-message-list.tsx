@@ -193,6 +193,51 @@ function SourceChips({ message }: Readonly<{ message: ChatMessage }>) {
 }
 
 /**
+ * T490 / §X.19 — Google Search Suggestion chips for a Gemini `google_search`
+ * grounded answer. Google's terms of service **require** rendering these chips
+ * whenever the grounded answer is shown; `renderedContent` is a self-contained
+ * HTML/CSS fragment returned by the API and rendered verbatim. When the API
+ * omits the rendered fragment we fall back to plain query chips.
+ */
+function SearchSuggestions({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const suggestions = message.searchSuggestions
+  if (!suggestions) return null
+  const rendered = suggestions.renderedContent?.trim()
+  const queries = suggestions.queries ?? []
+  if (!rendered && queries.length === 0) return null
+  return (
+    <div className="not-prose mt-3 border-t border-border/60 pt-2">
+      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+        {t("chat.searchSuggestions.heading")}
+      </div>
+      {rendered ? (
+        // Google-mandated chips: a self-contained HTML/CSS fragment rendered as-is.
+        // eslint-disable-next-line react/no-danger
+        <div
+          className="overflow-x-auto"
+          dangerouslySetInnerHTML={{ __html: rendered }}
+        />
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {queries.map((q: string) => (
+            <a
+              key={q}
+              href={`https://www.google.com/search?q=${encodeURIComponent(q)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-muted hover:border-border/80"
+            >
+              {q}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
  * Admin skin over the shared headless {@code TuringToolActivity} (T437). Renders
  * the agent's live tool calls (running → done/failed) above the answer when the
  * agent has `toolCallEventsEnabled`. The `data-status` attribute drives row
@@ -264,6 +309,89 @@ function ReasoningPanel({ message }: Readonly<{ message: ChatMessage }>) {
           <TuringMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</TuringMarkdown>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/**
+ * T516 / §XXVIII.12 — the answer-grounding guardrail verdict badge. Present only
+ * when the guardrail is enabled and flagged the answer (ungrounded / unsafe /
+ * PII); a clean answer emits no `"grounding"` event so this renders nothing.
+ * Surfaced as a compact amber/red chip beside the bubble, with the grounding
+ * score and flagged categories.
+ */
+function GroundingBadge({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const grounding = message.grounding
+  if (!grounding) return null
+  const ungrounded = grounding.grounded === false
+  const tone = ungrounded
+    ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+    : "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+  const label = ungrounded
+    ? t("chat.grounding.ungrounded", { defaultValue: "Not grounded in sources" })
+    : t("chat.grounding.flagged", { defaultValue: "Flagged by guardrail" })
+  const score =
+    typeof grounding.groundingScore === "number"
+      ? ` · ${Math.round(grounding.groundingScore * 100)}%`
+      : ""
+  const categories = (grounding.categories ?? []).filter((c: string) => c !== "ungrounded")
+  return (
+    <div
+      className={`not-prose mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${tone}`}
+      title={t("chat.grounding.tooltip", {
+        defaultValue: "Answer-grounding guardrail verdict",
+      })}
+    >
+      <IconAlertTriangle className="size-3.5 shrink-0" />
+      <span className="font-medium">
+        {label}
+        {score}
+      </span>
+      {categories.length > 0 ? (
+        <span className="opacity-80">({categories.join(", ")})</span>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * T522 / §XXVIII.18 — the cross-vendor "second opinion" badge. Present only when
+ * the check is enabled and a different-vendor critic returned a verdict. A green
+ * "agrees" chip or an amber "disagrees" chip (with the critic's reason), plus the
+ * critic vendor and optional confidence.
+ */
+function SecondOpinionBadge({ message }: Readonly<{ message: ChatMessage }>) {
+  const { t } = useTranslation()
+  const opinion = message.secondOpinion
+  if (!opinion) return null
+  const agree = opinion.agree === true
+  const tone = agree
+    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+    : "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+  const label = agree
+    ? t("chat.secondOpinion.agree", { defaultValue: "Second opinion agrees" })
+    : t("chat.secondOpinion.disagree", { defaultValue: "Second opinion disagrees" })
+  const vendor = opinion.criticVendor ? ` · ${opinion.criticVendor}` : ""
+  const confidence =
+    typeof opinion.confidence === "number" ? ` · ${Math.round(opinion.confidence * 100)}%` : ""
+  return (
+    <div
+      className={`not-prose mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${tone}`}
+      title={opinion.rationale ?? t("chat.secondOpinion.tooltip", {
+        defaultValue: "A different-vendor model reviewed this answer",
+      })}
+    >
+      {agree ? (
+        <IconThumbUp className="size-3.5 shrink-0" />
+      ) : (
+        <IconAlertTriangle className="size-3.5 shrink-0" />
+      )}
+      <span className="font-medium">
+        {label}
+        {vendor}
+        {confidence}
+      </span>
     </div>
   )
 }
@@ -376,6 +504,9 @@ function AssistantBody({
         ? <CitedAssistantContent message={message} />
         : <AssistantContent content={message.content} />}
       <SourceChips message={message} />
+      <GroundingBadge message={message} />
+      <SecondOpinionBadge message={message} />
+      <SearchSuggestions message={message} />
       <ReasoningPanel message={message} />
       {(onFeedback || onRephrase) && message.content ? (
         <div className="not-prose mt-2 flex items-center gap-1">

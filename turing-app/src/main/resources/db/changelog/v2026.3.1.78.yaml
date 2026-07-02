@@ -1,0 +1,37 @@
+databaseChangeLog:
+  # --- T506 / §XXVIII.2: AWS Bedrock LLM vendor ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent: skipped if
+  # the table is empty (fresh install) or the row already exists.
+  - changeSet:
+      id: v2026.3.1.78-01-add-bedrock-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'BEDROCK'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: BEDROCK
+              - column:
+                  name: description
+                  value: "AWS Bedrock — Claude/Llama/Mistral/Nova/Titan on one IAM-authenticated gateway"
+              - column:
+                  name: plugin
+                  value: bedrock
+              - column:
+                  name: title
+                  value: "AWS Bedrock"
+              - column:
+                  name: website
+                  value: "https://aws.amazon.com/bedrock"

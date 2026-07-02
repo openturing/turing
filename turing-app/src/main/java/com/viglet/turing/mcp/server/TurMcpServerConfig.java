@@ -69,7 +69,8 @@ public class TurMcpServerConfig {
      * bean and converts its callbacks into MCP tool specifications.
      */
     @Bean
-    ToolCallbackProvider turingMcpToolCallbackProvider(TurMcpSearchToolService searchToolService,
+    ToolCallbackProvider turingMcpToolCallbackProvider(TurMcpBackboneToolService backboneToolService,
+            TurMcpSearchToolService searchToolService,
             TurMcpRagToolService ragToolService,
             TurMcpAgentToolService agentToolService,
             TurMcpAnalyticsToolService analyticsToolService,
@@ -77,11 +78,13 @@ public class TurMcpServerConfig {
             TurToolCallbackPipeline toolCallbackPipeline,
             TurMcpToolScopePolicy toolScopePolicy,
             TurConfigProperties configProperties) {
+        // T188 — describe_backbone is the discovery entry point, always first.
         // Read tools are always published; the T253 write/ingestion tools are
         // added ONLY when the operator opts in (and still require the write
         // scope per call via TurMcpToolScopePolicy).
         java.util.List<Object> toolObjects = new java.util.ArrayList<>(
-                java.util.List.of(searchToolService, ragToolService, agentToolService, analyticsToolService));
+                java.util.List.of(backboneToolService, searchToolService, ragToolService,
+                        agentToolService, analyticsToolService));
         if (configProperties.getMcpServer().isWriteEnabled()) {
             toolObjects.add(writeToolService);
             log.info("[MCP] Write/ingestion tools ENABLED (require the {} scope)",

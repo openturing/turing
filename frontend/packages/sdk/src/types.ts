@@ -249,9 +249,71 @@ export interface TurChatStreamEvent {
     | "form"
     | "sources"
     | "citations"
+    | "searchSuggestions"
     | "reasoning"
     | "tool_call"
-    | "client_tool_call";
+    | "client_tool_call"
+    | "grounding"
+    | "secondOpinion";
+}
+
+/**
+ * T522 / §XXVIII.18 — the multi-provider "second opinion" verdict carried by the
+ * `"secondOpinion"` SSE event, emitted only when the cross-check is enabled. A
+ * cheap model from a DIFFERENT vendor critiqued the answer; the chat UI renders
+ * an "agrees / disagrees" confidence badge beside the bubble. Mirrors the backend
+ * `TurSecondOpinion`.
+ */
+export interface TurChatSecondOpinion {
+  /** `true` when the cross-vendor critic judged the answer accurate + supported. */
+  agree: boolean;
+  /** Optional calibrated confidence in `[0,1]`, when available. */
+  confidence?: number | null;
+  /** The critic's one-line reason (for the hover/tooltip). */
+  rationale?: string | null;
+  /** The critic model name. */
+  criticModel?: string | null;
+  /** The critic's vendor/plugin type (always different from the answerer's). */
+  criticVendor?: string | null;
+}
+
+/**
+ * T516 / §XXVIII.12 — the answer-grounding guardrail verdict carried by the
+ * `"grounding"` SSE event, emitted only when the guardrail is enabled and
+ * flagged something. Mirrors the backend `TurAnswerGuardrailVerdict`. The chat
+ * UI renders a confidence badge beside the answer (e.g. "⚠ not grounded" or a
+ * flagged-category chip); a clean answer emits no event at all.
+ */
+export interface TurChatGrounding {
+  /** `false` when the answer is not supported by the retrieved context. */
+  grounded: boolean;
+  /** Contextual-grounding confidence in `[0,1]`, when assessed. */
+  groundingScore?: number | null;
+  /** Answer↔query relevance confidence in `[0,1]`, when assessed. */
+  relevanceScore?: number | null;
+  /** Recommended action: `"PASS"`, `"FLAG"`, or `"BLOCK"`. */
+  action: "PASS" | "FLAG" | "BLOCK";
+  /** Flagged content/PII categories (e.g. `"ungrounded"`, `"pii:EMAIL"`). */
+  categories: string[];
+  /** Masked answer variant when the guardrail redacted PII, else null. */
+  redactedAnswer?: string | null;
+  /** Which guardrail backend produced this verdict. */
+  strategy: "NONE" | "BEDROCK" | "OPENAI_MODERATION" | "MISTRAL_MODERATION";
+}
+
+/**
+ * T490 / §X.19 — Google Search Suggestion chips carried by the
+ * `"searchSuggestions"` SSE event, emitted when a Gemini turn used the
+ * `google_search` grounding tool. Google's terms of service **require**
+ * rendering these chips whenever a grounded answer is shown; the headless UI
+ * renders `renderedContent` (a self-contained HTML/CSS fragment) verbatim.
+ * Mirrors the backend `TurGeminiGroundingDecoder.SearchSuggestions` record.
+ */
+export interface TurSearchSuggestions {
+  /** Self-contained HTML/CSS fragment for the Google-mandated chips (render as-is). */
+  renderedContent?: string | null;
+  /** The web-search queries the model ran (a textual fallback / debug aid). */
+  queries?: string[];
 }
 
 /**
@@ -398,6 +460,12 @@ export interface TurChatConversationResponse {
   /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
   citations?: TurChatCitation[];
   /**
+   * T490 / §X.19 — Google Search Suggestion chips for a Gemini `google_search`
+   * grounded answer, if any. Google's ToS require rendering these whenever the
+   * grounded answer is shown.
+   */
+  searchSuggestions?: TurSearchSuggestions;
+  /**
    * T178 / §X.13.a — the OpenAI reasoning model's summary of how it reached the
    * answer (the `"reasoning"` SSE event), if the agent opted into the
    * `reasoning-summary` request option. The UI renders it as the collapsible
@@ -416,6 +484,19 @@ export interface TurChatConversationResponse {
    * runs the registered handler and resumes via `/v2/chat/client-tool-result`.
    */
   clientToolCall?: TurClientToolCall;
+  /**
+   * T516 / §XXVIII.12 — the answer-grounding guardrail verdict, present only
+   * when the guardrail is enabled and flagged the answer (ungrounded / unsafe /
+   * PII). The UI renders a confidence badge beside the answer; a clean answer
+   * leaves this undefined.
+   */
+  grounding?: TurChatGrounding;
+  /**
+   * T522 / §XXVIII.18 — the cross-vendor "second opinion" verdict, present only
+   * when the check is enabled and produced a signal. The UI renders an
+   * agrees/disagrees confidence badge beside the answer.
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

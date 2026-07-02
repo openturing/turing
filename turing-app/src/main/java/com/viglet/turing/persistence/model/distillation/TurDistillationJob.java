@@ -100,6 +100,15 @@ public class TurDistillationJob implements Serializable {
     @Column(name = "errorMessage", length = 1024)
     private String errorMessage;
 
+    /**
+     * T191 / §X.15.e — when true this is an overnight "propose-only" run: on a
+     * passing eval gate the candidate is surfaced as a {@code TurAgentSuggestion}
+     * for human approval and the model is NOT applied. Default false = the legacy
+     * T169 auto-swap behaviour.
+     */
+    @Column(name = "proposeOnly", nullable = false)
+    private boolean proposeOnly = false;
+
     @Column(name = "createdAt", nullable = false)
     private Instant createdAt = Instant.now();
 

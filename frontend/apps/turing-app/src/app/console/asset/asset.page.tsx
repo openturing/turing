@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const"
 import { LoadProvider } from "@/components/loading-provider"
-import { SubPageHeader } from "@/components/sub.page.header"
+import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -205,9 +205,9 @@ export default function AssetPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={assets} error={error} tryAgainUrl={ROUTES.ASSET_ROOT}>
-      <SubPageHeader icon={IconFolder} feature="Assets" name="Assets" description="Manage files stored in MinIO." />
+      <PageHeader turIcon={IconFolder} title="Assets" />
 
-      <div className="px-4 lg:px-6 space-y-4">
+      <div className="px-4 lg:px-6 space-y-4 pt-4">
         {/* Toolbar */}
         <div className="flex items-center gap-3">
           <input ref={fileInputRef} type="file" multiple className="hidden" title="Upload files" onChange={(e) => handleUpload(e.target.files)} />

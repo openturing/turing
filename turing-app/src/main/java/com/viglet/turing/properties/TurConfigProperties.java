@@ -27,5 +27,6 @@ public class TurConfigProperties {
 	private TurBatchProperty batch = new TurBatchProperty();
 	private TurEvalsProperty evals = new TurEvalsProperty();
 	private TurDistillationProperty distillation = new TurDistillationProperty();
+	private TurOcrProperty ocr = new TurOcrProperty();
 
 }

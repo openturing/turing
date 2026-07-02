@@ -16,53 +16,6 @@
 | ⏳ | Partial — direction is right, more work remains |
 | 🛠 | In progress |
 
-## F.14 — Bold creative bets (the long shots)
-
-- 💭 **T187** (deps: T133, T139, T141) **"Live answers" hybrid mode** — single chat answer fuses (a) SN index hits, (b) web_search citations, (c) live data via web_fetch, (d) computed analytics via code_execution — composed in one Responses turn. → §X.15.a
-- 💭 **T188** (deps: T146, T138, T144) **Turing as the "headless" enterprise-search MCP backbone** — abandon the chat UI as the only consumption surface. → §X.15.b
-- 💭 **T189** (deps: T147, T150, T55) **Real-time multilingual call center augmentation** — operator's headset audio goes through `gpt-realtime-translate` (T150), agent's screen shows live cited answers (T154) sourced from the customer's index, escalation paths via T55 handoff.… → §X.15.c
-- 💭 **T190** (deps: T136, T142, T78) **"Self-installing" enterprise connectors via computer_use** — customer says "connect my company's Notion" → Turing's computer-use agent navigates to Notion → guides them through API token generation → tests the connection → enables the con… → §X.15.d
-- 💭 **T191** (deps: T169, T126) **Agent that improves itself overnight** — combine T169 distillation + T126 eval suite + T127 production-replay-as-test: every night, the agent's prod traffic feeds a distillation candidate, the candidate runs against the eval suite, and if… → §X.15.e
-- 💭 **T192** (deps: T138, T144, T146) **Inter-tenant MCP federation** — opt-in directory at `directory.turing.io` where tenants can publish a redacted MCP server exposing **only public knowledge** (their docs, their public catalog). → §X.15.f
-
-## Block F.16 — Gemini native API exploitation + cross-vendor parity
-
-> Block F wired ~30 native features for OpenAI and Anthropic through the
-> `TurNativeProviderClient` seam (T130) + capability matrix (T132); **Gemini got
-> none** — `TurGeminiLlmProvider` is chat-only and `throw`s on embeddings. This
-> block gives Gemini the third native branch and the same capability surface,
-> then exploits primitives the other two lack (task-type embeddings, explicit
-> reusable context caching, 1–2 M-token full-context answering, native video).
-> It also closes three cross-vendor gaps the F-blocks left open (Anthropic
-> `cache_control`, OpenAI background mode, Anthropic extended thinking). Design →
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §X.19 / §X.20 / §X.13.
-
-**Foundation:**
-- 📋 **T489** (deps: T130, T131, T132) **`TurGoogleGenAiNativeService` + Gemini executor branch** — third `TurNativeChatExecutor` branch (Gemini `Client.models().generateContent`/`generateContentStream`) reusing the T131 prompt-assembly fusion; opt-in per the T132 matrix, empty matrix = unchanged Spring AI path. → §X.19
-
-**Server-side built-in tools (parity with F.2/F.3):**
-- 📋 **T490** (deps: T489) **Gemini Google Search grounding** (`google_search`) — analog to T133/T139; grounding metadata decodes onto the T152–T155 `TurChatCitation`/SSE contract; renders the mandatory Search Suggestion chips. cap `gemini-google-search`. → §X.19
-- 📋 **T491** (deps: T489) **Gemini URL Context tool** (`url_context`) — Claude `web_fetch` (T140) analog: model pulls a URL/PDF directly. cap `gemini-url-context`. → §X.19
-- 📋 **T492** (deps: T489) **Gemini code execution tool** (`code_execution`) — built-in Python sandbox alongside T135/T141; inline matplotlib images map to the `sandbox:` scheme (T83). cap `gemini-code-execution`. → §X.19
-- 📋 **T493** (deps: T489) **Gemini native image generation** (`gemini-2.5-flash-image`/Imagen) — analog to OpenAI `image_generation` (T137); image part → `sandbox:` artifact. cap `gemini-image-generation`. → §X.19
-- 📋 **T494** (deps: T489, T136) **Gemini Computer Use** (`gemini-2.5-computer-use`) — reuses the vendor-neutral `TurComputerUseDriver` seam (T136); no-op driver default. `ownsTurn`. cap `gemini-computer-use`. → §X.19
-
-**Distinctive Gemini cost/quality primitives:**
-- 📋 **T495** (deps: —) **Gemini embeddings + task-type optimization** — fix the `UnsupportedOperationException`: `gemini-embedding-001` via `embedContent` with **asymmetric** `taskType` (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + Matryoshka `outputDimensionality`. Retrieval-quality win the other providers can't match. → §X.19
-- 📋 **T496** (deps: T156) **Gemini Batch provider** — `TurGeminiBatchProvider` (~50% off) into `TurBatchProviderFactory`, so T157/T158/T159 batches run on Gemini-backed instances instead of falling back to synchronous. → §X.19
-- 📋 **T497** (deps: T175) **Gemini Files bridge** — fold Gemini into `TurFilesApiBridge`: upload binary to the Gemini Files API, reference by URI (48 h) for native PDF/video grounding. → §X.19
-- 💭 **T498** (deps: T489, T178) **Gemini thinking budget + thought summaries** — `thinkingConfig` (`thinkingBudget`/`includeThoughts`) feeds the T178 "Why this answer" panel; Gemini leg of the cross-vendor F.12. → §X.19
-
-**Innovation bets (Gemini-shape-only):**
-- 💭 **T499** (deps: T489) **Explicit context caching — `TurContextCacheProvider` seam + Gemini impl** — named, TTL'd, reusable `cachedContents` cache the stable prefix (system prompt + persona + pinned grounding) once, reuse across turns/users at ~75% off; no-op default keeps OpenAI automatic. The RAG cost lever. → §X.20
-- 💭 **T500** (deps: T499, T383) **Full-context (retrieval-free) answering for small sites** — per-site mode (gated on an index-token budget) that stuffs the whole corpus into Gemini's 1–2 M window instead of top-K retrieval, paired with the T499 cache; measured head-to-head vs T383 HYBRID_RRF. → §X.19
-- 💭 **T501** (deps: T489, T64, T497) **Native video understanding for indexed media** — pass video/audio (incl. YouTube URL) to Gemini for timestamped transcript + scene/visual description written to the SN doc; adds a VIDEO modality to the T64 slots. → §X.19
-
-**Cross-vendor gaps the F-blocks left open:**
-- 📋 **T502** (deps: T131, T499) **Anthropic prompt caching (`cache_control`)** — mark the system prompt + retrieved `search_result` blocks (T153) with ephemeral cache breakpoints behind the T499 seam; opt-in, null → unchanged. → §X.20
-- 💭 **T503** (deps: T131) **OpenAI Responses `background` mode** — submit long reasoning/agentic turns with `background:true` + poll/stream-resume by response id so a slow turn doesn't hold the connection; pairs with T179. → §X.13
-- 📋 **T504** (deps: T178) **Anthropic extended / interleaved thinking** — `thinking` (`budget_tokens`) + interleaved-thinking beta in the F.3 tool loops; thought summaries feed the same T178 panel, making "reasoning budget" one cross-vendor contract. → §X.13
-
 ## Block W — Agent↔UI transparency & client tools (AG-UI parity)
 
 > Closed the two AG-UI parity gaps for Turing's own agent runtime (live tool-call
@@ -70,59 +23,6 @@
 > [CHANGELOG.md](CHANGELOG.md) Block W. Only the optional protocol adapter remains.
 
 - 💭 **T441** (deps: T436, T438) **Canonical AG-UI protocol adapter** — optional endpoint that re-encodes Turing's stream into the canonical AG-UI event schema (`RUN_STARTED`, `TEXT_MESSAGE_*`, `TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, …) so CopilotKit's off-the-shelf React/Angular clients connect with zero Turing-SDK code. Distribution play, not core parity — promote from 💭 only if a named integration asks. → §XXII.6
-
-## Block Y — Reference showcase app (stress every feature)
-
-> **Why now:** one installable reference app that exercises the **maximum surface
-> of the platform** — a living demo, an SDK-vs-real-backend integration test, and
-> the canonical "this is what Turing can do" artifact for sales/docs. Domain: a
-> commerce-catalog copilot ("Atlas Store") — the most feature-dense domain, where
-> a typed catalog + compare + add-to-cart + "why #1?" + returns flow naturally
-> pull in nearly every primitive. Lives at `frontend/apps/showcase`, seeds its
-> own data. **Coverage matrix + per-task feature lists → §XXIV.**
-
-> **Block complete (2026-06-29).** All seven tasks shipped (T451–T457) — see
-> [CHANGELOG.md](CHANGELOG.md) → Block Y. The `frontend/apps/showcase` "Atlas
-> Store" app exercises the maximum platform surface end to end (typed catalog,
-> faceted + hybrid search, RAG chat, agent power, creative bets,
-> voice/memory/ops, MCP) with an in-app guided tour, the `TurShowcaseSmokeIT`
-> e2e test (which uncovered + fixed a T448 circular-dependency context-startup
-> bug), a `docs-turing` page, and the §XXIV.1 coverage audit (`COVERAGE.md`). No
-> active backlog remains.
-
-## Block AA — Synthetic personas: audience-fit content evaluation & persona synthesis from audio (T464–T472)
-
-> **Why:** today `TurPersona` is a **speaker** contract — it controls how the
-> assistant *talks* (tone/verbosity/languageStyle/mandatory+forbidden terms). It
-> models nothing about the *reader*. This block adds the missing half: a persona
-> as an **audience proxy**, so the platform can answer *"is this indexed page / PDF /
-> URL appropriate for this audience?"* (NotebookLM-style condiz/não-condiz report —
-> e.g. a low-education persona rejects dense, jargon-heavy text), and can **synthesize
-> a new persona from a real recorded conversation** (audio → transcript → behavioral
-> traits). Pure composition of shipped primitives: content extraction (`TurFileUtils`/
-> `VigletContentExtractor`), cached LLM reports (`TurLlmSummaryService`), the LlmJudge
-> structured-verdict path, and the T385 *deterministic-scorer + LLM-seam* shape. The
-> whole block is **opt-in** behind a `personaKind` discriminator (default `SPEAKER` =
-> existing voice personas byte-for-byte unchanged). Rationale → §XXVI.
-
-> **Block AA is fully shipped** (T464–T472) — see [CHANGELOG.md](CHANGELOG.md). No
-> active backlog remains.
-
-## Block G — Embedded LLM (Jlama) — DOWNGRADED TO SPIKE (2026-06-03)
-
-> **Decision:** the 26-task committed Jlama program (was T193–T218) is cut to a
-> single time-boxed spike. Rationale: Jlama upstream is stagnant (last release
-> 2025-01-01, single maintainer), and **Ollama-as-sidecar already delivers the
-> air-gapped + tool-calling story** in the same docker-compose with far less risk.
-> The committed 8-week build was the roadmap violating its own "courage to
-> deprecate" principle. Detailed Jlama design is in `git log` (former §XI).
-
-- 💭 **T193 (spike)** (deps: —) **Embedded inference engine evaluation** — 2–3 day spike: benchmark Jlama (pure-Java, Panama) vs Ollama-sidecar vs `de.kherud:llama` for the zero-egress deployment story (tool calling, RAM, tok/s, Windows, ops). Decide ONE engine before committing any build. Default assumption: **Ollama-sidecar**. Promote to a real block only if the spike beats that default for a named customer requirement. → STRATEGY §VIII (deprecations)
-
-## Block I — Turing as an MCP Server (T245–T256)
-
-- 💭 **T254** (deps: T246) **Per-tenant SaaS endpoints + scale** — `https://<tenant>.turing.cloud/mcp` with token-scoped site visibility; reuse tool pre-filtering (T29) for big catalogs and MCP per-tool metrics (reuse T32 / T88). → §XIII.6
-- 💭 **T256** (deps: T254) **Federation directory + bold bets** — cross-ref §X.5 T192: opt-in publish a redacted public MCP server to `directory.turing.io`; every publisher makes every subscriber's agents more useful. → §XIII.7
 
 ## Block J follow-ups — Cloud SaaS hardening (T334–T373)
 
@@ -158,18 +58,6 @@
 - 📋 **T354** (deps: —) **Seed independent mentions** — answer relevant SO/Reddit/AEM-forum threads; republish A/B posts to Dev.to/Medium (canonical → docs); list on AlternativeTo + `awesome-*` lists + G2. No code dep; pairs with T346. → §X.1
 - 💭 **T355** (deps: T354) **Monthly model-prompt audit** — prompt ChatGPT/Claude/Gemini with the target queries, log whether Turing appears and where; the actual KPI for this block. → §X.4
 
-## Block P — Open-core source split (`turing` → `turing-ce`)
-
-> Publish the runtime as a public community edition while keeping strategy docs,
-> commit history, and the (future) paid add-on private. **Phase 1 is pure
-> mechanics — no CE/EE module surgery** (§XI.3). Boundary + license → STRATEGY
-> §XI; publish mechanics → IMPROVEMENTS §XIX. Mechanics shipped (T356–T361); what
-> remains are strategy decisions.
-
-- 💭 **T362** (deps: T360 ✅) **License posture decision** — keep Apache 2.0 on CE now; revisit FSL (over BSL/SSPL) only if Turing Cloud is real revenue AND a competitor hosts the CE. Strategy decision, not code. → §XI.4
-- 💭 **T363** (deps: paying customer asks twice) **Phase-2: carve the Agent Eval engine private** — when the §IX.3 add-on is built, hold its slim engine in the private repo; CE keeps the LlmJudge primitive. Not scheduled. → §XI.3 / §IX.3
-- 💭 **T364** (deps: T357) **Point Block O at `turing-ce`** — once populated, the public-GitHub keyword/topics pass (T346) + GEO off-domain links (T354) target `turing-ce`, not the empty public repo. → §XI.3
-
 ## Block AB — Public site & top-of-funnel conversion (`turing.viglet.org`)
 
 > The marketing site as a conversion surface, not a brochure. Positioning bet in
@@ -203,29 +91,27 @@
 > (rerank via Block N `TurRagReranker`); empty/legacy config = unchanged paths.
 > Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVIII.
 
-**Foundation — the provider seams (ROI-ordered):**
-- 📋 **T505** (deps: §XXVIII) **Generic OpenAI-compatible provider** (`openai-compatible`) — generalize the `gemini-openai` pattern into a first-class provider with a configurable `baseUrl`, unlocking **DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, Together, Fireworks, and local vLLM** with one seam (chat + embeddings where exposed). Highest ROI: 1 provider → ~8 vendors. → §XXVIII.1
-- 📋 **T506** (deps: §XXVIII) **AWS Bedrock provider** (`bedrock`) — `TurBedrockLlmProvider` via Spring AI Bedrock Converse: Claude/Llama/Mistral/Nova on one gateway, IAM/region credentials (not an API key), Titan/Cohere embeddings. The enterprise compliance/data-residency path AWS-standardized customers require. → §XXVIII.2
-- 📋 **T507** (deps: §XXVIII, T337–T340) **Voyage AI embeddings + rerank** — `voyage` embedding provider (`voyage-3` family, asymmetric `input_type` doc/query) + a `VOYAGE` `TurRagReranker` strategy (`rerank-2.5`). The specialist retrieval vendor Anthropic itself recommends; directly lifts RAG quality. → §XXVIII.3
-- 📋 **T508** (deps: §XXVIII, T337–T340) **Cohere full provider** (`cohere`) — promote Cohere beyond the existing reranker: `Command` chat (built-in citation mode) + `Embed v4` multilingual/multimodal embeddings, reusing the wired Cohere credentials. → §XXVIII.4
-- 📋 **T509** (deps: §XXVIII, T337–T340) **Mistral AI provider** (`mistral`) — Spring-AI-native chat (Mistral Large/Small/Codestral) + Mistral embeddings + a `MISTRAL` reranker strategy. European/GDPR-friendly origin (EU customers). → §XXVIII.5
-- 📋 **T510** (deps: §XXVIII, T489) **Google Vertex AI provider** (`vertex-ai`) — enterprise Gemini via Vertex (IAM, VPC-SC, CMEK, regional endpoints, provisioned throughput) + Claude/Llama-on-Vertex via Model Garden, distinct from the public `generativelanguage.googleapis.com` path that can't serve GCP-regulated tenants. → §XXVIII.6
+**Foundation — the provider seams (ROI-ordered):** ✅ shipped (T505–T510) —
+see [CHANGELOG.md](CHANGELOG.md) Block AD. (T509's `MISTRAL` reranker was
+dropped: Mistral has no managed rerank API; use the `LLM` strategy on a Mistral
+instance.)
 
-**Exploit distinctive primitives (net-new retrieval capabilities):**
-- 💭 **T511** (deps: T507, T508, T64) **Multimodal embeddings retrieval mode** — index PDF page-images, diagrams and screenshots into the vector store via `voyage-multimodal-3` / Cohere `Embed v4` / Bedrock Titan multimodal, so text queries match *visual* documents. New "search by text → match an image" surface; bridges T64 multimodal slots + the Lucene vector store + the indexer write path. → §XXVIII.7
-- 💭 **T512** (deps: T507) **Contextualized chunk embeddings** (`voyage-context-3`) — embed each chunk *with* its surrounding document context, fixing the classic chunk-context-loss RAG failure. Per-site opt-in retrieval-quality lift, transparent to query time. → §XXVIII.8
-- 💭 **T513** (deps: T507, T508, T386) **Domain-specialized embedding model per SN site** — let a site pick `voyage-finance`/`voyage-law`/`voyage-code` (or a Cohere domain model) in its manifest/field config; index + query route through the site's chosen embedder. → §XXVIII.9
-- 💭 **T514** (deps: T507) **Quantized / Matryoshka embeddings for the Lucene vector store** — int8/binary vectors + `outputDimensionality` truncation to shrink the embedded vector store (cheaper, faster KNN) with a measured recall trade-off, opt-in per store. → §XXVIII.10
-- 💭 **T515** (deps: T509, T175) **Mistral OCR / Document-AI extraction bridge** — augment Tika on the indexer/connector write path for scanned PDFs and images via `mistral-ocr`; its structured (bbox) annotations also feed T387 manifest derivation and field extraction. → §XXVIII.11
+**Exploit distinctive primitives (net-new retrieval capabilities):** ✅ shipped
+(T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD.
 
-**Cross-vendor bridges (the bold bets):**
-- 💭 **T516** (deps: T506, T155, T182) **Pluggable answer-grounding guardrail** (`TurAnswerGuardrail` seam) — validate that a streamed RAG answer is actually grounded in the retrieved context before/while it streams; first adapter = Bedrock Guardrails contextual-grounding + PII redaction, with Mistral/OpenAI moderation adapters. Ties into T155 citation-drift + T182 moderation. → §XXVIII.12
-- 💭 **T517** (deps: T505, T101-router) **Cross-provider per-stage model "lanes"** — declaratively bind pipeline stages to providers: a **fast lane** (Groq/Cerebras) for autocomplete/spell/query-rewrite, a **reasoning lane** (DeepSeek R1 / o-series) for rerank/judge/router, a **cheap lane** for background work — over the existing router, no code per stage. → §XXVIII.13
-- 💭 **T518** (deps: T505, T183) **Cost-aware cross-provider fallback / meta-provider** (OpenRouter-style) — automatic failover + cheapest-capable routing across configured instances, with per-tenant cost attribution (Bedrock application-inference-profile tags); ties to F.13 cost governance. → §XXVIII.14
-- 💭 **T519** (deps: T508, T506, T152–T155) **Native-citation RAG across vendors** — providers that return grounded citations natively (Cohere `Command` citation mode, Bedrock KB citations) decode onto the T152–T155 `TurChatCitation`/SSE contract — parity with the Gemini/Anthropic/OpenAI native grounding already wired. → §XXVIII.15
-- 💭 **T520** (deps: T506, T510) **Managed-RAG retrieval backend seam** (`TurRetrievalBackend`) — optional alternative to the built-in index: Bedrock Knowledge Bases / Vertex AI Search / Vertex RAG Engine as a pluggable retriever for tenants already standardized on a cloud RAG stack. Larger architectural bet. → §XXVIII.16
-- 💭 **T521** (deps: T510, T506, T337–T340) **Managed reranker strategies** — Vertex AI Ranking API + Bedrock rerank as additional Block N `TurRagReranker` strategies for cloud-native deployments (no self-hosted cross-encoder). → §XXVIII.17
-- 💭 **T522** (deps: T505, T180) **Multi-provider "second opinion" answer cross-check** — for high-stakes answers, a cheap *different-vendor* model critiques the primary answer (cross-vendor LlmJudge), surfaced as a confidence signal next to the answer; composes the existing LlmJudge + T180 logprobs. → §XXVIII.18
+**Cross-vendor bridges (the bold bets):** ✅ shipped (T516–T522) — see
+[CHANGELOG.md](CHANGELOG.md) Block AD. (T519's Bedrock-KB-citation half landed
+with T520, where the `bedrockagentruntime` dependency lives.) **Block AD is now
+fully shipped.**
+
+## Block AE — Documentation parity & didactic refresh (post-T410) — ✅ COMPLETE
+
+> **Shipped (2026-06-30) — T524–T538.** Second documentation round: brought
+> `docs-turing` to parity with everything shipped T424→T523 and added the
+> zero→first-agent didactic layer. All task detail is in
+> [CHANGELOG.md](CHANGELOG.md) → Block AE; the living coverage gate is
+> `docs-turing/COVERAGE.md`. §XXIX design rationale removed on ship, per the
+> founding rule.
 
 ## Non-goals (do NOT add as tasks)
 

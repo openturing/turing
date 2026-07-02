@@ -21,6 +21,8 @@ import org.springframework.util.StringUtils;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.google.genai.Client;
+import com.google.genai.types.HttpOptions;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
@@ -48,6 +50,8 @@ public class TurNativeProviderClientImpl implements TurNativeProviderClient {
 
     private static final String OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1";
     private static final String ANTHROPIC_DEFAULT_BASE_URL = "https://api.anthropic.com";
+    /** Google AI Studio (Gemini Developer API) default endpoint. */
+    private static final String GEMINI_DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 
     private final TurGenAiLlmProviderFactory providerFactory;
     private final TurSecretCryptoService secretCryptoService;
@@ -100,15 +104,38 @@ public class TurNativeProviderClientImpl implements TurNativeProviderClient {
     }
 
     @Override
+    public Optional<Client> gemini(TurLLMInstance instance) {
+        if (!"gemini".equals(pluginType(instance))) {
+            return Optional.empty();
+        }
+        NativeCredentials creds = credentials(instance, GEMINI_DEFAULT_BASE_URL);
+        if (!StringUtils.hasText(creds.apiKey())) {
+            log.warn("[Native] Gemini instance '{}' has no API key — native path unavailable",
+                    instance.getId());
+            return Optional.empty();
+        }
+        Client.Builder builder = Client.builder().apiKey(creds.apiKey());
+        // Only override the endpoint when the instance configures a non-default
+        // base URL (e.g. a proxy); otherwise let the SDK use its own default so
+        // the Vertex/Developer-API resolution stays the SDK's responsibility.
+        if (!GEMINI_DEFAULT_BASE_URL.equals(creds.baseUrl())) {
+            builder.httpOptions(HttpOptions.builder().baseUrl(creds.baseUrl()).build());
+        }
+        return Optional.of(builder.build());
+    }
+
+    @Override
     public boolean hasCapability(String instanceId, TurNativeCapability capability) {
         return capabilityService.hasCapability(instanceId, capability);
     }
 
     @Override
     public NativeCredentials credentials(TurLLMInstance instance) {
-        String defaultBaseUrl = "anthropic".equals(pluginType(instance))
-                ? ANTHROPIC_DEFAULT_BASE_URL
-                : OPENAI_DEFAULT_BASE_URL;
+        String defaultBaseUrl = switch (pluginType(instance)) {
+            case "anthropic" -> ANTHROPIC_DEFAULT_BASE_URL;
+            case "gemini" -> GEMINI_DEFAULT_BASE_URL;
+            default -> OPENAI_DEFAULT_BASE_URL;
+        };
         return credentials(instance, defaultBaseUrl);
     }
 

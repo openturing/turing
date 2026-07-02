@@ -18,6 +18,8 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
+import com.viglet.turing.system.lane.TurModelLaneService;
+import com.viglet.turing.system.lane.TurModelStage;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,15 +48,21 @@ public class TurDefaultChatModelResolver {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurSecretCryptoService secretCryptoService;
     private final TurLlmModelFactory llmModelFactory;
+    private final TurModelLaneService modelLaneService;
+    private final com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver;
 
     public TurDefaultChatModelResolver(TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurSecretCryptoService secretCryptoService,
-            TurLlmModelFactory llmModelFactory) {
+            TurLlmModelFactory llmModelFactory,
+            TurModelLaneService modelLaneService,
+            com.viglet.turing.resilience.llm.TurMetaChatModelResolver metaChatModelResolver) {
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
         this.secretCryptoService = secretCryptoService;
         this.llmModelFactory = llmModelFactory;
+        this.modelLaneService = modelLaneService;
+        this.metaChatModelResolver = metaChatModelResolver;
     }
 
     /**
@@ -62,7 +70,24 @@ public class TurDefaultChatModelResolver {
      *         configured/enabled or it cannot be built.
      */
     public Optional<ChatModel> resolve() {
-        String llmId = globalSettingsService.getDefaultLlmId();
+        return buildFor(globalSettingsService.getDefaultLlmId());
+    }
+
+    /**
+     * T517 / §XXVIII.13 — resolves the chat model for a specific pipeline
+     * {@code stage}, honouring its cross-provider model "lane" binding (falling
+     * back to the default LLM when the lane is unbound or its instance is
+     * missing/disabled). Same fail-open contract as {@link #resolve()}.
+     *
+     * @return the lane-resolved chat model, or {@link Optional#empty()} when it
+     *         cannot be built.
+     */
+    public Optional<ChatModel> resolve(TurModelStage stage) {
+        return buildFor(modelLaneService.resolveInstanceId(stage));
+    }
+
+    /** Looks up, decrypts and builds a resilience-wrapped model for {@code llmId}. */
+    private Optional<ChatModel> buildFor(String llmId) {
         if (!StringUtils.hasText(llmId)) {
             return Optional.empty();
         }
@@ -72,9 +97,12 @@ public class TurDefaultChatModelResolver {
                 return Optional.empty();
             }
             String apiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-            return Optional.ofNullable(llmModelFactory.createChatModel(llmInstance, apiKey));
+            ChatModel model = llmModelFactory.createChatModel(llmInstance, apiKey);
+            // T518 — wrap with the cost-aware cross-provider fallback chain when
+            // one is configured (no-op pass-through when empty).
+            return Optional.ofNullable(metaChatModelResolver.wrapWithFallback(llmInstance, model));
         } catch (RuntimeException e) {
-            log.debug("[LLM] default chat model unavailable: {}", e.getMessage());
+            log.debug("[LLM] chat model unavailable for instance {}: {}", llmId, e.getMessage());
             return Optional.empty();
         }
     }

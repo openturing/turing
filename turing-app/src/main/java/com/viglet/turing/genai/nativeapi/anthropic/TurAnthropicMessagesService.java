@@ -34,6 +34,7 @@ import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.CodeExecutionTool20250522;
+import com.anthropic.models.messages.CacheControlEphemeral;
 import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolResultBlockParam;
@@ -113,15 +114,18 @@ public class TurAnthropicMessagesService {
     private final TurNativeFunctionToolSupport toolSupport;
     private final TurAnthropicCitationSupport citationSupport;
     private final TurAnthropicContextManagement contextManagement;
+    private final com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory contextCacheFactory;
 
     public TurAnthropicMessagesService(TurProviderOptionsParser optionsParser,
             TurNativeFunctionToolSupport toolSupport,
             TurAnthropicCitationSupport citationSupport,
-            TurAnthropicContextManagement contextManagement) {
+            TurAnthropicContextManagement contextManagement,
+            com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory contextCacheFactory) {
         this.optionsParser = optionsParser;
         this.toolSupport = toolSupport;
         this.citationSupport = citationSupport;
         this.contextManagement = contextManagement;
+        this.contextCacheFactory = contextCacheFactory;
     }
 
     /**
@@ -207,13 +211,24 @@ public class TurAnthropicMessagesService {
      * {@code citations} request option is on, the per-sentence citations decoded
      * from the response (empty otherwise).
      */
-    record TurnResult(String text, List<TurChatCitation> citations) {
+    record TurnResult(String text, List<TurChatCitation> citations, String reasoningSummary) {
+        TurnResult(String text, List<TurChatCitation> citations) {
+            this(text, citations, "");
+        }
     }
 
-    /** Fan a {@link TurnResult} into the SSE token event + an optional citations event. */
+    /**
+     * Fan a {@link TurnResult} into the SSE token event, the optional T504
+     * {@code reasoning} event (the thought summary → T178 "Why this answer" panel),
+     * and the optional citations event.
+     */
     private static Flux<ChatResponse> emitTurn(TurnResult result) {
         Flux<ChatResponse> events = Flux.just(new ChatResponse("assistant",
                 StringUtils.hasText(result.text()) ? result.text() : ""));
+        if (StringUtils.hasText(result.reasoningSummary())) {
+            events = events.concatWith(Flux.just(
+                    new ChatResponse("assistant", result.reasoningSummary(), "reasoning")));
+        }
         if (result.citations() != null && !result.citations().isEmpty()) {
             try {
                 String citationsJson = OBJECT_MAPPER.writeValueAsString(result.citations());
@@ -240,9 +255,13 @@ public class TurAnthropicMessagesService {
         List<ToolUnion> tools = new ArrayList<>(serverTools);
         tools.addAll(functionTools);
 
-        List<MessageParam> conversation = seedConversation(history, citationDocuments);
+        // T502 — one ephemeral cache_control breakpoint (when opted in) stamps the
+        // last retrieved search_result block here and the system prompt below.
+        CacheControlEphemeral cacheControl = resolveCacheControl(instance).orElse(null);
+        List<MessageParam> conversation = seedConversation(history, citationDocuments, cacheControl);
         StringBuilder text = new StringBuilder();
         List<TurChatCitation> citations = new ArrayList<>();
+        String reasoningSummary = "";
         int toolCalls = 0;
 
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
@@ -253,6 +272,12 @@ public class TurAnthropicMessagesService {
             // T154 / §X.7.c — append text and decode citations in one pass so each
             // citation carries its answer-span offsets (for inline underlining).
             citationSupport.appendTextAndCitations(response, text, citations, citationDocuments);
+            // T504 / §X.13 — keep the latest non-blank thinking summary (the final
+            // answer round's reasoning is what the "Why this answer" panel shows).
+            String roundThinking = extractThinking(response);
+            if (StringUtils.hasText(roundThinking)) {
+                reasoningSummary = roundThinking;
+            }
 
             List<ToolUseBlock> calls = clientToolUseBlocks(response, toolIndex);
             if (calls.isEmpty()) {
@@ -262,7 +287,7 @@ public class TurAnthropicMessagesService {
                         capabilities.stream().map(c -> c.capability().getKey()).toList(),
                         functionTools.size(), text.length(), toolCalls, citations.size(),
                         System.currentTimeMillis() - t0);
-                return new TurnResult(text.toString(), citations);
+                return new TurnResult(text.toString(), citations, reasoningSummary);
             }
 
             conversation.add(response.toParam());
@@ -284,7 +309,7 @@ public class TurAnthropicMessagesService {
 
         log.warn("[Native][Anthropic-Messages] instance '{}' hit the {}-round tool-execution cap",
                 instance.getId(), MAX_TOOL_ITERATIONS);
-        return new TurnResult(text.toString(), citations);
+        return new TurnResult(text.toString(), citations, reasoningSummary);
     }
 
     MessageCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
@@ -307,9 +332,30 @@ public class TurAnthropicMessagesService {
                 .messages(conversation);
 
         if (StringUtils.hasText(systemPrompt)) {
-            builder.system(systemPrompt);
+            // T502 / §X.20 — when context caching is opted in (the T499 seam),
+            // carry the system prompt as a single text block with an ephemeral
+            // cache_control breakpoint so Anthropic serves the repeated prefix at a
+            // discount. Default (no ref) → the plain string, byte-for-byte unchanged.
+            Optional<CacheControlEphemeral> cacheControl = resolveCacheControl(instance);
+            if (cacheControl.isPresent()) {
+                builder.systemOfTextBlockParams(List.of(TextBlockParam.builder()
+                        .text(systemPrompt)
+                        .cacheControl(cacheControl.get())
+                        .build()));
+            } else {
+                builder.system(systemPrompt);
+            }
         }
-        if (instance.getTemperature() != null) {
+        // T504 / §X.13 — extended thinking: opt-in budget_tokens enables a
+        // reasoning pass whose thought summary feeds the same T178 panel. When on,
+        // Anthropic requires temperature = 1, so the per-instance temperature is
+        // NOT applied (it would 400). Default (no budget) → unchanged request.
+        ThinkingOptions thinking = resolveThinking(instance);
+        if (thinking.enabled()) {
+            builder.thinking(com.anthropic.models.messages.ThinkingConfigEnabled.builder()
+                    .budgetTokens(thinking.budgetTokens())
+                    .build());
+        } else if (instance.getTemperature() != null) {
             builder.temperature(instance.getTemperature());
         }
         if (serviceTier != null) {
@@ -334,14 +380,80 @@ public class TurAnthropicMessagesService {
         contextManagement.rawConfig(contextOptions).ifPresent(config ->
                 builder.putAdditionalBodyProperty("context_management", config));
         allBetas.addAll(contextManagement.rawBetaTokens(contextOptions));
+        // T504 — interleaved thinking lets the model reason BETWEEN tool calls in
+        // the F.3 tool loop (beta token); only meaningful with thinking enabled.
+        if (thinking.enabled() && thinking.interleaved()) {
+            allBetas.add(com.anthropic.models.beta.AnthropicBeta.INTERLEAVED_THINKING_2025_05_14
+                    .asString());
+        }
         if (!allBetas.isEmpty()) {
             builder.putAdditionalHeader("anthropic-beta", String.join(",", allBetas));
         }
         return builder.build();
     }
 
+    /**
+     * T502 / §X.20 — resolve the ephemeral {@code cache_control} breakpoint for an
+     * instance through the T499 {@link com.viglet.turing.genai.nativeapi.cache.TurContextCacheProvider}
+     * seam, or empty when context caching is not opted in. The Anthropic provider
+     * returns a ref whose {@code handle} is the TTL token ({@code 5m} / {@code 1h});
+     * any other vendor's ref (or none) leaves the request uncached here.
+     */
+    Optional<CacheControlEphemeral> resolveCacheControl(TurLLMInstance instance) {
+        return contextCacheFactory.resolve(instance)
+                .ensureCache(com.viglet.turing.genai.nativeapi.cache.TurContextCacheRequest
+                        .ofSystemInstruction(instance, resolveModel(instance), "x", null))
+                .filter(ref -> "anthropic".equals(ref.pluginType()))
+                .map(ref -> CacheControlEphemeral.builder()
+                        .ttl("1h".equals(ref.handle())
+                                ? CacheControlEphemeral.Ttl.TTL_1H
+                                : CacheControlEphemeral.Ttl.TTL_5M)
+                        .build());
+    }
+
+    /**
+     * T504 / §X.13 — resolved extended-thinking knobs for an instance:
+     * {@code thinkingBudget} (budget_tokens; &gt; 0 enables the reasoning pass) and
+     * {@code interleavedThinking} (think between tool calls, a beta). Absent /
+     * non-positive budget → disabled (unchanged request).
+     */
+    record ThinkingOptions(boolean enabled, long budgetTokens, boolean interleaved) {
+        static final ThinkingOptions DISABLED = new ThinkingOptions(false, 0, false);
+    }
+
+    ThinkingOptions resolveThinking(TurLLMInstance instance) {
+        Map<String, Object> options = optionsParser.parse(instance.getProviderOptionsJson());
+        Integer budget = optionsParser.intValue(options, "thinkingBudget");
+        if (budget == null || budget <= 0) {
+            return ThinkingOptions.DISABLED;
+        }
+        Object interleaved = options == null ? null : options.get("interleavedThinking");
+        boolean inter = interleaved != null && "true".equalsIgnoreCase(interleaved.toString().trim());
+        return new ThinkingOptions(true, budget, inter);
+    }
+
+    /** T504 — concatenate the response's thinking blocks (the thought summary), or "". */
+    static String extractThinking(Message response) {
+        if (response == null || response.content() == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        response.content().forEach(block -> {
+            if (block.isThinking()) {
+                String thought = block.asThinking().thinking();
+                if (StringUtils.hasText(thought)) {
+                    if (sb.length() > 0) {
+                        sb.append("\n\n");
+                    }
+                    sb.append(thought);
+                }
+            }
+        });
+        return sb.toString();
+    }
+
     private List<MessageParam> seedConversation(List<ChatMessageItem> history) {
-        return seedConversation(history, List.of());
+        return seedConversation(history, List.of(), null);
     }
 
     /**
@@ -355,7 +467,7 @@ public class TurAnthropicMessagesService {
      * turns are plain text, identical to the pre-T152 path.
      */
     private List<MessageParam> seedConversation(List<ChatMessageItem> history,
-            List<TurCitationDocument> citationDocuments) {
+            List<TurCitationDocument> citationDocuments, CacheControlEphemeral cacheControl) {
         List<MessageParam> conversation = new ArrayList<>();
         if (history == null) {
             return conversation;
@@ -375,9 +487,12 @@ public class TurAnthropicMessagesService {
                 // {@code search_result} blocks (the default citation path).
                 boolean nativePdf = citationDocuments.stream()
                         .anyMatch(TurCitationDocument::hasNativePdf);
+                // T502 — stamp the last search_result block with cache_control when
+                // caching is opted in (the native-PDF document path is left uncached
+                // for now — base64 PDFs aren't a stable cross-turn prefix).
                 List<ContentBlockParam> blocks = new ArrayList<>(nativePdf
                         ? citationSupport.documentBlocks(citationDocuments)
-                        : citationSupport.searchResultBlocks(citationDocuments));
+                        : citationSupport.searchResultBlocks(citationDocuments, cacheControl));
                 blocks.add(ContentBlockParam.ofText(
                         TextBlockParam.builder().text(message.content()).build()));
                 conversation.add(MessageParam.builder()

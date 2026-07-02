@@ -5,7 +5,7 @@ import {
   useSkills,
 } from "@/api/queries/skill.queries"
 import { LoadProvider } from "@/components/loading-provider"
-import { SubPageHeader } from "@/components/sub.page.header"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -80,14 +80,9 @@ export default function SkillPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={skills} error={error} tryAgainUrl={ROUTES.SKILL_ROOT}>
-      <SubPageHeader
-        icon={IconSparkles}
-        feature="Skills"
-        name="Skills"
-        description="Anthropic-compatible skill folders. Create one or import a ZIP, then edit its files."
-      />
+      <PageHeader turIcon={IconSparkles} title="Skills" />
 
-      <div className="px-4 lg:px-6 space-y-4">
+      <div className="px-4 lg:px-6 space-y-4 pt-4">
         {/* Toolbar */}
         <div className="flex items-center gap-3">
           <input

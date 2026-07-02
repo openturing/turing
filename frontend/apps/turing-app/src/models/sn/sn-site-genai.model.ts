@@ -84,6 +84,28 @@ export interface TurSNSiteGenAi {
    * {@link contentFitIndexingEnabled} is `true`. @since 2026.3.4
    */
   contentFitPersonaId?: string | null;
+  /**
+   * T501 / §X.19 — opt-in for index-time native video/audio understanding. When
+   * `true` and the site's GenAI agent resolves to a Gemini LLM, a document that
+   * references a video/audio asset (a `media_url` attribute, or a media-typed
+   * `url`) is run through Gemini understanding as it is indexed and the resulting
+   * timestamped transcript + scene description is appended to the document's text
+   * field — so the clip's content becomes searchable. Gemini-only, fail-open;
+   * spends one LLM call per media document. Default `false` keeps indexing
+   * unchanged. @since 2026.3.4
+   */
+  mediaUnderstandingIndexingEnabled?: boolean;
+  /**
+   * T513 / §XXVIII.9 — per-site domain-specialized embedding model override
+   * (`TurEmbeddingModel` id). When set, the public SN hybrid-ranking path
+   * indexes AND queries this site's `sn_<siteId>` vector collection through the
+   * chosen embedder — so a legal site can pick `voyage-law`, a code site
+   * `voyage-code`, etc., while other sites stay on the platform default.
+   * Null/blank falls back to the Global Settings default embedding model.
+   * Switching the model requires clearing + re-indexing the site's collection
+   * (the vector space changes). @since 2026.3.4
+   */
+  embeddingModelId?: string | null;
 }
 
 /**

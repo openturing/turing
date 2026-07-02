@@ -64,6 +64,8 @@ class TurNativeChatExecutorTest {
     @Mock private TurAnthropicComputerUseService anthropicComputerUseService;
     @Mock private TurAnthropicEditorService anthropicEditorService;
     @Mock private com.viglet.turing.genai.nativeapi.anthropic.memory.TurAnthropicMemoryService anthropicMemoryService;
+    @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService googleGenAiNativeService;
+    @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGeminiComputerUseService geminiComputerUseService;
     @Mock private TurChatPromptAssembler promptAssembler;
     @Mock private TurAgentPersonaResolver personaResolver;
     @Mock private com.viglet.turing.genai.nativeapi.capability.TurNativeCapabilityResolver capabilityResolver;
@@ -76,6 +78,7 @@ class TurNativeChatExecutorTest {
     @Mock private TurGenAiLlmProvider provider;
     @Mock private OpenAIClient openAiClient;
     @Mock private AnthropicClient anthropicClient;
+    @Mock private com.google.genai.Client geminiClient;
 
     private final com.viglet.turing.genai.provider.TurProviderOptionsParser optionsParser =
             new com.viglet.turing.genai.provider.TurProviderOptionsParser();
@@ -107,15 +110,24 @@ class TurNativeChatExecutorTest {
     // the existing routing tests (currentSafetyIdentifier() returns empty).
     @Mock private com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
 
+    // T187 — mock; default agent has liveAnswersEnabled=false so isEnabled() returns
+    // false (Mockito boolean default) and the existing routing assertions are unchanged.
+    @Mock private com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
+
+    // T519 — Cohere native citation path mock; default agent has citations off so
+    // the existing routing assertions are unchanged.
+    @Mock private com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService;
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
                 anthropicComputerUseService, anthropicEditorService, anthropicMemoryService,
+                googleGenAiNativeService, geminiComputerUseService, cohereMessagesService,
                 promptAssembler, personaResolver,
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
-                reasoningEffortResolver, safetyIdentifierService);
+                reasoningEffortResolver, safetyIdentifierService, liveAnswersService);
     }
 
     @BeforeEach
@@ -365,6 +377,41 @@ class TurNativeChatExecutorTest {
     }
 
     @Test
+    void liveAnswersAugmentsSystemPromptOnOpenAiPath() {
+        // T187 / §X.15.a — when live-answers is on, the executor runs the assembled
+        // system prompt through TurLiveAnswersService.augment and passes the
+        // grounded prompt to the Responses service. groundWithDocuments is false on
+        // the OpenAI path, so the [KB-n] block is injected here (the leg the
+        // Responses path otherwise lacks) rather than as Anthropic citation blocks.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("openai");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null));
+        when(capabilityService.enabledFor("inst-1", "openai")).thenReturn(caps);
+        when(nativeClient.openAi(instance)).thenReturn(Optional.of(openAiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("BASE"), new UserMessage("hello")));
+        TurAIAgent agent = agent();
+        agent.setLiveAnswersEnabled(true);
+        when(liveAnswersService.isEnabled(agent)).thenReturn(true);
+        when(liveAnswersService.augment("BASE", "hello", false)).thenReturn("BASE + GROUNDED");
+        ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.captor();
+        when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
+                systemPromptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(),
+                any()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "fused")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent, instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("fused");
+        assertThat(systemPromptCaptor.getValue()).isEqualTo("BASE + GROUNDED");
+        verify(liveAnswersService).augment("BASE", "hello", false);
+    }
+
+    @Test
     void reasoningSummaryRequestOptionForcesResponsesPathOnReasoningModel() {
         // T178 / §X.13.a — an agent with the "reasoning-summary" request option on
         // a reasoning model (o3) takes the native Responses path even with no
@@ -487,6 +534,87 @@ class TurNativeChatExecutorTest {
         assertThat(result).isPresent();
         assertThat(result.get().blockFirst().content()).isEqualTo("done");
         verifyNoInteractions(openAiResponsesService);
+    }
+
+    @Test
+    void routesToGeminiNativeServiceWhenGeminiAndCapabilityEnabled() {
+        // T489 / §X.19 — a gemini instance with an enabled native capability
+        // routes the turn to the Gemini native service with the fused prompt +
+        // history. (The real gemini capabilities arrive in T490; here any
+        // non-empty matrix list flips the branch on — the executor passes the
+        // list straight through to the native service.)
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        List<EnabledCapability> caps =
+                List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null));
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(caps);
+        when(nativeClient.gemini(instance)).thenReturn(Optional.of(geminiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
+        when(googleGenAiNativeService.chat(eq(geminiClient), eq(instance), historyCaptor.capture(),
+                promptCaptor.capture(), anyList()))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "gemini")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("gemini");
+        assertThat(promptCaptor.getValue()).isEqualTo("FUSED");
+        assertThat(historyCaptor.getValue()).containsExactly(new ChatMessageItem("user", "hello"));
+        verifyNoInteractions(openAiResponsesService, anthropicMessagesService);
+    }
+
+    @Test
+    void routesToGeminiComputerUseLoopWhenComputerUseEnabled() {
+        // T494 / §X.19 — Gemini computer_use is a multi-turn loop that owns the turn.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        EnabledCapability cap = new EnabledCapability(TurNativeCapability.GEMINI_COMPUTER_USE, null);
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(List.of(cap));
+        when(nativeClient.gemini(instance)).thenReturn(Optional.of(geminiClient));
+        when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
+                .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
+        when(geminiComputerUseService.chat(eq(geminiClient), eq(instance), anyList(), any(), eq(cap)))
+                .thenReturn(Flux.just(new ChatResponse("assistant", "operated")));
+
+        Optional<Flux<ChatResponse>> result =
+                executor().tryExecute(agent(), instance, history, null, "conv-1");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().blockFirst().content()).isEqualTo("operated");
+        verifyNoInteractions(googleGenAiNativeService);
+    }
+
+    @Test
+    void emptyWhenGeminiHasNoCapabilityEnabled() {
+        // Foundation behaviour: a gemini instance with an empty capability matrix
+        // falls through to the Spring AI path — unchanged for every existing
+        // Gemini agent.
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        when(capabilityService.enabledFor("inst-1", "gemini")).thenReturn(List.of());
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(googleGenAiNativeService);
+    }
+
+    @Test
+    void emptyWhenGeminiClientUnavailable() {
+        TurLLMInstance instance = instance();
+        when(providerFactory.getProvider(instance)).thenReturn(provider);
+        when(provider.getPluginType()).thenReturn("gemini");
+        when(capabilityService.enabledFor("inst-1", "gemini"))
+                .thenReturn(List.of(new EnabledCapability(TurNativeCapability.OPENAI_WEB_SEARCH, null)));
+        when(nativeClient.gemini(instance)).thenReturn(Optional.empty());
+
+        assertThat(executor().tryExecute(agent(), instance, history, null, "conv-1")).isEmpty();
+        verifyNoInteractions(googleGenAiNativeService);
     }
 
     @Test

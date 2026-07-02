@@ -45,7 +45,13 @@ public record LlmProviderType(String value) {
             "anthropic",
             "ollama",
             "gemini",
-            "gemini-openai");
+            "gemini-openai",
+            "openai-compatible",
+            "bedrock",
+            "voyage",
+            "cohere",
+            "mistral",
+            "vertex-ai");
 
     public LlmProviderType {
         if (value == null || value.isBlank()) {

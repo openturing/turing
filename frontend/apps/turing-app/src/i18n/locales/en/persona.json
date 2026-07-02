@@ -4,6 +4,15 @@
     "blankTitle": "You don't seem to have any persona.",
     "blankDescription": "Create a reusable voice profile to apply consistent tone, vocabulary and brand context across your AI agents.",
     "newInstance": "New Persona",
+    "sidebar": {
+      "general": "General",
+      "systemInstruction": "System Instruction",
+      "style": "Style Guidelines",
+      "audience": "Audience Profile",
+      "notebook": "Evaluation Notebook",
+      "fitReport": "Audience-Fit Report",
+      "guidelines": "Persona Guidelines"
+    },
     "deleted": "The {{name}} persona was deleted",
     "notDeleted": "The {{name}} persona was not deleted",
     "aiChat": {

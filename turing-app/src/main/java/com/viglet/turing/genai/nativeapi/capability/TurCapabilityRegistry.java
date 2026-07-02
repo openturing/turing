@@ -134,7 +134,22 @@ public class TurCapabilityRegistry {
                     TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()),
             requestOption("safety-identifier", "Safety Identifier",
                     "Send a hashed end-user id for abuse monitoring.",
-                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()));
+                    TurCapabilityProvider.OPENAI, "Safety", VALUE_BOOLEAN, List.of()),
+            requestOption("gemini-context-cache", "Context Caching",
+                    "Cache the stable prefix (system prompt + pinned grounding) as a named, "
+                            + "TTL'd Gemini cachedContents object and reuse it across turns and "
+                            + "users at a steep discount. The RAG cost lever; off by default.",
+                    TurCapabilityProvider.GEMINI, "Cost & Tier", VALUE_BOOLEAN, List.of()),
+            requestOption("openai-background", "Background Mode",
+                    "Submit long reasoning/agentic turns asynchronously (background:true) and "
+                            + "resume by polling the response id, so a slow turn doesn't hold the "
+                            + "connection open. Off by default.",
+                    TurCapabilityProvider.OPENAI, "Cost & Tier", VALUE_BOOLEAN, List.of()),
+            requestOption("anthropic-extended-thinking", "Extended Thinking",
+                    "Give Claude a reasoning budget (thinking budget_tokens); its thought "
+                            + "summary feeds the same Why-this-answer panel. Optionally interleave "
+                            + "thinking between tool calls. Off by default.",
+                    TurCapabilityProvider.ANTHROPIC, "Reasoning", VALUE_BOOLEAN, List.of()));
 
     private static TurCapabilityDescriptor requestOption(String key, String label, String description,
             TurCapabilityProvider provider, String category, String valueType, List<String> options) {

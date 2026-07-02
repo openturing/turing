@@ -325,6 +325,77 @@ class TurRagContextBuilderTest {
         assertThat(result).isEmpty();
     }
 
+    @Test
+    void reindexContextualShouldFallBackToVectorStoreAddForTextOnlyModel() {
+        EmbeddingModel textOnly = mock(EmbeddingModel.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        var infra = new TurRagContextBuilder.RagInfrastructure(vectorStore, textOnly, storeProvider,
+                storeInstance, "cred", "coll");
+        var docs = java.util.List.of(
+                org.springframework.ai.document.Document.builder().id("c1").text("chunk one").build(),
+                org.springframework.ai.document.Document.builder().id("c2").text("chunk two").build());
+
+        boolean contextual = builder.reindexByMetadataContextual(infra, docs, "objectName", "doc.pdf");
+
+        assertThat(contextual).isFalse();
+        verify(storeProvider).deleteByMetadata(storeInstance, "cred", "coll", "objectName", "doc.pdf");
+        verify(vectorStore).add(docs);
+    }
+
+    @Test
+    void reindexContextualShouldEmbedChunksTogetherAndUpsertPrecomputed() {
+        EmbeddingModel contextualModel = mock(EmbeddingModel.class,
+                org.mockito.Mockito.withSettings().extraInterfaces(
+                        com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel.class));
+        var asContextual = (com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel) contextualModel;
+        when(asContextual.supportsContextualChunks()).thenReturn(true);
+        when(asContextual.embedDocumentChunks(any()))
+                .thenReturn(java.util.List.of(new float[] { 0.1f }, new float[] { 0.2f }));
+
+        VectorStore vectorStore = mock(VectorStore.class);
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        var infra = new TurRagContextBuilder.RagInfrastructure(vectorStore, contextualModel, storeProvider,
+                storeInstance, "cred", "coll");
+        var docs = java.util.List.of(
+                org.springframework.ai.document.Document.builder().id("c1").text("chunk one").build(),
+                org.springframework.ai.document.Document.builder().id("c2").text("chunk two").build());
+
+        boolean contextual = builder.reindexByMetadataContextual(infra, docs, "objectName", "doc.pdf");
+
+        assertThat(contextual).isTrue();
+        verify(storeProvider).deleteByMetadata(storeInstance, "cred", "coll", "objectName", "doc.pdf");
+        verify(storeProvider).importChunks(eq(storeInstance), eq("cred"), eq("coll"), any(), eq(contextualModel));
+        // The per-chunk vector-store add() must NOT run on the contextual path.
+        org.mockito.Mockito.verify(vectorStore, org.mockito.Mockito.never())
+                .add(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void reindexContextualShouldFallBackWhenVectorCountMismatches() {
+        EmbeddingModel contextualModel = mock(EmbeddingModel.class,
+                org.mockito.Mockito.withSettings().extraInterfaces(
+                        com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel.class));
+        var asContextual = (com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel) contextualModel;
+        when(asContextual.supportsContextualChunks()).thenReturn(true);
+        // Only one vector for two chunks → mismatch → fall back.
+        when(asContextual.embedDocumentChunks(any()))
+                .thenReturn(java.util.List.of(new float[] { 0.1f }));
+
+        VectorStore vectorStore = mock(VectorStore.class);
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        var infra = new TurRagContextBuilder.RagInfrastructure(vectorStore, contextualModel, storeProvider,
+                storeInstance, "cred", "coll");
+        var docs = java.util.List.of(
+                org.springframework.ai.document.Document.builder().id("c1").text("chunk one").build(),
+                org.springframework.ai.document.Document.builder().id("c2").text("chunk two").build());
+
+        boolean contextual = builder.reindexByMetadataContextual(infra, docs, "objectName", "doc.pdf");
+
+        assertThat(contextual).isFalse();
+        verify(vectorStore).add(docs);
+    }
+
     // Helper interface for testing VectorStore that also implements InitializingBean
     interface InitializingVectorStore extends VectorStore, InitializingBean {
     }

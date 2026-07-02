@@ -139,6 +139,7 @@ public class TurSNGenAi {
     private final com.viglet.turing.genai.rag.TurRagReranker ragReranker;
     private final com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
     private final com.viglet.turing.genai.safety.TurModerationService moderationService;
+    private final TurSNFullContextService fullContextService;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
@@ -149,7 +150,8 @@ public class TurSNGenAi {
             com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
             com.viglet.turing.genai.rag.TurRagReranker ragReranker,
             com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService,
-            com.viglet.turing.genai.safety.TurModerationService moderationService) {
+            com.viglet.turing.genai.safety.TurModerationService moderationService,
+            TurSNFullContextService fullContextService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -160,6 +162,7 @@ public class TurSNGenAi {
         this.ragReranker = ragReranker;
         this.chatFlowEngineService = chatFlowEngineService;
         this.moderationService = moderationService;
+        this.fullContextService = fullContextService;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -508,6 +511,19 @@ public class TurSNGenAi {
     private List<Document> retrieveDocuments(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
+        // T500 — full-context (retrieval-free) answering: only on the unfiltered
+        // conversational path (an explicit facet filter is a deliberate narrowing
+        // we must respect). When the site opted in and the whole corpus fits the
+        // token budget, ground over every chunk and skip top-K + rerank entirely.
+        // Fail-open: declines to empty → the normal top-K path below runs unchanged.
+        boolean callerFilters = filters != null && !filters.isEmpty();
+        if (!callerFilters) {
+            java.util.Optional<List<Document>> fullCorpus =
+                    fullContextService.tryFullContext(context, latestUserQuery);
+            if (fullCorpus.isPresent()) {
+                return fullCorpus.get();
+            }
+        }
         java.util.Map<String, List<String>> effectiveFilters = filters;
         boolean autoExtracted = false;
         if (effectiveFilters == null || effectiveFilters.isEmpty()) {

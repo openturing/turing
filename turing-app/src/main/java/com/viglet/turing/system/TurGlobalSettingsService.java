@@ -230,6 +230,84 @@ public class TurGlobalSettingsService {
         return configVars.setString(TurConfigVarOnStartup.DEFAULT_LLM, defaultLlmId);
     }
 
+    /**
+     * T517 — the {@code TurLLMInstance} id bound to {@code lane} (blank when the
+     * lane falls back to the default LLM).
+     */
+    public String getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane lane) {
+        return configVars.getString(modelLaneConfigVar(lane), "");
+    }
+
+    public String updateModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane lane,
+            String instanceId) {
+        return configVars.setString(modelLaneConfigVar(lane), instanceId == null ? "" : instanceId);
+    }
+
+    private static String modelLaneConfigVar(com.viglet.turing.system.lane.TurModelLane lane) {
+        return switch (lane) {
+            case FAST -> TurConfigVarOnStartup.MODEL_LANE_FAST;
+            case REASONING -> TurConfigVarOnStartup.MODEL_LANE_REASONING;
+            case CHEAP -> TurConfigVarOnStartup.MODEL_LANE_CHEAP;
+        };
+    }
+
+    /**
+     * T518 — the ordered cross-provider fallback chain (LLM instance ids). Parsed
+     * from the comma-separated {@code GLOBAL_LLM_FALLBACK_CHAIN}; blank entries
+     * are dropped. Empty list = no chain (legacy single-model path).
+     */
+    public java.util.List<String> getLlmFallbackChainIds() {
+        String raw = configVars.getString(TurConfigVarOnStartup.LLM_FALLBACK_CHAIN, "");
+        if (raw == null || raw.isBlank()) {
+            return java.util.List.of();
+        }
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    /** T518 — persist the fallback chain as a comma-separated id list. */
+    public java.util.List<String> updateLlmFallbackChainIds(java.util.List<String> ids) {
+        java.util.List<String> clean = ids == null ? java.util.List.of()
+                : ids.stream().filter(s -> s != null && !s.isBlank()).map(String::trim).toList();
+        configVars.setRaw(TurConfigVarOnStartup.LLM_FALLBACK_CHAIN, String.join(",", clean));
+        return clean;
+    }
+
+    /** T518 — fallback routing mode; unknown/blank falls back to {@code PRIORITY}. */
+    public com.viglet.turing.resilience.llm.TurLlmFallbackMode getLlmFallbackMode() {
+        return configVars.find(TurConfigVarOnStartup.LLM_FALLBACK_MODE)
+                .map(com.viglet.turing.resilience.llm.TurLlmFallbackMode::fromValue)
+                .orElse(com.viglet.turing.resilience.llm.TurLlmFallbackMode.PRIORITY);
+    }
+
+    public com.viglet.turing.resilience.llm.TurLlmFallbackMode updateLlmFallbackMode(
+            com.viglet.turing.resilience.llm.TurLlmFallbackMode mode) {
+        com.viglet.turing.resilience.llm.TurLlmFallbackMode value =
+                mode == null ? com.viglet.turing.resilience.llm.TurLlmFallbackMode.PRIORITY : mode;
+        configVars.setRaw(TurConfigVarOnStartup.LLM_FALLBACK_MODE, value.name());
+        return value;
+    }
+
+    /** T522 — whether the multi-provider "second opinion" cross-check runs. */
+    public boolean isSecondOpinionEnabled() {
+        return configVars.getBoolean(TurConfigVarOnStartup.SECOND_OPINION_ENABLED, false);
+    }
+
+    public boolean updateSecondOpinionEnabled(boolean enabled) {
+        return configVars.setBoolean(TurConfigVarOnStartup.SECOND_OPINION_ENABLED, enabled);
+    }
+
+    /** T522 — the critic {@code TurLLMInstance} id (a different vendor than the answerer). */
+    public String getSecondOpinionLlmId() {
+        return configVars.getString(TurConfigVarOnStartup.SECOND_OPINION_LLM, "");
+    }
+
+    public String updateSecondOpinionLlmId(String llmId) {
+        return configVars.setString(TurConfigVarOnStartup.SECOND_OPINION_LLM, llmId);
+    }
+
     public TurEmailProviderType getEmailProvider() {
         return configVars.getEnum(TurEmailProviderType.class, TurConfigVarOnStartup.EMAIL_PROVIDER,
                 TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE));
@@ -377,6 +455,38 @@ public class TurGlobalSettingsService {
     @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
     public String updateRagSnRerankModel(String model) {
         return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_MODEL, model);
+    }
+
+    /** T521 — AWS region for the managed Bedrock Rerank API ({@code BEDROCK}). */
+    public String getRagSnRerankRegion() {
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.RAG_SN_RERANK_REGION,
+                TurConfigVarOnStartup.RAG_SN_RERANK_REGION_DEFAULT_VALUE);
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankRegion(String region) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_REGION, region);
+    }
+
+    /** T521 — GCP project for the managed Vertex AI Ranking API ({@code VERTEX_AI}). */
+    public String getRagSnRerankVertexProject() {
+        return configVars.getString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_PROJECT, "");
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankVertexProject(String project) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_PROJECT, project);
+    }
+
+    /** T521 — GCP location for Vertex AI Ranking (default {@code global}). */
+    public String getRagSnRerankVertexLocation() {
+        return configVars.getStringNonBlank(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION,
+                TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION_DEFAULT_VALUE);
+    }
+
+    @CacheEvict(cacheNames = "turRagRerankScore", allEntries = true)
+    public String updateRagSnRerankVertexLocation(String location) {
+        return configVars.setString(TurConfigVarOnStartup.RAG_SN_RERANK_VERTEX_LOCATION, location);
     }
 
     /**

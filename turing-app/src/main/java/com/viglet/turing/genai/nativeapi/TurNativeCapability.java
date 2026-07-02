@@ -122,6 +122,41 @@ public enum TurNativeCapability {
      *  (server name) plus optional {@code authToken} and {@code allowedTools}. */
     ANTHROPIC_MCP("anthropic-mcp", "anthropic", TOOL, MCP, "Integrations", false),
 
+    /** T490 / §X.19 — Gemini {@code google_search} grounding tool (the Gemini
+     *  analog of OpenAI {@code web_search} / Anthropic {@code web_search}). The
+     *  model runs Google Search in Google's infrastructure and returns grounding
+     *  metadata (per-segment support + source spans) that decodes onto the
+     *  shipped {@code TurChatCitation} / {@code type:"citations"} SSE contract
+     *  (T152–T155); Google's terms require rendering the returned Search
+     *  Suggestion chips, streamed as a {@code type:"searchSuggestions"} event. */
+    GEMINI_GOOGLE_SEARCH("gemini-google-search", "gemini", TOOL, WEB_SEARCH, "Web", false),
+    /** T491 / §X.19 — Gemini {@code url_context} tool (the Gemini analog of
+     *  Anthropic {@code web_fetch}, T140): the model pulls a URL/PDF named in the
+     *  prompt directly in Google's infrastructure, no Turing crawler. Coexists
+     *  with {@link #GEMINI_GOOGLE_SEARCH} in the same turn. */
+    GEMINI_URL_CONTEXT("gemini-url-context", "gemini", TOOL, WEB_FETCH, "Web", false),
+    /** T492 / §X.19 — Gemini {@code code_execution} tool: a built-in Python
+     *  sandbox (the Gemini analog of OpenAI {@code code_interpreter} (T135) /
+     *  Anthropic {@code code_execution} (T141)). The generated code, its output
+     *  and inline matplotlib images come back as response parts that
+     *  {@code TurGeminiCodeExecutionDecoder} renders into the answer markdown
+     *  (images as inline {@code data:} URIs). */
+    GEMINI_CODE_EXECUTION("gemini-code-execution", "gemini", TOOL, CODE_EXEC, "Code", false),
+    /** T493 / §X.19 — Gemini native image generation (the Gemini analog of
+     *  OpenAI {@code image_generation}, T137). Not a {@code tools} entry: it sets
+     *  the request's {@code responseModalities} to include {@code IMAGE}, so an
+     *  image-capable model ({@code gemini-2.5-flash-image} / Imagen) returns the
+     *  generated image as an inline data part, rendered into the answer as a
+     *  {@code data:} URI by {@code TurGeminiCodeExecutionDecoder}. */
+    GEMINI_IMAGE_GENERATION("gemini-image-generation", "gemini", TOOL, IMAGE_GEN, "Media", false),
+    /** T494 / §X.19 — Gemini Computer Use ({@code gemini-2.5-computer-use-*}). The
+     *  multi-turn screenshot/action loop driving the same vendor-neutral
+     *  {@link com.viglet.turing.genai.nativeapi.openai.computeruse.TurComputerUseDriver}
+     *  seam (T136) as the OpenAI/Anthropic variants; ships against the no-op
+     *  driver, so it's matrix-selectable without bundling a browser. Owns the
+     *  whole turn. */
+    GEMINI_COMPUTER_USE("gemini-computer-use", "gemini", TOOL, COMPUTER_USE, "Automation", true),
+
     /** T147 / §X.6.a — OpenAI Realtime voice ({@code gpt-realtime} family). Unlike
      *  the other capabilities this is <b>not</b> wired into the text-chat
      *  {@code TurNativeChatExecutor} turn: a voice session is minted out-of-band

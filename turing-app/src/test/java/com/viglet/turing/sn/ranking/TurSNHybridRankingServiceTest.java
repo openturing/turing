@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -124,6 +125,35 @@ class TurSNHybridRankingServiceTest {
     @Test
     void rerankModeWithDefaultsConfiguredIsEnabled() {
         assertThat(service.isEnabled(siteWithMode(TurSNRankingMode.HYBRID_RRF_RERANK))).isTrue();
+    }
+
+    // ---- T513 per-site domain embedding model override --------------------
+
+    @Test
+    void siteEmbeddingOverrideEnablesEvenWithoutGlobalDefault() {
+        // No platform default embedding model, but the site picks its own — the
+        // override short-circuits the global lookup, so isEnabled is still true.
+        lenient().when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("");
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setEmbeddingModelId("voyage-law");
+
+        assertThat(service.isEnabled(site)).isTrue();
+    }
+
+    @Test
+    void siteEmbeddingOverrideRoutesInfraThroughChosenModel() {
+        when(ragContextBuilder.build(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.of(infra()));
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(Document.builder().id("B").text("").build()));
+
+        TurSNSite site = siteWithMode(TurSNRankingMode.HYBRID_RRF);
+        site.getTurSNSiteGenAi().setEmbeddingModelId("voyage-law");
+
+        service.fuse(site, Locale.ENGLISH, "query", List.of(result("A"), result("B")));
+
+        // The per-site override id (not the global "emb-1") is the one used to build infra.
+        verify(ragContextBuilder).build(eq("voyage-law"), anyString(), anyString());
     }
 
     // ---- fuse reordering --------------------------------------------------

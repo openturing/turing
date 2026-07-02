@@ -65,13 +65,14 @@ class TurChatMultiModalSlotServiceTest {
     @Mock private TurSecretCryptoService cryptoService;
     @Mock private TurChatFlowEngineService engineService;
     @Mock private TurAIAgentSlotRepository slotRepository;
+    @Mock private com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService videoUnderstanding;
 
     private TurChatMultiModalSlotService service;
 
     @BeforeEach
     void setUp() {
         service = new TurChatMultiModalSlotService(storageService, llmProviderFactory,
-                cryptoService, engineService, slotRepository);
+                cryptoService, engineService, slotRepository, videoUnderstanding);
     }
 
     private TurAIAgent agent() {

@@ -6,11 +6,14 @@ import { Container, GitHubIcon, Logo, LINKS } from "@/components/brand";
 import { formatStars, useGitHubStars } from "@/components/github-stars";
 import { cn } from "@/lib/utils";
 
+// Hrefs are root-anchored ("/#…") so they also work from the feature pages —
+// the browser navigates home and scrolls to the section.
 const NAV_ITEMS = [
-  { label: "Capabilities", href: "#features" },
-  { label: "Why Turing", href: "#why" },
-  { label: "Developers", href: "#developers" },
-  { label: "Marketplace", href: "#marketplace" },
+  { label: "Capabilities", href: "/#features" },
+  { label: "Native tools", href: "/#native-tools" },
+  { label: "Why Turing", href: "/#why" },
+  { label: "Developers", href: "/#developers" },
+  { label: "Marketplace", href: "/#marketplace" },
   { label: "Docs", href: LINKS.docs },
 ];
 
@@ -35,7 +38,7 @@ export function SiteNav() {
       )}
     >
       <Container className="flex h-16 items-center gap-4">
-        <a href="#top" className="text-base">
+        <a href="/" className="text-base" aria-label="Viglet Turing ES — home">
           <Logo />
         </a>
         <nav className="ml-6 hidden items-center gap-6 md:flex">

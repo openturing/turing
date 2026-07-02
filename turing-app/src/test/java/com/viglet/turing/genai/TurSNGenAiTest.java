@@ -77,7 +77,7 @@ class TurSNGenAiTest {
     void setUp() {
         turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder,
                 facetExtractor, agentChatExecutor, globalSettingsService, ragReranker, chatFlowEngineService,
-                moderationService);
+                moderationService, new TurSNFullContextService());
     }
 
     @Test

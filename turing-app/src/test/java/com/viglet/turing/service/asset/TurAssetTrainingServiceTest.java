@@ -52,6 +52,9 @@ class TurAssetTrainingServiceTest {
         private TurAssetTrainingRecordRepository trainingRecordRepository;
 
         @Mock
+        private com.viglet.turing.genai.ocr.TurMistralOcrService mistralOcrService;
+
+        @Mock
         private RagInfrastructure ragInfrastructure;
 
         private TurAssetTrainingService service;
@@ -62,7 +65,8 @@ class TurAssetTrainingServiceTest {
                                 storageService,
                                 globalSettingsService,
                                 ragContextBuilder,
-                                trainingRecordRepository);
+                                trainingRecordRepository,
+                                mistralOcrService);
         }
 
         @Test

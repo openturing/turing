@@ -30,6 +30,8 @@ class TurRagRerankStrategyTypeTest {
             "llm,LLM",
             "  Cross_Encoder  ,CROSS_ENCODER",
             "COHERE,COHERE",
+            "voyage,VOYAGE",
+            "VOYAGE,VOYAGE",
     })
     void parsesKnownValuesCaseInsensitively(String input, TurRagRerankStrategyType expected) {
         assertThat(TurRagRerankStrategyType.fromValue(input)).isEqualTo(expected);

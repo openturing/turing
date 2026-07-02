@@ -15,10 +15,10 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 /**
  * F.7 / §X.8.c — the embeddings-batch seam, separate from the chat
- * {@link TurBatchProvider} because only OpenAI exposes a Batch
- * {@code /v1/embeddings} endpoint (Anthropic has no embedding API at all). A
- * vendor's chat-batch and embedding-batch support are therefore independent
- * capabilities.
+ * {@link TurBatchProvider} because a vendor's chat-batch and embedding-batch
+ * support are independent capabilities. OpenAI (Batch {@code /v1/embeddings}) and
+ * Gemini ({@code batches.createEmbeddings}, T496) implement it; Anthropic has no
+ * embedding API at all.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4

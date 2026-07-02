@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.anthropic.client.AnthropicClient;
+import com.google.genai.Client;
 import com.openai.client.OpenAIClient;
 import com.viglet.turing.genai.TurChatPromptAssembler;
 import com.viglet.turing.genai.TurChatPromptRequest;
@@ -51,6 +52,8 @@ import com.viglet.turing.genai.nativeapi.openai.TurOpenAiResponsesService;
 import com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService;
 import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUseService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiComputerUseService;
+import com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -100,6 +103,9 @@ public class TurNativeChatExecutor {
     private final TurAnthropicComputerUseService anthropicComputerUseService;
     private final TurAnthropicEditorService anthropicEditorService;
     private final TurAnthropicMemoryService anthropicMemoryService;
+    private final TurGoogleGenAiNativeService googleGenAiNativeService;
+    private final TurGeminiComputerUseService geminiComputerUseService;
+    private final com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService;
     private final TurChatPromptAssembler promptAssembler;
     private final TurAgentPersonaResolver personaResolver;
     private final TurNativeCapabilityResolver capabilityResolver;
@@ -117,6 +123,7 @@ public class TurNativeChatExecutor {
     private final com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
             reasoningEffortResolver;
     private final com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
+    private final com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -138,6 +145,9 @@ public class TurNativeChatExecutor {
             TurAnthropicComputerUseService anthropicComputerUseService,
             TurAnthropicEditorService anthropicEditorService,
             TurAnthropicMemoryService anthropicMemoryService,
+            TurGoogleGenAiNativeService googleGenAiNativeService,
+            TurGeminiComputerUseService geminiComputerUseService,
+            com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService,
             TurChatPromptAssembler promptAssembler,
             TurAgentPersonaResolver personaResolver,
             TurNativeCapabilityResolver capabilityResolver,
@@ -154,7 +164,8 @@ public class TurNativeChatExecutor {
                     nativeDocumentGroundingService,
             com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
                     reasoningEffortResolver,
-            com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService) {
+            com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService,
+            com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -164,6 +175,9 @@ public class TurNativeChatExecutor {
         this.anthropicComputerUseService = anthropicComputerUseService;
         this.anthropicEditorService = anthropicEditorService;
         this.anthropicMemoryService = anthropicMemoryService;
+        this.googleGenAiNativeService = googleGenAiNativeService;
+        this.geminiComputerUseService = geminiComputerUseService;
+        this.cohereMessagesService = cohereMessagesService;
         this.promptAssembler = promptAssembler;
         this.personaResolver = personaResolver;
         this.capabilityResolver = capabilityResolver;
@@ -179,6 +193,7 @@ public class TurNativeChatExecutor {
         this.nativeDocumentGroundingService = nativeDocumentGroundingService;
         this.reasoningEffortResolver = reasoningEffortResolver;
         this.safetyIdentifierService = safetyIdentifierService;
+        this.liveAnswersService = liveAnswersService;
     }
 
     /**
@@ -194,9 +209,20 @@ public class TurNativeChatExecutor {
         String pluginType = resolvePluginType(instance);
         boolean isOpenAi = "openai".equals(pluginType);
         boolean isAnthropic = "anthropic".equals(pluginType);
-        if (!isOpenAi && !isAnthropic) {
-            // Only OpenAI (F.2) and Anthropic (F.3) have a native path; other
-            // vendors always fall through to the Spring AI executor.
+        boolean isGemini = "gemini".equals(pluginType);
+        boolean isCohere = "cohere".equals(pluginType);
+        if (!isOpenAi && !isAnthropic && !isGemini && !isCohere) {
+            // Only OpenAI (F.2), Anthropic (F.3), Gemini (T489 / F.16) and — for
+            // native citations only — Cohere (T519 / §XXVIII.15) have a native
+            // path; other vendors always fall through to the Spring AI executor.
+            return Optional.empty();
+        }
+
+        // T519 / §XXVIII.15 — Cohere has a native path ONLY for Command citation
+        // mode (the `citations` Request Option). Without it, a Cohere agent stays
+        // on the OpenAI-compatible Spring AI path — unchanged.
+        boolean cohereCitations = isCohere && isCitationsEnabled(agent);
+        if (isCohere && !cohereCitations) {
             return Optional.empty();
         }
 
@@ -229,7 +255,8 @@ public class TurNativeChatExecutor {
 
         List<EnabledCapability> instanceCapabilities =
                 capabilityService.enabledFor(instance.getId(), pluginType);
-        if (instanceCapabilities.isEmpty() && !groundWithDocuments && !openAiReasoningForced) {
+        if (instanceCapabilities.isEmpty() && !groundWithDocuments && !openAiReasoningForced
+                && !cohereCitations) {
             return Optional.empty();
         }
 
@@ -274,10 +301,14 @@ public class TurNativeChatExecutor {
         Optional<OpenAIClient> openAiClient = isOpenAi ? nativeClient.openAi(instance) : Optional.empty();
         Optional<AnthropicClient> anthropicClient = isAnthropic
                 ? nativeClient.anthropic(instance) : Optional.empty();
+        Optional<Client> geminiClient = isGemini ? nativeClient.gemini(instance) : Optional.empty();
         if (isOpenAi && openAiClient.isEmpty()) {
             return Optional.empty();
         }
         if (isAnthropic && anthropicClient.isEmpty()) {
+            return Optional.empty();
+        }
+        if (isGemini && geminiClient.isEmpty()) {
             return Optional.empty();
         }
 
@@ -297,6 +328,70 @@ public class TurNativeChatExecutor {
                 new TurChatPromptRequest(agent, history, conversationId,
                         /* flowContext = */ null, activePersona, lastUserMessage, baseSystemPrompt));
         AssembledTurn turn = splitAssembled(assembled);
+
+        // T187 / §X.15.a — "Live answers" hybrid mode. When the agent opted in,
+        // fuse the indexed knowledge base + web_search + web_fetch + code_execution
+        // into one turn: append the [KB-n] grounding block (the leg the OpenAI
+        // Responses path otherwise lacks) + the fusion-guidance prompt. Skip the
+        // grounding block when the Anthropic citations / native-PDF path already
+        // attaches the passages as document blocks (groundWithDocuments), to avoid
+        // double-grounding. No-op (unchanged turn) for every non-live agent.
+        if (liveAnswersService.isEnabled(agent)) {
+            String groundedPrompt = liveAnswersService.augment(
+                    turn.systemPrompt(), lastUserMessage, groundWithDocuments);
+            turn = new AssembledTurn(groundedPrompt, turn.history());
+        }
+
+        // T519 / §XXVIII.15 — Cohere native citation branch. Retrieve the top-K
+        // passages and run Cohere's v2/chat with them as documents; the response's
+        // native citations decode onto the same TurChatCitation/SSE contract as
+        // the Anthropic/Gemini paths. Reached only when the citations option is on
+        // (gated above); persists the citations for the T155 drift scan like the
+        // Anthropic path.
+        if (isCohere) {
+            List<TurCitationDocument> citationDocuments =
+                    ragSearchToolService.retrievePassagesForCitations(lastUserMessage, CITATION_TOP_K);
+            log.info("[Native] agent '{}' instance '{}' handled by Cohere citation path "
+                    + "({} citation doc(s), persona '{}')", agent.getTitle(), instance.getId(),
+                    citationDocuments.size(), activePersona == null ? "none" : activePersona.getName());
+            Flux<ChatResponse> messages = cohereMessagesService.chat(instance, turn.history(),
+                    turn.systemPrompt(), citationDocuments);
+            return Optional.of(citationDriftService.tapForPersistence(messages, agent.getId(),
+                    conversationId, lastUserMessage, CITATION_TOP_K));
+        }
+
+        // T489 / §X.19 — Gemini native branch. The base path streams a turn
+        // through the Google GenAI SDK's generateContentStream with the fused
+        // system prompt + history; the enabled capabilities are threaded through
+        // for the server-side built-in tools (T490+) to wire. No coexisting-tool
+        // loop on the foundation path (Gemini built-in tools are one-shot, like
+        // the other vendors' server-side tools).
+        if (isGemini) {
+            // T494 / §X.19 — computer_use is a multi-turn screenshot/action loop
+            // (not a one-shot tool), so it owns the whole turn when enabled, like
+            // the OpenAI/Anthropic computer-use variants.
+            Optional<EnabledCapability> geminiComputerUse = capabilities.stream()
+                    .filter(c -> c.capability() == TurNativeCapability.GEMINI_COMPUTER_USE)
+                    .findFirst();
+            if (geminiComputerUse.isPresent()) {
+                if (capabilities.size() > 1) {
+                    log.info("[Native] agent '{}' instance '{}' has Gemini computer_use enabled "
+                            + "alongside {} other native capability/ies — driving the computer-use "
+                            + "loop only this turn", agent.getTitle(), instance.getId(),
+                            capabilities.size() - 1);
+                }
+                log.info("[Native] agent '{}' instance '{}' handled by Gemini computer-use loop "
+                        + "(persona '{}')", agent.getTitle(), instance.getId(),
+                        activePersona == null ? "none" : activePersona.getName());
+                return Optional.of(geminiComputerUseService.chat(geminiClient.get(), instance,
+                        turn.history(), turn.systemPrompt(), geminiComputerUse.get()));
+            }
+            log.info("[Native] agent '{}' instance '{}' handled by Gemini native path "
+                    + "({} capability/ies, persona '{}')", agent.getTitle(), instance.getId(),
+                    capabilities.size(), activePersona == null ? "none" : activePersona.getName());
+            return Optional.of(googleGenAiNativeService.chat(geminiClient.get(), instance,
+                    turn.history(), turn.systemPrompt(), capabilities));
+        }
 
         // T433 / §X.18.b — "capacidade é mutex, resto coexiste". For an explicit
         // (non-legacy) selection whose picks don't own the turn, attach the

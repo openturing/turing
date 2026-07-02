@@ -104,8 +104,9 @@ bet on the same protocol:
    in 30 seconds and searches/answers/acts on enterprise content with
    citations. Turing stops being "a chat UI you must adopt" and becomes
    the grounding layer inside whatever agent the customer already runs.
-   Full plan in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIII; tasks in
-   [ROADMAP.md](ROADMAP.md) Block I.
+   The both-ways `/mcp` core **shipped** — see [CHANGELOG.md](CHANGELOG.md)
+   → Block I; the remaining per-tenant SaaS + federation expansion is
+   **cancelled** (§VIII.7).
 
 **Why one pillar, not two**: the same protocol investment (transport,
 auth, tool/resource/prompt schema) serves both. Sell it as one line —
@@ -153,11 +154,12 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    Turned capabilities already shipped (LLM-judge + analytics + transcripts
    + T94 lint) into the trust unlock for regulated verticals: a
    non-engineer changes a prompt and a golden-set eval gate proves no
-   regression before publish. The next anchor is now the MCP pillar (#2).
-2. ⭐ **MCP pillar (Block I + the §VIII.4 Groovy→MCP exporter)** — highest
-   *distribution* leverage at lowest build cost (mostly transport — see
-   §XIII.2). Ride the adoption curve of Claude/Cursor/ChatGPT instead of
-   asking customers to adopt our UI.
+   regression before publish. The next live anchor is now Block M (#3).
+2. ✅/✖ **MCP pillar (Block I)** — the both-ways `/mcp` core **shipped**
+   (T245–T253 + T146 + the §VIII.4 Groovy→MCP exporter); the *remaining*
+   expansion (per-tenant SaaS endpoints + the federation directory) is
+   **cancelled** — see "Cancelled" below. The distribution bet is realized by
+   the shipped surface; no further Block I build is scheduled.
 3. **Block M — Verifiable answers (T292–T293)** — provider-agnostic
    provenance UI over existing RAG hits. Cheap, visible, and the
    Education/Finance trust differentiator vs source-less ChatGPT.
@@ -167,12 +169,27 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    any bank/hospital conversation; also seeds Agent CI's anonymized
    golden sets.
 
-**Downgraded (courage to deprecate, applied to our own roadmap):**
-- **Jlama (former Block G, T193–T218) → a 2–3 day spike (T193-spike).**
-  Upstream is stagnant (last release 2025-01-01); **Ollama-as-sidecar**
-  already delivers air-gapped + tool-calling with far less risk. Do not
-  commit an 8-week pure-Java inference build before a spike beats that
-  default for a *named* customer requirement.
+**Cancelled (courage to deprecate, applied to our own roadmap):**
+- **Embedded LLM / Jlama (former Block G, T193–T218, then the T193 spike)
+  — cancelled, not on the roadmap.** Upstream is stagnant (last release
+  2025-01-01) and **Ollama-as-sidecar** already delivers the air-gapped +
+  tool-calling story in the same docker-compose with far less risk, so the
+  zero-egress deployment need is already met. Revisit only if a *named*
+  customer requires a pure-Java in-process engine that Ollama cannot serve.
+  Jlama design detail remains in `git log` (former §XI).
+- **Block I remaining (T254 per-tenant SaaS MCP endpoints + T192 inter-tenant
+  federation directory) — cancelled.** The MCP-server *core* shipped (Turing's
+  both-ways `/mcp`, T245–T253 + T146); the per-tenant SaaS endpoint scaling and
+  the `directory.turing.io` federation network-effect bet are dropped — no named
+  customer is asking, and the shipped surface already covers the integration
+  story. Reopen only on a concrete multi-tenant SaaS demand. Design in `git log`
+  (former §XIII).
+- **Block P remaining (T362 license posture, T363 private Eval-engine carve-out,
+  T364 point GEO at `turing-ce`) — cancelled.** The publish *mechanics* shipped
+  (T356–T361); the open remainder were "decide later" strategy calls — settle by
+  default: **stay Apache 2.0**, keep the Eval engine in-tree, no further open-core
+  surgery until Turing Cloud is real revenue AND a competitor hosts the CE. Design
+  in `git log` (former §XIX).
 
 **Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining
 Block D/F items wait on a customer to ask for them twice before
@@ -360,9 +377,9 @@ to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
 
 > Added 2026-06-15. The boundary + license posture for separating the public
 > community edition from confidential strategy. Implements the open-core model
-> §VIII/§IX assume but never specced mechanically. Tasks in
-> [ROADMAP.md](ROADMAP.md) Block P; publish mechanics design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIX.
+> §VIII/§IX assume but never specced mechanically. Publish mechanics **shipped**
+> (T356–T361) — see [CHANGELOG.md](CHANGELOG.md) → Block P; the remaining
+> open-core decisions are **cancelled** (§VIII.7) — default is stay Apache 2.0.
 
 ### XI.1 The boundary principle — hide *thinking* and *revenue*, not *cleverness*
 

@@ -5,7 +5,9 @@ import type {
   TurChatConversationResponse,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatGrounding,
   TurChatResponse,
+  TurChatSecondOpinion,
   TurChatSource,
   TurChatStreamEvent,
   TurChatToolCall,
@@ -15,6 +17,7 @@ import type {
   TurLlmInstance,
   TurLlmVendor,
   TurSearchResponse,
+  TurSearchSuggestions,
   TurSortOption,
   TurSpellCheck,
 } from "./types";
@@ -249,12 +252,51 @@ function parseSourcesEvent(content: string): TurChatSource[] | null {
   return null;
 }
 
+/** Parses a `"grounding"` SSE event payload (T516) into a guardrail verdict, or `null`. */
+function parseGroundingEvent(content: string): TurChatGrounding | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatGrounding;
+    if (parsed && typeof parsed.action === "string") {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"secondOpinion"` SSE event payload (T522) into a verdict, or `null`. */
+function parseSecondOpinionEvent(content: string): TurChatSecondOpinion | null {
+  try {
+    const parsed = JSON.parse(content) as TurChatSecondOpinion;
+    if (parsed && typeof parsed.agree === "boolean") {
+      return parsed;
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
 /** Parses a `"citations"` SSE event payload (T152) into per-sentence citations, or `null`. */
 function parseCitationsEvent(content: string): TurChatCitation[] | null {
   try {
     const parsed = JSON.parse(content) as unknown;
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed as TurChatCitation[];
+    }
+  } catch {
+    // ignore malformed payloads
+  }
+  return null;
+}
+
+/** Parses a `"searchSuggestions"` SSE event payload (T490) into the Gemini chips, or `null`. */
+function parseSearchSuggestionsEvent(content: string): TurSearchSuggestions | null {
+  try {
+    const parsed = JSON.parse(content) as TurSearchSuggestions;
+    if (parsed && (parsed.renderedContent || (parsed.queries?.length ?? 0) > 0)) {
+      return parsed;
     }
   } catch {
     // ignore malformed payloads
@@ -311,15 +353,20 @@ async function consumeAssistantStream(
   onCitations?: (citations: TurChatCitation[]) => void,
   onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void,
   onReasoning?: (reasoning: string) => void,
+  onGrounding?: (grounding: TurChatGrounding) => void,
+  onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void,
 ): Promise<{
   text: string;
   options: string[];
   form?: TurChatForm;
   sources?: TurChatSource[];
   citations?: TurChatCitation[];
+  searchSuggestions?: TurSearchSuggestions;
   reasoning?: string;
   toolCalls?: TurChatToolCall[];
   clientToolCall?: TurClientToolCall;
+  grounding?: TurChatGrounding;
+  secondOpinion?: TurChatSecondOpinion;
 }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
@@ -332,9 +379,12 @@ async function consumeAssistantStream(
   let form: TurChatForm | undefined;
   let sources: TurChatSource[] | undefined;
   let citations: TurChatCitation[] | undefined;
+  let searchSuggestions: TurSearchSuggestions | undefined;
   let reasoning: string | undefined;
   let toolCalls: TurChatToolCall[] = [];
   let clientToolCall: TurClientToolCall | undefined;
+  let grounding: TurChatGrounding | undefined;
+  let secondOpinion: TurChatSecondOpinion | undefined;
 
   /** Handle a non-token structured event; returns true when it was one. */
   function handleStructuredEvent(parsed: TurChatStreamEvent): boolean {
@@ -370,6 +420,13 @@ async function consumeAssistantStream(
       }
       return true;
     }
+    if (parsed.type === "searchSuggestions") {
+      const parsedSuggestions = parseSearchSuggestionsEvent(parsed.content);
+      if (parsedSuggestions) {
+        searchSuggestions = parsedSuggestions;
+      }
+      return true;
+    }
     if (parsed.type === "reasoning") {
       // T178 — the reasoning summary is plain text (one or more parts joined
       // server-side); accumulate in case the backend emits more than one event.
@@ -391,6 +448,22 @@ async function consumeAssistantStream(
       const parsedClientCall = parseClientToolCallEvent(parsed.content);
       if (parsedClientCall) {
         clientToolCall = parsedClientCall;
+      }
+      return true;
+    }
+    if (parsed.type === "grounding") {
+      const parsedGrounding = parseGroundingEvent(parsed.content);
+      if (parsedGrounding) {
+        grounding = parsedGrounding;
+        onGrounding?.(parsedGrounding);
+      }
+      return true;
+    }
+    if (parsed.type === "secondOpinion") {
+      const parsedSecondOpinion = parseSecondOpinionEvent(parsed.content);
+      if (parsedSecondOpinion) {
+        secondOpinion = parsedSecondOpinion;
+        onSecondOpinion?.(parsedSecondOpinion);
       }
       return true;
     }
@@ -435,9 +508,12 @@ async function consumeAssistantStream(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
     clientToolCall,
+    grounding,
+    secondOpinion,
   };
 }
 
@@ -508,9 +584,12 @@ export async function postChatConversation(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -520,6 +599,8 @@ export async function postChatConversation(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -528,9 +609,12 @@ export async function postChatConversation(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   };
 }
 
@@ -600,9 +684,12 @@ export async function postAgentChat(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -612,6 +699,8 @@ export async function postAgentChat(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -620,9 +709,12 @@ export async function postAgentChat(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   };
 }
 
@@ -666,9 +758,12 @@ export async function postClientToolResult(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   } = await consumeAssistantStream(
     response,
     options?.onToken,
@@ -678,6 +773,8 @@ export async function postClientToolResult(
     options?.onCitations,
     options?.onToolCall,
     options?.onReasoning,
+    options?.onGrounding,
+    options?.onSecondOpinion,
   );
   return {
     role: "assistant",
@@ -686,9 +783,12 @@ export async function postClientToolResult(
     form,
     sources,
     citations,
+    searchSuggestions,
     reasoning,
     toolCalls,
     clientToolCall,
+    grounding,
+    secondOpinion,
   };
 }
 

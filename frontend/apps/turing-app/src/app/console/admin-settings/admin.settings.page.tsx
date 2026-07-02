@@ -8,6 +8,7 @@ import {
     IconReceiptRupee,
     IconSettings,
     IconShieldCog,
+    IconSparkles,
     IconUsers,
     IconUsersGroup,
     IconUserShield,
@@ -28,6 +29,11 @@ export default function AdminSettingsPage() {
                 title: t("admin.settings"),
                 url: "/settings",
                 icon: IconSettings,
+            },
+            {
+                title: t("admin.genAi"),
+                url: "/genai",
+                icon: IconSparkles,
             },
             ...(showAuthManagement ? [
                 {

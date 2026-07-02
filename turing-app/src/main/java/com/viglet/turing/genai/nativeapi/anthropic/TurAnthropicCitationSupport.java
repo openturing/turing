@@ -70,21 +70,38 @@ public class TurAnthropicCitationSupport {
      * block stays valid and the index stays aligned.
      */
     public List<ContentBlockParam> searchResultBlocks(List<TurCitationDocument> documents) {
+        return searchResultBlocks(documents, null);
+    }
+
+    /**
+     * T502 / §X.20 — same {@code search_result} blocks, but when {@code cacheControl}
+     * is non-null the <b>last</b> block carries an ephemeral {@code cache_control}
+     * breakpoint, so Anthropic caches the whole retrieved-passage prefix (every
+     * block up to and including the breakpoint) at a discount. Null → byte-for-byte
+     * unchanged blocks.
+     */
+    public List<ContentBlockParam> searchResultBlocks(List<TurCitationDocument> documents,
+            com.anthropic.models.messages.CacheControlEphemeral cacheControl) {
         List<ContentBlockParam> blocks = new ArrayList<>();
         if (documents == null) {
             return blocks;
         }
-        for (TurCitationDocument doc : documents) {
+        int lastIdx = documents.size() - 1;
+        for (int i = 0; i < documents.size(); i++) {
+            TurCitationDocument doc = documents.get(i);
             String text = doc.text() == null || doc.text().isBlank() ? " " : doc.text();
             String source = StringUtils.hasText(doc.url()) ? doc.url()
                     : (StringUtils.hasText(doc.sourceId()) ? doc.sourceId() : DEFAULT_SOURCE);
             String title = StringUtils.hasText(doc.title()) ? doc.title() : DEFAULT_TITLE;
-            blocks.add(ContentBlockParam.ofSearchResult(SearchResultBlockParam.builder()
+            SearchResultBlockParam.Builder block = SearchResultBlockParam.builder()
                     .source(source)
                     .title(title)
                     .addContent(TextBlockParam.builder().text(text).build())
-                    .citations(CitationsConfigParam.builder().enabled(true).build())
-                    .build()));
+                    .citations(CitationsConfigParam.builder().enabled(true).build());
+            if (cacheControl != null && i == lastIdx) {
+                block.cacheControl(cacheControl);
+            }
+            blocks.add(ContentBlockParam.ofSearchResult(block.build()));
         }
         return blocks;
     }

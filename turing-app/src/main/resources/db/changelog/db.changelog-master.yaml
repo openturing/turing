@@ -259,3 +259,29 @@ databaseChangeLog:
       file: db/changelog/v2026.3.1.69.yaml
   - include:
       file: db/changelog/v2026.3.1.70.yaml
+  - include:
+      file: db/changelog/v2026.3.1.71.yaml
+  - include:
+      file: db/changelog/v2026.3.1.72.yaml
+  - include:
+      file: db/changelog/v2026.3.1.73.yaml
+  - include:
+      file: db/changelog/v2026.3.1.74.yaml
+  - include:
+      file: db/changelog/v2026.3.1.75.yaml
+  - include:
+      file: db/changelog/v2026.3.1.76.yaml
+  - include:
+      file: db/changelog/v2026.3.1.77.yaml
+  - include:
+      file: db/changelog/v2026.3.1.78.yaml
+  - include:
+      file: db/changelog/v2026.3.1.79.yaml
+  - include:
+      file: db/changelog/v2026.3.1.80.yaml
+  - include:
+      file: db/changelog/v2026.3.1.81.yaml
+  - include:
+      file: db/changelog/v2026.3.1.82.yaml
+  - include:
+      file: db/changelog/v2026.3.1.83.yaml

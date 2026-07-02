@@ -5,7 +5,7 @@
 ## Documentation
 
 - [Turing Docs](https://docs.viglet.org/turing/): Official documentation
-- [GitHub Repository](https://github.com/openviglet/turing): Source code (Apache 2.0)
+- [GitHub Repository](https://github.com/openviglet/turing-ce): Source code (Apache 2.0)
 
 ## React SDK
 

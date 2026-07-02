@@ -4,6 +4,15 @@
     "blankTitle": "Você ainda não tem nenhuma persona.",
     "blankDescription": "Crie um perfil de voz reutilizável para aplicar tom, vocabulário e contexto de marca consistentes nos seus agentes de IA.",
     "newInstance": "Nova Persona",
+    "sidebar": {
+      "general": "Geral",
+      "systemInstruction": "Instrução do Sistema",
+      "style": "Diretrizes de Estilo",
+      "audience": "Perfil de Audiência",
+      "notebook": "Caderno de Avaliação",
+      "fitReport": "Relatório de Adequação de Audiência",
+      "guidelines": "Diretrizes da Persona"
+    },
     "deleted": "A persona {{name}} foi removida",
     "notDeleted": "A persona {{name}} não foi removida",
     "aiChat": {

@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { PersonaForm } from "@/components/persona/persona.form";
+import { PersonaInstanceFormLayout } from "@/components/persona/persona.instance.form.layout";
 import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
@@ -52,7 +52,7 @@ export default function PersonaPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={persona} error={error} tryAgainUrl={`${ROUTES.PERSONA_INSTANCE}/${id}`}>
-      {persona && <PersonaForm value={persona} isNew={isNew} />}
+      {persona && <PersonaInstanceFormLayout value={persona} isNew={isNew} />}
     </LoadProvider>
   );
 }

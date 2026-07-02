@@ -218,6 +218,11 @@ public class TurSNSiteAPI {
                 // deterministic readability scorer at index time.
                 turSNSiteGenAi.setContentFitIndexingEnabled(genAi.isContentFitIndexingEnabled());
                 turSNSiteGenAi.setContentFitPersonaId(genAi.getContentFitPersonaId());
+                // T501 / §X.19 — index-time native video/audio understanding (opt-in,
+                // Gemini-only). Appends the clip transcript/scenes to the document text
+                // field so the media's content becomes searchable.
+                turSNSiteGenAi.setMediaUnderstandingIndexingEnabled(
+                        genAi.isMediaUnderstandingIndexingEnabled());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });

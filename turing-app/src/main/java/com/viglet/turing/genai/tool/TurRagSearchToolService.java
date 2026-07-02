@@ -73,19 +73,22 @@ public class TurRagSearchToolService {
     private final TurSNSiteGenAiRepository snSiteGenAiRepository;
     private final TurRagBm25CoreRepository ragBm25CoreRepository;
     private final TurSearchEnginePluginFactory searchEnginePluginFactory;
+    private final com.viglet.turing.genai.rag.backend.TurRetrievalBackendResolver retrievalBackendResolver;
 
     public TurRagSearchToolService(TurGlobalSettingsService globalSettingsService,
                                     TurRagContextBuilder ragContextBuilder,
                                     TurAssetTrainingRecordRepository trainingRecordRepository,
                                     TurSNSiteGenAiRepository snSiteGenAiRepository,
                                     TurRagBm25CoreRepository ragBm25CoreRepository,
-                                    TurSearchEnginePluginFactory searchEnginePluginFactory) {
+                                    TurSearchEnginePluginFactory searchEnginePluginFactory,
+                                    com.viglet.turing.genai.rag.backend.TurRetrievalBackendResolver retrievalBackendResolver) {
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
         this.snSiteGenAiRepository = snSiteGenAiRepository;
         this.ragBm25CoreRepository = ragBm25CoreRepository;
         this.searchEnginePluginFactory = searchEnginePluginFactory;
+        this.retrievalBackendResolver = retrievalBackendResolver;
     }
 
     public boolean isAvailable() {
@@ -210,6 +213,30 @@ public class TurRagSearchToolService {
      */
     private RetrievalResult retrieveDocuments(String query, int topK, boolean bm25Enabled, boolean hybridEnabled,
             AgentRagFlags flags, TurRagContextBuilder.RagInfrastructure infra, ToolContext toolContext) {
+        // T520 / §XXVIII.16 — when a managed retrieval backend (e.g. Bedrock
+        // Knowledge Bases) is configured + available, it serves the passages
+        // instead of the built-in index; its documents flow through the rest of
+        // the pipeline (rerank / sources / citations) unchanged. Empty override
+        // (the default BUILT_IN) → the built-in path below runs byte-for-byte
+        // unchanged. Fail-safe: a backend error degrades to the built-in index.
+        var backendOverride = retrievalBackendResolver.resolveOverride();
+        if (backendOverride.isPresent()) {
+            try {
+                List<Document> managed = backendOverride.get().retrieve(
+                        new com.viglet.turing.genai.rag.backend.TurRetrievalRequest(
+                                query, topK, resolveLocale(toolContext).toLanguageTag()));
+                if (!managed.isEmpty()) {
+                    log.debug("[RAG] managed backend {} returned {} result(s) for '{}'",
+                            backendOverride.get().getType(), managed.size(), query);
+                    return new RetrievalResult(managed, false);
+                }
+                log.debug("[RAG] managed backend {} returned no results for '{}'; using built-in index",
+                        backendOverride.get().getType(), query);
+            } catch (RuntimeException e) {
+                log.warn("[RAG] managed backend {} failed ({}); falling back to built-in index",
+                        backendOverride.get().getType(), e.getMessage());
+            }
+        }
         VectorStore vectorStore = infra.vectorStore();
         boolean useHybrid = bm25Enabled && hybridEnabled;
         boolean useSeHybrid = useHybrid
@@ -350,6 +377,10 @@ public class TurRagSearchToolService {
 
             if (sourceCollector != null) {
                 sourceCollector.add(TurRagSource.fromDocument(doc));
+                // T516 — also tee the chunk text so the answer-grounding
+                // guardrail can validate the answer against it (server-side
+                // only; the chunk text never rides the sources[] SSE event).
+                sourceCollector.addContext(doc.getText());
             }
 
             sb.append("--- Document ").append(i + 1).append(" ---\n");

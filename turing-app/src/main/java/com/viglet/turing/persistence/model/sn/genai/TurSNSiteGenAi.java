@@ -210,4 +210,82 @@ public class TurSNSiteGenAi implements Serializable {
      */
     @Column(name = "contentFitPersonaId", length = 40)
     private String contentFitPersonaId;
+
+    /**
+     * T500 / §X.19 — opt-in for full-context (retrieval-free) answering. When
+     * {@code true} and the whole indexed corpus fits {@link #fullContextTokenBudget}
+     * estimated tokens, the SN RAG path skips top-K retrieval and grounds the
+     * answer over <em>every</em> chunk — inverting the RAG assumption, so recall
+     * is 100% by construction for small sites. Most valuable on a 1–2 M-token
+     * model window (Gemini), paired with the T499 context cache so the corpus is
+     * billed once. When the corpus exceeds the budget the path falls back to the
+     * normal top-K retrieval (and the T383 ranking mode) unchanged.
+     *
+     * <p>Default {@code false} keeps the answering path byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "fullContextAnsweringEnabled", nullable = false)
+    private boolean fullContextAnsweringEnabled = false;
+
+    /**
+     * T500 / §X.19 — the maximum estimated corpus size (in {@code chars/4} tokens)
+     * that still qualifies for full-context answering. Above it the site falls
+     * back to top-K retrieval. Default 800 000 — comfortably inside Gemini's
+     * 1 M-token window with headroom for the system prompt + history + answer.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "fullContextTokenBudget", nullable = false)
+    private int fullContextTokenBudget = 800_000;
+
+    /**
+     * T501 / §X.19 — opt-in for index-time native video/audio understanding. When
+     * {@code true} and the site's GenAI agent resolves to a <em>Gemini</em> LLM
+     * instance, a document that references a video or audio asset (a media URL in
+     * its {@code media_url} attribute, or a media-typed {@code url}) is run through
+     * {@link com.viglet.turing.genai.nativeapi.gemini.TurGeminiVideoUnderstandingService}
+     * at index time and the resulting timestamped transcript + scene description is
+     * appended to the document's text field — so the spoken/visual content of the
+     * clip becomes searchable through the normal full-text path. A media-catalog
+     * differentiator OpenAI/Anthropic can't match.
+     *
+     * <p>Default {@code false} keeps the indexing path byte-for-byte unchanged — no
+     * understanding call runs. Gemini-only and <strong>fail-open</strong>: a
+     * non-Gemini agent, a non-media document, or any understanding error simply
+     * skips the enrichment and never blocks the document from being indexed. Unlike
+     * the deterministic {@link #contentFitIndexingEnabled} signal, this <em>does</em>
+     * spend an LLM call per media document, so it is off by default.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "mediaUnderstandingIndexingEnabled", nullable = false)
+    private boolean mediaUnderstandingIndexingEnabled = false;
+
+    /**
+     * T513 / §XXVIII.9 — per-site domain-specialized embedding model override
+     * ({@code TurEmbeddingModel} id). When set, the public Semantic Navigation
+     * hybrid-ranking path ({@link com.viglet.turing.sn.ranking.TurSNHybridRankingService})
+     * indexes <em>and</em> queries this site's {@code sn_<siteId>} vector
+     * collection through the chosen embedder — so a legal-docs site can pick
+     * {@code voyage-law}, a code-search site {@code voyage-code}, a finance site
+     * {@code voyage-finance} (or a Cohere domain model), each routed to the right
+     * specialist while every other site stays on the platform default.
+     *
+     * <p>Plain id column (not a {@code @ManyToOne}) so the indexing/query path
+     * resolves it via the embedding-model repository without dragging a LAZY
+     * association across the request boundary, mirroring {@link #contentFitPersonaId}.
+     * Null / blank falls back to the Global Settings default embedding model —
+     * existing sites are byte-for-byte unchanged.
+     *
+     * <p><b>Operational note:</b> switching a site's embedding model changes the
+     * vector space (and possibly the dimensionality), so the site's
+     * {@code sn_<siteId>} collection must be cleared and re-indexed after a change;
+     * index and query always use the same resolved model so they never mismatch
+     * within one configuration.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "embeddingModelId", length = 40)
+    private String embeddingModelId;
 }

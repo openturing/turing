@@ -79,6 +79,58 @@ public class TurLLMVendorOnStartup {
 			geminiOpenAI.setWebsite("https://ai.google.dev");
 			turLLMVendorRepository.save(geminiOpenAI);
 
+			TurLLMVendor openAiCompatible = new TurLLMVendor();
+			openAiCompatible.setId("OPENAI_COMPAT");
+			openAiCompatible.setDescription(
+					"Any OpenAI-compatible endpoint (DeepSeek, xAI Grok, Groq, Cerebras, OpenRouter, "
+							+ "Together, Fireworks, local vLLM/LM-Studio) — set the base URL");
+			openAiCompatible.setPlugin("openai-compatible");
+			openAiCompatible.setTitle("OpenAI-Compatible");
+			openAiCompatible.setWebsite("https://platform.openai.com/docs/api-reference");
+			turLLMVendorRepository.save(openAiCompatible);
+
+			TurLLMVendor bedrock = new TurLLMVendor();
+			bedrock.setId("BEDROCK");
+			bedrock.setDescription(
+					"AWS Bedrock — Claude/Llama/Mistral/Nova/Titan on one IAM-authenticated gateway");
+			bedrock.setPlugin("bedrock");
+			bedrock.setTitle("AWS Bedrock");
+			bedrock.setWebsite("https://aws.amazon.com/bedrock");
+			turLLMVendorRepository.save(bedrock);
+
+			TurLLMVendor voyage = new TurLLMVendor();
+			voyage.setId("VOYAGE");
+			voyage.setDescription("Voyage AI — retrieval-specialist embeddings + rerank (no chat API)");
+			voyage.setPlugin("voyage");
+			voyage.setTitle("Voyage AI");
+			voyage.setWebsite("https://www.voyageai.com");
+			turLLMVendorRepository.save(voyage);
+
+			TurLLMVendor cohere = new TurLLMVendor();
+			cohere.setId("COHERE");
+			cohere.setDescription("Cohere — Command chat + Embed v4 (OpenAI-compatible endpoint)");
+			cohere.setPlugin("cohere");
+			cohere.setTitle("Cohere");
+			cohere.setWebsite("https://cohere.com");
+			turLLMVendorRepository.save(cohere);
+
+			TurLLMVendor mistral = new TurLLMVendor();
+			mistral.setId("MISTRAL");
+			mistral.setDescription("Mistral AI — European/GDPR-native chat + embeddings (OpenAI-compatible)");
+			mistral.setPlugin("mistral");
+			mistral.setTitle("Mistral AI");
+			mistral.setWebsite("https://mistral.ai");
+			turLLMVendorRepository.save(mistral);
+
+			TurLLMVendor vertexAi = new TurLLMVendor();
+			vertexAi.setId("VERTEX_AI");
+			vertexAi.setDescription(
+					"Google Vertex AI — enterprise Gemini on GCP (IAM/VPC-SC/CMEK, regional endpoints)");
+			vertexAi.setPlugin("vertex-ai");
+			vertexAi.setTitle("Google Vertex AI");
+			vertexAi.setWebsite("https://cloud.google.com/vertex-ai");
+			turLLMVendorRepository.save(vertexAi);
+
 		}
 	}
 }

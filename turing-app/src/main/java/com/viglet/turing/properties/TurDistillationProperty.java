@@ -49,4 +49,11 @@ public class TurDistillationProperty {
 
     /** Cron for the poller that drives fine-tuning jobs to completion (default every 15 min). */
     private String pollCron = "0 */15 * * * *";
+
+    /**
+     * T191 / §X.15.e — cron for the overnight self-improvement job that kicks off
+     * propose-only distillation for opted-in agents (default 03:20 daily). Still
+     * requires {@link #enabled} and each agent's {@code overnightImprovementEnabled}.
+     */
+    private String overnightCron = "0 20 3 * * *";
 }
