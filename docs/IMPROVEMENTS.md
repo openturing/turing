@@ -1962,16 +1962,6 @@ build a DTO — hot read paths (search, chat/RAG), cache values, and
 cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
 `agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
 
-### XXX.4 Prune the speculative scaffolding (T543)
-
-Remove the ports+adapters+mappers+records generated for pure admin-CRUD
-aggregates that never touch a hot path, a cache, or a LazyInit risk — the
-ceremony a 100% migration would have made permanent, and the source of the
-two-sources-of-truth confusion. Dead scaffolding (a port with **zero**
-consumers outside its own adapter) is unambiguously safe and is removed
-opportunistically ahead of this task; T543 is the systematic pass that applies
-the boundary to the ports that *do* have a consumer but shouldn't (admin-only).
-
 ### XXX.5 Close the write-path question (T544)
 
 The Javadoc on every port promises "future slices will introduce save /
