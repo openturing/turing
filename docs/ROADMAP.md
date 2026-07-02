@@ -128,7 +128,14 @@ fully shipped.**
 > that valuable slice, prunes the ceremony a 100% migration would have created,
 > and makes the boundary self-enforcing. Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXX.
 
-- 💭 **T546** (deps: T541 ✅) **Collapse port+adapter → mapper-only where the interface is pure ceremony** — for aggregates that will only ever have a single JPA adapter, evaluate dropping the `*RepositoryPort` interface and returning records straight from a mapper-backed reader. Keeps ~90% of the benefit (immutability/caching) without the interface boilerplate the port adds when there's no second implementation and no mocking need. → §XXX.7
+> **Shipped (2026-07-02) — T540–T546. Block AF complete.** The bounded domain
+> layer landed: benchmark (T540) → ADR + stop-criteria (T541) → finished the
+> keep slice (T542) → pruned scaffolding (T543) → read-only-forever Javadoc
+> (T544) → enforcement lint (T545) → collapsed the one pure-ceremony port to a
+> mapper-backed reader (T546). End state: **7 ports + 8 records + 1 reader**,
+> self-policed by `TurDomainLayerConventionsTest`. Detail in
+> [CHANGELOG.md](CHANGELOG.md) → Block AF; §XXX design rationale removed on ship
+> per the founding rule.
 
 ## Non-goals (do NOT add as tasks)
 

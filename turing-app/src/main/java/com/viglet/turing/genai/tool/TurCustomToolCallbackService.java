@@ -30,8 +30,8 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.domain.customtool.TurCustomToolDomain;
-import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.persistence.adapter.customtool.TurCustomToolReader;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
@@ -167,7 +167,7 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_TOOL_CALLS = "turing.toolCalls";
 
-    private final TurCustomToolRepositoryPort repositoryPort;
+    private final TurCustomToolReader reader;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
     private final com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus;
@@ -182,7 +182,7 @@ public class TurCustomToolCallbackService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
-    public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort,
+    public TurCustomToolCallbackService(TurCustomToolReader reader,
             TurCustomToolSearchHelper searchHelper,
             TurChatFlowStateRepository stateRepository,
             com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus,
@@ -198,7 +198,7 @@ public class TurCustomToolCallbackService {
             TurLLMInstanceRepository llmRepository,
             com.viglet.turing.genai.workspace.TurAgentWorkspace agentWorkspace,
             TurMcpToolCallbackService mcpToolCallbackService) {
-        this.repositoryPort = repositoryPort;
+        this.reader = reader;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
         this.slotEventBus = slotEventBus;
@@ -227,7 +227,7 @@ public class TurCustomToolCallbackService {
                 .map(TurCustomTool::getId)
                 .collect(Collectors.toSet());
 
-        return repositoryPort.findAllEnabled().stream()
+        return reader.findAllEnabled().stream()
                 .filter(t -> allowedIds.contains(t.id()))
                 .map(this::buildCallback)
                 .toArray(ToolCallback[]::new);
@@ -235,7 +235,7 @@ public class TurCustomToolCallbackService {
 
     /** All enabled custom tool callbacks across the platform. */
     public ToolCallback[] getToolCallbacks() {
-        return repositoryPort.findAllEnabled().stream()
+        return reader.findAllEnabled().stream()
                 .map(this::buildCallback)
                 .toArray(ToolCallback[]::new);
     }

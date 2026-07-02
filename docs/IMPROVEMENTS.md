@@ -1915,21 +1915,14 @@ it's an alternative backend, not a rewrite.
 
 ## XXX. Domain layer — bounded completion, stop-criteria & enforcement (Block AF)
 
-**The block shipped (T540–T545); only the T546 idea below remains.** The full
-decision and rationale — do NOT take the hexagonal migration to 100%; the value
-is the immutable/lazy-proxy-free/cacheable read model, so records + ports are
-bounded to hot / cached / cross-aggregate / LazyInit-prone reads while JPA
-repositories keep admin/CRUD and **all** writes — now lives in the ADR:
-[`docs/adr/0001-domain-layer-bounded-completion.md`](adr/0001-domain-layer-bounded-completion.md),
-mirrored into `agents.md` and enforced by `TurDomainLayerConventionsTest` (T545).
-The founding rule (don't re-accrete shipped design here) applies; this section
-keeps only the open idea.
-
-### XXX.7 Collapse the port where it is pure ceremony (T546, 💭)
-
-Even within the keep set, the `*RepositoryPort` interface only pays for itself
-when there will be a second implementation or a mocking need. For an aggregate
-with a single permanent JPA adapter, the interface is redeclaring the repo at a
-cost. Evaluate dropping it and returning records straight from a mapper-backed
-reader — ~90% of the benefit (immutable, cacheable records) without the
-boilerplate. Left as an idea pending the T540 numbers and the T542/T543 shape.
+> **Block AF (T540–T546) shipped 2026-07-02.** Per the founding rule, the design
+> rationale was removed once the block shipped. The full decision — do NOT take
+> the hexagonal migration to 100%; the value is the immutable/lazy-proxy-free/
+> cacheable read model, so records + ports are bounded to hot / cached /
+> cross-aggregate / LazyInit-prone reads while JPA repositories keep admin/CRUD
+> and **all** writes — lives in the ADR:
+> [`docs/adr/0001-domain-layer-bounded-completion.md`](adr/0001-domain-layer-bounded-completion.md),
+> mirrored into `agents.md` and enforced by `TurDomainLayerConventionsTest`
+> (T545). T546 collapsed the one pure-ceremony port (`TurCustomTool`, no mocking
+> need) to a mapper-backed reader; the end state is **7 ports + 8 records + 1
+> reader**. What shipped is indexed in [`CHANGELOG.md`](CHANGELOG.md) → Block AF.

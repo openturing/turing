@@ -65,8 +65,9 @@ reverses the "future slices" promise; T544 rewrites the Javadoc to say so.
 > Is this aggregate read on a **hot / cached / cross-aggregate** path, or exposed
 > where a **lazy proxy would escape its session**?
 
-If **yes** → it earns a `*Domain` record (+ port, unless T546 collapses it to a
-mapper-backed reader). If **no** → it stays on the JPA repository. There is no
+If **yes** → it earns a `*Domain` record — with a `*RepositoryPort` when it will
+be mocked or gain a second implementation, otherwise just a mapper-backed reader
+(the T546 rule). If **no** → it stays on the JPA repository. There is no
 "complete the set for consistency" obligation — partial coverage of the entity
 space is the intended end state, not a debt.
 
@@ -108,8 +109,13 @@ space is the intended end state, not a debt.
   depend on ports not JPA repos; every surviving port has exactly one adapter +
   mapper. Without it the layer silently drifts back toward the 100% it was told
   not to reach.
-- **T546 (💭)** may collapse a port to a mapper-backed reader where the interface
-  is pure ceremony (single permanent adapter, no mocking need).
+- **T546** collapsed the one port that was pure ceremony (single permanent
+  adapter **and** no mocking need) — `TurCustomToolRepositoryPort` → the concrete
+  `TurCustomToolReader` (mapper-backed, returns records). The other 7 ports are
+  mocked in unit tests, so the interface pays for itself and they stay. End
+  state: **7 ports + 8 records + 1 reader**. A future aggregate that earns a
+  record follows the same test: keep the port only if it will be mocked or gain
+  a second implementation; otherwise a mapper-backed reader is enough.
 
 The rule is mirrored into `agents.md` ("Domain layer (ports & adapters)") so it
 guides day-to-day work without a doc dive, and into agent memory.

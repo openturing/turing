@@ -496,11 +496,18 @@ adapters + MapStruct mappers under `com.viglet.turing.persistence.adapter.*`.
 [`docs/adr/0001-domain-layer-bounded-completion.md`](docs/adr/0001-domain-layer-bounded-completion.md).
 The rule, in one screen:
 
-- **Use a `*Domain` record + port** only when the read is on a **hot path**
+- **Use a `*Domain` record** only when the read is on a **hot path**
   (search / chat / RAG / autocomplete), a **cached value**, a **cross-aggregate
   read** (would walk `@ManyToOne`/`@OneToOne` across aggregates — the EAGER
   200ms→5s hazard), or a **LazyInit-prone read** (returned/cached/passed outside
   its session). The record references neighbours **by ID**, never by object.
+- **Port vs mapper-backed reader (T546):** wrap the record read in a
+  `*RepositoryPort` interface only when it will be **mocked in a unit test** or
+  gain a **second implementation**. Otherwise skip the interface and expose a
+  concrete `*Reader` `@Component` that maps entity → record directly (see
+  `TurCustomToolReader`). Today: **7 ports + 8 records + 1 reader**. Don't add a
+  port "for symmetry" — a port with no mock is pure ceremony over its lone
+  adapter.
 - **Use the JPA repository directly** (with `@Transactional` + `LEFT JOIN FETCH`
   for the to-one graph, per T488 — not `@EntityGraph`, never a repo
   `@Cacheable`) for **admin/CRUD** reads and **all writes**.
@@ -517,7 +524,8 @@ The rule, in one screen:
   ≈48–53 ns/op (T540), immeasurable against a millisecond search request.
 - `TurDomainLayerConventionsTest` (T545) enforces this: records carry no
   JPA/Hibernate/Jackson annotations, hot-path packages depend on ports not JPA
-  repos, and every surviving port has exactly one adapter + mapper.
+  repos, and every surviving port has exactly one adapter + mapper. (A collapsed
+  reader has no port, so it's simply outside the port walk — T546.)
 
 ### Agent Operational Memory (Repository)
 

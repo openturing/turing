@@ -22,18 +22,18 @@ import com.viglet.turing.domain.customtool.TurCustomToolDomain;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
 
-/** Unit tests for {@link TurCustomToolRepositoryAdapter}. */
+/** Unit tests for {@link TurCustomToolReader} (T546 — port collapsed to a mapper-backed reader). */
 @ExtendWith(MockitoExtension.class)
-class TurCustomToolRepositoryAdapterTest {
+class TurCustomToolReaderTest {
 
     @Mock
     private TurCustomToolRepository turCustomToolRepository;
 
-    private TurCustomToolRepositoryAdapter adapter;
+    private TurCustomToolReader reader;
 
     @BeforeEach
     void setUp() {
-        adapter = new TurCustomToolRepositoryAdapter(turCustomToolRepository,
+        reader = new TurCustomToolReader(turCustomToolRepository,
                 Mappers.getMapper(TurCustomToolDomainMapper.class));
     }
 
@@ -45,7 +45,7 @@ class TurCustomToolRepositoryAdapterTest {
         entity.setReturnType("number");
         when(turCustomToolRepository.findById("tool-1")).thenReturn(Optional.of(entity));
 
-        Optional<TurCustomToolDomain> result = adapter.findById("tool-1");
+        Optional<TurCustomToolDomain> result = reader.findById("tool-1");
 
         assertThat(result).isPresent();
         assertThat(result.get().groovyScript()).isEqualTo("return params.a + params.b");
@@ -57,7 +57,7 @@ class TurCustomToolRepositoryAdapterTest {
     @Test
     void findByIdEmpty() {
         when(turCustomToolRepository.findById("missing")).thenReturn(Optional.empty());
-        assertThat(adapter.findById("missing")).isEmpty();
+        assertThat(reader.findById("missing")).isEmpty();
     }
 
     @Test
@@ -65,7 +65,7 @@ class TurCustomToolRepositoryAdapterTest {
         when(turCustomToolRepository.findAll()).thenReturn(List.of(buildEntity("a", "A", 1),
                 buildEntity("b", "B", 0), buildEntity("c", "C", 1)));
 
-        assertThat(adapter.findAllEnabled()).extracting(TurCustomToolDomain::id)
+        assertThat(reader.findAllEnabled()).extracting(TurCustomToolDomain::id)
                 .containsExactly("a", "c");
     }
 
