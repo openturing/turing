@@ -27,6 +27,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
@@ -39,8 +41,14 @@ public interface TurSNRankingExpressionRepository extends JpaRepository<TurSNRan
 
 	public String FIND_BY_TUR_SN_SITE = "turSNRankingExpressionFindByTurSNSite";
 
+	// JOIN FETCH eagerly initializes the LAZY turSNRankingConditions collection
+	// within the query session. Because the result is @Cacheable, the cached
+	// entities are detached with no live session; without this, DTO/domain mappers
+	// that read the collection on a cache hit throw LazyInitializationException.
 	@Cacheable(FIND_BY_TUR_SN_SITE)
-	Set<TurSNRankingExpression> findByTurSNSite(Sort language, TurSNSite turSNSite);
+	@Query("select distinct e from TurSNRankingExpression e "
+			+ "left join fetch e.turSNRankingConditions where e.turSNSite = :turSNSite")
+	Set<TurSNRankingExpression> findByTurSNSite(Sort language, @Param("turSNSite") TurSNSite turSNSite);
 
 	@CacheEvict(value = { FIND_BY_TUR_SN_SITE }, allEntries = true)
 	@NotNull

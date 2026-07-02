@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,6 +40,7 @@ import com.viglet.turing.api.sn.bean.TurSNSiteFacetOrderingDto;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
@@ -59,13 +59,16 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Semantic Navigation Faceted Field", description = "Semantic Navigation Faceted Field API")
 public class TurSNSiteFacetedFieldAPI {
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+        private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
         private final TurSNSiteRepository turSNSiteRepository;
         private final TurSNFieldProcess turSNFieldProcess;
 
         public TurSNSiteFacetedFieldAPI(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                        TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
                         TurSNSiteRepository turSNSiteRepository,
                         TurSNFieldProcess turSNFieldProcess) {
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+                this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
                 this.turSNSiteRepository = turSNSiteRepository;
                 this.turSNFieldProcess = turSNFieldProcess;
         }
@@ -92,16 +95,19 @@ public class TurSNSiteFacetedFieldAPI {
                                                                         (map, field) -> map.put(field.getId(), field),
                                                                         HashMap::putAll);
 
-                                        Map<String, TurSNSiteFieldExt> customFacetFieldById = new HashMap<>();
-                                        Map<String, TurSNSiteCustomFacet> customFacetById = new HashMap<>();
-                                        enabledFields.forEach(field -> Optional.ofNullable(field.getCustomFacets())
-                                                        .orElse(Collections.emptySet())
-                                                        .forEach(customFacet -> {
-                                                                customFacetFieldById.put(customFacet.getId(), field);
-                                                                customFacetById.put(customFacet.getId(), customFacet);
-                                                        }));
+                                        // Load custom facets via a JOIN FETCH query instead of the LAZY
+                                        // TurSNSiteFieldExt.customFacets collection, which is uninitialized on the
+                                        // cached (detached) field entities and throws LazyInitializationException.
+                                        Map<String, TurSNSiteCustomFacet> customFacetById = turSNSiteCustomFacetRepository
+                                                        .findByFieldExtsWithDetails(enabledFields).stream()
+                                                        .collect(HashMap::new,
+                                                                        (map, customFacet) -> map
+                                                                                        .put(customFacet.getId(),
+                                                                                                        customFacet),
+                                                                        HashMap::putAll);
 
                                         Set<TurSNSiteFieldExt> fieldsToSave = new HashSet<>();
+                                        Set<TurSNSiteCustomFacet> customFacetsToSave = new HashSet<>();
                                         turSNSiteFacetOrderings.stream()
                                                         .filter(fieldsFromRequest -> fieldsFromRequest
                                                                         .getFacetPosition() != null
@@ -120,20 +126,20 @@ public class TurSNSiteFacetedFieldAPI {
 
                                                                 TurSNSiteCustomFacet customFacet = customFacetById
                                                                                 .get(fieldsFromRequest.getId());
-                                                                TurSNSiteFieldExt customFieldExtension = customFacetFieldById
-                                                                                .get(fieldsFromRequest.getId());
-                                                                if (customFacet != null
-                                                                                && customFieldExtension != null) {
+                                                                if (customFacet != null) {
                                                                         customFacet.setFacetPosition(
                                                                                         fieldsFromRequest
                                                                                                         .getFacetPosition());
-                                                                        fieldsToSave.add(customFieldExtension);
+                                                                        customFacetsToSave.add(customFacet);
                                                                 }
                                                         });
 
                                         if (!fieldsToSave.isEmpty()) {
                                                 turSNSiteFieldExtRepository.saveAll(fieldsToSave);
                                         }
+                                        // Save each custom facet through the proxied save() so its designed
+                                        // @CacheEvict fires (saveAll bypasses the caching aspect).
+                                        customFacetsToSave.forEach(turSNSiteCustomFacetRepository::save);
 
                                         return getAllFacetEntries(snSiteId);
                                 })

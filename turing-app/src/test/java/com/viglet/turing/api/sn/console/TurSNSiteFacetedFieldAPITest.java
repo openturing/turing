@@ -24,6 +24,7 @@ package com.viglet.turing.api.sn.console;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -37,6 +38,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.facet.TurSNCustomFacetDefinition;
@@ -53,10 +55,11 @@ class TurSNSiteFacetedFieldAPITest {
         @Test
         void testFacetFieldListReturnsEmptyWhenMissing() {
                 TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+                TurSNSiteCustomFacetRepository customFacetRepository = mock(TurSNSiteCustomFacetRepository.class);
                 TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
                 TurSNFieldProcess fieldProcess = mock(TurSNFieldProcess.class);
-                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, siteRepository,
-                                fieldProcess);
+                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, customFacetRepository,
+                                siteRepository, fieldProcess);
 
                 when(fieldProcess.getTurSNSiteFacetOrdering("site")).thenReturn(Optional.empty());
 
@@ -68,10 +71,11 @@ class TurSNSiteFacetedFieldAPITest {
         @Test
         void testFacetFieldUpdateReordersPositions() {
                 TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+                TurSNSiteCustomFacetRepository customFacetRepository = mock(TurSNSiteCustomFacetRepository.class);
                 TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
                 TurSNFieldProcess fieldProcess = mock(TurSNFieldProcess.class);
-                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, siteRepository,
-                                fieldProcess);
+                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, customFacetRepository,
+                                siteRepository, fieldProcess);
 
                 TurSNSite site = new TurSNSite();
 
@@ -110,10 +114,11 @@ class TurSNSiteFacetedFieldAPITest {
         @Test
         void testFacetFieldUpdateCustomFacetPositionIsIndependent() {
                 TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+                TurSNSiteCustomFacetRepository customFacetRepository = mock(TurSNSiteCustomFacetRepository.class);
                 TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
                 TurSNFieldProcess fieldProcess = mock(TurSNFieldProcess.class);
-                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, siteRepository,
-                                fieldProcess);
+                TurSNSiteFacetedFieldAPI api = new TurSNSiteFacetedFieldAPI(fieldExtRepository, customFacetRepository,
+                                siteRepository, fieldProcess);
 
                 TurSNSite site = new TurSNSite();
                 TurSNSiteFieldExt idField = new TurSNSiteFieldExt();
@@ -126,7 +131,7 @@ class TurSNSiteFacetedFieldAPITest {
                 customFacet.setId("custom-price-range");
                 customFacet.setName("price_range");
                 customFacet.setFacetPosition(2);
-                idField.setCustomFacets(new java.util.HashSet<>(java.util.List.of(customFacet)));
+                customFacet.setTurSNSiteFieldExt(idField);
 
                 TurSNSiteFacetOrderingDto update = new TurSNSiteFacetOrderingDto();
                 update.setId("custom-price-range");
@@ -134,6 +139,8 @@ class TurSNSiteFacetedFieldAPITest {
 
                 when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of(idField));
+                when(customFacetRepository.findByFieldExtsWithDetails(List.of(idField)))
+                                .thenReturn(List.of(customFacet));
                 when(fieldProcess.getTurSNSiteFacetOrdering("site"))
                                 .thenReturn(Optional.of(List.of(
                                                 new TurSNCustomFacetDefinition(idField, customFacet, null),
@@ -143,6 +150,7 @@ class TurSNSiteFacetedFieldAPITest {
 
                 assertThat(customFacet.getFacetPosition()).isEqualTo(1);
                 assertThat(idField.getFacetPosition()).isEqualTo(3);
+                verify(customFacetRepository).save(customFacet);
                 assertThat(result).extracting(TurSNSiteFacetOrderingDto::getId)
                                 .containsExactly("custom-price-range", "field-id");
         }
