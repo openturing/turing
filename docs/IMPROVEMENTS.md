@@ -1962,13 +1962,6 @@ build a DTO — hot read paths (search, chat/RAG), cache values, and
 cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
 `agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
 
-### XXX.3 Finish the valuable slice (T542)
-
-Complete the migration of the hot read paths (search / chat / RAG) and the
-cache read-models to records/ports, so the "keep" set is actually consistent —
-no hot path left half on entities, half on records. This is finishing, not
-expanding: scope is bounded by the T541 boundary, not by "all 68 entities".
-
 ### XXX.4 Prune the speculative scaffolding (T543)
 
 Remove the ports+adapters+mappers+records generated for pure admin-CRUD

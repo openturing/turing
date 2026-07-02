@@ -1,10 +1,10 @@
 package com.viglet.turing.genai.tool;
 
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtDomain;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtRepositoryPort;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.dsl.TurDslSearchResponse;
@@ -44,7 +44,7 @@ public class TurDslToolService {
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort;
     private final TurDslSearchService turDslSearchService;
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurSNSiteConfigCache configCache;
@@ -52,13 +52,13 @@ public class TurDslToolService {
 
     public TurDslToolService(TurSNSiteRepository turSNSiteRepository,
                               TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-                              TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                              TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort,
                               TurDslSearchService turDslSearchService,
                               TurSearchEnginePluginFactory pluginFactory,
                               TurSNSiteConfigCache configCache) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
-        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteFieldExtRepositoryPort = turSNSiteFieldExtRepositoryPort;
         this.turDslSearchService = turDslSearchService;
         this.pluginFactory = pluginFactory;
         this.configCache = configCache;
@@ -149,15 +149,19 @@ public class TurDslToolService {
     private TurSNSiteFieldConfigModel loadFieldConfig(String index) {
         return turSNSiteRepository.findByNameIgnoreCase(index)
                 .map(site -> {
-                    List<TurSNSiteFieldExt> fields = turSNSiteFieldExtRepository
-                            .findByTurSNSiteAndEnabled(site, 1);
+                    // Enabled fields read through the domain port — the derived
+                    // FieldInfo list feeds an immutable cached read-model
+                    // (TurSNSiteConfigCache), so it must not carry JPA entities
+                    // (T542 boundary: cache read-models go through records).
+                    List<TurSNSiteFieldExtDomain> fields = turSNSiteFieldExtRepositoryPort
+                            .findBySnSiteIdAndEnabled(site.getId(), 1);
                     List<TurSNSiteFieldConfigModel.FieldInfo> infos = fields.stream()
                             .map(f -> new TurSNSiteFieldConfigModel.FieldInfo(
-                                    f.getName(),
-                                    f.getType() != null ? f.getType().toString().toLowerCase() : "text",
-                                    f.getFacet() == 1,
-                                    f.getMultiValued() == 1,
-                                    f.getDescription()))
+                                    f.name(),
+                                    f.type() != null ? f.type().toString().toLowerCase() : "text",
+                                    f.isFacet(),
+                                    f.isMultiValued(),
+                                    f.description()))
                             .toList();
                     return new TurSNSiteFieldConfigModel(site.getName(), infos);
                 })
