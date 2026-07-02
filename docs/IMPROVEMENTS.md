@@ -1962,15 +1962,6 @@ build a DTO — hot read paths (search, chat/RAG), cache values, and
 cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
 `agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
 
-### XXX.5 Close the write-path question (T544)
-
-The Javadoc on every port promises "future slices will introduce save /
-delete". That promise is the decision to reverse: writes stay on the JPA repo +
-`@Transactional` + `LEFT JOIN FETCH` (per T488), because a write path gains
-nothing from an immutable read record and everything from a managed, dirty-
-checked entity. Rewrite that Javadoc to state the final decision so the layer
-stops advertising itself as perpetually in-progress.
-
 ### XXX.6 Enforcement convention test (T545)
 
 Follow the `TurCacheAnnotationConventionsTest` / `TurLiquibaseChangelogAgnosticTest`

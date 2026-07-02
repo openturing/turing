@@ -24,7 +24,9 @@ import org.springframework.data.domain.Pageable;
 /**
  * Domain-side port for retrieving {@link TurSNSiteMetricAccessDomain}
  * rows and their aggregated {@link TurSNSiteMetricAccessTermDomain}
- * projections. Read-only.
+ * projections. Read-only <b>by design, permanently</b> — writes stay on the JPA
+ * repository; ports will not grow {@code save} / {@code delete}. See
+ * {@code docs/adr/0001-domain-layer-bounded-completion.md}.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6

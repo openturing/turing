@@ -21,8 +21,10 @@ import java.util.Optional;
 
 /**
  * Domain-side port for retrieving {@link TurSNSiteFieldExtDomain}
- * aggregates. Read-only; the JPA repository remains the source for the
- * cache-evicting save / delete paths.
+ * aggregates. Read-only <b>by design, permanently</b>; the JPA repository
+ * remains the source for the cache-evicting save / delete paths — ports will
+ * not grow write methods. See
+ * {@code docs/adr/0001-domain-layer-bounded-completion.md}.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
