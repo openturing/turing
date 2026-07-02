@@ -51,7 +51,7 @@
         <!-- Versions not managed by Spring Boot BOM -->
         <elasticsearch.version>9.4.2</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
-        <lucene.version>10.4.0</lucene.version>
+        <lucene.version>10.5.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.3</minio.version>
         <mongodb.version>5.8.0</mongodb.version>
