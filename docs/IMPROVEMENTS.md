@@ -1962,15 +1962,6 @@ build a DTO — hot read paths (search, chat/RAG), cache values, and
 cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
 `agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
 
-### XXX.1 Benchmark the double-mapping cost (T540)
-
-Every migrated read now runs entity → MapStruct → record. On search/chat that
-is extra allocation per request. Measure it against the direct-entity path and
-against a projection query that builds the record without loading the full
-entity. Output = the numbers that decide whether ports go *on* the hot path or
-whether those specific callers should get a projection DTO instead. Cheap,
-gates the rest of the block.
-
 ### XXX.2 ADR + stop-criteria (T541)
 
 The layer's one real smell is that a bet this size has no written rationale —
