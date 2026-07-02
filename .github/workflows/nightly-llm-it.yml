@@ -47,7 +47,7 @@ jobs:
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: steps.gate.outputs.run == 'true'
       - name: Set up JDK 21
         if: steps.gate.outputs.run == 'true'
@@ -58,7 +58,7 @@ jobs:
           cache: maven
       - name: Cache Maven packages
         if: steps.gate.outputs.run == 'true'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -76,7 +76,7 @@ jobs:
         run: mvn -B verify -P${{ matrix.profile }} -pl turing-app -Dskip.npm=true -Dgpg.skip=true -Dturing.open-browser=false
       - name: Upload failsafe reports
         if: steps.gate.outputs.run == 'true' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: failsafe-reports-${{ matrix.profile }}
           path: turing-app/target/failsafe-reports/
