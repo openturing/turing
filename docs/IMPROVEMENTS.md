@@ -1915,61 +1915,15 @@ it's an alternative backend, not a rewrite.
 
 ## XXX. Domain layer — bounded completion, stop-criteria & enforcement (Block AF)
 
-**Context.** A hexagonal (ports & adapters) migration was started at 2026.2.6,
-all authored solo. Three coordinated pieces exist under
-`com.viglet.turing.domain.*` and `com.viglet.turing.persistence.adapter.*`:
-
-- **~50 `*Domain` records** — immutable, free of JPA/Hibernate/Jackson
-  annotations, referencing neighbouring aggregates **by ID** (not by object).
-- **39 `*RepositoryPort` interfaces** — what application services depend on.
-- **39 adapters + 39 MapStruct mappers** — `@Component` adapters that delegate
-  to the *existing* JPA repositories and map entity → record.
-
-State on entry: a **read-only pilot**. ~18 app/API files consume ports;
-**~333 files still use the JPA repositories directly**; write paths are
-untouched; several ports were committed "scaffolding only"; there is **no ADR**.
-~39 of 68 entities have a port (~57%).
-
-**The decision: do not take this to 100%.** The reasoning:
-
-1. **The hexagonal anchor benefit is a fantasy here.** "Swap JPA for another
-   persistence" has near-zero probability for this product. Paying the
-   permanent abstraction tax across 68 entities (~270 scaffolding files +
-   migrating ~333 call sites) buys insurance we will never claim.
-2. **The easy 20% was done; the hard 80% wasn't.** Read-only ports are trivial.
-   Writes — save/delete, transactional consistency, cascade, optimistic
-   locking, and the `apiKey`/`credential` secret crypto (`TurSecretCryptoService`)
-   — are where hexagonal actually hurts, and none of it is started.
-3. **Half-migrated is the worst state.** With 18 files on ports and 333 on
-   repos, every contributor must know which pattern applies where. A migration
-   frozen mid-flight, with no written stop-criteria, is worse than either
-   extreme.
-
-**Where the layer genuinely pays off (the "keep" set).** The value is not
-"swap the database" — it's the **immutable, lazy-proxy-free, cacheable read
-model**, which attacks the exact incidents already on record:
-
-- The **EAGER 200ms→5s** search incident (`TurSNSite → TurSNSiteGenAi →
-  TurAIAgent → 4 @ManyToMany`): a domain record referencing neighbours **by ID**
-  structurally cannot trigger that cascade.
-- The **"never cache a JPA entity, cache a DTO"** rule (Block AC / T486–T488):
-  domain records *are* the safe cacheable value.
-- `LazyInitializationException` outside a transaction: a proxy-free record is
-  safe to return, cache, and pass anywhere.
-
-So the layer earns its keep exactly where the project was already obliged to
-build a DTO — hot read paths (search, chat/RAG), cache values, and
-cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
-`agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
-
-### XXX.6 Enforcement convention test (T545)
-
-Follow the `TurCacheAnnotationConventionsTest` / `TurLiquibaseChangelogAgnosticTest`
-precedent: a build-failing convention test that asserts `*Domain` records carry
-no JPA/Hibernate/Jackson annotations, the designated hot-path packages depend
-on ports (not JPA repositories), and every surviving port has exactly one
-adapter + mapper. This is what makes "bounded" durable — without it the layer
-silently drifts back toward the 100% it was told not to reach.
+**The block shipped (T540–T545); only the T546 idea below remains.** The full
+decision and rationale — do NOT take the hexagonal migration to 100%; the value
+is the immutable/lazy-proxy-free/cacheable read model, so records + ports are
+bounded to hot / cached / cross-aggregate / LazyInit-prone reads while JPA
+repositories keep admin/CRUD and **all** writes — now lives in the ADR:
+[`docs/adr/0001-domain-layer-bounded-completion.md`](adr/0001-domain-layer-bounded-completion.md),
+mirrored into `agents.md` and enforced by `TurDomainLayerConventionsTest` (T545).
+The founding rule (don't re-accrete shipped design here) applies; this section
+keeps only the open idea.
 
 ### XXX.7 Collapse the port where it is pure ceremony (T546, 💭)
 

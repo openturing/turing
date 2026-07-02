@@ -128,8 +128,7 @@ fully shipped.**
 > that valuable slice, prunes the ceremony a 100% migration would have created,
 > and makes the boundary self-enforcing. Design → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXX.
 
-- 📋 **T545** (deps: T541 ✅, T542 ✅, T543 ✅) **Enforcement convention test** (`TurDomainLayerConventionsTest`) — following the `TurCacheAnnotationConventionsTest` pattern: assert `*Domain` records carry no JPA/Hibernate/Jackson annotations; the designated hot-path packages depend on ports, not JPA repositories; every surviving port has exactly one adapter + mapper. Makes the boundary self-policing so it can't silently drift back toward 100%. → §XXX.6
-- 💭 **T546** (deps: T541) **Collapse port+adapter → mapper-only where the interface is pure ceremony** — for aggregates that will only ever have a single JPA adapter, evaluate dropping the `*RepositoryPort` interface and returning records straight from a mapper-backed reader. Keeps ~90% of the benefit (immutability/caching) without the interface boilerplate the port adds when there's no second implementation and no mocking need. → §XXX.7
+- 💭 **T546** (deps: T541 ✅) **Collapse port+adapter → mapper-only where the interface is pure ceremony** — for aggregates that will only ever have a single JPA adapter, evaluate dropping the `*RepositoryPort` interface and returning records straight from a mapper-backed reader. Keeps ~90% of the benefit (immutability/caching) without the interface boilerplate the port adds when there's no second implementation and no mocking need. → §XXX.7
 
 ## Non-goals (do NOT add as tasks)
 
