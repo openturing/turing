@@ -1962,18 +1962,6 @@ build a DTO — hot read paths (search, chat/RAG), cache values, and
 cross-aggregate reads. It is pure ceremony on plain admin-CRUD aggregates that
 `agents.md` already routes through uncached `@Transactional` + `LEFT JOIN FETCH`.
 
-### XXX.2 ADR + stop-criteria (T541)
-
-The layer's one real smell is that a bet this size has no written rationale —
-it lives only in class Javadoc and "scaffolding only" commit messages. Write
-the ADR. It fixes the boundary: **domain records** for hot read paths / cache
-values / cross-aggregate reads / LazyInit-prone reads; **JPA repository** for
-admin/CRUD and all writes; **ports stay read-only by design**. It states the
-explicit "not 100%" decision and the single criterion a *new* aggregate must
-meet to earn a domain record ("is it read on a hot/cached/cross-aggregate path,
-or exposed where a lazy proxy would escape its session?"). Land the rule in
-`agents.md` so it guides future work, and in memory.
-
 ### XXX.3 Finish the valuable slice (T542)
 
 Complete the migration of the hot read paths (search / chat / RAG) and the
