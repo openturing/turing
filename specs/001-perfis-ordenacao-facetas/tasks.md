@@ -86,11 +86,23 @@ Gate por fase: ver `plan.md`.
 - [x] **T057** Gate Fase 4: `tsc --noEmit -p tsconfig.app.json` **sem erros** (node 16 + tsc local).
 
 ## Fase 5 — Integração e validação
+- [x] **T059** Commit da feature na `2026.2` local: `69430661b0` (2026-07-01).
 - [ ] **T060** IT end-to-end (`AbstractTuringSpringIT`) — cenários do `quickstart.md` (incl. DT-6).
 - [ ] **T061** Suíte completa backend + build frontend.
-- [ ] **T062** Validar export/import (T004) e ES/Lucene seguindo o padrão (DT-6).
+- [ ] **T062** Validar export/import (T004) e ES/Lucene seguindo o padrão (DT-6). *Parcial*: import
+  do `insper-stage-author` validado manualmente no app (2026-07-02) — perfil "Geral" derivado OK.
 - [ ] **T063** Atualizar docs se aplicável.
 - [ ] **T064** Revisar critérios de aceite (`spec.md §8`).
+- [ ] **T065** Integrar `origin/2026.2` (2 commits: `4ac6e9a437` custom facet handling +
+  `99d2ba63af` fix ranking) e **push**. Conflito provável em `TurSNSiteFacetedFieldAPI.java`
+  (preservar delegação ao service); no repositório de ranking, ficar com a versão upstream
+  (`@Query left join fetch`). Ver HANDOFF §3.14 e §7.1.
+
+> **Validação manual (2026-07-02)**, com o app local de pé: import do site `insper-stage-author`
+> OK e Console operando. Descoberto bug **pré-existente** na lista de Classificação de Resultados
+> (`LazyInitializationException` em cache hit — `@Cacheable` + Hazelcast + coleção lazy); a
+> correção já existe na `origin/2026.2` (`99d2ba63af`) e entra com o T065 — até lá o erro ainda
+> reproduz localmente.
 
 ---
 

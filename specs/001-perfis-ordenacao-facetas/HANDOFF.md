@@ -2,7 +2,8 @@
 
 > **Propósito**: ponto único de retomada. Reúne tudo o que foi feito nesta linha de trabalho
 > (feature + correções operacionais) para continuar em uma **nova conversa** sem perder histórico.
-> Última atualização: **2026-06-30**. Branch: **`2026.2`** (turing). Nada commitado ainda.
+> Última atualização: **2026-07-03**. Branch: **`2026.2`** (turing). Feature **commitada
+> localmente** (`69430661b0`); `origin/2026.2` está **2 commits à frente** — integrar (ver §7.1).
 >
 > Leia também, nesta pasta: `spec.md` (requisitos), `plan.md` (fases), `tasks.md` (checklist),
 > `research.md` (achados técnicos + §6 indexação), `data-model.md`, `contracts/facet-profile-api.md`.
@@ -91,7 +92,25 @@ padrão **"Geral"**.
 > são **cache de compilação incremental defasado** do maven-compiler nesta máquina. Solução: rodar
 > com `clean` (`.\mvnw.cmd -pl turing-app clean ... test`). Não é bug do código.
 
-## 4. Arquivos (git status na branch 2026.2 — nada commitado)
+12. **Commit da feature (2026-07-01)** — todo o trabalho acima foi commitado na `2026.2` local como
+    **`69430661b0`** (`feat: add facet ordering profiles for semantic navigation`). Resolve a
+    antiga pendência "commit do trabalho".
+
+13. **Validação manual no app (2026-07-02)** — app local de pé (porta 2700) com a feature. Import
+    do `export.json` do site **`insper-stage-author`** OK (48 fields/fieldExts, 2 locales; índices
+    `_pt_BR`/`_en_US` já existentes no Solr; caches do SN limpos após import). Console operando.
+
+14. **Bug pré-existente (fora da feature): `LazyInitializationException` na lista de Classificação
+    de Resultados** — `GET /api/sn/{id}/ranking-expression` estoura em **cache hit** de
+    `TurSNRankingExpressionRepository.findByTurSNSite` (`@Cacheable` + Hazelcast serializa o valor →
+    entidade volta **detached**; o MapStruct lê a coleção lazy `turSNRankingConditions` sem sessão —
+    mesmo padrão do item 9; `enable_lazy_load_no_trans` não salva cópia desserializada). Diagnóstico
+    confirmado no `turing.log` e fix local com `@EntityGraph` validado (testes verdes), porém o
+    **upstream já corrigiu o mesmo bug** com `@Query` + `left join fetch` (**`99d2ba63af`** na
+    `origin/2026.2`). A branch local foi resetada e ficou **sem** a correção — o erro ainda
+    reproduz localmente até integrar a origin (§7.1).
+
+## 4. Arquivos (commit `69430661b0` na branch 2026.2 local)
 
 **Novos (backend):**
 - `persistence/model/sn/field/TurSNSiteFacetProfile.java`, `TurSNSiteFacetProfileItem.java`
@@ -156,17 +175,30 @@ padrão **"Geral"**.
 - **Frontend npm/EBUSY (Windows)**: `pnpm` não está no PATH; type-check via
   `node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.app.json` (na pasta
   `frontend/apps/turing-app`).
+- **Maven trava com o app local rodando**: a instância do Turing segura os assets de
+  `target/classes` → `maven-resources-plugin` falha com `AccessDeniedException` ao copiar
+  recursos. Contorno validado: rodar testes com `"-Dmaven.resources.skip=true"` (ou parar o app).
+- **`javac` do PATH é Java 11**: compilar/testar **sempre via `.\mvnw.cmd`** (usa JDK 21).
+  `javac` direto falha com `class file has wrong version 61.0/65.0, should be 55.0`.
 
 ## 7. Pendências / próximos passos
 
-1. **Fase 5** — ITs end-to-end (`AbstractTuringSpringIT`) dos cenários do `quickstart.md` (criar
+1. **Integrar `origin/2026.2`** (2 commits à frente do local): `4ac6e9a437`
+   ("enhance custom facet handling in Semantic Navigation API") e `99d2ba63af` (remove
+   `AulaRelampagoDspaceIT` + **fix do ranking**, §3.14). Atenção no merge:
+   - `TurSNSiteFacetedFieldAPI.java` foi reescrito no commit local **e** alterado no `4ac6e9a437`
+     → conflito provável; resolver preservando a delegação ao `TurSNSiteFacetProfileService`.
+   - Em `TurSNRankingExpressionRepository.java`, ficar com a versão upstream
+     (`@Query` + `left join fetch`) — equivalente ao `@EntityGraph` validado localmente
+     (não manter os dois). Depois do merge, **push**.
+2. **Fase 5** — ITs end-to-end (`AbstractTuringSpringIT`) dos cenários do `quickstart.md` (criar
    perfis, ordenar, buscar com `facetProfile`, fallback, DT-6). **Bloqueada** pelo Hazelcast (§6).
-2. Rodar a **suíte completa**: `mvn test -pl turing-app -Dskip.npm=true` (quando o ambiente subir).
-3. Validar **export/import** de site com perfis (export de perfis ainda não implementado — só o
-   import deriva o "Geral").
-4. **Operacional Insper**: subir Solr, reindexar `economiaee1`; reindex completo após single→multi.
-5. Avaliar varredura de outros records `@RequestBody` com primitivos (gotcha Jackson 3).
-6. **Commit** do trabalho (nada foi commitado; branch `2026.2`).
+3. Rodar a **suíte completa**: `mvn test -pl turing-app -Dskip.npm=true` (quando o ambiente subir;
+   com o app local de pé, adicionar `"-Dmaven.resources.skip=true"` — ver §6).
+4. Validar **export/import** de site com perfis (export de perfis ainda não implementado — só o
+   import deriva o "Geral"). Import do `insper-stage-author` já validado manualmente (§3.13).
+5. **Operacional Insper**: subir Solr, reindexar `economiaee1`; reindex completo após single→multi.
+6. Avaliar varredura de outros records `@RequestBody` com primitivos (gotcha Jackson 3).
 
 ## 8. Como retomar (nova conversa)
 
