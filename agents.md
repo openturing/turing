@@ -2,6 +2,28 @@
 
 ## Development Guidelines
 
+> **Situational guidance now lives in skills.** Deep, subsystem-specific
+> conventions were moved out of this always-loaded file into on-demand Claude
+> Code skills under [`.claude/skills/`](.claude/skills/). Claude auto-invokes a
+> skill when its `description` matches the task; you can also invoke one
+> explicitly with `/<skill-name>`. The pointers below say which skill to reach
+> for. This file keeps only the always-relevant core.
+>
+> | Skill | Reach for it when… |
+> | ----- | ------------------ |
+> | `turing-roadmap-docs` | editing `docs/ROADMAP.md`/`CHANGELOG.md`/`IMPROVEMENTS.md`/`STRATEGY.md`, adding/shipping a task, picking the next `T<n>` |
+> | `turing-persistence` | writing JPA entities, `@Column` annotations, associations (LAZY rule), or Liquibase changelogs |
+> | `turing-integration-tests` | creating or debugging a `*IT.java` / `@SpringBootTest` / context-startup hang |
+> | `turing-frontend-testing` | adding or debugging a `*.test.tsx` (vitest + RTL) |
+> | `turing-spring-ai` | LLM providers, streaming/multimodal chat, embeddings, Spring AI tool calling |
+> | `turing-storage` | asset/file storage, MinIO, filesystem storage, uploads |
+> | `turing-currency-decimal` | currency/decimal fields, Solr `CurrencyFieldType`, decimal-separator localization |
+> | `turing-caching` | `@Cacheable`/`@Scheduled`, cache config, Jackson 3 serialization |
+> | `turing-domain-layer` | `*Domain` records, `*RepositoryPort`, adapters/mappers, hexagonal layer decisions |
+> | `turing-search-lucene` | search-engine plugins (Solr/ES/Lucene), Lucene 10, faceting, vector store |
+> | `turing-llm-summary` | cached LLM insights / `TurLlmSummaryService` features |
+> | `turing-resizable-panel` | `ResizablePanel` layouts, side-panel / side-by-side AI authoring |
+
 ### Project Structure
 
 - **turing-app**: Spring Boot 4 backend (Java 21), main Maven module
@@ -27,46 +49,11 @@
 
 ### Roadmap & docs maintenance
 
-The roadmap is **split across four files in `docs/`** that must be kept in sync.
-Each has one job — never duplicate content between them, and when you touch one,
-check whether a sibling needs updating:
-
-| File                                           | Single responsibility                                                                                                                           | Granularity               |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md)           | **Task status** — the _only_ source of truth for what's done/active. Active backlog only (📋 designed · 💭 idea · ⏳ partial · 🛠 in-progress). | one line per task         |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md)       | What has **shipped** — a searchable index; `git log` is authoritative for detail.                                                               | one line per shipped task |
-| [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) | **Design rationale** (the what/why) for _unshipped_ sections only. No status tables, no shipped implementation reports.                         | prose per active section  |
-| [`docs/STRATEGY.md`](docs/STRATEGY.md)         | Business/positioning decisions (pricing, markets, deprecations, bets).                                                                          | prose                     |
-
-**Task numbering — the next free `T<n>` lives in [`docs/last-task.md`](docs/last-task.md).**
-Read it before adding a task, use `T<n+1>`, then bump the counter + append a log
-line. T-numbers are **non-contiguous across blocks**, so never infer the next
-number from a block's header range or a `git log` scan — that mis-numbers tasks
-and collides with already-shipped ones (it happened: Block N shipped T337–T341
-_inside_ the Block J band).
-
-**The cross-file update rules — follow these every time:**
-
-1. **When a task ships:** move its one-liner from `ROADMAP.md` → `CHANGELOG.md`
-   (under its block), and **delete** its detailed design subsection from
-   `IMPROVEMENTS.md`. `git log` is the history — do **not** leave a shipped
-   implementation report in `IMPROVEMENTS.md` or re-accrete one. This is the
-   founding rule; the doc grew to 539 KB once by violating it.
-2. **When you add a new task:** add the one-liner to `ROADMAP.md` (with `deps`
-   - a `→ §x.y` pointer) and, if it needs design, add the rationale subsection
-     to `IMPROVEMENTS.md`. Status lives **only** in `ROADMAP.md` — don't put
-     ✅/📋 markers inside `IMPROVEMENTS.md` prose.
-3. **Status belongs to exactly one file.** If you find a status marker in
-   `IMPROVEMENTS.md` that disagrees with `ROADMAP.md`/`CHANGELOG.md`, the
-   roadmap files win — fix or remove the stale marker.
-4. **Keep entries terse.** A task line is _what + why + pointer_ (~1 sentence).
-   Implementation detail goes in code/commits, not the table cell. Never put
-   multi-paragraph release notes inside a markdown table cell.
-5. **Strategy ≠ backlog.** Pricing/market/deprecation discussion goes in
-   `STRATEGY.md`, never as a numbered task.
-6. **Non-goals are binding.** `ROADMAP.md` → "Non-goals" + `IMPROVEMENTS.md`
-   §I.6/§I.7 list things deliberately _not_ to build — check them before
-   proposing new work.
+> **Moved to the `turing-roadmap-docs` skill.** The roadmap is split across four
+> `docs/` files (`ROADMAP.md` = status, `CHANGELOG.md` = shipped, `IMPROVEMENTS.md`
+> = design rationale, `STRATEGY.md` = business) with strict cross-file sync rules,
+> and the next `T<n>` lives in [`docs/last-task.md`](docs/last-task.md). Invoke the
+> skill (or `/turing-roadmap-docs`) before adding/shipping a task or editing those docs.
 
 ### Build & Test Commands
 
@@ -99,8 +86,8 @@ mvn clean install
 
 ### Backend Conventions
 
-- **Spring Boot 4** with **Spring AI 2.0.0-M2** for LLM integration
-- Persistence: JPA/Hibernate with H2 (dev) and Liquibase migrations
+- **Spring Boot 4** with **Spring AI 2.0.0-M2** for LLM integration (details → `turing-spring-ai` skill)
+- Persistence: JPA/Hibernate with H2 (dev) and Liquibase migrations (details → `turing-persistence` skill)
 - REST controllers in `api/` package, services in dedicated packages
 - Use constructor injection (no `@Autowired` on fields)
 - Records for DTOs/API request-response types
@@ -122,32 +109,13 @@ mvn clean install
   ```
 - When the project version changes, update the "Current version" line above so new files always reference the correct version
 
-### JPA & Database Column Naming
+### JPA, Liquibase & Persistence
 
-- **No implicit naming strategy** is configured — Hibernate maps Java field names **literally** to column names (no snake_case conversion)
-- A Java field `sitePrompt` maps to column `sitePrompt`, **not** `site_prompt`
-- When adding `@Column` annotations, use the exact camelCase field name (or omit `name` to let Hibernate use the default)
-- **Never use snake_case** in Liquibase column names unless the existing table already uses it — always match the convention of the target table
-- Existing tables like `sn_site_genai` use camelCase columns: `systemPrompt`, `sitePrompt`
-- Existing tables like `sn_site` use lowercase: `description`, `name`, `facet`
-- When in doubt, check the existing columns in the entity class or run a query against the H2 dev database
-
-### Liquibase Conventions
-
-- The user may run the app between turns; editing a changeset that may already
-  have run breaks Liquibase checksums. Fix follow-ups with a new changelog file
-  instead of changing the prior one.
-
-- **Always create a new file** — never modify existing changelog files
-- Naming: `v{currentVersion}.{subversion}.yaml` with incremental subversion (e.g., if current version is `2026.1.14` and `v2026.1.14.0.yaml` exists, the next file is `v2026.1.14.1.yaml`)
-- Include in `db.changelog-master.yaml`
-- Use `preconditions` with `onFail: MARK_RAN` for idempotent changesets
-- Column size changes: use `modifyDataType`; new data: use `insert`
-- **Column names must match the JPA field name exactly** (camelCase) — see "JPA & Database Column Naming" above
-- **Large text columns**: use `longtext` instead of `clob` — `longtext` is compatible with H2, MySQL, and PostgreSQL, while `clob` may not map correctly on MySQL
-
-- Use lowercase portable Liquibase types (`boolean`, `longtext`), not uppercase
-  `BOOLEAN`/`CLOB`; `TurLiquibaseChangelogAgnosticTest` checks this.
+> **Moved to the `turing-persistence` skill.** Column naming (no implicit
+> snake_case — camelCase maps literally), Liquibase conventions (new file per
+> change, idempotent preconditions, portable lowercase types, `longtext` not
+> `clob`), and the `FetchType.LAZY`-by-default rule for all associations. Invoke
+> the skill when writing entities, `@Column` annotations, or changelogs.
 
 ### Visual Identity & Brand Colors
 
@@ -184,6 +152,8 @@ mvn clean install
 - Avoid `import * as Icons` plus dynamic property access in Vite/Rolldown. That
   pattern disables tree-shaking and keeps every export. Use static imports or
   Iconify for runtime icon lookup.
+- **Layout components** (`ResizablePanel`, side-panel / side-by-side AI authoring)
+  → `turing-resizable-panel` skill.
 
 #### Data fetching with React Query (since 2026.2.6)
 
@@ -228,107 +198,10 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 - Mockito strict stubbing: stub all methods that will be called (use `any()` for broad matching)
 - Integration tests use `@SpringBootTest` with full context — keep controllers lean to avoid bean issues
 - Always run `mvn test -pl turing-app -Dskip.npm=true` after backend changes
-
-#### Integration test (`*IT.java`) `@SpringBootTest` requirements
-
-Every new IT that boots the full Spring context **must** either:
-
-1. **Extend `AbstractTuringSpringIT`** ([turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java](turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java)) — gives you an ephemeral H2 datasource, snapshot seeding, JMX enabled, **per-JVM Artemis data directory**, and proper cleanup. **Preferred**. The subclass **must NOT redeclare `@SpringBootTest`** — that would override (not merge with) the parent's annotation and silently drop `spring.jmx.enabled=true`:
-
-   ```java
-   // ✅ correct — inherits @SpringBootTest from AbstractTuringSpringIT
-   class TurFooIT extends AbstractTuringSpringIT {
-       @Test
-       void something() { ... }
-   }
-
-   // ❌ wrong — own @SpringBootTest overrides parent's annotation,
-   //    JMX property is lost, context fails on TurQueueBrowserService
-   @SpringBootTest
-   class TurFooIT extends AbstractTuringSpringIT { ... }
-   ```
-
-2. **Or, when subclassing isn't possible** (rare — e.g. needs a different base or test slice), explicitly enable JMX on the annotation:
-
-   ```java
-   @SpringBootTest(properties = "spring.jmx.enabled=true")
-   class TurFooIT { ... }
-   ```
-
-   When going this route, also override `spring.artemis.embedded.data-directory` via `@DynamicPropertySource` to a unique per-JVM path (see `AbstractTuringSpringIT.overrideArtemisDataDirectoryWithEphemeralPath`), otherwise concurrent ITs and a locally-running app will collide on the same Artemis file lock and hang for several minutes on context startup.
-
-**Why JMX must be passed via `properties = ...`**: `TurQueueBrowserService` injects `javax.management.MBeanServer` in its constructor (mandatory dep, not optional). In Spring Boot 4, the `JmxAutoConfiguration` that supplies `MBeanServer` is **not** activated in `@SpringBootTest` from `application.yaml` alone — the property has to be passed via `properties = ...` on the annotation. Without it the context fails with `No qualifying bean of type 'javax.management.MBeanServer' available` and Failsafe burns ~30s per attempt before giving up.
-
-**Why per-JVM Artemis data dir matters**: the production default is `spring.artemis.embedded.data-directory=store/queue` — a CWD-relative path. With embedded Artemis + `persistent: true`, two JVMs sharing that path (e.g. a running app + a forked Surefire IT, or two parallel ITs) compete for `server.lock` and serialize through `FileLockNodeManager`'s sleep-retry loop. Symptom: the IT hangs on Spring context startup with no error logged, until you `Stop-Process` the other JVM. `AbstractTuringSpringIT` redirects this to a unique per-JVM temp dir, eliminating the class of bug entirely.
-
-`AbstractTuringSpringIT` also sets
-`spring.artemis.embedded.persistent=false`. Keep it that way: multiple cached
-Spring contexts in the same Maven fork can otherwise share the per-JVM Artemis
-directory and block for minutes on `FileLockNodeManager`.
-
-`@TestConfiguration` classes with `@Primary` mocks must live outside the main
-component scan (`com.viglet.turing.*`). Put reusable test config under
-`com.viglet.testsupport.*`; otherwise a mock can leak into every
-`@SpringBootTest`.
-
-#### JPA fetch strategy: LAZY by default
-
-**Always use `FetchType.LAZY` for associations.** This is a project-wide rule, not a per-case decision.
-
-- `@OneToOne`: JPA default is EAGER → **must** override with `@OneToOne(fetch = FetchType.LAZY)`.
-- `@ManyToOne`: JPA default is EAGER → **must** override with `@ManyToOne(fetch = FetchType.LAZY)`.
-- `@OneToMany`, `@ManyToMany`: default is LAZY — leave it.
-- **Never use `FetchType.EAGER`** unless you have a measured, documented reason. Add a `// reason:` comment when you do.
-
-**Why this is non-negotiable**: EAGER associations cascade across the object graph and explode load cost. Real incident — search latency went from **200ms → 5s** on sites with an AI Agent configured because `TurSNSite → TurSNSiteGenAi → TurAIAgent → 4 @ManyToMany` all defaulted to EAGER, even though search never touches GenAi. Reverting that one chain to LAZY brought search back to ~200ms.
-
-**Safety net for legacy code paths**: [turing-app/src/main/resources/application.yaml](turing-app/src/main/resources/application.yaml) has `hibernate.enable_lazy_load_no_trans=true`, so LAZY access outside a `@Transactional` boundary still works (Hibernate opens a temporary session). This is a fallback for callers we may have missed during the EAGER → LAZY migration — **don't rely on it for new code**. New write paths and chat/RAG flows should access lazy associations inside an `@Transactional` or service-managed session.
-
-**When loading a graph in one shot is genuinely needed**, use:
-
-- `@EntityGraph(attributePaths = {...})` on the repository method, or
-- `JOIN FETCH` in a `@Query`
-
-— not `FetchType.EAGER` on the entity.
-
-#### Other testing rules
-
-- Always check `application.yaml` defaults before writing test-specific properties — most ITs should inherit project conventions.
-
-#### Frontend Testing (vitest + React Testing Library)
-
-The frontend gained its first test runner in 2026.3 (`turing-app` only).
-Stack: **vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb**.
-
-- **Run**: `pnpm --filter turing-app test` (CI) / `test:watch`. vitest 3.2.4
-  runs fine against Vite 8 despite the peer-range warning; bump to vitest 4
-  only if a Vite upgrade forces it.
-- **Config**: standalone [`vitest.config.ts`](frontend/apps/turing-app/vitest.config.ts) —
-  deliberately does **NOT** extend `vite.config.ts` (its Module Federation /
-  Tailwind / viglet boot-loader plugins break under jsdom). Only the React
-  plugin + `@` alias + `environment: "jsdom"`, `globals: true`, `css: false`,
-  `clearMocks`/`restoreMocks: true`.
-- **Test location**: `src/**/__tests__/*.test.tsx`. These ARE included by
-  `tsconfig.app.json`, so `tsc -b` (the build) type-checks them — keep tests
-  type-clean (`noUnusedLocals`/`Params`, `verbatimModuleSyntax` → `import type`).
-  `src/test/vitest-globals.d.ts` provides `/// <reference types="vitest/globals" />`.
-- **Global mocks** live in [`src/test/setup.ts`](frontend/apps/turing-app/src/test/setup.ts)
-  (applied to every test): `react-i18next` (passthrough `t` returning the key
-  or its `defaultValue`), `react-markdown` → raw children (skips the heavy
-  rehype/remark ESM tree), `@/contexts/user.context` `useCurrentUser` stub, and
-  the shared **`axios`** singleton (both admin services and the SDK's `get`
-  helper import the default axios — one mock covers all reads). Plus jsdom
-  polyfills: `scrollIntoView`, `ResizeObserver`, `matchMedia`.
-- **Network boundary**: `postAgentChat`/`postLlmChat` use `fetch` (not axios) —
-  stub `global.fetch` with an SSE `ReadableStream` of `data: {type:"token"|"options",content}`
-  lines (see `chat/__tests__/test-utils.tsx` `makeSseFetch`). Slot polling and
-  all other reads go through the mocked `axios.get`.
-- **Full-page renders** (e.g. `ChatPage`) must be wrapped in a
-  `QueryClientProvider` (the header's session-info sheet uses React Query) and a
-  `MemoryRouter` — `renderWithRouter` in `test-utils.tsx` does both. Component-
-  level renders (e.g. `AgentChatTab`) usually need neither.
-- **IndexedDB**: `import "fake-indexeddb/auto"` at the top of the test file
-  before anything touches the session store.
+- **Writing a `*IT.java` (`@SpringBootTest`)?** → `turing-integration-tests` skill
+  (extend `AbstractTuringSpringIT`, JMX-via-`properties`, per-JVM Artemis dir).
+- **Writing a frontend `*.test.tsx`?** → `turing-frontend-testing` skill
+  (vitest + RTL + jsdom, global mocks, SSE `fetch` stubbing).
 
 ### Common Pitfalls
 
@@ -337,195 +210,6 @@ Stack: **vitest 3.2.4 + @testing-library/react 16 + jsdom + fake-indexeddb**.
 - Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
 - Anthropic provider doesn't support embedding — throws `UnsupportedOperationException`. Gemini **does** (T495): `TurGeminiEmbeddingModel` over `embedContent` with asymmetric task types (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at query) + optional Matryoshka `outputDimensionality`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
-
-### Search Engine & Lucene Notes
-
-- `TurSearchEnginePlugin` is the search-engine plugin lifecycle interface;
-  resolve plugins through `TurSearchEnginePluginFactory` (`getPluginForSite`,
-  `getPluginForInstance`, `getPlugin(String type)`). Plugin type strings come
-  from `getPluginType()` and are lowercased.
-- The Lucene search-engine plugin lives under
-  `turing-app/src/main/java/com/viglet/turing/lucene/` and uses Lucene 10.
-  Lucene 10 removed `FacetsCollector.search()`; do not use it.
-- `TopScoreDocCollector.create(int, int)` does not exist in Lucene 10. Use
-  separate `searcher.search()` calls where needed.
-- `TurSNSiteFieldExt.getFacet()`, `getEnabled()`, and `getMultiValued()` are
-  primitive `int` flags; compare with `== 1`, not null checks. Only
-  `getFacetPosition()` is nullable.
-- The embedded Lucene vector store is separate from the search-engine Lucene
-  plugin. It is exposed through `TurLuceneStoreProvider` with plugin type
-  `lucene`.
-
-### Pluggable Storage Architecture
-
-The storage layer is abstracted via `TurStorageService` interface with three implementations:
-
-**Configuration** (`application.yaml`):
-
-```yaml
-turing:
-  storage:
-    type: none # none | minio | filesystem
-    filesystem:
-      path: ./store/assets
-    minio:
-      endpoint: http://localhost:9000
-      access-key: admin
-      secret-key: minha_senha_forte
-      bucket: turing-assets
-```
-
-**Key classes** (all in `service/storage/`):
-
-- `TurStorageType` — enum: `NONE`, `MINIO`, `FILESYSTEM`
-- `TurStorageService` — interface: `isEnabled()`, `getType()`, `listObjects()`, `downloadObject()`, `statObject()`, `uploadObject()`, `uploadStream()`, `deleteObject()`, `deleteObjectsWithPrefix()`, `createFolder()`, `guessContentType()`
-- `TurStorageObjectStat` — neutral DTO replacing MinIO's `StatObjectResponse`
-- `TurStorageContentTypes` — shared static MIME type utility
-- `TurMinioStorageService` — MinIO implementation
-- `TurFilesystemStorageService` — filesystem implementation with path traversal protection (`resolveSafe()`)
-- `TurNoOpStorageService` — disabled/no-op implementation (lists return empty, mutations throw)
-- `TurStorageConfig` — `@Configuration` with `@Bean` factory that selects implementation based on `turing.storage.type`
-
-**Properties** (in `properties/`):
-
-- `TurStorageProperty` — `type` (enum), nested `minio` (TurMinioProperty), nested `filesystem` (TurFilesystemProperty with `path`)
-- `TurMinioProperty` — `endpoint`, `accessKey`, `secretKey`, `bucket` (no `enabled` field — type selection controls this)
-- Access pattern: `configProperties.getStorage().getMinio()` or `configProperties.getStorage().getFilesystem().getPath()`
-- Old `turing.minio.enabled` and `turing.minio.*` are **removed** — all storage config lives under `turing.storage.*`
-
-**Frontend feature flag**: `FeaturesResponse.storageEnabled` (renamed from `minioEnabled`)
-
-- Sidebar hides "assets" and "pages" when `storageEnabled=false`
-- System Info shows storage section with dynamic type label and property key
-
-### LLM Summary Service (Cached AI Insights)
-
-Reusable service for generating cached LLM summaries with regenerate support:
-
-**Backend** (`system/TurLlmSummaryService`):
-
-- `generate(cacheKey, data, systemPrompt, regenerate)` → `SummaryResult(success, error, content, canRegenerate)`
-- Uses `TurLlmCacheService` for in-memory caching (respects Global Settings TTL)
-- Uses default LLM from `TurGlobalSettingsService.getDefaultLlmId()`
-- `isAvailable()` — checks if default LLM is configured and enabled
-
-**Used by**:
-
-- `TurSNSiteSummaryAPI` — `GET /api/sn/{id}/summary?regenerate=false` for SN site insights
-- `TurSystemInfoAPI` — `GET /api/system/info/insights?regenerate=false` for system info AI insights
-- Both follow same pattern: collect data → call `llmSummaryService.generate()` → return `SummaryResult`
-
-**Frontend pattern** (same for both SN insights and System Info insights):
-
-```typescript
-const response = await axios.get<InsightsResponse>(url, {
-  params: regenerate ? { regenerate: true } : {},
-});
-// InsightsResponse: { success, error, content, canRegenerate }
-```
-
-- Show regenerate button when `canRegenerate=true` (controlled by `llmCacheRegenerate` in Global Settings)
-- System Info uses a resizable side panel; SN insights uses a full page
-
-### ResizablePanel Customization (shadcn)
-
-The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `overflowHidden` prop:
-
-- `react-resizable-panels` injects an internal wrapper `div` with `style="overflow: auto"` that cannot be controlled via props
-- `overflowHidden` prop applies `overflow: hidden` on the Panel element and `[&>div]:overflow-hidden!` (with `!important`) to override the inline style on the internal wrapper
-- Use `<ResizablePanel overflowHidden>` when the panel content manages its own scroll (e.g., a Card with `overflow-auto` on its body)
-- In `react-resizable-panels` v4, numeric sizes are pixels. Use strings for
-  percentages (`defaultSize="60"`), otherwise panels can render tiny/squeezed.
-
-### Cache, Scheduling & Serialization Notes
-
-- This project uses Jackson 3 in `turing-app`: imports are `tools.jackson.*`,
-  not `com.fasterxml.jackson.*`.
-- For Keycloak admin REST URL derivation, preserve the `issuer-uri` base path
-  (for example `/kc`); do not rebuild URLs from only scheme/host/realm.
-- Spring Boot 4 clustered cache requires `com.hazelcast:hazelcast-spring` for a
-  Hazelcast-backed `CacheManager`; without it Boot may silently fall back to
-  `ConcurrentMapCacheManager`.
-- Cluster-wide-once `@Scheduled` jobs should use ShedLock via
-  `@SchedulerLock`; `TurSchedulerLockConfig` provides the Hazelcast-backed
-  `LockProvider`.
-#### Caching policy: never on repositories (Block AC / T486)
-
-**Repositories are uncached.** `@Cacheable`/`@CacheEvict`/`@Caching` must not
-appear on any repository — `TurCacheAnnotationConventionsTest` (under
-`turing-app/src/test/java/com/viglet/turing/db/`) fails the build if they do.
-The reason: a repository finder caches a **JPA entity**, and entities carry
-lazy `@ManyToOne` proxies. A cached entity outlives its session, so any hot-path
-read that dereferences a lazy association outside a transaction throws
-`LazyInitializationException` (the bug that surfaced when
-`hibernate.enable_lazy_load_no_trans` was turned off). T486 removed the whole
-class — including the per-finder cache-name constants. T488 then retired the
-now-redundant `findByIdNoCache` band-aid: admin/CRUD callers use plain
-`findById`, and load-mutate-map paths run `@Transactional` (with a
-`LEFT JOIN FETCH` finder — e.g. `TurSNSiteRepository.findByIdWithGenAi` — for the
-to-one graph the mapper/prompt-builder touches, never `@EntityGraph`).
-
-When you do need to cache for the search/chat hot path:
-
-1. **Cache an immutable read-model / DTO in a service-level cache, never a JPA
-   entity.** The parsed `ChatFlowGraph`, an SN site + field-config DTO, router
-   decisions, static prompts, rerank scores, prices — values with no lazy
-   proxies and no session affinity, safe to read anywhere. Admin/CRUD stays
-   uncached and uses `@Transactional` + `@Query ... LEFT JOIN FETCH` to load the
-   graph it needs (see T488).
-2. **`@Cacheable` is proxy-based — never call it via `this`.** A
-   `this.cacheableMethod()` from the same class bypasses the Spring proxy and
-   silently no-ops the cache (and its eviction). For intra-class calls, inject
-   the bean into itself with `@Lazy` and route through that reference. See
-   [`TurChatFlowStaticPromptCache`](turing-app/src/main/java/com/viglet/turing/genai/flow/TurChatFlowStaticPromptCache.java)
-   for the canonical pattern.
-3. **Pair every service cache name with an eviction.** Evict on the matching
-   admin write (e.g. the reranker-config setters evict `turRagRerankScore`).
-4. **Cache names follow lowerCamelCase** — `turXxx<Purpose>` for service-level
-   caches (e.g. `turChatFlowRouterDecision`, `turPersonaStaticPrompt`).
-5. **Hazelcast vs in-process is a deploy-time concern.** The cache topology is
-   decided by whether `com.hazelcast:hazelcast-spring` is on the classpath; the
-   `@Cacheable` site stays identical either way.
-
-### Domain layer (ports & adapters): bounded by design — do NOT go 100%
-
-There is a partial hexagonal layer under `com.viglet.turing.domain.*`
-(immutable annotation-free `*Domain` records + `*RepositoryPort` interfaces) with
-adapters + MapStruct mappers under `com.viglet.turing.persistence.adapter.*`.
-**It is deliberately incomplete and stays that way.** Full rationale + the ADR:
-[`docs/adr/0001-domain-layer-bounded-completion.md`](docs/adr/0001-domain-layer-bounded-completion.md).
-The rule, in one screen:
-
-- **Use a `*Domain` record** only when the read is on a **hot path**
-  (search / chat / RAG / autocomplete), a **cached value**, a **cross-aggregate
-  read** (would walk `@ManyToOne`/`@OneToOne` across aggregates — the EAGER
-  200ms→5s hazard), or a **LazyInit-prone read** (returned/cached/passed outside
-  its session). The record references neighbours **by ID**, never by object.
-- **Port vs mapper-backed reader (T546):** wrap the record read in a
-  `*RepositoryPort` interface only when it will be **mocked in a unit test** or
-  gain a **second implementation**. Otherwise skip the interface and expose a
-  concrete `*Reader` `@Component` that maps entity → record directly (see
-  `TurCustomToolReader`). Today: **7 ports + 8 records + 1 reader**. Don't add a
-  port "for symmetry" — a port with no mock is pure ceremony over its lone
-  adapter.
-- **Use the JPA repository directly** (with `@Transactional` + `LEFT JOIN FETCH`
-  for the to-one graph, per T488 — not `@EntityGraph`, never a repo
-  `@Cacheable`) for **admin/CRUD** reads and **all writes**.
-- **Ports are read-only by design, permanently.** They will not grow `save` /
-  `delete` — writes gain nothing from an immutable record and everything from a
-  managed, dirty-checked entity. (Ignore any legacy "future slices will
-  introduce save/delete" Javadoc; that promise was reversed by T544.)
-- **The single criterion for a new aggregate:** is it read on a
-  hot/cached/cross-aggregate path, or where a lazy proxy would escape its
-  session? Yes → it earns a record. No → it stays on the JPA repo. Partial
-  coverage of the entity space is the intended end state, **not** a debt — there
-  is no "complete the set for consistency" obligation.
-- The mapping cost is a non-issue: `entity → MapStruct → record` measures
-  ≈48–53 ns/op (T540), immeasurable against a millisecond search request.
-- `TurDomainLayerConventionsTest` (T545) enforces this: records carry no
-  JPA/Hibernate/Jackson annotations, hot-path packages depend on ports not JPA
-  repos, and every surviving port has exactly one adapter + mapper. (A collapsed
-  reader has no port, so it's simply outside the port walk — T546.)
 
 ### Agent Operational Memory (Repository)
 
@@ -550,15 +234,6 @@ The rule, in one screen:
   mark a task done for skeleton-only tests that still contain `fail()` or only
   `@Disabled`. Implement real assertions first.
 
-### Frontend Authoring & Design System Notes
-
-- AI authoring side-by-side mode uses one global `ResizablePanelGroup` in
-  `ConsoleRootPage`; pages portal authoring content into the slot through
-  `useGlobalSidePanel`.
-- Viglet Design System source lives at
-  `d:/git/viglet/viglet-design-system`; inspect `src/components/ui/` there
-  when debugging design-system component behavior.
-
 ### Frontend TypeScript Check (Windows EBUSY workaround)
 
 When `node_modules` native binaries are locked by the IDE/Vite dev server:
@@ -569,181 +244,18 @@ When `node_modules` native binaries are locked by the IDE/Vite dev server:
 
 ---
 
-## Reusable Playbook: Decimal and Currency Demands
+## Subsystem deep-dives — see `.claude/skills/`
 
-Use this checklist whenever a demand involves numeric localization (dot/comma), currency fields, Solr schema updates, and React admin forms.
+The following areas each have a dedicated skill (auto-invoked by description, or
+`/<skill-name>`). They were moved out of this file to keep per-turn context lean:
 
-### Quick Checklist (10 lines)
-
-1. Confirm `TurSEFieldType`/API/frontend type options are aligned.
-2. Keep enum persistence as `@Enumerated(EnumType.STRING)`.
-3. Map `CURRENCY` to Solr `currency` (`CurrencyFieldType`), never `pdouble`.
-4. Ensure `currency.xml` exists in all configsets and packaged zip configsets.
-5. Index currency as `amount,ISO4217` (example: `150.00,BRL`).
-6. Use one global decimal source (`DOT`/`COMMA`) and normalize centrally.
-7. Normalize decimal-capable React inputs on blur (`FLOAT`/`DOUBLE`/`CURRENCY`).
-8. Preserve date-like values in mixed fields (normalize only numeric-looking strings).
-9. Validate backend first (`mvn test -Dskip.npm`; in PowerShell use `"-Dskip.npm"`), then frontend (`npm run compile`).
-10. For Windows npm issues, use resilient deps fallback (`npm ci` -> `npm install` -> `--legacy-peer-deps` when needed).
-
-### 1) Backend and Persistence Rules
-
-- Keep field enums aligned end-to-end (`TurSEFieldType`, API type lists, frontend type selectors).
-- Persist enum fields as strings (`@Enumerated(EnumType.STRING)`) to avoid ordinal drift across versions.
-- If introducing global numeric behavior, centralize in a dedicated service (e.g., global settings + normalizer component) and avoid scattered parsing logic.
-
-### 2) Solr Currency Rules (Mandatory)
-
-- Map `CURRENCY` to Solr `CurrencyFieldType` (`currency`), not `pdouble`.
-- Ensure schema field type exists with these attributes:
-  - `class="solr.CurrencyFieldType"`
-  - `amountLongSuffix="_l_ns"`
-  - `codeStrSuffix="_s_ns"`
-  - `defaultCurrency="USD"`
-  - `currencyConfig="currency.xml"`
-- Ensure `currency.xml` exists in all configsets (`en`, `pt`, `es`, `ca`) and in packaged zip configsets used at runtime.
-- Currency payload format for indexing must be `amount,ISO4217` (example: `150.00,BRL`).
-
-### 3) Decimal Separator Behavior (Global)
-
-- Use one global config source (`DOT` or `COMMA`) and normalize values before indexing/query persistence.
-- Frontend forms should normalize on blur for decimal-capable fields (`FLOAT`, `DOUBLE`, `CURRENCY`).
-- Keep date-like values untouched in mixed inputs (e.g., custom facet ranges) and only normalize when value looks numeric.
-
-### 4) React/Admin Integration Pattern
-
-- Add dedicated route + page for global settings.
-- Expose typed model and service for `/api/system/global-settings`.
-- Use a reusable hook for decimal symbol retrieval and normalization helpers.
-- Update placeholders/descriptions dynamically to reflect active separator and expected currency format.
-
-### 5) Validation Workflow
-
-- Backend-first validation: run focused tests with `mvn test -Dskip.npm`.
-- Frontend validation: prefer `npm run compile`.
-- If Windows `EPERM`/lock affects `npm ci`, use resilient scripts with fallback.
-
-### 6) Resilient npm Script Pattern
-
-- Prefer split scripts:
-  - `compile:deps` (or `build:deps`) for dependency step.
-  - `compile:build` (or `build:run`) for actual build.
-  - top-level `compile`/`build` chaining both.
-- Recommended deps fallback pattern:
-  - `npm install --no-audit --no-fund`
-- For workspaces with peer-resolution instability, extend fallback with:
-  - `npm install --no-audit --no-fund --legacy-peer-deps`
-
-### 7) Delivery Discipline
-
-- Prefer targeted fixes over broad refactors.
-- Regenerate only artifacts that must reflect schema/runtime changes.
-- If validation reveals unrelated pre-existing issues, report them separately and keep scope explicit.
-
-## Spring AI Integration (v2.0.0-M2)
-
-### LLM Provider Architecture
-
-Turing uses a pluggable provider pattern for LLM integration via Spring AI:
-
-- **Interface**: `TurGenAiLlmProvider` — defines `getPluginType()`, `createChatModel()`, `createEmbeddingModel()`
-- **Factory**: `TurGenAiLlmProviderFactory` — resolves the correct provider based on the vendor's plugin type
-- **Supported providers**: OpenAI, Ollama, Anthropic (Claude), Google Gemini (native GenAI SDK), Google Gemini (OpenAI-compatible), Azure OpenAI (Copilot)
-
-### Streaming Chat API
-
-The chat endpoint supports **Server-Sent Events (SSE)** for token-by-token streaming:
-
-```java
-// Backend: Flux-based SSE streaming
-@PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-public Flux<ChatResponse> chat(...) {
-    return chatModel.stream(prompt)
-        .map(response -> new ChatResponse("assistant", response.getResult().getOutput().getText()))
-        .filter(r -> !r.content().isEmpty());
-}
-```
-
-```typescript
-// Frontend: fetch + ReadableStream for SSE consumption
-const response = await fetch(url, {
-  method: "POST",
-  headers,
-  credentials: "include",
-  body,
-});
-const reader = response.body.getReader();
-// Parse "data:" lines, extract JSON, call onToken(parsed.content)
-```
-
-### Multimodal Support (File Attachments)
-
-The chat API accepts file uploads via multipart form data, using Spring AI's `Media` API:
-
-```java
-// Build UserMessage with media attachments
-UserMessage.builder()
-    .text("Analyze this document")
-    .media(Media.builder()
-        .mimeType(MimeType.valueOf("application/pdf"))
-        .data(new ByteArrayResource(fileBytes))
-        .name("document.pdf")
-        .build())
-    .build();
-```
-
-**Supported formats**: Images (PNG, JPEG, GIF, WebP), Documents (PDF, CSV, DOC/DOCX, XLS/XLSX, HTML, TXT, Markdown), Video formats.
-
-### Spring AI Message Types
-
-- `UserMessage` — supports text + media attachments via builder
-- `AssistantMessage` — text + tool calls + media
-- `SystemMessage` — system prompts
-- `Prompt` — accepts `List<Message>` for proper conversation history
-
-### Provider-Specific Notes
-
-| Provider        | Chat | Embedding | Notes                                                                                           |
-| --------------- | ---- | --------- | ----------------------------------------------------------------------------------------------- |
-| OpenAI          | Yes  | Yes       | Full support                                                                                    |
-| Ollama          | Yes  | Yes       | Local models                                                                                    |
-| Anthropic       | Yes  | No        | No embedding API — throws `UnsupportedOperationException`                                       |
-| Gemini (native) | Yes  | Yes       | Native chat/streaming + server-side tools via `com.google.genai.Client` (T489–T494); embeddings via `embedContent` with asymmetric task types + Matryoshka dims (T495); plugin type `gemini` |
-| Gemini (OpenAI) | Yes  | No        | Uses OpenAI-compat endpoint at `generativelanguage.googleapis.com`; plugin type `gemini-openai` |
-| Azure OpenAI    | Yes  | Yes       | `AzureOpenAiEmbeddingModel` uses constructor (no builder)                                       |
-
-### Tool Calling (Semantic Navigation Chat)
-
-The Semantic Navigation chat uses Spring AI's tool calling with `ToolCallingChatOptions`:
-
-```java
-// Define tools via @Tool annotation in a service
-@Tool(name = "search_site", description = "...")
-public String searchSite(String siteName, String locale, String query, ...) { ... }
-
-// Use MethodToolCallbackProvider to create callbacks
-ToolCallback[] callbacks = MethodToolCallbackProvider.builder()
-    .toolObjects(toolService).build().getToolCallbacks();
-
-// Pass tools via DefaultToolCallingChatOptions with internal execution
-var options = DefaultToolCallingChatOptions.builder()
-    .toolCallbacks(callbacks)
-    .internalToolExecutionEnabled(true)
-    .build();
-
-Prompt prompt = new Prompt(messages, options);
-chatModel.stream(prompt); // Model automatically executes tools
-```
-
-- `internalToolExecutionEnabled(true)` — lets the ChatModel handle the tool call loop internally
-- Tools: `list_sites`, `get_site_fields`, `search_site` (mirrors Turing MCP Server tools)
-- Endpoint: `/api/v2/llm/{id}/semantic-chat`
-
-### API Key Management
-
-- API keys stored encrypted via `TurSecretCryptoService`
-- Decrypted at runtime when creating provider instances
-- Provider options (JSON) stored in `TurLLMInstance.providerOptionsJson`
+- **Search Engine & Lucene** (`TurSearchEnginePlugin`, Lucene 10 gotchas, vector store) → `turing-search-lucene`
+- **Pluggable Storage** (`TurStorageService`: NONE/MINIO/FILESYSTEM) → `turing-storage`
+- **LLM Summary Service** (cached AI insights) → `turing-llm-summary`
+- **Cache, Scheduling & Serialization** (incl. "never cache repositories", Jackson 3, ShedLock) → `turing-caching`
+- **Domain layer** (ports & adapters, bounded by design) → `turing-domain-layer`
+- **Decimal & Currency demands** playbook → `turing-currency-decimal`
+- **Spring AI Integration** (providers, streaming, multimodal, tool calling) → `turing-spring-ai`
 
 ---
 
