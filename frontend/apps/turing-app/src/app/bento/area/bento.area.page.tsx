@@ -3,7 +3,6 @@ import {
   BENTO_SPAN_FEATURED,
   BENTO_SPAN_SQUARE,
   BentoHero,
-  BentoSection,
   BentoTile,
   bentoNavTarget,
   bentoSectionByAreaRoute,
@@ -64,7 +63,12 @@ export default function BentoAreaPage() {
         subtitle={description}
       />
 
-      <BentoSection title={label} description={description}>
+      {/*
+       * The hero above already carries the section title + description, so the
+       * mosaic renders as a bare `bento-grid` (no repeated `BentoSection`
+       * header). Keeping the `bento-grid` class preserves the stagger reveal.
+       */}
+      <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         {items.map((item) => (
           <BentoTile
             key={item.id}
@@ -79,7 +83,7 @@ export default function BentoAreaPage() {
             <p className="text-sm text-muted-foreground">{t(item.descriptionKey)}</p>
           </BentoTile>
         ))}
-      </BentoSection>
+      </div>
     </>
   );
 }
