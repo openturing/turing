@@ -17,6 +17,17 @@ import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 /**
+ * The command-palette shortcut hint, honest per-platform: macOS uses ⌘, every
+ * other platform uses Ctrl (the handler already accepts both `metaKey` and
+ * `ctrlKey`). Showing a bare `⌘K` on Windows/Linux misleads users into
+ * pressing the wrong key.
+ */
+const IS_MAC =
+  typeof navigator !== "undefined" &&
+  /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+const SHORTCUT_HINT = IS_MAC ? "⌘K" : "Ctrl K";
+
+/**
  * Resolve the parent route for the current bento path (config-driven, T573).
  *
  * iOS-style "up" navigation: the back button is anchored to the route
@@ -132,7 +143,7 @@ export default function BentoRootPage() {
               <IconSearch size={16} />
               <span className="hidden sm:inline">{t("bento.palette.search", { defaultValue: "Search" })}</span>
               <kbd className="hidden rounded border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide sm:inline">
-                ⌘K
+                {SHORTCUT_HINT}
               </kbd>
             </button>
             <ModeToggle />
