@@ -46,7 +46,7 @@ export default function BentoPersonaPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={persona} error={error} tryAgainUrl={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}`}>
-      {persona && <PersonaInstanceFormLayout value={persona} isNew={isNew} baseRoute={ROUTES.BENTO_PERSONA_INSTANCE} />}
+      {persona && <PersonaInstanceFormLayout value={persona} isNew={isNew} baseRoute={ROUTES.BENTO_PERSONA_INSTANCE} chrome="bento" />}
     </LoadProvider>
   );
 }

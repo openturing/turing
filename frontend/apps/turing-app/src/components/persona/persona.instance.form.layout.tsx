@@ -18,14 +18,17 @@ import {
   IconReportAnalytics,
   IconSettings,
   IconSparkles,
+  IconTrash,
   IconUserCircle,
   IconUsers,
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm, type UseFormReturn } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { BentoActionsMenu, BentoHero } from "@/components/bento"
+import { DialogDelete } from "@/components/dialog.delete"
 import { SubPage } from "../sub.page"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 
@@ -41,6 +44,11 @@ interface Props {
    * passes its own base so the editor's section links stay inside Bento (T556).
    */
   baseRoute?: string
+  /**
+   * Chrome around the shared form: the console `SubPage` sidebar (default) or
+   * the Bento hero + pill tab-bar (matches the AI-agent surface, no sidebar).
+   */
+  chrome?: "console" | "bento"
 }
 
 /**
@@ -101,7 +109,7 @@ const linesToTerms = (text: string) =>
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE }) => {
+export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE, chrome = "console" }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const urlBase = baseRoute
@@ -282,18 +290,84 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
           onCancel={() => navigate(urlBase)}
         />
 
-        <SubPage
-          icon={IconUserCircle}
-          feature={t("persona.title")}
-          name={watchedName || value.name || t("persona.title")}
-          urlBase={instanceUrlBase}
-          isNew={isNew}
-          data={navData}
-          open={deleteOpen}
-          setOpen={setDeleteOpen}
-          onDelete={onDelete}
-          outletContext={outletContext}
-        />
+        {chrome === "bento" ? (
+          <>
+            <BentoHero
+              eyebrow={
+                <Link to={baseRoute} className="hover:text-foreground">{t("persona.title")}</Link>
+              }
+              leading={
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
+                  <IconUserCircle size={24} />
+                </span>
+              }
+              title={watchedName || value.name || (isNew ? t("persona.newInstance") : t("persona.title"))}
+              subtitle={t("persona.description")}
+              trailing={
+                !isNew ? (
+                  <BentoActionsMenu
+                    actions={[
+                      {
+                        label: t("forms.formActions.delete"),
+                        icon: IconTrash,
+                        tone: "destructive",
+                        onSelect: () => setDeleteOpen(true),
+                      },
+                    ]}
+                  />
+                ) : undefined
+              }
+            />
+
+            <nav className="mb-6 flex flex-wrap gap-2">
+              {navData.navMain.map((item) => {
+                const ItemIcon = item.icon
+                return (
+                  <NavLink
+                    key={item.url}
+                    to={`${instanceUrlBase}${item.url}`}
+                    className={({ isActive }) =>
+                      `bento-tile bento-tile-clickable inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm backdrop-blur transition-colors ${
+                        isActive
+                          ? "border-primary/40 bg-primary text-primary-foreground"
+                          : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground"
+                      }`
+                    }
+                  >
+                    <ItemIcon size={16} />
+                    {item.title}
+                  </NavLink>
+                )
+              })}
+            </nav>
+
+            <Outlet context={outletContext} />
+
+            {!isNew && (
+              <DialogDelete
+                feature={t("persona.title")}
+                name={value.name}
+                onDelete={onDelete}
+                open={deleteOpen}
+                setOpen={setDeleteOpen}
+                trigger={<span className="hidden" aria-hidden />}
+              />
+            )}
+          </>
+        ) : (
+          <SubPage
+            icon={IconUserCircle}
+            feature={t("persona.title")}
+            name={watchedName || value.name || t("persona.title")}
+            urlBase={instanceUrlBase}
+            isNew={isNew}
+            data={navData}
+            open={deleteOpen}
+            setOpen={setDeleteOpen}
+            onDelete={onDelete}
+            outletContext={outletContext}
+          />
+        )}
       </form>
     </Form>
   )
