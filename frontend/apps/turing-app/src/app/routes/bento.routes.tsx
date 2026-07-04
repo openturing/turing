@@ -52,7 +52,8 @@ export const BentoRoutes = (
     <Route path="token/instance/:id" element={<BentoTokenInstancePage />} />
     <Route path="integration" element={<Navigate to={ROUTES.BENTO_INTEGRATION_INSTANCE} replace />} />
     <Route path="integration/instance" element={<BentoIntegrationInstanceListPage />} />
-    <Route path="integration/instance/:id" element={<BentoIntegrationInstancePage />} />
+    {/* Splat: Turing-owned settings at the base, Dumont's remote (relative) routes under it. */}
+    <Route path="integration/instance/:id/*" element={<BentoIntegrationInstancePage />} />
     <Route path="mcp" element={<Navigate to={ROUTES.BENTO_MCP_INSTANCE} replace />} />
     <Route path="mcp/instance" element={<BentoMcpServerListPage />} />
     <Route path="mcp/instance/:id" element={<BentoMcpServerPage />} />

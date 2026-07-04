@@ -2042,3 +2042,40 @@ whole surface (T571); and a delight polish round — consistent empty-states, a
 keyboard-shortcut guide, reduced-motion audit, first-run tour (T572, 💭). Only
 after T570 is the console truly retired; until then it stays live as the fallback.
 
+### XXXI.11 Customizable list layout — user-driven emphasis (T574–T575)
+
+Today the mosaic is **binary and positional**: `BentoListPage` renders item
+`idx === 0` as the 2×2 featured tile and everything else as 2×1
+(`bento-list-page.tsx`), so "what is prominent" is dictated entirely by array
+order. The request is to let people **highlight** a specific item (large/medium)
+and have that choice **stick**.
+
+**Decision — decouple emphasis from position.** Rather than making "slot 1 =
+large, slot 2 = medium, rest = small" (the naïve drag-to-slot model), treat
+**emphasis** (`SMALL|MEDIUM|LARGE`) and **order** as two independent properties
+of an item. Coupling size to position is fragile: inserting an item silently
+demotes its neighbours, you can't emphasise the 5th item without dragging it to
+the top, emphasis wouldn't survive a future sort, and two large tiles become
+impossible (large = "being first"). With emphasis explicit, drag-and-drop does
+*one* thing (reorder), a per-card affordance sets size, and a masonry/bin-packing
+pass fills the grid so mixed sizes leave no holes.
+
+**Decision — cascade defaults with override (admin-as-template).** Layout
+resolves in three layers: **per-user override → admin global template → the
+current `featured=idx0` default**. A user *can* create their own layout; when an
+**admin** saves one it becomes the **template** for everyone who has not yet
+customized, and those non-customizers keep following later template changes. A
+user override is protective (it pins their layout against template edits), so it
+must ship with a **"reset to default"** that clears the override and re-inherits
+the template — otherwise a one-time tweak locks a user out of future admin
+improvements. "Global" therefore means a real backend field per item
+(`emphasis` + `displayOrder`), not `localStorage`, with the template scoped
+appropriately (respecting tenant boundaries where they apply).
+
+**A11y is a requirement, not a nice-to-have.** Per the T550 baseline, the drag
+interaction must have a keyboard path — `@dnd-kit`'s keyboard sensor gives
+focus-a-card → Space to grab → arrows to move for free.
+
+T574 is the persistence + resolver seam (schema, cascade, reset); T575 is the
+`@dnd-kit` reorder + emphasis affordance + packing on top of it.
+
