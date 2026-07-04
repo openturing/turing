@@ -62,6 +62,12 @@ export interface BentoEntityShellProps<TEntity extends BentoEntityLike> {
   /** Render the Active/Idle status pill (driven by `enabled`). */
   hasStatus?: boolean;
   /**
+   * Hide the hero icon picker for entities that have no `icon` field
+   * (e.g. API Token, Git). A static default-icon chip renders instead and
+   * no `icon` patch is ever emitted.
+   */
+  hideIcon?: boolean;
+  /**
    * Read-only mode — used by BYO-infra surfaces for the shared GLOBAL pool
    * (T372) when the caller is not a platform admin. Suppresses inline-edit,
    * the icon picker, the status toggle, the save buttons and destructive
@@ -116,6 +122,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   formId,
   feature,
   hasStatus = false,
+  hideIcon = false,
   readOnly = false,
   badge,
   notice,
@@ -259,7 +266,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             tone={tone}
             title={staged.title}
             description={staged.description}
-            readOnly={readOnly}
+            readOnly={readOnly || hideIcon}
           />
         }
         title={

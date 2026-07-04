@@ -4,6 +4,7 @@ import type { Icon as TablerIcon } from "@tabler/icons-react";
 import {
   IconBraces,
   IconBrandGraphql,
+  IconCode,
   IconBuildingStore,
   IconClock,
   IconCoin,
@@ -149,7 +150,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   // --- enterprise search ---
   { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
   { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
-  { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", consoleRoute: "/admin/integration/instance" },
+  { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", bentoRoute: ROUTES.BENTO_INTEGRATION_INSTANCE, consoleRoute: "/admin/integration/instance" },
   { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", consoleRoute: ROUTES.GRAPHQL_ROOT },
 
   // --- management ---
@@ -157,6 +158,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "assets", titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", icon: IconFolder, section: "management", tone: "amber", consoleRoute: ROUTES.ASSET_ROOT },
   { id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", consoleRoute: ROUTES.PAGE_ROOT },
   { id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", consoleRoute: ROUTES.GIT_ROOT },
+  { id: "apiToken", titleKey: "apiToken.title", descriptionKey: "apiToken.description", icon: IconCode, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_TOKEN_INSTANCE, consoleRoute: ROUTES.ADMIN_TOKENS },
   { id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", consoleRoute: ROUTES.MARKETPLACE_ROOT },
   { id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", consoleRoute: ROUTES.EXCHANGE_IMPORT },
   { id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", consoleRoute: ROUTES.LOGGING_INSTANCE },
