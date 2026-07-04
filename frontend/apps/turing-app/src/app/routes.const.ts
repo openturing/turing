@@ -106,4 +106,17 @@ export const ROUTES = {
   BENTO_SKILL: "/bento/skill",
   BENTO_ASSET: "/bento/asset",
   BENTO_PAGE: "/bento/page",
+
+  // Block AG Phase 3 — functional & dashboard surfaces.
+  BENTO_CHAT: "/bento/chat",
+  BENTO_CONVERSATION: "/bento/conversation",
+  BENTO_AI_ANALYTICS: "/bento/ai-analytics",
+  BENTO_COST_GOVERNANCE: "/bento/ai-analytics/cost-governance",
+  BENTO_GRAPHQL: "/bento/graphql",
+  BENTO_DASHBOARD: "/bento/dashboard",
+  BENTO_MARKETPLACE: "/bento/marketplace",
+  BENTO_GLOBAL_SETTINGS: "/bento/global-settings",
+  BENTO_IMPORT: "/bento/import",
+  BENTO_LOGGING: "/bento/logging",
+  BENTO_SYSTEM_INFO: "/bento/system-info",
 };

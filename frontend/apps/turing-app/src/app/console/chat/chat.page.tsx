@@ -1,5 +1,5 @@
 "use client"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
@@ -41,7 +41,13 @@ const turGlobalSettingsService = new TurGlobalSettingsService()
 const turChatFlowService = new TurChatFlowService()
 const turSkillService = new TurSkillService()
 
-export default function ChatPage() {
+/**
+ * @param emptyStateHeader Optional header rendered above the "no LLM" / "no
+ * agent" blank slates. Defaults to the console {@link PageHeader}; the Bento
+ * shell (T563) passes its own frosted header so the reused surface never pulls
+ * the console {@code SidebarTrigger} into a shell that has no SidebarProvider.
+ */
+export default function ChatPage({ emptyStateHeader }: Readonly<{ emptyStateHeader?: ReactNode }> = {}) {
   const { t } = useTranslation()
   // Empty until agents load — then becomes `agent:<id>` of the default or first agent.
   const [activeTab, setActiveTab] = useState<string>("")
@@ -347,10 +353,14 @@ export default function ChatPage() {
 
   // ── Early returns ──
 
+  const blankSlateHeader = emptyStateHeader ?? (
+    <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
+  )
+
   if (loaded && llmInstances.length === 0) {
     return (
       <>
-        <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
+        {blankSlateHeader}
         <BlankSlate
           icon={IconMessageChatbot}
           title={t("chat.noLlmAvailable")}
@@ -365,7 +375,7 @@ export default function ChatPage() {
   if (agentsLoaded && agents.length === 0) {
     return (
       <>
-        <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
+        {blankSlateHeader}
         <BlankSlate
           icon={IconRobot}
           title={t("chat.noAgentAvailable")}

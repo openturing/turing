@@ -175,10 +175,10 @@ fully shipped.**
 - ✅ **T562** — Page CRUD → bento (`app/bento/page/`): ZIP-deployed-SPA grid (upload/open/delete) re-skinned onto a `BentoHero` + frosted tiles, reusing `TurPageService`. **Phase 2 complete.** → CHANGELOG Block AG.
 
 **Phase 3 — functional & dashboard surfaces:**
-- 📋 **T563** (deps: T549) **Chat workspace + Conversation detail in the bento shell** — the chat surface itself under the bento header/nav. → §XXXI.8
-- 📋 **T564** (deps: T549) **AI Analytics suite → bento** — cost-governance, chat-analytics, parked-conversations, capability-matrix dashboards. → §XXXI.8
-- 📋 **T565** (deps: T549) **GraphQL explorer + Dashboard + Marketplace + Voice Kiosk → bento**. → §XXXI.8
-- 📋 **T566** (deps: T549) **Global Settings + Import/Exchange + Logging + System Info → bento**. → §XXXI.8
+- ✅ **T563** — Chat workspace + Conversation detail → bento (`app/bento/{chat,conversation}/`): reused verbatim inside the shell; `ChatPage` gained an `emptyStateHeader` prop so blank slates use a `BentoHero` (no console `SidebarTrigger`). **Phase 3 opens.** → CHANGELOG Block AG.
+- ✅ **T564** — AI Analytics suite → bento (`app/bento/ai-analytics/`): `BentoHero` + pill tab-bar over `<Outlet />`, mounting the four reused console content components (cost-governance/chat-analytics/parked-conversations/capability-matrix); shares `useAiAnalyticsNav` visibility with the console. → CHANGELOG Block AG.
+- ✅ **T565** — GraphQL explorer + Dashboard + Marketplace → bento (`app/bento/{graphql,dashboard,marketplace}/`); GraphiQL/Marketplace reused under a `BentoHero`, Dashboard re-skinned (customize in hero + reused widget grid). Voice Kiosk intentionally stays a standalone chrome-free route (booth/lobby, §X.6.c). → CHANGELOG Block AG.
+- ✅ **T566** — Global Settings + Import/Exchange + Logging + System Info → bento (`app/bento/{settings,import,logging,system-info}/`): read-mostly surfaces hosted in the shell; `SystemInfoPage` gained a `header` prop; two admin-gated management nav items added. **Phase 3 complete.** → CHANGELOG Block AG.
 
 **Phase 4 — admin & tenancy:**
 - 📋 **T567** (deps: T548, T549) **Admin settings → bento** — users / groups / roles / settings / tokens, preserving the Keycloak-vs-JPA dependent-query pattern. → §XXXI.9

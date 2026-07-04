@@ -38,7 +38,7 @@ import {
     IconX,
 } from "@tabler/icons-react";
 import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
@@ -120,9 +120,24 @@ function StatusBadge({ status }: Readonly<{ status: string | null | undefined }>
     );
 }
 
-export default function SystemInfoPage() {
+/**
+ * @param header Optional header rendered above the content. Defaults to the
+ * console {@link SubPageHeader}; the Bento shell (T566) passes its own frosted
+ * header so the reused surface never pulls the console {@code useSidebar} into a
+ * shell that has no SidebarProvider.
+ */
+export default function SystemInfoPage({ header }: Readonly<{ header?: ReactNode }> = {}) {
     const { t } = useTranslation();
     useSubPageBreadcrumb(t("systemInfo.title"));
+
+    const headerNode: ReactNode = header ?? (
+        <SubPageHeader
+            icon={IconInfoCircle}
+            feature={t("systemInfo.title")}
+            name={t("systemInfo.title")}
+            description={t("systemInfo.description")}
+        />
+    );
 
     const [info, setInfo] = useState<TurSystemInfo | null>(null);
     const [variables, setVariables] = useState<Record<string, string>>({});
@@ -203,12 +218,7 @@ export default function SystemInfoPage() {
     if (isLoading) {
         return (
             <>
-                <SubPageHeader
-                    icon={IconInfoCircle}
-                    feature={t("systemInfo.title")}
-                    name={t("systemInfo.title")}
-                    description={t("systemInfo.description")}
-                />
+                {headerNode}
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
                 </div>
@@ -232,12 +242,7 @@ export default function SystemInfoPage() {
 
     const mainContent = (
         <>
-            <SubPageHeader
-                icon={IconInfoCircle}
-                feature="System Information"
-                name="System Information"
-                description="Runtime environment and system details."
-            />
+            {headerNode}
             <div className="py-6 px-6">
                 <Tabs defaultValue="overview">
                     <div className="flex items-center justify-between gap-4">

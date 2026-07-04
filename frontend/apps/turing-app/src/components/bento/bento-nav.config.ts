@@ -17,6 +17,7 @@ import {
   IconGitBranch,
   IconGlobe,
   IconHome,
+  IconInfoCircle,
   IconLayoutDashboard,
   IconMessageChatbot,
   IconPlugConnectedX,
@@ -130,7 +131,7 @@ export interface BentoNavItem {
 export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   // --- primary (rail Home button + palette; not rendered as a hub) ---
   { id: "home", titleKey: "home.title", descriptionKey: "home.welcome", icon: IconHome, section: "primary", tone: "blue", bentoRoute: ROUTES.BENTO_HOME, consoleRoute: ROUTES.HOME },
-  { id: "dashboard", titleKey: "dashboard.title", descriptionKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", tone: "indigo", consoleRoute: ROUTES.DASHBOARD },
+  { id: "dashboard", titleKey: "dashboard.title", descriptionKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", tone: "indigo", bentoRoute: ROUTES.BENTO_DASHBOARD, consoleRoute: ROUTES.DASHBOARD },
 
   // --- generative AI ---
   { id: "aiAgent", titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", icon: IconRobot, section: "generativeAi", tone: "blue", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_AI_AGENT_INSTANCE, consoleRoute: "/admin/ai-agent/instance", privilege: "AI_AGENT_VIEW" },
@@ -142,16 +143,16 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "routine", titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", icon: IconClock, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_ROUTINE_INSTANCE, consoleRoute: ROUTES.ROUTINE_INSTANCE },
   { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE, consoleRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
   { id: "persona", titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", icon: IconUserCircle, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_PERSONA_INSTANCE, consoleRoute: ROUTES.PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" },
-  { id: "costGovernance", titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", icon: IconCoin, section: "generativeAi", tone: "emerald", consoleRoute: ROUTES.COST_GOVERNANCE },
+  { id: "costGovernance", titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", icon: IconCoin, section: "generativeAi", tone: "emerald", bentoRoute: ROUTES.BENTO_COST_GOVERNANCE, consoleRoute: ROUTES.COST_GOVERNANCE },
   { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL, consoleRoute: ROUTES.SKILL_ROOT },
-  { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
-  { id: "chat", titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", icon: IconMessageChatbot, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.CHAT_ROOT, requiresLlm: true },
+  { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_AI_ANALYTICS, consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
+  { id: "chat", titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", icon: IconMessageChatbot, section: "generativeAi", tone: "indigo", bentoRoute: ROUTES.BENTO_CHAT, consoleRoute: ROUTES.CHAT_ROOT, requiresLlm: true },
 
   // --- enterprise search ---
   { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_SN_INSTANCE, consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
   { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
   { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", bentoRoute: ROUTES.BENTO_INTEGRATION_INSTANCE, consoleRoute: "/admin/integration/instance" },
-  { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", consoleRoute: ROUTES.GRAPHQL_ROOT },
+  { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", bentoRoute: ROUTES.BENTO_GRAPHQL, consoleRoute: ROUTES.GRAPHQL_ROOT },
 
   // --- management ---
   { id: "administration", titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", icon: IconShieldCog, section: "management", tone: "slate", span: BENTO_SPAN_WIDE, consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },
@@ -159,9 +160,11 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_PAGE, consoleRoute: ROUTES.PAGE_ROOT },
   { id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", bentoRoute: ROUTES.BENTO_GIT, consoleRoute: ROUTES.GIT_ROOT },
   { id: "apiToken", titleKey: "apiToken.title", descriptionKey: "apiToken.description", icon: IconCode, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_TOKEN_INSTANCE, consoleRoute: ROUTES.ADMIN_TOKENS },
-  { id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", consoleRoute: ROUTES.MARKETPLACE_ROOT },
-  { id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", consoleRoute: ROUTES.EXCHANGE_IMPORT },
-  { id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", consoleRoute: ROUTES.LOGGING_INSTANCE },
+  { id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", bentoRoute: ROUTES.BENTO_MARKETPLACE, consoleRoute: ROUTES.MARKETPLACE_ROOT },
+  { id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_IMPORT, consoleRoute: ROUTES.EXCHANGE_IMPORT },
+  { id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", bentoRoute: ROUTES.BENTO_LOGGING, consoleRoute: ROUTES.LOGGING_INSTANCE },
+  { id: "globalSettings", titleKey: "globalSettings.breadcrumb", descriptionKey: "globalSettings.description", icon: IconSettings, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_GLOBAL_SETTINGS, consoleRoute: ROUTES.GLOBAL_SETTINGS, privilege: "__admin__" },
+  { id: "systemInfo", titleKey: "systemInfo.title", descriptionKey: "systemInfo.description", icon: IconInfoCircle, section: "management", tone: "slate", bentoRoute: ROUTES.BENTO_SYSTEM_INFO, consoleRoute: ROUTES.ADMIN_SYSTEM_INFO, privilege: "__admin__" },
 ];
 
 /**

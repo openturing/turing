@@ -56,6 +56,28 @@ const BentoSkillEditorPage = lazy(() => import("../bento/skill/bento.skill.edito
 const BentoAssetPage = lazy(() => import("../bento/asset/bento.asset.page"));
 // Phase 2 (T562) — Page CRUD (ZIP-deployed SPAs) in the bento shell.
 const BentoPagePage = lazy(() => import("../bento/page/bento.page.page"));
+// Phase 3 (T563) — chat workspace + conversation detail in the bento shell.
+const BentoChatPage = lazy(() => import("../bento/chat/bento.chat.page"));
+const BentoConversationPage = lazy(() => import("../bento/conversation/bento.conversation.page"));
+// Phase 3 (T564) — AI Analytics suite (reuses the console sub-page content).
+const BentoAiAnalyticsPage = lazy(() => import("../bento/ai-analytics/bento.ai-analytics.page"));
+const BentoAiAnalyticsIndexRedirect = lazy(() => import("../bento/ai-analytics/bento.ai-analytics.index.redirect"));
+const CostGovernancePage = lazy(() => import("../console/cost-governance/cost-governance.page"));
+const ChatAnalyticsPage = lazy(() => import("../console/chat-analytics/chat-analytics.page"));
+const ParkedConversationsPage = lazy(() => import("../console/parked-conversations/parked-conversations.page"));
+const CapabilityMatrixPage = lazy(() => import("../console/capability-matrix/capability-matrix.page"));
+// Phase 3 (T565) — GraphQL explorer + Dashboard + Marketplace.
+const BentoGraphqlPage = lazy(() => import("../bento/graphql/bento.graphql.page"));
+const BentoDashboardPage = lazy(() => import("../bento/dashboard/bento.dashboard.page"));
+const BentoMarketplacePage = lazy(() => import("../bento/marketplace/bento.marketplace.page"));
+// Phase 3 (T566) — Global Settings + Import + Logging + System Info.
+const BentoGlobalSettingsPage = lazy(() => import("../bento/settings/bento.global-settings.page"));
+const BentoImportPage = lazy(() => import("../bento/import/bento.import.page"));
+const BentoLoggingPage = lazy(() => import("../bento/logging/bento.logging.page"));
+const BentoSystemInfoPage = lazy(() => import("../bento/system-info/bento.system-info.page"));
+const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"));
+const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"));
+const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -129,5 +151,29 @@ export const BentoRoutes = (
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />
     <Route path="asset" element={<BentoAssetPage />} />
     <Route path="page" element={<BentoPagePage />} />
+    {/* Phase 3 (T563) — chat + conversation. */}
+    <Route path="chat" element={<BentoChatPage />} />
+    <Route path="conversation/:conversationId" element={<BentoConversationPage />} />
+    {/* Phase 3 (T564) — AI Analytics suite; index redirects to the first
+        visible sub-page, tabs render the reused console content components. */}
+    <Route path="ai-analytics" element={<BentoAiAnalyticsPage />}>
+      <Route index element={<BentoAiAnalyticsIndexRedirect />} />
+      <Route path="cost-governance" element={<CostGovernancePage />} />
+      <Route path="chat-analytics" element={<ChatAnalyticsPage />} />
+      <Route path="parked-conversations" element={<ParkedConversationsPage />} />
+      <Route path="capability-matrix" element={<CapabilityMatrixPage />} />
+    </Route>
+    {/* Phase 3 (T565) — GraphQL + Dashboard + Marketplace. */}
+    <Route path="graphql" element={<BentoGraphqlPage />} />
+    <Route path="dashboard" element={<BentoDashboardPage />} />
+    <Route path="marketplace" element={<BentoMarketplacePage />} />
+    {/* Phase 3 (T566) — Global Settings + Import + Logging + System Info. */}
+    <Route path="global-settings" element={<BentoGlobalSettingsPage />} />
+    <Route path="import" element={<BentoImportPage />} />
+    <Route path="logging" element={<BentoLoggingPage />} />
+    <Route path="logging/server" element={<LoggingServerPage />} />
+    <Route path="logging/indexing" element={<LoggingIndexingPage />} />
+    <Route path="logging/aem" element={<LoggingAemPage />} />
+    <Route path="system-info" element={<BentoSystemInfoPage />} />
   </Route>
 );
