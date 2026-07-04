@@ -164,7 +164,7 @@ fully shipped.**
 - ✅ **T553** — API Token + Integration → bento (Token drove a `hideIcon` shell option; new `apiToken` nav item). → CHANGELOG Block AG.
 - ✅ **T554** — MCP Server + Custom Tool → bento (Custom Tool keeps its Groovy editor + params + Vibe-Coding inside the form body). → CHANGELOG Block AG.
 - ✅ **T555** — Routine + Chat Webhook → bento (both alias `name`↔`title` + boolean↔numeric `enabled`, `hideIcon`). → CHANGELOG Block AG.
-- 📋 **T556** (deps: T548) **Persona + Git → bento**. → §XXXI.5
+- ✅ **T556** — Persona + Git → bento (Persona reuses its multi-section editor via a `baseRoute` prop; Git re-skinned as a Bento repo/pipeline tool). **Phase 1 complete.** → CHANGELOG Block AG.
 
 **Phase 2 — complex CRUD & editors:**
 - 📋 **T557** (deps: T548) **Semantic Navigation instance → bento** — the largest CRUD; instance identity + config sections. → §XXXI.6

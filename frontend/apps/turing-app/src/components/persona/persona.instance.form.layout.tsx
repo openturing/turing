@@ -31,11 +31,16 @@ import { StickySaveBar } from "../ui/sticky-save-bar"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 const turMcpServerService = new TurMcpServerService()
-const urlBase = ROUTES.PERSONA_INSTANCE
 
 interface Props {
   value: TurPersona
   isNew: boolean
+  /**
+   * Base list route for cancel/after-save/delete navigation and the section
+   * sub-nav links. Defaults to the console persona route; the Bento shell
+   * passes its own base so the editor's section links stay inside Bento (T556).
+   */
+  baseRoute?: string
 }
 
 /**
@@ -96,9 +101,10 @@ const linesToTerms = (text: string) =>
  * @author Alexandre Oliveira
  * @since 2026.3.4
  */
-export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew }) => {
+export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.PERSONA_INSTANCE }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const urlBase = baseRoute
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [stores, setStores] = useState<TurStoreInstance[]>([])
   const [mcpServers, setMcpServers] = useState<TurMcpServer[]>([])

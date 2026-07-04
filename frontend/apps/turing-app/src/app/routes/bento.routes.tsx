@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route, useParams } from "react-router-dom";
 import { ROUTES } from "../routes.const";
 
 const BentoRootPage = lazy(() => import("../bento/bento.root.page"));
@@ -27,6 +27,24 @@ const BentoRoutineListPage = lazy(() => import("../bento/routine/bento.routine.l
 const BentoRoutinePage = lazy(() => import("../bento/routine/bento.routine.page"));
 const BentoWebhookListPage = lazy(() => import("../bento/webhook/bento.webhook.list.page"));
 const BentoWebhookPage = lazy(() => import("../bento/webhook/bento.webhook.page"));
+const BentoPersonaListPage = lazy(() => import("../bento/persona/bento.persona.list.page"));
+const BentoPersonaPage = lazy(() => import("../bento/persona/bento.persona.page"));
+const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
+const GitRepoPage = lazy(() => import("../console/git/git.repo.page"));
+// Persona section sub-pages (reused from the console) — mounted under the
+// Bento persona detail so its shared-form Outlet resolves inside Bento (T556).
+const PersonaGeneralSection = lazy(() => import("../console/persona/sections/persona.instance.general.section"));
+const PersonaSystemInstructionSection = lazy(() => import("../console/persona/sections/persona.instance.system-instruction.section"));
+const PersonaStyleSection = lazy(() => import("../console/persona/sections/persona.instance.style.section"));
+const PersonaAudienceSection = lazy(() => import("../console/persona/sections/persona.instance.audience.section"));
+const PersonaNotebookSection = lazy(() => import("../console/persona/sections/persona.instance.notebook.section"));
+const PersonaFitReportSection = lazy(() => import("../console/persona/sections/persona.instance.fit-report.section"));
+const PersonaGuidelinesSection = lazy(() => import("../console/persona/sections/persona.instance.guidelines.section"));
+
+function RedirectToBentoPersonaGeneral() {
+  const { id } = useParams();
+  return <Navigate to={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}/general`} replace />;
+}
 
 export const BentoRoutes = (
   <Route path={ROUTES.BENTO_ROOT} element={<BentoRootPage />}>
@@ -70,5 +88,19 @@ export const BentoRoutes = (
     <Route path="chat-webhook" element={<Navigate to={ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE} replace />} />
     <Route path="chat-webhook/instance" element={<BentoWebhookListPage />} />
     <Route path="chat-webhook/instance/:id" element={<BentoWebhookPage />} />
+    <Route path="persona" element={<Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />} />
+    <Route path="persona/instance" element={<BentoPersonaListPage />} />
+    <Route path="persona/instance/:id" element={<BentoPersonaPage />}>
+      <Route index element={<RedirectToBentoPersonaGeneral />} />
+      <Route path="general" element={<PersonaGeneralSection />} />
+      <Route path="system-instruction" element={<PersonaSystemInstructionSection />} />
+      <Route path="style" element={<PersonaStyleSection />} />
+      <Route path="audience" element={<PersonaAudienceSection />} />
+      <Route path="notebook" element={<PersonaNotebookSection />} />
+      <Route path="fit-report" element={<PersonaFitReportSection />} />
+      <Route path="guidelines" element={<PersonaGuidelinesSection />} />
+    </Route>
+    <Route path="git" element={<BentoGitPage />} />
+    <Route path="git/:name" element={<GitRepoPage />} />
   </Route>
 );
