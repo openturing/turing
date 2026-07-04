@@ -159,7 +159,7 @@ fully shipped.**
 - ✅ **T573** — Nav rail restructured to **hub-and-spoke**: rail lists Home + 3 section hubs (not the ~22 leaves) so it can't overflow the viewport as surfaces migrate; each hub is a shared `BentoAreaPage` mosaic; taxonomy unified into one `bento-nav.config.ts` (rail + hubs + home + `⌘K` all read it), retiring the home page's divergent `SECTIONS` array. → CHANGELOG Block AG.
 
 **Phase 1 — BYO-infra & simple CRUD (reuse T548 scaffold, LLM pattern applies directly):**
-- 📋 **T551** (deps: T548) **Search Engine (SE) → bento** — list + instance detail. → §XXXI.5
+- ✅ **T551** — Search Engine (SE) → bento (list + instance detail + form). BYO-infra read-only mode (T372 GLOBAL + Solr catalog lock) threaded through the shared shell. → CHANGELOG Block AG.
 - 📋 **T552** (deps: T548) **Embedding Store + Embedding Model → bento** — two adjacent BYO-infra CRUDs. → §XXXI.5
 - 📋 **T553** (deps: T548) **API Token + Integration → bento**. → §XXXI.5
 - 📋 **T554** (deps: T548) **MCP Server + Custom Tool → bento** (Custom Tool keeps its Groovy editor inside a `BentoFormSection`). → §XXXI.5

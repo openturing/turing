@@ -20,6 +20,8 @@ export interface BentoHeroIconPickerProps {
   title?: string;
   /** Description of the entity (passed to the dialog for AI suggestions). */
   description?: string;
+  /** Render a static chip (no picker dialog, no hover overlay / clear). */
+  readOnly?: boolean;
 }
 
 /**
@@ -41,9 +43,19 @@ export function BentoHeroIconPicker({
   tone,
   title,
   description,
+  readOnly = false,
 }: Readonly<BentoHeroIconPickerProps>) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+
+  // Read-only: a static tonal chip with no picker / hover / clear affordance.
+  if (readOnly) {
+    return (
+      <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br ${BENTO_TONE_GRADIENTS[tone]} text-white shadow-md`}>
+        {value ? <Icon icon={value} className="size-6 text-white" /> : <DefaultIcon size={24} />}
+      </span>
+    );
+  }
 
   return (
     <div className="group relative">

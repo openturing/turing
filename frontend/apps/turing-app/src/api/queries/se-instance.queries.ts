@@ -12,6 +12,14 @@ export function useSeInstances() {
   });
 }
 
+export function useSeInstance(id: string | undefined) {
+  return useQuery<TurSEInstance>({
+    queryKey: id ? queryKeys.seInstances.detail(id) : ['se-instances', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateSeInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.seInstances.all() });
 }

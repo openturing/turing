@@ -15,6 +15,9 @@ interface Row {
 function renderShell(props: {
   entity: Row;
   isNew: boolean;
+  readOnly?: boolean;
+  badge?: React.ReactNode;
+  notice?: React.ReactNode;
   child: (args: BentoEntityShellRenderArgs) => React.ReactNode;
 }) {
   return render(
@@ -30,6 +33,9 @@ function renderShell(props: {
         formId="f"
         feature="LLM"
         hasStatus
+        readOnly={props.readOnly}
+        badge={props.badge}
+        notice={props.notice}
         onUpdate={async () => undefined}
         onDelete={async () => true}
       >
@@ -71,5 +77,27 @@ describe("BentoEntityShell", () => {
     fireEvent.click(screen.getByText("make-dirty"));
 
     expect(screen.getByText("forms.formActions.saveChanges")).toBeInTheDocument();
+  });
+
+  it("in read-only mode suppresses Save even when the form reports dirty, and renders badge + notice", () => {
+    renderShell({
+      entity: { id: "1", title: "GLOBAL SE", enabled: 1 },
+      isNew: false,
+      readOnly: true,
+      badge: <span>GLOBAL-BADGE</span>,
+      notice: <div>READ-ONLY-NOTICE</div>,
+      child: ({ onStateChange }) => (
+        <button type="button" onClick={() => onStateChange({ isDirty: true, isSubmitting: false })}>
+          make-dirty
+        </button>
+      ),
+    });
+
+    expect(screen.getByText("GLOBAL-BADGE")).toBeInTheDocument();
+    expect(screen.getByText("READ-ONLY-NOTICE")).toBeInTheDocument();
+
+    // Even after the form goes dirty, read-only never reveals a Save button.
+    fireEvent.click(screen.getByText("make-dirty"));
+    expect(screen.queryByText("forms.formActions.saveChanges")).not.toBeInTheDocument();
   });
 });

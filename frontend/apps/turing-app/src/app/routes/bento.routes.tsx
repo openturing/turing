@@ -9,6 +9,8 @@ const BentoAIAgentListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent
 const BentoAIAgentPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.page"));
 const BentoLLMInstanceListPage = lazy(() => import("../bento/llm/bento.llm.instance.list.page"));
 const BentoLLMInstancePage = lazy(() => import("../bento/llm/bento.llm.instance.page"));
+const BentoSEInstanceListPage = lazy(() => import("../bento/se/bento.se.instance.list.page"));
+const BentoSEInstancePage = lazy(() => import("../bento/se/bento.se.instance.page"));
 
 export const BentoRoutes = (
   <Route path={ROUTES.BENTO_ROOT} element={<BentoRootPage />}>
@@ -24,5 +26,8 @@ export const BentoRoutes = (
     <Route path="llm" element={<Navigate to={ROUTES.BENTO_LLM_INSTANCE} replace />} />
     <Route path="llm/instance" element={<BentoLLMInstanceListPage />} />
     <Route path="llm/instance/:id" element={<BentoLLMInstancePage />} />
+    <Route path="se" element={<Navigate to={ROUTES.BENTO_SE_INSTANCE} replace />} />
+    <Route path="se/instance" element={<BentoSEInstanceListPage />} />
+    <Route path="se/instance/:id" element={<BentoSEInstancePage />} />
   </Route>
 );

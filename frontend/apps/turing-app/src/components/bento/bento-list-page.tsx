@@ -28,6 +28,8 @@ export interface BentoListPageProps<T> {
   newRoute: string;
   newLabel: ReactNode;
   newSubtitle?: ReactNode;
+  /** Hide the dashed "New" tile — e.g. a read-only BYO-infra catalog. */
+  hideNew?: boolean;
 
   // --- items ---
   itemKey: (item: T) => string;
@@ -57,6 +59,7 @@ export function BentoListPage<T>({
   newRoute,
   newLabel,
   newSubtitle,
+  hideNew = false,
   itemKey,
   renderTile,
   emptyTitle,
@@ -78,7 +81,7 @@ export function BentoListPage<T>({
       />
 
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
-        <NewTile route={newRoute} label={newLabel} subtitle={newSubtitle} gradient={gradient} />
+        {!hideNew && <NewTile route={newRoute} label={newLabel} subtitle={newSubtitle} gradient={gradient} />}
         {(items ?? []).map((item, idx) => (
           <span key={itemKey(item)} className="contents">
             {renderTile(item, idx === 0)}

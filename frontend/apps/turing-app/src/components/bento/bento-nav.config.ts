@@ -148,7 +148,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
 
   // --- enterprise search ---
   { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
-  { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
+  { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_SE_INSTANCE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
   { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", consoleRoute: "/admin/integration/instance" },
   { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", consoleRoute: ROUTES.GRAPHQL_ROOT },
 

@@ -62,6 +62,17 @@ export interface BentoEntityShellProps<TEntity extends BentoEntityLike> {
   /** Render the Active/Idle status pill (driven by `enabled`). */
   hasStatus?: boolean;
   /**
+   * Read-only mode — used by BYO-infra surfaces for the shared GLOBAL pool
+   * (T372) when the caller is not a platform admin. Suppresses inline-edit,
+   * the icon picker, the status toggle, the save buttons and destructive
+   * actions; identity renders as plain text. Pair with a `notice`.
+   */
+  readOnly?: boolean;
+  /** Small chip rendered in the hero trailing slot (e.g. a GLOBAL badge). */
+  badge?: ReactNode;
+  /** Banner rendered directly under the hero (e.g. a read-only notice). */
+  notice?: ReactNode;
+  /**
    * Existing-mode immediate save. Receives the entity already merged with
    * the changed identity patch. Omit in new mode (fields stage locally and
    * the form's Save creates the entity).
@@ -105,6 +116,9 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   formId,
   feature,
   hasStatus = false,
+  readOnly = false,
+  badge,
+  notice,
   onUpdate,
   onDelete,
   extraActions,
@@ -217,12 +231,12 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   }
 
   const enabled = staged.enabled === 1;
-  const showSaveButtons = isNew || formState.isDirty;
+  const showSaveButtons = !readOnly && (isNew || formState.isDirty);
   const titleMissing = !staged.title.trim();
 
   const actions: BentoActionsMenuItem[] = [
     ...(extraActions ?? []),
-    ...(onDelete
+    ...(onDelete && !readOnly
       ? [{
           label: t("forms.formActions.delete"),
           icon: IconTrash,
@@ -245,6 +259,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             tone={tone}
             title={staged.title}
             description={staged.description}
+            readOnly={readOnly}
           />
         }
         title={
@@ -257,6 +272,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             // Open in edit mode when creating so the user immediately sees a
             // focused input — a clear cue this is the first field to fill.
             autoFocus={isNew}
+            readOnly={readOnly}
           />
         }
         subtitle={
@@ -267,6 +283,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
             placeholder={t("forms.common.description")}
             className="max-w-2xl text-sm text-muted-foreground"
             ariaLabel={t("forms.common.description")}
+            readOnly={readOnly}
           />
         }
         trailing={
@@ -290,7 +307,19 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                 </GradientButton>
               </div>
             )}
-            {hasStatus && (
+            {badge}
+            {hasStatus && (readOnly ? (
+              <span
+                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider ${
+                  enabled
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "border-border bg-muted text-muted-foreground"
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
+                {enabled ? "Active" : "Idle"}
+              </span>
+            ) : (
               <button
                 type="button"
                 onClick={() => persistField({ enabled: enabled ? 0 : 1 })}
@@ -305,7 +334,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                 <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
                 {enabled ? "Active" : "Idle"}
               </button>
-            )}
+            ))}
             {!isNew && actions.length > 0 && <BentoActionsMenu actions={actions} />}
           </>
         }
@@ -313,6 +342,8 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
 
       {/* Sentinel for the scroll-driven progress — sits between hero and form. */}
       <div ref={heroSentinelRef} aria-hidden className="h-px" />
+
+      {notice}
 
       {/*
        * Controlled DialogDelete — its built-in trigger is hidden so the
