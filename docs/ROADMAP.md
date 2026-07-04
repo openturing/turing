@@ -171,7 +171,7 @@ fully shipped.**
 - ✅ **T558** — SN fields sub-CRUD + field-coverage → bento sub-routes (`sn/instance/:id/field[/:fieldId]`, `/field-coverage`): reuses `SNSiteFieldGridList` + `SNSiteFieldForm` (new `baseRoute` prop) + a shared `SNFieldCoveragePanel`. Manifest plan/diff lives in the onboarding/field wizards (→ T559). → CHANGELOG Block AG.
 - ✅ **T559** — SN onboarding wizard → bento (`/bento/sn/onboarding`): the multi-step stepper reused via a new `baseRoute` prop so completion lands inside the shell; a "Guided onboarding" pill on the bento SN list surfaces it. → CHANGELOG Block AG.
 - ✅ **T560** — Skill folder editor (mini VS Code) → bento shell (`app/bento/skill/`): bento list + the T318 editor reused via new `baseRoute` + `containerClassName` props (shell-aware height + frosted frame). → CHANGELOG Block AG.
-- 📋 **T561** (deps: T549) **Asset browser/manager → bento** — grid/file-browser surface. → §XXXI.7
+- ✅ **T561** — Asset browser/manager → bento shell (`app/bento/asset/`): extracted a shared `AssetBrowser` (route-shell-agnostic, prefix-based folder nav) rendered under a `BentoHero`. → CHANGELOG Block AG.
 - 📋 **T562** (deps: T548) **Page CRUD → bento**. → §XXXI.5
 
 **Phase 3 — functional & dashboard surfaces:**

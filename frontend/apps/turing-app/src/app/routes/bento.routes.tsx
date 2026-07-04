@@ -52,6 +52,8 @@ const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding
 // Phase 2 (T560) — skill folder editor (mini VS Code) in the bento shell.
 const BentoSkillListPage = lazy(() => import("../bento/skill/bento.skill.list.page"));
 const BentoSkillEditorPage = lazy(() => import("../bento/skill/bento.skill.editor.page"));
+// Phase 2 (T561) — asset browser/manager in the bento shell.
+const BentoAssetPage = lazy(() => import("../bento/asset/bento.asset.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -123,5 +125,6 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/field-coverage" element={<BentoSNFieldCoveragePage />} />
     <Route path="skill" element={<BentoSkillListPage />} />
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />
+    <Route path="asset" element={<BentoAssetPage />} />
   </Route>
 );
