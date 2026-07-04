@@ -167,7 +167,7 @@ fully shipped.**
 - ✅ **T556** — Persona + Git → bento (Persona reuses its multi-section editor via a `baseRoute` prop; Git re-skinned as a Bento repo/pipeline tool). **Phase 1 complete.** → CHANGELOG Block AG.
 
 **Phase 2 — complex CRUD & editors:**
-- 📋 **T557** (deps: T548) **Semantic Navigation instance → bento** — the largest CRUD; instance identity + config sections. → §XXXI.6
+- ✅ **T557** — Semantic Navigation instance → bento (`app/bento/sn/`): list + hero-driven detail + config form (SE binding + search template); identity aliases title↔name (no status pill); deeper SN sub-sections reached from a config-sections panel until their own migration. **Phase 2 opens.** → CHANGELOG Block AG.
 - 📋 **T558** (deps: T557) **SN fields sub-CRUD + manifest/coverage surfaces → bento** — nested field editor, field-coverage bars, manifest plan/diff. → §XXXI.6
 - 📋 **T559** (deps: T557) **SN onboarding wizard → bento** — multi-step flow re-skinned as a bento stepper. → §XXXI.6
 - 📋 **T560** (deps: T549) **Skill folder editor (mini VS Code) in the bento shell** — the file-tree + editor surface adapted to the frosted shell. → §XXXI.7

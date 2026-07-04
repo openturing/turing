@@ -98,4 +98,9 @@ export const ROUTES = {
   BENTO_PERSONA_INSTANCE: "/bento/persona/instance",
   BENTO_GIT: "/bento/git",
   BENTO_GIT_INSTANCE: "/bento/git/instance",
+
+  // Block AG Phase 2 — complex CRUD & editors.
+  BENTO_SN: "/bento/sn",
+  BENTO_SN_INSTANCE: "/bento/sn/instance",
+  BENTO_SN_ONBOARDING: "/bento/sn/onboarding",
 };

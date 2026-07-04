@@ -40,6 +40,9 @@ const PersonaAudienceSection = lazy(() => import("../console/persona/sections/pe
 const PersonaNotebookSection = lazy(() => import("../console/persona/sections/persona.instance.notebook.section"));
 const PersonaFitReportSection = lazy(() => import("../console/persona/sections/persona.instance.fit-report.section"));
 const PersonaGuidelinesSection = lazy(() => import("../console/persona/sections/persona.instance.guidelines.section"));
+// Phase 2 (T557) — Semantic Navigation instance CRUD in the bento shell.
+const BentoSNInstanceListPage = lazy(() => import("../bento/sn/bento.sn.instance.list.page"));
+const BentoSNInstancePage = lazy(() => import("../bento/sn/bento.sn.instance.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -102,5 +105,8 @@ export const BentoRoutes = (
     </Route>
     <Route path="git" element={<BentoGitPage />} />
     <Route path="git/:name" element={<GitRepoPage />} />
+    <Route path="sn" element={<Navigate to={ROUTES.BENTO_SN_INSTANCE} replace />} />
+    <Route path="sn/instance" element={<BentoSNInstanceListPage />} />
+    <Route path="sn/instance/:id" element={<BentoSNInstancePage />} />
   </Route>
 );
