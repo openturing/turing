@@ -153,7 +153,7 @@ fully shipped.**
 
 **Phase 0 — foundation (gate the rest):**
 - ✅ **T547** — Migration architecture & cutover strategy (ADR `0002`): Bento-as-primary, route-swap + `<Navigate>` redirects (no runtime flag), closed surface inventory. → CHANGELOG Block AG.
-- 📋 **T548** (deps: T547) **Extract a shared Bento CRUD scaffold** — factor the LLM/AI-Agent detail+list pattern (`BentoEntityShell` + `BentoListPage`) so each remaining entity is a thin config (icon/tone/fields/queries), not a bespoke page — the lever that makes Phases 1–4 cheap. → §XXXI.2
+- ✅ **T548** — Shared Bento CRUD scaffold (`BentoEntityShell` + `BentoListPage` + `BentoEntityTile`); LLM + AI-Agent surfaces re-skinned onto it as proof. → CHANGELOG Block AG.
 - 📋 **T549** (deps: T547) **Global Bento navigation + command palette** — the console sidebar has no bento equivalent; add persistent nav + `⌘K` palette so deep areas are reachable without the launcher home. → §XXXI.3
 - 📋 **T550** (deps: T548) **Bento conventions: i18n, a11y, responsive, tests** — codify i18n key reuse, keyboard/focus a11y, breakpoint rules, and vitest coverage for the shared components before fan-out. → §XXXI.4
 

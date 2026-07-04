@@ -1970,21 +1970,10 @@ the bento pages consume directly — no data-layer work per screen.
 > `docs/adr/0002-bento-ui-migration-cutover.md` (Bento-as-primary, route-swap +
 > `<Navigate>` redirects, closed surface inventory). See CHANGELOG Block AG.
 
-### XXXI.2 T548 — the shared scaffold (the lever)
-
-Today `bento.llm.instance.page.tsx` hand-rolls the Shell (staged hero state,
-scroll morph, immediate-save vs staged-create, delete dialog). Copy-pasting that
-~360-line file ~25 times is the wrong move. Extract:
-
-- `BentoEntityShell` — the hero + inline-edit + save-bar-morph + actions-menu +
-  new/existing mode logic, parameterized by a small config (entity type, icon,
-  tone, query hooks, identity-field getters).
-- `BentoListPage` — the `bento-grid` + New tile + featured-first tiling + empty
-  hint, parameterized by an item→tile renderer.
-
-Then each Phase 1–4 screen is a thin config + its `BentoFormSection` field
-groups. This is the single highest-ROI task in the block; everything after it is
-priced against it.
+> **T548 shipped** — the shared scaffold (`BentoEntityShell` + `BentoListPage` +
+> `BentoEntityTile`) is extracted and the LLM + AI-Agent surfaces re-skinned onto
+> it as proof. Each Phase 1–4 screen is now a thin config + its `BentoFormSection`
+> field groups. See CHANGELOG Block AG.
 
 ### XXXI.3 T549 — navigation & command palette
 
