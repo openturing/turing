@@ -12,6 +12,14 @@ export function useStoreInstances() {
   });
 }
 
+export function useStoreInstance(id: string | undefined) {
+  return useQuery<TurStoreInstance>({
+    queryKey: id ? queryKeys.storeInstances.detail(id) : ['store-instances', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateStoreInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.storeInstances.all() });
 }
