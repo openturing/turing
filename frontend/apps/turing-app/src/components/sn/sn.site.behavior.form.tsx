@@ -50,14 +50,17 @@ import { SectionCard } from "../ui/section-card"
 interface Props {
   value: TurSNSite;
   isNew: boolean;
+  /** SN instance base route for save/cancel navigation. Defaults to the
+   *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+  baseRoute?: string;
 }
 
-export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
+export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSite>({
     defaultValues: value
   });
-  const urlBase = ROUTES.SN_INSTANCE;
+  const urlBase = baseRoute;
   const navigate = useNavigate()
   const createMutation = useCreateSnSite();
   const updateMutation = useUpdateSnSite();

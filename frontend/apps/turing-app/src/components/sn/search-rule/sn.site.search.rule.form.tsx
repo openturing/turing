@@ -37,13 +37,16 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 
-export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSearchRule>({ defaultValues: value });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/search-rule`;
+    const urlBase = `${baseRoute}/${snSiteId}/search-rule`;
     const [fieldOptions, setFieldOptions] = useState<TurSNSiteSearchRuleFieldOption[]>([]);
     const [customSorts, setCustomSorts] = useState<TurSNSiteCustomSort[]>([]);
     const [siteLocales, setSiteLocales] = useState<TurSNSiteLocale[]>([]);

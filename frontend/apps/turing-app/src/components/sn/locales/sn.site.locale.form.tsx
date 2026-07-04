@@ -41,17 +41,20 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /** SN instance base route for save/cancel navigation. Defaults to the
+   *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+  baseRoute?: string;
 }
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
-export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen }) => {
+export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [useCustomCore, setUseCustomCore] = useState(isNew && !!snLocale.core);
   const form = useForm<TurSNSiteLocale>({
     defaultValues: snLocale
   });
-  const urlBase = `/admin/sn/instance/${snSiteId}/locale`;
+  const urlBase = `${baseRoute}/${snSiteId}/locale`;
   const navigate = useNavigate()
 
   useEffect(() => {

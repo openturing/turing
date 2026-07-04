@@ -50,9 +50,12 @@ interface Props {
   isNew: boolean;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /** SN instance base route for save/cancel navigation. Defaults to the
+   *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+  baseRoute?: string;
 }
 
-export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
+export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -81,7 +84,7 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [availableLocales, setAvailableLocales] = useState<TurLocale[]>([]);
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
-  const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/field`;
+  const urlBase = `${baseRoute}/${snSiteId}/field`;
   const navigate = useNavigate()
 
   const facetRanges = [

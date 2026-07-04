@@ -52,15 +52,18 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 
-export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteMerge>({
         defaultValues: value,
     });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/merge-providers`;
+    const urlBase = `${baseRoute}/${snSiteId}/merge-providers`;
     const [addFieldOpen, setAddFieldOpen] = useState(false);
     const [newFieldName, setNewFieldName] = useState("");
 

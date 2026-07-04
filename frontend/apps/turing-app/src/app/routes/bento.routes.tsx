@@ -47,6 +47,27 @@ const BentoSNInstancePage = lazy(() => import("../bento/sn/bento.sn.instance.pag
 const BentoSNFieldListPage = lazy(() => import("../bento/sn/bento.sn.field.list.page"));
 const BentoSNFieldPage = lazy(() => import("../bento/sn/bento.sn.field.page"));
 const BentoSNFieldCoveragePage = lazy(() => import("../bento/sn/bento.sn.field.coverage.page"));
+// SN instance sub-sections in the bento shell (T576).
+const BentoSNInsightsPage = lazy(() => import("../bento/sn/bento.sn.insights.page"));
+const BentoSNLocaleListPage = lazy(() => import("../bento/sn/bento.sn.locale.list.page"));
+const BentoSNLocalePage = lazy(() => import("../bento/sn/bento.sn.locale.page"));
+const BentoSNBehaviorPage = lazy(() => import("../bento/sn/bento.sn.behavior.page"));
+const BentoSNFacetListPage = lazy(() => import("../bento/sn/bento.sn.facet.list.page"));
+const BentoSNCustomFacetPage = lazy(() => import("../bento/sn/bento.sn.custom-facet.page"));
+const BentoSNCustomFacetItemPage = lazy(() => import("../bento/sn/bento.sn.custom-facet.item.page"));
+const BentoSNFacetedFieldPage = lazy(() => import("../bento/sn/bento.sn.faceted-field.page"));
+const BentoSNCustomSortListPage = lazy(() => import("../bento/sn/bento.sn.custom-sort.list.page"));
+const BentoSNCustomSortPage = lazy(() => import("../bento/sn/bento.sn.custom-sort.page"));
+const BentoSNSearchRuleListPage = lazy(() => import("../bento/sn/bento.sn.search-rule.list.page"));
+const BentoSNSearchRulePage = lazy(() => import("../bento/sn/bento.sn.search-rule.page"));
+const BentoSNGenAiPage = lazy(() => import("../bento/sn/bento.sn.genai.page"));
+const BentoSNResultRankingListPage = lazy(() => import("../bento/sn/bento.sn.result-ranking.list.page"));
+const BentoSNResultRankingPage = lazy(() => import("../bento/sn/bento.sn.result-ranking.page"));
+const BentoSNMergeProvidersListPage = lazy(() => import("../bento/sn/bento.sn.merge-providers.list.page"));
+const BentoSNMergeProvidersPage = lazy(() => import("../bento/sn/bento.sn.merge-providers.page"));
+const BentoSNSpotlightListPage = lazy(() => import("../bento/sn/bento.sn.spotlight.list.page"));
+const BentoSNSpotlightPage = lazy(() => import("../bento/sn/bento.sn.spotlight.page"));
+const BentoSNTopTermsPage = lazy(() => import("../bento/sn/bento.sn.top-terms.page"));
 // Phase 2 (T559) — SN onboarding wizard in the bento shell.
 const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding.page"));
 // Phase 2 (T560) — skill folder editor (mini VS Code) in the bento shell.
@@ -161,6 +182,27 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/field" element={<BentoSNFieldListPage />} />
     <Route path="sn/instance/:id/field/:fieldId" element={<BentoSNFieldPage />} />
     <Route path="sn/instance/:id/field-coverage" element={<BentoSNFieldCoveragePage />} />
+    {/* SN instance sub-sections (T576). */}
+    <Route path="sn/instance/:id/insights" element={<BentoSNInsightsPage />} />
+    <Route path="sn/instance/:id/locale" element={<BentoSNLocaleListPage />} />
+    <Route path="sn/instance/:id/locale/:localeId" element={<BentoSNLocalePage />} />
+    <Route path="sn/instance/:id/behavior" element={<BentoSNBehaviorPage />} />
+    <Route path="sn/instance/:id/facet" element={<BentoSNFacetListPage />} />
+    <Route path="sn/instance/:id/facet/custom/:customFacetId" element={<BentoSNCustomFacetPage />} />
+    <Route path="sn/instance/:id/facet/custom/:customFacetId/item/:itemIndex" element={<BentoSNCustomFacetItemPage />} />
+    <Route path="sn/instance/:id/facet/field/:facetedFieldId" element={<BentoSNFacetedFieldPage />} />
+    <Route path="sn/instance/:id/custom-sort" element={<BentoSNCustomSortListPage />} />
+    <Route path="sn/instance/:id/custom-sort/:customSortId" element={<BentoSNCustomSortPage />} />
+    <Route path="sn/instance/:id/search-rule" element={<BentoSNSearchRuleListPage />} />
+    <Route path="sn/instance/:id/search-rule/:searchRuleId" element={<BentoSNSearchRulePage />} />
+    <Route path="sn/instance/:id/ai" element={<BentoSNGenAiPage />} />
+    <Route path="sn/instance/:id/result-ranking" element={<BentoSNResultRankingListPage />} />
+    <Route path="sn/instance/:id/result-ranking/:resultRankingId" element={<BentoSNResultRankingPage />} />
+    <Route path="sn/instance/:id/merge-providers" element={<BentoSNMergeProvidersListPage />} />
+    <Route path="sn/instance/:id/merge-providers/:mergeProviderId" element={<BentoSNMergeProvidersPage />} />
+    <Route path="sn/instance/:id/spotlight" element={<BentoSNSpotlightListPage />} />
+    <Route path="sn/instance/:id/spotlight/:spotlightId" element={<BentoSNSpotlightPage />} />
+    <Route path="sn/instance/:id/top-terms/:period?" element={<BentoSNTopTermsPage />} />
     <Route path="skill" element={<BentoSkillListPage />} />
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />
     <Route path="asset" element={<BentoAssetPage />} />

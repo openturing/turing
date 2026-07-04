@@ -50,7 +50,11 @@ const EMPTY_ITEM: TurSNSiteCustomFacetItem = {
  *
  * @since 2026.2.7
  */
-export default function SNSiteCustomFacetItemPage() {
+/**
+ * @param baseRoute SN instance base route for back/breadcrumb navigation.
+ *   Defaults to the console; Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576).
+ */
+export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTANCE }: Readonly<{ baseRoute?: string }> = {}) {
   const navigate = useNavigate();
   const { id, customFacetId, itemIndex } = useParams() as {
     id: string;
@@ -129,7 +133,7 @@ export default function SNSiteCustomFacetItemPage() {
   }
 
   function backToFacet() {
-    navigate(`${ROUTES.SN_INSTANCE}/${id}/facet/custom/${customFacetId}`);
+    navigate(`${baseRoute}/${id}/facet/custom/${customFacetId}`);
   }
 
   async function onSave() {
@@ -202,7 +206,7 @@ export default function SNSiteCustomFacetItemPage() {
     <LoadProvider
       checkIsNotUndefined={customFacet && availableLocales}
       error={error}
-      tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/facet/custom/${customFacetId}/item/${itemIndex}`}
+      tryAgainUrl={`${baseRoute}/${id}/facet/custom/${customFacetId}/item/${itemIndex}`}
     >
       {customFacet && (
         <div className="space-y-4 px-4 lg:px-6 pb-8">

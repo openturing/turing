@@ -37,16 +37,19 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /** SN instance base route for save/cancel navigation. Defaults to the
+   *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+  baseRoute?: string;
 }
 
-export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNRankingExpression>({
     defaultValues: value
   });
   const { control, register, formState: { errors } } = form;
   const [slideValue, setSlideValue] = React.useState([4]);
-  const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/result-ranking`;;
+  const urlBase = `${baseRoute}/${snSiteId}/result-ranking`;;
   const navigate = useNavigate()
   useEffect(() => {
     const nextValue = isNew

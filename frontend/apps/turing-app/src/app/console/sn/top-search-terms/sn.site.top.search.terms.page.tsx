@@ -10,7 +10,7 @@ import type { TurSNSiteMetricsTerm } from "@/models/sn/sn-site-metrics-term.mode
 import { TurSNSiteMetricsService, type TurSNTopTermsPeriod } from "@/services/sn/sn.site.metrics.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconArrowDown, IconArrowUp, IconChartBar, IconSearch } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -44,7 +44,13 @@ function formatNumber(value: number | undefined): string {
   return value.toLocaleString();
 }
 
-export default function SNSiteTopSearchTermsPage() {
+/**
+ * @param baseRoute SN instance base for tab navigation. Defaults to the console;
+ *   Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576).
+ * @param header Optional header override — Bento passes a `BentoHero`; console
+ *   falls back to the sidebar-coupled `SubPageHeader`.
+ */
+export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANCE, header }: Readonly<{ baseRoute?: string; header?: ReactNode }> = {}) {
   const { id, period: periodParam } = useParams() as { id: string; period?: string };
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -66,9 +72,9 @@ export default function SNSiteTopSearchTermsPage() {
       return;
     }
     if (!isValidPeriod(periodParam)) {
-      navigate(`${ROUTES.SN_INSTANCE}/${id}/top-terms/this-month`, { replace: true });
+      navigate(`${baseRoute}/${id}/top-terms/this-month`, { replace: true });
     }
-  }, [periodParam, id, navigate]);
+  }, [periodParam, id, navigate, baseRoute]);
 
   useEffect(() => {
     if (!id) {
@@ -211,17 +217,19 @@ export default function SNSiteTopSearchTermsPage() {
 
   return (
     <>
-      <SubPageHeader
-        icon={IconChartBar}
-        name={t("sn.topSearchTerms.title")}
-        feature={t("sn.topSearchTerms.title")}
-        description={t("sn.topSearchTerms.description")}
-      />
+      {header !== undefined ? header : (
+        <SubPageHeader
+          icon={IconChartBar}
+          name={t("sn.topSearchTerms.title")}
+          feature={t("sn.topSearchTerms.title")}
+          description={t("sn.topSearchTerms.description")}
+        />
+      )}
       <div className="px-6">
         <Tabs
           value={resolvedPeriod}
           onValueChange={(value) =>
-            navigate(`${ROUTES.SN_INSTANCE}/${id}/top-terms/${value}`)
+            navigate(`${baseRoute}/${id}/top-terms/${value}`)
           }
           className="mb-4"
         >

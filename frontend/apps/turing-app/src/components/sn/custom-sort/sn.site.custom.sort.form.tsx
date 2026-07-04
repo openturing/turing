@@ -52,15 +52,18 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 
-export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteCustomSort>({
         defaultValues: value,
     });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/custom-sort`;
+    const urlBase = `${baseRoute}/${snSiteId}/custom-sort`;
     const [fieldOptions, setFieldOptions] = useState<TurSNSiteCustomSortFieldOption[]>([]);
 
     const { fields, append, remove, swap, update } = useFieldArray({

@@ -173,6 +173,7 @@ fully shipped.**
 - ✅ **T560** — Skill folder editor (mini VS Code) → bento shell (`app/bento/skill/`): bento list + the T318 editor reused via new `baseRoute` + `containerClassName` props (shell-aware height + frosted frame). → CHANGELOG Block AG.
 - ✅ **T561** — Asset browser/manager → bento shell (`app/bento/asset/`): extracted a shared `AssetBrowser` (route-shell-agnostic, prefix-based folder nav) rendered under a `BentoHero`. → CHANGELOG Block AG.
 - ✅ **T562** — Page CRUD → bento (`app/bento/page/`): ZIP-deployed-SPA grid (upload/open/delete) re-skinned onto a `BentoHero` + frosted tiles, reusing `TurPageService`. **Phase 2 complete.** → CHANGELOG Block AG.
+- ✅ **T576** — SN instance sub-sections → bento (`app/bento/sn/`): the deep sections T557 deferred — locale/behavior/facet(+custom-facet/item/faceted-field)/custom-sort/search-rule/ai/result-ranking/merge-providers/spotlight/top-terms/insights. Reuses the console forms/lists verbatim via a new `baseRoute` prop + a shared `BentoSnSectionList` scaffold; the SN config-sections panel now routes every section into `/bento`. Completes the SN instance migration. → CHANGELOG Block AG.
 
 **Phase 3 — functional & dashboard surfaces:**
 - ✅ **T563** — Chat workspace + Conversation detail → bento (`app/bento/{chat,conversation}/`): reused verbatim inside the shell; `ChatPage` gained an `emptyStateHeader` prop so blank slates use a `BentoHero` (no console `SidebarTrigger`). **Phase 3 opens.** → CHANGELOG Block AG.

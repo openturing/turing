@@ -35,9 +35,10 @@ import { GradientButtonLink } from '@viglet/viglet-design-system/router';
 interface SNSiteFacetDraggableListRowProps {
     row: TurSNSiteFacetOrdering;
     siteId: string;
+    baseRoute: string;
 }
 
-const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = ({ row, siteId }) => {
+const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = ({ row, siteId, baseRoute }) => {
     const { t } = useTranslation();
     const {
         attributes,
@@ -81,7 +82,7 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
                 <GradientButtonLink
                     variant="outline"
                     size="sm"
-                    to={`${ROUTES.SN_INSTANCE}/${siteId}/${row.customFacet ? 'facet/custom' : 'facet/field'
+                    to={`${baseRoute}/${siteId}/${row.customFacet ? 'facet/custom' : 'facet/field'
                         }/${row.customFacet ? row.id : row.fieldExtId}`}
                 >
                     {t("forms.common.edit")}
@@ -97,9 +98,12 @@ interface SNSiteFacetDraggableListProps {
     tableData: TurSNSiteFacetOrdering[];
     setTableData: React.Dispatch<React.SetStateAction<TurSNSiteFacetOrdering[]>>;
     children?: React.ReactNode;
+    /** SN instance base route for the row edit link. Defaults to the console;
+     *  the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
-export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children }) => {
+export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
 
     const sensors = useSensors(useSensor(PointerSensor));
@@ -155,7 +159,7 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
                                 strategy={verticalListSortingStrategy}
                             >
                                 {tableData.map((row) => (
-                                    <SNSiteFacetDraggableListRow key={row.id} row={row} siteId={siteId} />
+                                    <SNSiteFacetDraggableListRow key={row.id} row={row} siteId={siteId} baseRoute={baseRoute} />
                                 ))}
                             </SortableContext>
                         </TableBody>

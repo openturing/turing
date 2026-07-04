@@ -39,24 +39,21 @@ const fromView = (view: SNView): TurSNSite => {
 };
 
 /**
- * The advanced SN config sections. T557 migrates the **instance** (identity +
- * engine/store bindings + search template); these deeper sections stay on the
- * console until their own migration (fields/coverage/manifest → T558, the rest
- * later), reached via this panel per ADR 0002 (console stays live until Phase 5).
+ * The advanced SN config sections. T557 migrated the **instance** (identity +
+ * engine/store bindings + search template), T558 fields/coverage, and T576 the
+ * remaining deep sections — so every section is now a Bento sub-route reached
+ * via this panel.
  */
 interface SectionLink {
   labelKey: string;
   icon: TablerIcon;
   path: string;
-  /** `true` when the target is a Bento sub-route; else it links out to console. */
-  bento?: boolean;
 }
 
 const SN_SECTIONS: readonly SectionLink[] = [
-  // Migrated to bento sub-surfaces (T558).
-  { labelKey: "sn.fields.title", icon: IconAlignBoxCenterStretch, path: "field", bento: true },
-  { labelKey: "sn.fieldCoverage.title", icon: IconChartHistogram, path: "field-coverage", bento: true },
-  // Still on the console until their own migration (per ADR 0002).
+  { labelKey: "sn.insights.title", icon: IconSparkles, path: "insights" },
+  { labelKey: "sn.fields.title", icon: IconAlignBoxCenterStretch, path: "field" },
+  { labelKey: "sn.fieldCoverage.title", icon: IconChartHistogram, path: "field-coverage" },
   { labelKey: "sn.multiLanguage.title", icon: IconLanguage, path: "locale" },
   { labelKey: "sn.behavior.title", icon: IconScale, path: "behavior" },
   { labelKey: "sn.facets.title", icon: IconFilter, path: "facet" },
@@ -78,10 +75,10 @@ function SNSectionsPanel({ siteId }: Readonly<{ siteId: string }>) {
         {t("sn.settings.title")}
       </h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-        {SN_SECTIONS.map(({ labelKey, icon: Icon, path, bento }) => (
+        {SN_SECTIONS.map(({ labelKey, icon: Icon, path }) => (
           <Link
             key={path}
-            to={`${bento ? ROUTES.BENTO_SN_INSTANCE : ROUTES.SN_INSTANCE}/${siteId}/${path}`}
+            to={`${ROUTES.BENTO_SN_INSTANCE}/${siteId}/${path}`}
             className="bento-tile bento-tile-clickable bento-glass flex items-center gap-3 rounded-2xl p-4"
           >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">

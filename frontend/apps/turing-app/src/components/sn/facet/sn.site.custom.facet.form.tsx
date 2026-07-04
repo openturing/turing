@@ -91,9 +91,12 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /** SN instance base route for navigation (item editor + save/cancel).
+   *  Defaults to the console; Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+  baseRoute?: string;
 }
 
-export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSiteCustomFacet>({
     defaultValues: {
@@ -143,7 +146,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
       toast.info(t("forms.snCustomFacet.saveFirstToAddItems"));
       return;
     }
-    navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet/custom/${value.id}/item/new`);
+    navigate(`${baseRoute}/${snSiteId}/facet/custom/${value.id}/item/new`);
   }
 
   function onOpenEditItem(index: number) {
@@ -151,7 +154,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
       toast.info(t("forms.snCustomFacet.saveFirstToAddItems"));
       return;
     }
-    navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet/custom/${value.id}/item/${index}`);
+    navigate(`${baseRoute}/${snSiteId}/facet/custom/${value.id}/item/${index}`);
   }
 
   function onRemoveItem(index: number) {
@@ -260,7 +263,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
         const result = await turSNSiteCustomFacetService.create(snSiteId, payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.name, feature: "Custom Facet" }));
-          navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`);
+          navigate(`${baseRoute}/${snSiteId}/facet`);
         } else {
           toast.error(t("forms.common.notSaved", { name: payload.name, feature: "Custom Facet" }));
         }
@@ -313,7 +316,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)}
+                onClick={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
               >
                 <IconX className="size-4" />
                 {t("forms.formActions.cancel")}

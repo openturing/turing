@@ -46,9 +46,10 @@ interface SNSiteLocaleDraggableListRowProps {
     row: TurSNSiteLocale;
     index: number;
     storageEnabled: boolean;
+    baseRoute: string;
 }
 
-const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> = ({ row, index, storageEnabled }) => {
+const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> = ({ row, index, storageEnabled, baseRoute }) => {
     const { t } = useTranslation();
     const {
         attributes,
@@ -102,7 +103,7 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
                     <GradientButtonLink
                         variant="outline"
                         size="sm"
-                        to={`${ROUTES.SN_INSTANCE}/${site.id}/locale/${row.id}`}
+                        to={`${baseRoute}/${site.id}/locale/${row.id}`}
                     >
                         {t("forms.common.edit")}
                     </GradientButtonLink>
@@ -148,6 +149,9 @@ interface SNSiteLocaleDraggableListProps {
     setTableData: React.Dispatch<React.SetStateAction<TurSNSiteLocale[]>>;
     storageEnabled?: boolean;
     children?: React.ReactNode;
+    /** SN instance base route for the row edit link. Defaults to the console;
+     *  the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
@@ -158,6 +162,7 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
     setTableData,
     storageEnabled = false,
     children,
+    baseRoute = ROUTES.SN_INSTANCE,
 }) => {
     const { t } = useTranslation();
     const sensors = useSensors(useSensor(PointerSensor));
@@ -213,7 +218,7 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
                                 strategy={verticalListSortingStrategy}
                             >
                                 {tableData.map((row, index) => (
-                                    <SNSiteLocaleDraggableListRow key={row.id} row={row} index={index} storageEnabled={storageEnabled} />
+                                    <SNSiteLocaleDraggableListRow key={row.id} row={row} index={index} storageEnabled={storageEnabled} baseRoute={baseRoute} />
                                 ))}
                             </SortableContext>
                         </TableBody>

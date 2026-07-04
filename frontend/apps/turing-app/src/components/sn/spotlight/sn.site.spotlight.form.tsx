@@ -57,15 +57,18 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
 }
 
-export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSpotlight>({
         defaultValues: value,
     });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/spotlight`;
+    const urlBase = `${baseRoute}/${snSiteId}/spotlight`;
     const [locales, setLocales] = useState<TurSNSiteLocale[]>([]);
     const [searchDialogOpen, setSearchDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
