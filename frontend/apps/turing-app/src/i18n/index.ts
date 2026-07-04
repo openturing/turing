@@ -49,6 +49,7 @@ import enSystemInfo from "./locales/en/systemInfo.json";
 import enTheme from "./locales/en/theme.json";
 import enTokenUsage from "./locales/en/tokenUsage.json";
 import enParkedConversations from "./locales/en/parkedConversations.json";
+import enBento from "./locales/en/bento.json";
 
 // Portuguese segments
 import ptAccount from "./locales/pt/account.json";
@@ -96,6 +97,7 @@ import ptSystemInfo from "./locales/pt/systemInfo.json";
 import ptTheme from "./locales/pt/theme.json";
 import ptTokenUsage from "./locales/pt/tokenUsage.json";
 import ptParkedConversations from "./locales/pt/parkedConversations.json";
+import ptBento from "./locales/pt/bento.json";
 
 const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
@@ -105,7 +107,7 @@ const en = {
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
-  ...enVoiceKiosk,
+  ...enVoiceKiosk, ...enBento,
 };
 
 const pt = {
@@ -116,7 +118,7 @@ const pt = {
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
-  ...ptVoiceKiosk,
+  ...ptVoiceKiosk, ...ptBento,
 };
 
 /**

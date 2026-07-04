@@ -1975,14 +1975,11 @@ the bento pages consume directly — no data-layer work per screen.
 > it as proof. Each Phase 1–4 screen is now a thin config + its `BentoFormSection`
 > field groups. See CHANGELOG Block AG.
 
-### XXXI.3 T549 — navigation & command palette
-
-The console has a sidebar; bento home is a launcher. A launcher alone means deep
-screens (admin sub-pages, analytics, a specific SN field) cost too many clicks.
-Add a persistent bento nav (collapsible rail or top segmented nav) **and** a
-`⌘K` command palette over all routes/entities — the "concise & friendly" lever
-for power users, and a prerequisite for the editor/dashboard surfaces that aren't
-reachable from the home mosaic.
+> **T549 shipped** — persistent frosted `BentoNavRail` (fixed left icon rail,
+> desktop) over the migrated surfaces + a zero-dep `⌘K` `BentoCommandPalette`
+> reaching every area (unmigrated ones link out to the console until they
+> migrate). Both driven by a single `bento-nav.config.ts` registry that mirrors
+> the console `AppSidebar` taxonomy. See CHANGELOG Block AG.
 
 ### XXXI.4 T550 — conventions before fan-out
 

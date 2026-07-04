@@ -27,6 +27,17 @@ export {
   BentoEntityTile,
   type BentoEntityTileProps,
 } from "./bento-list-page";
+export { BentoNavRail } from "./bento-nav-rail";
+export { BentoCommandPalette, type BentoCommandPaletteProps } from "./bento-command-palette";
+export {
+  BENTO_NAV_ITEMS,
+  BENTO_NAV_SECTIONS,
+  bentoNavTarget,
+  useVisibleBentoNav,
+  type BentoNavItem,
+  type BentoNavSection,
+  type BentoNavSectionId,
+} from "./bento-nav.config";
 export {
   BentoActionsMenu,
   type BentoActionsMenuItem,

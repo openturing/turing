@@ -1,0 +1,16 @@
+{
+  "bento": {
+    "nav": {
+      "label": "Primary"
+    },
+    "palette": {
+      "title": "Command palette",
+      "description": "Search and jump to any area",
+      "placeholder": "Search areas…",
+      "search": "Search",
+      "open": "Open command palette",
+      "noResults": "No matches",
+      "opensConsole": "Opens in console"
+    }
+  }
+}

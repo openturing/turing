@@ -1,0 +1,16 @@
+{
+  "bento": {
+    "nav": {
+      "label": "Navegação principal"
+    },
+    "palette": {
+      "title": "Paleta de comandos",
+      "description": "Busque e navegue para qualquer área",
+      "placeholder": "Buscar áreas…",
+      "search": "Buscar",
+      "open": "Abrir paleta de comandos",
+      "noResults": "Nenhum resultado",
+      "opensConsole": "Abre no console"
+    }
+  }
+}
