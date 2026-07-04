@@ -12,9 +12,12 @@ import { useNavigate } from "react-router-dom";
 
 interface Props {
     value: TurKeycloakGroup;
+    /** List route the Back button returns to. Defaults to the console admin
+     *  groups list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
 }
 
-export const AdminKeycloakGroupView: React.FC<Props> = ({ value }) => {
+export const AdminKeycloakGroupView: React.FC<Props> = ({ value, listRoute = ROUTES.ADMIN_GROUPS }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -27,7 +30,7 @@ export const AdminKeycloakGroupView: React.FC<Props> = ({ value }) => {
                     description={t("admin.groups.keycloakViewDescription")}
                 />
                 <StickyPageHeader.Actions>
-                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_GROUPS)}>
+                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
                         <IconArrowLeft className="size-4" />
                         {t("forms.formActions.back", "Back")}
                     </GradientButton>

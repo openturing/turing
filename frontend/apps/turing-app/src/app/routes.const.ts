@@ -119,4 +119,13 @@ export const ROUTES = {
   BENTO_IMPORT: "/bento/import",
   BENTO_LOGGING: "/bento/logging",
   BENTO_SYSTEM_INFO: "/bento/system-info",
+
+  // Block AG Phase 4 — admin & tenancy surfaces.
+  BENTO_ADMIN: "/bento/admin",
+  BENTO_ADMIN_USERS: "/bento/admin/users",
+  BENTO_ADMIN_GROUPS: "/bento/admin/groups",
+  BENTO_ADMIN_ROLES: "/bento/admin/roles",
+  BENTO_TENANT_SETTINGS: "/bento/tenant",
+  BENTO_TENANT_ADMIN: "/bento/tenant-admin",
+  BENTO_USER_ACCOUNT: "/bento/user/account",
 };

@@ -56,9 +56,13 @@ describe("BentoCommandPalette", () => {
     expect(navigateMock).toHaveBeenCalledWith(expect.stringContaining("graphql"));
   });
 
-  it("marks unmigrated areas as opening in the console", () => {
+  it("routes every nav surface into the bento shell once the migration is complete", () => {
+    // As of Block AG Phase 4 (T567) every nav-config surface is migrated, so the
+    // console-fallback indicator no longer appears for any item. The palette's
+    // "Opens in console" affordance (shown when an item lacks a `bentoRoute`)
+    // stays in the component for any future surface added ahead of its bento
+    // page, but no live nav item exercises it anymore.
     openPalette();
-    // At least one item links out to the console (sr-only indicator text).
-    expect(screen.getAllByText("Opens in console").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Opens in console")).not.toBeInTheDocument();
   });
 });

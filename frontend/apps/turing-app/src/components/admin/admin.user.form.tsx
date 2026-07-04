@@ -35,9 +35,12 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** List route to return to on save/cancel. Defaults to the console admin
+     *  users list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
 }
 
-export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen }) => {
+export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_USERS }) => {
     const { t } = useTranslation();
     const form = useForm<TurUser>({ defaultValues: value });
     const navigate = useNavigate();
@@ -150,7 +153,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
                 const result = await turAdminUserService.create(userPayload as TurUser);
                 if (result) {
                     toast.success(t("forms.adminUser.created", { name: data.username }));
-                    navigate(ROUTES.ADMIN_USERS);
+                    navigate(listRoute);
                 } else {
                     toast.error(t("forms.adminUser.createFailed"));
                 }
@@ -183,7 +186,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
                             <IconDeviceFloppy className="size-4" />
                             {t("forms.formActions.saveChanges")}
                         </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_USERS)}>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
                             <IconX className="size-4" />
                             {t("forms.formActions.cancel")}
                         </GradientButton>

@@ -181,7 +181,7 @@ fully shipped.**
 - ✅ **T566** — Global Settings + Import/Exchange + Logging + System Info → bento (`app/bento/{settings,import,logging,system-info}/`): read-mostly surfaces hosted in the shell; `SystemInfoPage` gained a `header` prop; two admin-gated management nav items added. **Phase 3 complete.** → CHANGELOG Block AG.
 
 **Phase 4 — admin & tenancy:**
-- 📋 **T567** (deps: T548, T549) **Admin settings → bento** — users / groups / roles / settings / tokens, preserving the Keycloak-vs-JPA dependent-query pattern. → §XXXI.9
+- ✅ **T567** — Admin settings → bento (`app/bento/admin/`): `BentoHero` + pill tab-bar over users/groups/roles list `Outlet`s (settings/tokens tabs link to their migrated surfaces); reuses the Keycloak-vs-JPA dependent-query hooks + the admin forms/Keycloak views verbatim via a new `listRoute` prop. `administration` was the last console-only nav item → nav-config migration complete. **Phase 4 opens.** → CHANGELOG Block AG.
 - 📋 **T568** (deps: T567) **Tenant settings + Tenant admin + User account → bento**. → §XXXI.9
 
 **Phase 5 — cutover & retirement:**

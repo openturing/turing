@@ -34,9 +34,12 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** List route to return to on save/cancel. Defaults to the console admin
+     *  groups list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
 }
 
-export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen }) => {
+export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_GROUPS }) => {
     const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();
@@ -114,7 +117,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
                 const result = await turGroupService.create(groupPayload);
                 if (result) {
                     toast.success(t("forms.adminGroup.created", { name: data.name }));
-                    navigate(ROUTES.ADMIN_GROUPS);
+                    navigate(listRoute);
                 } else {
                     toast.error(t("forms.adminGroup.createFailed"));
                 }
@@ -147,7 +150,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
                             <IconDeviceFloppy className="size-4" />
                             {t("forms.formActions.saveChanges")}
                         </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_GROUPS)}>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
                             <IconX className="size-4" />
                             {t("forms.formActions.cancel")}
                         </GradientButton>

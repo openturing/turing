@@ -155,7 +155,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", bentoRoute: ROUTES.BENTO_GRAPHQL, consoleRoute: ROUTES.GRAPHQL_ROOT },
 
   // --- management ---
-  { id: "administration", titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", icon: IconShieldCog, section: "management", tone: "slate", span: BENTO_SPAN_WIDE, consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },
+  { id: "administration", titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", icon: IconShieldCog, section: "management", tone: "slate", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_ADMIN, consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },
   { id: "assets", titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", icon: IconFolder, section: "management", tone: "amber", bentoRoute: ROUTES.BENTO_ASSET, consoleRoute: ROUTES.ASSET_ROOT },
   { id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", bentoRoute: ROUTES.BENTO_PAGE, consoleRoute: ROUTES.PAGE_ROOT },
   { id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", bentoRoute: ROUTES.BENTO_GIT, consoleRoute: ROUTES.GIT_ROOT },

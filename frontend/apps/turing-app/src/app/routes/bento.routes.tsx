@@ -78,6 +78,14 @@ const BentoSystemInfoPage = lazy(() => import("../bento/system-info/bento.system
 const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"));
 const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"));
 const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"));
+// Phase 4 (T567) — Admin settings (users/groups/roles) in the bento shell.
+const BentoAdminPage = lazy(() => import("../bento/admin/bento.admin.page"));
+const BentoAdminUsersListPage = lazy(() => import("../bento/admin/bento.admin.users.list.page"));
+const BentoAdminUserPage = lazy(() => import("../bento/admin/bento.admin.user.page"));
+const BentoAdminGroupsListPage = lazy(() => import("../bento/admin/bento.admin.groups.list.page"));
+const BentoAdminGroupPage = lazy(() => import("../bento/admin/bento.admin.group.page"));
+const BentoAdminRolesListPage = lazy(() => import("../bento/admin/bento.admin.roles.list.page"));
+const BentoAdminRolePage = lazy(() => import("../bento/admin/bento.admin.role.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -175,5 +183,17 @@ export const BentoRoutes = (
     <Route path="logging/indexing" element={<LoggingIndexingPage />} />
     <Route path="logging/aem" element={<LoggingAemPage />} />
     <Route path="system-info" element={<BentoSystemInfoPage />} />
+    {/* Phase 4 (T567) — Administration: hero + tab-bar over users/groups/roles;
+        settings & tokens tabs link to their own migrated surfaces. Detail
+        editors are separate full-page routes (no tab bar). */}
+    <Route path="admin" element={<BentoAdminPage />}>
+      <Route index element={<Navigate to={ROUTES.BENTO_ADMIN_USERS} replace />} />
+      <Route path="users" element={<BentoAdminUsersListPage />} />
+      <Route path="groups" element={<BentoAdminGroupsListPage />} />
+      <Route path="roles" element={<BentoAdminRolesListPage />} />
+    </Route>
+    <Route path="admin/users/:username" element={<BentoAdminUserPage />} />
+    <Route path="admin/groups/:groupId" element={<BentoAdminGroupPage />} />
+    <Route path="admin/roles/:roleId" element={<BentoAdminRolePage />} />
   </Route>
 );

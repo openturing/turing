@@ -42,9 +42,12 @@ const PRIVILEGE_LAYOUT: PrivilegeGroup[] = [
 interface Props {
     value: TurRole;
     isNew: boolean;
+    /** List route to return to on save/cancel. Defaults to the console admin
+     *  roles list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
 }
 
-export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
+export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES }) => {
     const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();
@@ -119,7 +122,7 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                 const result = await turRoleService.create(data);
                 if (result) {
                     toast.success(t("forms.adminRole.created", { name: data.name }));
-                    navigate(ROUTES.ADMIN_ROLES);
+                    navigate(listRoute);
                 } else {
                     toast.error(t("forms.adminRole.createFailed"));
                 }
@@ -151,7 +154,7 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                             <IconDeviceFloppy className="size-4" />
                             {t("forms.formActions.saveChanges")}
                         </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_ROLES)}>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
                             <IconX className="size-4" />
                             {t("forms.formActions.cancel")}
                         </GradientButton>

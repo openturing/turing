@@ -12,9 +12,12 @@ import { useNavigate } from "react-router-dom";
 
 interface Props {
     value: TurKeycloakUser;
+    /** List route the Back button returns to. Defaults to the console admin
+     *  users list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
 }
 
-export const AdminKeycloakUserView: React.FC<Props> = ({ value }) => {
+export const AdminKeycloakUserView: React.FC<Props> = ({ value, listRoute = ROUTES.ADMIN_USERS }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -29,7 +32,7 @@ export const AdminKeycloakUserView: React.FC<Props> = ({ value }) => {
                     description={t("admin.users.keycloakViewDescription")}
                 />
                 <StickyPageHeader.Actions>
-                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_USERS)}>
+                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
                         <IconArrowLeft className="size-4" />
                         {t("forms.formActions.back", "Back")}
                     </GradientButton>
