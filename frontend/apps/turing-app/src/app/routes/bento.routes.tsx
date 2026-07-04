@@ -47,6 +47,8 @@ const BentoSNInstancePage = lazy(() => import("../bento/sn/bento.sn.instance.pag
 const BentoSNFieldListPage = lazy(() => import("../bento/sn/bento.sn.field.list.page"));
 const BentoSNFieldPage = lazy(() => import("../bento/sn/bento.sn.field.page"));
 const BentoSNFieldCoveragePage = lazy(() => import("../bento/sn/bento.sn.field.coverage.page"));
+// Phase 2 (T559) — SN onboarding wizard in the bento shell.
+const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -110,6 +112,7 @@ export const BentoRoutes = (
     <Route path="git" element={<BentoGitPage />} />
     <Route path="git/:name" element={<GitRepoPage />} />
     <Route path="sn" element={<Navigate to={ROUTES.BENTO_SN_INSTANCE} replace />} />
+    <Route path="sn/onboarding" element={<BentoSNOnboardingPage />} />
     <Route path="sn/instance" element={<BentoSNInstanceListPage />} />
     <Route path="sn/instance/:id" element={<BentoSNInstancePage />} />
     <Route path="sn/instance/:id/field" element={<BentoSNFieldListPage />} />

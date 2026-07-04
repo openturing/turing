@@ -165,7 +165,13 @@ function buildStarterPack(
  *
  * Nothing is created until step 2's "Create catalog"; the eval step is optional.
  */
-export default function SNOnboardingWizardPage() {
+/**
+ * @param baseRoute Base SN instance route the "Configure site" / "Add fields"
+ *   completion actions navigate to. Defaults to the console
+ *   (`ROUTES.SN_INSTANCE`); the Bento onboarding page (T559) passes
+ *   `ROUTES.BENTO_SN_INSTANCE` so the wizard lands the user inside the shell.
+ */
+export default function SNOnboardingWizardPage({ baseRoute = ROUTES.SN_INSTANCE }: Readonly<{ baseRoute?: string }> = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -683,7 +689,7 @@ export default function SNOnboardingWizardPage() {
               <div className="flex flex-wrap gap-2">
                 <GradientButton
                   onClick={() =>
-                    navigate(`${ROUTES.SN_INSTANCE}/${provisionResult.siteId}`)
+                    navigate(`${baseRoute}/${provisionResult.siteId}`)
                   }
                 >
                   <IconSettings className="size-4" />
@@ -701,7 +707,7 @@ export default function SNOnboardingWizardPage() {
                 <GradientButton
                   variant="outline"
                   onClick={() =>
-                    navigate(`${ROUTES.SN_INSTANCE}/${provisionResult.siteId}/field`)
+                    navigate(`${baseRoute}/${provisionResult.siteId}/field`)
                   }
                 >
                   {t("sn.onboarding.addFields")}

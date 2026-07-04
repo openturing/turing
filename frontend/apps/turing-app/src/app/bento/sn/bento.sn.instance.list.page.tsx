@@ -1,8 +1,9 @@
 import { useSnSites } from "@/api/queries/sn-site.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
-import { IconCompass } from "@tabler/icons-react";
+import { IconCompass, IconRocket } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 /**
  * Bento Semantic Navigation list — T557. The heaviest console area, re-skinned
@@ -16,7 +17,17 @@ export default function BentoSNInstanceListPage() {
   const error = isError ? t("common.connectionError", { resource: t("sn.title") }) : null;
 
   return (
-    <BentoListPage
+    <>
+      <div className="mb-4 flex justify-end">
+        <Link
+          to={ROUTES.BENTO_SN_ONBOARDING}
+          className="bento-tile bento-tile-clickable inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-sm text-muted-foreground backdrop-blur hover:text-foreground"
+        >
+          <IconRocket size={16} className="text-emerald-500" />
+          {t("sn.onboarding.action")}
+        </Link>
+      </div>
+      <BentoListPage
       items={snSites}
       error={error}
       tryAgainUrl={ROUTES.BENTO_SN_INSTANCE}
@@ -50,6 +61,7 @@ export default function BentoSNInstanceListPage() {
           }
         />
       )}
-    />
+      />
+    </>
   );
 }
