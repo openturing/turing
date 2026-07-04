@@ -32,8 +32,18 @@ export interface BentoShellFormState {
   isSubmitting: boolean;
 }
 
-/** Fields the shell reads off the entity to seed the hero identity. */
-type BentoEntityLike = Partial<BentoIdentity> & { id?: string };
+/**
+ * Fields the shell reads off the entity to seed the hero identity. `title` /
+ * `description` tolerate `null` so entities whose columns are nullable (e.g.
+ * Custom Tool) satisfy the constraint without a cast.
+ */
+type BentoEntityLike = {
+  id?: string;
+  title?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  enabled?: number;
+};
 
 export interface BentoEntityShellRenderArgs {
   /** Latest hero identity — merged into the form's create/update payload. */

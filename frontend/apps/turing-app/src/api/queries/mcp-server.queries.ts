@@ -12,6 +12,14 @@ export function useMcpServers() {
   });
 }
 
+export function useMcpServer(id: string | undefined) {
+  return useQuery<TurMcpServer>({
+    queryKey: id ? queryKeys.mcpServers.detail(id) : ['mcp-servers', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateMcpServers(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.mcpServers.all() });
 }
