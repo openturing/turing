@@ -43,6 +43,10 @@ const PersonaGuidelinesSection = lazy(() => import("../console/persona/sections/
 // Phase 2 (T557) — Semantic Navigation instance CRUD in the bento shell.
 const BentoSNInstanceListPage = lazy(() => import("../bento/sn/bento.sn.instance.list.page"));
 const BentoSNInstancePage = lazy(() => import("../bento/sn/bento.sn.instance.page"));
+// Phase 2 (T558) — SN fields sub-CRUD + field-coverage in the bento shell.
+const BentoSNFieldListPage = lazy(() => import("../bento/sn/bento.sn.field.list.page"));
+const BentoSNFieldPage = lazy(() => import("../bento/sn/bento.sn.field.page"));
+const BentoSNFieldCoveragePage = lazy(() => import("../bento/sn/bento.sn.field.coverage.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -108,5 +112,8 @@ export const BentoRoutes = (
     <Route path="sn" element={<Navigate to={ROUTES.BENTO_SN_INSTANCE} replace />} />
     <Route path="sn/instance" element={<BentoSNInstanceListPage />} />
     <Route path="sn/instance/:id" element={<BentoSNInstancePage />} />
+    <Route path="sn/instance/:id/field" element={<BentoSNFieldListPage />} />
+    <Route path="sn/instance/:id/field/:fieldId" element={<BentoSNFieldPage />} />
+    <Route path="sn/instance/:id/field-coverage" element={<BentoSNFieldCoveragePage />} />
   </Route>
 );

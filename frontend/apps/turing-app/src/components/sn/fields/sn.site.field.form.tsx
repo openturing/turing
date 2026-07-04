@@ -51,9 +51,15 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /**
+   * Base SN instance route the field list lives under. Defaults to the console
+   * (`ROUTES.SN_INSTANCE`); the Bento field editor (T558) passes
+   * `ROUTES.BENTO_SN_INSTANCE` so save/cancel navigate back inside the shell.
+   */
+  baseRoute?: string;
 }
 
-export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen }) => {
+export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -86,7 +92,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
     normalizeCurrencyString,
     normalizeDecimalString,
   } = useGlobalDecimalSeparator();
-  const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/field`;
+  const urlBase = `${baseRoute}/${snSiteId}/field`;
   const navigate = useNavigate()
   const selectedFieldType = form.watch("type");
   const isDecimalType = selectedFieldType === "FLOAT" || selectedFieldType === "DOUBLE";

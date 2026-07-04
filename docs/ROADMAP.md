@@ -168,7 +168,7 @@ fully shipped.**
 
 **Phase 2 — complex CRUD & editors:**
 - ✅ **T557** — Semantic Navigation instance → bento (`app/bento/sn/`): list + hero-driven detail + config form (SE binding + search template); identity aliases title↔name (no status pill); deeper SN sub-sections reached from a config-sections panel until their own migration. **Phase 2 opens.** → CHANGELOG Block AG.
-- 📋 **T558** (deps: T557) **SN fields sub-CRUD + manifest/coverage surfaces → bento** — nested field editor, field-coverage bars, manifest plan/diff. → §XXXI.6
+- ✅ **T558** — SN fields sub-CRUD + field-coverage → bento sub-routes (`sn/instance/:id/field[/:fieldId]`, `/field-coverage`): reuses `SNSiteFieldGridList` + `SNSiteFieldForm` (new `baseRoute` prop) + a shared `SNFieldCoveragePanel`. Manifest plan/diff lives in the onboarding/field wizards (→ T559). → CHANGELOG Block AG.
 - 📋 **T559** (deps: T557) **SN onboarding wizard → bento** — multi-step flow re-skinned as a bento stepper. → §XXXI.6
 - 📋 **T560** (deps: T549) **Skill folder editor (mini VS Code) in the bento shell** — the file-tree + editor surface adapted to the frosted shell. → §XXXI.7
 - 📋 **T561** (deps: T549) **Asset browser/manager → bento** — grid/file-browser surface. → §XXXI.7

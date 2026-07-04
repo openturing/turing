@@ -48,13 +48,17 @@ interface SectionLink {
   labelKey: string;
   icon: TablerIcon;
   path: string;
+  /** `true` when the target is a Bento sub-route; else it links out to console. */
+  bento?: boolean;
 }
 
 const SN_SECTIONS: readonly SectionLink[] = [
+  // Migrated to bento sub-surfaces (T558).
+  { labelKey: "sn.fields.title", icon: IconAlignBoxCenterStretch, path: "field", bento: true },
+  { labelKey: "sn.fieldCoverage.title", icon: IconChartHistogram, path: "field-coverage", bento: true },
+  // Still on the console until their own migration (per ADR 0002).
   { labelKey: "sn.multiLanguage.title", icon: IconLanguage, path: "locale" },
   { labelKey: "sn.behavior.title", icon: IconScale, path: "behavior" },
-  { labelKey: "sn.fields.title", icon: IconAlignBoxCenterStretch, path: "field" },
-  { labelKey: "sn.fieldCoverage.title", icon: IconChartHistogram, path: "field-coverage" },
   { labelKey: "sn.facets.title", icon: IconFilter, path: "facet" },
   { labelKey: "sn.customSort.title", icon: IconArrowsSort, path: "custom-sort" },
   { labelKey: "sn.searchRule.title", icon: IconGavel, path: "search-rule" },
@@ -74,10 +78,10 @@ function SNSectionsPanel({ siteId }: Readonly<{ siteId: string }>) {
         {t("sn.settings.title")}
       </h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-        {SN_SECTIONS.map(({ labelKey, icon: Icon, path }) => (
+        {SN_SECTIONS.map(({ labelKey, icon: Icon, path, bento }) => (
           <Link
             key={path}
-            to={`${ROUTES.SN_INSTANCE}/${siteId}/${path}`}
+            to={`${bento ? ROUTES.BENTO_SN_INSTANCE : ROUTES.SN_INSTANCE}/${siteId}/${path}`}
             className="bento-tile bento-tile-clickable bento-glass flex items-center gap-3 rounded-2xl p-4"
           >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
