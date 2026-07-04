@@ -22,8 +22,8 @@ export default function BentoGraphqlPage() {
         title={t("home.features.graphqlExplorer.title")}
         subtitle={t("home.features.graphqlExplorer.description")}
       />
-      <div className="bento-glass overflow-hidden rounded-3xl">
-        <GraphiQLPage />
+      <div className="bento-glass h-[calc(100svh-16rem)] overflow-hidden rounded-3xl">
+        <GraphiQLPage className="flex h-full w-full flex-col" />
       </div>
     </>
   );
