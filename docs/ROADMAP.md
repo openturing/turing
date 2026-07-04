@@ -172,7 +172,7 @@ fully shipped.**
 - ✅ **T559** — SN onboarding wizard → bento (`/bento/sn/onboarding`): the multi-step stepper reused via a new `baseRoute` prop so completion lands inside the shell; a "Guided onboarding" pill on the bento SN list surfaces it. → CHANGELOG Block AG.
 - ✅ **T560** — Skill folder editor (mini VS Code) → bento shell (`app/bento/skill/`): bento list + the T318 editor reused via new `baseRoute` + `containerClassName` props (shell-aware height + frosted frame). → CHANGELOG Block AG.
 - ✅ **T561** — Asset browser/manager → bento shell (`app/bento/asset/`): extracted a shared `AssetBrowser` (route-shell-agnostic, prefix-based folder nav) rendered under a `BentoHero`. → CHANGELOG Block AG.
-- 📋 **T562** (deps: T548) **Page CRUD → bento**. → §XXXI.5
+- ✅ **T562** — Page CRUD → bento (`app/bento/page/`): ZIP-deployed-SPA grid (upload/open/delete) re-skinned onto a `BentoHero` + frosted tiles, reusing `TurPageService`. **Phase 2 complete.** → CHANGELOG Block AG.
 
 **Phase 3 — functional & dashboard surfaces:**
 - 📋 **T563** (deps: T549) **Chat workspace + Conversation detail in the bento shell** — the chat surface itself under the bento header/nav. → §XXXI.8

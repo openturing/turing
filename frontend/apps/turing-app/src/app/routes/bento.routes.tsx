@@ -54,6 +54,8 @@ const BentoSkillListPage = lazy(() => import("../bento/skill/bento.skill.list.pa
 const BentoSkillEditorPage = lazy(() => import("../bento/skill/bento.skill.editor.page"));
 // Phase 2 (T561) — asset browser/manager in the bento shell.
 const BentoAssetPage = lazy(() => import("../bento/asset/bento.asset.page"));
+// Phase 2 (T562) — Page CRUD (ZIP-deployed SPAs) in the bento shell.
+const BentoPagePage = lazy(() => import("../bento/page/bento.page.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -126,5 +128,6 @@ export const BentoRoutes = (
     <Route path="skill" element={<BentoSkillListPage />} />
     <Route path="skill/:id" element={<BentoSkillEditorPage />} />
     <Route path="asset" element={<BentoAssetPage />} />
+    <Route path="page" element={<BentoPagePage />} />
   </Route>
 );

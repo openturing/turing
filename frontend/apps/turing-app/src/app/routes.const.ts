@@ -105,4 +105,5 @@ export const ROUTES = {
   BENTO_SN_ONBOARDING: "/bento/sn/onboarding",
   BENTO_SKILL: "/bento/skill",
   BENTO_ASSET: "/bento/asset",
+  BENTO_PAGE: "/bento/page",
 };
