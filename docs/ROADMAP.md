@@ -191,7 +191,6 @@ fully shipped.**
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
 
 **Enhancement — customizable list layout (user-driven bento emphasis):**
-- 📋 **T574** (deps: T548) **Bento list layout persistence + cascade resolution** — persist per-item **emphasis** (`SMALL|MEDIUM|LARGE`) and an explicit **displayOrder**, *decoupled* from array position (today emphasis = `idx === 0`). Resolver cascade: per-user override → admin **global template** → the `featured=idx0` default. An admin edit becomes the template for anyone who hasn't customized (and non-customizers follow later template changes); a user's override is protective and includes a **"reset to default"**. Liquibase. → §XXXI.11
 - 📋 **T575** (deps: T574) **Bento list drag-reorder + emphasis UX** — `@dnd-kit` drag that changes **order only** (keyboard sensor for the a11y baseline, per T550), a per-card **emphasis affordance** (size cycler / "feature" pin — never position-coupled), and masonry/bin-packing over the `bento-grid` so explicit sizes leave no holes. Admin "set as default for everyone" + user "reset to default". → §XXXI.11
 
 ## Non-goals (do NOT add as tasks)

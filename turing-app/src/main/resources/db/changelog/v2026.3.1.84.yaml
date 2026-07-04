@@ -1,0 +1,65 @@
+databaseChangeLog:
+  # T574 / §XXXI.11 — persisted Bento list layout (emphasis + order) with a
+  # user-override → global-template cascade. Idempotent: gated by "table absent".
+  - changeSet:
+      id: v2026.3.1.84-create-bento_layout
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: bento_layout
+      changes:
+        - createTable:
+            tableName: bento_layout
+            columns:
+              - column:
+                  name: id
+                  type: varchar(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: scope
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ownerId
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: listId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: layoutJson
+                  type: longtext
+              - column:
+                  name: createdAt
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updatedAt
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: bento_layout
+            indexName: ux_bento_layout_scope_owner_list
+            unique: true
+            columns:
+              - column:
+                  name: tenantId
+              - column:
+                  name: scope
+              - column:
+                  name: ownerId
+              - column:
+                  name: listId
