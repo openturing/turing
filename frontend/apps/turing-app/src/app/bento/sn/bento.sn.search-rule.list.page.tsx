@@ -1,7 +1,5 @@
-import { ROUTES } from "@/app/routes.const";
 import type { TurSNSiteSearchRule } from "@/models/sn/sn-site-search-rule.model";
 import { TurSNSiteSearchRuleService } from "@/services/sn/sn.site.search.rule.service";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import { IconGavel } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,12 +19,6 @@ export default function BentoSNSearchRuleListPage() {
     service.query(id).then(setItems).catch(() => setError(t("common.connectionError", { resource: t("sn.searchRule.title") })));
   }, [id, t]);
 
-  const gridItemList = useGridAdapter(items, {
-    name: "name",
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_SN_INSTANCE}/${id}/search-rule/${item.id}`,
-  });
-
   return (
     <BentoSnSectionList
       siteId={id}
@@ -35,12 +27,13 @@ export default function BentoSNSearchRuleListPage() {
       title={t("sn.searchRule.title")}
       subtitle={t("sn.searchRule.description")}
       items={items}
-      gridItemList={gridItemList}
       error={error}
       newLabel={t("sn.searchRule.newSearchRule")}
-      blankTitle={t("sn.searchRule.blankTitle")}
-      blankDescription={t("sn.searchRule.blankDescription")}
-      blankButton={t("sn.searchRule.newSearchRuleBlank")}
+      emptyTitle={t("sn.searchRule.blankTitle")}
+      emptyDescription={t("sn.searchRule.blankDescription")}
+      itemKey={(item) => item.id ?? ""}
+      itemTitle={(item) => item.name}
+      itemDescription={(item) => item.description}
     />
   );
 }

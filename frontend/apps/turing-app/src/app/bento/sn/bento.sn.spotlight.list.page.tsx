@@ -1,7 +1,5 @@
-import { ROUTES } from "@/app/routes.const";
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model";
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import { IconSpeakerphone } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,12 +19,6 @@ export default function BentoSNSpotlightListPage() {
     service.query(id).then(setItems).catch(() => setError(t("common.connectionError", { resource: t("sn.spotlight.title") })));
   }, [id, t]);
 
-  const gridItemList = useGridAdapter(items, {
-    name: "name",
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_SN_INSTANCE}/${id}/spotlight/${item.id}`,
-  });
-
   return (
     <BentoSnSectionList
       siteId={id}
@@ -35,12 +27,13 @@ export default function BentoSNSpotlightListPage() {
       title={t("sn.spotlight.title")}
       subtitle={t("sn.spotlight.description")}
       items={items}
-      gridItemList={gridItemList}
       error={error}
       newLabel={t("sn.spotlight.newSpotlight")}
-      blankTitle={t("sn.spotlight.blankTitle")}
-      blankDescription={t("sn.spotlight.blankDescription")}
-      blankButton={t("sn.spotlight.newSpotlightBlank")}
+      emptyTitle={t("sn.spotlight.blankTitle")}
+      emptyDescription={t("sn.spotlight.blankDescription")}
+      itemKey={(item) => item.id ?? ""}
+      itemTitle={(item) => item.name}
+      itemDescription={(item) => item.description}
     />
   );
 }

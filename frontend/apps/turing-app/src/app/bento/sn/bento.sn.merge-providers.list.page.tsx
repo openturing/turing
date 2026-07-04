@@ -1,7 +1,5 @@
-import { ROUTES } from "@/app/routes.const";
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model";
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import { IconGitMerge } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,12 +19,6 @@ export default function BentoSNMergeProvidersListPage() {
     service.query(id).then(setItems).catch(() => setError(t("common.connectionError", { resource: t("sn.mergeProviders.title") })));
   }, [id, t]);
 
-  const gridItemList = useGridAdapter(items, {
-    name: (item) => `${item.providerFrom} → ${item.providerTo}`,
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_SN_INSTANCE}/${id}/merge-providers/${item.id}`,
-  });
-
   return (
     <BentoSnSectionList
       siteId={id}
@@ -35,12 +27,13 @@ export default function BentoSNMergeProvidersListPage() {
       title={t("sn.mergeProviders.title")}
       subtitle={t("sn.mergeProviders.description")}
       items={items}
-      gridItemList={gridItemList}
       error={error}
       newLabel={t("sn.mergeProviders.newMergeProvider")}
-      blankTitle={t("sn.mergeProviders.blankTitle")}
-      blankDescription={t("sn.mergeProviders.blankDescription")}
-      blankButton={t("sn.mergeProviders.newMergeProviderBlank")}
+      emptyTitle={t("sn.mergeProviders.blankTitle")}
+      emptyDescription={t("sn.mergeProviders.blankDescription")}
+      itemKey={(item) => item.id ?? ""}
+      itemTitle={(item) => `${item.providerFrom} → ${item.providerTo}`}
+      itemDescription={(item) => item.description}
     />
   );
 }

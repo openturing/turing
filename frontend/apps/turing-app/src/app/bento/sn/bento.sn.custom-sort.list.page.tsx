@@ -1,7 +1,5 @@
-import { ROUTES } from "@/app/routes.const";
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model";
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import { IconArrowsSort } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,12 +19,6 @@ export default function BentoSNCustomSortListPage() {
     service.query(id).then(setItems).catch(() => setError(t("common.connectionError", { resource: t("sn.customSort.title") })));
   }, [id, t]);
 
-  const gridItemList = useGridAdapter(items, {
-    name: "name",
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_SN_INSTANCE}/${id}/custom-sort/${item.id}`,
-  });
-
   return (
     <BentoSnSectionList
       siteId={id}
@@ -35,12 +27,13 @@ export default function BentoSNCustomSortListPage() {
       title={t("sn.customSort.title")}
       subtitle={t("sn.customSort.description")}
       items={items}
-      gridItemList={gridItemList}
       error={error}
       newLabel={t("sn.customSort.newCustomSort")}
-      blankTitle={t("sn.customSort.blankTitle")}
-      blankDescription={t("sn.customSort.blankDescription")}
-      blankButton={t("sn.customSort.newCustomSortBlank")}
+      emptyTitle={t("sn.customSort.blankTitle")}
+      emptyDescription={t("sn.customSort.blankDescription")}
+      itemKey={(item) => item.id ?? ""}
+      itemTitle={(item) => item.name}
+      itemDescription={(item) => item.description}
     />
   );
 }
