@@ -143,7 +143,7 @@ export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
   { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE, consoleRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
   { id: "persona", titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", icon: IconUserCircle, section: "generativeAi", tone: "rose", bentoRoute: ROUTES.BENTO_PERSONA_INSTANCE, consoleRoute: ROUTES.PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" },
   { id: "costGovernance", titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", icon: IconCoin, section: "generativeAi", tone: "emerald", consoleRoute: ROUTES.COST_GOVERNANCE },
-  { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", consoleRoute: ROUTES.SKILL_ROOT },
+  { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", bentoRoute: ROUTES.BENTO_SKILL, consoleRoute: ROUTES.SKILL_ROOT },
   { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
   { id: "chat", titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", icon: IconMessageChatbot, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.CHAT_ROOT, requiresLlm: true },
 

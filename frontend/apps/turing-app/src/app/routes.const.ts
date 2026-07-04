@@ -103,4 +103,5 @@ export const ROUTES = {
   BENTO_SN: "/bento/sn",
   BENTO_SN_INSTANCE: "/bento/sn/instance",
   BENTO_SN_ONBOARDING: "/bento/sn/onboarding",
+  BENTO_SKILL: "/bento/skill",
 };

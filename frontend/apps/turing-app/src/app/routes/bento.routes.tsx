@@ -49,6 +49,9 @@ const BentoSNFieldPage = lazy(() => import("../bento/sn/bento.sn.field.page"));
 const BentoSNFieldCoveragePage = lazy(() => import("../bento/sn/bento.sn.field.coverage.page"));
 // Phase 2 (T559) — SN onboarding wizard in the bento shell.
 const BentoSNOnboardingPage = lazy(() => import("../bento/sn/bento.sn.onboarding.page"));
+// Phase 2 (T560) — skill folder editor (mini VS Code) in the bento shell.
+const BentoSkillListPage = lazy(() => import("../bento/skill/bento.skill.list.page"));
+const BentoSkillEditorPage = lazy(() => import("../bento/skill/bento.skill.editor.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -118,5 +121,7 @@ export const BentoRoutes = (
     <Route path="sn/instance/:id/field" element={<BentoSNFieldListPage />} />
     <Route path="sn/instance/:id/field/:fieldId" element={<BentoSNFieldPage />} />
     <Route path="sn/instance/:id/field-coverage" element={<BentoSNFieldCoveragePage />} />
+    <Route path="skill" element={<BentoSkillListPage />} />
+    <Route path="skill/:id" element={<BentoSkillEditorPage />} />
   </Route>
 );
