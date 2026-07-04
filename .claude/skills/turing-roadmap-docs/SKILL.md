@@ -45,3 +45,15 @@ _inside_ the Block J band).
 6. **Non-goals are binding.** `ROADMAP.md` → "Non-goals" + `IMPROVEMENTS.md`
    §I.6/§I.7 list things deliberately _not_ to build — check them before
    proposing new work.
+7. **Always commit when a task finishes.** As soon as a task is complete and
+   validated, run `run-commit.cmd -m "<conventional-commits title>"` (one commit
+   per finished task — see the global `run-commit.cmd` guidance). Do the doc sync
+   (rules 1–2, bump `docs/last-task.md`) **in the same commit** as the code so
+   `ROADMAP`/`CHANGELOG`/`last-task.md` never drift from what actually shipped.
+   `cd` to the repo root before running it, and keep the `-m` title ASCII.
+8. **More than one task in the batch → drive it with `/loop`.** When the ask
+   covers multiple tasks (a whole phase/block, or an explicit list of `T<n>`s),
+   run them under the `/loop` skill self-paced: one task per iteration, commit at
+   the end of each (rule 7), then let the loop advance to the next. This keeps
+   each task atomic and reviewable instead of one giant uncommitted diff. A
+   single task doesn't need `/loop`.
