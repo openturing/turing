@@ -218,4 +218,9 @@ export const queryKeys = {
     all: () => ['parked-conversations'] as const,
     list: () => [...queryKeys.parkedConversations.all(), 'list'] as const,
   },
+  // T575 — customizable Bento list layout, scoped per list surface.
+  bentoLayout: {
+    all: () => ['bento-layout'] as const,
+    byList: (listId: string) => [...queryKeys.bentoLayout.all(), listId] as const,
+  },
 } as const;

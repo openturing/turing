@@ -34,10 +34,11 @@ export default function BentoSEInstanceListPage() {
       itemKey={(se) => se.id}
       emptyTitle={t("se.blankTitle")}
       emptyDescription={t("se.blankDescription")}
-      renderTile={(se, featured) => (
+      listId="searchEngine"
+      renderTile={(se, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_SE_INSTANCE}/${se.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconZoomCode}
           icon={se.icon}
           tone="emerald"

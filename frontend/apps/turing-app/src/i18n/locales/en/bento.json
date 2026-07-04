@@ -11,6 +11,20 @@
       "open": "Open command palette",
       "noResults": "No matches",
       "opensConsole": "Opens in console"
+    },
+    "layout": {
+      "customize": "Customize layout",
+      "editHint": "Drag tiles to reorder · pick S / M / L to resize",
+      "dragToReorder": "Drag to reorder",
+      "sizeGroup": "Tile size",
+      "size": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "save": "Save layout",
+      "saveGlobal": "Set as default for everyone",
+      "reset": "Reset to default"
     }
   }
 }

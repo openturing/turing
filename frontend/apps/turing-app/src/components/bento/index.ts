@@ -27,6 +27,17 @@ export {
   BentoEntityTile,
   type BentoEntityTileProps,
 } from "./bento-list-page";
+export {
+  BENTO_EMPHASIS_SPAN,
+  BENTO_EMPHASIS_NEXT,
+  type BentoEmphasis,
+  type BentoLayoutEntry,
+  type BentoLayoutResponse,
+  type BentoLayoutSource,
+  type ResolvedBentoItem,
+  resolveBentoLayout,
+  toBentoLayoutEntries,
+} from "./bento-layout";
 export { BentoNavRail } from "./bento-nav-rail";
 export { BentoCommandPalette, type BentoCommandPaletteProps } from "./bento-command-palette";
 export {

@@ -25,10 +25,11 @@ export default function BentoLLMInstanceListPage() {
       itemKey={(llm) => llm.id}
       emptyTitle={t("llm.blankTitle")}
       emptyDescription={t("llm.blankDescription")}
-      renderTile={(llm, featured) => (
+      listId="languageModel"
+      renderTile={(llm, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_LLM_INSTANCE}/${llm.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconCpu2}
           icon={llm.icon}
           tone="indigo"

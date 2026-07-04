@@ -25,10 +25,11 @@ export default function BentoAIAgentListPage() {
       itemKey={(agent) => agent.id}
       emptyTitle={t("aiAgent.blankTitle")}
       emptyDescription={t("aiAgent.blankDescription")}
-      renderTile={(agent, featured) => (
+      listId="aiAgent"
+      renderTile={(agent, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agent.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconRobot}
           icon={agent.icon}
           tone="blue"

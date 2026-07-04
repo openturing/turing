@@ -29,10 +29,11 @@ export default function BentoStoreInstanceListPage() {
       itemKey={(store) => store.id}
       emptyTitle={t("store.blankTitle")}
       emptyDescription={t("store.blankDescription")}
-      renderTile={(store, featured) => (
+      listId="embeddingStore"
+      renderTile={(store, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_STORE_INSTANCE}/${store.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconDatabase}
           icon={store.icon}
           tone="violet"

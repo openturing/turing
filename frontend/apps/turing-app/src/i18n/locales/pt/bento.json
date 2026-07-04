@@ -11,6 +11,20 @@
       "open": "Abrir paleta de comandos",
       "noResults": "Nenhum resultado",
       "opensConsole": "Abre no console"
+    },
+    "layout": {
+      "customize": "Personalizar layout",
+      "editHint": "Arraste os blocos para reordenar · escolha P / M / G para redimensionar",
+      "dragToReorder": "Arraste para reordenar",
+      "sizeGroup": "Tamanho do bloco",
+      "size": {
+        "small": "Pequeno",
+        "medium": "Médio",
+        "large": "Grande"
+      },
+      "save": "Salvar layout",
+      "saveGlobal": "Definir como padrão para todos",
+      "reset": "Restaurar padrão"
     }
   }
 }

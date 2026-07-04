@@ -24,10 +24,11 @@ export default function BentoTokenInstanceListPage() {
       itemKey={(token) => token.id}
       emptyTitle={t("apiToken.blankTitle")}
       emptyDescription={t("apiToken.blankDescription")}
-      renderTile={(token, featured) => (
+      listId="apiToken"
+      renderTile={(token, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_TOKEN_INSTANCE}/${token.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconCode}
           tone="slate"
           title={token.title}

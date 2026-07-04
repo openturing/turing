@@ -25,10 +25,11 @@ export default function BentoRoutineListPage() {
       itemKey={(routine) => routine.id ?? routine.name}
       emptyTitle={t("routine.blankTitle")}
       emptyDescription={t("routine.blankDescription")}
-      renderTile={(routine, featured) => (
+      listId="routine"
+      renderTile={(routine, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_ROUTINE_INSTANCE}/${routine.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconClock}
           tone="emerald"
           title={routine.name}

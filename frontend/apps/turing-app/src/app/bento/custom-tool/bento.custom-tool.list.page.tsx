@@ -24,10 +24,11 @@ export default function BentoCustomToolListPage() {
       itemKey={(tool) => tool.id}
       emptyTitle={t("customTool.blankTitle")}
       emptyDescription={t("customTool.blankDescription")}
-      renderTile={(tool, featured) => (
+      listId="customTool"
+      renderTile={(tool, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_CUSTOM_TOOL_INSTANCE}/${tool.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconBraces}
           icon={tool.icon}
           tone="slate"

@@ -29,10 +29,11 @@ export default function BentoMcpServerListPage() {
       itemKey={(server) => server.id}
       emptyTitle={t("mcp.blankTitle")}
       emptyDescription={t("mcp.blankDescription")}
-      renderTile={(server, featured) => (
+      listId="mcpServer"
+      renderTile={(server, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_MCP_INSTANCE}/${server.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconServer2}
           icon={server.icon}
           tone="amber"

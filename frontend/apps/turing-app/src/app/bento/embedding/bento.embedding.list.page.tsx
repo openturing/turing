@@ -28,10 +28,11 @@ export default function BentoEmbeddingModelListPage() {
       itemKey={(model) => model.id}
       emptyTitle={t("embeddingModel.blankTitle")}
       emptyDescription={t("embeddingModel.blankDescription")}
-      renderTile={(model, featured) => (
+      listId="embeddingModel"
+      renderTile={(model, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_EMBEDDING_MODEL_INSTANCE}/${model.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconCube}
           icon={model.icon}
           tone="violet"

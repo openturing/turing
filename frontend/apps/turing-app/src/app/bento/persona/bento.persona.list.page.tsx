@@ -24,10 +24,11 @@ export default function BentoPersonaListPage() {
       itemKey={(persona) => persona.id ?? persona.name}
       emptyTitle={t("persona.blankTitle")}
       emptyDescription={t("persona.blankDescription")}
-      renderTile={(persona, featured) => (
+      listId="persona"
+      renderTile={(persona, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_PERSONA_INSTANCE}/${persona.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconUserCircle}
           tone="rose"
           title={persona.name}

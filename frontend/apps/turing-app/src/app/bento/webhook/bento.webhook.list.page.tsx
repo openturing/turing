@@ -24,10 +24,11 @@ export default function BentoWebhookListPage() {
       itemKey={(webhook) => webhook.id ?? webhook.name}
       emptyTitle={t("webhook.blankTitle")}
       emptyDescription={t("webhook.blankDescription")}
-      renderTile={(webhook, featured) => (
+      listId="chatWebhook"
+      renderTile={(webhook, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE}/${webhook.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconWebhook}
           tone="rose"
           title={webhook.name}

@@ -190,9 +190,6 @@ fully shipped.**
 - 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). → §XXXI.10
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
 
-**Enhancement — customizable list layout (user-driven bento emphasis):**
-- 📋 **T575** (deps: T574) **Bento list drag-reorder + emphasis UX** — `@dnd-kit` drag that changes **order only** (keyboard sensor for the a11y baseline, per T550), a per-card **emphasis affordance** (size cycler / "feature" pin — never position-coupled), and masonry/bin-packing over the `bento-grid` so explicit sizes leave no holes. Admin "set as default for everyone" + user "reset to default". → §XXXI.11
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

@@ -28,10 +28,11 @@ export default function BentoIntegrationInstanceListPage() {
       itemKey={(integration) => integration.id}
       emptyTitle={t("integration.blankTitle")}
       emptyDescription={t("integration.blankDescription")}
-      renderTile={(integration, featured) => (
+      listId="integration"
+      renderTile={(integration, emphasis) => (
         <BentoEntityTile
           to={`${ROUTES.BENTO_INTEGRATION_INSTANCE}/${integration.id}`}
-          featured={featured}
+          emphasis={emphasis}
           defaultIcon={IconPlugConnectedX}
           icon={integration.icon}
           tone="amber"
