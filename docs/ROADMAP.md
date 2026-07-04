@@ -163,7 +163,7 @@ fully shipped.**
 - ✅ **T552** — Embedding Store + Embedding Model → bento (two BYO-infra CRUDs; Embedding Model aliases `modelName`↔`title` at the page boundary). → CHANGELOG Block AG.
 - ✅ **T553** — API Token + Integration → bento (Token drove a `hideIcon` shell option; new `apiToken` nav item). → CHANGELOG Block AG.
 - ✅ **T554** — MCP Server + Custom Tool → bento (Custom Tool keeps its Groovy editor + params + Vibe-Coding inside the form body). → CHANGELOG Block AG.
-- 📋 **T555** (deps: T548) **Routine + Chat Webhook → bento**. → §XXXI.5
+- ✅ **T555** — Routine + Chat Webhook → bento (both alias `name`↔`title` + boolean↔numeric `enabled`, `hideIcon`). → CHANGELOG Block AG.
 - 📋 **T556** (deps: T548) **Persona + Git → bento**. → §XXXI.5
 
 **Phase 2 — complex CRUD & editors:**

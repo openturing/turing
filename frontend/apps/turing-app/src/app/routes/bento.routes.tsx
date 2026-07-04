@@ -23,6 +23,10 @@ const BentoMcpServerListPage = lazy(() => import("../bento/mcp/bento.mcp.server.
 const BentoMcpServerPage = lazy(() => import("../bento/mcp/bento.mcp.server.page"));
 const BentoCustomToolListPage = lazy(() => import("../bento/custom-tool/bento.custom-tool.list.page"));
 const BentoCustomToolPage = lazy(() => import("../bento/custom-tool/bento.custom-tool.page"));
+const BentoRoutineListPage = lazy(() => import("../bento/routine/bento.routine.list.page"));
+const BentoRoutinePage = lazy(() => import("../bento/routine/bento.routine.page"));
+const BentoWebhookListPage = lazy(() => import("../bento/webhook/bento.webhook.list.page"));
+const BentoWebhookPage = lazy(() => import("../bento/webhook/bento.webhook.page"));
 
 export const BentoRoutes = (
   <Route path={ROUTES.BENTO_ROOT} element={<BentoRootPage />}>
@@ -60,5 +64,11 @@ export const BentoRoutes = (
     <Route path="custom-tool" element={<Navigate to={ROUTES.BENTO_CUSTOM_TOOL_INSTANCE} replace />} />
     <Route path="custom-tool/instance" element={<BentoCustomToolListPage />} />
     <Route path="custom-tool/instance/:id" element={<BentoCustomToolPage />} />
+    <Route path="routine" element={<Navigate to={ROUTES.BENTO_ROUTINE_INSTANCE} replace />} />
+    <Route path="routine/instance" element={<BentoRoutineListPage />} />
+    <Route path="routine/instance/:id" element={<BentoRoutinePage />} />
+    <Route path="chat-webhook" element={<Navigate to={ROUTES.BENTO_CHAT_WEBHOOK_INSTANCE} replace />} />
+    <Route path="chat-webhook/instance" element={<BentoWebhookListPage />} />
+    <Route path="chat-webhook/instance/:id" element={<BentoWebhookPage />} />
   </Route>
 );
