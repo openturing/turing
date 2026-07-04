@@ -182,7 +182,7 @@ fully shipped.**
 
 **Phase 4 — admin & tenancy:**
 - ✅ **T567** — Admin settings → bento (`app/bento/admin/`): `BentoHero` + pill tab-bar over users/groups/roles list `Outlet`s (settings/tokens tabs link to their migrated surfaces); reuses the Keycloak-vs-JPA dependent-query hooks + the admin forms/Keycloak views verbatim via a new `listRoute` prop. `administration` was the last console-only nav item → nav-config migration complete. **Phase 4 opens.** → CHANGELOG Block AG.
-- 📋 **T568** (deps: T567) **Tenant settings + Tenant admin + User account → bento**. → §XXXI.9
+- ✅ **T568** — Tenant settings + Tenant admin + User account → bento (`app/bento/{user,tenant}/`): account is a hero + Profile/Preferences tabs over the reused console pages (new `header` prop drops the sidebar-coupled `SubPageHeader`); the two tenant surfaces are reused verbatim under a `BentoHero`; `BentoUserMenu` gains tenancy-gated Organizations + Tenant admin entries. **Phase 4 complete** — every surface now exists in bento. → CHANGELOG Block AG.
 
 **Phase 5 — cutover & retirement:**
 - 📋 **T569** (deps: T551–T568) **Make `/bento` the default interface** — route cutover, console → bento redirects, drop the "Preview" badge. → §XXXI.10

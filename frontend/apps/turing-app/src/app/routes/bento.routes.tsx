@@ -86,6 +86,12 @@ const BentoAdminGroupsListPage = lazy(() => import("../bento/admin/bento.admin.g
 const BentoAdminGroupPage = lazy(() => import("../bento/admin/bento.admin.group.page"));
 const BentoAdminRolesListPage = lazy(() => import("../bento/admin/bento.admin.roles.list.page"));
 const BentoAdminRolePage = lazy(() => import("../bento/admin/bento.admin.role.page"));
+// Phase 4 (T568) — tenant settings + tenant admin + user account in the bento shell.
+const BentoUserAccountPage = lazy(() => import("../bento/user/bento.user.account.page"));
+const UserProfilePage = lazy(() => import("../console/user/profile/user.profile.page"));
+const UserPreferencesPage = lazy(() => import("../console/user/preferences/user.preferences.page"));
+const BentoTenantSettingsPage = lazy(() => import("../bento/tenant/bento.tenant.settings.page"));
+const BentoTenantAdminPage = lazy(() => import("../bento/tenant/bento.tenant.admin.page"));
 
 function RedirectToBentoPersonaGeneral() {
   const { id } = useParams();
@@ -195,5 +201,13 @@ export const BentoRoutes = (
     <Route path="admin/users/:username" element={<BentoAdminUserPage />} />
     <Route path="admin/groups/:groupId" element={<BentoAdminGroupPage />} />
     <Route path="admin/roles/:roleId" element={<BentoAdminRolePage />} />
+    {/* Phase 4 (T568) — user account (profile/preferences) + tenant surfaces. */}
+    <Route path="user/account" element={<BentoUserAccountPage />}>
+      <Route index element={<Navigate to={`${ROUTES.BENTO_USER_ACCOUNT}/profile`} replace />} />
+      <Route path="profile" element={<UserProfilePage header={null} />} />
+      <Route path="preferences" element={<UserPreferencesPage header={null} />} />
+    </Route>
+    <Route path="tenant" element={<BentoTenantSettingsPage />} />
+    <Route path="tenant-admin" element={<BentoTenantAdminPage />} />
   </Route>
 );

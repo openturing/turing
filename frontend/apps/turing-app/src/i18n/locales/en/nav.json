@@ -1,6 +1,10 @@
 {
   "nav": {
     "account": "Account",
+    "organizations": "Organizations",
+    "organizationsDesc": "Switch the active organization or create a new one.",
+    "tenantAdmin": "Tenant administration",
+    "tenantAdminDesc": "Platform-wide tenant management: suspend, reactivate, or impersonate.",
     "logOut": "Log out"
   }
 }
