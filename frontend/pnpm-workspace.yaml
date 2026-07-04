@@ -13,6 +13,9 @@ allowBuilds:
   "@swc/core": true
   "@tailwindcss/oxide": true
 
+minimumReleaseAgeExclude:
+  - '@viglet/viglet-design-system@2026.3.2'
+
 # Force a single @codemirror/view copy. @codemirror/language@6.12.3 pulled in
 # 6.41.1 while @uiw/react-codemirror / codemirror@6.0.2 used 6.43.0. Two view
 # copies make CodeMirror silently drop the syntax-highlighting ViewPlugin
