@@ -137,6 +137,58 @@ fully shipped.**
 > [CHANGELOG.md](CHANGELOG.md) → Block AF; §XXX design rationale removed on ship
 > per the founding rule.
 
+## Block AG — Bento UI: complete the interface migration (100%)
+
+> A Bento (iOS-flavored frosted-glass mosaic) redesign of the admin was started
+> and lives **in parallel** at `/bento` under a "Preview" badge — only 3 surfaces
+> exist so far: **home**, **AI Agent**, **LLM instance** (list + detail). The
+> detail pattern is settled and reusable: a `BentoHero` with inline-edit identity
+> fields (title/description/status/icon), a scroll-linked hero→sticky-`BentoSaveBar`
+> morph, a `⋮` `BentoActionsMenu` for destructive actions, and `BentoFormSection`
+> wrappers that **reuse the existing react-hook-form fields unchanged** — so each
+> remaining screen is mostly a re-skin, not a rewrite. This block takes it to
+> **100%**: migrate every console CRUD/functional surface, make `/bento` the
+> default interface, and retire the legacy console. Goal per the ask: fluid,
+> concise, friendly. Design + full screen inventory → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXI.
+
+**Phase 0 — foundation (gate the rest):**
+- ✅ **T547** — Migration architecture & cutover strategy (ADR `0002`): Bento-as-primary, route-swap + `<Navigate>` redirects (no runtime flag), closed surface inventory. → CHANGELOG Block AG.
+- 📋 **T548** (deps: T547) **Extract a shared Bento CRUD scaffold** — factor the LLM/AI-Agent detail+list pattern (`BentoEntityShell` + `BentoListPage`) so each remaining entity is a thin config (icon/tone/fields/queries), not a bespoke page — the lever that makes Phases 1–4 cheap. → §XXXI.2
+- 📋 **T549** (deps: T547) **Global Bento navigation + command palette** — the console sidebar has no bento equivalent; add persistent nav + `⌘K` palette so deep areas are reachable without the launcher home. → §XXXI.3
+- 📋 **T550** (deps: T548) **Bento conventions: i18n, a11y, responsive, tests** — codify i18n key reuse, keyboard/focus a11y, breakpoint rules, and vitest coverage for the shared components before fan-out. → §XXXI.4
+
+**Phase 1 — BYO-infra & simple CRUD (reuse T548 scaffold, LLM pattern applies directly):**
+- 📋 **T551** (deps: T548) **Search Engine (SE) → bento** — list + instance detail. → §XXXI.5
+- 📋 **T552** (deps: T548) **Embedding Store + Embedding Model → bento** — two adjacent BYO-infra CRUDs. → §XXXI.5
+- 📋 **T553** (deps: T548) **API Token + Integration → bento**. → §XXXI.5
+- 📋 **T554** (deps: T548) **MCP Server + Custom Tool → bento** (Custom Tool keeps its Groovy editor inside a `BentoFormSection`). → §XXXI.5
+- 📋 **T555** (deps: T548) **Routine + Chat Webhook → bento**. → §XXXI.5
+- 📋 **T556** (deps: T548) **Persona + Git → bento**. → §XXXI.5
+
+**Phase 2 — complex CRUD & editors:**
+- 📋 **T557** (deps: T548) **Semantic Navigation instance → bento** — the largest CRUD; instance identity + config sections. → §XXXI.6
+- 📋 **T558** (deps: T557) **SN fields sub-CRUD + manifest/coverage surfaces → bento** — nested field editor, field-coverage bars, manifest plan/diff. → §XXXI.6
+- 📋 **T559** (deps: T557) **SN onboarding wizard → bento** — multi-step flow re-skinned as a bento stepper. → §XXXI.6
+- 📋 **T560** (deps: T549) **Skill folder editor (mini VS Code) in the bento shell** — the file-tree + editor surface adapted to the frosted shell. → §XXXI.7
+- 📋 **T561** (deps: T549) **Asset browser/manager → bento** — grid/file-browser surface. → §XXXI.7
+- 📋 **T562** (deps: T548) **Page CRUD → bento**. → §XXXI.5
+
+**Phase 3 — functional & dashboard surfaces:**
+- 📋 **T563** (deps: T549) **Chat workspace + Conversation detail in the bento shell** — the chat surface itself under the bento header/nav. → §XXXI.8
+- 📋 **T564** (deps: T549) **AI Analytics suite → bento** — cost-governance, chat-analytics, parked-conversations, capability-matrix dashboards. → §XXXI.8
+- 📋 **T565** (deps: T549) **GraphQL explorer + Dashboard + Marketplace + Voice Kiosk → bento**. → §XXXI.8
+- 📋 **T566** (deps: T549) **Global Settings + Import/Exchange + Logging + System Info → bento**. → §XXXI.8
+
+**Phase 4 — admin & tenancy:**
+- 📋 **T567** (deps: T548, T549) **Admin settings → bento** — users / groups / roles / settings / tokens, preserving the Keycloak-vs-JPA dependent-query pattern. → §XXXI.9
+- 📋 **T568** (deps: T567) **Tenant settings + Tenant admin + User account → bento**. → §XXXI.9
+
+**Phase 5 — cutover & retirement:**
+- 📋 **T569** (deps: T551–T568) **Make `/bento` the default interface** — route cutover, console → bento redirects, drop the "Preview" badge. → §XXXI.10
+- 📋 **T570** (deps: T569) **Retire the legacy console** — delete migrated `console/*` pages + dead routes/components; no orphaned imports. → §XXXI.10
+- 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). → §XXXI.10
+- 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

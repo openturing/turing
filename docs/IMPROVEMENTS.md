@@ -1926,3 +1926,136 @@ it's an alternative backend, not a rewrite.
 > (T545). T546 collapsed the one pure-ceremony port (`TurCustomTool`, no mocking
 > need) to a mapper-backed reader; the end state is **7 ports + 8 records + 1
 > reader**. What shipped is indexed in [`CHANGELOG.md`](CHANGELOG.md) → Block AF.
+
+## XXXI. Bento UI — complete the interface migration (Block AG)
+
+> Design rationale for Block AG (T547–T572). The goal is to take the Bento
+> redesign from a 3-screen `/bento` "Preview" to **100% of the admin
+> interface**, then retire the legacy console. Guiding words from the ask:
+> **fluido, conciso, amigável**.
+
+### XXXI.0 Where we are
+
+Bento is a **parallel** route tree mounted at `/bento` (see
+`app/routes/bento.routes.tsx`), rendered inside `BentoRootPage` — a frosted-glass
+shell with a sticky blurred header, ambient gradient blobs, iOS-style
+route-hierarchy "up" navigation, a dark-mode toggle and a user menu. It carries a
+"Preview" badge and does **not** replace the console. Migrated so far:
+
+- `bento/home` — a launcher mosaic of feature tiles (privilege-gated), with an
+  inline `ChatStarter` when a default agent + enabled LLM exist.
+- `bento/ai-agent` — list (`bento-grid` of tiles) + detail dashboard.
+- `bento/llm` — list + instance detail + form.
+
+The **detail pattern is settled and worth codifying** because it's what makes the
+rest cheap:
+
+- `BentoHero` owns the entity identity — `BentoInlineEdit` title/description,
+  a `BentoHeroIconPicker` (Iconify), and a status pill. In *existing* mode each
+  field commits immediately via the update mutation (type → blur → saved); in
+  *new* mode fields stage locally and the form's Save creates the entity.
+- A scroll-linked **hero → sticky `BentoSaveBar` morph** driven by a single
+  `--bento-fade` CSS custom property on `<html>` (rAF loop, zero React re-renders
+  during scroll) — Save/Cancel live in the hero and fade into a fixed bar.
+- Destructive actions live in a `⋮` `BentoActionsMenu`, never in the save bar.
+- `BentoFormSection` groups the remaining fields under a tonal icon chip and
+  **wraps the existing react-hook-form `FormField`/`Input`/`Select`/`Switch`
+  unchanged** — so migrating a screen is re-skinning its layout, not rewriting
+  its logic or validation.
+
+The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
+the bento pages consume directly — no data-layer work per screen.
+
+> **T547 shipped** — architecture & cutover decision now lives in ADR
+> `docs/adr/0002-bento-ui-migration-cutover.md` (Bento-as-primary, route-swap +
+> `<Navigate>` redirects, closed surface inventory). See CHANGELOG Block AG.
+
+### XXXI.2 T548 — the shared scaffold (the lever)
+
+Today `bento.llm.instance.page.tsx` hand-rolls the Shell (staged hero state,
+scroll morph, immediate-save vs staged-create, delete dialog). Copy-pasting that
+~360-line file ~25 times is the wrong move. Extract:
+
+- `BentoEntityShell` — the hero + inline-edit + save-bar-morph + actions-menu +
+  new/existing mode logic, parameterized by a small config (entity type, icon,
+  tone, query hooks, identity-field getters).
+- `BentoListPage` — the `bento-grid` + New tile + featured-first tiling + empty
+  hint, parameterized by an item→tile renderer.
+
+Then each Phase 1–4 screen is a thin config + its `BentoFormSection` field
+groups. This is the single highest-ROI task in the block; everything after it is
+priced against it.
+
+### XXXI.3 T549 — navigation & command palette
+
+The console has a sidebar; bento home is a launcher. A launcher alone means deep
+screens (admin sub-pages, analytics, a specific SN field) cost too many clicks.
+Add a persistent bento nav (collapsible rail or top segmented nav) **and** a
+`⌘K` command palette over all routes/entities — the "concise & friendly" lever
+for power users, and a prerequisite for the editor/dashboard surfaces that aren't
+reachable from the home mosaic.
+
+### XXXI.4 T550 — conventions before fan-out
+
+Lock the rules so 20 screens don't drift: reuse existing i18n keys (the bento
+pages already pull `home.*`, `llm.*`, `forms.common.*`), a11y baseline
+(keyboard-reachable inline-edit, focus-visible on tiles, `aria-label`s on
+icon-only controls, `prefers-reduced-motion` guards on the spring/pulse
+animations), responsive breakpoints for the `bento-grid` spans on mobile, and
+vitest coverage for `BentoEntityShell`/`BentoListPage` so regressions surface
+once, centrally.
+
+### XXXI.5 Phases 1 & the simple-CRUD tail (T551–T556, T562)
+
+These are the BYO-infra and plain entity CRUDs — SE, Embedding Store, Embedding
+Model, Token, Integration, MCP Server, Custom Tool, Routine, Chat Webhook,
+Persona, Git, Page. Each is the LLM pattern: list of tiles → hero-driven detail →
+`BentoFormSection`s wrapping the current fields. Grouped ~2 per task so each is a
+shippable PR. Custom Tool and Skill keep their code editors inside a section (the
+editor component is reused as-is). BYO-infra screens must keep the `T372`
+GLOBAL-is-read-only behavior in the bento CRUD.
+
+### XXXI.6 Semantic Navigation (T557–T559)
+
+The heaviest area. Three tasks: the **instance** CRUD (identity + engine/store
+bindings + config sections), the **fields** sub-CRUD (a nested editor — best
+rendered as its own bento sub-surface, not a modal — plus the T388 coverage bars
+and T386 manifest plan/diff), and the **onboarding wizard** re-skinned as a bento
+stepper. Splitting keeps each PR reviewable.
+
+### XXXI.7 Editors & browsers (T560–T561)
+
+Skill (the T318 mini-VS-Code file-tree + editor) and Asset (file browser) aren't
+form CRUDs — they're app-like surfaces. They mainly need to sit correctly inside
+the bento shell (full-height layout inside the frosted chrome, the
+`turing-resizable-panel` `overflowHidden` gotcha) rather than adopt the
+hero/save-bar pattern. Reachable via T549 nav, not the home mosaic.
+
+### XXXI.8 Functional & dashboard surfaces (T563–T566)
+
+Chat, Conversation detail, the AI-Analytics dashboards (cost-governance,
+chat-analytics, parked-conversations, capability-matrix), GraphQL explorer,
+Dashboard, Marketplace, Voice Kiosk, Global Settings, Import/Exchange, Logging,
+System Info. These are read-mostly / bespoke; the work is hosting them in the
+bento shell + nav and applying the frosted-tile visual language to their existing
+charts/panels — not the CRUD scaffold. Chart color rules follow the dataviz
+guidance and the brand blue→indigo palette.
+
+### XXXI.9 Admin & tenancy (T567–T568)
+
+Admin settings (users/groups/roles/settings/tokens), Tenant settings, Tenant
+admin, User account. The only subtlety is preserving the existing **Keycloak-vs-
+JPA dependent-query pattern** (see `api/queries/admin.queries.ts`) — the bento
+re-skin must not collapse the source discriminator that toggles cleanly between
+backends.
+
+### XXXI.10 Cutover & retirement (T569–T572)
+
+Once every surface exists in bento: flip `/bento` to be the default entry, add
+`console/*` → `/bento/*` redirects, drop the "Preview" badge (T569); delete the
+migrated console pages and prune dead routes/components/imports (T570); a full
+a11y + responsive + performance (lazy-load/bundle) + e2e smoke pass across the
+whole surface (T571); and a delight polish round — consistent empty-states, a
+keyboard-shortcut guide, reduced-motion audit, first-run tour (T572, 💭). Only
+after T570 is the console truly retired; until then it stays live as the fallback.
+
