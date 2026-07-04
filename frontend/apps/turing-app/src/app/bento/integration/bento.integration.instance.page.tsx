@@ -3,6 +3,7 @@ import { ROUTES } from "@/app/routes.const";
 import { BentoEntityShell } from "@/components/bento";
 import { GlobalBadge, GlobalReadOnlyNotice } from "@/components/infra-global-notice";
 import { LoadProvider } from "@/components/loading-provider";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { useInfraReadOnly } from "@/hooks/use-infra-read-only";
 import { resolveIcon } from "@/lib/icon-resolver";
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts";
@@ -153,9 +154,18 @@ export default function BentoIntegrationInstancePage() {
     return (
       <>
         {subNav}
-        <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</div>}>
-          <RemoteDumontRoutes />
-        </Suspense>
+        {/*
+         * Dumont's remote pages render the design-system `SubPageHeader`, whose
+         * `SidebarTrigger` calls `useSidebar()` — so they need a `SidebarProvider`
+         * ancestor. The console root provides one; the Bento shell uses its own
+         * nav rail and does not, so we scope a provider here. With no `<Sidebar>`
+         * mounted the trigger is a harmless no-op toggle.
+         */}
+        <SidebarProvider defaultOpen={false} className="min-h-0 block">
+          <Suspense fallback={<div className="flex items-center justify-center py-12 text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</div>}>
+            <RemoteDumontRoutes />
+          </Suspense>
+        </SidebarProvider>
       </>
     );
   }
