@@ -111,7 +111,7 @@ function NewTile({
         <span className={`bento-pulse grid h-10 w-10 place-items-center rounded-2xl bg-linear-to-br ${gradient} text-white shadow-md`}>
           <IconPlus size={20} />
         </span>
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("forms.formActions.new", "New")}</span>
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("forms.formActions.new", { defaultValue: "New" })}</span>
       </div>
       <div>
         <div className="text-base font-semibold tracking-tight md:text-lg">

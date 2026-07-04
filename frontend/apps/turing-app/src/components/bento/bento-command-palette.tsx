@@ -81,9 +81,9 @@ export function BentoCommandPalette({ open, onOpenChange }: Readonly<BentoComman
         className="top-[15%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0"
         onKeyDown={onKeyDown}
       >
-        <DialogTitle className="sr-only">{t("bento.palette.title", "Command palette")}</DialogTitle>
+        <DialogTitle className="sr-only">{t("bento.palette.title", { defaultValue: "Command palette" })}</DialogTitle>
         <DialogDescription className="sr-only">
-          {t("bento.palette.description", "Search and jump to any area")}
+          {t("bento.palette.description", { defaultValue: "Search and jump to any area" })}
         </DialogDescription>
 
         <div className="flex items-center gap-3 border-b border-border/60 px-4">
@@ -93,12 +93,12 @@ export function BentoCommandPalette({ open, onOpenChange }: Readonly<BentoComman
             autoFocus
             type="text"
             role="combobox"
-            aria-expanded
+            aria-expanded="true"
             aria-controls="bento-palette-list"
             aria-activedescendant={results[activeIndex] ? `bento-palette-opt-${activeIndex}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("bento.palette.placeholder", "Search areas…")}
+            placeholder={t("bento.palette.placeholder", { defaultValue: "Search areas…" })}
             className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -112,7 +112,7 @@ export function BentoCommandPalette({ open, onOpenChange }: Readonly<BentoComman
         >
           {results.length === 0 && (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-              {t("bento.palette.noResults", "No matches")}
+              {t("bento.palette.noResults", { defaultValue: "No matches" })}
             </p>
           )}
           {results.map(({ item, label }, index) => {
@@ -126,7 +126,7 @@ export function BentoCommandPalette({ open, onOpenChange }: Readonly<BentoComman
                 id={`bento-palette-opt-${index}`}
                 data-index={index}
                 role="option"
-                aria-selected={active}
+                aria-selected={active ? "true" : "false"}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => go(item)}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
@@ -136,9 +136,12 @@ export function BentoCommandPalette({ open, onOpenChange }: Readonly<BentoComman
                 <Icon size={18} className="shrink-0 text-muted-foreground" />
                 <span className="flex-1 truncate">{label}</span>
                 {external ? (
-                  <IconExternalLink size={15} className="shrink-0 text-muted-foreground/70" aria-label={t("bento.palette.opensConsole", "Opens in console")} />
+                  <>
+                    <IconExternalLink aria-hidden size={15} className="shrink-0 text-muted-foreground/70" />
+                    <span className="sr-only">{t("bento.palette.opensConsole", { defaultValue: "Opens in console" })}</span>
+                  </>
                 ) : (
-                  active && <IconArrowRight size={15} className="shrink-0 text-muted-foreground" />
+                  active && <IconArrowRight aria-hidden size={15} className="shrink-0 text-muted-foreground" />
                 )}
               </button>
             );

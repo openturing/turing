@@ -109,11 +109,11 @@ export default function BentoRootPage() {
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              aria-label={t("bento.palette.open", "Open command palette")}
+              aria-label={t("bento.palette.open", { defaultValue: "Open command palette" })}
               className="bento-tile bento-tile-clickable inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 py-1.5 pl-3 pr-2 text-sm text-muted-foreground backdrop-blur hover:text-foreground"
             >
               <IconSearch size={16} />
-              <span className="hidden sm:inline">{t("bento.palette.search", "Search")}</span>
+              <span className="hidden sm:inline">{t("bento.palette.search", { defaultValue: "Search" })}</span>
               <kbd className="hidden rounded border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide sm:inline">
                 ⌘K
               </kbd>

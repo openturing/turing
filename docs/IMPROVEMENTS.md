@@ -1981,15 +1981,12 @@ the bento pages consume directly — no data-layer work per screen.
 > migrate). Both driven by a single `bento-nav.config.ts` registry that mirrors
 > the console `AppSidebar` taxonomy. See CHANGELOG Block AG.
 
-### XXXI.4 T550 — conventions before fan-out
-
-Lock the rules so 20 screens don't drift: reuse existing i18n keys (the bento
-pages already pull `home.*`, `llm.*`, `forms.common.*`), a11y baseline
-(keyboard-reachable inline-edit, focus-visible on tiles, `aria-label`s on
-icon-only controls, `prefers-reduced-motion` guards on the spring/pulse
-animations), responsive breakpoints for the `bento-grid` spans on mobile, and
-vitest coverage for `BentoEntityShell`/`BentoListPage` so regressions surface
-once, centrally.
+> **T550 shipped** — conventions codified in
+> [`components/bento/CONVENTIONS.md`](../frontend/apps/turing-app/src/components/bento/CONVENTIONS.md)
+> (i18n key reuse + object-form `t` defaults, a11y baseline, reduced-motion
+> guard extended to the ambient blobs, responsive rules) + vitest coverage for
+> all shared components under `components/bento/__tests__/`. **Phase 0 is
+> complete** — Phases 1–4 now fan out against the scaffold. See CHANGELOG Block AG.
 
 ### XXXI.5 Phases 1 & the simple-CRUD tail (T551–T556, T562)
 

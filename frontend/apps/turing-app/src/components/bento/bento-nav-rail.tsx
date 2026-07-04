@@ -37,7 +37,7 @@ export function BentoNavRail() {
   return (
     <TooltipProvider delayDuration={200}>
       <nav
-        aria-label={t("bento.nav.label", "Primary")}
+        aria-label={t("bento.nav.label", { defaultValue: "Primary" })}
         className="fixed inset-y-0 left-0 z-40 hidden w-16 flex-col items-center gap-1 border-r border-border/40 bg-background/55 pt-20 pb-4 backdrop-blur-xl backdrop-saturate-150 md:flex"
       >
         {grouped.map((group, groupIdx) => (

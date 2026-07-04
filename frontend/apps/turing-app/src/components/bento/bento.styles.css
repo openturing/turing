@@ -193,9 +193,16 @@
 @media (prefers-reduced-motion: reduce) {
   .bento-tile,
   .bento-shell-header,
-  .bento-pulse {
+  .bento-pulse,
+  .bento-save-bar-enter,
+  .bento-blob,
+  .bento-blob-2,
+  .bento-blob-3 {
     animation: none !important;
     transition: none !important;
   }
   .bento-tile:hover { transform: none; }
+  /* The scroll-linked hero->save-bar morph animates via the --bento-fade
+     custom property, not a CSS animation; the opacity swap still works but
+     the translate is already neutralised above (bento-fade-out/in). */
 }

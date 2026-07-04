@@ -155,7 +155,7 @@ fully shipped.**
 - ✅ **T547** — Migration architecture & cutover strategy (ADR `0002`): Bento-as-primary, route-swap + `<Navigate>` redirects (no runtime flag), closed surface inventory. → CHANGELOG Block AG.
 - ✅ **T548** — Shared Bento CRUD scaffold (`BentoEntityShell` + `BentoListPage` + `BentoEntityTile`); LLM + AI-Agent surfaces re-skinned onto it as proof. → CHANGELOG Block AG.
 - ✅ **T549** — Global Bento nav (`BentoNavRail`) + zero-dep `⌘K` `BentoCommandPalette`, both from one `bento-nav.config.ts` registry mirroring the console taxonomy. → CHANGELOG Block AG.
-- 📋 **T550** (deps: T548) **Bento conventions: i18n, a11y, responsive, tests** — codify i18n key reuse, keyboard/focus a11y, breakpoint rules, and vitest coverage for the shared components before fan-out. → §XXXI.4
+- ✅ **T550** — Bento conventions codified (`components/bento/CONVENTIONS.md`: i18n object-form defaults, a11y baseline + reduced-motion, responsive) + vitest coverage for the shared components. **Phase 0 complete.** → CHANGELOG Block AG.
 
 **Phase 1 — BYO-infra & simple CRUD (reuse T548 scaffold, LLM pattern applies directly):**
 - 📋 **T551** (deps: T548) **Search Engine (SE) → bento** — list + instance detail. → §XXXI.5
