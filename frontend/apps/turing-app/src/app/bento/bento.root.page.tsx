@@ -1,5 +1,13 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoBackToTop, BentoCommandPalette, BentoNavRail, BentoUserMenu } from "@/components/bento";
+import {
+  BENTO_NAV_ITEMS,
+  BENTO_NAV_SECTIONS,
+  BentoBackToTop,
+  BentoCommandPalette,
+  BentoNavRail,
+  BentoUserMenu,
+  bentoSectionAreaRoute,
+} from "@/components/bento";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserProvider } from "@/contexts/user.context";
@@ -9,32 +17,41 @@ import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 /**
- * Resolve the parent route for the current bento path.
+ * Resolve the parent route for the current bento path (config-driven, T573).
  *
  * iOS-style "up" navigation: the back button is anchored to the route
  * hierarchy, not to the browser history. That way a deep link or a
  * redirect-into-bento still goes somewhere predictable when the user
  * presses back, instead of bouncing them outside the bento section.
  *
- * Returns `null` when there's no in-app parent (we're already at bento
- * home) — the caller hides the back button in that case.
+ * The hierarchy is home → area hub → leaf list → leaf detail:
+ *  - a leaf **detail** (under a migrated `bentoRoute`) goes up to its list,
+ *  - a leaf **list** (exactly a `bentoRoute`) goes up to its section hub,
+ *  - an **area hub** goes up to home,
+ *  - home / `/bento` have no parent (returns `null`, hiding the button).
  */
 function resolveBentoParent(pathname: string): string | null {
-  if (pathname.startsWith(`${ROUTES.BENTO_AI_AGENT_INSTANCE}/`)) {
-    return ROUTES.BENTO_AI_AGENT_INSTANCE;
-  }
-  if (pathname === ROUTES.BENTO_AI_AGENT_INSTANCE
-      || pathname === `${ROUTES.BENTO_AI_AGENT_INSTANCE}/`) {
+  const path = pathname.replace(/\/$/, "");
+
+  // Top of the bento tree — no parent.
+  if (path === ROUTES.BENTO_HOME || path === ROUTES.BENTO_ROOT) return null;
+
+  // Area hubs sit directly under home.
+  if (BENTO_NAV_SECTIONS.some((s) => s.areaRoute === path)) {
     return ROUTES.BENTO_HOME;
   }
-  if (pathname.startsWith(`${ROUTES.BENTO_LLM_INSTANCE}/`)) {
-    return ROUTES.BENTO_LLM_INSTANCE;
+
+  // Migrated leaf surfaces (skip `home`, which has bentoRoute === BENTO_HOME).
+  for (const item of BENTO_NAV_ITEMS) {
+    if (!item.bentoRoute || item.bentoRoute === ROUTES.BENTO_HOME) continue;
+    if (path === item.bentoRoute) {
+      return bentoSectionAreaRoute(item) ?? ROUTES.BENTO_HOME;
+    }
+    if (path.startsWith(`${item.bentoRoute}/`)) {
+      return item.bentoRoute;
+    }
   }
-  if (pathname === ROUTES.BENTO_LLM_INSTANCE
-      || pathname === `${ROUTES.BENTO_LLM_INSTANCE}/`) {
-    return ROUTES.BENTO_HOME;
-  }
-  // /bento/home and /bento — top of the bento tree, no parent.
+
   return null;
 }
 

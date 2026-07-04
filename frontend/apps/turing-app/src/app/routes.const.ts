@@ -67,6 +67,10 @@ export const ROUTES = {
   REGISTER: "/register",
   BENTO_ROOT: "/bento",
   BENTO_HOME: "/bento/home",
+  // Section "hub" pages (T573) — the nav rail lists these, not the ~22 leaves.
+  BENTO_AREA_GENERATIVE_AI: "/bento/area/generative-ai",
+  BENTO_AREA_ENTERPRISE_SEARCH: "/bento/area/enterprise-search",
+  BENTO_AREA_MANAGEMENT: "/bento/area/management",
   BENTO_AI_AGENT: "/bento/ai-agent",
   BENTO_AI_AGENT_INSTANCE: "/bento/ai-agent/instance",
   BENTO_LLM: "/bento/llm",

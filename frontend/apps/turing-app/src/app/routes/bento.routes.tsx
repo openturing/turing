@@ -4,6 +4,7 @@ import { ROUTES } from "../routes.const";
 
 const BentoRootPage = lazy(() => import("../bento/bento.root.page"));
 const BentoHomePage = lazy(() => import("../bento/home/bento.home.page"));
+const BentoAreaPage = lazy(() => import("../bento/area/bento.area.page"));
 const BentoAIAgentListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.list.page"));
 const BentoAIAgentPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.page"));
 const BentoLLMInstanceListPage = lazy(() => import("../bento/llm/bento.llm.instance.list.page"));
@@ -13,6 +14,10 @@ export const BentoRoutes = (
   <Route path={ROUTES.BENTO_ROOT} element={<BentoRootPage />}>
     <Route index element={<Navigate to={ROUTES.BENTO_HOME} replace />} />
     <Route path="home" element={<BentoHomePage />} />
+    {/* Section hubs (T573) — one shared page resolves its section from the path. */}
+    <Route path="area/generative-ai" element={<BentoAreaPage />} />
+    <Route path="area/enterprise-search" element={<BentoAreaPage />} />
+    <Route path="area/management" element={<BentoAreaPage />} />
     <Route path="ai-agent" element={<Navigate to={ROUTES.BENTO_AI_AGENT_INSTANCE} replace />} />
     <Route path="ai-agent/instance" element={<BentoAIAgentListPage />} />
     <Route path="ai-agent/instance/:id" element={<BentoAIAgentPage />} />

@@ -156,6 +156,7 @@ fully shipped.**
 - ✅ **T548** — Shared Bento CRUD scaffold (`BentoEntityShell` + `BentoListPage` + `BentoEntityTile`); LLM + AI-Agent surfaces re-skinned onto it as proof. → CHANGELOG Block AG.
 - ✅ **T549** — Global Bento nav (`BentoNavRail`) + zero-dep `⌘K` `BentoCommandPalette`, both from one `bento-nav.config.ts` registry mirroring the console taxonomy. → CHANGELOG Block AG.
 - ✅ **T550** — Bento conventions codified (`components/bento/CONVENTIONS.md`: i18n object-form defaults, a11y baseline + reduced-motion, responsive) + vitest coverage for the shared components. **Phase 0 complete.** → CHANGELOG Block AG.
+- ✅ **T573** — Nav rail restructured to **hub-and-spoke**: rail lists Home + 3 section hubs (not the ~22 leaves) so it can't overflow the viewport as surfaces migrate; each hub is a shared `BentoAreaPage` mosaic; taxonomy unified into one `bento-nav.config.ts` (rail + hubs + home + `⌘K` all read it), retiring the home page's divergent `SECTIONS` array. → CHANGELOG Block AG.
 
 **Phase 1 — BYO-infra & simple CRUD (reuse T548 scaffold, LLM pattern applies directly):**
 - 📋 **T551** (deps: T548) **Search Engine (SE) → bento** — list + instance detail. → §XXXI.5

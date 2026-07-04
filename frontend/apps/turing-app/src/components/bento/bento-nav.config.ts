@@ -6,10 +6,12 @@ import {
   IconBrandGraphql,
   IconBuildingStore,
   IconClock,
+  IconCoin,
   IconCompass,
   IconCpu2,
   IconCube,
   IconDatabase,
+  IconFileImport,
   IconFolder,
   IconGitBranch,
   IconGlobe,
@@ -17,9 +19,12 @@ import {
   IconLayoutDashboard,
   IconMessageChatbot,
   IconPlugConnectedX,
+  IconReceiptRupee,
   IconReportAnalytics,
   IconRobot,
+  IconSearch,
   IconServer2,
+  IconSettings,
   IconShieldCog,
   IconSparkles,
   IconUserCircle,
@@ -27,89 +32,141 @@ import {
   IconZoomCode,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
+import type { BentoTone } from "./bento-tones";
 
-/** Top-level grouping for the Bento nav rail + command palette. */
+/** Top-level grouping for the Bento nav rail + area hubs + command palette. */
 export type BentoNavSectionId = "primary" | "generativeAi" | "enterpriseSearch" | "management";
+
+/** Tailwind grid-span presets for the bento mosaic (home + area hubs). */
+export const BENTO_SPAN_FEATURED =
+  "col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-2 lg:row-span-2";
+export const BENTO_SPAN_WIDE =
+  "col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-2 lg:row-span-1";
+export const BENTO_SPAN_SQUARE = "col-span-1 row-span-1";
 
 export interface BentoNavSection {
   id: BentoNavSectionId;
   /** i18n key for the section label. `primary` renders unlabelled. */
   labelKey?: string;
+  /** i18n key for the section description (shown on the area hub + home). */
+  descriptionKey?: string;
+  /** Icon shown for this section on the nav rail. */
+  icon?: TablerIcon;
+  /**
+   * The section "hub" page (T573). The nav rail links here; the hub renders
+   * every visible item of the section as a bento mosaic. `primary` has none —
+   * its single home item is the rail's Home button and the page root itself.
+   */
+  areaRoute?: string;
 }
 
+/**
+ * The four navigation sections. The rail lists **Home + the three hubs that
+ * have an `areaRoute`** — never the ~22 leaf surfaces (T573). This keeps the
+ * rail at a fixed, small height no matter how many surfaces migrate, killing
+ * the vertical-overflow problem the flat console sidebar had.
+ */
 export const BENTO_NAV_SECTIONS: readonly BentoNavSection[] = [
-  { id: "primary" },
-  { id: "generativeAi", labelKey: "home.sections.generativeAi.label" },
-  { id: "enterpriseSearch", labelKey: "home.sections.enterpriseSearch.label" },
-  { id: "management", labelKey: "home.sections.management.label" },
+  { id: "primary", icon: IconHome },
+  {
+    id: "generativeAi",
+    labelKey: "home.sections.generativeAi.label",
+    descriptionKey: "home.sections.generativeAi.description",
+    icon: IconSparkles,
+    areaRoute: ROUTES.BENTO_AREA_GENERATIVE_AI,
+  },
+  {
+    id: "enterpriseSearch",
+    labelKey: "home.sections.enterpriseSearch.label",
+    descriptionKey: "home.sections.enterpriseSearch.description",
+    icon: IconSearch,
+    areaRoute: ROUTES.BENTO_AREA_ENTERPRISE_SEARCH,
+  },
+  {
+    id: "management",
+    labelKey: "home.sections.management.label",
+    descriptionKey: "home.sections.management.description",
+    icon: IconSettings,
+    areaRoute: ROUTES.BENTO_AREA_MANAGEMENT,
+  },
 ];
 
 export interface BentoNavItem {
   id: string;
   /** i18n key for the item label. */
   titleKey: string;
+  /** i18n key for the item description (shown as tile body on hubs + home). */
+  descriptionKey: string;
   icon: TablerIcon;
   section: BentoNavSectionId;
+  /** Tile tone (gradient) on the mosaic. */
+  tone: BentoTone;
+  /** Grid span on the mosaic. Defaults to a 1x1 square when omitted. */
+  span?: string;
   /**
-   * Bento route once this surface is migrated. The nav rail lists **only**
-   * items that have one; the command palette links here when present.
+   * Bento route once this surface is migrated. The command palette links here
+   * when present; area hubs still link out to the console for unmigrated ones.
    */
   bentoRoute?: string;
   /**
-   * Console route the palette falls back to while a surface is not yet
-   * migrated — so `⌘K` reaches every area during the migration (per ADR
-   * 0002, the console stays live until Phase 5). When a surface migrates,
-   * set `bentoRoute` and it graduates onto the rail automatically.
+   * Console route the palette/hub falls back to while a surface is not yet
+   * migrated — so `⌘K` and the hubs reach every area during the migration
+   * (per ADR 0002, the console stays live until Phase 5).
    */
   consoleRoute: string;
   /** Privilege required to see the item; admins bypass. Undefined = always. */
   privilege?: string;
+  /** Hide unless at least one LLM instance is enabled. */
+  requiresLlm?: boolean;
 }
 
 /**
- * The single source of truth for Bento navigation (T549), mirroring the
- * console `AppSidebar` taxonomy. As each Block AG phase migrates a surface,
- * fill in its `bentoRoute` here and it appears on the rail without touching
- * the rail or palette components.
+ * The single source of truth for Bento navigation (T573) — the rail, the three
+ * area hubs, the home mosaic, and the `⌘K` palette all read from here. As each
+ * Block AG phase migrates a surface, fill in its `bentoRoute` and the palette
+ * navigates inside the shell instead of linking out.
  */
 export const BENTO_NAV_ITEMS: readonly BentoNavItem[] = [
-  // --- primary ---
-  { id: "home", titleKey: "home.title", icon: IconHome, section: "primary", bentoRoute: ROUTES.BENTO_HOME, consoleRoute: ROUTES.HOME },
-  { id: "dashboard", titleKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", consoleRoute: ROUTES.DASHBOARD },
+  // --- primary (rail Home button + palette; not rendered as a hub) ---
+  { id: "home", titleKey: "home.title", descriptionKey: "home.welcome", icon: IconHome, section: "primary", tone: "blue", bentoRoute: ROUTES.BENTO_HOME, consoleRoute: ROUTES.HOME },
+  { id: "dashboard", titleKey: "dashboard.title", descriptionKey: "dashboard.title", icon: IconLayoutDashboard, section: "primary", tone: "indigo", consoleRoute: ROUTES.DASHBOARD },
 
   // --- generative AI ---
-  { id: "aiAgent", titleKey: "home.features.aiAgent.title", icon: IconRobot, section: "generativeAi", bentoRoute: ROUTES.BENTO_AI_AGENT_INSTANCE, consoleRoute: "/admin/ai-agent/instance", privilege: "AI_AGENT_VIEW" },
-  { id: "languageModel", titleKey: "home.features.languageModel.title", icon: IconCpu2, section: "generativeAi", bentoRoute: ROUTES.BENTO_LLM_INSTANCE, consoleRoute: "/admin/llm/instance", privilege: "LLM_VIEW" },
-  { id: "embeddingModel", titleKey: "home.features.embeddingModel.title", icon: IconCube, section: "generativeAi", consoleRoute: ROUTES.EMBEDDING_MODEL_INSTANCE, privilege: "EMBEDDING_VIEW" },
-  { id: "embeddingStore", titleKey: "home.features.embeddingStore.title", icon: IconDatabase, section: "generativeAi", consoleRoute: "/admin/store/instance", privilege: "STORE_VIEW" },
-  { id: "mcpServer", titleKey: "home.features.mcpServer.title", icon: IconServer2, section: "generativeAi", consoleRoute: "/admin/mcp/instance" },
-  { id: "customTool", titleKey: "home.features.customTool.title", icon: IconBraces, section: "generativeAi", consoleRoute: ROUTES.CUSTOM_TOOL_INSTANCE },
-  { id: "routine", titleKey: "home.features.routine.title", icon: IconClock, section: "generativeAi", consoleRoute: ROUTES.ROUTINE_INSTANCE },
-  { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", icon: IconWebhook, section: "generativeAi", consoleRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
-  { id: "persona", titleKey: "home.features.persona.title", icon: IconUserCircle, section: "generativeAi", consoleRoute: ROUTES.PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" },
-  { id: "skills", titleKey: "home.features.skills.title", icon: IconSparkles, section: "generativeAi", consoleRoute: ROUTES.SKILL_ROOT },
-  { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", icon: IconReportAnalytics, section: "generativeAi", consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
-  { id: "chat", titleKey: "home.features.chat.title", icon: IconMessageChatbot, section: "generativeAi", consoleRoute: ROUTES.CHAT_ROOT },
+  { id: "aiAgent", titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", icon: IconRobot, section: "generativeAi", tone: "blue", span: BENTO_SPAN_FEATURED, bentoRoute: ROUTES.BENTO_AI_AGENT_INSTANCE, consoleRoute: "/admin/ai-agent/instance", privilege: "AI_AGENT_VIEW" },
+  { id: "languageModel", titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", icon: IconCpu2, section: "generativeAi", tone: "indigo", span: BENTO_SPAN_WIDE, bentoRoute: ROUTES.BENTO_LLM_INSTANCE, consoleRoute: "/admin/llm/instance", privilege: "LLM_VIEW" },
+  { id: "embeddingModel", titleKey: "home.features.embeddingModel.title", descriptionKey: "home.features.embeddingModel.description", icon: IconCube, section: "generativeAi", tone: "violet", consoleRoute: ROUTES.EMBEDDING_MODEL_INSTANCE, privilege: "EMBEDDING_VIEW" },
+  { id: "embeddingStore", titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", icon: IconDatabase, section: "generativeAi", tone: "violet", consoleRoute: "/admin/store/instance", privilege: "STORE_VIEW" },
+  { id: "mcpServer", titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", icon: IconServer2, section: "generativeAi", tone: "amber", consoleRoute: "/admin/mcp/instance" },
+  { id: "customTool", titleKey: "home.features.customTool.title", descriptionKey: "home.features.customTool.description", icon: IconBraces, section: "generativeAi", tone: "slate", consoleRoute: ROUTES.CUSTOM_TOOL_INSTANCE },
+  { id: "routine", titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", icon: IconClock, section: "generativeAi", tone: "emerald", consoleRoute: ROUTES.ROUTINE_INSTANCE },
+  { id: "chatWebhook", titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", icon: IconWebhook, section: "generativeAi", tone: "rose", consoleRoute: ROUTES.CHAT_WEBHOOK_INSTANCE },
+  { id: "persona", titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", icon: IconUserCircle, section: "generativeAi", tone: "rose", consoleRoute: ROUTES.PERSONA_INSTANCE, privilege: "AI_AGENT_VIEW" },
+  { id: "costGovernance", titleKey: "home.features.costGovernance.title", descriptionKey: "home.features.costGovernance.description", icon: IconCoin, section: "generativeAi", tone: "emerald", consoleRoute: ROUTES.COST_GOVERNANCE },
+  { id: "skills", titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", icon: IconSparkles, section: "generativeAi", tone: "violet", consoleRoute: ROUTES.SKILL_ROOT },
+  { id: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", icon: IconReportAnalytics, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.AI_ANALYTICS_ROOT },
+  { id: "chat", titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", icon: IconMessageChatbot, section: "generativeAi", tone: "indigo", consoleRoute: ROUTES.CHAT_ROOT, requiresLlm: true },
 
   // --- enterprise search ---
-  { id: "searchEngine", titleKey: "home.features.searchEngine.title", icon: IconZoomCode, section: "enterpriseSearch", consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
-  { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", icon: IconCompass, section: "enterpriseSearch", consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
-  { id: "integration", titleKey: "home.features.integration.title", icon: IconPlugConnectedX, section: "enterpriseSearch", consoleRoute: "/admin/integration/instance" },
-  { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", icon: IconBrandGraphql, section: "enterpriseSearch", consoleRoute: ROUTES.GRAPHQL_ROOT },
+  { id: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", icon: IconCompass, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_FEATURED, consoleRoute: "/admin/sn/instance", privilege: "SN_VIEW" },
+  { id: "searchEngine", titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", icon: IconZoomCode, section: "enterpriseSearch", tone: "emerald", span: BENTO_SPAN_WIDE, consoleRoute: "/admin/se/instance", privilege: "SE_VIEW" },
+  { id: "integration", titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", icon: IconPlugConnectedX, section: "enterpriseSearch", tone: "amber", consoleRoute: "/admin/integration/instance" },
+  { id: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", icon: IconBrandGraphql, section: "enterpriseSearch", tone: "rose", consoleRoute: ROUTES.GRAPHQL_ROOT },
 
   // --- management ---
-  { id: "assets", titleKey: "home.features.assets.title", icon: IconFolder, section: "management", consoleRoute: ROUTES.ASSET_ROOT },
-  { id: "pages", titleKey: "home.features.pages.title", icon: IconGlobe, section: "management", consoleRoute: ROUTES.PAGE_ROOT },
-  { id: "git", titleKey: "home.features.git.title", icon: IconGitBranch, section: "management", consoleRoute: ROUTES.GIT_ROOT },
-  { id: "marketplace", titleKey: "home.features.marketplace.title", icon: IconBuildingStore, section: "management", consoleRoute: ROUTES.MARKETPLACE_ROOT },
-  { id: "administration", titleKey: "home.features.administration.title", icon: IconShieldCog, section: "management", consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },
+  { id: "administration", titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", icon: IconShieldCog, section: "management", tone: "slate", span: BENTO_SPAN_WIDE, consoleRoute: ROUTES.ADMIN_ROOT, privilege: "__admin__" },
+  { id: "assets", titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", icon: IconFolder, section: "management", tone: "amber", consoleRoute: ROUTES.ASSET_ROOT },
+  { id: "pages", titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", icon: IconGlobe, section: "management", tone: "indigo", consoleRoute: ROUTES.PAGE_ROOT },
+  { id: "git", titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", icon: IconGitBranch, section: "management", tone: "violet", consoleRoute: ROUTES.GIT_ROOT },
+  { id: "marketplace", titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", icon: IconBuildingStore, section: "management", tone: "blue", consoleRoute: ROUTES.MARKETPLACE_ROOT },
+  { id: "import", titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", icon: IconFileImport, section: "management", tone: "indigo", consoleRoute: ROUTES.EXCHANGE_IMPORT },
+  { id: "logging", titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", icon: IconReceiptRupee, section: "management", tone: "rose", consoleRoute: ROUTES.LOGGING_INSTANCE },
 ];
 
 /**
  * Privilege-filtered nav items for the current user (admins see all). The
- * synthetic `__admin__` privilege gates admin-only areas. Feature-flag
- * gating (storage/git/marketplace) is intentionally deferred to the target
- * route itself — the palette links out to the console for unmigrated areas,
+ * synthetic `__admin__` privilege gates admin-only areas. Feature-flag gating
+ * (storage/git/marketplace) is intentionally deferred to the target route
+ * itself — the palette/hub links out to the console for unmigrated areas,
  * which already enforce those flags.
  */
 export function useVisibleBentoNav(): BentoNavItem[] {
@@ -129,7 +186,38 @@ export function useVisibleBentoNav(): BentoNavItem[] {
   );
 }
 
+export interface BentoNavGroup {
+  section: BentoNavSection;
+  items: BentoNavItem[];
+}
+
+/**
+ * Visible nav items grouped by section, in section order, dropping empty
+ * groups. The home mosaic, the area hubs, and the rail all derive from this.
+ */
+export function useVisibleBentoSections(): BentoNavGroup[] {
+  const items = useVisibleBentoNav();
+  return useMemo(
+    () =>
+      BENTO_NAV_SECTIONS.map((section) => ({
+        section,
+        items: items.filter((i) => i.section === section.id),
+      })).filter((g) => g.items.length > 0),
+    [items],
+  );
+}
+
 /** Resolve where an item navigates: bento route if migrated, else console. */
 export function bentoNavTarget(item: BentoNavItem): string {
   return item.bentoRoute ?? item.consoleRoute;
+}
+
+/** Look up a section by its hub route (used by the area hub page). */
+export function bentoSectionByAreaRoute(areaRoute: string): BentoNavSection | undefined {
+  return BENTO_NAV_SECTIONS.find((s) => s.areaRoute === areaRoute);
+}
+
+/** The hub route for an item's section, if the section has one. */
+export function bentoSectionAreaRoute(item: BentoNavItem): string | undefined {
+  return BENTO_NAV_SECTIONS.find((s) => s.id === item.section)?.areaRoute;
 }
