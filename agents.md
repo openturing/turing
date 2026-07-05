@@ -23,6 +23,7 @@
 > | `turing-search-lucene` | search-engine plugins (Solr/ES/Lucene), Lucene 10, faceting, vector store |
 > | `turing-llm-summary` | cached LLM insights / `TurLlmSummaryService` features |
 > | `turing-resizable-panel` | `ResizablePanel` layouts, side-panel / side-by-side AI authoring |
+> | `turing-bento-ui` | building or fixing a `/bento` page — `BentoHero`/`BentoEntityShell`/`BentoFormSection`/`BentoListPage`, frosted hover cards, or a page still showing console chrome (sidebar/`SectionCard`) |
 
 ### Project Structure
 
