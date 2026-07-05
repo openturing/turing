@@ -62,10 +62,11 @@ import { DialogDelete } from "@/components/dialog.delete"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { SectionCard } from "../../ui/section-card"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { CustomFacetFieldChangeDialog } from "./sn.site.custom.facet.field-change-dialog"
 import { CustomFacetItemRow } from "./sn.site.custom.facet.item-row"
 import {
@@ -94,9 +95,11 @@ interface Props {
   /** SN instance base route for navigation (item editor + save/cancel).
    *  Defaults to the console; Bento passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
+  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+  chrome?: SNFormChrome;
 }
 
-export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSiteCustomFacet>({
     defaultValues: {
@@ -282,6 +285,35 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
     }
   }
 
+  const isBento = chrome === "bento";
+
+  const actions = (
+    <>
+      {onDelete && open !== undefined && setOpen && (
+        <DialogDelete
+          feature={t("sn.facets.customField")}
+          name={value.name}
+          onDelete={onDelete}
+          open={open}
+          setOpen={setOpen}
+        />
+      )}
+      <GradientButton type="submit" size="sm">
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
+      >
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
+
   return (
     <>
       <CustomFacetFieldChangeDialog
@@ -291,47 +323,38 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
         onCancel={onCancelFieldChange}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconFilter}
-              feature={t("sn.facets.customField")}
-              description={value.defaultLabel ?? ""}
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+          {isBento ? (
+            <BentoHero
+              eyebrow={<Link to={`${baseRoute}/${snSiteId}/facet`} className="hover:text-foreground">{t("sn.facets.title")}</Link>}
+              leading={
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                  <IconFilter size={24} />
+                </span>
+              }
+              title={value.name || t("sn.facets.customField")}
+              subtitle={value.defaultLabel || t("sn.facets.customField")}
+              trailing={actions}
             />
-            <StickyPageHeader.Actions>
-              {onDelete && open !== undefined && setOpen && (
-                <DialogDelete
-                  feature={t("sn.facets.customField")}
-                  name={value.name}
-                  onDelete={onDelete}
-                  open={open}
-                  setOpen={setOpen}
-                />
-              )}
-              <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`${baseRoute}/${snSiteId}/facet`)}
-              >
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
-            </StickyPageHeader.Actions>
-          </StickyPageHeader>
+          ) : (
+            <StickyPageHeader>
+              <StickyPageHeader.Title
+                icon={IconFilter}
+                feature={t("sn.facets.customField")}
+                description={value.defaultLabel ?? ""}
+              />
+              <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+            </StickyPageHeader>
+          )}
 
           {/* Basic Information Section */}
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconInfoCircle}
-              title={t("forms.snCustomFacet.basicInfo")}
-              description={t("forms.snCustomFacet.basicInfoDesc")}
-            />
-            <SectionCard.Content>
+          <SNFormSection
+            chrome={chrome}
+            icon={IconInfoCircle}
+            tone="blue"
+            title={t("forms.snCustomFacet.basicInfo")}
+            description={t("forms.snCustomFacet.basicInfoDesc")}
+          >
               <FormField
                 control={control}
                 name="name"
@@ -357,17 +380,16 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   </FormItem>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+          </SNFormSection>
 
           {/* Labels Section */}
-          <SectionCard variant="violet">
-            <SectionCard.Header
-              icon={IconLanguage}
-              title={t("forms.snCustomFacet.displayLabels")}
-              description={t("forms.snCustomFacet.displayLabelsDesc")}
-            />
-            <SectionCard.Content>
+          <SNFormSection
+            chrome={chrome}
+            icon={IconLanguage}
+            tone="violet"
+            title={t("forms.snCustomFacet.displayLabels")}
+            description={t("forms.snCustomFacet.displayLabelsDesc")}
+          >
               <div>
                 <FormField
                   control={control}
@@ -397,17 +419,16 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   onRemove={removeLabelEntry}
                 />
               </div>
-            </SectionCard.Content>
-          </SectionCard>
+          </SNFormSection>
 
           {/* Facet Configuration Section */}
-          <SectionCard variant="emerald">
-            <SectionCard.Header
-              icon={IconFilter}
-              title={t("forms.snCustomFacet.facetConfig")}
-              description={t("forms.snCustomFacet.facetConfigDesc")}
-            />
-            <SectionCard.Content>
+          <SNFormSection
+            chrome={chrome}
+            icon={IconFilter}
+            tone="emerald"
+            title={t("forms.snCustomFacet.facetConfig")}
+            description={t("forms.snCustomFacet.facetConfigDesc")}
+          >
               <FormField
                 control={control}
                 name="fieldExtId"
@@ -513,17 +534,16 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   )}
                 />
               </div>
-            </SectionCard.Content>
-          </SectionCard>
+          </SNFormSection>
 
           {/* Facet Items Section */}
-          <SectionCard variant="amber">
-            <SectionCard.Header
-              icon={IconListDetails}
-              title={t("forms.snCustomFacet.facetItems")}
-              description={t("forms.snCustomFacet.facetItemsDesc")}
-            />
-            <SectionCard.Content>
+          <SNFormSection
+            chrome={chrome}
+            icon={IconListDetails}
+            tone="amber"
+            title={t("forms.snCustomFacet.facetItems")}
+            description={t("forms.snCustomFacet.facetItemsDesc")}
+          >
               <FormItem>
                 <div className="flex items-center justify-between mb-4">
                   <div className="grid gap-2">
@@ -609,8 +629,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   </div>
                 </DndContext>
               </FormItem>
-            </SectionCard.Content>
-          </SectionCard>
+          </SNFormSection>
         </form>
       </Form>
     </>

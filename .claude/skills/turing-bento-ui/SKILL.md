@@ -178,10 +178,51 @@ component and make it bento-capable with **props** (the established pattern):
   branch the wrapper between the console `SubPage` sidebar and the bento hero + pills +
   `<Outlet context={…}>`, keeping the single `useForm` + save bar.
 
+> **⚠️ A `header` prop alone is NOT enough — the body cards must change too.**
+> Passing a `BentoHero` via `header` gives the page a bento header but leaves the
+> body's `SectionCard`s intact, so you get the airy hero on top of flat console
+> cards **with no frosted surface and no hover-lift animation** — the page still
+> "doesn't look bento". This is the #1 half-migration mistake (it's what the SE
+> `system-info` page shipped with first). The animated card is `BentoFormSection`,
+> **not** `SectionCard`. Whenever you add a `header`/`baseRoute` reuse, audit the
+> body for `SectionCard` and swap each one.
+
 To restyle the form body itself into frosted hover cards, swap its `SectionCard`s for
 `BentoFormSection`s (the fields inside — `FormField`/`Input`/`Select`/`GradientSwitch`
-— stay unchanged). If the console form is also used by the console, either add a
-`chrome`/variant prop or fork a thin bento form that reuses the field sub-components.
+— stay unchanged):
+
+```tsx
+<BentoFormSection icon={IconServer} tone="emerald" title={…} description={…}>
+  {/* the exact same rows/fields that were in SectionCard.Content */}
+</BentoFormSection>
+```
+
+If the console still renders the same component, branch on the bento signal instead
+of forking. For a **read-only / detail page** reused via `header`, `header !== undefined`
+*is* the bento flag — gate the wrapper on it and keep `SectionCard` for the console path:
+
+```tsx
+const isBento = header !== undefined;
+const details = ( /* status row + info rows — rendered once, reused by both */ );
+return (
+  <>
+    {headerNode}
+    {isBento ? (
+      <BentoFormSection icon={IconServer} tone="emerald" title={…} description={…}>{details}</BentoFormSection>
+    ) : (
+      <SectionCard variant="blue">
+        <SectionCard.StaticHeader icon={IconServer} title={…} description={…} />
+        <SectionCard.Content>{details}</SectionCard.Content>
+      </SectionCard>
+    )}
+  </>
+);
+```
+
+Extract the card *body* into a shared `const` so both branches render identical
+content and only the wrapper differs. For a shared **form** that both consoles use,
+prefer an explicit `chrome`/variant prop or fork a thin bento form that reuses the
+field sub-components.
 
 ## Conventions that bite
 

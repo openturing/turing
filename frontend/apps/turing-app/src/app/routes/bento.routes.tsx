@@ -7,10 +7,27 @@ const BentoHomePage = lazy(() => import("../bento/home/bento.home.page"));
 const BentoAreaPage = lazy(() => import("../bento/area/bento.area.page"));
 const BentoAIAgentListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.list.page"));
 const BentoAIAgentPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.page"));
+// AI agent instance sub-sections in the bento shell (cards on the agent dashboard).
+const BentoAIAgentSettingsPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.settings.page"));
+const BentoAIAgentLlmPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.llm.page"));
+const BentoAIAgentToolsPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.tools.page"));
+const BentoAIAgentMcpPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.mcp.page"));
+const BentoAIAgentCustomToolPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.custom-tool.page"));
+const BentoAIAgentHistoryPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.history.page"));
+const BentoAIAgentIntentListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.intent.list.page"));
+const BentoAIAgentIntentPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.intent.page"));
+const BentoAIAgentChatFlowListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.chat-flow.list.page"));
+// Reused console pages, mounted in the bento shell via baseRoute/chrome props.
+const IntentAiChatPage = lazy(() => import("../console/intent/ai-chat/intent.ai-chat.page"));
+const ChatFlowPage = lazy(() => import("../console/chat-flow/chat-flow.page"));
+const ChatFlowAiChatPage = lazy(() => import("../console/chat-flow/ai-chat/chat-flow.ai-chat.page"));
 const BentoLLMInstanceListPage = lazy(() => import("../bento/llm/bento.llm.instance.list.page"));
 const BentoLLMInstancePage = lazy(() => import("../bento/llm/bento.llm.instance.page"));
 const BentoSEInstanceListPage = lazy(() => import("../bento/se/bento.se.instance.list.page"));
 const BentoSEInstancePage = lazy(() => import("../bento/se/bento.se.instance.page"));
+const BentoSECoresPage = lazy(() => import("../bento/se/bento.se.cores.page"));
+const BentoSECoreNewPage = lazy(() => import("../bento/se/bento.se.core.new.page"));
+const BentoSESystemInfoPage = lazy(() => import("../bento/se/bento.se.system-info.page"));
 const BentoStoreInstanceListPage = lazy(() => import("../bento/store/bento.store.instance.list.page"));
 const BentoStoreInstancePage = lazy(() => import("../bento/store/bento.store.instance.page"));
 const BentoEmbeddingModelListPage = lazy(() => import("../bento/embedding/bento.embedding.list.page"));
@@ -119,6 +136,11 @@ function RedirectToBentoPersonaGeneral() {
   return <Navigate to={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}/general`} replace />;
 }
 
+function RedirectToBentoIntentSettings() {
+  const { id, intentId } = useParams();
+  return <Navigate to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${id}/intent/${intentId}/settings`} replace />;
+}
+
 export const BentoRoutes = (
   <Route path={ROUTES.BENTO_ROOT} element={<BentoRootPage />}>
     <Route index element={<Navigate to={ROUTES.BENTO_HOME} replace />} />
@@ -130,12 +152,29 @@ export const BentoRoutes = (
     <Route path="ai-agent" element={<Navigate to={ROUTES.BENTO_AI_AGENT_INSTANCE} replace />} />
     <Route path="ai-agent/instance" element={<BentoAIAgentListPage />} />
     <Route path="ai-agent/instance/:id" element={<BentoAIAgentPage />} />
+    {/* AI agent instance sub-sections (dashboard cards) in the bento shell. */}
+    <Route path="ai-agent/instance/:id/settings" element={<BentoAIAgentSettingsPage />} />
+    <Route path="ai-agent/instance/:id/llm" element={<BentoAIAgentLlmPage />} />
+    <Route path="ai-agent/instance/:id/tools" element={<BentoAIAgentToolsPage />} />
+    <Route path="ai-agent/instance/:id/mcp" element={<BentoAIAgentMcpPage />} />
+    <Route path="ai-agent/instance/:id/custom-tool" element={<BentoAIAgentCustomToolPage />} />
+    <Route path="ai-agent/instance/:id/history" element={<BentoAIAgentHistoryPage />} />
+    <Route path="ai-agent/instance/:id/intent" element={<BentoAIAgentIntentListPage />} />
+    <Route path="ai-agent/instance/:id/intent/new/ai-chat" element={<IntentAiChatPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} chrome="bento" />} />
+    <Route path="ai-agent/instance/:id/intent/:intentId" element={<RedirectToBentoIntentSettings />} />
+    <Route path="ai-agent/instance/:id/intent/:intentId/settings" element={<BentoAIAgentIntentPage />} />
+    <Route path="ai-agent/instance/:id/chat-flow" element={<BentoAIAgentChatFlowListPage />} />
+    <Route path="ai-agent/instance/:id/chat-flow/new/ai-chat" element={<ChatFlowAiChatPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} />} />
+    <Route path="ai-agent/instance/:id/chat-flow/:flowId" element={<ChatFlowPage baseRoute={ROUTES.BENTO_AI_AGENT_INSTANCE} chrome="bento" />} />
     <Route path="llm" element={<Navigate to={ROUTES.BENTO_LLM_INSTANCE} replace />} />
     <Route path="llm/instance" element={<BentoLLMInstanceListPage />} />
     <Route path="llm/instance/:id" element={<BentoLLMInstancePage />} />
     <Route path="se" element={<Navigate to={ROUTES.BENTO_SE_INSTANCE} replace />} />
     <Route path="se/instance" element={<BentoSEInstanceListPage />} />
     <Route path="se/instance/:id" element={<BentoSEInstancePage />} />
+    <Route path="se/instance/:id/cores" element={<BentoSECoresPage />} />
+    <Route path="se/instance/:id/cores/new" element={<BentoSECoreNewPage />} />
+    <Route path="se/instance/:id/system-info" element={<BentoSESystemInfoPage />} />
     <Route path="store" element={<Navigate to={ROUTES.BENTO_STORE_INSTANCE} replace />} />
     <Route path="store/instance" element={<BentoStoreInstanceListPage />} />
     <Route path="store/instance/:id" element={<BentoStoreInstancePage />} />

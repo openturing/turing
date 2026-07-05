@@ -23,10 +23,11 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { SectionCard } from "../../ui/section-card"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
 const turSNRankingExpressionService = new TurSNRankingExpressionService();
@@ -40,9 +41,11 @@ interface Props {
   /** SN instance base route for save/cancel navigation. Defaults to the
    *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
   baseRoute?: string;
+  /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+  chrome?: SNFormChrome;
 }
 
-export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNRankingExpression>({
     defaultValues: value
@@ -86,35 +89,49 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
     }
   }
 
+  const isBento = chrome === "bento";
+
+  const actions = (
+    <>
+      {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+      <GradientButton type="submit" size="sm">
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader>
-          <StickyPageHeader.Title
-            icon={IconNumber123}
-            feature={t("sn.resultRanking.title")}
-            description={t("sn.resultRanking.description")}
+      <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+        {isBento ? (
+          <BentoHero
+            eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.resultRanking.title")}</Link>}
+            leading={
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                <IconNumber123 size={24} />
+              </span>
+            }
+            title={value.name || t("sn.resultRanking.title")}
+            subtitle={t("sn.resultRanking.description")}
+            trailing={actions}
           />
-          <StickyPageHeader.Actions>
-            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-              <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
-            </GradientButton>
-          </StickyPageHeader.Actions>
-        </StickyPageHeader>
+        ) : (
+          <StickyPageHeader>
+            <StickyPageHeader.Title
+              icon={IconNumber123}
+              feature={t("sn.resultRanking.title")}
+              description={t("sn.resultRanking.description")}
+            />
+            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+          </StickyPageHeader>
+        )}
             {/* General Information Section */}
-            <SectionCard variant="blue">
-              <SectionCard.Header
-                icon={IconInfoCircle}
-                title={t("forms.common.generalInfo")}
-                description={t("forms.snResultRanking.generalDesc")}
-              />
-              <SectionCard.Content>
+            <SNFormSection chrome={chrome} icon={IconInfoCircle} tone="blue" title={t("forms.common.generalInfo")} description={t("forms.snResultRanking.generalDesc")}>
                 <FormField
                   control={form.control}
                   name="name"
@@ -161,17 +178,10 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     </FormItem>
                   )}
                 />
-              </SectionCard.Content>
-            </SectionCard>
+            </SNFormSection>
 
             {/* Ranking Conditions Section */}
-            <SectionCard variant="violet">
-              <SectionCard.Header
-                icon={IconFilter}
-                title={t("forms.snResultRanking.conditions")}
-                description={t("forms.snResultRanking.conditionsDesc")}
-              />
-              <SectionCard.Content>
+            <SNFormSection chrome={chrome} icon={IconFilter} tone="violet" title={t("forms.snResultRanking.conditions")} description={t("forms.snResultRanking.conditionsDesc")}>
                 <FormItem>
                   <FormLabel>
                     {t("forms.snResultRanking.contentFilter")} <span className="text-destructive">*</span>
@@ -189,17 +199,10 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     />
                   </FormControl>
                 </FormItem>
-              </SectionCard.Content>
-            </SectionCard>
+            </SNFormSection>
 
             {/* Ranking Weight Section */}
-            <SectionCard variant="emerald">
-              <SectionCard.Header
-                icon={IconScale}
-                title={t("forms.snResultRanking.weight")}
-                description={t("forms.snResultRanking.weightDesc")}
-              />
-              <SectionCard.Content>
+            <SNFormSection chrome={chrome} icon={IconScale} tone="emerald" title={t("forms.snResultRanking.weight")} description={t("forms.snResultRanking.weightDesc")}>
                 <FormField
                   control={form.control}
                   name="weight"
@@ -233,8 +236,7 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     </FormItem>
                   )}
                 />
-              </SectionCard.Content>
-            </SectionCard>
+            </SNFormSection>
 
           {/* Action Footer */}
         </form>

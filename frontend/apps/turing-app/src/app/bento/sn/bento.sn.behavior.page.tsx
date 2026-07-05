@@ -9,8 +9,10 @@ import { useParams } from "react-router-dom";
 
 const service = new TurSNSiteService();
 
-/** Bento SN behavior — T576. Reuses `SNSiteBehaviorForm` (its own sticky header)
- *  with the bento base route so cancel/save stay inside the shell. */
+/** Bento SN behavior — T576. Reuses `SNSiteBehaviorForm` in `chrome="bento"`
+ *  so it renders the BentoHero + frosted BentoFormSection tiles (not the
+ *  console sticky header / SectionCard), with the bento base route so
+ *  cancel/save stay inside the shell. */
 export default function BentoSNBehaviorPage() {
   const { id } = useParams() as { id: string };
   const { t } = useTranslation();
@@ -23,7 +25,7 @@ export default function BentoSNBehaviorPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.BENTO_SN_INSTANCE}/${id}/behavior`}>
-      {snSite && <SNSiteBehaviorForm value={snSite} isNew={false} baseRoute={ROUTES.BENTO_SN_INSTANCE} />}
+      {snSite && <SNSiteBehaviorForm value={snSite} isNew={false} baseRoute={ROUTES.BENTO_SN_INSTANCE} chrome="bento" />}
     </LoadProvider>
   );
 }

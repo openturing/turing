@@ -23,7 +23,7 @@ export default function BentoSNGenAiPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.BENTO_SN_INSTANCE}/${id}/ai`}>
-      {snSite && <SNSiteGenAiForm snSite={snSite} />}
+      {snSite && <SNSiteGenAiForm snSite={snSite} baseRoute={ROUTES.BENTO_SN_INSTANCE} chrome="bento" />}
     </LoadProvider>
   );
 }

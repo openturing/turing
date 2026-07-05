@@ -8,7 +8,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { SectionCard } from "@/components/ui/section-card"
 import {
     Table,
     TableBody,
@@ -30,6 +29,7 @@ import { IconBolt, IconCirclePlus, IconTrash } from "@tabler/icons-react"
 import React, { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
+import { SNSiteSearchRuleSection, type SNSectionChrome } from "./sn.site.search.rule.section"
 
 const ACTION_TYPES: TurSNSiteSearchRuleActionType[] = [
     "SET_SORT", "ADD_FACETS", "REMOVE_FACETS",
@@ -153,9 +153,10 @@ interface Props {
     fieldOptions: TurSNSiteSearchRuleFieldOption[];
     customSorts: TurSNSiteCustomSort[];
     facets: TurSNSiteFacetOrdering[];
+    chrome?: SNSectionChrome;
 }
 
-export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets }) => {
+export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, customSorts, facets, chrome = "console" }) => {
     const { t } = useTranslation();
     const actions = form.watch("actions") || [];
 
@@ -267,9 +268,7 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
     }
 
     return (
-        <SectionCard variant="violet">
-            <SectionCard.Header icon={IconBolt} title={t("sn.searchRule.actions")} description={t("sn.searchRule.actionsDesc")} />
-            <SectionCard.Content>
+        <SNSiteSearchRuleSection chrome={chrome} icon={IconBolt} tone="violet" title={t("sn.searchRule.actions")} description={t("sn.searchRule.actionsDesc")}>
                 <div className="flex items-center justify-between mb-4">
                     <GradientButton variant="outline" type="button" onClick={addAction}>
                         <IconCirclePlus className="h-4 w-4 mr-2" />
@@ -322,8 +321,7 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
                         </TableBody>
                     </Table>
                 )}
-            </SectionCard.Content>
-        </SectionCard>
+        </SNSiteSearchRuleSection>
     );
 };
 

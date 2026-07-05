@@ -6,10 +6,47 @@ import { GlobalBadge, GlobalReadOnlyNotice } from "@/components/infra-global-not
 import { LoadProvider } from "@/components/loading-provider";
 import { useInfraReadOnly } from "@/hooks/use-infra-read-only";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
-import { IconLock, IconZoomCode } from "@tabler/icons-react";
+import { IconDatabase, IconInfoCircle, IconLock, IconServer, IconZoomCode, type Icon as TablerIcon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { BENTO_SE_FORM_ID, BentoSEInstanceForm } from "./bento.se.instance.form";
+
+interface SESectionLink {
+  labelKey: string;
+  icon: TablerIcon;
+  path: string;
+}
+
+const SE_SECTIONS: readonly SESectionLink[] = [
+  { labelKey: "se.nav.cores", icon: IconDatabase, path: "cores" },
+  { labelKey: "se.nav.systemInfo", icon: IconInfoCircle, path: "system-info" },
+];
+
+function SESectionsPanel({ seId }: Readonly<{ seId: string }>) {
+  const { t } = useTranslation();
+  return (
+    <section className="mt-2">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <IconServer size={16} className="text-emerald-500" />
+        {t("se.title")}
+      </h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        {SE_SECTIONS.map(({ labelKey, icon: Icon, path }) => (
+          <Link
+            key={path}
+            to={`${ROUTES.BENTO_SE_INSTANCE}/${seId}/${path}`}
+            className="bento-tile bento-tile-clickable bento-glass flex items-center gap-3 rounded-2xl p-4"
+          >
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-sm">
+              <Icon size={18} />
+            </span>
+            <span className="text-sm font-medium">{t(labelKey)}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 /**
  * Bento Search Engine (SE) detail — T551. Thin wrapper over the shared
@@ -68,7 +105,10 @@ export default function BentoSEInstancePage() {
         onDelete={isNew || readOnly ? undefined : () => deleteMutation.mutateAsync(entity)}
       >
         {({ staged, onStateChange }) => (
-          <BentoSEInstanceForm value={entity} isNew={isNew} readOnly={readOnly} staged={staged} onStateChange={onStateChange} />
+          <>
+            <BentoSEInstanceForm value={entity} isNew={isNew} readOnly={readOnly} staged={staged} onStateChange={onStateChange} />
+            {!isNew && entity.id && <SESectionsPanel seId={entity.id} />}
+          </>
         )}
       </BentoEntityShell>
     );

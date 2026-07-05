@@ -11,12 +11,15 @@ import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
+import { BentoFormSection } from "../bento"
 
 interface Props {
   value: TurAIAgent;
+  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
+  chrome?: "console" | "bento";
 }
 
-export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
+export const AIAgentMcpForm: React.FC<Props> = ({ value, chrome = "console" }) => {
   const { t } = useTranslation();
   const { data: mcpServers = [] } = useMcpServers();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -80,16 +83,37 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
     return mcp.connectionType;
   }
 
+  const Section = ({ children }: { readonly children: React.ReactNode }) =>
+    chrome === "bento" ? (
+      <BentoFormSection icon={IconServer2} tone="amber" title={t("forms.agentMcp.available")} description={t("forms.agentMcp.availableDesc")}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant="cyan">
+        <SectionCard.Header
+          icon={IconServer2}
+          title={t("forms.agentMcp.available")}
+          description={t("forms.agentMcp.availableDesc")}
+        />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
+  const FederationSection = ({ children }: { readonly children: React.ReactNode }) =>
+    chrome === "bento" ? (
+      <section className="bento-tile bento-glass relative flex flex-col gap-5 overflow-hidden rounded-3xl p-5 md:p-6">
+        {children}
+      </section>
+    ) : (
+      <SectionCard variant="cyan">
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
   return (
-    <div className="px-6">
-      <div className="space-y-4 py-8">
-        <SectionCard variant="cyan">
-          <SectionCard.Header
-            icon={IconServer2}
-            title={t("forms.agentMcp.available")}
-            description={t("forms.agentMcp.availableDesc")}
-          />
-          <SectionCard.Content>
+    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
+      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+        <Section>
             {mcpServers.length > 0 ? (
               <div className="space-y-2">
                 {mcpServers.map((mcp) => {
@@ -163,11 +187,9 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
                 </div>
               </div>
             )}
-          </SectionCard.Content>
-        </SectionCard>
+        </Section>
 
-        <SectionCard variant="cyan">
-          <SectionCard.Content>
+        <FederationSection>
             <label className="flex items-start gap-4 cursor-pointer">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 dark:bg-cyan-500/25">
                 <IconWorldBolt className="size-5 text-cyan-600 dark:text-cyan-400" />
@@ -183,8 +205,7 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
                 onCheckedChange={(checked) => setFederation(!!checked)}
               />
             </label>
-          </SectionCard.Content>
-        </SectionCard>
+        </FederationSection>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

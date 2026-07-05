@@ -2,6 +2,7 @@
 import { ROUTES } from "@/app/routes.const"
 import { Form } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
+import { BentoHero } from "@/components/bento"
 import type {
     TurSNSiteSearchRule,
     TurSNSiteSearchRuleFieldOption,
@@ -19,11 +20,12 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { DialogDelete } from "@/components/dialog.delete"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { SNSiteSearchRuleDetails } from "./sn.site.search.rule.details"
 import { SNSiteSearchRuleConditions } from "./sn.site.search.rule.conditions"
 import { SNSiteSearchRuleActions } from "./sn.site.search.rule.actions"
+import type { SNSectionChrome } from "./sn.site.search.rule.section"
 
 const turSNSiteSearchRuleService = new TurSNSiteSearchRuleService();
 const turSNSiteCustomSortService = new TurSNSiteCustomSortService();
@@ -40,9 +42,12 @@ interface Props {
     /** SN instance base route for save/cancel navigation. Defaults to the
      *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
     baseRoute?: string;
+    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
+     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+    chrome?: SNSectionChrome;
 }
 
-export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE }) => {
+export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSearchRule>({ defaultValues: value });
     const navigate = useNavigate();
@@ -87,39 +92,61 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
         }
     }
 
+    const isBento = chrome === "bento";
+
+    const actions = (
+        <>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.searchRule.title")} name={value?.name || t("sn.searchRule.newSearchRule")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+            </GradientButton>
+        </>
+    );
+
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconGavel}
-                        feature={t("sn.searchRule.title")}
-                        description={t("sn.searchRule.description")}
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <BentoHero
+                        eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.searchRule.title")}</Link>}
+                        leading={
+                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                                <IconGavel size={24} />
+                            </span>
+                        }
+                        title={value?.name || t("sn.searchRule.newSearchRule")}
+                        subtitle={t("sn.searchRule.description")}
+                        trailing={actions}
                     />
-                    <StickyPageHeader.Actions>
-                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.searchRule.title")} name={value?.name || t("sn.searchRule.newSearchRule")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
-                <SNSiteSearchRuleDetails form={form} />
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconGavel}
+                            feature={t("sn.searchRule.title")}
+                            description={t("sn.searchRule.description")}
+                        />
+                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
+                <SNSiteSearchRuleDetails form={form} chrome={chrome} />
                 <SNSiteSearchRuleConditions
                     form={form}
                     fieldOptions={fieldOptions}
                     customSorts={customSorts}
                     siteLocales={siteLocales}
+                    chrome={chrome}
                 />
                 <SNSiteSearchRuleActions
                     form={form}
                     fieldOptions={fieldOptions}
                     customSorts={customSorts}
                     facets={facets}
+                    chrome={chrome}
                 />
             </form>
         </Form>

@@ -21,7 +21,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconDeviceFloppy, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -43,15 +43,23 @@ function buildCoreName(name: string, locale: string, appendLocale: boolean): str
   return `${trimmed}_${locale}`;
 }
 
-export default function SEInstanceCoreNewPage() {
+interface SEInstanceCoreNewPageProps {
+  /** Override the console `StickyPageHeader` title block (e.g. a `BentoHero`). */
+  header?: ReactNode;
+  /** Route base for cores navigation; defaults to the console SE instance route. */
+  baseRoute?: string;
+}
+
+export default function SEInstanceCoreNewPage({ header, baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoreNewPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [appendLocale, setAppendLocale] = useState(true);
   const createCoreMutation = useCreateSeCore();
+  const coresRoute = `${baseRoute}/${id}/cores`;
   useSubPageBreadcrumb([
-    { label: t("se.cores.title"), href: `${ROUTES.SE_INSTANCE}/${id}/cores` },
+    { label: t("se.cores.title"), href: coresRoute },
     { label: t("se.newCore.title") },
   ]);
 
@@ -76,7 +84,7 @@ export default function SEInstanceCoreNewPage() {
     try {
       await createCoreMutation.mutateAsync({ seId: id, name: coreName, locale: data.locale });
       toast.success(t("se.newCore.createSuccess", { name: coreName }));
-      navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`);
+      navigate(coresRoute);
     } catch (error) {
       console.error("Failed to create core", error);
       const msg = error instanceof Error ? error.message : "Unknown error";
@@ -84,26 +92,37 @@ export default function SEInstanceCoreNewPage() {
     }
   }
 
+  const actions = (
+    <>
+      <GradientButton type="submit" size="sm">
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(coresRoute)}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader>
-          <StickyPageHeader.Title
-            icon={IconDatabase}
-            feature={t("se.cores.title")}
-            description={t("se.newCore.description")}
-          />
-          <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}>
-              <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
-            </GradientButton>
-          </StickyPageHeader.Actions>
-        </StickyPageHeader>
+        {header !== undefined ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {header}
+            <div className="flex items-center gap-2">{actions}</div>
+          </div>
+        ) : (
+          <StickyPageHeader>
+            <StickyPageHeader.Title
+              icon={IconDatabase}
+              feature={t("se.cores.title")}
+              description={t("se.newCore.description")}
+            />
+            <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+          </StickyPageHeader>
+        )}
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}

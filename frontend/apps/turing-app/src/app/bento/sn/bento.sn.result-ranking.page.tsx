@@ -59,6 +59,7 @@ export default function BentoSNResultRankingPage() {
           open={open}
           setOpen={setOpen}
           baseRoute={ROUTES.BENTO_SN_INSTANCE}
+          chrome="bento"
         />
       )}
     </LoadProvider>

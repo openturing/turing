@@ -41,13 +41,14 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
+import { BentoFormSection, BentoSaveBar, type BentoTone } from "../bento"
+import type { ComponentType, ReactNode } from "react"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
 const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turFeaturesService = new TurFeaturesService();
-const urlBase = ROUTES.AI_AGENT_INSTANCE
 
 const DEFAULT_VALUE = "__default__";
 const NONE_VALUE = "__none__";
@@ -55,10 +56,43 @@ const NONE_VALUE = "__none__";
 interface Props {
   value: TurAIAgent;
   isNew: boolean;
+  /** Render inside the bento shell (frosted BentoFormSection + BentoSaveBar) instead of console chrome. */
+  chrome?: "console" | "bento";
+  /** Base route for navigation after save/cancel (defaults to the console AI agent list). */
+  baseRoute?: string;
 }
 
-export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
+export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "console", baseRoute }) => {
   const { t } = useTranslation();
+  const urlBase = baseRoute ?? ROUTES.AI_AGENT_INSTANCE;
+
+  // Switches each field group between the console SectionCard and the frosted
+  // bento card, keeping the field bodies identical across both shells.
+  const Section = ({
+    variant,
+    tone,
+    icon,
+    title,
+    description,
+    children,
+  }: {
+    readonly variant?: "blue" | "violet" | "emerald" | "amber" | "cyan";
+    readonly tone: BentoTone;
+    readonly icon: ComponentType<{ size?: number }>;
+    readonly title: string;
+    readonly description?: string;
+    readonly children: ReactNode;
+  }) =>
+    chrome === "bento" ? (
+      <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant={variant}>
+        <SectionCard.Header icon={icon} title={title} description={description} />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
   const form = useForm<TurAIAgent>({
     defaultValues: value
   });
@@ -260,27 +294,31 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader>
-          <StickyPageHeader.Title
-            icon={IconSettings}
-            feature={t("aiAgent.settings.title")}
-            description={t("aiAgent.settings.description")}
-          />
-          <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-              <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
-            </GradientButton>
-          </StickyPageHeader.Actions>
-        </StickyPageHeader>
-          <SectionCard variant="blue">
-            <SectionCard.Header icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")} />
-            <SectionCard.Content>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+        {chrome === "bento" ? (
+          <div className="sticky top-0 z-20 mb-1 py-1">
+            <BentoSaveBar title={t("aiAgent.settings.title")} onCancel={() => navigate(urlBase)} />
+          </div>
+        ) : (
+          <StickyPageHeader>
+            <StickyPageHeader.Title
+              icon={IconSettings}
+              feature={t("aiAgent.settings.title")}
+              description={t("aiAgent.settings.description")}
+            />
+            <StickyPageHeader.Actions>
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+              </GradientButton>
+            </StickyPageHeader.Actions>
+          </StickyPageHeader>
+        )}
+          <Section variant="blue" tone="blue" icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")}>
               <FormField
                 control={form.control}
                 name="title"
@@ -346,12 +384,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItem>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="violet">
-            <SectionCard.Header icon={IconBrain} title={t("forms.agentSettings.ragModels")} description={t("forms.agentSettings.ragModelsDesc")} />
-            <SectionCard.Content>
+          <Section variant="violet" tone="violet" icon={IconBrain} title={t("forms.agentSettings.ragModels")} description={t("forms.agentSettings.ragModelsDesc")}>
               <FormField
                 control={form.control}
                 name="turEmbeddingModelInstance"
@@ -472,12 +507,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header icon={IconPower} title={t("forms.agentSettings.rag")} description={t("forms.agentSettings.ragDesc")} />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconPower} title={t("forms.agentSettings.rag")} description={t("forms.agentSettings.ragDesc")}>
               <FormField
                 control={form.control}
                 name="ragEnabled"
@@ -509,16 +541,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   chat API is the only invocation path that exercises
                   RAG) and locale-aware retrieval depends on
                   TurSNSiteLocale, which the SN site owns. */}
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconSparkles}
-              title={t("forms.agentSettings.richContent")}
-              description={t("forms.agentSettings.richContentDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconSparkles} title={t("forms.agentSettings.richContent")} description={t("forms.agentSettings.richContentDesc")}>
               <FormField
                 control={form.control}
                 name="richContentEnabled"
@@ -541,16 +566,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconWorldSearch}
-              title={t("forms.agentSettings.liveAnswers")}
-              description={t("forms.agentSettings.liveAnswersDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconWorldSearch} title={t("forms.agentSettings.liveAnswers")} description={t("forms.agentSettings.liveAnswersDesc")}>
               <FormField
                 control={form.control}
                 name="liveAnswersEnabled"
@@ -573,16 +591,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconHeadset}
-              title={t("forms.agentSettings.callCenter")}
-              description={t("forms.agentSettings.callCenterDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconHeadset} title={t("forms.agentSettings.callCenter")} description={t("forms.agentSettings.callCenterDesc")}>
               <FormField
                 control={form.control}
                 name="callCenterEnabled"
@@ -605,16 +616,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconPlug}
-              title={t("forms.agentSettings.connectorSetup")}
-              description={t("forms.agentSettings.connectorSetupDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconPlug} title={t("forms.agentSettings.connectorSetup")} description={t("forms.agentSettings.connectorSetupDesc")}>
               <FormField
                 control={form.control}
                 name="connectorSetupEnabled"
@@ -637,16 +641,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconMoon}
-              title={t("forms.agentSettings.overnightImprovement")}
-              description={t("forms.agentSettings.overnightImprovementDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconMoon} title={t("forms.agentSettings.overnightImprovement")} description={t("forms.agentSettings.overnightImprovementDesc")}>
               <FormField
                 control={form.control}
                 name="overnightImprovementEnabled"
@@ -669,16 +666,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconActivity}
-              title={t("forms.agentSettings.toolActivity")}
-              description={t("forms.agentSettings.toolActivityDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconActivity} title={t("forms.agentSettings.toolActivity")} description={t("forms.agentSettings.toolActivityDesc")}>
               <FormField
                 control={form.control}
                 name="toolCallEventsEnabled"
@@ -701,16 +691,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconBolt}
-              title={t("forms.agentSettings.skills")}
-              description={t("forms.agentSettings.skillsDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconBolt} title={t("forms.agentSettings.skills")} description={t("forms.agentSettings.skillsDesc")}>
               <FormField
                 control={form.control}
                 name="skillsEnabled"
@@ -736,16 +719,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="violet">
-            <SectionCard.Header
-              icon={IconDatabase}
-              title={t("forms.agentSettings.chatMemory")}
-              description={t("forms.agentSettings.chatMemoryDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="violet" tone="violet" icon={IconDatabase} title={t("forms.agentSettings.chatMemory")} description={t("forms.agentSettings.chatMemoryDesc")}>
               <FormField
                 control={form.control}
                 name="chatMemoryEnabled"
@@ -1225,20 +1201,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
           {/* T66 / §VII.6.g — submission retention (LGPD/GDPR compliance hook). */}
-          <SectionCard variant="amber">
-            <SectionCard.Header
-              icon={IconShieldLock}
-              title={t("forms.agentSettings.submissionRetention", { defaultValue: "Submission retention" })}
-              description={t("forms.agentSettings.submissionRetentionSectionDesc", {
-                defaultValue:
-                  "Compliance policy (LGPD / GDPR) for how long this agent's completed chat-flow submissions are kept. Applies to the submission archive only — live PII slots expire via the global PII retention TTL.",
-              })}
-            />
-            <SectionCard.Content>
+          <Section variant="amber" tone="amber" icon={IconShieldLock} title={t("forms.agentSettings.submissionRetention", { defaultValue: "Submission retention" })} description={t("forms.agentSettings.submissionRetentionSectionDesc", { defaultValue: "Compliance policy (LGPD / GDPR) for how long this agent's completed chat-flow submissions are kept. Applies to the submission archive only — live PII slots expire via the global PII retention TTL." })}>
               <FormField
                 control={form.control}
                 name="submissionRetention"
@@ -1324,16 +1290,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   )}
                 />
               )}
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard>
-            <SectionCard.Header
-              icon={IconBrandPython}
-              title={t("forms.agentSettings.codeInterpreter")}
-              description={t("forms.agentSettings.codeInterpreterDesc")}
-            />
-            <SectionCard.Content>
+          <Section tone="slate" icon={IconBrandPython} title={t("forms.agentSettings.codeInterpreter")} description={t("forms.agentSettings.codeInterpreterDesc")}>
               <FormField
                 control={form.control}
                 name="pythonRequirements"
@@ -1358,16 +1317,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItem>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconBolt}
-              title={t("forms.agentSettings.chatMode")}
-              description={t("forms.agentSettings.chatModeDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconBolt} title={t("forms.agentSettings.chatMode")} description={t("forms.agentSettings.chatModeDesc")}>
               <FormField
                 control={form.control}
                 name="chatMode"
@@ -1401,16 +1353,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconBrain}
-              title={t("forms.agentSettings.memoryScope")}
-              description={t("forms.agentSettings.memoryScopeDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="blue" tone="blue" icon={IconBrain} title={t("forms.agentSettings.memoryScope")} description={t("forms.agentSettings.memoryScopeDesc")}>
               <FormField
                 control={form.control}
                 name="memoryScope"
@@ -1444,16 +1389,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="emerald">
-            <SectionCard.Header
-              icon={IconPower}
-              title={t("forms.common.status")}
-              description={t("forms.agentSettings.statusDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="emerald" tone="emerald" icon={IconPower} title={t("forms.common.status")} description={t("forms.agentSettings.statusDesc")}>
               <FormField
                 control={form.control}
                 name="enabled"
@@ -1477,8 +1415,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
         </form>
     </Form>

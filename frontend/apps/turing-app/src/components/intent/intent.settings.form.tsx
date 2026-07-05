@@ -39,16 +39,48 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
+import { BentoFormSection, BentoSaveBar, type BentoTone } from "../bento"
+import type { ComponentType, ReactNode } from "react"
 
 interface Props {
   value: TurIntent
   isNew: boolean
   agentId: string
+  /** Render inside the bento shell (frosted BentoFormSection + BentoSaveBar) instead of console chrome. */
+  chrome?: "console" | "bento"
+  /** Base route for navigation after save/cancel (defaults to the console AI agent list). */
+  baseRoute?: string
 }
 
-export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) => {
-  const urlBase = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
+export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, chrome = "console", baseRoute }) => {
+  const urlBase = `${baseRoute ?? ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
   const { t } = useTranslation();
+
+  const Section = ({
+    variant,
+    tone,
+    icon,
+    title,
+    description,
+    children,
+  }: {
+    readonly variant?: "blue" | "violet" | "slate"
+    readonly tone: BentoTone
+    readonly icon: ComponentType<{ size?: number }>
+    readonly title: string
+    readonly description?: string
+    readonly children: ReactNode
+  }) =>
+    chrome === "bento" ? (
+      <BentoFormSection icon={icon} tone={tone} title={title} description={description}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant={variant}>
+        <SectionCard.Header icon={icon} title={title} description={description} />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
   const form = useForm<TurIntent>({
     defaultValues: value,
   })
@@ -165,40 +197,64 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader>
-          <StickyPageHeader.Title
-            icon={IconSettings}
-            feature={t("intent.settings.title")}
-            description={t("intent.settings.description")}
-          />
-          <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
-            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-              <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
-            </GradientButton>
-            {!isNew && (
-              <DialogDelete
-                feature={t("intent.title")}
-                name={value.title}
-                onDelete={onDelete}
-                open={deleteOpen}
-                setOpen={setDeleteOpen}
-              />
-            )}
-          </StickyPageHeader.Actions>
-        </StickyPageHeader>
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconInfoCircle}
-              title={t("forms.common.generalInfo")}
-              description={t("forms.intentSettings.generalDesc")}
+      <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+        {chrome === "bento" ? (
+          <div className="sticky top-0 z-20 mb-1 py-1">
+            <BentoSaveBar
+              title={t("intent.settings.title")}
+              onCancel={() => navigate(urlBase)}
+              actions={
+                <>
+                  <GradientButton type="submit" size="sm">
+                    <IconDeviceFloppy className="size-4" />
+                    {t("forms.formActions.saveChanges")}
+                  </GradientButton>
+                  <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                    <IconX className="size-4" />
+                    {t("forms.formActions.cancel")}
+                  </GradientButton>
+                  {!isNew && (
+                    <DialogDelete
+                      feature={t("intent.title")}
+                      name={value.title}
+                      onDelete={onDelete}
+                      open={deleteOpen}
+                      setOpen={setDeleteOpen}
+                    />
+                  )}
+                </>
+              }
             />
-            <SectionCard.Content>
+          </div>
+        ) : (
+          <StickyPageHeader>
+            <StickyPageHeader.Title
+              icon={IconSettings}
+              feature={t("intent.settings.title")}
+              description={t("intent.settings.description")}
+            />
+            <StickyPageHeader.Actions>
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+              </GradientButton>
+              {!isNew && (
+                <DialogDelete
+                  feature={t("intent.title")}
+                  name={value.title}
+                  onDelete={onDelete}
+                  open={deleteOpen}
+                  setOpen={setDeleteOpen}
+                />
+              )}
+            </StickyPageHeader.Actions>
+          </StickyPageHeader>
+        )}
+          <Section variant="blue" tone="blue" icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.intentSettings.generalDesc")}>
               <FormField
                 control={form.control}
                 name="title"
@@ -271,16 +327,9 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
                   </FormItem>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="violet">
-            <SectionCard.Header
-              icon={IconList}
-              title={t("forms.intentSettings.actions")}
-              description={t("forms.intentSettings.actionsDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="violet" tone="violet" icon={IconList} title={t("forms.intentSettings.actions")} description={t("forms.intentSettings.actionsDesc")}>
               <div className="space-y-3">
                 {fields.map((field, index) => (
                   <div
@@ -356,16 +405,9 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
                   {t("forms.intentSettings.addAction")}
                 </GradientButton>
               </div>
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
-          <SectionCard variant="slate">
-            <SectionCard.Header
-              icon={IconToggleLeft}
-              title={t("forms.common.status")}
-              description={t("forms.intentSettings.statusDesc")}
-            />
-            <SectionCard.Content>
+          <Section variant="slate" tone="slate" icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.intentSettings.statusDesc")}>
               <FormField
                 control={form.control}
                 name="enabled"
@@ -390,8 +432,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
                   </FormItemTwoColumns>
                 )}
               />
-            </SectionCard.Content>
-          </SectionCard>
+        </Section>
 
         </form>
     </Form>

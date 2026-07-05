@@ -1,14 +1,12 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteFieldForm } from "@/components/sn/fields/sn.site.field.form";
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model";
 import { TurSNFieldService } from "@/services/sn/sn.field.service";
-import { IconAlignBoxCenterStretch } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const turSNFieldService = new TurSNFieldService();
 
@@ -55,27 +53,16 @@ export default function BentoSNFieldPage() {
   return (
     <LoadProvider checkIsNotUndefined={snField} error={error} tryAgainUrl={fieldListRoute}>
       {snField && (
-        <>
-          <BentoHero
-            eyebrow={<Link to={fieldListRoute} className="hover:text-foreground">{t("sn.fields.title")}</Link>}
-            leading={
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
-                <IconAlignBoxCenterStretch size={24} />
-              </span>
-            }
-            title={isNew ? t("common.new") : snField.name || fieldId}
-            subtitle={t("sn.fields.description")}
-          />
-          <SNSiteFieldForm
-            snSiteId={id}
-            snField={snField}
-            isNew={isNew}
-            baseRoute={ROUTES.BENTO_SN_INSTANCE}
-            onDelete={isNew ? undefined : onDelete}
-            open={open}
-            setOpen={setOpen}
-          />
-        </>
+        <SNSiteFieldForm
+          snSiteId={id}
+          snField={snField}
+          isNew={isNew}
+          baseRoute={ROUTES.BENTO_SN_INSTANCE}
+          chrome="bento"
+          onDelete={isNew ? undefined : onDelete}
+          open={open}
+          setOpen={setOpen}
+        />
       )}
     </LoadProvider>
   );

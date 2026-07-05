@@ -22,8 +22,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-const ADMIN_INSTANCE = ROUTES.AI_AGENT_INSTANCE;
-
 export default function BentoAIAgentPage() {
   const { id } = useParams() as { id: string };
   const { t } = useTranslation();
@@ -47,7 +45,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const enabled = agent.enabled === 1;
-  const adminBase = `${ADMIN_INSTANCE}/${agent.id}`;
+  const bentoBase = `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agent.id}`;
 
   const updateMutation = useUpdateAiAgent();
   const deleteMutation = useDeleteAiAgent();
@@ -184,7 +182,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         {/* HERO: System prompt — large 2x2 frosted tile */}
         <BentoTile
-          to={`${adminBase}/settings`}
+          to={`${bentoBase}/settings`}
           icon={IconSettings}
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-3 lg:row-span-2"
@@ -198,7 +196,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
 
         {/* RAG state */}
         <BentoTile
-          to={`${adminBase}/settings`}
+          to={`${bentoBase}/settings`}
           icon={IconSparkles}
           tone="indigo"
           span="col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-3 lg:row-span-1"
@@ -213,7 +211,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoCountTile
-          to={`${adminBase}/llm`}
+          to={`${bentoBase}/llm`}
           icon={IconCpu2}
           tone="violet"
           label={t("aiAgent.nav.languageModels")}
@@ -221,7 +219,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1 lg:col-span-1 lg:row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/tools`}
+          to={`${bentoBase}/tools`}
           icon={IconTool}
           tone="emerald"
           label={t("aiAgent.nav.nativeTools")}
@@ -229,7 +227,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/mcp`}
+          to={`${bentoBase}/mcp`}
           icon={IconServer2}
           tone="amber"
           label={t("aiAgent.nav.mcpServers")}
@@ -237,7 +235,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/custom-tool`}
+          to={`${bentoBase}/custom-tool`}
           icon={IconBraces}
           tone="rose"
           label={t("aiAgent.nav.customTools")}
@@ -246,7 +244,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         />
 
         <BentoTile
-          to={`${adminBase}/intent`}
+          to={`${bentoBase}/intent`}
           icon={IconBulb}
           tone="amber"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
@@ -259,7 +257,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoTile
-          to={`${adminBase}/chat-flow`}
+          to={`${bentoBase}/chat-flow`}
           icon={IconSitemap}
           tone="indigo"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
@@ -272,7 +270,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoTile
-          to={`${adminBase}/history`}
+          to={`${bentoBase}/history`}
           icon={IconHistory}
           tone="slate"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
@@ -298,7 +296,7 @@ function NewAgentBento() {
       </div>
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         <BentoTile
-          to={`${ADMIN_INSTANCE}/new/settings`}
+          to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/new/settings`}
           icon={IconSettings}
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-4 md:row-span-2"

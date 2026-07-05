@@ -1,3 +1,4 @@
+import { ROUTES } from "@/app/routes.const"
 import {
     Dialog,
     DialogContent,
@@ -45,11 +46,13 @@ import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescript
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { Button } from "../../ui/button"
 import { StickyPageHeader } from "../../sticky-page-header"
 import { GradientButton } from "../../ui/gradient-button"
-import { SectionCard } from "../../ui/section-card"
 import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
@@ -62,9 +65,14 @@ const NONE_VALUE = "__none__";
 
 interface Props {
     snSite: TurSNSite;
+    /** SN instance base route for the bento back-link. Defaults to console. */
+    baseRoute?: string;
+    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
+     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+    chrome?: SNFormChrome;
 }
 
-export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
+export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
     const { t } = useTranslation();
     const updateMutation = useUpdateSnSite();
     const form = useForm<TurSNSiteGenAi>({
@@ -323,32 +331,50 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
     const canGenerate = !!defaultLlmId && !!snSite.description && !isGenerating;
 
+    const isBento = chrome === "bento";
+
+    const actions = (
+        <>
+            <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+            </GradientButton>
+        </>
+    );
+
     return (
         <>
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconCpu2}
-                        feature={t("sn.genai.title")}
-                        description={t("sn.genai.description")}
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <BentoHero
+                        eyebrow={<Link to={`${baseRoute}/${snSite.id}`} className="hover:text-foreground">{t("sn.title")}</Link>}
+                        leading={
+                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                                <IconCpu2 size={24} />
+                            </span>
+                        }
+                        title={t("sn.genai.title")}
+                        subtitle={t("sn.genai.description")}
+                        trailing={actions}
                     />
-                    <StickyPageHeader.Actions>
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconCpu2}
+                            feature={t("sn.genai.title")}
+                            description={t("sn.genai.description")}
+                        />
+                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
-                        <SectionCard variant="amber">
-                            <SectionCard.Header icon={IconFileDescription} title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")} />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconFileDescription} tone="amber" title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="sitePrompt"
@@ -393,13 +419,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                 : t("forms.snGenai.generatePromptHint")}
                                     </span>
                                 </div>
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* Section 2: AI Agent (single source of truth for LLM, embedding, store and RAG flag) */}
-                        <SectionCard variant="violet">
-                            <SectionCard.Header icon={IconBrain} title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")} />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconBrain} tone="violet" title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="turAIAgent"
@@ -499,20 +522,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </span>
                                     </div>
                                 )}
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T19/T24 — Hybrid Retrieval card.
                             Only meaningful when the bound agent has RAG enabled;
                             disabled state when ragEnabled is false makes the
                             UI track the runtime gating exactly. */}
-                        <SectionCard variant="blue">
-                            <SectionCard.Header
-                                icon={IconSparkles}
-                                title={t("forms.snGenai.hybridTitle")}
-                                description={t("forms.snGenai.hybridDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconSparkles} tone="blue" title={t("forms.snGenai.hybridTitle")} description={t("forms.snGenai.hybridDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="ragBm25Fallback"
@@ -796,8 +812,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </div>
                                     </>
                                 )}
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T383 / §XX.3 — ranking mode for the PUBLIC SN search
                             (faceted catalog results). Independent of the RAG
@@ -807,13 +822,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             documents are embedded into a per-site collection as
                             they are indexed, and fused with BM25 via RRF when the
                             sort is relevance. */}
-                        <SectionCard variant="blue">
-                            <SectionCard.Header
-                                icon={IconArrowsSort}
-                                title={t("forms.snGenai.snRankingTitle")}
-                                description={t("forms.snGenai.snRankingDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconArrowsSort} tone="blue" title={t("forms.snGenai.snRankingTitle")} description={t("forms.snGenai.snRankingDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="snRankingMode"
@@ -909,21 +918,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T472 / §XXVI.9 — index-time audience content-fit signal.
                             Scores each document's readability against an AUDIENCE
                             persona as it is indexed and stores content_fit_score;
                             surfaced in the Field Coverage dashboard. Independent of
                             the RAG / ranking cards above. */}
-                        <SectionCard variant="emerald">
-                            <SectionCard.Header
-                                icon={IconUserSearch}
-                                title={t("forms.snGenai.contentFitTitle")}
-                                description={t("forms.snGenai.contentFitDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconUserSearch} tone="emerald" title={t("forms.snGenai.contentFitTitle")} description={t("forms.snGenai.contentFitDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="contentFitIndexingEnabled"
@@ -1000,21 +1002,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T501 / §X.19 — index-time native video/audio understanding.
                             When a site's GenAI agent is a Gemini instance, a media
                             document's clip is transcribed + scene-described as it is
                             indexed and appended to the text field, so the clip's
                             content is searchable. Gemini-only, fail-open, off by default. */}
-                        <SectionCard variant="emerald">
-                            <SectionCard.Header
-                                icon={IconMovie}
-                                title={t("forms.snGenai.mediaUnderstandingTitle")}
-                                description={t("forms.snGenai.mediaUnderstandingDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconMovie} tone="emerald" title={t("forms.snGenai.mediaUnderstandingTitle")} description={t("forms.snGenai.mediaUnderstandingDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="mediaUnderstandingIndexingEnabled"
@@ -1044,8 +1039,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                     </div>
 
