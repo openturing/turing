@@ -7,6 +7,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
+import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
 import { SectionCard } from "@/components/ui/section-card"
 import {
@@ -134,6 +136,31 @@ export default function PersonaInstanceStyleSection() {
                   </Select>
                 </FormControl>
               </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="calibrateModelParams"
+            render={({ field }) => (
+              <FormItemTwoColumns>
+                <FormItemTwoColumns.Left>
+                  <FormItemTwoColumns.Label>
+                    {t("forms.persona.calibrateModelParams")}
+                  </FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
+                    {t("forms.persona.calibrateModelParamsDesc")}
+                  </FormItemTwoColumns.Description>
+                </FormItemTwoColumns.Left>
+                <FormItemTwoColumns.Right>
+                  <FormControl>
+                    <GradientSwitch
+                      checked={Number(field.value) === 1}
+                      onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                    />
+                  </FormControl>
+                </FormItemTwoColumns.Right>
+                <FormMessage />
+              </FormItemTwoColumns>
             )}
           />
         </SectionCard.Content>

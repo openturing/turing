@@ -1507,6 +1507,8 @@
       "verbosityRange": "Verbosity must be between 1 and 5.",
       "languageStyle": "Language Style",
       "languageStylePlaceholder": "No language style preference",
+      "calibrateModelParams": "Calibrate model from style",
+      "calibrateModelParamsDesc": "When on, this persona's style also tunes the model's sampling: verbosity sets the output length (max tokens) and tone sets the temperature. Off keeps the LLM instance's own settings.",
       "vocabulary": "Vocabulary",
       "vocabularyDesc": "Terms the persona must include or never use. One term per line.",
       "mandatoryTerms": "Required Terms",

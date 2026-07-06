@@ -61,6 +61,12 @@ export interface TurPersona {
   mandatoryTerms?: string | null;
   forbiddenTerms?: string | null;
   enabled: number;
+  /**
+   * T605 — opt-in style→model calibration. When 1, verbosity → maxTokens and
+   * tone → temperature calibrate the model's sampling params per turn. 0 (default)
+   * keeps the LLM instance's own params.
+   */
+  calibrateModelParams?: number;
   fewShotStore?: TurStoreInstance | null;
   brandContextMcpServer?: TurMcpServer | null;
   /** Block AA — defaults to SPEAKER for legacy voice personas. */

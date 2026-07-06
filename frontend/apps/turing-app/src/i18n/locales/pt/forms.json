@@ -1507,6 +1507,8 @@
       "verbosityRange": "A verbosidade deve estar entre 1 e 5.",
       "languageStyle": "Estilo de Linguagem",
       "languageStylePlaceholder": "Sem preferência de estilo",
+      "calibrateModelParams": "Calibrar o modelo pelo estilo",
+      "calibrateModelParamsDesc": "Quando ativo, o estilo desta persona também ajusta a amostragem do modelo: a verbosidade define o tamanho da resposta (max tokens) e o tom define a temperatura. Desativado mantém as configurações da própria instância de LLM.",
       "vocabulary": "Vocabulário",
       "vocabularyDesc": "Termos que a persona deve incluir ou nunca usar. Um termo por linha.",
       "mandatoryTerms": "Termos Obrigatórios",

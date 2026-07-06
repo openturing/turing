@@ -119,6 +119,16 @@ public class TurPersona implements Serializable {
     @Column(nullable = false)
     private int enabled = 1;
 
+    /**
+     * T605 — opt-in style→model calibration. When {@code 1}, the persona's style
+     * guidelines calibrate the resolved sampling params for the turn
+     * ({@link #verbosity} → {@code maxTokens}, {@link #tone} → {@code temperature},
+     * see {@code TurPersonaModelCalibration}). Default {@code 0} keeps the LLM
+     * instance's own params, so existing personas are byte-for-byte unchanged.
+     */
+    @Column(name = "calibrate_model_params", nullable = false)
+    private int calibrateModelParams = 0;
+
     @ManyToOne
     @JoinColumn(name = "few_shot_store_id")
     private TurStoreInstance fewShotStore;

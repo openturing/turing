@@ -30,6 +30,7 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -402,7 +403,7 @@ public class TurAgentChatExecutor {
         // Build chat options + per-turn tool context map (drives Custom
         // Tool Groovy scripts: conversationId, agentId, agentPythonReqs).
         ChatOptions chatOptions = buildChatOptions(chatModel, agent, conversationId, callbacks,
-                agentInvokeDepth);
+                agentInvokeDepth, activePersona);
 
         // Strip the toolset from the INITIAL LLM call when the active
         // node's declarative {@code toolsEnabled=false} forbids them
@@ -416,7 +417,7 @@ public class TurAgentChatExecutor {
         // still be the provider's concrete type (see buildChatOptions) — Spring
         // AI 2.0.0 (final) hard-casts prompt.getOptions() to OpenAiChatOptions.
         ChatOptions initialOptions = activeNodeForbidsTools
-                ? providerToolOptions(chatModel, new ToolCallback[0], java.util.Map.of())
+                ? providerToolOptions(chatModel, new ToolCallback[0], java.util.Map.of(), activePersona)
                 : chatOptions;
         if (activeNodeForbidsTools) {
             log.info("[AgentExec] Initial call on node '{}' running tool-free (aiInstruction forbids tools)",
@@ -524,7 +525,8 @@ public class TurAgentChatExecutor {
      * Custom Tool Groovy scripts.
      */
     private static ChatOptions buildChatOptions(ChatModel chatModel, TurAIAgent agent,
-            String conversationId, ToolCallback[] callbacks, int agentInvokeDepth) {
+            String conversationId, ToolCallback[] callbacks, int agentInvokeDepth,
+            TurPersona activePersona) {
         // Map.of() doesn't accept nulls — build with a LinkedHashMap so
         // we can skip entries cleanly when their source value is absent.
         var toolContextMap = new java.util.LinkedHashMap<String, Object>();
@@ -587,7 +589,7 @@ public class TurAgentChatExecutor {
                 new com.viglet.turing.genai.tool.TurToolCallCollector());
         // internalToolExecutionEnabled was removed in Spring AI 2.0.0-RC1;
         // internal tool execution is now the default once callbacks are present.
-        return providerToolOptions(chatModel, callbacks, toolContextMap);
+        return providerToolOptions(chatModel, callbacks, toolContextMap, activePersona);
     }
 
     /**
@@ -598,12 +600,24 @@ public class TurAgentChatExecutor {
      * prompt options to the provider type and would throw {@code ClassCastException}.
      */
     private static ChatOptions providerToolOptions(ChatModel chatModel,
-            ToolCallback[] callbacks, java.util.Map<String, Object> toolContext) {
+            ToolCallback[] callbacks, java.util.Map<String, Object> toolContext,
+            TurPersona activePersona) {
         List<ToolCallback> callbackList = callbacks == null ? List.of() : List.of(callbacks);
         ToolCallingChatOptions.Builder<?> builder = TurChatToolOptions.builderFrom(chatModel)
                 .toolCallbacks(callbackList);
         if (toolContext != null && !toolContext.isEmpty()) {
             builder.toolContext(toolContext);
+        }
+        // T605 — opt-in style→model calibration. When the active persona opts in,
+        // its verbosity/tone override the resolved sampling params for this turn;
+        // otherwise the builder keeps the instance's own temperature/maxTokens.
+        TurPersonaModelCalibration.Params calibration =
+                TurPersonaModelCalibration.forPersona(activePersona);
+        if (calibration.temperature() != null) {
+            builder.temperature(calibration.temperature());
+        }
+        if (calibration.maxTokens() != null) {
+            builder.maxTokens(calibration.maxTokens());
         }
         return builder.build();
     }
