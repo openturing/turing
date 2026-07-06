@@ -106,6 +106,9 @@
       "title": "Configurações",
       "description": "Configure o site de Navegação Semântica."
     },
+    "launch": {
+      "title": "Busca ao vivo"
+    },
     "behavior": {
       "title": "Comportamento",
       "description": "Como a busca se comportará durante a pesquisa."

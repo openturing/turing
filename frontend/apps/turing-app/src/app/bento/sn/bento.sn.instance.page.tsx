@@ -23,6 +23,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { BENTO_SN_FORM_ID, BentoSNInstanceForm } from "./bento.sn.instance.form";
+import { SnLaunchBar } from "./sn.launch.bar";
 
 /**
  * SN uses `name` (not `title`) and has no `enabled` status flag, so the shared
@@ -121,7 +122,12 @@ export default function BentoSNInstancePage() {
         {({ staged, onStateChange }) => (
           <>
             <BentoSNInstanceForm value={entity} isNew={isNew} staged={staged} onStateChange={onStateChange} />
-            {!isNew && entity.id && <SNSectionsPanel siteId={entity.id} />}
+            {!isNew && entity.id && (
+              <>
+                <SnLaunchBar site={entity} />
+                <SNSectionsPanel siteId={entity.id} />
+              </>
+            )}
           </>
         )}
       </BentoEntityShell>

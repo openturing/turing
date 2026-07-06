@@ -106,6 +106,9 @@
       "title": "Settings",
       "description": "Configure the Semantic Navigation Site."
     },
+    "launch": {
+      "title": "Live search"
+    },
     "behavior": {
       "title": "Behavior",
       "description": "How the search will behave during the search."
