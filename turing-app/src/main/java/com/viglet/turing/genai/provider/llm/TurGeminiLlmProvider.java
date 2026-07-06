@@ -94,6 +94,18 @@ public class TurGeminiLlmProvider implements TurGenAiLlmProvider {
         return new TurGeminiEmbeddingModel(genAiClient, modelName, outputDimensionality);
     }
 
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        // Gemini native uses the GenAI Client (api key only); the REST list
+        // endpoint lives under the generativelanguage v1beta base. Honour an
+        // explicit baseUrl override if one was set in provider options / url.
+        String baseUrl = firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl());
+        return TurLlmModelListingSupport.gemini(baseUrl, decryptedApiKey);
+    }
+
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {
         if (!StringUtils.hasText(decryptedApiKey)) {
             throw new IllegalStateException(

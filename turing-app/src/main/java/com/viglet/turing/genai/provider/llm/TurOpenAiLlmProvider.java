@@ -44,6 +44,16 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
 
     @Override
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        // OpenAI reasoning models (o1/o3/o4-*) 400 when sent temperature/top_p/seed.
+        // Build with sampling params + an equivalent without, and let
+        // TurSamplingParamFallbackChatModel retry transparently on the rejection.
+        return new TurSamplingParamFallbackChatModel(
+                buildChatModel(turLLMInstance, decryptedApiKey, true),
+                buildChatModel(turLLMInstance, decryptedApiKey, false));
+    }
+
+    private ChatModel buildChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey,
+            boolean includeSamplingParams) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String baseUrl = resolveBaseUrl(firstNonBlank(
                 optionsParser.stringValue(options, BASE_URL),
@@ -58,18 +68,20 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
                         optionsParser.stringValue(options, MODEL),
                         turLLMInstance.getModelName())));
 
-        Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
-                turLLMInstance.getTemperature());
-        if (temperature != null) {
-            optionsBuilder.temperature(temperature);
-        }
-        Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
-        if (topP != null) {
-            optionsBuilder.topP(topP);
-        }
-        Integer seed = firstNonNull(optionsParser.intValue(options, "seed"), turLLMInstance.getSeed());
-        if (seed != null) {
-            optionsBuilder.seed(seed);
+        if (includeSamplingParams) {
+            Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
+                    turLLMInstance.getTemperature());
+            if (temperature != null) {
+                optionsBuilder.temperature(temperature);
+            }
+            Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
+            if (topP != null) {
+                optionsBuilder.topP(topP);
+            }
+            Integer seed = firstNonNull(optionsParser.intValue(options, "seed"), turLLMInstance.getSeed());
+            if (seed != null) {
+                optionsBuilder.seed(seed);
+            }
         }
         Integer maxTokens = optionsParser.intValue(options, "maxTokens");
         if (maxTokens != null) {
@@ -91,6 +103,13 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         // Bypass it with a hand-rolled WebClient that POSTs stream:true
         // and parses SSE data: lines so tokens reach the SSE pipeline as
         // they arrive from OpenAI — bubble fills in incrementally.
+        return new TurSamplingParamFallbackChatModel(
+                buildStreamingChatModel(turLLMInstance, decryptedApiKey, true),
+                buildStreamingChatModel(turLLMInstance, decryptedApiKey, false));
+    }
+
+    private ChatModel buildStreamingChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey,
+            boolean includeSamplingParams) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String baseUrl = resolveBaseUrl(firstNonBlank(
                 optionsParser.stringValue(options, BASE_URL),
@@ -102,14 +121,16 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
                 turLLMInstance.getModelName()));
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder().model(modelName);
-        Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
-                turLLMInstance.getTemperature());
-        if (temperature != null) {
-            optionsBuilder.temperature(temperature);
-        }
-        Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
-        if (topP != null) {
-            optionsBuilder.topP(topP);
+        if (includeSamplingParams) {
+            Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
+                    turLLMInstance.getTemperature());
+            if (temperature != null) {
+                optionsBuilder.temperature(temperature);
+            }
+            Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
+            if (topP != null) {
+                optionsBuilder.topP(topP);
+            }
         }
         Integer maxTokens = optionsParser.intValue(options, "maxTokens");
         if (maxTokens != null) {
@@ -140,6 +161,15 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
                 .metadataMode(MetadataMode.NONE)
                 .options(embeddingOptions)
                 .build();
+    }
+
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, BASE_URL),
+                turLLMInstance.getUrl()));
+        return TurLlmModelListingSupport.openAiStyle(baseUrl, decryptedApiKey);
     }
 
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {

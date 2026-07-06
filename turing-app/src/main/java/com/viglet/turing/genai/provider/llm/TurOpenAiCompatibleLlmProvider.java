@@ -133,6 +133,15 @@ public class TurOpenAiCompatibleLlmProvider implements TurGenAiLlmProvider {
                 .build();
     }
 
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = firstNonBlank(
+                optionsParser.stringValue(options, BASE_URL),
+                turLLMInstance.getUrl());
+        return TurLlmModelListingSupport.openAiStyle(baseUrl, decryptedApiKey);
+    }
+
     private void applyCommonOptions(OpenAiChatOptions.Builder optionsBuilder, TurLLMInstance turLLMInstance,
             Map<String, Object> options) {
         Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),

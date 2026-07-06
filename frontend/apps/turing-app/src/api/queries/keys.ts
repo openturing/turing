@@ -56,6 +56,14 @@ export const queryKeys = {
     list: (instanceId: string) =>
       [...queryKeys.llmInstanceCapabilities.all(), 'list', instanceId] as const,
   },
+  // T577 — selectable models per vendor for the model picker. Keyed by vendor +
+  // instance + endpoint + whether a key is present (never the key value itself),
+  // so toggling any of those refetches without caching secrets.
+  llmModels: {
+    all: () => ['llm-models'] as const,
+    list: (params: { vendorId: string; instanceId?: string; url?: string; hasKey: boolean }) =>
+      [...queryKeys.llmModels.all(), params] as const,
+  },
   aiAgents: {
     all: () => ['ai-agents'] as const,
     list: () => [...queryKeys.aiAgents.all(), 'list'] as const,

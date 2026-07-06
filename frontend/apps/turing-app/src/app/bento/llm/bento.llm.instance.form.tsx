@@ -9,7 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
+import { ModelCombobox } from "@/components/ui/model-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
@@ -102,10 +104,27 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const [maxTokensInput, setMaxTokensInput] = useState<string>("")
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const selectedVendorId = form.watch("turLLMVendor.id")
+  const watchedUrl = form.watch("url")
+  const watchedApiKey = form.watch("apiKey")
   const navigate = useNavigate()
 
   const createMutation = useCreateLlmInstance()
   const updateMutation = useUpdateLlmInstance()
+
+  // T577 — models for the picker: live from the vendor when a key is available
+  // (typed here, or reused from the saved instance), else the static catalog.
+  const {
+    data: modelList,
+    isFetching: modelsLoading,
+    refetch: refetchModels,
+  } = useLlmModels({
+    vendorId: selectedVendorId,
+    instanceId: isNew ? undefined : value.id,
+    apiKey: watchedApiKey,
+    url: watchedUrl,
+    providerOptionsJson: value.providerOptionsJson,
+    enabled: Boolean(selectedVendorId),
+  })
 
   useEffect(() => {
     turLLMVendorService.query().then(setVendors)
@@ -395,7 +414,14 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                 <FormLabel>{t("forms.llm.modelName")}</FormLabel>
                 <p className="text-sm text-muted-foreground">{t("forms.llm.modelNameDesc")}</p>
                 <FormControl>
-                  <Input placeholder={t("forms.llm.modelNamePlaceholder")} type="text" autoComplete="one-time-code" className="w-full" {...field} />
+                  <ModelCombobox
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    options={modelList?.models ?? []}
+                    isLoading={modelsLoading}
+                    source={modelList?.source}
+                    onOpen={() => refetchModels()}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

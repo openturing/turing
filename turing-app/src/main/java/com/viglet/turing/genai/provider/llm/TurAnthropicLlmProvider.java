@@ -33,6 +33,17 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
 
     @Override
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        // Current Claude models (Opus 4.7/4.8, Sonnet 5, Fable 5) 400 when sent
+        // temperature/top_p/top_k. Build the model with sampling params, and an
+        // equivalent one without, so TurSamplingParamFallbackChatModel can retry
+        // transparently on the "`temperature` is deprecated for this model" 400.
+        return new TurSamplingParamFallbackChatModel(
+                buildChatModel(turLLMInstance, decryptedApiKey, true),
+                buildChatModel(turLLMInstance, decryptedApiKey, false));
+    }
+
+    private ChatModel buildChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey,
+            boolean includeSamplingParams) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
 
         var anthropicClientBuilder = AnthropicOkHttpClient.builder()
@@ -52,18 +63,20 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
                         optionsParser.stringValue(options, "model"),
                         turLLMInstance.getModelName())));
 
-        Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
-                turLLMInstance.getTemperature());
-        if (temperature != null) {
-            optionsBuilder.temperature(temperature);
-        }
-        Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
-        if (topP != null) {
-            optionsBuilder.topP(topP);
-        }
-        Integer topK = firstNonNull(optionsParser.intValue(options, "topK"), turLLMInstance.getTopK());
-        if (topK != null) {
-            optionsBuilder.topK(topK);
+        if (includeSamplingParams) {
+            Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
+                    turLLMInstance.getTemperature());
+            if (temperature != null) {
+                optionsBuilder.temperature(temperature);
+            }
+            Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
+            if (topP != null) {
+                optionsBuilder.topP(topP);
+            }
+            Integer topK = firstNonNull(optionsParser.intValue(options, "topK"), turLLMInstance.getTopK());
+            if (topK != null) {
+                optionsBuilder.topK(topK);
+            }
         }
         Integer maxTokens = optionsParser.intValue(options, "maxTokens");
         if (maxTokens != null) {
@@ -80,6 +93,15 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         throw new UnsupportedOperationException(
                 "Anthropic does not provide an embedding API. Use a different provider for embeddings.");
+    }
+
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        return TurLlmModelListingSupport.anthropic(baseUrl, decryptedApiKey);
     }
 
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {

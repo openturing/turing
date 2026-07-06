@@ -1,4 +1,5 @@
 "use client"
+import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { LLMFormContext } from "@/components/llm/llm.instance.form.layout"
 import {
   FormControl,
@@ -8,6 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { ModelCombobox } from "@/components/ui/model-combobox"
 import { SectionCard } from "@/components/ui/section-card"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { IconBrain } from "@tabler/icons-react"
@@ -21,8 +23,24 @@ import { useOutletContext } from "react-router-dom"
  */
 export default function LLMInstanceModelSection() {
   const { t } = useTranslation();
-  const { form } = useOutletContext<LLMFormContext>();
+  const { form, value, isNew, selectedVendorId } = useOutletContext<LLMFormContext>();
   useSubPageBreadcrumb(t("llm.sidebar.model"));
+
+  const watchedUrl = form.watch("url");
+  const watchedApiKey = form.watch("apiKey");
+  // T577 — models for the picker (live vendor list when a key is available, else static catalog).
+  const {
+    data: modelList,
+    isFetching: modelsLoading,
+    refetch: refetchModels,
+  } = useLlmModels({
+    vendorId: selectedVendorId,
+    instanceId: isNew ? undefined : value?.id,
+    apiKey: watchedApiKey,
+    url: watchedUrl,
+    providerOptionsJson: value?.providerOptionsJson,
+    enabled: Boolean(selectedVendorId),
+  });
 
   return (
     <div className="w-full max-w-2xl mx-auto px-2 md:px-6 py-2 md:py-8 flex flex-col gap-4">
@@ -62,7 +80,14 @@ export default function LLMInstanceModelSection() {
                     {t("forms.llm.modelNameDesc")}
                   </div>
                   <FormControl>
-                    <Input placeholder={t("forms.llm.modelNamePlaceholder")} type="text" autoComplete="one-time-code" className="w-full" {...field} />
+                    <ModelCombobox
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      options={modelList?.models ?? []}
+                      isLoading={modelsLoading}
+                      source={modelList?.source}
+                      onOpen={() => refetchModels()}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

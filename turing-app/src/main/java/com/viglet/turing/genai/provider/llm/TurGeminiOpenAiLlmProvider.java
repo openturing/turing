@@ -86,6 +86,15 @@ public class TurGeminiOpenAiLlmProvider implements TurGenAiLlmProvider {
                 "Gemini embedding is not yet supported. Use a different provider for embeddings.");
     }
 
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        return TurLlmModelListingSupport.openAiStyle(baseUrl, decryptedApiKey);
+    }
+
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {
         if (!StringUtils.hasText(decryptedApiKey)) {
             throw new IllegalStateException(

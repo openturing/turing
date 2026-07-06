@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.domain.llm.LlmInstanceUpdatedEvent;
 import com.viglet.turing.domain.llm.LlmProviderType;
+import com.viglet.turing.genai.provider.llm.TurLlmModelDiscoveryService;
 import com.viglet.turing.persistence.dto.llm.TurLLMInstanceDto;
 import com.viglet.turing.persistence.mapper.llm.TurLLMInstanceMapper;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -57,18 +58,41 @@ public class TurLLMInstanceAPI {
     private final TurSecretCryptoService turSecretCryptoService;
     private final ApplicationEventPublisher eventPublisher;
     private final TurInfraTenantScope tenantScope;
+    private final TurLlmModelDiscoveryService modelDiscoveryService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurLLMInstanceAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceMapper turLLMInstanceMapper,
             TurSecretCryptoService turSecretCryptoService,
             ApplicationEventPublisher eventPublisher,
-            TurInfraTenantScope tenantScope) {
+            TurInfraTenantScope tenantScope,
+            TurLlmModelDiscoveryService modelDiscoveryService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceMapper = turLLMInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
         this.eventPublisher = eventPublisher;
         this.tenantScope = tenantScope;
+        this.modelDiscoveryService = modelDiscoveryService;
+    }
+
+    /**
+     * T577 — lists the models available for a vendor so the model field can be
+     * a picker instead of free text. Serves a live list from the vendor API
+     * when a key is available (typed-but-unsaved via {@code apiKey}, or reused
+     * from an existing {@code instanceId}); otherwise the bundled static
+     * catalog. The picker stays editable, so any unlisted id can still be typed.
+     */
+    @Secured({"ROLE_ADMIN", "LLM_VIEW", "LLM_CREATE", "LLM_EDIT"})
+    @Operation(summary = "List selectable models for an LLM vendor")
+    @PostMapping("/models")
+    public TurLlmModelDiscoveryService.Result turLLMInstanceModels(@RequestBody TurLlmModelListRequest request) {
+        return modelDiscoveryService.listModels(request.vendorId(), request.instanceId(),
+                request.apiKey(), request.url(), request.providerOptionsJson());
+    }
+
+    /** Request body for {@link #turLLMInstanceModels(TurLlmModelListRequest)}. */
+    public record TurLlmModelListRequest(String vendorId, String instanceId, String apiKey, String url,
+            String providerOptionsJson) {
     }
 
     @Secured({"ROLE_ADMIN", "LLM_VIEW"})
