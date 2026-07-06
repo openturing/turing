@@ -12,6 +12,7 @@ export { BentoUserMenu } from "./bento-user-menu";
 export { BentoBackToTop } from "./bento-back-to-top";
 export { BentoFormSection, type BentoFormSectionProps } from "./bento-form-section";
 export { BentoSaveBar, type BentoSaveBarProps } from "./bento-save-bar";
+export { BentoStatusMarker, type BentoStatusMarkerProps } from "./bento-status-marker";
 export { BentoHeroIconPicker, type BentoHeroIconPickerProps } from "./bento-hero-icon-picker";
 export { BentoInlineEdit, type BentoInlineEditProps } from "./bento-inline-edit";
 export {

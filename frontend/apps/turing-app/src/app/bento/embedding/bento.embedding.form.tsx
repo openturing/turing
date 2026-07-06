@@ -105,7 +105,9 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
   const providerLabel = selectedProviderType === TRANSFORMERS_LOCAL
     ? t("forms.embedding.transformersLocal")
     : llmInstances.find((i) => i.id === selectedProviderType)?.title
-  const showSaveBar = !readOnly && (isNew || form.formState.isDirty)
+  // Save bar is present on any editable detail page so it stays suspended on
+  // scroll; Save is disabled until there is something to persist.
+  const showSaveBar = !readOnly
 
   return (
     <Form {...form}>
@@ -116,7 +118,9 @@ export const BentoEmbeddingModelForm: React.FC<Props> = ({ value, isNew, readOnl
             <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
               <BentoSaveBar
                 title={stagedName || (isNew ? t("embeddingModel.newEmbeddingModel") : t("embeddingModel.title"))}
-                disabled={nameMissing}
+                disabled={nameMissing || (!isNew && !form.formState.isDirty)}
+                titleMissing={nameMissing}
+                dirty={isNew || form.formState.isDirty}
                 loading={isSubmitting}
                 badges={providerLabel && <BentoSaveBar.Badge>{providerLabel}</BentoSaveBar.Badge>}
                 onCancel={() => navigate(urlBase)}

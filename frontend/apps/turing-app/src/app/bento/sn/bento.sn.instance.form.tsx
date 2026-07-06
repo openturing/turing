@@ -124,7 +124,9 @@ export const BentoSNInstanceForm: React.FC<Props> = ({ value, isNew, staged, onS
   const stagedTitle = staged?.title?.trim() ?? ""
   const titleMissing = !stagedTitle
   const seLabel = seInstances.find((s) => s.id === selectedSeId)?.title
-  const showSaveBar = isNew || form.formState.isDirty
+  // Save bar is present on any editable detail page so it stays suspended on
+  // scroll; Save is disabled until there is something to persist.
+  const showSaveBar = true
 
   return (
     <Form {...form}>
@@ -135,7 +137,9 @@ export const BentoSNInstanceForm: React.FC<Props> = ({ value, isNew, staged, onS
             <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
               <BentoSaveBar
                 title={stagedTitle || (isNew ? t("sn.newSite") : t("sn.title"))}
-                disabled={titleMissing}
+                disabled={titleMissing || (!isNew && !form.formState.isDirty)}
+                titleMissing={titleMissing}
+                dirty={isNew || form.formState.isDirty}
                 loading={isSubmitting}
                 badges={seLabel && <BentoSaveBar.Badge>{seLabel}</BentoSaveBar.Badge>}
                 onCancel={() => navigate(urlBase)}

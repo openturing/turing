@@ -77,7 +77,9 @@ export const BentoWebhookForm: React.FC<Props> = ({ value, isNew, staged, onStat
 
   const stagedTitle = staged?.title?.trim() ?? ""
   const titleMissing = !stagedTitle
-  const showSaveBar = isNew || form.formState.isDirty
+  // Save bar is present on any editable detail page so it stays suspended on
+  // scroll; Save is disabled until there is something to persist.
+  const showSaveBar = true
 
   return (
     <Form {...form}>
@@ -88,7 +90,9 @@ export const BentoWebhookForm: React.FC<Props> = ({ value, isNew, staged, onStat
             <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
               <BentoSaveBar
                 title={stagedTitle || (isNew ? t("webhook.newWebhook") : t("webhook.title"))}
-                disabled={titleMissing}
+                disabled={titleMissing || (!isNew && !form.formState.isDirty)}
+                titleMissing={titleMissing}
+                dirty={isNew || form.formState.isDirty}
                 loading={isSubmitting}
                 onCancel={() => navigate(urlBase)}
               />

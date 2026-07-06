@@ -10,6 +10,7 @@ import { BentoActionsMenu, type BentoActionsMenuItem } from "./bento-actions-men
 import { BentoHero } from "./bento-hero";
 import { BentoHeroIconPicker } from "./bento-hero-icon-picker";
 import { BentoInlineEdit } from "./bento-inline-edit";
+import { BentoStatusMarker } from "./bento-status-marker";
 import type { BentoTone } from "./bento-tones";
 
 /**
@@ -248,8 +249,18 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   }
 
   const enabled = staged.enabled === 1;
-  const showSaveButtons = !readOnly && (isNew || formState.isDirty);
+  /*
+   * Save/Cancel are always present on an editable detail page — parity with
+   * the new-entity flow and the pre-redesign sticky header, so an existing
+   * entity always shows the header affordance instead of it appearing only
+   * after the form goes dirty. Identity fields (title/description/icon/
+   * status) auto-save on blur, so for an untouched existing entity there is
+   * nothing pending: Save stays disabled until the form body reports dirty.
+   */
+  const showSaveButtons = !readOnly;
   const titleMissing = !staged.title.trim();
+  const nothingToSave = !isNew && !formState.isDirty;
+  const saveDisabled = titleMissing || nothingToSave;
 
   const actions: BentoActionsMenuItem[] = [
     ...(extraActions ?? []),
@@ -266,7 +277,14 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
   return (
     <>
       <BentoHero
-        eyebrow={<Link to={listRoute} className="hover:text-foreground">{eyebrow}</Link>}
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <Link to={listRoute} className="hover:text-foreground">{eyebrow}</Link>
+            {!readOnly && (
+              <BentoStatusMarker titleMissing={titleMissing} dirty={isNew || formState.isDirty} />
+            )}
+          </span>
+        }
         leading={
           <BentoHeroIconPicker
             value={staged.icon}
@@ -314,7 +332,7 @@ export function BentoEntityShell<TEntity extends BentoEntityLike>({
                * Bind to the form via the `form="…"` attribute.
                */
               <div className="bento-fade-out flex shrink-0 items-center gap-2">
-                <GradientButton type="submit" form={formId} size="sm" loading={formState.isSubmitting} disabled={titleMissing}>
+                <GradientButton type="submit" form={formId} size="sm" loading={formState.isSubmitting} disabled={saveDisabled}>
                   <IconDeviceFloppy className="size-4" />
                   {t("forms.formActions.saveChanges")}
                 </GradientButton>

@@ -12,6 +12,10 @@
       "noResults": "Nenhum resultado",
       "opensConsole": "Abre no console"
     },
+    "saveBar": {
+      "unsaved": "Alterações não salvas",
+      "titleRequired": "Título obrigatório"
+    },
     "layout": {
       "customize": "Personalizar layout",
       "editHint": "Arraste os blocos para reordenar · escolha P / M / G para redimensionar",

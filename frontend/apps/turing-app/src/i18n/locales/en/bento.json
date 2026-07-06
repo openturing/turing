@@ -12,6 +12,10 @@
       "noResults": "No matches",
       "opensConsole": "Opens in console"
     },
+    "saveBar": {
+      "unsaved": "Unsaved changes",
+      "titleRequired": "Title required"
+    },
     "layout": {
       "customize": "Customize layout",
       "editHint": "Drag tiles to reorder · pick S / M / L to resize",

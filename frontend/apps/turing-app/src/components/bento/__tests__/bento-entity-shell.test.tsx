@@ -58,7 +58,7 @@ describe("BentoEntityShell", () => {
     expect(screen.getByText("forms.formActions.saveChanges")).toBeInTheDocument();
   });
 
-  it("in existing mode reveals Save only after the form reports dirty", () => {
+  it("in existing mode always shows the header Save, disabled until the form reports dirty", () => {
     renderShell({
       entity: { id: "1", title: "GPT", enabled: 1 },
       isNew: false,
@@ -71,12 +71,30 @@ describe("BentoEntityShell", () => {
 
     // Status pill reflects the entity's enabled flag.
     expect(screen.getByText("Active")).toBeInTheDocument();
-    // Not dirty yet → no Save button.
-    expect(screen.queryByText("forms.formActions.saveChanges")).not.toBeInTheDocument();
+    // The header Save is present even before any edit (parity with new mode /
+    // the pre-redesign sticky header) but disabled — nothing pending yet — and
+    // there is no unsaved marker.
+    const saveBefore = screen.getByRole("button", { name: "forms.formActions.saveChanges" });
+    expect(saveBefore).toBeInTheDocument();
+    expect(saveBefore).toBeDisabled();
+    expect(screen.queryByText("bento.saveBar.unsaved")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("make-dirty"));
 
-    expect(screen.getByText("forms.formActions.saveChanges")).toBeInTheDocument();
+    // Once the form reports dirty, Save enables and the eyebrow marks it unsaved.
+    expect(screen.getByRole("button", { name: "forms.formActions.saveChanges" })).toBeEnabled();
+    expect(screen.getByText("bento.saveBar.unsaved")).toBeInTheDocument();
+  });
+
+  it("marks the title as required in new mode until one is entered", () => {
+    renderShell({
+      entity: {},
+      isNew: true,
+      child: () => null,
+    });
+
+    // Empty title in new mode → the required blocker is surfaced in the hero.
+    expect(screen.getByText("bento.saveBar.titleRequired")).toBeInTheDocument();
   });
 
   it("in read-only mode suppresses Save even when the form reports dirty, and renders badge + notice", () => {
