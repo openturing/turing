@@ -82,7 +82,10 @@ export function PersonaLaunchBar({ persona }: Readonly<{ persona: TurPersona }>)
       label: t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" }),
       icon: IconMasksTheater,
       tone: "rose",
-      soon: true,
+      // A dialogue is between TWO personas, so it lives on a GLOBAL surface
+      // (T585); we deep-link there with this persona pre-selected as speaker A.
+      onSelect: () =>
+        navigate(`${ROUTES.BENTO_PERSONA_DIALOGUE}?a=${encodeURIComponent(persona.id)}`),
     },
   ];
 

@@ -29,6 +29,26 @@
       "title": "Validate content",
       "subtitle": "Add documents, links or indexed content and score how well it fits this persona's audience."
     },
+    "dialogue": {
+      "title": "Persona dialogue",
+      "subtitle": "Pick a topic and two personas and watch them talk it through, turn by turn.",
+      "setupTitle": "Set up the conversation",
+      "setupDesc": "Each persona must end every reply with a question, so the dialogue keeps flowing.",
+      "needTwo": "You need at least two speaker personas (SPEAKER or BOTH) to run a dialogue.",
+      "topic": "Topic",
+      "topicPlaceholder": "e.g. Should a startup adopt a four-day work week?",
+      "personaA": "First speaker",
+      "personaB": "Second speaker",
+      "turns": "Turns",
+      "model": "Model",
+      "selectModel": "Select a model",
+      "noLlm": "No enabled LLM instance is available.",
+      "run": "Start dialogue",
+      "running": "Talking…",
+      "transcriptTitle": "Transcript",
+      "empty": "No turns were produced.",
+      "partial": "The dialogue stopped early: {{error}}"
+    },
     "dashboard": {
       "systemInstructionSet": "Voice contract defined",
       "systemInstructionEmpty": "Set the voice contract",

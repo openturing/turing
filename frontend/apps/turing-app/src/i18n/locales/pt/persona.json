@@ -29,6 +29,26 @@
       "title": "Validar conteúdo",
       "subtitle": "Adicione documentos, links ou conteúdo indexado e pontue o quão bem ele se adequa à audiência desta persona."
     },
+    "dialogue": {
+      "title": "Diálogo entre personas",
+      "subtitle": "Escolha um tema e duas personas e veja-as conversarem, turn a turn.",
+      "setupTitle": "Configurar a conversa",
+      "setupDesc": "Cada persona é obrigada a terminar toda resposta com uma pergunta, para o diálogo continuar sempre.",
+      "needTwo": "Você precisa de pelo menos duas personas falantes (SPEAKER ou BOTH) para rodar um diálogo.",
+      "topic": "Tema",
+      "topicPlaceholder": "ex.: Uma startup deveria adotar a semana de quatro dias?",
+      "personaA": "Primeira persona",
+      "personaB": "Segunda persona",
+      "turns": "Turnos",
+      "model": "Modelo",
+      "selectModel": "Selecione um modelo",
+      "noLlm": "Nenhuma instância de LLM habilitada está disponível.",
+      "run": "Iniciar diálogo",
+      "running": "Conversando…",
+      "transcriptTitle": "Transcrição",
+      "empty": "Nenhum turno foi produzido.",
+      "partial": "O diálogo parou antes do fim: {{error}}"
+    },
     "dashboard": {
       "systemInstructionSet": "Contrato de voz definido",
       "systemInstructionEmpty": "Defina o contrato de voz",

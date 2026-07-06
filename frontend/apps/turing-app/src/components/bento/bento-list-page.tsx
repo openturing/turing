@@ -61,6 +61,12 @@ export interface BentoListPageProps<T> {
   subtitle: string;
   /** Tone driving the hero chip + New-tile gradient. Default `indigo`. */
   tone?: BentoTone;
+  /**
+   * Optional global action(s) rendered in a row below the hero (left-aligned,
+   * sharing the row with the "Customize" button). Use for list-scoped launch
+   * actions that aren't per-item — e.g. the persona↔persona dialogue (T585).
+   */
+  headerAction?: ReactNode;
 
   // --- "new" tile ---
   newRoute: string;
@@ -101,6 +107,7 @@ export function BentoListPage<T>({
   title,
   subtitle,
   tone = "indigo",
+  headerAction,
   newRoute,
   newLabel,
   newSubtitle,
@@ -135,12 +142,15 @@ export function BentoListPage<T>({
         subtitle={subtitle}
       />
 
-      {canCustomize && !editing && (
-        <div className="mb-4 flex justify-end">
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-2">
-            <IconAdjustmentsHorizontal size={16} />
-            {t("bento.layout.customize", { defaultValue: "Customize layout" })}
-          </Button>
+      {(headerAction || (canCustomize && !editing)) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {headerAction}
+          {canCustomize && !editing && (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="ml-auto gap-2">
+              <IconAdjustmentsHorizontal size={16} />
+              {t("bento.layout.customize", { defaultValue: "Customize layout" })}
+            </Button>
+          )}
         </div>
       )}
 

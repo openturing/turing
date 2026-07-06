@@ -1,8 +1,10 @@
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
-import { IconUserCircle } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { IconMasksTheater, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 export default function BentoPersonaListPage() {
   const { t } = useTranslation();
@@ -19,6 +21,14 @@ export default function BentoPersonaListPage() {
       tone="rose"
       title={t("persona.title")}
       subtitle={t("persona.blankDescription")}
+      headerAction={
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
+            <IconMasksTheater size={16} />
+            {t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" })}
+          </Link>
+        </Button>
+      }
       newRoute={`${ROUTES.BENTO_PERSONA_INSTANCE}/new`}
       newLabel={t("persona.newInstance")}
       itemKey={(persona) => persona.id ?? persona.name}
