@@ -4,6 +4,10 @@
     "blankTitle": "Você ainda não possui nenhum agente de IA.",
     "blankDescription": "Crie um novo agente de IA para orquestrar instâncias de LLM e servidores MCP.",
     "newInstance": "Novo Agente de IA",
+    "launch": {
+      "title": "Abrir",
+      "openChat": "Abrir chat"
+    },
     "deleted": "O Agente de IA {{name}} foi excluído",
     "notDeleted": "O Agente de IA {{name}} não foi excluído",
     "nav": {

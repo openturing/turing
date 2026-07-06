@@ -4,6 +4,10 @@
     "blankTitle": "You don't seem to have any AI agent.",
     "blankDescription": "Create a new AI agent to orchestrate LLM instances and MCP servers.",
     "newInstance": "New AI Agent",
+    "launch": {
+      "title": "Launch",
+      "openChat": "Open chat"
+    },
     "deleted": "The {{name}} AI Agent was deleted",
     "notDeleted": "The {{name}} AI Agent was not deleted",
     "nav": {

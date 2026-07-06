@@ -21,6 +21,7 @@ import {
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AiAgentLaunchBar } from "./ai-agent.launch.bar";
 
 export default function BentoAIAgentPage() {
   const { id } = useParams() as { id: string };
@@ -178,6 +179,8 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         setOpen={setDeleteOpen}
         trigger={<span className="hidden" aria-hidden />}
       />
+
+      <AiAgentLaunchBar agent={agent} />
 
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         {/* HERO: System prompt — large 2x2 frosted tile */}
