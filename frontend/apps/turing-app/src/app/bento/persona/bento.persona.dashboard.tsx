@@ -6,9 +6,7 @@ import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { toast } from "@viglet/viglet-design-system";
 import {
   IconBook2,
-  IconNotebook,
   IconPalette,
-  IconReportAnalytics,
   IconSettings,
   IconSparkles,
   IconTrash,
@@ -226,46 +224,21 @@ export default function BentoPersonaDashboard() {
         </BentoTile>
 
         {showAudience && (
-          <>
-            <BentoTile
-              to={`${base}/audience`}
-              icon={IconUsers}
-              tone="indigo"
-              span="col-span-2 row-span-1 md:col-span-2 lg:col-span-2"
-              eyebrow={t("persona.sidebar.audience")}
-              title={t("persona.dashboard.audienceTitle", { defaultValue: "Audience profile" })}
-            >
-              <p className="text-sm text-muted-foreground">
-                {t("persona.dashboard.audienceHint", { defaultValue: "Who this persona reads for." })}
-              </p>
-            </BentoTile>
-
-            <BentoTile
-              to={`${base}/notebook`}
-              icon={IconNotebook}
-              tone="slate"
-              span="col-span-1 row-span-1 md:col-span-1 lg:col-span-2"
-              eyebrow={t("persona.sidebar.notebook")}
-              title={t("persona.dashboard.notebookTitle", { defaultValue: "Evaluation notebook" })}
-            >
-              <p className="text-sm text-muted-foreground">
-                {t("persona.dashboard.notebookHint", { defaultValue: "Sources used to score content fit." })}
-              </p>
-            </BentoTile>
-
-            <BentoTile
-              to={`${base}/fit-report`}
-              icon={IconReportAnalytics}
-              tone="rose"
-              span="col-span-1 row-span-1 md:col-span-1 lg:col-span-2"
-              eyebrow={t("persona.sidebar.fitReport")}
-              title={t("persona.dashboard.fitReportTitle", { defaultValue: "Audience-fit report" })}
-            >
-              <p className="text-sm text-muted-foreground">
-                {t("persona.dashboard.fitReportHint", { defaultValue: "How well content matches this audience." })}
-              </p>
-            </BentoTile>
-          </>
+          // Notebook + fit report are reached through the "Validate content"
+          // launchpad action (a single add-sources → score flow), so the
+          // dashboard only surfaces the audience-profile config here.
+          <BentoTile
+            to={`${base}/audience`}
+            icon={IconUsers}
+            tone="indigo"
+            span="col-span-2 row-span-1 md:col-span-2 lg:col-span-2"
+            eyebrow={t("persona.sidebar.audience")}
+            title={t("persona.dashboard.audienceTitle", { defaultValue: "Audience profile" })}
+          >
+            <p className="text-sm text-muted-foreground">
+              {t("persona.dashboard.audienceHint", { defaultValue: "Who this persona reads for." })}
+            </p>
+          </BentoTile>
         )}
       </div>
     </>

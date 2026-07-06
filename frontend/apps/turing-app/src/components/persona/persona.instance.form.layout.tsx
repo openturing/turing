@@ -243,8 +243,11 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
         icon: IconUsers,
         showOnNew: true,
       })
-      // Notebook + content-fit report need a saved persona (FK).
-      if (!isNew && value.id) {
+      // Notebook + content-fit report need a saved persona (FK). In the Bento
+      // shell they're reached through the "Validate content" launch surface
+      // (T584), so we don't duplicate them as editor tabs there; the legacy
+      // console editor keeps them inline.
+      if (!isNew && value.id && chrome === "console") {
         navMain.push({
           title: t("persona.sidebar.notebook"),
           url: "/notebook",
@@ -266,7 +269,7 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
       showOnNew: true,
     })
     return { navMain }
-  }, [isNew, showAudience, value.id, t])
+  }, [isNew, showAudience, value.id, chrome, t])
 
   const outletContext: PersonaFormContext = {
     form,
