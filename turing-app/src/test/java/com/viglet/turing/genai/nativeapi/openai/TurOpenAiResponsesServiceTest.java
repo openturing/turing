@@ -21,6 +21,7 @@ import com.openai.models.responses.Tool;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService.StoredCompletionsDirective;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -273,6 +274,27 @@ class TurOpenAiResponsesServiceTest {
         TurLLMInstance instance = new TurLLMInstance();
         ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of());
         assertThat(params.background()).isEmpty();
+    }
+
+    @Test
+    void personaCalibrationOverridesTemperatureAndSetsMaxOutputTokens() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setTemperature(0.9);
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                new Params(0.2, 4096));
+        assertThat(params.temperature()).contains(0.2);
+        // The chat path sets no maxOutputTokens by default; calibration adds it.
+        assertThat(params.maxOutputTokens()).contains(4096L);
+    }
+
+    @Test
+    void noneCalibrationKeepsInstanceTemperatureAndNoMaxOutputTokens() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setTemperature(0.9);
+        ResponseCreateParams params = service.buildParams(instance, List.of(), "hi", List.of(),
+                Params.NONE);
+        assertThat(params.temperature()).contains(0.9);
+        assertThat(params.maxOutputTokens()).isEmpty();
     }
 
     @Test

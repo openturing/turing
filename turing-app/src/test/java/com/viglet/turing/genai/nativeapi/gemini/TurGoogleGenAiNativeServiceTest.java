@@ -24,6 +24,7 @@ import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapab
 import com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory;
 import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRef;
 import com.viglet.turing.genai.nativeapi.cache.TurNoOpContextCacheProvider;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -124,6 +125,31 @@ class TurGoogleGenAiNativeServiceTest {
 
         assertThat(config.temperature()).contains(0.4f);
         assertThat(config.topP()).contains(0.8f);
+        assertThat(config.maxOutputTokens()).contains(256);
+    }
+
+    @Test
+    void personaCalibrationOverridesTemperatureAndMaxTokens() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setTemperature(0.4);
+        instance.setProviderOptionsJson("{\"maxTokens\":256}");
+        // T606 — opted-in persona calibration wins over the instance + providerOptions.
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of(),
+                Optional.empty(), new Params(0.2, 4096));
+
+        assertThat(config.temperature()).contains(0.2f);
+        assertThat(config.maxOutputTokens()).contains(4096);
+    }
+
+    @Test
+    void noneCalibrationKeepsInstanceSampling() {
+        TurLLMInstance instance = new TurLLMInstance();
+        instance.setTemperature(0.4);
+        instance.setProviderOptionsJson("{\"maxTokens\":256}");
+        GenerateContentConfig config = service.buildConfig(instance, "sys", List.of(),
+                Optional.empty(), Params.NONE);
+
+        assertThat(config.temperature()).contains(0.4f);
         assertThat(config.maxOutputTokens()).contains(256);
     }
 

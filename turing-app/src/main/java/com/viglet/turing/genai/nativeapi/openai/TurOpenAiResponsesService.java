@@ -50,6 +50,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport.ToolOutcome;
 import com.viglet.turing.genai.nativeapi.openai.TurStoredCompletionsService.StoredCompletionsDirective;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
@@ -209,9 +210,25 @@ public class TurOpenAiResponsesService {
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
             ReasoningOptions reasoning, String safetyIdentifier) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                serviceTier, agentId, conversationId, storedCompletions, reasoning, safetyIdentifier,
+                Params.NONE);
+    }
+
+    /**
+     * T606 — persona-aware overload. When the active persona opted into
+     * style→model calibration, {@code calibration} carries the per-turn
+     * temperature/maxOutputTokens overrides ({@link Params#NONE} = unchanged path).
+     */
+    public Flux<ChatResponse> chat(OpenAIClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
+            ReasoningOptions reasoning, String safetyIdentifier, Params calibration) {
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
                         capabilities, coexistingTools, serviceTier, agentId, conversationId,
-                        storedCompletions, reasoning, safetyIdentifier))
+                        storedCompletions, reasoning, safetyIdentifier, calibration))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(TurOpenAiResponsesService::emitResult)
                 .doOnError(err -> log.error("[Native][OpenAI-Responses] instance '{}' error: {}",
@@ -339,7 +356,7 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             String agentId, String conversationId, StoredCompletionsDirective storedCompletions,
-            ReasoningOptions reasoning, String safetyIdentifier) {
+            ReasoningOptions reasoning, String safetyIdentifier, Params calibration) {
         long t0 = System.currentTimeMillis();
         List<Tool> serverTools = buildTools(capabilities);
         List<Tool> functionTools = buildFunctionTools(coexistingTools);
@@ -355,7 +372,7 @@ public class TurOpenAiResponsesService {
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             ResponseCreateParams params = buildParamsFromItems(instance, items, systemPrompt,
                     serverTools, functionTools, serviceTier, storedCompletions, reasoning,
-                    safetyIdentifier);
+                    safetyIdentifier, calibration);
             Response response = client.responses().create(params);
             if (background.enabled()) {
                 response = awaitBackground(client, response, background);
@@ -407,7 +424,15 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
-                ReasoningOptions.NONE, null);
+                ReasoningOptions.NONE, null, Params.NONE);
+    }
+
+    /** T606 — persona-calibration-aware builder overload (test/builder entry). */
+    ResponseCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, Params calibration) {
+        return buildParamsFromItems(instance, seedItems(history), systemPrompt,
+                buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
+                ReasoningOptions.NONE, null, calibration);
     }
 
     /** Test/builder overload with an explicit stored-completions directive. */
@@ -416,7 +441,7 @@ public class TurOpenAiResponsesService {
             StoredCompletionsDirective storedCompletions) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, storedCompletions, ReasoningOptions.NONE,
-                null);
+                null, Params.NONE);
     }
 
     /** F.12 / §X.13 — test/builder overload with explicit {@link ReasoningOptions}. */
@@ -424,7 +449,7 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities, ReasoningOptions reasoning) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
-                reasoning, null);
+                reasoning, null, Params.NONE);
     }
 
     /**
@@ -435,7 +460,7 @@ public class TurOpenAiResponsesService {
             String systemPrompt, List<EnabledCapability> capabilities, String safetyIdentifier) {
         return buildParamsFromItems(instance, seedItems(history), systemPrompt,
                 buildTools(capabilities), List.of(), null, StoredCompletionsDirective.DISABLED,
-                ReasoningOptions.NONE, safetyIdentifier);
+                ReasoningOptions.NONE, safetyIdentifier, Params.NONE);
     }
 
     private ResponseCreateParams buildParamsFromItems(TurLLMInstance instance,
@@ -443,7 +468,7 @@ public class TurOpenAiResponsesService {
             List<Tool> functionTools,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             StoredCompletionsDirective storedCompletions, ReasoningOptions reasoning,
-            String safetyIdentifier) {
+            String safetyIdentifier, Params calibration) {
         ResponseCreateParams.Builder builder = ResponseCreateParams.builder()
                 .model(resolveModel(instance));
 
@@ -452,8 +477,17 @@ public class TurOpenAiResponsesService {
         }
         builder.inputOfResponse(items);
 
-        if (instance.getTemperature() != null) {
-            builder.temperature(instance.getTemperature());
+        // T606 — persona style→model calibration overrides the instance temperature
+        // when opted in, and adds a maxOutputTokens ceiling from verbosity (the chat
+        // path otherwise sets none). Null fields = unchanged path.
+        Double temperature = calibration.temperature() != null
+                ? calibration.temperature()
+                : instance.getTemperature();
+        if (temperature != null) {
+            builder.temperature(temperature);
+        }
+        if (calibration.maxTokens() != null) {
+            builder.maxOutputTokens(calibration.maxTokens().longValue());
         }
         if (serviceTier != null) {
             builder.serviceTier(com.openai.models.responses.ResponseCreateParams.ServiceTier

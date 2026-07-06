@@ -46,6 +46,7 @@ import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.citation.TurChatCitation;
 import com.viglet.turing.genai.citation.TurCitationDocument;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeFunctionToolSupport;
@@ -189,10 +190,26 @@ public class TurAnthropicMessagesService {
             List<TurCitationDocument> citationDocuments,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
             TurAnthropicContextManagement.Options contextOptions) {
+        return chat(client, instance, history, systemPrompt, capabilities, coexistingTools,
+                citationDocuments, serviceTier, contextOptions, Params.NONE);
+    }
+
+    /**
+     * T606 — persona-aware overload. When the active persona opted into
+     * style→model calibration, {@code calibration} carries the per-turn
+     * temperature/maxTokens overrides ({@link Params#NONE} = unchanged path).
+     */
+    public Flux<ChatResponse> chat(AnthropicClient client, TurLLMInstance instance,
+            List<ChatMessageItem> history, String systemPrompt,
+            List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
+            List<TurCitationDocument> citationDocuments,
+            com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
+            TurAnthropicContextManagement.Options contextOptions, Params calibration) {
         TurAnthropicContextManagement.Options options =
                 contextOptions == null ? TurAnthropicContextManagement.Options.NONE : contextOptions;
         return Mono.fromCallable(() -> runLoop(client, instance, history, systemPrompt,
-                        capabilities, coexistingTools, citationDocuments, serviceTier, options))
+                        capabilities, coexistingTools, citationDocuments, serviceTier, options,
+                        calibration))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(TurAnthropicMessagesService::emitTurn)
                 .doOnError(err -> log.error("[Native][Anthropic-Messages] instance '{}' error: {}",
@@ -245,7 +262,7 @@ public class TurAnthropicMessagesService {
             String systemPrompt, List<EnabledCapability> capabilities, ToolCallback[] coexistingTools,
             List<TurCitationDocument> citationDocuments,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            TurAnthropicContextManagement.Options contextOptions) {
+            TurAnthropicContextManagement.Options contextOptions, Params calibration) {
         long t0 = System.currentTimeMillis();
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> serverTools = buildTools(capabilities, betas);
@@ -267,7 +284,7 @@ public class TurAnthropicMessagesService {
         for (int iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
             MessageCreateParams params = buildParamsFromConversation(
                     instance, conversation, systemPrompt, tools, betas, mcpServers, serviceTier,
-                    contextOptions);
+                    contextOptions, calibration);
             Message response = client.messages().create(params);
             // T154 / §X.7.c — append text and decode citations in one pass so each
             // citation carries its answer-span offsets (for inline underlining).
@@ -314,21 +331,32 @@ public class TurAnthropicMessagesService {
 
     MessageCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
             String systemPrompt, List<EnabledCapability> capabilities) {
+        return buildParams(instance, history, systemPrompt, capabilities, Params.NONE);
+    }
+
+    /** T606 — persona-calibration-aware builder overload (test/builder entry). */
+    MessageCreateParams buildParams(TurLLMInstance instance, List<ChatMessageItem> history,
+            String systemPrompt, List<EnabledCapability> capabilities, Params calibration) {
         Set<String> betas = new LinkedHashSet<>();
         List<ToolUnion> tools = buildTools(capabilities, betas);
         List<Object> mcpServers = buildMcpServers(capabilities, betas);
         return buildParamsFromConversation(instance, seedConversation(history), systemPrompt, tools,
-                betas, mcpServers, null, TurAnthropicContextManagement.Options.NONE);
+                betas, mcpServers, null, TurAnthropicContextManagement.Options.NONE, calibration);
     }
 
     private MessageCreateParams buildParamsFromConversation(TurLLMInstance instance,
             List<MessageParam> conversation, String systemPrompt, List<ToolUnion> tools,
             Set<String> betas, List<Object> mcpServers,
             com.viglet.turing.genai.servicetier.TurServiceTier serviceTier,
-            TurAnthropicContextManagement.Options contextOptions) {
+            TurAnthropicContextManagement.Options contextOptions, Params calibration) {
+        // T606 — persona style→model calibration takes precedence over the instance
+        // maxTokens/temperature when opted in (null fields = no override).
+        long maxTokens = calibration.maxTokens() != null
+                ? calibration.maxTokens()
+                : resolveMaxTokens(instance);
         MessageCreateParams.Builder builder = MessageCreateParams.builder()
                 .model(resolveModel(instance))
-                .maxTokens(resolveMaxTokens(instance))
+                .maxTokens(maxTokens)
                 .messages(conversation);
 
         if (StringUtils.hasText(systemPrompt)) {
@@ -355,8 +383,15 @@ public class TurAnthropicMessagesService {
             builder.thinking(com.anthropic.models.messages.ThinkingConfigEnabled.builder()
                     .budgetTokens(thinking.budgetTokens())
                     .build());
-        } else if (instance.getTemperature() != null) {
-            builder.temperature(instance.getTemperature());
+        } else {
+            // T606 — persona calibration overrides the instance temperature when
+            // opted in; still skipped under thinking (Anthropic forces temp=1).
+            Double temperature = calibration.temperature() != null
+                    ? calibration.temperature()
+                    : instance.getTemperature();
+            if (temperature != null) {
+                builder.temperature(temperature);
+            }
         }
         if (serviceTier != null) {
             builder.serviceTier(com.anthropic.models.messages.MessageCreateParams.ServiceTier

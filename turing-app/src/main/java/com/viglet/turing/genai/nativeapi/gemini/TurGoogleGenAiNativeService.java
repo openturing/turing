@@ -40,6 +40,7 @@ import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
 import com.viglet.turing.genai.nativeapi.cache.TurContextCacheProviderFactory;
 import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRef;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.nativeapi.cache.TurContextCacheRequest;
 import com.viglet.turing.genai.nativeapi.gemini.TurGeminiGroundingDecoder.GroundingResult;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
@@ -111,7 +112,7 @@ public class TurGoogleGenAiNativeService {
      */
     public Flux<ChatResponse> chat(Client client, TurLLMInstance instance,
             List<ChatMessageItem> history, String systemPrompt,
-            List<EnabledCapability> capabilities) {
+            List<EnabledCapability> capabilities, Params calibration) {
         String model = resolveModelName(instance);
         List<Content> contents = toContents(history);
         // T499 / §X.20 — when context caching is opted in, cache the stable prefix
@@ -119,7 +120,7 @@ public class TurGoogleGenAiNativeService {
         // no-op default returns empty for every other vendor, leaving the request
         // byte-for-byte unchanged.
         Optional<TurContextCacheRef> cacheRef = resolveContextCache(instance, model, systemPrompt);
-        GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities, cacheRef);
+        GenerateContentConfig config = buildConfig(instance, systemPrompt, capabilities, cacheRef, calibration);
         boolean surfaceThoughts = isThinkingSurfaced(instance);
         return Flux.<ChatResponse>create(sink -> {
             StringBuilder answer = new StringBuilder();
@@ -274,7 +275,13 @@ public class TurGoogleGenAiNativeService {
      */
     GenerateContentConfig buildConfig(TurLLMInstance instance, String systemPrompt,
             List<EnabledCapability> capabilities) {
-        return buildConfig(instance, systemPrompt, capabilities, Optional.empty());
+        return buildConfig(instance, systemPrompt, capabilities, Optional.empty(), Params.NONE);
+    }
+
+    /** Cache-aware overload without persona calibration (retained for callers/tests). */
+    GenerateContentConfig buildConfig(TurLLMInstance instance, String systemPrompt,
+            List<EnabledCapability> capabilities, Optional<TurContextCacheRef> cacheRef) {
+        return buildConfig(instance, systemPrompt, capabilities, cacheRef, Params.NONE);
     }
 
     /**
@@ -289,7 +296,8 @@ public class TurGoogleGenAiNativeService {
      * (they belong to the cache), so both are omitted in that case.
      */
     GenerateContentConfig buildConfig(TurLLMInstance instance, String systemPrompt,
-            List<EnabledCapability> capabilities, Optional<TurContextCacheRef> cacheRef) {
+            List<EnabledCapability> capabilities, Optional<TurContextCacheRef> cacheRef,
+            Params calibration) {
         Map<String, Object> options = optionsParser.parse(instance.getProviderOptionsJson());
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
         boolean cached = cacheRef != null && cacheRef.isPresent();
@@ -298,8 +306,11 @@ public class TurGoogleGenAiNativeService {
         } else if (StringUtils.hasText(systemPrompt)) {
             builder.systemInstruction(Content.fromParts(Part.fromText(systemPrompt)));
         }
-        Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
-                instance.getTemperature());
+        // T606 — opt-in persona style→model calibration takes precedence over the
+        // providerOptionsJson override and the instance default; null means "no
+        // calibration", so the legacy precedence is preserved.
+        Double temperature = firstNonNull(calibration.temperature(),
+                optionsParser.doubleValue(options, "temperature"), instance.getTemperature());
         if (temperature != null) {
             builder.temperature(temperature.floatValue());
         }
@@ -311,7 +322,8 @@ public class TurGoogleGenAiNativeService {
         if (topK != null) {
             builder.topK(topK.floatValue());
         }
-        Integer maxTokens = optionsParser.intValue(options, "maxTokens");
+        Integer maxTokens = firstNonNull(calibration.maxTokens(),
+                optionsParser.intValue(options, "maxTokens"));
         if (maxTokens != null) {
             builder.maxOutputTokens(maxTokens);
         }

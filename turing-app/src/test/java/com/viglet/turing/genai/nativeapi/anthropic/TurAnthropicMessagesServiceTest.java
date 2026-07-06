@@ -22,6 +22,7 @@ import com.anthropic.models.messages.ToolUnion;
 import com.anthropic.models.messages.CacheControlEphemeral;
 import com.viglet.turing.genai.nativeapi.TurNativeCapability;
 import com.viglet.turing.genai.nativeapi.TurNativeCapabilityService.EnabledCapability;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration.Params;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -260,5 +261,25 @@ class TurAnthropicMessagesServiceTest {
         var params = service.buildParams(instance, List.of(), "hi", List.of());
         assertThat(params.thinking()).isEmpty();
         assertThat(params.temperature()).contains(0.3);
+    }
+
+    @Test
+    void personaCalibrationOverridesTemperatureAndMaxTokens() {
+        TurLLMInstance instance = anthropicInstance(null);
+        instance.setTemperature(0.9);
+        var params = service.buildParams(instance, List.of(), "hi", List.of(), new Params(0.2, 4096));
+        assertThat(params.temperature()).contains(0.2);
+        assertThat(params.maxTokens()).isEqualTo(4096L);
+    }
+
+    @Test
+    void personaCalibrationTemperatureStillSkippedUnderThinking() {
+        TurLLMInstance instance = anthropicInstance("{\"thinkingBudget\":2048}");
+        var params = service.buildParams(instance, List.of(), "hi", List.of(), new Params(0.2, 4096));
+        assertThat(params.thinking()).isPresent();
+        // Under thinking Anthropic forces temperature=1, so the calibrated value is skipped…
+        assertThat(params.temperature()).isEmpty();
+        // …but the maxTokens calibration still applies.
+        assertThat(params.maxTokens()).isEqualTo(4096L);
     }
 }

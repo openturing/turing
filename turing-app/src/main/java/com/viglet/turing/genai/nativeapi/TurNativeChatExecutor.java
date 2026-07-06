@@ -55,6 +55,7 @@ import com.viglet.turing.genai.nativeapi.openai.computeruse.TurOpenAiComputerUse
 import com.viglet.turing.genai.nativeapi.gemini.TurGeminiComputerUseService;
 import com.viglet.turing.genai.nativeapi.gemini.TurGoogleGenAiNativeService;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
+import com.viglet.turing.genai.persona.TurPersonaModelCalibration;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -323,6 +324,11 @@ public class TurNativeChatExecutor {
                 ? systemPromptOverride
                 : agent.getSystemPrompt();
         TurPersona activePersona = personaResolver.resolve(agent, conversationId);
+        // T606 — opt-in persona style→model calibration for the native paths (same
+        // seam as the Spring-AI CALL path). Params.NONE when the persona hasn't
+        // opted in, so the native request is byte-for-byte unchanged by default.
+        TurPersonaModelCalibration.Params calibration =
+                TurPersonaModelCalibration.forPersona(activePersona);
         String lastUserMessage = lastMessageOfRole(history, "user");
         List<Message> assembled = promptAssembler.assemble(
                 new TurChatPromptRequest(agent, history, conversationId,
@@ -390,7 +396,7 @@ public class TurNativeChatExecutor {
                     + "({} capability/ies, persona '{}')", agent.getTitle(), instance.getId(),
                     capabilities.size(), activePersona == null ? "none" : activePersona.getName());
             return Optional.of(googleGenAiNativeService.chat(geminiClient.get(), instance,
-                    turn.history(), turn.systemPrompt(), capabilities));
+                    turn.history(), turn.systemPrompt(), capabilities, calibration));
         }
 
         // T433 / §X.18.b — "capacidade é mutex, resto coexiste". For an explicit
@@ -494,7 +500,8 @@ public class TurNativeChatExecutor {
             Flux<ChatResponse> messages = anthropicMessagesService.chat(anthropicClient.get(), instance,
                     turn.history(), turn.systemPrompt(), capabilities, coexistingTools,
                     citationDocuments,
-                    serviceTierResolver.resolveForChat(agent, instance).orElse(null), ctxOptions);
+                    serviceTierResolver.resolveForChat(agent, instance).orElse(null), ctxOptions,
+                    calibration);
             // T155 / §X.7.d — when citations are on and drift detection is
             // enabled, persist the per-sentence citations as they stream so the
             // daily scan can later re-resolve them. No-op pass-through otherwise.
@@ -560,7 +567,8 @@ public class TurNativeChatExecutor {
         return Optional.of(openAiResponsesService.chat(openAiClient.get(), instance, turn.history(),
                 turn.systemPrompt(), capabilities, coexistingTools,
                 serviceTierResolver.resolveForChat(agent, instance).orElse(null),
-                agent.getId(), conversationId, storedCompletions, reasoningOptions, safetyIdentifier));
+                agent.getId(), conversationId, storedCompletions, reasoningOptions, safetyIdentifier,
+                calibration));
     }
 
     /**

@@ -180,7 +180,7 @@ class TurNativeChatExecutorTest {
         when(promptAssembler.assemble(any(TurChatPromptRequest.class)))
                 .thenReturn(List.of(new SystemMessage("FUSED"), new UserMessage("hello")));
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(),
-                any(), anyList(), any(), anyList(), any(), any()))
+                any(), anyList(), any(), anyList(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "claude")));
 
         Optional<Flux<ChatResponse>> result =
@@ -208,7 +208,7 @@ class TurNativeChatExecutorTest {
                 new com.viglet.turing.genai.citation.TurCitationDocument("doc-a", "Doc A", "/u", "text"));
         when(ragSearchToolService.retrievePassagesForCitations(eq("hello"), anyInt())).thenReturn(docs);
         when(anthropicMessagesService.chat(eq(anthropicClient), eq(instance), anyList(), any(),
-                anyList(), any(), eq(docs), any(), any()))
+                anyList(), any(), eq(docs), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "cited")));
         // T155 — with citations on, the flux is routed through drift persistence;
         // the no-op pass-through (disabled) returns the source unchanged.
@@ -364,7 +364,7 @@ class TurNativeChatExecutorTest {
                 .thenReturn(List.of(new SystemMessage("You are helpful. (persona voice)"),
                         new UserMessage("hello")));
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
-                any(), anyList(), any(), any(), any(), any(), any(), any(), any()))
+                any(), anyList(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -399,7 +399,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<String> systemPromptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
                 systemPromptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(),
-                any()))
+                any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "fused")));
 
         Optional<Flux<ChatResponse>> result =
@@ -430,7 +430,7 @@ class TurNativeChatExecutorTest {
                 ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
                 any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture(),
-                any()))
+                any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -461,7 +461,7 @@ class TurNativeChatExecutorTest {
                 ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), anyList(),
                 any(), anyList(), any(), any(), any(), any(), any(), reasoningCaptor.capture(),
-                any()))
+                any(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         Optional<Flux<ChatResponse>> result =
@@ -504,7 +504,8 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(openAiResponsesService.chat(eq(openAiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(), any()))
+                promptCaptor.capture(), anyList(), any(), any(), any(), any(), any(), any(), any(),
+                any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "hi")));
 
         executor().tryExecute(agent(), instance, history, null, "conv-1").get()
@@ -555,7 +556,7 @@ class TurNativeChatExecutorTest {
         ArgumentCaptor<List<ChatMessageItem>> historyCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.captor();
         when(googleGenAiNativeService.chat(eq(geminiClient), eq(instance), historyCaptor.capture(),
-                promptCaptor.capture(), anyList()))
+                promptCaptor.capture(), anyList(), any()))
                 .thenReturn(Flux.just(new ChatResponse("assistant", "gemini")));
 
         Optional<Flux<ChatResponse>> result =
