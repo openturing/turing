@@ -1,4 +1,4 @@
-import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY } from "@/app/console/chat/chat.types";
+import { CHAT_INITIAL_PROMPT_KEY } from "@/app/console/chat/chat.types";
 import { ROUTES } from "@/app/routes.const";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { IconMessageChatbot } from "@tabler/icons-react";
@@ -8,9 +8,10 @@ import { useNavigate } from "react-router-dom";
 /**
  * Bento AI-agent "launch" bar — mirrors the SN detail launch bar (T-SN). The
  * primary thing you do with a configured agent is talk to it, so surface a
- * frosted "Open chat" launcher on the agent detail dashboard. It preselects
- * this agent in the bento chat (via the shared `CHAT_INITIAL_AGENT_KEY`
- * hand-off the chat page reads on mount) and clears any stale forwarded prompt.
+ * frosted "Open chat" launcher on the agent detail dashboard. It navigates to
+ * the deterministic, shareable `/bento/chat/agent/:id` route (T580, replacing
+ * the retired `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off) and clears any
+ * stale forwarded prompt.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -20,9 +21,8 @@ export function AiAgentLaunchBar({ agent }: Readonly<{ agent: TurAIAgent }>) {
   const navigate = useNavigate();
 
   function openChat() {
-    sessionStorage.setItem(CHAT_INITIAL_AGENT_KEY, agent.id);
     sessionStorage.removeItem(CHAT_INITIAL_PROMPT_KEY);
-    navigate(ROUTES.BENTO_CHAT);
+    navigate(`${ROUTES.BENTO_CHAT_AGENT}/${agent.id}`);
   }
 
   return (

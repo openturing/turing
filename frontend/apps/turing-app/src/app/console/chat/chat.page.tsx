@@ -22,7 +22,6 @@ import {
   type ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 import {
-  CHAT_INITIAL_AGENT_KEY,
   CHAT_INITIAL_PROMPT_KEY,
   DEFAULT_CONTEXT_WINDOW,
   LLM_STORAGE_KEY,
@@ -46,8 +45,15 @@ const turSkillService = new TurSkillService()
  * agent" blank slates. Defaults to the console {@link PageHeader}; the Bento
  * shell (T563) passes its own frosted header so the reused surface never pulls
  * the console {@code SidebarTrigger} into a shell that has no SidebarProvider.
+ * @param initialAgentId Block AI / §XXXII.3 (T580) — the agent to open on
+ * mount, resolved from the deterministic `/bento/chat/agent/:agentId` route
+ * (replaces the retired `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off). When
+ * absent, the global default (or first) agent is selected as before.
  */
-export default function ChatPage({ emptyStateHeader }: Readonly<{ emptyStateHeader?: ReactNode }> = {}) {
+export default function ChatPage({
+  emptyStateHeader,
+  initialAgentId,
+}: Readonly<{ emptyStateHeader?: ReactNode; initialAgentId?: string }> = {}) {
   const { t } = useTranslation()
   // Empty until agents load — then becomes `agent:<id>` of the default or first agent.
   const [activeTab, setActiveTab] = useState<string>("")
@@ -296,16 +302,14 @@ export default function ChatPage({ emptyStateHeader }: Readonly<{ emptyStateHead
   }, [])
 
   // Once agents have loaded, pick the initial active tab.
-  // Priority: agent forwarded from home page (sessionStorage) → global default → first agent.
+  // Priority: agent from the URL (T580) → global default → first agent.
   useEffect(() => {
     if (!agentsLoaded || activeTab) return
     if (agents.length === 0) return
-    const forwardedAgentId = sessionStorage.getItem(CHAT_INITIAL_AGENT_KEY)
-    const forwardedAgent = forwardedAgentId ? agents.find((a) => a.id === forwardedAgentId) : null
-    const target = forwardedAgent ?? agents.find((a) => a.id === defaultAgentId) ?? agents[0]
-    sessionStorage.removeItem(CHAT_INITIAL_AGENT_KEY)
+    const routedAgent = initialAgentId ? agents.find((a) => a.id === initialAgentId) : null
+    const target = routedAgent ?? agents.find((a) => a.id === defaultAgentId) ?? agents[0]
     setActiveTab(`agent:${target.id}`)
-  }, [agentsLoaded, agents, activeTab, defaultAgentId])
+  }, [agentsLoaded, agents, activeTab, defaultAgentId, initialAgentId])
 
   // Capture the initial prompt forwarded from the home page ChatStarter. The
   // active tab's AgentChatTab auto-sends it once the LLM resolves.

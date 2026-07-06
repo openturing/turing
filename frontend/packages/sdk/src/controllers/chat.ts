@@ -6,6 +6,7 @@ import {
   fetchSiteChatSlots,
   fetchSiteChatState,
   postAgentChat,
+  postPersonaChat,
   postChatConversation,
   postClientToolResult,
   type ChatDisabledReason,
@@ -165,6 +166,17 @@ export interface ChatControllerAgent {
   readonly allowOverride?: boolean;
 }
 
+/**
+ * Block AI / §XXXII.2 (T579) — persona subject: talk directly to a persona
+ * (`POST /v2/persona/{id}/chat`). A peer of {@link ChatControllerAgent}; pass
+ * exactly one of `agent` / `persona`. Persona turns are stateless.
+ */
+export interface ChatControllerPersona {
+  readonly id: string;
+  readonly llmInstanceId: string;
+  readonly allowOverride?: boolean;
+}
+
 export interface SendOverrides {
   /** Routes this turn through a different LLM instance (agent mode only). */
   readonly llmInstanceId?: string;
@@ -198,6 +210,12 @@ export interface ChatControllerOptions {
   readonly readAbVariantFromUrl?: boolean;
   /** Opt into agent mode. */
   readonly agent?: ChatControllerAgent;
+  /**
+   * Block AI / §XXXII.2 (T579) — opt into persona mode (`POST /v2/persona/{id}/chat`).
+   * Mutually exclusive with {@link agent}; when both are set, `persona` wins.
+   * Persona turns are stateless (flow / variant options are ignored).
+   */
+  readonly persona?: ChatControllerPersona;
   /** Controlled conversation id (host owns the session lifecycle). */
   readonly conversationId?: string;
   /** Seed the message list at construction. */
@@ -390,6 +408,7 @@ export function createChatController(
     maxMessages = DEFAULT_MAX_MESSAGES,
     flowId,
     agent,
+    persona,
     conversationId: controlledConversationId,
     initialMessages,
     clientTools,
@@ -414,14 +433,21 @@ export function createChatController(
     options.forcedVariant ??
     (options.readAbVariantFromUrl === false ? undefined : readAbVariantFromLocation());
 
-  const agentId = agent?.id;
-  const agentLlmInstanceId = agent?.llmInstanceId;
+  // Persona mode wins over agent mode when both subjects are (mis)configured.
+  const personaId = persona?.id;
+  const personaLlmInstanceId = persona?.llmInstanceId;
+  const isPersonaMode = Boolean(personaId && personaLlmInstanceId);
+  const agentId = isPersonaMode ? undefined : agent?.id;
+  const agentLlmInstanceId = isPersonaMode ? undefined : agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
+  // Both persona and agent mode carry an explicit LLM, so neither needs the
+  // site name or the RAG-enabled probe.
+  const isSubjectMode = isAgentMode || isPersonaMode;
 
-  if (!site && !isAgentMode) {
+  if (!site && !isSubjectMode) {
     throw new Error(
       "createChatController in site mode requires `options.site`. " +
-        "Either pass it or pass `options.agent` to use agent mode.",
+        "Either pass it or pass `options.agent` / `options.persona`.",
     );
   }
 
@@ -431,7 +457,7 @@ export function createChatController(
     : { conversationId: controlledConversationId ?? null, messages: initialMessages ?? [] };
 
   const store = createStore<ChatControllerState>({
-    enabled: isAgentMode ? true : null,
+    enabled: isSubjectMode ? true : null,
     disabledReason: null,
     messages: initialPersisted.messages,
     status: "idle",
@@ -567,8 +593,8 @@ export function createChatController(
     store.setState({ conversationId: id });
   }
 
-  // Resolve enabled flag once (skipped in agent mode). Fire-and-forget.
-  if (isAgentMode || !site) {
+  // Resolve enabled flag once (skipped in agent/persona mode). Fire-and-forget.
+  if (isSubjectMode || !site) {
     store.setState({ enabled: true });
   } else {
     fetchChatEnabled(client, site)
@@ -605,8 +631,11 @@ export function createChatController(
     const content = rawContent.trim();
     if (!content) return;
 
+    const baseLlmInstanceId = personaLlmInstanceId ?? agentLlmInstanceId;
     const effectiveLlmInstanceId =
-      overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
+      overrides?.llmInstanceId && (agentId || personaId)
+        ? overrides.llmInstanceId
+        : baseLlmInstanceId;
 
     const userMsg: ChatMessage = {
       id: newId(),
@@ -649,7 +678,9 @@ export function createChatController(
       if (!chatStarted) {
         chatStarted = true;
         convStartedAt = Date.now();
-        analytics.emit(TURING_ANALYTICS_EVENTS.chatStart, { mode: isAgentMode ? "agent" : "site" });
+        analytics.emit(TURING_ANALYTICS_EVENTS.chatStart, {
+          mode: isPersonaMode ? "persona" : isAgentMode ? "agent" : "site",
+        });
         // T460 — arm the abandonment watcher once the conversation is real.
         if (abandonmentEnabled && !abandonmentWatcher) {
           abandonmentWatcher = createAbandonmentWatcher(fireAbandonment, abandonmentOptions);
@@ -723,24 +754,36 @@ export function createChatController(
         );
       };
 
-      let res =
-        agentId && effectiveLlmInstanceId
-          ? await postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              onToolCall,
-              signal: controller.signal,
-            })
-          : await postChatConversation(client, site, wire, locale, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              onToolCall,
-              signal: controller.signal,
-            });
+      // Picks the transport for this turn: persona (T579, stateless), else
+      // agent, else the site RAG endpoint.
+      const dispatchSubjectTurn = () => {
+        if (personaId && effectiveLlmInstanceId) {
+          return postPersonaChat(client, personaId, effectiveLlmInstanceId, wire, {
+            onToken,
+            onToolCall,
+            signal: controller.signal,
+          });
+        }
+        if (agentId && effectiveLlmInstanceId) {
+          return postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
+            conversationId: activeConversationId,
+            flowId,
+            forcedVariant,
+            onToken,
+            onToolCall,
+            signal: controller.signal,
+          });
+        }
+        return postChatConversation(client, site, wire, locale, {
+          conversationId: activeConversationId,
+          flowId,
+          forcedVariant,
+          onToken,
+          onToolCall,
+          signal: controller.signal,
+        });
+      };
+      let res = await dispatchSubjectTurn();
 
       // T516 — carry the last leg's guardrail verdict (set just below).
       let aggregatedGrounding: TurChatGrounding | undefined = res?.grounding;

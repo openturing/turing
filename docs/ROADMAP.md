@@ -204,11 +204,7 @@ fully shipped.**
 > validation and persona↔persona dialogue are staged as future actions.
 > Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXII.
 
-**Phase 1 — persona chat MVP (talk to a persona):**
-- 📋 **T578** (deps: —) **Backend: persona chat endpoint** — `POST /api/v2/persona/{personaId}/chat` (SSE) that reuses `TurAgentChatExecutor` via a **transient synthetic** `TurAIAgent` (never persisted): generic `DEFAULT_SYSTEM_PROMPT`, **all** default native tools (from `TurNativeToolService.getAllTools()` → CSV `nativeTools`), **no** MCP/custom-tool/chat-flow (empty collections), persona voice fused via `setDefaultPersona(persona)`. Enforce `persona.isUsableAsSpeaker()` (reject AUDIENCE-only), validate the requested LLM instance is allowed/tenant-scoped (this bypasses `TurAIAgentChatAPI`'s allow-list), and keep the turn **stateless** (`conversationId=null`, `flowId=null`) so no flow-state/analytics/chat-memory rows are written. → §XXXII.1
-- 📋 **T579** (deps: T578) **SDK: persona chat client + hook subject** — `postPersonaChat(personaId, llmInstanceId, messages, options)` in `react-sdk/core/api.ts` mirroring `postAgentChat` (CSRF, timezone, SSE consume, multipart), vanilla `@viglet/turing-sdk` parity, and a `persona: { id, llmInstanceId }` subject on `useTuringChat` as an alternative to `agent`. Extend the T406 SDK parity/contract guard. → §XXXII.2
-- 📋 **T580** (deps: T579) **Frontend: deterministic, URL-addressable chat** — new bento routes `/bento/chat/agent/:agentId` and `/bento/chat/persona/:personaId` (keep `/bento/chat` = default agent). `ChatPage` resolves the chat **subject** from route params instead of the `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off (retire that key; keep the prompt hand-off for auto-send). The agent launch bar navigates to the deterministic URL. Back/forward + shareable links work. → §XXXII.3
-- 📋 **T581** (deps: T580) **Frontend: persona chat tab** — generalize the chat "subject" so a `PersonaChatTab` (or a subject-parameterized `AgentChatTab`) posts to the persona endpoint and reuses the presentational stack (`ChatInput`/`ChatMessageList`/empty-state/context bar). No flow/skill selectors in persona mode; persona identity (name/icon) in the header + empty state; LLM picker = any enabled instance. → §XXXII.4
+**Phase 1 — persona chat MVP (talk to a persona): ✅ shipped (T578–T581) — see CHANGELOG.**
 
 **Phase 2 — persona bento dashboard + launchpad:**
 - 📋 **T582** (deps: —) **Frontend: persona detail → bento dashboard** — replace the reused pill-tab form landing (T556) with an AI-agent-style **`BentoHero` + big `BentoTile`/`BentoCountTile` mosaic** (system-instruction hero tile, style, audience, guidelines, notebook, fit-report), each card linking into its section. Keep the section sub-pages but audit their bodies and swap any `SectionCard` → `BentoFormSection` (frosted hover cards, per the bento-ui skill), preserving the single-`useForm` save bar. → §XXXII.5
@@ -217,6 +213,53 @@ fully shipped.**
 **Phase 3 — future launch actions (💭 need design):**
 - 💭 **T584** (deps: T583, T465, T467, T468) **Content-fit validation from the launchpad** — add documents / links / indexed content and validate compatibility with the persona → compatibility **score + final result** (condiz/não-condiz, flagged spans, suggestions). Composition of Block AA's notebook (T465) + content-fit evaluator (T466/T467) + fit-report surface (T468), promoted to a first-class launch action rather than a buried section. → §XXXII.7
 - 💭 **T585** (deps: T578) **Automatic persona↔persona conversation** — pick a **topic** + two personas and orchestrate a turn-by-turn dialogue (one turn each, bounded rounds) by driving the T578 persona executor with each persona as the speaker in alternation; render the transcript (and optionally a "voice diff" of the same prompt across personas). → §XXXII.8
+
+## Block AJ — Evaluation platform: pluggable graders (model/code/human) + datasets
+
+> Today "eval" is two hard-wired islands: the **Agent-CI eval** (Block K —
+> `TurAgentEvalRunnerService` scores every case on exactly four baked-in
+> dimensions: slots/outcome/node = deterministic, rubric = one LLM judge) and the
+> **NL→facet eval** (Block R — a pure deterministic scorer). Neither lets you
+> *choose* how a case is graded, there is no **human-in-the-loop** grader at all,
+> and a "dataset" is just golden cases typed inline into one agent — you cannot
+> upload one, reuse it across agents, or version it. The industry frames graders
+> as three kinds — **model** (LLM-as-judge), **code** (deterministic/programmatic)
+> and **human** (review). This block turns Turing's eval into a real platform: a
+> **grader SPI** (the three kinds as pluggable, composable extensions), a
+> **first-class dataset** you can provide/import/version/share, reusable **grader
+> stacks**, an **Eval Studio** surface, and consolidation of the two islands onto
+> one model — all opt-in so empty/legacy config runs the exact current path (ITs
+> stay green). Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXIII.
+
+**Phase 0 — grader SPI (refactor, zero behavior change):**
+- 📋 **T586** (deps: —) **Grader SPI + registry** — `TurEvalGrader` interface + `TurEvalGraderKind {MODEL, CODE, HUMAN}` + `TurEvalGradingContext` (case + replayed turns + captured slots + final node + outcome + assistant transcript + dataset row) + `TurEvalGraderResult` (score 0-1, passed, verdict, rationale, `deferred`). Refactor `TurAgentEvalRunnerService.scoreCase` to iterate a **resolved grader list**; wrap the four current dimensions as built-in graders (SlotMatch/Outcome/Node = CODE, Rubric = MODEL). Empty config ⇒ the legacy default stack, so every existing report/gate/IT is byte-identical. → §XXXIII.1
+- 📋 **T587** (deps: T586) **Grader config persistence** — `TurEvalGraderConfig` (kind, graderId, name, `configJson`, weight, threshold, `blocking`, enabled) attached per `TurAgentEvalSet` + optional per-case override; Liquibase; exported/imported inline with the agent (extend `TurAIAgentExchange.evalSets`). → §XXXIII.2
+
+**Phase 1 — CODE graders (deterministic, CI-safe, no LLM):**
+- 📋 **T588** (deps: T587) **Built-in CODE grader library** — exact / contains / regex on the final answer, JSON-path + slot equality with tolerance, numeric range, generalized outcome/node, and latency-budget + `tool_called` assertions (compose T427 tool-call trace + T88 latency p95). Each is a `TurEvalGrader` keyed by `graderId`, config-driven. → §XXXIII.3
+- 📋 **T589** (deps: T588) **Custom Groovy CODE grader** — a scripted `grade(ctx) -> {score, pass, rationale}` reusing the Custom Tool sandbox + `TurToolCallbackPipeline` safe-binding model; opt-in, errors-as-fail. Lets a team assert domain rules the built-ins can't express without a backend change. → §XXXIII.4
+
+**Phase 2 — MODEL graders (LLM-as-judge, extensible):**
+- 📋 **T590** (deps: T587) **Model-grader strategies** — generalize the single rubric judge into `LABEL` / `SCORE` / `CRITERIA` (multi-criterion) / `PAIRWISE` model graders over `TurEvalJudgePrompt`, each with a per-grader model + prompt override, driven by provider **tool-calling / strict schema** (not free-text JSON — avoids the gpt-4o-mini pitfall). Fold the existing sync + Batch (T159) + OpenAI-Evals (T168) paths *under* the grader so any MODEL grader can run sync/batch/remote. → §XXXIII.5
+- 📋 **T591** (deps: T590, T595) **Reference-answer grading** — dataset rows carry a golden reference answer; a MODEL grader scores answer-vs-reference faithfulness/correctness and a CODE grader scores embedding cosine similarity (reuses the configured embedding provider). Bridges eval to the Block M grounding contract. → §XXXIII.6
+
+**Phase 3 — HUMAN graders (human-in-the-loop review):**
+- 📋 **T592** (deps: T587) **Human-review grader** — a grader that **defers**: emits `PENDING_REVIEW` and persists a `TurEvalReviewTask` per case-result; the report gains a `PENDING_REVIEW` status; gate policy per stack = *warn* or *block-until-reviewed*. This is the missing third grader kind. → §XXXIII.7
+- 📋 **T593** (deps: T592) **Human review inbox (API + bento)** — reviewers see the replayed transcript + expected-vs-actual + the per-grader breakdown and submit `{pass, score, notes}`; the verdict merges back into the report and can be **promoted into a golden dataset row** in one click. Role-gated (`AI_AGENT_*`). → §XXXIII.8
+- 💭 **T594** (deps: T593) **Calibration & inter-annotator agreement** — optional N reviewers per item + an agreement metric, plus a sample-based human audit of MODEL-graded runs to align the LLM judge to human labels (feeds judge-prompt tuning). Makes the model grader *trustworthy*, not just cheap. → §XXXIII.9
+
+**Phase 4 — datasets (provide, import, version, test):**
+- 📋 **T595** (deps: T586) **`TurEvalDataset` + `TurEvalDatasetRow`** — a reusable, versioned, **agent-decoupled** collection of rows (input turns + expected slots/outcome/node/reference answer + tags/metadata); an eval set now binds `dataset + grader stack`. Migrate the existing inline cases into a per-agent default dataset (back-compat view). → §XXXIII.10
+- 📋 **T596** (deps: T595) **Dataset import/export** — upload CSV / JSON / JSONL / OpenAI-Evals JSONL; import from anonymized production transcripts (T61) and from Chat-Analytics failures (reuse the T447 miner); a column-mapping step; export as JSONL. `POST /api/eval/dataset/import`. This is the "provide a dataset to be tested" ask made concrete. → §XXXIII.11
+- 💭 **T597** (deps: T595) **LLM-assisted dataset generation & augmentation** — synthesize candidate rows from the flow / system-prompt / T386 manifest and paraphrase seed turns; **never auto-trusted** → opens the review form (reuses the T387 derivation + grounding pattern). → §XXXIII.12
+- 📋 **T598** (deps: T595) **Dataset versioning + drift** — immutable snapshots; a run pins a dataset version; a diff shows added/removed/changed rows across versions; every report references the version it ran against (regression comparisons become honest). → §XXXIII.13
+
+**Phase 5 — UX, consolidation & scale:**
+- 📋 **T599** (deps: T587, T595) **Eval Studio (bento page)** — `/bento/eval`: datasets, grader stacks, run history, per-case drill-down (transcript + per-grader breakdown), the human-review inbox, and a baseline/regression + score timeline. The cramped flow-editor gate panel shrinks to a compact status badge that links here (follows the bento-ui skill). → §XXXIII.14
+- 📋 **T600** (deps: T587) **Grader stacks as reusable templates** — a named stack (e.g. "Lead-capture QA") shareable across agents; **weighted** aggregate + per-grader pass thresholds + a blocking policy on the stack (replacing the hardcoded all-must-pass rule). → §XXXIII.15
+- 📋 **T601** (deps: T586, T595) **Unify NL→facet eval (Block R) onto the grader/dataset model** — the `sn.dsl.eval` scorer becomes a CODE grader and the facet pack becomes a dataset, so chat-flow and SN evals share one Studio, one gate, and one dataset toolchain. → §XXXIII.16
+- 💭 **T602** (deps: T595, T600) **Public eval API + SDK/CLI** — `turing eval` (T125–T127) runs a named `dataset × grader stack` remotely; SDK `runEval`; a reusable CI gate over any dataset (extends T428/T430). → §XXXIII.17
+- 💭 **T603** (deps: T590, T588) **Continuous / online eval** — sample live production traffic, grade in the background with CODE+MODEL graders, and alert on quality **drift** (composes T87 sentiment + T155 citation-drift + T447 miner). "Eval in prod", not just pre-publish. → §XXXIII.18
 
 ## Non-goals (do NOT add as tasks)
 

@@ -737,6 +737,118 @@ export async function postAgentChat(
   };
 }
 
+/**
+ * Options for {@link postPersonaChat}. A persona chat turn is deliberately
+ * stateless (Block AI / §XXXII.1) — there is no conversation/flow/variant/skill
+ * knob, only the streaming callbacks, an abort signal and optional attachments.
+ */
+export interface PostPersonaChatOptions {
+  readonly onToken?: (token: string) => void;
+  readonly onOptions?: (options: string[]) => void;
+  /** Fired when the engine emits a native multi-field form schema (T107). */
+  readonly onForm?: (form: TurChatForm) => void;
+  /** Fired when the engine emits RAG provenance for the answer (T292). */
+  readonly onSources?: (sources: TurChatSource[]) => void;
+  /** Fired when the engine emits per-sentence Anthropic citations (T152). */
+  readonly onCitations?: (citations: TurChatCitation[]) => void;
+  /** Fired when the answer-grounding guardrail flags the answer (T516). */
+  readonly onGrounding?: (grounding: TurChatGrounding) => void;
+  /** Fired when the cross-vendor second-opinion check returns a verdict (T522). */
+  readonly onSecondOpinion?: (secondOpinion: TurChatSecondOpinion) => void;
+  /** Fired on each live tool-call lifecycle event (T436). */
+  readonly onToolCall?: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
+  /** Fired when an OpenAI reasoning model returns its "Why this answer" summary (T178). */
+  readonly onReasoning?: (reasoning: string) => void;
+  readonly signal?: AbortSignal;
+  /** Optional file attachments — switches the request to multipart/form-data. */
+  readonly files?: ReadonlyArray<File>;
+}
+
+/**
+ * Block AI / §XXXII.2 (T579) — talk directly to a persona
+ * (`POST /v2/persona/{personaId}/chat`). Mirrors {@link postAgentChat} exactly;
+ * only the URL and the (leaner, stateless) request payload differ. The whole
+ * SSE-consume path is shared.
+ */
+export async function postPersonaChat(
+  client: TuringClient,
+  personaId: string,
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostPersonaChatOptions,
+): Promise<TurChatConversationResponse> {
+  const requestPayload = { llmInstanceId, messages };
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    ...browserTimezoneHeaders(),
+  };
+  let body: BodyInit;
+  if (options?.files && options.files.length > 0) {
+    const form = new FormData();
+    form.append(
+      "request",
+      new Blob([JSON.stringify(requestPayload)], { type: "application/json" }),
+    );
+    for (const file of options.files) form.append("files", file);
+    body = form;
+    // FormData → browser sets multipart Content-Type + boundary.
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(requestPayload);
+  }
+
+  const response = await client.fetchRaw(`/v2/persona/${personaId}/chat`, {
+    method: "POST",
+    headers,
+    body,
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const {
+    text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    searchSuggestions,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+    grounding,
+    secondOpinion,
+  } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+    options?.onForm,
+    options?.onSources,
+    options?.onCitations,
+    options?.onToolCall,
+    options?.onReasoning,
+    options?.onGrounding,
+    options?.onSecondOpinion,
+  );
+  return {
+    role: "assistant",
+    content: text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    searchSuggestions,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+    grounding,
+    secondOpinion,
+  };
+}
+
 export interface PostClientToolResultOptions {
   readonly onToken?: (token: string) => void;
   readonly onOptions?: (options: string[]) => void;
@@ -1761,6 +1873,12 @@ export function createTuringApi(client: TuringClient) {
       messages: TurChatConversationMessage[],
       options?: PostAgentChatOptions,
     ) => postAgentChat(client, agentId, llmInstanceId, messages, options),
+    postPersonaChat: (
+      personaId: string,
+      llmInstanceId: string,
+      messages: TurChatConversationMessage[],
+      options?: PostPersonaChatOptions,
+    ) => postPersonaChat(client, personaId, llmInstanceId, messages, options),
     postLlmChat: (
       llmInstanceId: string,
       messages: TurChatConversationMessage[],

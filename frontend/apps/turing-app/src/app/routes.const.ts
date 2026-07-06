@@ -109,6 +109,10 @@ export const ROUTES = {
 
   // Block AG Phase 3 — functional & dashboard surfaces.
   BENTO_CHAT: "/bento/chat",
+  /** Block AI / T580 — deterministic agent-scoped chat (append `/:agentId`). */
+  BENTO_CHAT_AGENT: "/bento/chat/agent",
+  /** Block AI / T580 — deterministic persona-scoped chat (append `/:personaId`). */
+  BENTO_CHAT_PERSONA: "/bento/chat/persona",
   BENTO_CONVERSATION: "/bento/conversation",
   BENTO_AI_ANALYTICS: "/bento/ai-analytics",
   BENTO_COST_GOVERNANCE: "/bento/ai-analytics/cost-governance",

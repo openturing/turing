@@ -14,6 +14,12 @@
     "deleteSession": "Excluir sessão",
     "selectModel": "Selecione um modelo...",
     "newChat": "Novo Chat",
+    "noModelSelected": "Nenhum modelo selecionado",
+    "persona": {
+      "ask": "Converse com {{persona}}",
+      "usingModel": "Conversando com esta persona usando {{model}}",
+      "subtitle": "Converse diretamente com uma persona para testar sua voz"
+    },
     "chatTab": "Chat",
     "semanticTab": "Semântico",
     "semanticTabShort": "SN",

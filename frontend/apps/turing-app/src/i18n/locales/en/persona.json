@@ -1,6 +1,10 @@
 {
   "persona": {
     "title": "Persona",
+    "notFound": {
+      "title": "Persona not found",
+      "description": "This persona no longer exists or is not available."
+    },
     "blankTitle": "You don't seem to have any persona.",
     "blankDescription": "Create a reusable voice profile to apply consistent tone, vocabulary and brand context across your AI agents.",
     "newInstance": "New Persona",

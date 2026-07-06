@@ -4,6 +4,7 @@ import {
   deleteSiteConversationState,
   fetchChatEnabled,
   postAgentChat,
+  postPersonaChat,
   postChatConversation,
   postClientToolResult,
   postSiteFormSubmit,
@@ -87,6 +88,26 @@ export interface UseTuringChatAgent {
 }
 
 /**
+ * Block AI / §XXXII.2 (T579) — switches the hook into persona mode: talk
+ * directly to a {@link TurPersona} (`POST /v2/persona/{id}/chat`) instead of an
+ * agent or a site. A peer of {@link UseTuringChatAgent}; pass exactly one of
+ * `agent` / `persona`. Persona turns are stateless (no flow / skill / A-B knobs).
+ *
+ * @since 2026.3.4
+ */
+export interface UseTuringChatPersona {
+  readonly id: string;
+  readonly llmInstanceId: string;
+  /**
+   * Advertises that the host may pass a per-turn {@code llmInstanceId} override
+   * to {@link UseTuringChatReturn#send} (personas have no per-entity LLM
+   * allow-list, so any enabled instance is valid). Documentary only — the
+   * override is always honoured when supplied. Defaults to {@code false}.
+   */
+  readonly allowOverride?: boolean;
+}
+
+/**
  * Per-call overrides accepted by {@link UseTuringChatReturn#send}. Today
  * only the LLM-instance override matters; structuring it as an options bag
  * keeps the door open for future per-turn flags (forced flow, structured
@@ -158,6 +179,16 @@ export interface UseTuringChatOptions {
    * @since 2026.2.16
    */
   readonly agent?: UseTuringChatAgent;
+  /**
+   * Block AI / §XXXII.2 (T579) — opt into persona mode: the hook hits
+   * `POST /v2/persona/{id}/chat` with the explicit `llmInstanceId` instead of
+   * the agent or site endpoint. Mutually exclusive with {@link agent}; when both
+   * are set, `persona` wins. Persona turns are stateless (flow / skill / A-B
+   * options are ignored).
+   *
+   * @since 2026.3.4
+   */
+  readonly persona?: UseTuringChatPersona;
   /**
    * Overrides {@code TuringConfig.locale} for the chat call only. Useful
    * when the active locale is selected dynamically (e.g. a locale picker on
@@ -391,6 +422,91 @@ async function runClientToolRoundTrips(
   return { res, content, toolCalls };
 }
 
+interface SubjectTurnCtx {
+  readonly personaId?: string;
+  readonly agentId?: string;
+  readonly llmInstanceId?: string;
+  readonly siteName: string;
+  readonly effectiveLocale?: string;
+  readonly conversationId: string;
+  readonly flowId?: string;
+  readonly forcedVariant?: string;
+  readonly selectedSkillId?: string;
+  readonly wire: TurChatConversationMessage[];
+  readonly onToken: (token: string) => void;
+  readonly onToolCall: (call: TurChatToolCall, all: TurChatToolCall[]) => void;
+  readonly signal: AbortSignal;
+}
+
+/**
+ * Picks the transport for one turn from the resolved chat subject: persona
+ * (T579, stateless — no flow/skill/variant), else agent, else the site RAG
+ * endpoint. Extracted so {@link useTuringChat}'s `runAssistantTurn` stays a
+ * single straight-line flow regardless of subject.
+ */
+function dispatchSubjectTurn(c: SubjectTurnCtx): Promise<TurChatConversationResponse> {
+  if (c.personaId && c.llmInstanceId) {
+    return postPersonaChat(c.personaId, c.llmInstanceId, c.wire, {
+      onToken: c.onToken,
+      onToolCall: c.onToolCall,
+      signal: c.signal,
+    });
+  }
+  if (c.agentId && c.llmInstanceId) {
+    return postAgentChat(c.agentId, c.llmInstanceId, c.wire, {
+      conversationId: c.conversationId,
+      flowId: c.flowId,
+      forcedVariant: c.forcedVariant,
+      selectedSkillId: c.selectedSkillId,
+      onToken: c.onToken,
+      onToolCall: c.onToolCall,
+      signal: c.signal,
+    });
+  }
+  return postChatConversation(c.siteName, c.wire, c.effectiveLocale, {
+    conversationId: c.conversationId,
+    flowId: c.flowId,
+    forcedVariant: c.forcedVariant,
+    onToken: c.onToken,
+    onToolCall: c.onToolCall,
+    signal: c.signal,
+  });
+}
+
+/**
+ * Normalizes a finished turn's response + the client-tool-aggregated content /
+ * tool calls into the "empty → undefined" shape the assistant bubble patch
+ * expects. Extracted so {@link useTuringChat}'s `runAssistantTurn` stays under
+ * the cognitive-complexity budget.
+ */
+function buildAssistantFinals(
+  res: TurChatConversationResponse,
+  aggregatedContent: string,
+  aggregatedToolCalls: TurChatToolCall[],
+) {
+  const searchSuggestions =
+    res?.searchSuggestions &&
+    (res.searchSuggestions.renderedContent ||
+      (res.searchSuggestions.queries?.length ?? 0) > 0)
+      ? res.searchSuggestions
+      : undefined;
+  return {
+    content: aggregatedContent,
+    options: res?.options && res.options.length > 0 ? res.options : undefined,
+    form: res?.form && res.form.fields?.length > 0 ? res.form : undefined,
+    sources: res?.sources && res.sources.length > 0 ? res.sources : undefined,
+    citations: res?.citations && res.citations.length > 0 ? res.citations : undefined,
+    // T490 — Gemini google_search Search Suggestion chips, when present.
+    searchSuggestions,
+    // T178 — the OpenAI reasoning summary ("Why this answer"), when present.
+    reasoning: res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined,
+    toolCalls: aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined,
+    // T516 grounding verdict / T522 second-opinion verdict (undefined when clean).
+    grounding: res?.grounding ?? undefined,
+    secondOpinion: res?.secondOpinion ?? undefined,
+  };
+}
+
 function storageKey(site: string, suffix: string | true): string {
   const tag = typeof suffix === "string" ? suffix : "default";
   return `turing.chat.${site}.${tag}`;
@@ -480,6 +596,7 @@ export function useTuringChat(
     flowId,
     selectedSkillId,
     agent,
+    persona,
     locale: localeOverride,
     conversationId: controlledConversationId,
     initialMessages,
@@ -531,13 +648,20 @@ export function useTuringChat(
       (optReadAbVariantFromUrl === false ? undefined : readAbVariantFromLocation()),
     [optForcedVariant, optReadAbVariantFromUrl],
   );
-  const agentId = agent?.id;
-  const agentLlmInstanceId = agent?.llmInstanceId;
+  // Persona mode wins over agent mode when both subjects are (mis)configured.
+  const personaId = persona?.id;
+  const personaLlmInstanceId = persona?.llmInstanceId;
+  const isPersonaMode = Boolean(personaId && personaLlmInstanceId);
+  const agentId = isPersonaMode ? undefined : agent?.id;
+  const agentLlmInstanceId = isPersonaMode ? undefined : agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
-  if (!ctx && !isAgentMode) {
+  // Both persona and agent mode are self-contained subjects (explicit LLM), so
+  // neither needs the site provider or the RAG-enabled probe.
+  const isSubjectMode = isAgentMode || isPersonaMode;
+  if (!ctx && !isSubjectMode) {
     throw new Error(
       "useTuringChat in site mode requires a <TuringProvider> ancestor. " +
-      "Either mount the provider or pass `options.agent` to use agent mode.",
+      "Either mount the provider or pass `options.agent` / `options.persona`.",
     );
   }
   const siteName = ctx?.config.site ?? "";
@@ -575,7 +699,7 @@ export function useTuringChat(
 
   // In agent mode the site's RAG flag doesn't gate access — the consumer
   // already chose an agent — so default to enabled and skip the fetch.
-  const [enabled, setEnabled] = useState<boolean | null>(isAgentMode ? true : null);
+  const [enabled, setEnabled] = useState<boolean | null>(isSubjectMode ? true : null);
   const [disabledReason, setDisabledReason] = useState<ChatDisabledReason | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(initialPersisted.conversationId);
   // T107 — the native multi-field form awaiting submission, if any.
@@ -610,7 +734,7 @@ export function useTuringChat(
   // the server-driven session cookie name + TTL so the SDK can mint
   // TUR_SESSION with the deployment's overrides.
   useEffect(() => {
-    if (isAgentMode || !siteName) {
+    if (isSubjectMode || !siteName) {
       setEnabled(true);
       return;
     }
@@ -635,7 +759,7 @@ export function useTuringChat(
     return () => {
       alive = false;
     };
-  }, [siteName, isAgentMode]);
+  }, [siteName, isSubjectMode]);
 
   // Persist on change + keep the synchronous refs in sync
   useEffect(() => {
@@ -680,24 +804,21 @@ export function useTuringChat(
           patchAssistant(assistantId, (m) => ({ ...m, toolCalls: all }));
         };
 
-        let res = agentId && effectiveLlmInstanceId
-          ? await postAgentChat(agentId, effectiveLlmInstanceId, wire, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              selectedSkillId,
-              onToken,
-              onToolCall,
-              signal: controller.signal,
-            })
-          : await postChatConversation(siteName, wire, effectiveLocale, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              onToolCall,
-              signal: controller.signal,
-            });
+        let res = await dispatchSubjectTurn({
+          personaId,
+          agentId,
+          llmInstanceId: effectiveLlmInstanceId,
+          siteName,
+          effectiveLocale,
+          conversationId: activeConversationId,
+          flowId,
+          forcedVariant,
+          selectedSkillId,
+          wire,
+          onToken,
+          onToolCall,
+          signal: controller.signal,
+        });
 
         if (isStale(requestId)) return;
 
@@ -718,47 +839,27 @@ export function useTuringChat(
         const aggregatedContent = roundTrip.content;
         const aggregatedToolCalls = roundTrip.toolCalls;
 
-        const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
-        const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
-        const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
-        const finalCitations =
-          res?.citations && res.citations.length > 0 ? res.citations : undefined;
-        // T490 — Gemini google_search Search Suggestion chips, when present.
-        const finalSearchSuggestions =
-          res?.searchSuggestions &&
-          (res.searchSuggestions.renderedContent ||
-            (res.searchSuggestions.queries?.length ?? 0) > 0)
-            ? res.searchSuggestions
-            : undefined;
-        // T178 — the OpenAI reasoning summary ("Why this answer"), when present.
-        const finalReasoning =
-          res?.reasoning && res.reasoning.trim().length > 0 ? res.reasoning : undefined;
-        const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
-        // T516 — the answer-grounding guardrail verdict, when the guardrail
-        // flagged the answer (clean answers emit no event → undefined).
-        const finalGrounding = res?.grounding ?? undefined;
-        // T522 — the cross-vendor second-opinion verdict, when enabled.
-        const finalSecondOpinion = res?.secondOpinion ?? undefined;
+        const finals = buildAssistantFinals(res, aggregatedContent, aggregatedToolCalls);
         patchAssistant(assistantId, (m) => ({
           ...m,
-          content: aggregatedContent || m.content,
-          options: finalOptions,
-          form: finalForm,
-          sources: finalSources,
-          citations: finalCitations,
-          searchSuggestions: finalSearchSuggestions,
-          reasoning: finalReasoning,
-          toolCalls: finalToolCalls ?? m.toolCalls,
-          grounding: finalGrounding,
-          secondOpinion: finalSecondOpinion,
+          content: finals.content || m.content,
+          options: finals.options,
+          form: finals.form,
+          sources: finals.sources,
+          citations: finals.citations,
+          searchSuggestions: finals.searchSuggestions,
+          reasoning: finals.reasoning,
+          toolCalls: finals.toolCalls ?? m.toolCalls,
+          grounding: finals.grounding,
+          secondOpinion: finals.secondOpinion,
         }));
-        setActiveForm(finalForm ?? null);
+        setActiveForm(finals.form ?? null);
         setStatus("success");
       } catch (err) {
         handleSendError(err, requestId);
       }
     },
-    [siteName, effectiveLocale, flowId, selectedSkillId, forcedVariant, agentId,
+    [siteName, effectiveLocale, flowId, selectedSkillId, forcedVariant, agentId, personaId,
       openAssistantBubble, appendToken, patchAssistant, isStale, handleSendError, setStatus,
       resolveClientToolHandlers],
   );
@@ -767,15 +868,16 @@ export function useTuringChat(
     async (rawContent: string, overrides?: SendOverrides) => {
       const content = rawContent.trim();
       if (!content) return;
-      // Per-turn LLM override — only meaningful in agent mode where the
-      // endpoint accepts an explicit `llmInstanceId`. In site mode the
-      // override is silently ignored (the site picks its agent + LLM
-      // server-side). The hook never mutates `agentLlmInstanceId`; the
+      // Per-turn LLM override — only meaningful in a subject mode (agent /
+      // persona) where the endpoint accepts an explicit `llmInstanceId`. In
+      // site mode the override is silently ignored (the site picks its agent +
+      // LLM server-side). The hook never mutates the pinned instance; the
       // caller owns the "sticky" decision.
+      const baseLlmInstanceId = personaLlmInstanceId ?? agentLlmInstanceId;
       const effectiveLlmInstanceId =
-        overrides?.llmInstanceId && agentId
+        overrides?.llmInstanceId && (agentId || personaId)
           ? overrides.llmInstanceId
-          : agentLlmInstanceId;
+          : baseLlmInstanceId;
 
       const userMsg: ChatMessage = {
         id: newId(),
@@ -818,7 +920,9 @@ export function useTuringChat(
         if (!chatStartedRef.current) {
           chatStartedRef.current = true;
           convStartedAtRef.current = Date.now();
-          bus.emit(TURING_ANALYTICS_EVENTS.chatStart, { mode: agentId ? "agent" : "site" });
+          bus.emit(TURING_ANALYTICS_EVENTS.chatStart, {
+            mode: personaId ? "persona" : agentId ? "agent" : "site",
+          });
           if (abandonmentEnabledRef.current && !watcherRef.current) {
             watcherRef.current = createAbandonmentWatcher(fireAbandonment, abandonmentOptionsRef.current);
           }
@@ -845,8 +949,8 @@ export function useTuringChat(
         effectiveLlmInstanceId,
       );
     },
-    [agentId, agentLlmInstanceId, controlledConversationId, beginSend, commitMessages,
-      messagesRef, runAssistantTurn, fireAbandonment],
+    [agentId, agentLlmInstanceId, personaId, personaLlmInstanceId, controlledConversationId,
+      beginSend, commitMessages, messagesRef, runAssistantTurn, fireAbandonment],
   );
 
   const submitForm = useCallback(

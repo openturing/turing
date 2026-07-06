@@ -14,6 +14,12 @@
     "deleteSession": "Delete session",
     "selectModel": "Select a model...",
     "newChat": "New Chat",
+    "noModelSelected": "No model selected",
+    "persona": {
+      "ask": "Talk to {{persona}}",
+      "usingModel": "Talking to this persona using {{model}}",
+      "subtitle": "Talk directly to a persona to test its voice"
+    },
     "chatTab": "Chat",
     "semanticTab": "Semantic",
     "semanticTabShort": "SN",

@@ -48,6 +48,7 @@ export type {
   ChatDisabledReason,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostPersonaChatOptions,
   PostClientToolResultOptions,
   ClientToolResultBody,
   PostLlmChatOptions,
@@ -84,6 +85,7 @@ import type {
   ChatEnabledResponse,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostPersonaChatOptions,
   PostClientToolResultOptions,
   ClientToolResultBody,
   PostLlmChatOptions,
@@ -648,6 +650,101 @@ export async function postAgentChat(
     forcedVariant: options?.forcedVariant,
     selectedSkillId: options?.selectedSkillId,
   };
+
+  let body: BodyInit;
+  if (options?.files && options.files.length > 0) {
+    const form = new FormData();
+    form.append(
+      "request",
+      new Blob([JSON.stringify(requestPayload)], { type: "application/json" }),
+    );
+    for (const file of options.files) {
+      form.append("files", file);
+    }
+    body = form;
+    // FormData → browser sets multipart Content-Type + boundary; don't set it manually.
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(requestPayload);
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body,
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const {
+    text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    searchSuggestions,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+    grounding,
+    secondOpinion,
+  } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+    options?.onForm,
+    options?.onSources,
+    options?.onCitations,
+    options?.onToolCall,
+    options?.onReasoning,
+    options?.onGrounding,
+    options?.onSecondOpinion,
+  );
+  return {
+    role: "assistant",
+    content: text,
+    options: chipOptions,
+    form,
+    sources,
+    citations,
+    searchSuggestions,
+    reasoning,
+    toolCalls,
+    clientToolCall,
+    grounding,
+    secondOpinion,
+  };
+}
+
+/**
+ * Block AI / §XXXII.2 (T579) — streams a turn through a persona
+ * (`POST /v2/persona/{personaId}/chat`). Mirrors {@link postAgentChat}; only the
+ * URL and the (leaner, stateless) request payload differ.
+ *
+ * @since 2026.3.4
+ */
+export async function postPersonaChat(
+  personaId: string,
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostPersonaChatOptions,
+): Promise<TurChatConversationResponse> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/persona/${personaId}/chat`;
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+  };
+  const xsrf = await ensureXsrfToken();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const tz = browserTimezone();
+  if (tz) headers["X-Timezone"] = tz;
+
+  const requestPayload = { llmInstanceId, messages };
 
   let body: BodyInit;
   if (options?.files && options.files.length > 0) {

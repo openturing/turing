@@ -96,6 +96,8 @@ const BentoAssetPage = lazy(() => import("../bento/asset/bento.asset.page"));
 const BentoPagePage = lazy(() => import("../bento/page/bento.page.page"));
 // Phase 3 (T563) — chat workspace + conversation detail in the bento shell.
 const BentoChatPage = lazy(() => import("../bento/chat/bento.chat.page"));
+// Block AI (T580/T581) — persona chat workspace (talk directly to a persona).
+const BentoPersonaChatPage = lazy(() => import("../bento/chat/bento.persona.chat.page"));
 const BentoConversationPage = lazy(() => import("../bento/conversation/bento.conversation.page"));
 // Phase 3 (T564) — AI Analytics suite (reuses the console sub-page content).
 const BentoAiAnalyticsPage = lazy(() => import("../bento/ai-analytics/bento.ai-analytics.page"));
@@ -248,6 +250,9 @@ export const BentoRoutes = (
     <Route path="page" element={<BentoPagePage />} />
     {/* Phase 3 (T563) — chat + conversation. */}
     <Route path="chat" element={<BentoChatPage />} />
+    {/* Block AI (T580) — deterministic, shareable chat URLs. */}
+    <Route path="chat/agent/:agentId" element={<BentoChatPage />} />
+    <Route path="chat/persona/:personaId" element={<BentoPersonaChatPage />} />
     <Route path="conversation/:conversationId" element={<BentoConversationPage />} />
     {/* Phase 3 (T564) — AI Analytics suite; index redirects to the first
         visible sub-page, tabs render the reused console content components. */}

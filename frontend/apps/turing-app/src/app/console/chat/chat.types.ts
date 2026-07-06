@@ -12,8 +12,17 @@ import type {
 export const DEFAULT_CONTEXT_WINDOW = 128000
 export const LLM_STORAGE_KEY = "turing-chat-selected-llm"
 export const CHAT_INITIAL_PROMPT_KEY = "turing-chat-initial-prompt"
-export const CHAT_INITIAL_AGENT_KEY = "turing-chat-initial-agent"
 export const TITLE_TIMEOUT_MS = 8000
+
+/**
+ * Block AI / §XXXII.3 (T580) — the chat "subject": what a chat surface talks
+ * to. Resolved from the URL (deterministic, shareable) rather than the retired
+ * `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off. A bare agent subject with
+ * no id means "the default/first agent" (the `/bento/chat` landing).
+ */
+export type ChatSubject =
+  | { readonly kind: "agent"; readonly agentId?: string }
+  | { readonly kind: "persona"; readonly personaId: string }
 
 export interface ChatAttachment {
   name: string
