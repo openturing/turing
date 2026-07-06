@@ -176,6 +176,74 @@ export function BentoListPage<T>({
   );
 }
 
+export interface BentoTileGridProps<T> {
+  /** Query data — `undefined` while loading (drives the LoadProvider gate). */
+  items: T[] | undefined;
+  /** Connection error message, or null. */
+  error?: string | null;
+  /** URL the LoadProvider "try again" link points at. */
+  tryAgainUrl: string;
+  /** Tone driving the dashed New-tile gradient. Default `indigo`. */
+  tone?: BentoTone;
+  // --- "new" tile (omit both, or set hideNew, to drop it) ---
+  newRoute?: string;
+  newLabel?: ReactNode;
+  newSubtitle?: ReactNode;
+  /** Force-hide the dashed "New" tile (e.g. a Keycloak-backed read-only list). */
+  hideNew?: boolean;
+  // --- items ---
+  itemKey: (item: T) => string;
+  /** Render one item's tile (typically a {@link BentoEntityTile}). */
+  renderTile: (item: T) => ReactNode;
+  // --- empty state ---
+  emptyTitle: string;
+  emptyDescription: string;
+}
+
+/**
+ * The Bento mosaic **without** a hero — the frosted `bento-grid` of tiles, an
+ * optional dashed "New" tile, and an empty-state hint. Use it for list content
+ * that renders inside a shell which already owns the header (e.g. a page with a
+ * shared {@link BentoHero} + pill tab-bar `Outlet`, like Administration, or a
+ * read-only landing that renders its own hero above the grid). Standalone CRUD
+ * lists should use {@link BentoListPage}, which wraps this shape with a hero and
+ * the T575 customize/reorder mode.
+ */
+export function BentoTileGrid<T>({
+  items,
+  error,
+  tryAgainUrl,
+  tone = "indigo",
+  newRoute,
+  newLabel,
+  newSubtitle,
+  hideNew = false,
+  itemKey,
+  renderTile,
+  emptyTitle,
+  emptyDescription,
+}: Readonly<BentoTileGridProps<T>>) {
+  const gradient = BENTO_TONE_GRADIENTS[tone];
+  const newTile =
+    !hideNew && newRoute && newLabel ? (
+      <NewTile route={newRoute} label={newLabel} subtitle={newSubtitle} gradient={gradient} />
+    ) : null;
+
+  return (
+    <LoadProvider checkIsNotUndefined={items} error={error ?? null} tryAgainUrl={tryAgainUrl}>
+      <div className={BENTO_GRID_CLASS}>
+        {newTile}
+        {(items ?? []).map((item) => (
+          <span key={itemKey(item)} className="contents">
+            {renderTile(item)}
+          </span>
+        ))}
+        {items?.length === 0 && <EmptyHintTile title={emptyTitle} description={emptyDescription} />}
+      </div>
+    </LoadProvider>
+  );
+}
+
 function StaticGrid<T>({
   resolved,
   renderTile,

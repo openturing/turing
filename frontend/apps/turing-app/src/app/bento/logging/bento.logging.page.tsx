@@ -1,36 +1,51 @@
 import { ROUTES } from "@/app/routes.const";
-import { BentoHero } from "@/components/bento";
-import { GridList } from "@/components/grid.list";
-import { IconReceiptRupee } from "@tabler/icons-react";
+import { BentoEntityTile, BentoHero, BentoTileGrid } from "@/components/bento";
+import type { BentoTone } from "@/components/bento";
+import { IconDatabaseSearch, IconPlugConnected, IconReceiptRupee, IconServer } from "@tabler/icons-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 /**
  * Bento logging landing — T566. Lists the three log sources (Turing server,
- * indexing, AEM) as a frosted {@link GridList} whose cards deep-link to the
- * Bento log sub-routes; the log viewers themselves are the console pages reused
- * unchanged under the Bento shell. Read-only surface, so no hero/save-bar CRUD.
+ * indexing, AEM) as the frosted bento mosaic ({@link BentoTileGrid} + tiles)
+ * whose cards deep-link to the Bento log sub-routes; the log viewers themselves
+ * are the console pages reused unchanged under the Bento shell. Read-only
+ * surface, so no "New" tile and no hero/save-bar CRUD.
  */
 export default function BentoLoggingPage() {
   const { t } = useTranslation();
 
-  const gridItemList = [
+  const sources: {
+    id: string;
+    name: string;
+    description: string;
+    url: string;
+    icon: TablerIcon;
+    tone: BentoTone;
+  }[] = [
     {
-      id: "1",
+      id: "server",
       name: t("logging.turingServer"),
       description: t("logging.turingServerDesc"),
       url: `${ROUTES.BENTO_LOGGING}/server`,
+      icon: IconServer,
+      tone: "rose",
     },
     {
-      id: "2",
+      id: "indexing",
       name: t("logging.indexing"),
       description: t("logging.indexingDesc"),
       url: `${ROUTES.BENTO_LOGGING}/indexing`,
+      icon: IconDatabaseSearch,
+      tone: "amber",
     },
     {
-      id: "3",
+      id: "aem",
       name: t("logging.aem"),
       description: t("logging.aemDesc"),
       url: `${ROUTES.BENTO_LOGGING}/aem`,
+      icon: IconPlugConnected,
+      tone: "indigo",
     },
   ];
 
@@ -46,7 +61,23 @@ export default function BentoLoggingPage() {
         title={t("home.features.logging.title")}
         subtitle={t("home.features.logging.description")}
       />
-      <GridList gridItemList={gridItemList} />
+      <BentoTileGrid
+        items={sources}
+        tryAgainUrl={ROUTES.BENTO_LOGGING}
+        hideNew
+        itemKey={(s) => s.id}
+        renderTile={(s) => (
+          <BentoEntityTile
+            to={s.url}
+            defaultIcon={s.icon}
+            tone={s.tone}
+            title={s.name}
+            description={s.description}
+          />
+        )}
+        emptyTitle={t("home.features.logging.title")}
+        emptyDescription={t("home.features.logging.description")}
+      />
     </>
   );
 }

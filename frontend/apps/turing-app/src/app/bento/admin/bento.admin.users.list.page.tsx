@@ -1,17 +1,17 @@
 import { useAdminUsers } from "@/api/queries/admin.queries";
 import { useAuthDiscovery } from "@/api/queries/auth.queries";
 import { ROUTES } from "@/app/routes.const";
-import { GridList } from "@/components/grid.list";
-import { LoadProvider } from "@/components/loading-provider";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
+import { BentoEntityTile, BentoTileGrid } from "@/components/bento";
+import { IconUsers } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 /**
  * Bento admin users list — T567. Rendered inside the {@code BentoAdminPage}
- * tab-bar Outlet, so it drops the console `SubPageHeader`/breadcrumb (which need
- * the sidebar/breadcrumb providers absent in the Bento shell) and reuses the
- * shared `GridList` + the Keycloak-vs-JPA `useAdminUsers` dependent query. Row +
- * "New" links point at the Bento detail routes.
+ * hero + pill tab-bar Outlet, so it drops the console `SubPageHeader`/breadcrumb
+ * and renders the frosted bento mosaic ({@link BentoTileGrid} + tiles) instead
+ * of the console `GridList` card grid. Keeps the Keycloak-vs-JPA `useAdminUsers`
+ * dependent query; the "New" tile is hidden for Keycloak (read-only) directories.
+ * Row + "New" links point at the Bento detail routes.
  */
 export default function BentoAdminUsersListPage() {
   const { t } = useTranslation();
@@ -21,20 +21,28 @@ export default function BentoAdminUsersListPage() {
   const { data: users, isError: usersError } = useAdminUsers(keycloak);
   const error = usersError ? t("admin.users.loadFailed") : null;
 
-  const gridItemList = useGridAdapter(users, {
-    id: "username",
-    name: "username",
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_ADMIN_USERS}/${item.username}`,
-  });
-
   return (
-    <LoadProvider checkIsNotUndefined={users} error={error} tryAgainUrl={ROUTES.BENTO_ADMIN_USERS}>
-      {users && (
-        <GridList gridItemList={gridItemList}>
-          {!keycloak && <GridList.NewButton to={`${ROUTES.BENTO_ADMIN_USERS}/new`} label="User" />}
-        </GridList>
+    <BentoTileGrid
+      items={users}
+      error={error}
+      tryAgainUrl={ROUTES.BENTO_ADMIN_USERS}
+      tone="slate"
+      hideNew={!!keycloak}
+      newRoute={`${ROUTES.BENTO_ADMIN_USERS}/new`}
+      newLabel={t("admin.users.newUser")}
+      newSubtitle={t("admin.users.createDescription")}
+      itemKey={(u) => u.username}
+      renderTile={(u) => (
+        <BentoEntityTile
+          to={`${ROUTES.BENTO_ADMIN_USERS}/${u.username}`}
+          defaultIcon={IconUsers}
+          tone="slate"
+          title={u.username}
+          description={u.description}
+        />
       )}
-    </LoadProvider>
+      emptyTitle={t("admin.users.title")}
+      emptyDescription={t("admin.users.description")}
+    />
   );
 }

@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { resolveBentoLayout, toBentoLayoutEntries } from "../bento-layout";
-import { BentoEntityTile, BentoListPage } from "../bento-list-page";
+import { BentoEntityTile, BentoListPage, BentoTileGrid } from "../bento-list-page";
 
 interface Row {
   id: string;
@@ -93,6 +93,52 @@ describe("BentoListPage", () => {
     fireEvent.click(screen.getAllByLabelText("Small")[0]);
     expect(screen.getByTestId("tile-a")).toHaveAttribute("data-emphasis", "SMALL");
     expect(screen.getAllByLabelText("Small")[0]).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("BentoTileGrid", () => {
+  function renderGrid(items: Row[] | undefined, opts?: { hideNew?: boolean }) {
+    return renderWithProviders(
+      <BentoTileGrid<Row>
+        items={items}
+        error={null}
+        tryAgainUrl="/bento/admin/users"
+        tone="slate"
+        hideNew={opts?.hideNew}
+        newRoute="/bento/admin/users/new"
+        newLabel="New User"
+        itemKey={(r) => r.id}
+        emptyTitle="No users yet"
+        emptyDescription="Add your first user"
+        renderTile={(row) => <div data-testid={`tile-${row.id}`}>{row.title}</div>}
+      />,
+    );
+  }
+
+  it("renders a New tile plus one tile per item, without a hero", () => {
+    renderGrid([
+      { id: "a", title: "Alpha" },
+      { id: "b", title: "Beta" },
+    ]);
+    expect(screen.getByRole("link", { name: /New User/i })).toHaveAttribute(
+      "href",
+      "/bento/admin/users/new",
+    );
+    expect(screen.getByTestId("tile-a")).toBeInTheDocument();
+    expect(screen.getByTestId("tile-b")).toBeInTheDocument();
+    // No customize affordance — BentoTileGrid is the hero-less static mosaic.
+    expect(screen.queryByText("Customize layout")).not.toBeInTheDocument();
+  });
+
+  it("hides the New tile when hideNew is set (e.g. a read-only directory)", () => {
+    renderGrid([{ id: "a", title: "Alpha" }], { hideNew: true });
+    expect(screen.queryByRole("link", { name: /New User/i })).not.toBeInTheDocument();
+    expect(screen.getByTestId("tile-a")).toBeInTheDocument();
+  });
+
+  it("shows the empty hint when the list is empty", () => {
+    renderGrid([]);
+    expect(screen.getByText("No users yet")).toBeInTheDocument();
   });
 });
 

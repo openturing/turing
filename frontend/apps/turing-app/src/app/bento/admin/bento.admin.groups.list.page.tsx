@@ -1,16 +1,16 @@
 import { useAdminGroups } from "@/api/queries/admin.queries";
 import { useAuthDiscovery } from "@/api/queries/auth.queries";
 import { ROUTES } from "@/app/routes.const";
-import { GridList } from "@/components/grid.list";
-import { LoadProvider } from "@/components/loading-provider";
-import { useGridAdapter } from "@/hooks/use-grid-adapter";
+import { BentoEntityTile, BentoTileGrid } from "@/components/bento";
+import { IconUsersGroup } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 /**
- * Bento admin groups list — T567. Reuses the shared `GridList` + the
- * Keycloak-vs-JPA `useAdminGroups` dependent query inside the
- * {@code BentoAdminPage} tab Outlet; row + "New" links point at the Bento
- * detail routes.
+ * Bento admin groups list — T567. Renders the frosted bento mosaic
+ * ({@link BentoTileGrid} + tiles) inside the {@code BentoAdminPage} tab Outlet,
+ * reusing the Keycloak-vs-JPA `useAdminGroups` dependent query; the "New" tile
+ * is hidden for Keycloak (read-only) directories. Row + "New" links point at
+ * the Bento detail routes.
  */
 export default function BentoAdminGroupsListPage() {
   const { t } = useTranslation();
@@ -20,19 +20,28 @@ export default function BentoAdminGroupsListPage() {
   const { data: groups, isError: groupsError } = useAdminGroups(keycloak);
   const error = groupsError ? t("admin.groups.loadFailed") : null;
 
-  const gridItemList = useGridAdapter(groups, {
-    name: "name",
-    description: "description",
-    url: (item) => `${ROUTES.BENTO_ADMIN_GROUPS}/${item.id}`,
-  });
-
   return (
-    <LoadProvider checkIsNotUndefined={groups} error={error} tryAgainUrl={ROUTES.BENTO_ADMIN_GROUPS}>
-      {groups && (
-        <GridList gridItemList={gridItemList}>
-          {!keycloak && <GridList.NewButton to={`${ROUTES.BENTO_ADMIN_GROUPS}/new`} label="Group" />}
-        </GridList>
+    <BentoTileGrid
+      items={groups}
+      error={error}
+      tryAgainUrl={ROUTES.BENTO_ADMIN_GROUPS}
+      tone="slate"
+      hideNew={!!keycloak}
+      newRoute={`${ROUTES.BENTO_ADMIN_GROUPS}/new`}
+      newLabel={t("admin.groups.newGroup")}
+      newSubtitle={t("admin.groups.createDescription")}
+      itemKey={(g) => g.id}
+      renderTile={(g) => (
+        <BentoEntityTile
+          to={`${ROUTES.BENTO_ADMIN_GROUPS}/${g.id}`}
+          defaultIcon={IconUsersGroup}
+          tone="slate"
+          title={g.name}
+          description={g.description}
+        />
       )}
-    </LoadProvider>
+      emptyTitle={t("admin.groups.title")}
+      emptyDescription={t("admin.groups.description")}
+    />
   );
 }

@@ -24,6 +24,8 @@ export {
 export {
   BentoListPage,
   type BentoListPageProps,
+  BentoTileGrid,
+  type BentoTileGridProps,
   BentoEntityTile,
   type BentoEntityTileProps,
 } from "./bento-list-page";
