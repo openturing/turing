@@ -95,11 +95,16 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
   const hasResults = (topTerms?.topTerms?.length ?? 0) > 0;
   const variation = topTerms?.variationPeriod ?? 0;
 
+  // Bento passes an explicit `header`; the console leaves it undefined. In bento
+  // the neutral shadcn Cards get a frosted surface so they match the shell.
+  const isBento = header !== undefined;
+  const cardClass = isBento ? "border-border/50 bg-transparent shadow-md bento-glass rounded-3xl" : undefined;
+
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] px-6">
-          <Card>
+          <Card className={cardClass}>
             <CardHeader>
               <Skeleton className="h-6 w-48" />
             </CardHeader>
@@ -109,7 +114,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
               ))}
             </CardContent>
           </Card>
-          <Card>
+          <Card className={cardClass}>
             <CardHeader>
               <Skeleton className="h-6 w-32" />
             </CardHeader>
@@ -124,7 +129,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
 
     if (error) {
       return (
-        <Card>
+        <Card className={cardClass}>
           <CardContent className="py-6 text-sm text-destructive">{error}</CardContent>
         </Card>
       );
@@ -143,7 +148,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
 
     return (
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <Card>
+        <Card className={cardClass}>
           <CardContent>
             <Table>
               <TableHeader>
@@ -182,7 +187,7 @@ export default function SNSiteTopSearchTermsPage({ baseRoute = ROUTES.SN_INSTANC
             </Table>
           </CardContent>
         </Card>
-        <Card >
+        <Card className={cardClass}>
           <CardHeader>
             <CardTitle>{t("sn.insights.statistics")}</CardTitle>
           </CardHeader>
