@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.genai.TurAgentChatRequest;
+import com.viglet.turing.genai.persona.dialogue.TurDialogueEvent.TurDialogueEventType;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.persona.TurPersonaKind;
@@ -38,11 +40,12 @@ import com.viglet.turing.tenant.TurInfraTenantScope;
 import reactor.core.publisher.Flux;
 
 /**
- * Orchestration tests for the persona↔persona dialogue driver (Block AI /
- * §XXXII.8, T585). The chat executor is mocked to echo the active speaker + its
- * incoming turn, so we can assert the alternation, the message threading
- * (each persona replies to the other's last utterance), the turn budget, and
- * the guard rails — all without a Spring context or a real LLM.
+ * Orchestration tests for the streaming persona↔persona dialogue driver (Block
+ * AI / §XXXII.8, T585; N-persona + streaming, T604). The chat executor is mocked
+ * to echo the active speaker + its incoming turn, so we can assert the
+ * round-robin over N personas, the message threading (each persona replies to
+ * the previous utterance), the turn budget, the streamed event sequence, and the
+ * guard rails — all without a Spring context or a real LLM.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -78,13 +81,9 @@ class TurPersonaDialogueServiceTest {
         return llm;
     }
 
-    private void wireHappyPath(TurPersona a, TurPersona b, TurLLMInstance llm) {
-        when(personaRepository.findById("A")).thenReturn(Optional.of(a));
-        when(personaRepository.findById("B")).thenReturn(Optional.of(b));
-        when(llmInstanceRepository.findById("llm1")).thenReturn(Optional.of(llm));
-        when(tenantScope.isVisibleToTenant(llm)).thenReturn(true);
+    private void echoExecutor() {
         // Echo the active speaker and the incoming user turn so we can trace both
-        // the alternation and the "reply to the other's last message" threading.
+        // the round-robin and the "reply to the previous message" threading.
         when(agentChatExecutor.execute(any(TurAgentChatRequest.class))).thenAnswer(inv -> {
             TurAgentChatRequest req = inv.getArgument(0);
             String name = req.agent().getDefaultPersona().getName();
@@ -93,64 +92,87 @@ class TurPersonaDialogueServiceTest {
         });
     }
 
+    private List<TurDialogueEvent> collect(Flux<TurDialogueEvent> flux) {
+        return flux.collectList().block();
+    }
+
     @Test
-    void alternatesSpeakersThreadsMessagesAndHonoursTurnBudget() {
-        TurPersona a = speaker("A", "Alice");
-        TurPersona b = speaker("B", "Bob");
+    void roundRobinsThreePersonasThreadsMessagesAndEmitsDone() {
+        when(personaRepository.findById("A")).thenReturn(Optional.of(speaker("A", "Alice")));
+        when(personaRepository.findById("B")).thenReturn(Optional.of(speaker("B", "Bob")));
+        when(personaRepository.findById("C")).thenReturn(Optional.of(speaker("C", "Cleo")));
         TurLLMInstance llm = llm();
-        wireHappyPath(a, b, llm);
+        when(llmInstanceRepository.findById("llm1")).thenReturn(Optional.of(llm));
+        when(tenantScope.isVisibleToTenant(llm)).thenReturn(true);
+        echoExecutor();
 
-        TurDialogueTranscript result = service.run("weather", "A", "B", "llm1", 4);
+        List<TurDialogueEvent> events = collect(
+                service.stream("weather", List.of("A", "B", "C"), "llm1", 4));
 
-        assertThat(result.turns()).isEqualTo(4);
-        assertThat(result.llmError()).isFalse();
-        assertThat(result.transcript()).hasSize(4);
-        // Alternation A, B, A, B.
-        assertThat(result.transcript()).extracting(TurDialogueTurn::personaId)
-                .containsExactly("A", "B", "A", "B");
+        // 4 TURN events + 1 DONE.
+        assertThat(events).hasSize(5);
+        List<TurDialogueEvent> turns = events.stream()
+                .filter(e -> e.type() == TurDialogueEventType.TURN).toList();
+        assertThat(turns).extracting(TurDialogueEvent::personaId)
+                .containsExactly("A", "B", "C", "A"); // round-robin over 3
         // Threading: A opens on the topic; each subsequent speaker replies to the
         // previous utterance.
-        assertThat(result.transcript().get(0).content()).isEqualTo("Alice->weather");
-        assertThat(result.transcript().get(1).content()).isEqualTo("Bob->Alice->weather");
-        assertThat(result.transcript().get(2).content()).isEqualTo("Alice->Bob->Alice->weather");
-        assertThat(result.personaA().name()).isEqualTo("Alice");
-        assertThat(result.personaB().name()).isEqualTo("Bob");
+        assertThat(turns.get(0).content()).isEqualTo("Alice->weather");
+        assertThat(turns.get(1).content()).isEqualTo("Bob->Alice->weather");
+        assertThat(turns.get(2).content()).isEqualTo("Cleo->Bob->Alice->weather");
+        TurDialogueEvent done = events.get(events.size() - 1);
+        assertThat(done.type()).isEqualTo(TurDialogueEventType.DONE);
+        assertThat(done.index()).isEqualTo(4);
     }
 
     @Test
-    void defaultsToTenTurnsAndClampsToTwenty() {
-        TurPersona a = speaker("A", "Alice");
-        TurPersona b = speaker("B", "Bob");
-        wireHappyPath(a, b, llm());
-
-        assertThat(service.run("t", "A", "B", "llm1", null).turns())
-                .isEqualTo(TurPersonaDialogueService.DEFAULT_TURNS);
-        assertThat(service.run("t", "A", "B", "llm1", 999).turns()).isEqualTo(20);
-        assertThat(service.run("t", "A", "B", "llm1", 1).turns()).isEqualTo(2);
-    }
-
-    @Test
-    void stopsEarlyAndFlagsWhenATurnEmits() {
-        TurPersona a = speaker("A", "Alice");
-        TurPersona b = speaker("B", "Bob");
+    void defaultsToTenTurnsAndClampsToForty() {
+        when(personaRepository.findById("A")).thenReturn(Optional.of(speaker("A", "Alice")));
+        when(personaRepository.findById("B")).thenReturn(Optional.of(speaker("B", "Bob")));
         TurLLMInstance llm = llm();
-        when(personaRepository.findById("A")).thenReturn(Optional.of(a));
-        when(personaRepository.findById("B")).thenReturn(Optional.of(b));
+        when(llmInstanceRepository.findById("llm1")).thenReturn(Optional.of(llm));
+        when(tenantScope.isVisibleToTenant(llm)).thenReturn(true);
+        echoExecutor();
+
+        assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", null)))
+                .isEqualTo(TurPersonaDialogueService.DEFAULT_TURNS);
+        assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", 999))).isEqualTo(40);
+        assertThat(turnCount(service.stream("t", List.of("A", "B"), "llm1", 1))).isEqualTo(2);
+    }
+
+    private long turnCount(Flux<TurDialogueEvent> flux) {
+        return collect(flux).stream().filter(e -> e.type() == TurDialogueEventType.TURN).count();
+    }
+
+    @Test
+    void emitsErrorEventAndStopsWhenATurnFails() {
+        when(personaRepository.findById("A")).thenReturn(Optional.of(speaker("A", "Alice")));
+        when(personaRepository.findById("B")).thenReturn(Optional.of(speaker("B", "Bob")));
+        TurLLMInstance llm = llm();
         when(llmInstanceRepository.findById("llm1")).thenReturn(Optional.of(llm));
         when(tenantScope.isVisibleToTenant(llm)).thenReturn(true);
         when(agentChatExecutor.execute(any(TurAgentChatRequest.class)))
                 .thenReturn(Flux.error(new IllegalStateException("provider down")));
 
-        TurDialogueTranscript result = service.run("weather", "A", "B", "llm1", 4);
+        List<TurDialogueEvent> events = collect(
+                service.stream("weather", List.of("A", "B"), "llm1", 4));
 
-        assertThat(result.llmError()).isTrue();
-        assertThat(result.transcript()).isEmpty();
-        assertThat(result.error()).contains("provider down");
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).type()).isEqualTo(TurDialogueEventType.ERROR);
+        assertThat(events.get(0).error()).contains("provider down");
     }
 
     @Test
     void rejectsBlankTopic() {
-        assertThatThrownBy(() -> service.run("  ", "A", "B", "llm1", 4))
+        assertThatThrownBy(() -> service.stream("  ", List.of("A", "B"), "llm1", 4))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void rejectsFewerThanTwoPersonas() {
+        assertThatThrownBy(() -> service.stream("weather", List.of("A"), "llm1", 4))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
@@ -162,7 +184,7 @@ class TurPersonaDialogueServiceTest {
         audience.setPersonaKind(TurPersonaKind.AUDIENCE);
         when(personaRepository.findById("A")).thenReturn(Optional.of(audience));
 
-        assertThatThrownBy(() -> service.run("weather", "A", "B", "llm1", 4))
+        assertThatThrownBy(() -> service.stream("weather", List.of("A", "B"), "llm1", 4))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
@@ -172,7 +194,7 @@ class TurPersonaDialogueServiceTest {
     void rejectsMissingPersona() {
         when(personaRepository.findById("A")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.run("weather", "A", "B", "llm1", 4))
+        assertThatThrownBy(() -> service.stream("weather", List.of("A", "B"), "llm1", 4))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
@@ -180,15 +202,13 @@ class TurPersonaDialogueServiceTest {
 
     @Test
     void rejectsInvisibleLlm() {
-        TurPersona a = speaker("A", "Alice");
-        TurPersona b = speaker("B", "Bob");
+        when(personaRepository.findById("A")).thenReturn(Optional.of(speaker("A", "Alice")));
+        when(personaRepository.findById("B")).thenReturn(Optional.of(speaker("B", "Bob")));
         TurLLMInstance llm = llm();
-        when(personaRepository.findById("A")).thenReturn(Optional.of(a));
-        when(personaRepository.findById("B")).thenReturn(Optional.of(b));
         lenient().when(llmInstanceRepository.findById("llm1")).thenReturn(Optional.of(llm));
         when(tenantScope.isVisibleToTenant(llm)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.run("weather", "A", "B", "llm1", 4))
+        assertThatThrownBy(() -> service.stream("weather", List.of("A", "B"), "llm1", 4))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);

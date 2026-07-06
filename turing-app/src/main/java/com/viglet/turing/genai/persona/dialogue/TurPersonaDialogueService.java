@@ -10,7 +10,6 @@
 package com.viglet.turing.genai.persona.dialogue;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurAgentChatRequest;
-import com.viglet.turing.genai.persona.dialogue.TurDialogueTranscript.TurPersonaRef;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.persona.TurPersona;
@@ -28,34 +26,40 @@ import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.tenant.TurInfraTenantScope;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 /**
- * Automatic persona↔persona conversation — Block AI / §XXXII.8 (T585).
+ * Automatic persona↔persona conversation — Block AI / §XXXII.8 (T585; N-persona
+ * + streaming in T604).
  *
- * <p>Given a <b>topic</b> and <b>two speaker personas</b>, this orchestrates a
- * bounded, turn-by-turn dialogue by driving the same shared
+ * <p>Given a <b>topic</b> and <b>two or more speaker personas</b>, this
+ * orchestrates a bounded, <b>round-robin</b> dialogue by driving the same shared
  * {@link TurAgentChatExecutor} the persona-chat MVP (T578) uses — one transient,
  * never-persisted {@link TurAIAgent} shell per turn, carrying the active
  * speaker's voice via {@code setDefaultPersona}. The topic is the opening user
- * turn to persona&nbsp;A; from then on each persona receives the other's last
- * utterance as its user turn and replies in character, alternating until the
- * turn budget is spent.
+ * turn to the first persona; from then on each persona receives the previous
+ * speaker's utterance as its user turn and replies in character, cycling through
+ * the roster (speaker {@code i % N}) until the turn budget is spent.
  *
- * <p>Two rules keep the conversation flowing (both configurable at the call
- * site): a shared <b>base system prompt</b> instructs every speaker to always
- * end its reply with a question to the other participant (so the dialogue never
- * stalls) — the persona's own voice is still fused <em>on top</em> of it by
+ * <p>Turns are streamed as {@link TurDialogueEvent}s so the client renders the
+ * conversation <b>live</b> instead of waiting for the whole transcript: each
+ * completed utterance is one {@code TURN} event, followed by a {@code DONE}
+ * (or {@code ERROR} + the partial thread). The blocking per-turn LLM calls run
+ * on a bounded-elastic worker so the SSE thread is never parked.
+ *
+ * <p>Two rules keep the conversation flowing: a shared <b>base system prompt</b>
+ * instructs every speaker to always end its reply with a question to the other
+ * participant(s) (so the dialogue never stalls) — the persona's own voice is
+ * still fused <em>on top</em> of it by
  * {@link com.viglet.turing.genai.TurChatPromptAssembler}; and the number of
  * <b>turns</b> is bounded (default {@value #DEFAULT_TURNS}).
  *
  * <p>Each turn is <b>stateless</b> ({@code conversationId = null},
- * {@code flowId = null}) exactly like T578, so no flow-state / analytics /
- * chat-memory rows are written and a fresh agent never
- * {@code LazyInitializationException}s. Unlike the chat MVP no native tools are
- * loaded — a dialogue is a pure voice exercise, and tool loops would only add
- * latency and break character. The executor runs in its default {@code CALL}
- * mode, emitting each utterance as a single {@code "token"} event that we
- * collect and join.
+ * {@code flowId = null}) exactly like T578, with no native tools (a dialogue is
+ * a pure voice exercise). The executor runs in its default {@code CALL} mode,
+ * emitting each utterance as a single {@code "token"} event that we collect and
+ * join.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -67,7 +71,8 @@ public class TurPersonaDialogueService {
     /** Default number of turns (utterances) when the caller doesn't specify. */
     public static final int DEFAULT_TURNS = 10;
     private static final int MIN_TURNS = 2;
-    private static final int MAX_TURNS = 20;
+    private static final int MAX_TURNS = 40;
+    private static final int MIN_PERSONAS = 2;
     /** Per-turn upper bound on the blocking LLM call. */
     private static final Duration TURN_TIMEOUT = Duration.ofSeconds(120);
 
@@ -78,12 +83,12 @@ public class TurPersonaDialogueService {
      * exchange self-sustaining.
      */
     private static final String DIALOGUE_DIRECTIVE = """
-            You are one of two personas having a live, turn-by-turn conversation about a topic. \
+            You are one of several personas having a live, turn-by-turn conversation about a topic. \
             Stay fully in character and speak in your own distinct voice. \
             Reply in the same language as the conversation, and keep each reply short and natural \
             (at most a few sentences). \
             IMPORTANT: every single time you reply you MUST end with a direct question addressed to \
-            the other participant, so the dialogue always keeps going.""";
+            the other participant(s), so the dialogue always keeps going.""";
 
     private final TurPersonaRepository personaRepository;
     private final TurLLMInstanceRepository llmInstanceRepository;
@@ -101,61 +106,64 @@ public class TurPersonaDialogueService {
     }
 
     /**
-     * Run a bounded dialogue between {@code personaAId} and {@code personaBId}
-     * about {@code topic} using {@code llmInstanceId}.
+     * Stream a bounded round-robin dialogue between {@code personaIds} (two or
+     * more) about {@code topic} using {@code llmInstanceId}.
      *
-     * @param topic          the subject that seeds persona A's opening turn
-     * @param personaAId     the persona that speaks first (must be a speaker)
-     * @param personaBId     the persona that replies (must be a speaker)
+     * <p>Validation is synchronous (throws {@link ResponseStatusException} before
+     * the stream starts, so the client gets a proper 4xx); the turn loop then
+     * runs on a bounded-elastic worker, emitting one {@code TURN} event per
+     * completed utterance and a terminal {@code DONE}/{@code ERROR}.
+     *
+     * @param topic          the subject that seeds the first persona's opening turn
+     * @param personaIds     the ordered roster of speaker personas (size ≥ 2)
      * @param llmInstanceId  the LLM instance (validated against the tenant scope)
      * @param turnsRequested the desired number of turns; null → {@link #DEFAULT_TURNS},
      *                       clamped to [{@value #MIN_TURNS}, {@value #MAX_TURNS}]
-     * @return the transcript (partial + flagged if a turn fails mid-dialogue)
      */
-    public TurDialogueTranscript run(String topic, String personaAId, String personaBId,
+    public Flux<TurDialogueEvent> stream(String topic, List<String> personaIds,
             String llmInstanceId, Integer turnsRequested) {
 
         if (topic == null || topic.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A topic is required");
         }
-        TurPersona personaA = loadSpeaker(personaAId);
-        TurPersona personaB = loadSpeaker(personaBId);
+        if (personaIds == null || personaIds.size() < MIN_PERSONAS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "At least " + MIN_PERSONAS + " personas are required for a dialogue");
+        }
+        List<TurPersona> speakers = personaIds.stream().map(this::loadSpeaker).toList();
         TurLLMInstance llm = loadLlm(llmInstanceId);
         int turns = clampTurns(turnsRequested);
 
-        log.info("[PersonaDialogue] '{}' <-> '{}' on '{}' for {} turns via {}",
-                personaA.getName(), personaB.getName(), topic, turns, llm.getTitle());
+        log.info("[PersonaDialogue] {} personas on '{}' for {} turns via {}",
+                speakers.size(), topic, turns, llm.getTitle());
 
-        List<TurDialogueTurn> transcript = new ArrayList<>();
-        TurPersona[] speakers = {personaA, personaB};
-        String incoming = topic;
-        boolean llmError = false;
-        String error = null;
-
-        for (int i = 0; i < turns; i++) {
-            TurPersona speaker = speakers[i % 2];
-            String utterance;
-            try {
-                utterance = runTurn(speaker, llm, incoming);
-            } catch (Exception e) {
-                log.error("[PersonaDialogue] turn {} ({}) failed: {}", i, speaker.getName(), e.getMessage(), e);
-                llmError = true;
-                error = e.getMessage();
-                break;
+        return Flux.<TurDialogueEvent>create(sink -> {
+            String incoming = topic;
+            for (int i = 0; i < turns; i++) {
+                if (sink.isCancelled()) {
+                    return;
+                }
+                TurPersona speaker = speakers.get(i % speakers.size());
+                String utterance;
+                try {
+                    utterance = runTurn(speaker, llm, incoming);
+                } catch (Exception e) {
+                    log.error("[PersonaDialogue] turn {} ({}) failed: {}", i, speaker.getName(), e.getMessage(), e);
+                    sink.next(TurDialogueEvent.error(i, e.getMessage()));
+                    sink.complete();
+                    return;
+                }
+                if (utterance == null || utterance.isBlank()) {
+                    sink.next(TurDialogueEvent.error(i, "The model returned an empty turn"));
+                    sink.complete();
+                    return;
+                }
+                sink.next(TurDialogueEvent.turn(i, speaker.getId(), speaker.getName(), utterance));
+                incoming = utterance;
             }
-            if (utterance == null || utterance.isBlank()) {
-                llmError = true;
-                error = "The model returned an empty turn";
-                break;
-            }
-            transcript.add(new TurDialogueTurn(speaker.getId(), speaker.getName(), utterance));
-            incoming = utterance;
-        }
-
-        return new TurDialogueTranscript(topic,
-                new TurPersonaRef(personaA.getId(), personaA.getName()),
-                new TurPersonaRef(personaB.getId(), personaB.getName()),
-                turns, transcript, llmError, error);
+            sink.next(TurDialogueEvent.done(turns));
+            sink.complete();
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /** One utterance: drive the executor for {@code speaker} replying to {@code incoming}. */
@@ -191,7 +199,7 @@ public class TurPersonaDialogueService {
 
     private TurPersona loadSpeaker(String id) {
         if (id == null || id.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Two persona ids are required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A persona id is required");
         }
         // @TenantId auto-filters, so a persona from another tenant 404s here too.
         TurPersona persona = personaRepository.findById(id)

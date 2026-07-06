@@ -1,15 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TurPersona } from '@/models/persona/persona.model.ts';
-import type {
-  TurDialogueTranscript,
-  TurPersonaDialogueRequest,
-} from '@/models/persona/persona-dialogue.model';
 import { TurPersonaService } from '@/services/persona/persona.service';
-import { TurPersonaDialogueService } from '@/services/persona/persona-dialogue.service';
 import { queryKeys } from './keys';
 
 const service = new TurPersonaService();
-const dialogueService = new TurPersonaDialogueService();
 
 export function usePersonas() {
   return useQuery<TurPersona[]>({
@@ -61,15 +55,5 @@ export function useDeletePersona() {
       }
       invalidatePersonas(queryClient);
     },
-  });
-}
-
-/**
- * Block AI / §XXXII.8 (T585) — run a bounded persona↔persona dialogue. A pure
- * action (no cache to invalidate); the transcript lives in the mutation result.
- */
-export function useRunPersonaDialogue() {
-  return useMutation<TurDialogueTranscript, Error, TurPersonaDialogueRequest>({
-    mutationFn: (request) => dialogueService.run(request),
   });
 }

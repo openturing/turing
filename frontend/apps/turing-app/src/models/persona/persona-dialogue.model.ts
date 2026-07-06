@@ -1,35 +1,26 @@
 /**
- * Block AI / §XXXII.8 (T585) — automatic persona↔persona conversation types.
- * Mirrors the backend `TurDialogueTranscript` / `PersonaDialogueRequest`.
+ * Block AI / §XXXII.8 (T585; N-persona + streaming in T604) — automatic
+ * persona↔persona conversation types. Mirrors the backend `TurDialogueEvent` /
+ * `PersonaDialogueRequest`.
  */
 
-export interface TurPersonaRef {
-  id: string;
-  name: string;
-}
+export type TurDialogueEventType = "TURN" | "DONE" | "ERROR";
 
-export interface TurDialogueTurn {
-  personaId: string;
-  personaName: string;
-  content: string;
-}
-
-export interface TurDialogueTranscript {
-  topic: string;
-  personaA: TurPersonaRef;
-  personaB: TurPersonaRef;
-  turns: number;
-  transcript: TurDialogueTurn[];
-  /** True when a turn failed mid-dialogue; `transcript` still holds prior turns. */
-  llmError: boolean;
+export interface TurDialogueEvent {
+  type: TurDialogueEventType;
+  /** TURN: 0-based turn index · DONE: number of turns produced. */
+  index?: number | null;
+  personaId?: string | null;
+  personaName?: string | null;
+  content?: string | null;
   error?: string | null;
 }
 
 export interface TurPersonaDialogueRequest {
   topic: string;
-  personaAId: string;
-  personaBId: string;
+  /** Ordered roster of speaker personas (two or more). */
+  personaIds: string[];
   llmInstanceId: string;
-  /** Total number of turns; omitted → backend default (10), clamped [2, 20]. */
+  /** Total number of turns; omitted → backend default (10), clamped [2, 40]. */
   turns?: number;
 }
