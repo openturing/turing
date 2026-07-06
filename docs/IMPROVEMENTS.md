@@ -2041,3 +2041,135 @@ a11y + responsive + performance (lazy-load/bundle) + e2e smoke pass across the
 whole surface (T571); and a delight polish round — consistent empty-states, a
 keyboard-shortcut guide, reduced-motion audit, first-run tour (T572, 💭). Only
 after T570 is the console truly retired; until then it stays live as the fallback.
+
+## XXXII. Persona as a first-class actionable surface (Block AI)
+
+> Design rationale for Block AI (T578–T585). Block AA (§XXVI) reframed
+> `TurPersona` from speaker-only to also model an *audience*, but the persona is
+> still **passive**: it only shapes a conversation when attached to a
+> `TurAIAgent`, and the bento persona detail (T556) is the multi-section editor
+> form reused verbatim. The ask: make a persona **something you act on** — talk
+> to it directly to test its voice, and later validate content against it and let
+> two personas talk. Guiding words from the request: *simples neste primeiro
+> momento*, and *determinístico*.
+
+### XXXII.0 Where we are
+
+- Chat is **entirely agent-scoped**. `ChatPage` → `AgentChatTab` → SDK
+  `useTuringChat({ agent })` → `postAgentChat(agentId, …)` → `POST
+  /api/v2/ai-agent/{agentId}/chat`. `TurAIAgentChatAPI.doChat` re-fetches the
+  agent by id and derives everything (system prompt, tools, MCP, custom code,
+  flows, persona) from that entity.
+- The persona reaches a turn only via `agent.getDefaultPersona()` (or a
+  flow-state override), fused into the system prompt by `TurChatPromptAssembler`
+  / `TurPersonaPromptComposer`.
+- `POST /persona/chat` already exists but is **AI-authoring** (drafting a persona
+  from a brief), not a conversation *with* the persona — a different feature.
+- The bento chat is reached by a **non-deterministic** hand-off: the agent launch
+  bar writes `CHAT_INITIAL_AGENT_KEY` to `sessionStorage` and navigates to
+  `/bento/chat`, which reads+clears it on mount. Not shareable, no back/forward.
+
+### XXXII.1 Persona chat backend — reuse the executor with a transient agent (T578)
+
+Research confirmed the executor is safe to drive with a **transient, never-saved**
+`TurAIAgent`: `TurAgentChatExecutor.execute(...)` never calls `repository.save`
+with the agent; the only agent-keyed writes (flow-state, analytics, chat-memory,
+spectator bus) are **skipped entirely when `conversationId` is null/blank**, and
+token-usage records a *nullable, non-FK* `agentId` inside a try/catch. A fresh
+`new TurAIAgent()` also has its association collections field-initialized to empty
+`HashSet`s, so reads never `LazyInitializationException` (safer than a detached
+persisted agent). So a new controller builds the shell:
+
+- `systemPrompt = null` → falls back to the generic `DEFAULT_SYSTEM_PROMPT`.
+- `nativeTools = ` CSV of **all** default tool names from
+  `TurNativeToolService.getAllTools()` (there is no `"*"` sentinel — the CSV must
+  list real names, matched exactly by `TurNativeToolService.getToolCallbacks`).
+- `mcpServers` / `customTools` empty, `skillsEnabled=false`, `ragEnabled=false`,
+  no flows → exactly "all native tools, no MCP/custom/flow".
+- `setDefaultPersona(persona)` — the loaded (managed) persona; must satisfy
+  `isUsableAsSpeaker()` (SPEAKER/BOTH/legacy-null), else 400. Load the persona and
+  the LLM instance from their repositories (the LLM must be managed for the
+  encrypted key/vendor). **Enforce LLM allow-list/tenant scope in the new
+  controller** since it bypasses `TurAIAgentChatAPI`'s `agent.getLlmInstances()`
+  check.
+- Call `agentChatExecutor.execute(new TurAgentChatRequest(agent, llm, history,
+  null, null, null, files))`.
+
+MVP is **stateless** (no persisted conversation). A later iteration can promote to
+a persisted hidden per-persona system agent if conversationId-scoped statefulness
+(flow state, analytics, chat memory) is wanted — none of the MVP requirements need
+it.
+
+### XXXII.2 SDK persona client + hook subject (T579)
+
+`postPersonaChat` mirrors `postAgentChat` exactly (only the URL differs:
+`/v2/persona/{id}/chat`) so the whole SSE-consume/CSRF/timezone/multipart path is
+shared. `useTuringChat` grows a `persona: { id, llmInstanceId }` option as a peer
+of `agent`; internally the "subject" selects which POST fn to call. Both the
+React SDK and the vanilla `@viglet/turing-sdk` get it (the vanilla SDK's controller
+mirrors the same client fn), and the T406 parity guard is extended so they can't
+drift.
+
+### XXXII.3 Deterministic, URL-addressable chat (T580)
+
+The sessionStorage hand-off is the wrong primitive for a shareable, resumable
+chat. Replace it with **routes**:
+
+- `/bento/chat` — default (first/default agent), unchanged.
+- `/bento/chat/agent/:agentId` — chat scoped to an agent.
+- `/bento/chat/persona/:personaId` — chat scoped to a persona.
+
+`ChatPage` reads the subject from route params (threaded from the bento wrapper)
+instead of `CHAT_INITIAL_AGENT_KEY`; the agent launch bar navigates to the agent
+URL. The prompt hand-off (`CHAT_INITIAL_PROMPT_KEY`, for auto-send from the home
+ChatStarter) stays — it's a one-shot payload, not addressable state. Tab identity
+generalizes from `agent:<id>` to also `persona:<id>`.
+
+### XXXII.4 Persona chat tab (T581)
+
+`AgentChatTab` is richly agent-coupled (flow selector, skill selector, preflight
+cost by agent id, feedback/rephrase by agent id). Rather than bolt persona
+branches through all of it, introduce a chat **subject** abstraction and a
+`PersonaChatTab` that reuses the *presentational* pieces (`ChatInput`,
+`ChatMessageList`, `ChatEmptyState`, `ContextBar`) but drops flow/skill selectors
+and posts to the persona endpoint via the T579 hook. Persona name/icon drive the
+header + empty state; the LLM picker offers any enabled instance (personas have no
+per-entity LLM allow-list).
+
+### XXXII.5 Persona detail → bento dashboard (T582)
+
+The persona detail should read like the AI-agent dashboard: a `BentoHero` (persona
+identity) over a **big frosted `BentoTile` mosaic** where each card is a doorway
+into a detail — a 2×2 "System instruction" hero tile, then Style, Audience
+(when kind ⊇ AUDIENCE), Guidelines, Notebook, Fit report. The existing section
+sub-pages stay, but their bodies are audited and any `SectionCard` swapped for
+`BentoFormSection` so they get the frosted hover-lift (the #1 half-migration
+mistake per the bento-ui skill), keeping the single-`useForm` save bar. This
+supersedes T556's "reuse the pill-tab form as the landing" for the *landing*; the
+sections remain reachable.
+
+### XXXII.6 Persona Launchpad (T583)
+
+A launch bar on the dashboard mirroring `AiAgentLaunchBar`, but built as an
+**extensible launchpad** from day one: **Open chat** is live (→
+`/bento/chat/persona/:id`); "Validate content" and "Persona dialogue" render as
+disabled/"soon" affordances so the surface communicates the roadmap without
+shipping half-features. This is where the future actions dock.
+
+### XXXII.7 Content-fit validation as a launch action (T584, 💭)
+
+The user wants to drop documents / links / indexed content and get a
+**compatibility score + final result** against the persona. This is not new
+engine work — it's Block AA's stack (notebook source set T465, deterministic
+readability scorer T466, grounded content-fit evaluator T467, red/amber/green fit
+report T468) **promoted** from a buried section to a first-class launch action
+with an inline "add sources → score" flow. Design when Phase 2 lands.
+
+### XXXII.8 Automatic persona↔persona conversation (T585, 💭)
+
+Pick a **topic** and two personas; the system runs a bounded, turn-by-turn
+dialogue (one turn each, alternating) by driving the T578 executor with each
+persona as the active speaker in turn, feeding the other's last message as the
+user turn. Render the transcript. A natural sibling is a "voice diff" — the same
+prompt answered by two personas side by side — which also validates the subject
+abstraction from T581. Design when the persona chat MVP is proven.

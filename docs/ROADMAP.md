@@ -191,6 +191,33 @@ fully shipped.**
 - 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). → §XXXI.10
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
 
+## Block AI — Persona as a first-class actionable surface (persona chat, launchpad, bento dashboard)
+
+> Today a `TurPersona` is a passive voice profile that only reaches a conversation
+> by being attached to a `TurAIAgent`; the bento persona detail (T556) reuses the
+> multi-section pill-tab **form** verbatim, so it reads as an editor, not a
+> product surface. This block makes the persona **actionable and testable in its
+> own right**: talk directly to a persona from a launchpad (MVP), redesign its
+> detail as an AI-agent-style bento **dashboard** (big frosted cards → each
+> detail), and make chat **URL-deterministic** so both agent and persona chats are
+> shareable/back-forward-safe. The launchpad is designed to grow: content-fit
+> validation and persona↔persona dialogue are staged as future actions.
+> Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXII.
+
+**Phase 1 — persona chat MVP (talk to a persona):**
+- 📋 **T578** (deps: —) **Backend: persona chat endpoint** — `POST /api/v2/persona/{personaId}/chat` (SSE) that reuses `TurAgentChatExecutor` via a **transient synthetic** `TurAIAgent` (never persisted): generic `DEFAULT_SYSTEM_PROMPT`, **all** default native tools (from `TurNativeToolService.getAllTools()` → CSV `nativeTools`), **no** MCP/custom-tool/chat-flow (empty collections), persona voice fused via `setDefaultPersona(persona)`. Enforce `persona.isUsableAsSpeaker()` (reject AUDIENCE-only), validate the requested LLM instance is allowed/tenant-scoped (this bypasses `TurAIAgentChatAPI`'s allow-list), and keep the turn **stateless** (`conversationId=null`, `flowId=null`) so no flow-state/analytics/chat-memory rows are written. → §XXXII.1
+- 📋 **T579** (deps: T578) **SDK: persona chat client + hook subject** — `postPersonaChat(personaId, llmInstanceId, messages, options)` in `react-sdk/core/api.ts` mirroring `postAgentChat` (CSRF, timezone, SSE consume, multipart), vanilla `@viglet/turing-sdk` parity, and a `persona: { id, llmInstanceId }` subject on `useTuringChat` as an alternative to `agent`. Extend the T406 SDK parity/contract guard. → §XXXII.2
+- 📋 **T580** (deps: T579) **Frontend: deterministic, URL-addressable chat** — new bento routes `/bento/chat/agent/:agentId` and `/bento/chat/persona/:personaId` (keep `/bento/chat` = default agent). `ChatPage` resolves the chat **subject** from route params instead of the `CHAT_INITIAL_AGENT_KEY` sessionStorage hand-off (retire that key; keep the prompt hand-off for auto-send). The agent launch bar navigates to the deterministic URL. Back/forward + shareable links work. → §XXXII.3
+- 📋 **T581** (deps: T580) **Frontend: persona chat tab** — generalize the chat "subject" so a `PersonaChatTab` (or a subject-parameterized `AgentChatTab`) posts to the persona endpoint and reuses the presentational stack (`ChatInput`/`ChatMessageList`/empty-state/context bar). No flow/skill selectors in persona mode; persona identity (name/icon) in the header + empty state; LLM picker = any enabled instance. → §XXXII.4
+
+**Phase 2 — persona bento dashboard + launchpad:**
+- 📋 **T582** (deps: —) **Frontend: persona detail → bento dashboard** — replace the reused pill-tab form landing (T556) with an AI-agent-style **`BentoHero` + big `BentoTile`/`BentoCountTile` mosaic** (system-instruction hero tile, style, audience, guidelines, notebook, fit-report), each card linking into its section. Keep the section sub-pages but audit their bodies and swap any `SectionCard` → `BentoFormSection` (frosted hover cards, per the bento-ui skill), preserving the single-`useForm` save bar. → §XXXII.5
+- 📋 **T583** (deps: T581, T582) **Frontend: Persona Launchpad** — an extensible launch bar on the persona dashboard mirroring `AiAgentLaunchBar`, with **Open chat** live (navigates to `/bento/chat/persona/:id`) and disabled/"soon" affordances that communicate the roadmap (validate content, persona dialogue). → §XXXII.6
+
+**Phase 3 — future launch actions (💭 need design):**
+- 💭 **T584** (deps: T583, T465, T467, T468) **Content-fit validation from the launchpad** — add documents / links / indexed content and validate compatibility with the persona → compatibility **score + final result** (condiz/não-condiz, flagged spans, suggestions). Composition of Block AA's notebook (T465) + content-fit evaluator (T466/T467) + fit-report surface (T468), promoted to a first-class launch action rather than a buried section. → §XXXII.7
+- 💭 **T585** (deps: T578) **Automatic persona↔persona conversation** — pick a **topic** + two personas and orchestrate a turn-by-turn dialogue (one turn each, bounded rounds) by driving the T578 persona executor with each persona as the speaker in alternation; render the transcript (and optionally a "voice diff" of the same prompt across personas). → §XXXII.8
+
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to
