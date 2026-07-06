@@ -4,6 +4,7 @@ import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { BentoSaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +20,7 @@ import {
 } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { DialogDelete } from "@/components/dialog.delete";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -38,12 +39,17 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  users list; the Bento surface passes its own route (T567). */
     listRoute?: string;
+    /** Optional header override. The console renders its own sidebar-coupled
+     *  {@link StickyPageHeader}; Bento passes a `BentoHero` so the surface stays
+     *  clear of `useSidebar` and gets a sticky BentoSaveBar (T567). */
+    header?: ReactNode;
 }
 
-export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_USERS }) => {
+export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_USERS, header }) => {
     const { t } = useTranslation();
     const form = useForm<TurUser>({ defaultValues: value });
     const navigate = useNavigate();
+    const isBento = header !== undefined;
     const [allGroups, setAllGroups] = useState<TurGroup[]>([]);
     const [userGroups, setUserGroups] = useState<TurGroup[]>([]);
     const [groupSearch, setGroupSearch] = useState("");
@@ -173,25 +179,50 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconUser}
-                        feature="User"
-                        description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
-                    />
-                    <StickyPageHeader.Actions>
-                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <>
+                        {header}
+                        {/* Sticky save bar — pinned below the shell header while scrolling. */}
+                        <div className="sticky top-20 z-20">
+                            <BentoSaveBar
+                                title={isNew ? t("admin.users.newUser") : (value?.username ?? "")}
+                                actions={
+                                    <>
+                                        <GradientButton type="submit" size="sm">
+                                            <IconDeviceFloppy className="size-4" />
+                                            {t("forms.formActions.saveChanges")}
+                                        </GradientButton>
+                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                            <IconX className="size-4" />
+                                            {t("forms.formActions.cancel")}
+                                        </GradientButton>
+                                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                                    </>
+                                }
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconUser}
+                            feature="User"
+                            description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
+                        />
+                        <StickyPageHeader.Actions>
+                            {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                            <GradientButton type="submit" size="sm">
+                                <IconDeviceFloppy className="size-4" />
+                                {t("forms.formActions.saveChanges")}
+                            </GradientButton>
+                            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                <IconX className="size-4" />
+                                {t("forms.formActions.cancel")}
+                            </GradientButton>
+                        </StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                     {/* Avatar Section */}
                     <SectionCard variant="slate">
                         <SectionCard.Header icon={IconUser} title={t("forms.adminUser.avatar")} description={t("forms.adminUser.avatarDesc")} />

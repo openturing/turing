@@ -4,6 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
+import { BentoSaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,7 @@ import {
 } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { DialogDelete } from "@/components/dialog.delete";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -37,12 +38,16 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  groups list; the Bento surface passes its own route (T567). */
     listRoute?: string;
+    /** Optional header override. The console renders its own sidebar-coupled
+     *  {@link StickyPageHeader}; Bento passes a `BentoHero` + sticky BentoSaveBar. */
+    header?: ReactNode;
 }
 
-export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_GROUPS }) => {
+export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen, listRoute = ROUTES.ADMIN_GROUPS, header }) => {
     const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();
+    const isBento = header !== undefined;
     const [allRoles, setAllRoles] = useState<TurRole[]>([]);
     const [allUsers, setAllUsers] = useState<TurUser[]>([]);
     const [groupRoles, setGroupRoles] = useState<TurRole[]>([]);
@@ -137,25 +142,49 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconUsersGroup}
-                        feature="Group"
-                        description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
-                    />
-                    <StickyPageHeader.Actions>
-                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <>
+                        {header}
+                        <div className="sticky top-20 z-20">
+                            <BentoSaveBar
+                                title={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")}
+                                actions={
+                                    <>
+                                        <GradientButton type="submit" size="sm">
+                                            <IconDeviceFloppy className="size-4" />
+                                            {t("forms.formActions.saveChanges")}
+                                        </GradientButton>
+                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                            <IconX className="size-4" />
+                                            {t("forms.formActions.cancel")}
+                                        </GradientButton>
+                                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                                    </>
+                                }
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconUsersGroup}
+                            feature="Group"
+                            description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
+                        />
+                        <StickyPageHeader.Actions>
+                            {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                            <GradientButton type="submit" size="sm">
+                                <IconDeviceFloppy className="size-4" />
+                                {t("forms.formActions.saveChanges")}
+                            </GradientButton>
+                            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                <IconX className="size-4" />
+                                {t("forms.formActions.cancel")}
+                            </GradientButton>
+                        </StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                     {/* Group Details */}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />

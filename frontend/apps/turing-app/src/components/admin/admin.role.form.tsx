@@ -4,6 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
+import { BentoSaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
@@ -12,7 +13,7 @@ import { TurRoleService } from "@/services/auth/role.service";
 import { TurPrivilegeService } from "@/services/auth/privilege.service";
 import { IconDeviceFloppy, IconLock, IconNotes, IconUserShield, IconX } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -45,12 +46,16 @@ interface Props {
     /** List route to return to on save/cancel. Defaults to the console admin
      *  roles list; the Bento surface passes its own route (T567). */
     listRoute?: string;
+    /** Optional header override. The console renders its own sidebar-coupled
+     *  {@link StickyPageHeader}; Bento passes a `BentoHero` + sticky BentoSaveBar. */
+    header?: ReactNode;
 }
 
-export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES }) => {
+export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTES.ADMIN_ROLES, header }) => {
     const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();
+    const isBento = header !== undefined;
     const [allPrivileges, setAllPrivileges] = useState<TurPrivilege[]>([]);
 
     useEffect(() => {
@@ -142,24 +147,47 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew, listRoute = ROUTE
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconUserShield}
-                        feature={isNew ? t("admin.roles.newRole") : "Role"}
-                        description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
-                    />
-                    <StickyPageHeader.Actions>
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <>
+                        {header}
+                        <div className="sticky top-20 z-20">
+                            <BentoSaveBar
+                                title={isNew ? t("admin.roles.newRole") : (value?.name ?? "")}
+                                actions={
+                                    <>
+                                        <GradientButton type="submit" size="sm">
+                                            <IconDeviceFloppy className="size-4" />
+                                            {t("forms.formActions.saveChanges")}
+                                        </GradientButton>
+                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                            <IconX className="size-4" />
+                                            {t("forms.formActions.cancel")}
+                                        </GradientButton>
+                                    </>
+                                }
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconUserShield}
+                            feature={isNew ? t("admin.roles.newRole") : "Role"}
+                            description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
+                        />
+                        <StickyPageHeader.Actions>
+                            <GradientButton type="submit" size="sm">
+                                <IconDeviceFloppy className="size-4" />
+                                {t("forms.formActions.saveChanges")}
+                            </GradientButton>
+                            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                <IconX className="size-4" />
+                                {t("forms.formActions.cancel")}
+                            </GradientButton>
+                        </StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>

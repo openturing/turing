@@ -1,15 +1,18 @@
 import { ROUTES } from "@/app/routes.const";
 import { AdminGroupForm } from "@/components/admin/admin.group.form";
 import { AdminKeycloakGroupView } from "@/components/admin/admin.keycloak.group.view";
+import { BentoHero } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
+import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurGroup } from "@/models/auth/group";
 import type { TurKeycloakGroup } from "@/models/auth/keycloak-group";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurGroupService } from "@/services/auth/group.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
+import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turGroupService = new TurGroupService();
@@ -82,26 +85,53 @@ export default function BentoAdminGroupPage() {
       .finally(() => setOpen(false));
   }
 
+  const hero = (title: string, subtitle: string) => (
+    <BentoHero
+      eyebrow={<Link to={ROUTES.BENTO_ADMIN_GROUPS} className="hover:text-foreground">{t("admin.groups.title")}</Link>}
+      leading={
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+          <IconUsersGroup size={24} />
+        </span>
+      }
+      title={title}
+      subtitle={subtitle}
+    />
+  );
+
   if (keycloak) {
     return (
-      <LoadProvider checkIsNotUndefined={keycloakGroup} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
-        {keycloakGroup && <AdminKeycloakGroupView value={keycloakGroup} listRoute={ROUTES.BENTO_ADMIN_GROUPS} />}
-      </LoadProvider>
+      <SectionCardChromeProvider chrome="bento">
+        <LoadProvider checkIsNotUndefined={keycloakGroup} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
+          {keycloakGroup && (
+            <AdminKeycloakGroupView
+              value={keycloakGroup}
+              listRoute={ROUTES.BENTO_ADMIN_GROUPS}
+              header={hero(keycloakGroup.name, t("admin.groups.keycloakViewDescription"))}
+            />
+          )}
+        </LoadProvider>
+      </SectionCardChromeProvider>
     );
   }
 
   return (
-    <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
-      {group && (
-        <AdminGroupForm
-          value={group}
-          isNew={isNew}
-          onDelete={isNew ? undefined : onDelete}
-          open={open}
-          setOpen={setOpen}
-          listRoute={ROUTES.BENTO_ADMIN_GROUPS}
-        />
-      )}
-    </LoadProvider>
+    <SectionCardChromeProvider chrome="bento">
+      <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_GROUPS}/${groupId}`}>
+        {group && (
+          <AdminGroupForm
+            value={group}
+            isNew={isNew}
+            onDelete={isNew ? undefined : onDelete}
+            open={open}
+            setOpen={setOpen}
+            listRoute={ROUTES.BENTO_ADMIN_GROUPS}
+            header={hero(
+              isNew ? t("admin.groups.newGroup") : (group.name || ""),
+              isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription"),
+            )}
+          />
+        )}
+      </LoadProvider>
+    </SectionCardChromeProvider>
   );
 }

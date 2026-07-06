@@ -1,15 +1,18 @@
 import { ROUTES } from "@/app/routes.const";
 import { AdminKeycloakUserView } from "@/components/admin/admin.keycloak.user.view";
 import { AdminUserForm } from "@/components/admin/admin.user.form";
+import { BentoHero } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
+import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
+import { IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turAdminUserService = new TurAdminUserService();
@@ -82,26 +85,53 @@ export default function BentoAdminUserPage() {
       .finally(() => setOpen(false));
   }
 
+  const hero = (title: string, subtitle: string) => (
+    <BentoHero
+      eyebrow={<Link to={ROUTES.BENTO_ADMIN_USERS} className="hover:text-foreground">{t("admin.users.title")}</Link>}
+      leading={
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-slate-600 to-slate-700 text-white shadow-md">
+          <IconUser size={24} />
+        </span>
+      }
+      title={title}
+      subtitle={subtitle}
+    />
+  );
+
   if (keycloak) {
     return (
-      <LoadProvider checkIsNotUndefined={keycloakUser} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
-        {keycloakUser && <AdminKeycloakUserView value={keycloakUser} listRoute={ROUTES.BENTO_ADMIN_USERS} />}
-      </LoadProvider>
+      <SectionCardChromeProvider chrome="bento">
+        <LoadProvider checkIsNotUndefined={keycloakUser} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
+          {keycloakUser && (
+            <AdminKeycloakUserView
+              value={keycloakUser}
+              listRoute={ROUTES.BENTO_ADMIN_USERS}
+              header={hero(keycloakUser.username, t("admin.users.keycloakViewDescription"))}
+            />
+          )}
+        </LoadProvider>
+      </SectionCardChromeProvider>
     );
   }
 
   return (
-    <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
-      {user && (
-        <AdminUserForm
-          value={user}
-          isNew={isNew}
-          onDelete={isNew ? undefined : onDelete}
-          open={open}
-          setOpen={setOpen}
-          listRoute={ROUTES.BENTO_ADMIN_USERS}
-        />
-      )}
-    </LoadProvider>
+    <SectionCardChromeProvider chrome="bento">
+      <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.BENTO_ADMIN_USERS}/${username}`}>
+        {user && (
+          <AdminUserForm
+            value={user}
+            isNew={isNew}
+            onDelete={isNew ? undefined : onDelete}
+            open={open}
+            setOpen={setOpen}
+            listRoute={ROUTES.BENTO_ADMIN_USERS}
+            header={hero(
+              isNew ? t("admin.users.newUser") : (user.username || username),
+              isNew ? t("admin.users.createDescription") : t("admin.users.editDescription"),
+            )}
+          />
+        )}
+      </LoadProvider>
+    </SectionCardChromeProvider>
   );
 }
