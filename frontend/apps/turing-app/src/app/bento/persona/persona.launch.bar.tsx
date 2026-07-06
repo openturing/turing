@@ -4,7 +4,6 @@ import { BENTO_TONE_GRADIENTS, type BentoTone } from "@/components/bento";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import {
   IconFileSearch,
-  IconMasksTheater,
   IconMessageChatbot,
   IconRocket,
   type Icon as TablerIcon,
@@ -31,12 +30,12 @@ interface LaunchAction {
 
 /**
  * Persona Launchpad — Block AI / §XXXII.6 (T583). Mirrors the
- * {@link AiAgentLaunchBar} but is built as an **extensible** launch bar from day
- * one: **Open chat** is live (navigates to the deterministic, shareable
- * `/bento/chat/persona/:id` route, T580) while future launch actions —
- * content-fit validation (T584) and persona↔persona dialogue (T585) — render as
- * disabled "soon" affordances so the surface communicates the roadmap without
- * shipping half-features. New actions dock here by appending to `actions`.
+ * {@link AiAgentLaunchBar} but is built as an **extensible** launch bar. It holds
+ * only the **per-persona** actions: **Open chat** (T580, always live) and
+ * **Validate content** (T584, live for AUDIENCE/BOTH, else a disabled hint).
+ * Persona↔persona **dialogue** (T585) is deliberately *not* here — it is about
+ * multiple peer personas, so it lives only on the global persona list surface.
+ * New per-persona actions dock here by appending to `actions`.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -77,16 +76,10 @@ export function PersonaLaunchBar({ persona }: Readonly<{ persona: TurPersona }>)
             }),
           }),
     },
-    {
-      key: "dialogue",
-      label: t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" }),
-      icon: IconMasksTheater,
-      tone: "rose",
-      // A dialogue is between TWO personas, so it lives on a GLOBAL surface
-      // (T585); we deep-link there with this persona pre-selected as speaker A.
-      onSelect: () =>
-        navigate(`${ROUTES.BENTO_PERSONA_DIALOGUE}?a=${encodeURIComponent(persona.id)}`),
-    },
+    // Note: persona↔persona dialogue is intentionally NOT here. A dialogue is
+    // between multiple peer personas, so it lives only on the GLOBAL persona
+    // list surface (/bento/persona/instance), not on a single persona's
+    // launchpad.
   ];
 
   return (
