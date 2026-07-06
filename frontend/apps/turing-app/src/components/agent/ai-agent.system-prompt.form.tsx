@@ -28,6 +28,14 @@ const urlBase = ROUTES.AI_AGENT_INSTANCE
 
 interface Props {
   value: TurAIAgent;
+  /**
+   * Which shell the form lives in. In "bento" the console `StickyPageHeader`
+   * is dropped (the bento page supplies its own `BentoHero`) and Save/Cancel
+   * render as a footer action row instead.
+   */
+  chrome?: "console" | "bento";
+  /** Route base for the Cancel navigation — defaults to the console list. */
+  baseRoute?: string;
 }
 
 /**
@@ -66,10 +74,24 @@ function buildSystemPromptFieldInstruction(spec: {
   ].join("\n");
 }
 
-export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
+export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "console", baseRoute = urlBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const updateMutation = useUpdateAiAgent();
+  const isBento = chrome === "bento";
+
+  const actions = (
+    <>
+      <GradientButton type="submit" size="sm">
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(baseRoute)}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
 
   // Whole agent in form state (defaultValues) so a save round-trips every
   // field the update endpoint reads — we only render the systemPrompt field.
@@ -100,25 +122,20 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
     <div className="space-y-4 px-4 lg:px-6 pb-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconFileText}
-              feature={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
-              description={t("aiAgent.systemPrompt.description", {
-                defaultValue: "The behavioral contract sent to the model on every turn.",
-              })}
-            />
-            <StickyPageHeader.Actions>
-              <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
-            </StickyPageHeader.Actions>
-          </StickyPageHeader>
+          {isBento ? (
+            <div className="flex items-center justify-end gap-3">{actions}</div>
+          ) : (
+            <StickyPageHeader>
+              <StickyPageHeader.Title
+                icon={IconFileText}
+                feature={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
+                description={t("aiAgent.systemPrompt.description", {
+                  defaultValue: "The behavioral contract sent to the model on every turn.",
+                })}
+              />
+              <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+            </StickyPageHeader>
+          )}
 
           <Tabs defaultValue="editor" className="space-y-4">
             <TabsList>

@@ -216,9 +216,12 @@ public final class ChatFlowOps {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("\n\n=== ACTIVE FLOW STEP: ")
-                .append(safe(node.label()))
-                .append(" ===\n");
+        // Markdown H2 (not `=== … ===` decoration): a salient section delimiter
+        // that renders as a proper heading in the Live Preview. The node's own
+        // label is intentionally NOT emitted — behavior is driven entirely by
+        // the Goal below, and the Hard rules explicitly tell the model to ignore
+        // persona/role framing, so the label is pure token cost.
+        sb.append("\n\n## ACTIVE FLOW STEP\n");
         if (node.aiInstruction() != null && !node.aiInstruction().isBlank()) {
             sb.append("Goal: ").append(node.aiInstruction().trim()).append('\n');
         }

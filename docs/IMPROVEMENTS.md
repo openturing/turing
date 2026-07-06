@@ -2183,3 +2183,171 @@ empty/legacy config runs the exact current path; CODE graders stay LLM-free so P
 CI is zero-cost; MODEL graders never use free-text JSON; the grounding hard-fail
 (Block R) and "propose, never auto-apply" (T447) postures carry over to dataset
 generation and self-tuning.
+
+## XXXIV. Live Preview as a per-turn prompt-diagnostics surface (Block AK)
+
+### XXXIV.0 The problem — the preview reads, but doesn't diagnose
+
+The System-Prompt **Live Preview** (`TurSystemPromptPreviewService` →
+`SystemPromptLivePreview`) reverses the opaque assembled system message into
+labeled provenance segments (PERSONA / AGENT / MCP / FLOW). A redesign made it a
+readable, Medium-style flowing article (rendered Markdown, per-passage hover
+provenance, origin legend) instead of one scrolling `<pre>` per fragment. That
+alone turned it into a tool people actually read — and reading it surfaced real,
+quantifiable problems on a live agent (the Insper multi-flow concierge):
+
+- **~40–50% of an active-flow turn is inert or duplicated.** The agent prompt
+  hard-codes a whole "first-interaction / welcome / 3-experiences" section that the
+  flow addendum *explicitly orders the model to ignore* ("IGNORE TODO O RESTO …
+  siga o Goal"). On every active-flow turn that is ~800 tokens of dead weight the
+  model still has to attend to.
+- **Rules are paid for 2–3×.** The forbidden-vocabulary list (`talvez`,
+  `impossível`, `não sei`, …) appears in the Persona block *and* the agent "REGRAS
+  DURAS"; "never ask for CPF/card" and "never cite competitors" likewise. Same
+  rule, multiple segments.
+- **The node label was pure cost.** The flow addendum emitted
+  `=== ACTIVE FLOW STEP: <label> ===` — literal `===` (not Markdown) plus a
+  Portuguese node label inside an English scaffold, when behavior is driven
+  entirely by the `Goal:` line and the Hard rules already tell the model to ignore
+  persona/role framing. (Fixed ahead of this block: the delimiter is now a Markdown
+  `## ACTIVE FLOW STEP` heading and the label is dropped.)
+- **The preview lies about the persona.** `buildPreviewInternal` hardcodes
+  `agent.getDefaultPersona()`, but at runtime `TurAgentPersonaResolver.resolve()`
+  reads a `__activePersonaId` set by a `persona`-type flow node — so a flow can
+  switch Marina → Professor Insper and the preview would still show Marina.
+  `TurSystemPromptValidatorService` has the same blind spot.
+
+The insight: the Live Preview is the natural place to *optimize the turn*. It
+should answer three questions per turn — **what does the model actually receive,
+what does it cost, and what is wasted** — not just "what does a plain entry-turn
+look like". This block builds that. All additions are read-only/opt-in and never
+change the assembled prompt itself (that stays the faithful ground truth).
+
+### XXXIV.1 Flow-aware persona (T607)
+
+Make the preview + validator resolve the persona the way the runtime does: walk
+the selected flow to its anchor node, apply any `persona`-node override on the
+path (mirroring `setActivePersonaVariable` → `TurAgentPersonaResolver`), and fall
+back to the default only when none applies. Label the PERSONA segment "switched by
+flow" when overridden, and warn when a node's `personaId` isn't in the agent's
+persona catalog — the exact silent-fallback that would make runtime quietly use
+the default too.
+
+### XXXIV.2 Per-segment token accounting (T608)
+
+Show a token count + share-of-total per segment and a grand total, with an
+optional cost estimate from the previewed turn's resolved LLM-instance pricing.
+This is what makes "where does the budget go" concrete — persona vs agent vs MCP
+vs flow addendum vs tool schemas — and turns the redundancy findings above from a
+hunch into a number.
+
+### XXXIV.3 "Inert this turn" detection (T609)
+
+When a flow is active, dim the agent-prompt regions the flow addendum neutralizes
+(welcome / first-interaction / routing scaffolding) and total their token cost, so
+the dead weight is visible. Heuristic first (the headings/anchors the flow's
+"IGNORE everything else" clause covers), with an optional author marker to tag a
+block as flow-only vs concierge-only for precise attribution.
+
+### XXXIV.4 Cross-segment redundancy & contradiction lint (T610)
+
+Extend the existing conflict-check to run *across* segments, not within one:
+detect a rule repeated in persona + agent + flow (duplicated forbidden vocab,
+duplicated "never ask CPF") and contradictions between segments (agent "never
+answer general knowledge" vs a flow Goal "explain any concept"). Each finding
+carries the token waste and/or the ambiguity the model must resolve.
+
+### XXXIV.5 Node picker + simulated variables (T611)
+
+Today the preview only shows the flow *entry* node with empty state. Let the
+operator pick any node and supply collected slot values, so the "Already
+collected: {…}" line and the next-step hint reflect a real mid-conversation turn.
+This makes it a per-*turn* inspector rather than a per-*flow* one.
+
+### XXXIV.6 Replay the actual assembled prompt (T612, 💭)
+
+The ultimate ground truth: instead of synthesizing an entry-turn, capture and
+render the real system message sent on a chosen past conversation turn (from
+transcripts / the T427 tool-call trace) so the preview shows exactly what
+happened — the artifact you need when debugging a specific bad reply.
+
+### XXXIV.7 Single source of truth — moved to Block AL
+
+The preview's fidelity fix (render through the real assembler, retire the
+reconstruction) is not a preview feature — it's the assembly pipeline itself.
+It lives in **Block AL §XXXV** as **T613**, and every surface here (persona
+T607, token metrics T608, inert T609, lint T610, replay T612) becomes a *view
+over that one true assembly*.
+
+**Design invariants for Block AK:** read-only and opt-in; the assembled prompt is
+never mutated for display (the preview must stay a faithful mirror of what the
+model receives — Block AL T613 makes that literal by reusing the runtime
+assembler); token counting is best-effort/provider-approximate and must never
+block the page; lint + inert-detection are advisory (they never rewrite the
+prompt).
+
+## XXXV. Prompt assembly as a composable, cache-friendly pipeline (Block AL)
+
+### XXXV.0 The root cause behind every Block AK symptom
+
+There are **two** prompt-builders today, and that is the bug factory:
+
+- **Runtime** — `TurChatPromptAssembler.assemble(TurChatPromptRequest, files,
+  selectedSkillId)`, the one method both executors call (`TurAgentChatExecutor`
+  for the Spring-AI path, `TurNativeChatExecutor` for the native path). Via
+  `TurPersonaPromptComposer.compose` it glues
+  `persona-static + few-shot + "----" + (agent-base + mcp + flow-addendum)`,
+  resolving persona (`TurAgentPersonaResolver`), flow context, MCP, skills,
+  memory/compaction and few-shot — and returns the exact `List<Message>` sent to
+  the LLM.
+- **Preview** — `TurSystemPromptPreviewService.buildPreviewInternal` *rebuilds a
+  lookalike* separately (`compose(defaultPersona, null, null,
+  base + mcp + flowText)`). Every place the two disagree is a latent bug: the
+  persona lie we hit, and every future one as the assembler grows.
+
+The user's framing (verbatim intent): *somewhere Java assembles the whole turn and
+sends it to the LLM — use that method as the evidence, drive it TDD-style by
+injecting test parameters, validate the method + the final prompt, and show the
+truly faithful prompt.* Exactly right — and the scalable form of it is a pipeline,
+not a second call site.
+
+### XXXV.1 `PromptContributor` SPI + single-pass assembler (T613)
+
+Each source (persona, agent-base, MCP, flow, skill, memory, RAG, tools) becomes a
+`TurPromptContributor` emitting a `TurPromptSegment {origin, text, stability,
+tokens}`. The assembler runs the ordered contributor list **once**; the runtime
+joins the segments into `List<Message>` and the preview renders the *same*
+segments — so provenance is produced at the source, not reverse-engineered, and
+the reconstruction path is retired. Empty/default pipeline = byte-identical current
+prompt. The assembler becomes a TDD seam: inject contributors, assert the final
+prompt equals what the model receives — a regression-tested invariant, not a hope.
+This subsumes the old "preview through the real assembler" idea at the root, and
+makes T607/T608/T609/T610/T612 views over one true assembly.
+
+### XXXV.2 Stability-classed ordering + provider cache breakpoint (T614) ⭐
+
+Confirmed cache-hostile ordering today: the per-turn few-shot block sits *between*
+the stable persona and the stable agent-base/MCP/tools, so provider prefix caching
+(Anthropic `cache_control` / Gemini context cache — T502/T499) can only cache up to
+the persona; the heaviest stable content (agent-base + MCP + tool schemas) is
+re-billed every turn. With segments carrying a `stability` class, the assembler
+orders **STABLE-first** (persona-static, agent-base, MCP, tool schemas)
+contiguously, then **PER_TURN** (few-shot, flow addendum, "already collected", RAG,
+history), and exposes the boundary so the native providers set a prefix cache
+breakpoint there. This is the scalability/cost lever: the heavy stable prefix
+becomes cacheable across every turn of a conversation (order effects re-validated
+per step, gated).
+
+### XXXV.3 Migrate every prompt source to a contributor (T615, 💭)
+
+Move persona/base/MCP/flow/skill/memory (T115)/RAG each behind the SPI, one at a
+time behind a flag, retiring the ad-hoc concatenation in `TurPersonaPromptComposer`
+and the preview reconstruction entirely. End state: adding a new prompt source is
+registering a contributor, not editing a monolith + a parallel rebuild.
+
+**Design invariants for the block:** foundational + incremental + gated —
+contributors are introduced behind the current assembler and migrated one at a
+time, feature-flagged so the exact current prompt can be restored; the
+empty/default pipeline is byte-identical; reordering (T614) changes what the model
+sees, so each step re-validates like the flow-heading change did; the preview never
+mutates the assembled prompt (it is a mirror).

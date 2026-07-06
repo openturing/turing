@@ -16,7 +16,7 @@ import { SystemPromptLivePreview } from "@/components/agent/system-prompt-live-p
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
-export default function AIAgentLivePreviewPage() {
+export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?: "console" | "bento" }) {
   const { id } = useParams() as { id: string };
   // Which chat flow governs the preview (undefined → backend default = first
   // enabled flow). Drives the segment breakdown and the assembled prompt.
@@ -30,6 +30,9 @@ export default function AIAgentLivePreviewPage() {
         isLoading={isLoading}
         flowId={flowId}
         onFlowChange={setFlowId}
+        // In bento the hero already shows the "Live Preview" title and reuses
+        // this description as its subtitle, so suppress the article's masthead.
+        showHeader={chrome !== "bento"}
       />
     </div>
   );

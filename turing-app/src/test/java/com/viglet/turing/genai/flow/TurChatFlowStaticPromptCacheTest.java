@@ -87,7 +87,9 @@ class TurChatFlowStaticPromptCacheTest {
         // Head pieces: ACTIVE FLOW STEP, Goal, Collect
         // Dynamic line from state; Tail: HARD_RULES (one of its anchor phrases)
         assertThat(out)
-                .contains("=== ACTIVE FLOW STEP: Ask for name ===")
+                .contains("## ACTIVE FLOW STEP")
+                // The node label is intentionally NOT emitted (pure token cost).
+                .doesNotContain("### Ask for name")
                 .contains("Goal: What is your name?")
                 .contains("Collect: userName")
                 .contains("Already collected: {company=Viglet}")
@@ -120,14 +122,16 @@ class TurChatFlowStaticPromptCacheTest {
     // ─────────────── staticHead / staticTail content ───────────────
 
     @Test
-    void staticHead_includesLabelGoalCollectValidate() {
+    void staticHead_includesGoalCollectValidate() {
         ChatFlowNode q = node("q-id", "aiQuestion", "Capture email",
                 "Ask for the email", "email", "email");
         String head = cache.staticHead(flow.getId(), q.id(), q);
         // Static head should NOT contain HARD_RULES (that's in the tail) nor
         // the variables line (that's dynamic and assembled by buildAddendum).
+        // The node label is intentionally NOT emitted (pure token cost).
         assertThat(head)
-                .contains("=== ACTIVE FLOW STEP: Capture email ===")
+                .contains("## ACTIVE FLOW STEP")
+                .doesNotContain("### Capture email")
                 .contains("Goal: Ask for the email")
                 .contains("Collect: email")
                 .contains("Validate the collected value as: email")
@@ -147,7 +151,7 @@ class TurChatFlowStaticPromptCacheTest {
         String tail = cache.staticTail(flow.getId(), q.id(), true, q, graph);
         assertThat(tail)
                 .contains("Hard rules")
-                .doesNotContain("=== ACTIVE FLOW STEP:")
+                .doesNotContain("## ACTIVE FLOW STEP")
                 .doesNotContain("Already collected:");
     }
 

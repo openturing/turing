@@ -128,7 +128,8 @@
         "copied": "Copiado para a área de transferência",
         "copyFailed": "Não foi possível copiar",
         "toolsHeading": "Ferramentas disponíveis para o modelo",
-        "toolsNote": "Fornecidas ao modelo como esquemas de função/ferramenta (não como texto literal do prompt)."
+        "toolsNote": "Fornecidas ao modelo como esquemas de função/ferramenta (não como texto literal do prompt).",
+        "hoverHint": "Passe o mouse sobre um trecho para ver de onde ele vem"
       },
       "warnings": {
         "title": "Checagem de conflitos",

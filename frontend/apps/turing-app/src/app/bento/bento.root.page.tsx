@@ -11,6 +11,7 @@ import {
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserProvider } from "@/contexts/user.context";
+import { LanguageSwitcher } from "@viglet/viglet-design-system";
 import { IconArrowLeft, IconSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -146,6 +147,7 @@ export default function BentoRootPage() {
                 {SHORTCUT_HINT}
               </kbd>
             </button>
+            <LanguageSwitcher />
             <ModeToggle />
             <BentoUserMenu />
           </div>

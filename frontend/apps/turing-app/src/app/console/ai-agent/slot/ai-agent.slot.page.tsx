@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -66,7 +66,16 @@ const NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
  *
  * @since 2026.2.7
  */
-export default function AIAgentSlotPage() {
+interface AIAgentSlotPageProps {
+  /**
+   * Header slot. When omitted (console) the page renders its own
+   * sidebar-coupled {@link SubPageHeader}; the bento shell passes its own
+   * {@code BentoHero} (or {@code null}) so the console chrome is dropped.
+   */
+  header?: ReactNode;
+}
+
+export default function AIAgentSlotPage({ header }: Readonly<AIAgentSlotPageProps> = {}) {
   const { t } = useTranslation();
   const { id: agentId } = useParams() as { id: string };
   const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/slot`;
@@ -159,12 +168,16 @@ export default function AIAgentSlotPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={slots} error={error} tryAgainUrl={baseUrl}>
-      <SubPageHeader
-        icon={IconLayoutList}
-        feature={t("aiAgent.slot.title")}
-        name={t("aiAgent.slot.title")}
-        description={t("aiAgent.slot.description")}
-      />
+      {header !== undefined ? (
+        header
+      ) : (
+        <SubPageHeader
+          icon={IconLayoutList}
+          feature={t("aiAgent.slot.title")}
+          name={t("aiAgent.slot.title")}
+          description={t("aiAgent.slot.description")}
+        />
+      )}
 
       <div className="px-4 lg:px-6">
         {hasSlots ? (

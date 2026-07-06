@@ -221,7 +221,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       {/* Preview mode: Rendered Markdown */}
       {mode === "preview" && (
         <div
-          className="rounded-md border bg-background px-3 py-2 overflow-y-auto prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg"
+          className="rounded-md border bg-background px-3 py-2 overflow-y-auto prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:rounded-lg"
           style={{ minHeight: `${rowHeight}rem` }}
         >
           {value.trim() ? (

@@ -9,6 +9,7 @@ import { IconAlertTriangle, IconCheck, IconLock, IconSparkles } from "@tabler/ic
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
+import { BentoFormSection } from "../bento"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 
@@ -16,6 +17,8 @@ const capabilityService = new TurCapabilityRegistryService();
 
 interface Props {
   value: TurAIAgent;
+  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
+  chrome?: "console" | "bento";
 }
 
 function parseCsv(csv?: string | null): Set<string> {
@@ -37,8 +40,9 @@ function providerLabel(provider: TurCapabilityProvider): string {
   }
 }
 
-export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value }) => {
+export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value, chrome = "console" }) => {
   const { t } = useTranslation();
+  const isBento = chrome === "bento";
   const [descriptors, setDescriptors] = useState<TurCapabilityDescriptor[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [selectedCaps, setSelectedCaps] = useState<Set<string>>(new Set());
@@ -171,17 +175,28 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value }) => {
     setSelectedCaps(new Set(savedCaps));
   }
 
+  const Section = ({ children }: { readonly children: React.ReactNode }) =>
+    isBento ? (
+      <BentoFormSection icon={IconSparkles} tone="blue"
+        title={t("forms.agentCapabilities.title")} description={t("forms.agentCapabilities.description")}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant="blue">
+        <SectionCard.Header
+          icon={IconSparkles}
+          title={t("forms.agentCapabilities.title")}
+          description={t("forms.agentCapabilities.description")}
+        />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
   return (
     <TooltipProvider>
-      <div className="px-6">
-        <div className="space-y-4 py-8">
-          <SectionCard variant="blue">
-            <SectionCard.Header
-              icon={IconSparkles}
-              title={t("forms.agentCapabilities.title")}
-              description={t("forms.agentCapabilities.description")}
-            />
-            <SectionCard.Content>
+      <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
+        <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+          <Section>
               {functionGroups.length === 0 ? (
                 <div className="text-center py-8">
                   <IconSparkles className="mx-auto size-10 text-muted-foreground/30 mb-3" />
@@ -247,8 +262,7 @@ export const AIAgentCapabilitiesForm: React.FC<Props> = ({ value }) => {
                   })}
                 </div>
               )}
-            </SectionCard.Content>
-          </SectionCard>
+          </Section>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
             <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

@@ -12,6 +12,7 @@ import { IconAdjustments, IconLock } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
+import { BentoFormSection } from "../bento"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 
@@ -19,6 +20,8 @@ const capabilityService = new TurCapabilityRegistryService();
 
 interface Props {
   value: TurAIAgent;
+  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
+  chrome?: "console" | "bento";
 }
 
 function providerLabel(provider: TurCapabilityProvider): string {
@@ -54,8 +57,9 @@ function serializeOptions(map: Record<string, string>): string {
   return JSON.stringify(cleaned);
 }
 
-export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value }) => {
+export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value, chrome = "console" }) => {
   const { t } = useTranslation();
+  const isBento = chrome === "bento";
   const [descriptors, setDescriptors] = useState<TurCapabilityDescriptor[]>([]);
   const [options, setOptions] = useState<Record<string, string>>({});
   const [savedJson, setSavedJson] = useState<string>("");
@@ -131,28 +135,36 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value }) => {
     setOptions(parseOptions(savedJson));
   }
 
+  const Section = ({ title, description, children }: {
+    readonly title: string; readonly description?: string; readonly children: React.ReactNode;
+  }) =>
+    isBento ? (
+      <BentoFormSection icon={IconAdjustments} tone="blue" title={title} description={description}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant="blue">
+        <SectionCard.Header icon={IconAdjustments} title={title} description={description} />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
   return (
     <TooltipProvider>
-      <div className="px-6">
-        <div className="space-y-4 py-8">
+      <div className={isBento ? "space-y-4 md:space-y-5" : "px-6"}>
+        <div className={isBento ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
           {categories.length === 0 ? (
-            <SectionCard variant="blue">
-              <SectionCard.Header icon={IconAdjustments}
-                title={t("forms.agentRequestOptions.title")}
-                description={t("forms.agentRequestOptions.description")} />
-              <SectionCard.Content>
-                <div className="text-center py-8">
-                  <IconAdjustments className="mx-auto size-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">{t("forms.agentRequestOptions.empty")}</p>
-                </div>
-              </SectionCard.Content>
-            </SectionCard>
+            <Section title={t("forms.agentRequestOptions.title")}
+              description={t("forms.agentRequestOptions.description")}>
+              <div className="text-center py-8">
+                <IconAdjustments className="mx-auto size-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">{t("forms.agentRequestOptions.empty")}</p>
+              </div>
+            </Section>
           ) : (
             categories.map(({ category, list }) => (
-              <SectionCard key={category} variant="blue">
-                <SectionCard.Header icon={IconAdjustments} title={category}
-                  description={t("forms.agentRequestOptions.description")} />
-                <SectionCard.Content>
+              <Section key={category} title={category}
+                description={t("forms.agentRequestOptions.description")}>
                   <div className="space-y-1.5">
                     {list.map((d) => {
                       const enabled = available(d);
@@ -206,8 +218,7 @@ export const AIAgentRequestOptionsForm: React.FC<Props> = ({ value }) => {
                       );
                     })}
                   </div>
-                </SectionCard.Content>
-              </SectionCard>
+              </Section>
             ))
           )}
 

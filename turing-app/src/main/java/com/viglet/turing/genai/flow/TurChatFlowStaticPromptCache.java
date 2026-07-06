@@ -24,7 +24,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  * three concatenated pieces (preserving the existing prompt order):
  *
  * <ol>
- *   <li><b>Head</b> — {@code === ACTIVE FLOW STEP: ... ===}, {@code Goal},
+ *   <li><b>Head</b> — {@code ## ACTIVE FLOW STEP}, {@code Goal},
  *       {@code Collect}, {@code Validate}. Derived from
  *       {@link com.viglet.turing.genai.flow.ChatFlowNode node fields}
  *       only → cacheable by {@code (flowId, nodeId)}.</li>
