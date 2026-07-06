@@ -50,6 +50,8 @@ const BentoPersonaPage = lazy(() => import("../bento/persona/bento.persona.page"
 // landing + a shared-form section editor (both fed by the loader above).
 const BentoPersonaDashboard = lazy(() => import("../bento/persona/bento.persona.dashboard"));
 const BentoPersonaEditor = lazy(() => import("../bento/persona/bento.persona.editor"));
+// Block AI (T584) — content-fit validation as a first-class launch surface.
+const BentoPersonaValidatePage = lazy(() => import("../bento/persona/bento.persona.validate.page"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
 const GitRepoPage = lazy(() => import("../console/git/git.repo.page"));
 // Persona section sub-pages (reused from the console) — mounted under the
@@ -202,6 +204,8 @@ export const BentoRoutes = (
     <Route path="chat-webhook/instance" element={<BentoWebhookListPage />} />
     <Route path="chat-webhook/instance/:id" element={<BentoWebhookPage />} />
     <Route path="persona" element={<Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />} />
+    {/* Block AI (T584) — persona content-fit validation launch surface. */}
+    <Route path="persona/validate/:personaId" element={<BentoPersonaValidatePage />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />
     <Route path="persona/instance/:id" element={<BentoPersonaPage />}>
       {/* Landing = AI-agent-style dashboard (T582); new personas redirect to the editor. */}

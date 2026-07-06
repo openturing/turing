@@ -96,6 +96,7 @@ export const ROUTES = {
   BENTO_CHAT_WEBHOOK_INSTANCE: "/bento/chat-webhook/instance",
   BENTO_PERSONA: "/bento/persona",
   BENTO_PERSONA_INSTANCE: "/bento/persona/instance",
+  BENTO_PERSONA_VALIDATE: "/bento/persona/validate",
   BENTO_GIT: "/bento/git",
   BENTO_GIT_INSTANCE: "/bento/git/instance",
 

@@ -12,6 +12,14 @@ export function usePersonas() {
   });
 }
 
+export function usePersona(id: string | undefined) {
+  return useQuery<TurPersona>({
+    queryKey: id ? queryKeys.personas.detail(id) : ['personas', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidatePersonas(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
 }

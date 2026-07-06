@@ -18,10 +18,15 @@ interface LaunchAction {
   label: string;
   icon: TablerIcon;
   tone: BentoTone;
-  /** Live action handler; omitted for "soon" affordances. */
+  /** Live action handler; omitted for "soon"/disabled affordances. */
   onSelect?: () => void;
   /** Renders disabled with a "Soon" badge to communicate the roadmap. */
   soon?: boolean;
+  /**
+   * Renders disabled with this tooltip when the action exists but isn't
+   * applicable to this persona (e.g. content-fit needs an audience persona).
+   */
+  disabledHint?: string;
 }
 
 /**
@@ -45,6 +50,12 @@ export function PersonaLaunchBar({ persona }: Readonly<{ persona: TurPersona }>)
     navigate(`${ROUTES.BENTO_CHAT_PERSONA}/${persona.id}`);
   }
 
+  // Content-fit scoring is only meaningful for audience personas (the fit
+  // report reads the audience profile), mirroring the dashboard which only
+  // shows the notebook/fit tiles for AUDIENCE/BOTH.
+  const kind = persona.personaKind ?? "SPEAKER";
+  const canValidate = kind === "AUDIENCE" || kind === "BOTH";
+
   const actions: LaunchAction[] = [
     {
       key: "chat",
@@ -58,7 +69,13 @@ export function PersonaLaunchBar({ persona }: Readonly<{ persona: TurPersona }>)
       label: t("persona.launch.validateContent", { defaultValue: "Validate content" }),
       icon: IconFileSearch,
       tone: "emerald",
-      soon: true,
+      ...(canValidate
+        ? { onSelect: () => navigate(`${ROUTES.BENTO_PERSONA_VALIDATE}/${persona.id}`) }
+        : {
+            disabledHint: t("persona.launch.audienceOnly", {
+              defaultValue: "Available for audience personas",
+            }),
+          }),
     },
     {
       key: "dialogue",
@@ -92,18 +109,20 @@ function LaunchButton({ action, soonLabel }: Readonly<{ action: LaunchAction; so
     </span>
   );
 
-  if (action.soon) {
+  if (action.soon || action.disabledHint) {
     return (
       <span
         className="bento-glass inline-flex cursor-not-allowed items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium opacity-60"
         aria-disabled="true"
-        title={soonLabel}
+        title={action.disabledHint ?? soonLabel}
       >
         {chip}
         {action.label}
-        <span className="rounded-full border border-border/60 bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          {soonLabel}
-        </span>
+        {action.soon && (
+          <span className="rounded-full border border-border/60 bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+            {soonLabel}
+          </span>
+        )}
       </span>
     );
   }

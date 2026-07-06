@@ -2070,7 +2070,7 @@ after T570 is the console truly retired; until then it stays live as the fallbac
   bar writes `CHAT_INITIAL_AGENT_KEY` to `sessionStorage` and navigates to
   `/bento/chat`, which reads+clears it on mount. Not shareable, no back/forward.
 
-> §XXXII.1–.6 (T578–T583, persona chat MVP + bento dashboard + launchpad) shipped — see CHANGELOG Block AI. Rationale for the remaining Phase 3 work below.
+> §XXXII.1–.7 (T578–T584, persona chat MVP + bento dashboard + launchpad + content-fit launch action) shipped — see CHANGELOG Block AI. Rationale for the remaining Phase 3 work below.
 
 ### XXXII.5 Persona detail → bento dashboard (T582 ✅)
 
@@ -2092,15 +2092,6 @@ A launch bar on the dashboard mirroring `AiAgentLaunchBar`, but built as an
 disabled/"soon" affordances so the surface communicates the roadmap without
 shipping half-features. This is where the future actions dock.
 
-### XXXII.7 Content-fit validation as a launch action (T584, 💭)
-
-The user wants to drop documents / links / indexed content and get a
-**compatibility score + final result** against the persona. This is not new
-engine work — it's Block AA's stack (notebook source set T465, deterministic
-readability scorer T466, grounded content-fit evaluator T467, red/amber/green fit
-report T468) **promoted** from a buried section to a first-class launch action
-with an inline "add sources → score" flow. Design when Phase 2 lands.
-
 ### XXXII.8 Automatic persona↔persona conversation (T585, 💭)
 
 Pick a **topic** and two personas; the system runs a bounded, turn-by-turn
@@ -2108,7 +2099,13 @@ dialogue (one turn each, alternating) by driving the T578 executor with each
 persona as the active speaker in turn, feeding the other's last message as the
 user turn. Render the transcript. A natural sibling is a "voice diff" — the same
 prompt answered by two personas side by side — which also validates the subject
-abstraction from T581. Design when the persona chat MVP is proven.
+abstraction from T581.
+
+Unlike content-fit (T584), which validates content against **one** persona and so
+belongs on that persona's launchpad, a dialogue is inherently about **two**
+personas plus a topic. Its surface must therefore be **global**, reached from the
+persona list (`/bento/persona/instance`) rather than scoped to a single persona
+instance — the two speakers are peers, and neither "owns" the conversation.
 
 ---
 

@@ -21,8 +21,13 @@
       "title": "Ações",
       "openChat": "Abrir chat",
       "validateContent": "Validar conteúdo",
+      "audienceOnly": "Disponível para personas de audiência",
       "personaDialogue": "Diálogo entre personas",
       "soon": "Em breve"
+    },
+    "validate": {
+      "title": "Validar conteúdo",
+      "subtitle": "Adicione documentos, links ou conteúdo indexado e pontue o quão bem ele se adequa à audiência desta persona."
     },
     "dashboard": {
       "systemInstructionSet": "Contrato de voz definido",

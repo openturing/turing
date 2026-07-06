@@ -21,8 +21,13 @@
       "title": "Launch",
       "openChat": "Open chat",
       "validateContent": "Validate content",
+      "audienceOnly": "Available for audience personas",
       "personaDialogue": "Persona dialogue",
       "soon": "Soon"
+    },
+    "validate": {
+      "title": "Validate content",
+      "subtitle": "Add documents, links or indexed content and score how well it fits this persona's audience."
     },
     "dashboard": {
       "systemInstructionSet": "Voice contract defined",
