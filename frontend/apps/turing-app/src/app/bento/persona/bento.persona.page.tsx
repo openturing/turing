@@ -1,21 +1,37 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { PersonaInstanceFormLayout } from "@/components/persona/persona.instance.form.layout";
 import type { TurPersona } from "@/models/persona/persona.model.ts";
 import { TurPersonaService } from "@/services/persona/persona.service";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 
 const turPersonaService = new TurPersonaService();
 
 /**
- * Bento Persona detail — T556. Persona is a rich multi-section editor with its
- * own nested-route sidebar (general / system-instruction / style / audience /
- * notebook / fit-report / guidelines), so it reuses the existing
- * {@link PersonaInstanceFormLayout} verbatim, passing the Bento base route so
- * its section links stay inside the Bento shell. The section child routes are
- * registered under this page's `:id` route (see bento.routes.tsx).
+ * Context threaded from the Bento persona loader to its child routes (the
+ * dashboard landing and the section editor). A single fetch feeds both so the
+ * dashboard's inline edits and the editor's form operate on the same entity.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.3.4
+ */
+export interface BentoPersonaContext {
+  persona: TurPersona;
+  isNew: boolean;
+  /** Replace the loaded persona (used by the dashboard's inline-edit persist). */
+  setPersona: (persona: TurPersona) => void;
+}
+
+/**
+ * Bento Persona detail loader — T582. Fetches the persona once and exposes it
+ * to child routes via the router `<Outlet context>`:
+ *
+ * - the index route renders the AI-agent-style **dashboard** (BentoHero +
+ *   BentoTile mosaic + Persona Launchpad), superseding T556's "reuse the
+ *   pill-tab form as the landing";
+ * - the section routes render the shared-form editor (pill tab-bar + single
+ *   `useForm` + save bar) unchanged, still reachable from the dashboard tiles.
  */
 export default function BentoPersonaPage() {
   const { id } = useParams() as { id: string };
@@ -46,7 +62,9 @@ export default function BentoPersonaPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={persona} error={error} tryAgainUrl={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}`}>
-      {persona && <PersonaInstanceFormLayout value={persona} isNew={isNew} baseRoute={ROUTES.BENTO_PERSONA_INSTANCE} chrome="bento" />}
+      {persona && (
+        <Outlet context={{ persona, isNew, setPersona } satisfies BentoPersonaContext} />
+      )}
     </LoadProvider>
   );
 }

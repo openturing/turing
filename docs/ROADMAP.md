@@ -206,9 +206,9 @@ fully shipped.**
 
 **Phase 1 — persona chat MVP (talk to a persona): ✅ shipped (T578–T581) — see CHANGELOG.**
 
-**Phase 2 — persona bento dashboard + launchpad:**
-- 📋 **T582** (deps: —) **Frontend: persona detail → bento dashboard** — replace the reused pill-tab form landing (T556) with an AI-agent-style **`BentoHero` + big `BentoTile`/`BentoCountTile` mosaic** (system-instruction hero tile, style, audience, guidelines, notebook, fit-report), each card linking into its section. Keep the section sub-pages but audit their bodies and swap any `SectionCard` → `BentoFormSection` (frosted hover cards, per the bento-ui skill), preserving the single-`useForm` save bar. → §XXXII.5
-- 📋 **T583** (deps: T581, T582) **Frontend: Persona Launchpad** — an extensible launch bar on the persona dashboard mirroring `AiAgentLaunchBar`, with **Open chat** live (navigates to `/bento/chat/persona/:id`) and disabled/"soon" affordances that communicate the roadmap (validate content, persona dialogue). → §XXXII.6
+**Phase 2 — persona bento dashboard + launchpad: ✅ shipped (T582–T583) — see CHANGELOG.**
+- ✅ **T582** (deps: —) **Frontend: persona detail → bento dashboard** — replaced the reused pill-tab form landing (T556) with an AI-agent-style **`BentoHero` + big `BentoTile` mosaic** (system-instruction hero tile, style, general, guidelines, audience, notebook, fit-report), each card linking into its section. Section sub-pages moved under a pathless editor route and their bodies swapped `SectionCard` → `BentoFormSection` (via `SectionCardChromeProvider chrome="bento"`), preserving the single-`useForm` save bar. → §XXXII.5
+- ✅ **T583** (deps: T581, T582) **Frontend: Persona Launchpad** — an extensible launch bar on the persona dashboard mirroring `AiAgentLaunchBar`, with **Open chat** live (navigates to `/bento/chat/persona/:id`) and disabled/"soon" affordances that communicate the roadmap (validate content, persona dialogue). → §XXXII.6
 
 **Phase 3 — future launch actions (💭 need design):**
 - 💭 **T584** (deps: T583, T465, T467, T468) **Content-fit validation from the launchpad** — add documents / links / indexed content and validate compatibility with the persona → compatibility **score + final result** (condiz/não-condiz, flagged spans, suggestions). Composition of Block AA's notebook (T465) + content-fit evaluator (T466/T467) + fit-report surface (T468), promoted to a first-class launch action rather than a buried section. → §XXXII.7

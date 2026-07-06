@@ -46,6 +46,10 @@ const BentoWebhookListPage = lazy(() => import("../bento/webhook/bento.webhook.l
 const BentoWebhookPage = lazy(() => import("../bento/webhook/bento.webhook.page"));
 const BentoPersonaListPage = lazy(() => import("../bento/persona/bento.persona.list.page"));
 const BentoPersonaPage = lazy(() => import("../bento/persona/bento.persona.page"));
+// Block AI (T582) — persona detail split into an AI-agent-style dashboard
+// landing + a shared-form section editor (both fed by the loader above).
+const BentoPersonaDashboard = lazy(() => import("../bento/persona/bento.persona.dashboard"));
+const BentoPersonaEditor = lazy(() => import("../bento/persona/bento.persona.editor"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
 const GitRepoPage = lazy(() => import("../console/git/git.repo.page"));
 // Persona section sub-pages (reused from the console) — mounted under the
@@ -133,11 +137,6 @@ const UserPreferencesPage = lazy(() => import("../console/user/preferences/user.
 const BentoTenantSettingsPage = lazy(() => import("../bento/tenant/bento.tenant.settings.page"));
 const BentoTenantAdminPage = lazy(() => import("../bento/tenant/bento.tenant.admin.page"));
 
-function RedirectToBentoPersonaGeneral() {
-  const { id } = useParams();
-  return <Navigate to={`${ROUTES.BENTO_PERSONA_INSTANCE}/${id}/general`} replace />;
-}
-
 function RedirectToBentoIntentSettings() {
   const { id, intentId } = useParams();
   return <Navigate to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${id}/intent/${intentId}/settings`} replace />;
@@ -205,14 +204,18 @@ export const BentoRoutes = (
     <Route path="persona" element={<Navigate to={ROUTES.BENTO_PERSONA_INSTANCE} replace />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />
     <Route path="persona/instance/:id" element={<BentoPersonaPage />}>
-      <Route index element={<RedirectToBentoPersonaGeneral />} />
-      <Route path="general" element={<PersonaGeneralSection />} />
-      <Route path="system-instruction" element={<PersonaSystemInstructionSection />} />
-      <Route path="style" element={<PersonaStyleSection />} />
-      <Route path="audience" element={<PersonaAudienceSection />} />
-      <Route path="notebook" element={<PersonaNotebookSection />} />
-      <Route path="fit-report" element={<PersonaFitReportSection />} />
-      <Route path="guidelines" element={<PersonaGuidelinesSection />} />
+      {/* Landing = AI-agent-style dashboard (T582); new personas redirect to the editor. */}
+      <Route index element={<BentoPersonaDashboard />} />
+      {/* Section editor: one shared useForm + pill tab-bar + save bar. */}
+      <Route element={<BentoPersonaEditor />}>
+        <Route path="general" element={<PersonaGeneralSection />} />
+        <Route path="system-instruction" element={<PersonaSystemInstructionSection />} />
+        <Route path="style" element={<PersonaStyleSection />} />
+        <Route path="audience" element={<PersonaAudienceSection />} />
+        <Route path="notebook" element={<PersonaNotebookSection />} />
+        <Route path="fit-report" element={<PersonaFitReportSection />} />
+        <Route path="guidelines" element={<PersonaGuidelinesSection />} />
+      </Route>
     </Route>
     <Route path="git" element={<BentoGitPage />} />
     <Route path="git/:name" element={<GitRepoPage />} />

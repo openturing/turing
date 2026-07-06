@@ -29,6 +29,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { BentoActionsMenu, BentoHero } from "@/components/bento"
 import { DialogDelete } from "@/components/dialog.delete"
+import { SectionCardChromeProvider } from "@/components/ui/section-card"
 import { SubPage } from "../sub.page"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 
@@ -294,7 +295,12 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
           <>
             <BentoHero
               eyebrow={
-                <Link to={baseRoute} className="hover:text-foreground">{t("persona.title")}</Link>
+                <Link
+                  to={isNew ? baseRoute : instanceUrlBase}
+                  className="hover:text-foreground"
+                >
+                  {isNew ? t("persona.title") : (value.name || t("persona.title"))}
+                </Link>
               }
               leading={
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-md">
@@ -341,7 +347,9 @@ export const PersonaInstanceFormLayout: React.FC<Props> = ({ value, isNew, baseR
               })}
             </nav>
 
-            <Outlet context={outletContext} />
+            <SectionCardChromeProvider chrome="bento">
+              <Outlet context={outletContext} />
+            </SectionCardChromeProvider>
 
             {!isNew && (
               <DialogDelete

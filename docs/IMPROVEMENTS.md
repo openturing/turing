@@ -2070,9 +2070,9 @@ after T570 is the console truly retired; until then it stays live as the fallbac
   bar writes `CHAT_INITIAL_AGENT_KEY` to `sessionStorage` and navigates to
   `/bento/chat`, which reads+clears it on mount. Not shareable, no back/forward.
 
-> §XXXII.1–.4 (T578–T581, persona chat MVP) shipped — see CHANGELOG Block AI. Rationale for the remaining Phase 2/3 work below.
+> §XXXII.1–.6 (T578–T583, persona chat MVP + bento dashboard + launchpad) shipped — see CHANGELOG Block AI. Rationale for the remaining Phase 3 work below.
 
-### XXXII.5 Persona detail → bento dashboard (T582)
+### XXXII.5 Persona detail → bento dashboard (T582 ✅)
 
 The persona detail should read like the AI-agent dashboard: a `BentoHero` (persona
 identity) over a **big frosted `BentoTile` mosaic** where each card is a doorway
@@ -2084,7 +2084,7 @@ mistake per the bento-ui skill), keeping the single-`useForm` save bar. This
 supersedes T556's "reuse the pill-tab form as the landing" for the *landing*; the
 sections remain reachable.
 
-### XXXII.6 Persona Launchpad (T583)
+### XXXII.6 Persona Launchpad (T583 ✅)
 
 A launch bar on the dashboard mirroring `AiAgentLaunchBar`, but built as an
 **extensible launchpad** from day one: **Open chat** is live (→

@@ -17,6 +17,29 @@
       "fitReport": "Relatório de Adequação de Audiência",
       "guidelines": "Diretrizes da Persona"
     },
+    "launch": {
+      "title": "Ações",
+      "openChat": "Abrir chat",
+      "validateContent": "Validar conteúdo",
+      "personaDialogue": "Diálogo entre personas",
+      "soon": "Em breve"
+    },
+    "dashboard": {
+      "systemInstructionSet": "Contrato de voz definido",
+      "systemInstructionEmpty": "Defina o contrato de voz",
+      "systemInstructionHint": "A instrução do sistema prependida aos chats que adotam esta persona.",
+      "styleTitle": "Estilo & voz",
+      "verbosityLevel": "Verbosidade {{level}}/5",
+      "guidelinesTitle": "Diretrizes",
+      "guidelinesHint": "Termos obrigatórios e proibidos.",
+      "termCount": "{{mandatory}} obrigatórios · {{forbidden}} proibidos",
+      "audienceTitle": "Perfil de audiência",
+      "audienceHint": "Para quem esta persona lê.",
+      "notebookTitle": "Caderno de avaliação",
+      "notebookHint": "Fontes usadas para pontuar a adequação de conteúdo.",
+      "fitReportTitle": "Relatório de adequação",
+      "fitReportHint": "Quão bem o conteúdo atende esta audiência."
+    },
     "deleted": "A persona {{name}} foi removida",
     "notDeleted": "A persona {{name}} não foi removida",
     "aiChat": {

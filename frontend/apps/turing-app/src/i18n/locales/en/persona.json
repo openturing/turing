@@ -17,6 +17,29 @@
       "fitReport": "Audience-Fit Report",
       "guidelines": "Persona Guidelines"
     },
+    "launch": {
+      "title": "Launch",
+      "openChat": "Open chat",
+      "validateContent": "Validate content",
+      "personaDialogue": "Persona dialogue",
+      "soon": "Soon"
+    },
+    "dashboard": {
+      "systemInstructionSet": "Voice contract defined",
+      "systemInstructionEmpty": "Set the voice contract",
+      "systemInstructionHint": "The system instruction prepended to chats that adopt this persona.",
+      "styleTitle": "Style & voice",
+      "verbosityLevel": "Verbosity {{level}}/5",
+      "guidelinesTitle": "Guidelines",
+      "guidelinesHint": "Mandatory and forbidden terms.",
+      "termCount": "{{mandatory}} mandatory · {{forbidden}} forbidden",
+      "audienceTitle": "Audience profile",
+      "audienceHint": "Who this persona reads for.",
+      "notebookTitle": "Evaluation notebook",
+      "notebookHint": "Sources used to score content fit.",
+      "fitReportTitle": "Audience-fit report",
+      "fitReportHint": "How well content matches this audience."
+    },
     "deleted": "The {{name}} persona was deleted",
     "notDeleted": "The {{name}} persona was not deleted",
     "aiChat": {
