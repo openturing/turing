@@ -59,6 +59,9 @@ public final class TurEvalBuiltinGraders {
     /** CODE — aggregated tool-call latency (T427 durations) within {@code maxMs}. */
     public static final String LATENCY_BUDGET = "latency-budget";
 
+    /** CODE — a custom Groovy script ({@code script}) returning score/pass/rationale (T589). */
+    public static final String GROOVY = "groovy";
+
     /**
      * The legacy default stack. Order is cosmetic for the aggregate (mean is
      * order-independent and the overall pass is a logical AND) but kept stable

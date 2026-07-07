@@ -2072,19 +2072,6 @@ The user's ask: (1) let us create **extensions of the eval for each grader kind*
 and (2) give us a way to **provide a dataset to be used and tested** — done in a
 scalable, friendly, functional way.
 
-### XXXIII.3–4 CODE graders — deterministic, CI-safe, extensible (T588, T589)
-
-The CODE kind is the CI-cheap backbone (no LLM, runs on every PR). T588 ships a
-built-in library keyed by `graderId` + `configJson`: exact/contains/regex on the
-final answer, JSON-path and slot equality with tolerance, numeric range, the
-generalized outcome/node graders, and — composing what already exists —
-latency-budget and `tool_called` assertions off the T427 tool-call trace and T88
-latency samples. T589 opens the CODE kind to **user extension** without a backend
-change: a Groovy `grade(ctx) -> {score, pass, rationale}` reusing the Custom Tool
-sandbox and the `TurToolCallbackPipeline` safe-binding model (the same trust
-boundary we already accept for custom tools), opt-in, errors-as-fail. This is the
-"create extensions of the eval" ask for the deterministic kind.
-
 ### XXXIII.5–6 MODEL graders — judge strategies, not one prompt (T590, T591)
 
 T590 generalizes the lone rubric judge into a family: `LABEL` (pass/fail),

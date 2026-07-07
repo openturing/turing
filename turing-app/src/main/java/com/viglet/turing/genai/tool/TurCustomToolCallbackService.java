@@ -330,8 +330,11 @@ public class TurCustomToolCallbackService {
      * lexer is happy because the offending token never appears.
      *
      * <p>Reproduced by {@link com.viglet.turing.genai.tool.TurCustomToolGroovyParserBugTest}.
+     *
+     * <p>Public so the Groovy eval-grader engine (T589) can reuse the exact same
+     * source sanitization as the Custom Tool sandbox.
      */
-    static String sanitizeGroovySource(String src) {
+    public static String sanitizeGroovySource(String src) {
         if (src == null || src.isEmpty() || src.indexOf("\\U") < 0) {
             return src == null ? "" : src;
         }
