@@ -15,7 +15,7 @@ import {
   type TurSystemPromptTool,
 } from "@/models/agent/system-prompt.model";
 import { cn } from "@/lib/utils";
-import { IconClipboard, IconClock, IconSitemap, IconTool } from "@tabler/icons-react";
+import { IconClipboard, IconClock, IconCoin, IconDatabase, IconSitemap, IconTool } from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -227,6 +227,12 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
         </div>
       )}
 
+      {/* T608 — per-turn token accounting: grand total, the cacheable-prefix
+          vs per-turn split (what T614's ordering saves), and an optional cost. */}
+      {!isLoading && preview && preview.totalTokens > 0 && (
+        <MetricsBar preview={preview} />
+      )}
+
       {isLoading && (
         <p className="text-sm text-muted-foreground">{t("common.loading", { defaultValue: "Loading…" })}</p>
       )}
@@ -238,11 +244,13 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
             <SegmentPassage
               key={`${segment.origin}-${idx}`}
               segment={segment}
+              totalTokens={preview.totalTokens}
               label={originLabel(segment.origin)}
               runtimeLabel={t("aiAgent.systemPrompt.preview.runtimeOnly", { defaultValue: "runtime only" })}
               emptyLabel={t("aiAgent.systemPrompt.preview.noFixedText", {
                 defaultValue: "No fixed text — depends on the live conversation.",
               })}
+              tokLabel={t("aiAgent.systemPrompt.preview.tokens", { defaultValue: "tok" })}
             />
           ))}
 
@@ -274,6 +282,73 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
       )}
     </div>
   );
+}
+
+/**
+ * T608 — per-turn prompt metrics strip. Reads the token counts the T613/T614
+ * pipeline emits (no re-parsing of the assembled string): the grand total, the
+ * STABLE cacheable-prefix vs PER_TURN split (the budget T614's ordering can
+ * cache across turns), and — when the resolved LLM instance has a price — a
+ * best-effort per-turn cost. All numbers are approximate (chars/4) by design.
+ */
+function MetricsBar({ preview }: Readonly<{ preview: TurSystemPromptPreview }>) {
+  const { t } = useTranslation();
+  const perTurn = Math.max(0, preview.totalTokens - preview.stableTokens);
+  const stableShare =
+    preview.totalTokens > 0 ? Math.round((preview.stableTokens / preview.totalTokens) * 100) : 0;
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+      <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+        <IconDatabase className="size-3.5 text-muted-foreground" />
+        {t("aiAgent.systemPrompt.preview.totalTokens", {
+          defaultValue: "{{count}} tokens total",
+          count: preview.totalTokens,
+        })}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+        <span className="size-2 rounded-full bg-emerald-500" />
+        {t("aiAgent.systemPrompt.preview.stableTokens", {
+          defaultValue: "{{count}} cacheable prefix ({{share}}%)",
+          count: preview.stableTokens,
+          share: stableShare,
+        })}
+      </span>
+      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+        <span className="size-2 rounded-full bg-amber-500" />
+        {t("aiAgent.systemPrompt.preview.perTurnTokens", {
+          defaultValue: "{{count}} per turn",
+          count: perTurn,
+        })}
+      </span>
+      {preview.estimatedCostUsd > 0 && (
+        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <IconCoin className="size-3.5 text-muted-foreground" />
+          {t("aiAgent.systemPrompt.preview.estimatedCost", {
+            defaultValue: "≈ {{cost}}/turn",
+            cost: formatCost(preview.estimatedCostUsd),
+          })}
+          {preview.costModelName && (
+            <span className="text-muted-foreground/70">({preview.costModelName})</span>
+          )}
+        </span>
+      )}
+      <span className="ml-auto hidden text-muted-foreground/70 sm:inline">
+        {t("aiAgent.systemPrompt.preview.tokensApprox", { defaultValue: "approximate" })}
+      </span>
+    </div>
+  );
+}
+
+/** Formats a small USD cost with enough precision to stay non-zero when tiny. */
+function formatCost(cost: number): string {
+  if (cost >= 0.01) {
+    return `$${cost.toFixed(4)}`;
+  }
+  if (cost > 0) {
+    // Sub-cent — keep the first two significant figures (e.g. $0.00032).
+    return `$${cost.toPrecision(2)}`;
+  }
+  return "$0";
 }
 
 /**
@@ -324,16 +399,26 @@ function buildToolsMarkdown(
  */
 function SegmentPassage({
   segment,
+  totalTokens,
   label,
   runtimeLabel,
   emptyLabel,
+  tokLabel,
 }: Readonly<{
   segment: TurSystemPromptSegment;
+  totalTokens: number;
   label: string;
   runtimeLabel: string;
   emptyLabel: string;
+  tokLabel: string;
 }>) {
   const style = ORIGIN_STYLE[segment.origin];
+  // Per-segment token accounting (T608): count + share-of-total, shown in the
+  // provenance label. Skipped for informational/runtime-only segments (0 tokens).
+  const share =
+    segment.tokens > 0 && totalTokens > 0
+      ? Math.round((segment.tokens / totalTokens) * 100)
+      : null;
   return (
     <section
       className={cn(
@@ -367,6 +452,11 @@ function SegmentPassage({
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-background px-2 py-0.5 text-[10px] font-medium text-amber-600 shadow-sm dark:text-amber-300">
             <IconClock className="size-3" />
             {runtimeLabel}
+          </span>
+        )}
+        {share !== null && (
+          <span className="inline-flex items-center gap-1 rounded-md border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm">
+            {segment.tokens} {tokLabel} · {share}%
           </span>
         )}
       </div>

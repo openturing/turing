@@ -129,7 +129,13 @@
         "copyFailed": "Could not copy",
         "toolsHeading": "Tools available to the model",
         "toolsNote": "Provided to the model as function/tool schemas (not literal prompt text).",
-        "hoverHint": "Hover a passage to see where it comes from"
+        "hoverHint": "Hover a passage to see where it comes from",
+        "tokens": "tok",
+        "totalTokens": "{{count}} tokens total",
+        "stableTokens": "{{count}} cacheable prefix ({{share}}%)",
+        "perTurnTokens": "{{count}} per turn",
+        "estimatedCost": "≈ {{cost}}/turn",
+        "tokensApprox": "approximate"
       },
       "warnings": {
         "title": "Conflict check",

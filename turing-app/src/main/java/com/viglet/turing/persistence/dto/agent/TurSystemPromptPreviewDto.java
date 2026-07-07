@@ -38,6 +38,13 @@ import java.util.List;
  * @param cacheBreakpointIndex Block AL / T614 — segment index at which the
  *                       PER_TURN tail begins under cache-optimized ordering, or
  *                       {@code -1} in legacy order (STABLE prefix not contiguous).
+ * @param estimatedCostUsd Block AK / T608 — best-effort USD cost of sending this
+ *                       assembled system prompt once (input tokens only) at the
+ *                       agent's first enabled LLM instance's configured price;
+ *                       {@code 0.0} when the model is unpriced or local.
+ * @param costModelName  Block AK / T608 — the model the cost estimate is based
+ *                       on (the resolved LLM instance's model), or {@code null}
+ *                       when no instance/price could be resolved.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -50,12 +57,23 @@ public record TurSystemPromptPreviewDto(
         String selectedFlowId,
         int totalTokens,
         int stableTokens,
-        int cacheBreakpointIndex) {
+        int cacheBreakpointIndex,
+        double estimatedCostUsd,
+        String costModelName) {
 
     /** Back-compat convenience for the pre-Block-AL 5-arg call sites. */
     public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
             List<TurSystemPromptToolDto> tools, String assembledText,
             List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId) {
         this(segments, tools, assembledText, flows, selectedFlowId, 0, 0, -1);
+    }
+
+    /** Back-compat convenience for the T613/T614 8-arg call sites (no cost). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, 0.0, null);
     }
 }

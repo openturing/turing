@@ -27,6 +27,10 @@ export interface TurSystemPromptSegment {
   /** Only materializes at runtime — shown as an example, not fixed text. */
   runtimeOnly: boolean;
   note: string | null;
+  /** Block AL/T613 — best-effort `chars/4` token estimate for this segment. */
+  tokens: number;
+  /** Block AL/T613 — `"STABLE"` (cacheable prefix) or `"PER_TURN"`; null for info segments. */
+  stability: "STABLE" | "PER_TURN" | null;
 }
 
 /** A tool exposed to the LLM (sent as a schema channel, not in the prompt text). */
@@ -50,6 +54,16 @@ export interface TurSystemPromptPreview {
   assembledText: string;
   flows: TurSystemPromptFlowOption[];
   selectedFlowId: string | null;
+  /** Block AL/T613 — grand-total token estimate across assembled segments. */
+  totalTokens: number;
+  /** Block AL/T614 — token estimate of the STABLE (cacheable-prefix) segments. */
+  stableTokens: number;
+  /** Block AL/T614 — segment index where the PER_TURN tail begins, or -1 in legacy order. */
+  cacheBreakpointIndex: number;
+  /** Block AK/T608 — per-turn USD cost of the assembled prompt (input only); 0 when unpriced/local. */
+  estimatedCostUsd: number;
+  /** Block AK/T608 — model the cost estimate is based on, or null. */
+  costModelName: string | null;
 }
 
 /** Sentinel flowId for "preview a turn with no chat flow governing". */

@@ -2223,14 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.2 Per-segment token accounting (T608)
-
-Show a token count + share-of-total per segment and a grand total, with an
-optional cost estimate from the previewed turn's resolved LLM-instance pricing.
-This is what makes "where does the budget go" concrete — persona vs agent vs MCP
-vs flow addendum vs tool schemas — and turns the redundancy findings above from a
-hunch into a number.
-
 ### XXXIV.3 "Inert this turn" detection (T609)
 
 When a flow is active, dim the agent-prompt regions the flow addendum neutralizes

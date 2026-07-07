@@ -36,9 +36,11 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
+import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,13 +81,16 @@ public class TurSystemPromptPreviewService {
     private final TurPromptAssemblyPipeline promptAssemblyPipeline;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurChatFlowRepository chatFlowRepository;
+    private final TurLLMPriceService priceService;
 
     public TurSystemPromptPreviewService(TurPromptAssemblyPipeline promptAssemblyPipeline,
             TurChatFlowEngineService chatFlowEngineService,
-            TurChatFlowRepository chatFlowRepository) {
+            TurChatFlowRepository chatFlowRepository,
+            TurLLMPriceService priceService) {
         this.promptAssemblyPipeline = promptAssemblyPipeline;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowRepository = chatFlowRepository;
+        this.priceService = priceService;
     }
 
     /** Convenience overload — previews the default flow (first enabled). */
@@ -155,9 +160,41 @@ public class TurSystemPromptPreviewService {
                 "When invoked through an SN site in AI (RAG) mode, the agent base prompt is replaced by a retrieval-augmented prompt carrying the matched knowledge chunks.",
                 0, null));
 
+        // T608 — best-effort per-turn cost of the assembled system prompt (input
+        // tokens only) at the agent's first enabled LLM instance's price. 0.0 for
+        // unpriced/local models, so the "$0 fully local" story stays honest.
+        TurLLMInstance costInstance = firstEnabledInstance(agent);
+        double estimatedCostUsd = estimateInputCost(costInstance, assembly.totalTokens());
+        String costModelName = costInstance == null ? null : costInstance.getModelName();
+
         return new TurSystemPromptPreviewDto(segments, buildTools(agent), assembly.systemText(),
                 flowOptions, selectedFlow == null ? null : selectedFlow.getId(),
-                assembly.totalTokens(), assembly.stableTokens(), assembly.cacheBreakpointIndex());
+                assembly.totalTokens(), assembly.stableTokens(), assembly.cacheBreakpointIndex(),
+                estimatedCostUsd, costModelName);
+    }
+
+    /** The agent's first enabled LLM instance, or {@code null} when none. */
+    private static TurLLMInstance firstEnabledInstance(TurAIAgent agent) {
+        if (agent.getLlmInstances() == null) {
+            return null;
+        }
+        return agent.getLlmInstances().stream()
+                .filter(i -> i != null && i.getEnabled() == 1)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * USD cost of sending {@code inputTokens} once at {@code instance}'s configured
+     * price (output tokens = 0 — this is the system-prompt input alone). Returns
+     * {@code 0.0} when the instance/vendor/price can't be resolved.
+     */
+    private double estimateInputCost(TurLLMInstance instance, int inputTokens) {
+        if (instance == null || instance.getTurLLMVendor() == null) {
+            return 0.0;
+        }
+        return priceService.computeCost(instance.getTurLLMVendor().getId(),
+                instance.getModelName(), inputTokens, 0);
     }
 
     /**
