@@ -15,6 +15,8 @@ const useAiAgents = vi.fn();
 const useGenerateRows = vi.fn();
 const useAugmentDataset = vi.fn();
 const useSaveReviewedRows = vi.fn();
+const useEvalRunHistory = vi.fn();
+const useRunEval = vi.fn();
 
 vi.mock("@/api/queries/eval-studio.queries", () => ({
   useEvalDatasets: () => useEvalDatasets(),
@@ -28,6 +30,8 @@ vi.mock("@/api/queries/eval-studio.queries", () => ({
   useGenerateRows: () => useGenerateRows(),
   useAugmentDataset: () => useAugmentDataset(),
   useSaveReviewedRows: () => useSaveReviewedRows(),
+  useEvalRunHistory: (agentId?: string) => useEvalRunHistory(agentId),
+  useRunEval: (agentId?: string) => useRunEval(agentId),
 }));
 
 vi.mock("@/api/queries/ai-agent.queries", () => ({
@@ -101,6 +105,8 @@ describe("BentoEvalPage", () => {
       isError: false,
       isSuccess: false,
     });
+    useEvalRunHistory.mockReturnValue({ data: [], isError: false });
+    useRunEval.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
   });
 
   it("renders the Eval Studio hero and the datasets tab by default", () => {
@@ -188,6 +194,56 @@ describe("BentoEvalPage", () => {
     // ...and saving hands the reviewed rows to the mutation.
     fireEvent.click(screen.getByText("Save reviewed rows"));
     expect(saveMutate).toHaveBeenCalled();
+  });
+
+  it("switches to the runs tab and shows the run-history empty state", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("Runs"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    expect(screen.getByText("No eval runs yet")).toBeInTheDocument();
+  });
+
+  it("drills into a run and shows the per-case breakdown + a failing slot diff", () => {
+    useEvalRunHistory.mockReturnValue({
+      data: [
+        {
+          reportId: "r1",
+          createdAt: "2026-07-07T10:00:00",
+          passed: false,
+          score: 0.5,
+          caseCount: 2,
+          passedCount: 1,
+          baseline: false,
+          regressed: true,
+          pendingReview: false,
+          results: [
+            {
+              caseId: "c1",
+              caseName: "greeting",
+              passed: false,
+              score: 0,
+              expectedOutcome: "CAPTURED",
+              actualOutcome: "ABANDONED",
+              finalNodeId: null,
+              slotDiffs: [
+                { slot: "email", expected: "a@b.com", actual: null, match: false },
+              ],
+              rubricVerdict: "pass",
+              rubricRationale: null,
+              error: null,
+            },
+          ],
+          error: null,
+        },
+      ],
+      isError: false,
+    });
+    renderPage();
+    fireEvent.click(screen.getByText("Runs"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    expect(screen.getByText("regressed")).toBeInTheDocument();
+    expect(screen.getByText("greeting")).toBeInTheDocument();
+    expect(screen.getByText("email")).toBeInTheDocument();
   });
 
   it("shows the calibration panel with kappa metrics once an agent is selected", () => {

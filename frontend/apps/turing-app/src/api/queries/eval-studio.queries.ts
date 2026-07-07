@@ -28,6 +28,34 @@ export function useEvalGraderStacks() {
   });
 }
 
+// ─────────────────────────── T599 run history ───────────────────────────
+
+/** T599 — the agent's eval run history (disabled until an agent is picked). */
+export function useEvalRunHistory(agentId: string | undefined) {
+  return useQuery({
+    queryKey: agentId
+      ? queryKeys.evalStudio.runHistory(agentId)
+      : ["eval-studio", "run-history", "pending"],
+    queryFn: () => service.listRunHistory(agentId as string),
+    enabled: Boolean(agentId),
+  });
+}
+
+/** T599 — run the gate now; refreshes the agent's run history. */
+export function useRunEval(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => service.runEval(agentId as string),
+    onSuccess: () => {
+      if (agentId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.evalStudio.runHistory(agentId),
+        });
+      }
+    },
+  });
+}
+
 // ─────────────────────────── T597 LLM-assisted generation ───────────────────────────
 
 /** T597 — synthesize candidate rows for an agent (draft, not persisted). */

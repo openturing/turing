@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { TurAgentEvalReport } from "@/models/agent/agent-eval.model";
 import type {
   TurEvalAgreement,
   TurEvalCalibration,
@@ -32,6 +33,24 @@ export class TurEvalStudioService {
   /** List reusable grader stacks. */
   async listGraderStacks(): Promise<TurEvalGraderStack[]> {
     const response = await axios.get<TurEvalGraderStack[]>("/eval/grader-stack");
+    return response.data;
+  }
+
+  // ─────────────────────────── T599 run history ───────────────────────────
+
+  /** The agent's eval run history (newest first) with the per-case breakdown. */
+  async listRunHistory(agentId: string): Promise<TurAgentEvalReport[]> {
+    const response = await axios.get<TurAgentEvalReport[]>(
+      `/ai-agent/${agentId}/eval/history`,
+    );
+    return response.data;
+  }
+
+  /** Replay every enabled golden set now and return the fresh report. */
+  async runEval(agentId: string): Promise<TurAgentEvalReport> {
+    const response = await axios.post<TurAgentEvalReport>(
+      `/ai-agent/${agentId}/eval/run`,
+    );
     return response.data;
   }
 

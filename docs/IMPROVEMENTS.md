@@ -2090,10 +2090,7 @@ version they ran against so regression comparisons are honest.
 
 ### XXXIII.14–18 UX, consolidation & scale (T599–T603)
 
-T599 gives eval its own home — an **Eval Studio** bento page (`/bento/eval`):
-datasets, grader stacks, run history, per-case drill-down with the per-grader
-breakdown, the human-review inbox, and a score/regression timeline. The flow-editor
-gate panel shrinks to a status badge that links here. T600 makes grader **stacks**
+T600 makes grader **stacks**
 reusable named templates with weighted aggregation and per-grader thresholds
 (retiring the hardcoded all-must-pass). T601 pays off the platform by folding the
 Block R NL→facet island onto the same model — its scorer becomes a CODE grader and

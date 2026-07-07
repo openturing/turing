@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   IconDatabase,
   IconFlask2,
+  IconHistory,
   IconInbox,
   IconSparkles,
   IconStack2,
@@ -13,14 +14,16 @@ import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.
 import { BentoHero } from "@/components/bento";
 import { BentoEvalGeneratePanel } from "./bento.eval.generate-panel";
 import { BentoEvalReviewInbox } from "./bento.eval.review-inbox";
+import { BentoEvalRunHistory } from "./bento.eval.run-history";
 
-type EvalTab = "datasets" | "generate" | "stacks" | "review";
+type EvalTab = "datasets" | "generate" | "stacks" | "runs" | "review";
 
 /**
  * T599 / §XXXIII.14 — Eval Studio. The bento home for the evaluation platform:
- * the reusable, agent-decoupled assets (datasets + grader stacks). Per-agent run
- * history / per-case drill-down / the review inbox / the score timeline are
- * surfaced iteratively; the flow-editor gate badge links here.
+ * the reusable, agent-decoupled assets (datasets + grader stacks), the
+ * LLM-assisted Generate tab, the per-agent Runs tab (run history + score
+ * timeline + per-case drill-down), and the human-review inbox. The flow-editor
+ * gate badge links here.
  *
  * @since 2026.3.4
  */
@@ -46,6 +49,11 @@ export default function BentoEvalPage() {
       id: "stacks",
       label: t("evalStudio.tabs.stacks", { defaultValue: "Grader stacks" }),
       icon: IconStack2,
+    },
+    {
+      id: "runs",
+      label: t("evalStudio.tabs.runs", { defaultValue: "Runs" }),
+      icon: IconHistory,
     },
     {
       id: "review",
@@ -135,6 +143,8 @@ export default function BentoEvalPage() {
           errorLabel={t("common.connectionError", { resource: "grader stacks" })}
         />
       )}
+
+      {tab === "runs" && <BentoEvalRunHistory />}
 
       {tab === "review" && <BentoEvalReviewInbox />}
     </div>

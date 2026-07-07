@@ -69,6 +69,8 @@ export interface TurAgentEvalReport {
   passedCount: number;
   baseline: boolean;
   regressed: boolean;
+  /** T592 — true when any case deferred to a human grader. */
+  pendingReview?: boolean;
   results: TurAgentEvalCaseResult[];
   error: string | null;
 }

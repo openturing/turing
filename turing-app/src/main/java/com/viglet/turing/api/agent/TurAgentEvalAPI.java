@@ -117,6 +117,13 @@ public class TurAgentEvalAPI {
                         "No eval report yet for agent: " + agentId));
     }
 
+    @Operation(summary = "Agent eval run history (newest first, with the per-case breakdown)")
+    @GetMapping("/history")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public java.util.List<TurAgentEvalReportDto> history(@PathVariable String agentId) {
+        return gateService.history(agentId);
+    }
+
     @Operation(summary = "Pre-publish gate status (rendered in the flow editor Lint panel)")
     @GetMapping("/gate")
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })

@@ -110,6 +110,18 @@ public class TurAgentEvalGateService {
     }
 
     /**
+     * T599 / §XXXIII.14 — the agent's full run history (newest first) for the
+     * Eval Studio's run list, per-case drill-down, and score timeline. Each
+     * report is parsed with its per-case breakdown so the Studio needs no
+     * second round-trip to drill into a run.
+     */
+    public List<TurAgentEvalReportDto> history(String agentId) {
+        return reportRepository.findByTurAIAgent_IdOrderByCreatedAtDesc(agentId).stream()
+                .map(TurAgentEvalGateService::toDto)
+                .toList();
+    }
+
+    /**
      * True when a blocking gate should hard-stop a publish: at least one
      * enabled set is marked blocking AND the latest run is red/regressed.
      */

@@ -133,6 +133,9 @@ export const queryKeys = {
       [...queryKeys.evalStudio.all(), 'agreement', agentId] as const,
     calibration: (agentId: string) =>
       [...queryKeys.evalStudio.all(), 'calibration', agentId] as const,
+    // T599 — per-agent eval run history (timeline + drill-down).
+    runHistory: (agentId: string) =>
+      [...queryKeys.evalStudio.all(), 'run-history', agentId] as const,
   },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,

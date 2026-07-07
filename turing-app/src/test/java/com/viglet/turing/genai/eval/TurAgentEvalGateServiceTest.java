@@ -172,6 +172,34 @@ class TurAgentEvalGateServiceTest {
         assertThat(gateService.shouldBlockPublish(AGENT_ID)).isTrue();
     }
 
+    @Test
+    void history_mapsReportsNewestFirstWithBreakdown() {
+        TurAgentEvalReport older = report(false, false, caseResult("c1", false));
+        older.setId("report-old");
+        older.setCreatedAt(LocalDateTime.parse("2026-06-14T12:00:00"));
+        TurAgentEvalReport newer = report(true, false, caseResult("c1", true));
+        newer.setId("report-new");
+        when(reportRepository.findByTurAIAgent_IdOrderByCreatedAtDesc(AGENT_ID))
+                .thenReturn(List.of(newer, older));
+
+        var history = gateService.history(AGENT_ID);
+
+        assertThat(history).hasSize(2);
+        assertThat(history.get(0).reportId()).isEqualTo("report-new");
+        assertThat(history.get(0).passed()).isTrue();
+        assertThat(history.get(0).results()).hasSize(1);
+        assertThat(history.get(1).reportId()).isEqualTo("report-old");
+        assertThat(history.get(1).passed()).isFalse();
+    }
+
+    @Test
+    void history_emptyWhenNoReports() {
+        when(reportRepository.findByTurAIAgent_IdOrderByCreatedAtDesc(AGENT_ID))
+                .thenReturn(List.of());
+
+        assertThat(gateService.history(AGENT_ID)).isEmpty();
+    }
+
     // ─────────────────────────── Fixtures ───────────────────────────
 
     private static TurAgentEvalSet setWithCase(boolean blocking) {
