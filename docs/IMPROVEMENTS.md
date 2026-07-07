@@ -2274,25 +2274,37 @@ not a second call site.
 > cache breakpoint) shipped** — see CHANGELOG Block AL. The `TurPromptContributor`
 > SPI, the single-pass `TurPromptAssemblyPipeline`, the six built-in contributors,
 > the byte-identical legacy join, the preview rendering the same segments, and the
-> opt-in STABLE-first reorder + `cacheBreakpointIndex` are all in. The subsections
-> that specified them were removed per the "no shipped reports in IMPROVEMENTS"
-> rule. What remains below is the unshipped tail (T615).
+> opt-in STABLE-first reorder + `cacheBreakpointIndex` are all in. **T615 also
+> shipped** — the pre-pipeline concatenation and its
+> `turing.prompt.assembly.pipeline-enabled` escape hatch were deleted, so the
+> pipeline is now the single system-prompt assembly path. The subsections that
+> specified all three were removed per the "no shipped reports in IMPROVEMENTS"
+> rule. What remains below is the unshipped tail (T616).
 
-### XXXV.3 Retire the legacy concatenation entirely (T615, 💭)
+### XXXV.3 Bring memory-T115 / RAG history fan-out behind the SPI (T616, 💭)
 
-T613 already moved persona/base/MCP/capability/skill/flow behind the SPI — adding a
-new prompt source is now "register a `TurPromptContributor`", not "edit a monolith
-+ a parallel rebuild". What is left is deleting the pre-pipeline path that survives
-as the `turing.prompt.assembly.pipeline-enabled=false` escape hatch
-(`TurChatPromptAssembler.buildSystemPromptLegacy` + `TurPersonaPromptComposer.compose`)
-once the pipeline has soaked in production, and moving the two sources still handled
-*outside* the system-message pipeline — chat-memory compression (T115) and the
-history/RAG fan-out into user/assistant messages — behind the SPI too. End state:
-one assembly path, no escape hatch, no parallel rebuild.
+T615 collapsed the system-prompt build to one path: the `TurPromptContributor`
+pipeline. But the turn's *message list* is still assembled in two layers —
+`TurPromptAssemblyPipeline` produces the system message, then
+`TurChatPromptAssembler.assemble` inlines two more sources that fan out into
+`user`/`assistant` messages rather than the system message:
+
+- **Chat-memory compression (T115)** — a single compact summary of the older
+  turn-pool prepended as one synthetic message when the pool exceeds the token
+  threshold.
+- **Conversation-relevance / RAG history retrieval (T30)** — BM25-top-K older
+  turns pinned back into the history ahead of the recent-N window.
+
+These live outside the SPI because today a `TurPromptContributor` emits
+system-text `TurPromptSegment`s, not full `Message`s. The task is to widen the SPI
+so a contributor can emit whole messages (or a message-level sibling interface),
+then move both sources onto it. End state: one assembly path for the *entire*
+message list, and the Live Preview can mirror the full list — not just the system
+message — with the same no-drift guarantee T613 gave the system prompt.
 
 **Design invariants for the block:** foundational + incremental + gated —
 contributors are introduced behind the current assembler and migrated one at a
-time, feature-flagged so the exact current prompt can be restored; the
-empty/default pipeline is byte-identical; reordering (T614) changes what the model
+time, feature-flagged so the exact current message list can be restored; the
+empty/default pipeline is byte-identical; any reordering changes what the model
 sees, so each step re-validates like the flow-heading change did; the preview never
 mutates the assembled prompt (it is a mirror).

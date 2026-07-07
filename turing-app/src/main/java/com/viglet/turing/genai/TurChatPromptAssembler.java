@@ -13,8 +13,6 @@
 
 package com.viglet.turing.genai;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,22 +20,15 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
-import com.viglet.turing.genai.flow.TurChatFlowEngineService;
-import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
 import com.viglet.turing.genai.prompt.TurPromptAssembly;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
-import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
-import com.viglet.turing.genai.tool.TurMcpInstructionsProvider;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -47,9 +38,11 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 /**
  * Composes the {@code List<Message>} that ships to the LLM:
  * <ol>
- *   <li>Fuses the agent / RAG-override base prompt with the flow-engine's
- *       per-node addendum (T31 cached) and the active persona's voice +
- *       constraints + brand-context block (T31 cached).</li>
+ *   <li>Builds the system prompt through the single-pass
+ *       {@link com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline}
+ *       contributor chain (persona voice + constraints + brand-context, agent /
+ *       RAG-override base, MCP, opt-in capabilities, skills, flow addendum) — the
+ *       same segments the Live Preview renders.</li>
  *   <li>Enriches the history with the T30 conversation-relevance retriever
  *       so older turns relevant to the latest user message get pinned into
  *       the prompt.</li>
@@ -59,8 +52,10 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
  *
  * <p>Extracted from {@link TurAgentChatExecutor} in T33. Owns the
  * {@link TurMeterNames#STAGE_CHAT_SETUP_COMPOSE} substage timing — measured
- * around the {@link TurPersonaPromptComposer#compose} call (matches the
- * pre-T33 boundary so dashboards keep reading the same number).
+ * around the system-prompt build (matches the pre-T33 boundary so dashboards
+ * keep reading the same number). T615 retired the pre-pipeline inline
+ * concatenation path and its {@code turing.prompt.assembly.pipeline-enabled}
+ * escape hatch: the pipeline is now the single assembly path.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -69,205 +64,38 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 @Service
 public class TurChatPromptAssembler {
 
-    private final TurChatFlowEngineService chatFlowEngineService;
-    private final TurPersonaPromptComposer personaPromptComposer;
     private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
     private final TurChatMemoryCompressionService chatMemoryCompressionService;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
-    private final TurMcpInstructionsProvider mcpInstructionsProvider;
-    private final TurSkillRunnerService skillRunnerService;
     private final TurPromptAssemblyPipeline promptAssemblyPipeline;
 
-    /**
-     * Block AL / T613 — when {@code true} (default) the system prompt is built by
-     * the {@link TurPromptAssemblyPipeline} contributor chain (byte-identical to
-     * the legacy layout, but the single source of truth the Live Preview also
-     * renders). Set {@code turing.prompt.assembly.pipeline-enabled=false} to fall
-     * back to the historical inline {@link TurPersonaPromptComposer} path — the
-     * escape hatch the block's "exact current prompt can be restored" invariant
-     * requires.
-     */
-    @Value("${turing.prompt.assembly.pipeline-enabled:true}")
-    private boolean pipelineEnabled;
-
-    /**
-     * The rich-content rendering guidance ({@code ```html} live preview /
-     * {@code ```d2} diagrams / Chart.js). Appended to an agent's system prompt
-     * only when {@link TurAIAgent#isRichContentEnabled()} — the same file the
-     * plain-LLM chat ({@code TurLLMChatAPI}) injects unconditionally. Loaded
-     * once at startup.
-     */
-    @Value("classpath:prompts/render.md")
-    private Resource renderPromptResource;
-
-    private String renderPrompt = "";
-
-    /**
-     * T442 / §XXIII.1 — answer-as-an-app guidance teaching the model the built-in
-     * {@code comparison_table} / {@code spec_card} / {@code configurator} client
-     * tools and the search-first, type-driven workflow. Appended only when
-     * {@link TurAIAgent#isAnswerAsAppEnabled()}. Loaded once at startup.
-     */
-    @Value("classpath:prompts/answer-as-app.md")
-    private Resource answerAsAppPromptResource;
-
-    private String answerAsAppPrompt = "";
-
-    /**
-     * T443 / §XXIII.2 — co-browse guidance teaching the model the built-in
-     * {@code set_search_query} / {@code toggle_facet} / {@code clear_facets} /
-     * {@code set_sort} / {@code set_page} client tools that drive the host page's
-     * real search UI. Appended only when {@link TurAIAgent#isCoBrowseEnabled()}.
-     */
-    @Value("classpath:prompts/co-browse.md")
-    private Resource coBrowsePromptResource;
-
-    private String coBrowsePrompt = "";
-
-    /**
-     * T446 / §XXIII.5 — cross-conversation personal-memory guidance teaching the
-     * model the {@code recall_user_memory} / {@code remember_fact} client tools.
-     * Appended only when {@link TurAIAgent#isUserMemoryEnabled()}.
-     */
-    @Value("classpath:prompts/user-memory.md")
-    private Resource userMemoryPromptResource;
-
-    private String userMemoryPrompt = "";
-
-    /**
-     * T450 / §XXIII.9 — action-widget guidance teaching the model the built-in
-     * {@code navigate} / {@code fill_form} / {@code click_element} /
-     * {@code add_to_cart} host-action client tools. Appended only when
-     * {@link TurAIAgent#isActionWidgetEnabled()}.
-     */
-    @Value("classpath:prompts/action-widget.md")
-    private Resource actionWidgetPromptResource;
-
-    private String actionWidgetPrompt = "";
-
-    @PostConstruct
-    void loadRenderPrompt() {
-        try {
-            renderPrompt = renderPromptResource.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.warn("[PromptAssembler] could not load prompts/render.md — rich-content "
-                    + "agents will fall back to the model's own formatting: {}", e.getMessage());
-            renderPrompt = "";
-        }
-        try {
-            answerAsAppPrompt = answerAsAppPromptResource.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.warn("[PromptAssembler] could not load prompts/answer-as-app.md — answer-as-app "
-                    + "agents will fall back to prose: {}", e.getMessage());
-            answerAsAppPrompt = "";
-        }
-        try {
-            coBrowsePrompt = coBrowsePromptResource.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.warn("[PromptAssembler] could not load prompts/co-browse.md — co-browse "
-                    + "agents will fall back to prose: {}", e.getMessage());
-            coBrowsePrompt = "";
-        }
-        try {
-            userMemoryPrompt = userMemoryPromptResource.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.warn("[PromptAssembler] could not load prompts/user-memory.md — user-memory "
-                    + "agents will skip recall/remember guidance: {}", e.getMessage());
-            userMemoryPrompt = "";
-        }
-        try {
-            actionWidgetPrompt = actionWidgetPromptResource.getContentAsString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.warn("[PromptAssembler] could not load prompts/action-widget.md — action-widget "
-                    + "agents will fall back to prose: {}", e.getMessage());
-            actionWidgetPrompt = "";
-        }
-    }
-
-    public TurChatPromptAssembler(TurChatFlowEngineService chatFlowEngineService,
-            TurPersonaPromptComposer personaPromptComposer,
-            TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
+    public TurChatPromptAssembler(TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
             TurChatMemoryCompressionService chatMemoryCompressionService,
             TurChatPipelineObservation chatPipelineObservation,
             TurChatAttachmentService chatAttachmentService,
-            TurMcpInstructionsProvider mcpInstructionsProvider,
-            TurSkillRunnerService skillRunnerService,
             TurPromptAssemblyPipeline promptAssemblyPipeline) {
-        this.chatFlowEngineService = chatFlowEngineService;
-        this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
         this.chatMemoryCompressionService = chatMemoryCompressionService;
         this.chatPipelineObservation = chatPipelineObservation;
         this.chatAttachmentService = chatAttachmentService;
-        this.mcpInstructionsProvider = mcpInstructionsProvider;
-        this.skillRunnerService = skillRunnerService;
         this.promptAssemblyPipeline = promptAssemblyPipeline;
     }
 
     /**
-     * Layer the per-agent capability prompt blocks onto the base system prompt:
-     * MCP server instructions, then the opt-in {@code prompts/render.md}
-     * (rich content), {@code prompts/answer-as-app.md} (T442 generative-UI client
-     * tools), and the skill progressive-disclosure block. Each block is a no-op
-     * for default-off agents, so existing agents are byte-for-byte unchanged.
+     * Block AL / T613 + T615 — build the system prompt through the single-pass
+     * {@link TurPromptAssemblyPipeline}. The contributor chain
+     * ({@code persona → agent-base → MCP → capability → skill → flow}) produces
+     * the same labeled segments the Live Preview renders, so runtime and preview
+     * can never drift. This is now the <em>only</em> assembly path: T615 retired
+     * the pre-pipeline inline concatenation and its
+     * {@code turing.prompt.assembly.pipeline-enabled} escape hatch once the
+     * pipeline had soaked in production. Every prompt source (persona, agent base,
+     * MCP, each opt-in capability block, skills, flow) owns its text in its own
+     * {@code TurPromptContributor}; adding a new source is "register a
+     * contributor", never "edit this class plus a parallel rebuild".
      */
-    private String augmentWithCapabilityPrompts(TurAIAgent agent, String baseSystemPrompt,
-            String selectedSkillId) {
-        // Per-agent MCP server instructions (enabled servers with non-blank
-        // llmInstructions). No-op when the agent has no MCP servers.
-        String augmented = baseSystemPrompt
-                + mcpInstructionsProvider.buildSystemPromptBlock(agent.getMcpServers());
-        // Rich-content rendering opt-in: teach the ```html / ```d2 conventions
-        // the chat client renders natively.
-        if (agent.isRichContentEnabled() && !renderPrompt.isBlank()) {
-            augmented = augmented + "\n\n" + renderPrompt;
-        }
-        // T442 / §XXIII.1 — answer-as-an-app opt-in: teach the built-in
-        // generative-UI client tools (comparison_table / spec_card /
-        // configurator) and the search-first, manifest-type-driven workflow. The
-        // tools are advertised by TurClientToolService when the same flag is on.
-        if (agent.isAnswerAsAppEnabled() && !answerAsAppPrompt.isBlank()) {
-            augmented = augmented + "\n\n" + answerAsAppPrompt;
-        }
-        // T443 / §XXIII.2 — co-browse opt-in: teach the built-in client tools that
-        // drive the host page's real search UI (query / facets / sort / page). The
-        // tools are advertised by TurClientToolService when the same flag is on.
-        if (agent.isCoBrowseEnabled() && !coBrowsePrompt.isBlank()) {
-            augmented = augmented + "\n\n" + coBrowsePrompt;
-        }
-        // T446 / §XXIII.5 — cross-conversation personal memory opt-in: teach the
-        // recall_user_memory / remember_fact client tools (advertised by
-        // TurUserMemoryClientTools when the same flag is on).
-        if (agent.isUserMemoryEnabled() && !userMemoryPrompt.isBlank()) {
-            augmented = augmented + "\n\n" + userMemoryPrompt;
-        }
-        // T450 / §XXIII.9 — action-widget opt-in: teach the host-action client
-        // tools (navigate / fill_form / click_element / add_to_cart) advertised by
-        // TurActionWidgetClientTools when the same flag is on.
-        if (agent.isActionWidgetEnabled() && !actionWidgetPrompt.isBlank()) {
-            augmented = augmented + "\n\n" + actionWidgetPrompt;
-        }
-        // T323 / §IX.4.d — skill delegation: append the cheap progressive-
-        // disclosure block (each enabled skill's name + description) and the
-        // run_skill instruction when skills are enabled AND the delegation layer
-        // is available. T325 — honour an optional single-skill pin.
-        if (agent.isSkillsEnabled() && skillRunnerService.isAvailable()) {
-            augmented = augmented
-                    + skillRunnerService.buildSystemPromptBlock(
-                            skillRunnerService.offeredSkills(selectedSkillId));
-        }
-        return augmented;
-    }
-
-    /**
-     * Block AL / T613 — build the system prompt through the single-pass
-     * {@link TurPromptAssemblyPipeline}. The contributor chain produces the same
-     * labeled segments the Live Preview renders, so runtime and preview can never
-     * drift. In the default (legacy) ordering mode the joined text is
-     * byte-identical to {@link #buildSystemPromptLegacy}.
-     */
-    private String buildSystemPromptViaPipeline(TurChatPromptRequest request, String selectedSkillId) {
+    private String buildSystemPrompt(TurChatPromptRequest request, String selectedSkillId) {
         TurAIAgent agent = request.agent();
         TurPromptAssemblyContext context = new TurPromptAssemblyContext(
                 agent,
@@ -279,32 +107,6 @@ public class TurChatPromptAssembler {
                 selectedSkillId);
         TurPromptAssembly assembly = promptAssemblyPipeline.assemble(context);
         return assembly.systemText();
-    }
-
-    /**
-     * Escape-hatch path (pre-Block-AL): the historical inline concatenation —
-     * capability augmentation, then the flow addendum, then the persona wrap via
-     * {@link TurPersonaPromptComposer#compose}. Retained so
-     * {@code turing.prompt.assembly.pipeline-enabled=false} restores the exact
-     * legacy prompt.
-     */
-    private String buildSystemPromptLegacy(TurChatPromptRequest request, String selectedSkillId) {
-        TurAIAgent agent = request.agent();
-        TurAgentChatFlowContext flowContext = request.flowContext();
-        String mcpAugmented = augmentWithCapabilityPrompts(agent, request.baseSystemPrompt(), selectedSkillId);
-        String flowAugmented = flowContext == null
-                ? mcpAugmented
-                : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(
-                        flowContext.flow(), flowContext.state(), flowContext.graph());
-        // Fuse the persona on top of everything: its instruction + style
-        // guidelines + vocabulary constraints + brand-context hint + few-shot
-        // examples wrap the (already RAG-augmented) base prompt. No-op when the
-        // effective persona is null.
-        return personaPromptComposer.compose(
-                request.effectivePersona(),
-                agent.getTurEmbeddingModelInstance(),
-                request.lastUserMessage(),
-                flowAugmented);
     }
 
     /**
@@ -348,9 +150,7 @@ public class TurChatPromptAssembler {
         String conversationId = request.conversationId();
         String lastUserMessage = request.lastUserMessage();
         long t0 = System.currentTimeMillis();
-        String resolvedSystemPrompt = pipelineEnabled
-                ? buildSystemPromptViaPipeline(request, selectedSkillId)
-                : buildSystemPromptLegacy(request, selectedSkillId);
+        String resolvedSystemPrompt = buildSystemPrompt(request, selectedSkillId);
         long elapsed = System.currentTimeMillis() - t0;
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_COMPOSE, elapsed);
 

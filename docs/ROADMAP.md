@@ -309,7 +309,7 @@ fully shipped.**
 > model sees, so each step re-validates like the T607-era flow-heading change.
 > Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXV.
 
-- 💭 **T615** (deps: T613) **Retire the legacy concatenation entirely** — T613 already moved persona/base/MCP/capability/skill/flow behind the `TurPromptContributor` SPI (adding a new source is now "register a contributor"), but the pre-pipeline path survives as the `turing.prompt.assembly.pipeline-enabled=false` escape hatch (`TurChatPromptAssembler.buildSystemPromptLegacy` + `TurPersonaPromptComposer.compose`). Once the pipeline has soaked in production, delete that path (and migrate memory-T115 / RAG, still handled outside the system-message pipeline, to contributors too). → §XXXV.3
+- 💭 **T616** (deps: T615) **Bring memory-T115 / RAG history fan-out behind the SPI** — T615 retired the system-message escape hatch, but two prompt sources still live *outside* the assembly pipeline because they fan out into user/assistant messages rather than the system message: chat-memory compression (T115) and the conversation-relevance / RAG history retrieval, both still assembled inline in `TurChatPromptAssembler.assemble`. Extend the contributor SPI to emit full `Message`s (not just system-text segments) so these become contributors too — end state: one assembly path with the preview able to mirror the whole message list. Gated + incremental per §XXXV design invariants. → §XXXV.3
 
 ## Non-goals (do NOT add as tasks)
 

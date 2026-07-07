@@ -1,7 +1,7 @@
-# Last task number — `T615`
+# Last task number — `T616`
 
 > **Single source of truth for the next free task number.** The next new task is
-> `T616`; after assigning it, bump the number above and the log line below.
+> `T617`; after assigning it, bump the number above and the log line below.
 >
 > **Note (2026-06-16):** `T380` is an intentional **free gap** — Block R was
 > created as `T381–T385` without bumping this counter (the exact hazard this file
@@ -27,6 +27,7 @@ number" looked free but wasn't. Grepping three files (`ROADMAP.md`,
 
 ## Log (most recent first)
 
+- **T615 SHIPPED** (Block AL) — 2026-07-06. Retired the pre-pipeline system-prompt concatenation and its `turing.prompt.assembly.pipeline-enabled` escape hatch. `TurChatPromptAssembler` dropped `buildSystemPromptLegacy` + `augmentWithCapabilityPrompts`, the five capability-prompt `@Value` resources + `@PostConstruct` loader (owned by `TurCapabilityPromptContributor`), and the flow/persona/MCP/skill collaborators — `TurPromptAssemblyPipeline` is now the single assembly path. Assembled output unchanged (byte-identical legacy layout default), so no runtime re-validation; `TurPromptAssemblyPipelineTest` untouched/green. `TurPersonaPromptComposer` kept (still used by `TurMcpPromptConfig` + persona contributor `fewShotBlock`). **T616 assigned** for the remaining tail (memory-T115 / RAG history fan-out behind the SPI as messages). → CHANGELOG Block AL / IMPROVEMENTS §XXXV.3.
 - **T611 SHIPPED** (Block AK) — 2026-07-06. Node picker + simulated variables in the Live Preview. Preview endpoint takes optional `nodeId` + `vars` (JSON collected values); `TurSystemPromptPreviewService` seeds the synthesized flow state (invalid JSON → `{}`), so the addendum's "Already collected" line reflects a real mid-conversation turn; upstream persona overrides still captured. DTO exposes `flowNodes` + `selectedNodeId`; UI adds a node selector + add/remove key-value editor (remounted per flow). Per-turn inspector, not per-flow. en/pt i18n. No new task number. **Block AK committed scope (T607–T611) COMPLETE; T612 remains 💭.** → CHANGELOG Block AK / IMPROVEMENTS §XXXIV.
 - **T610 SHIPPED** (Block AK) — 2026-07-06. Cross-segment redundancy & contradiction lint. `TurSystemPromptValidatorService` now compares the assembled segments (persona/agent/MCP/active-flow, from the preview's own segments) against each other: `cross_segment_redundancy` (WARNING) flags a normalized rule-line repeated across ≥2 segments + wasted tokens; `cross_segment_contradiction` (ERROR) flags a directive core (polarity/fillers stripped, EN/PT) affirmative in one segment and negated in another. Deterministic/fast; semantic contradictions stay the deepCheck's job. en/pt i18n. No new task number. → CHANGELOG Block AK / IMPROVEMENTS §XXXIV.
 - **T609 SHIPPED** (Block AK) — 2026-07-06. "Inert this turn" detection. New `TurInertRegionDetector` flags agent-prompt heading sections a governing flow neutralizes — heuristic (EN/PT welcome/first-interaction/menu/routing headings, flow-active only) + author markers (`<!-- turing:concierge-only -->` / `<!-- turing:flow-only -->`, precedence). Regions (label/offsets/tokens/reason) ride on the AGENT segment DTO; Live Preview slices + dims those spans with a token-cost tag. Advisory/read-only. `TurInertRegionDetectorTest` (6). No new task number. → CHANGELOG Block AK / IMPROVEMENTS §XXXIV.

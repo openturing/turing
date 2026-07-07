@@ -112,7 +112,11 @@ class TurPromptAssemblyPipelineTest {
         return new TurPromptAssemblyContext(agent, p, null, null, base, flow, null);
     }
 
-    /** Replicates TurChatPromptAssembler.buildSystemPromptLegacy for the comparison. */
+    /**
+     * Replicates the historical {@code TurPersonaPromptComposer}-based
+     * concatenation (retired from the runtime in T615) so the pipeline's legacy
+     * ordering can still be pinned byte-for-byte against it.
+     */
     private String legacy(TurPersona p, String base, boolean withMcp, boolean withSkill,
             TurAgentChatFlowContext flow) {
         String mcp = withMcp ? MCP : "";
