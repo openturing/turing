@@ -2223,13 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.5 Node picker + simulated variables (T611)
-
-Today the preview only shows the flow *entry* node with empty state. Let the
-operator pick any node and supply collected slot values, so the "Already
-collected: {…}" line and the next-step hint reflect a real mid-conversation turn.
-This makes it a per-*turn* inspector rather than a per-*flow* one.
-
 ### XXXIV.6 Replay the actual assembled prompt (T612, 💭)
 
 The ultimate ground truth: instead of synthesizing an entry-turn, capture and

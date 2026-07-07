@@ -67,8 +67,10 @@ public class TurAgentSystemPromptAPI {
     @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto preview(@PathVariable String id,
-            @RequestParam(required = false) String flowId) {
-        return previewService.buildPreview(requireAgent(id), flowId);
+            @RequestParam(required = false) String flowId,
+            @RequestParam(required = false) String nodeId,
+            @RequestParam(required = false) String vars) {
+        return previewService.buildPreview(requireAgent(id), flowId, nodeId, vars);
     }
 
     @Operation(summary = "Fast heuristic validation of the system prompt for conflicts")

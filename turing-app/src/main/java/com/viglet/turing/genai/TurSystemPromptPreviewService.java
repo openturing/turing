@@ -28,6 +28,7 @@ import com.viglet.turing.genai.prompt.TurPromptAssembly;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptSegment;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowNodeDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowOptionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptInertRegionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
@@ -44,6 +45,9 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Builds a legible, segmented preview of the system prompt an AI Agent sends to
@@ -100,7 +104,7 @@ public class TurSystemPromptPreviewService {
     /** Convenience overload — previews the default flow (first enabled). */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent) {
-        return buildPreviewInternal(agent, null);
+        return buildPreviewInternal(agent, null, null, null);
     }
 
     /**
@@ -111,10 +115,25 @@ public class TurSystemPromptPreviewService {
      */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent, String flowId) {
-        return buildPreviewInternal(agent, flowId);
+        return buildPreviewInternal(agent, flowId, null, null);
     }
 
-    private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId) {
+    /**
+     * T611 — compose the preview for a specific mid-conversation turn: the
+     * {@code nodeId} node of the selected flow governs (instead of the entry
+     * anchor) and {@code variablesJson} seeds the collected slot values, so the
+     * flow addendum's "Already collected" line + next-step hint reflect a real
+     * turn. Blank/unknown {@code nodeId} falls back to the entry anchor;
+     * invalid {@code variablesJson} falls back to empty state.
+     */
+    @Transactional(readOnly = true)
+    public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent, String flowId,
+            String nodeId, String variablesJson) {
+        return buildPreviewInternal(agent, flowId, nodeId, variablesJson);
+    }
+
+    private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId,
+            String nodeId, String variablesJson) {
         boolean usesDefault = !StringUtils.hasText(agent.getSystemPrompt());
         String base = usesDefault ? DEFAULT_SYSTEM_PROMPT.strip() : agent.getSystemPrompt();
 
@@ -124,10 +143,11 @@ public class TurSystemPromptPreviewService {
                 .toList();
         TurChatFlow selectedFlow = resolveSelectedFlow(flows, flowId);
 
-        // Synthesize the selected flow's entry-node state so the pipeline's flow
-        // contributor produces the exact addendum the runtime would at that node
-        // — no separate lookalike build.
-        FlowPreview flowPreview = selectedFlow == null ? null : buildFlowPreview(agent, selectedFlow);
+        // Synthesize the selected flow's node state (T611: the picked nodeId +
+        // simulated collected variables, or the entry anchor) so the pipeline's
+        // flow contributor produces the exact addendum the runtime would there.
+        FlowPreview flowPreview = selectedFlow == null
+                ? null : buildFlowPreview(agent, selectedFlow, nodeId, variablesJson);
         TurAgentChatFlowContext flowContext = flowPreview == null ? null : flowPreview.context();
 
         // T607 — resolve the persona the way the runtime does: a persona-type
@@ -174,7 +194,9 @@ public class TurSystemPromptPreviewService {
         return new TurSystemPromptPreviewDto(segments, buildTools(agent), assembly.systemText(),
                 flowOptions, selectedFlow == null ? null : selectedFlow.getId(),
                 assembly.totalTokens(), assembly.stableTokens(), assembly.cacheBreakpointIndex(),
-                estimatedCostUsd, costModelName);
+                estimatedCostUsd, costModelName,
+                flowPreview == null ? List.of() : flowPreview.flowNodes(),
+                flowPreview == null ? null : flowPreview.nodeId());
     }
 
     /** The agent's first enabled LLM instance, or {@code null} when none. */
@@ -263,7 +285,8 @@ public class TurSystemPromptPreviewService {
     }
 
     private record FlowPreview(TurAgentChatFlowContext context, String nodeId,
-            FlowPersonaResolution personaResolution) {
+            FlowPersonaResolution personaResolution,
+            List<TurSystemPromptFlowNodeDto> flowNodes) {
     }
 
     /**
@@ -297,6 +320,9 @@ public class TurSystemPromptPreviewService {
     /** Guards the transparent-node walk against a pathological/looping flow. */
     private static final int TRANSPARENT_WALK_MAX = 32;
 
+    /** Validates operator-supplied preview variables (T611); read-only. */
+    private static final ObjectMapper VARS_MAPPER = new ObjectMapper();
+
     /**
      * Transparent node types the preview linearly follows (first outgoing edge)
      * while walking to the entry anchor. {@code persona} is handled separately
@@ -309,28 +335,102 @@ public class TurSystemPromptPreviewService {
             "functionCall", "webhook", "scheduleAgent");
 
     /**
-     * Synthesizes the selected flow's entry-node runtime context so the pipeline
-     * flow contributor renders the addendum exactly as the runtime would, and
-     * resolves the flow-aware persona (T607). Returns {@code null} when the flow
-     * can't be parsed or has no interactive anchor.
+     * Synthesizes the selected flow's node runtime context so the pipeline flow
+     * contributor renders the addendum exactly as the runtime would, and resolves
+     * the flow-aware persona (T607). T611: when {@code nodeId} names a node in the
+     * flow, that node governs (with {@code variablesJson} as its collected state)
+     * instead of the entry anchor. Returns {@code null} when the flow can't be
+     * parsed or has no anchor.
      */
-    private FlowPreview buildFlowPreview(TurAIAgent agent, TurChatFlow flow) {
+    private FlowPreview buildFlowPreview(TurAIAgent agent, TurChatFlow flow,
+            String nodeId, String variablesJson) {
         Optional<ChatFlowGraph> graphOpt = chatFlowEngineService.parseGraph(flow);
         if (graphOpt.isEmpty()) {
             return null;
         }
         ChatFlowGraph graph = graphOpt.get();
-        FlowWalk walk = walkToAnchor(graph);
-        if (walk.anchor() == null) {
+
+        ChatFlowNode anchor;
+        String personaOverrideId;
+        Optional<ChatFlowNode> picked = StringUtils.hasText(nodeId)
+                ? graph.nodeById(nodeId) : Optional.empty();
+        if (picked.isPresent()) {
+            anchor = picked.get();
+            personaOverrideId = personaOverrideUpTo(graph, nodeId);
+        } else {
+            FlowWalk walk = walkToAnchor(graph);
+            anchor = walk.anchor();
+            personaOverrideId = walk.personaOverrideId();
+        }
+        if (anchor == null) {
             return null;
         }
+
         TurChatFlowState state = new TurChatFlowState();
         state.setFlow(flow);
-        state.setCurrentNodeId(walk.anchor().id());
-        state.setVariablesJson("{}");
-        FlowPersonaResolution personaResolution = resolvePersona(agent, walk.personaOverrideId());
+        state.setCurrentNodeId(anchor.id());
+        state.setVariablesJson(sanitizeVariablesJson(variablesJson));
+        FlowPersonaResolution personaResolution = resolvePersona(agent, personaOverrideId);
         return new FlowPreview(new TurAgentChatFlowContext(flow, graph, state, false),
-                walk.anchor().id(), personaResolution);
+                anchor.id(), personaResolution, buildFlowNodes(graph));
+    }
+
+    /** The pickable nodes of a flow (excludes structural start/end), for the UI. */
+    private static List<TurSystemPromptFlowNodeDto> buildFlowNodes(ChatFlowGraph graph) {
+        List<TurSystemPromptFlowNodeDto> nodes = new ArrayList<>();
+        for (ChatFlowNode node : graph.nodes()) {
+            if (node == null || "start".equals(node.type()) || "end".equals(node.type())) {
+                continue;
+            }
+            String label = StringUtils.hasText(node.label()) ? node.label() : node.id();
+            nodes.add(new TurSystemPromptFlowNodeDto(node.id(), label, node.type()));
+        }
+        return nodes;
+    }
+
+    /**
+     * Walks the graph from start following first edges until it reaches
+     * {@code targetId}, capturing the last {@code persona}-node override on the
+     * way — so a mid-conversation node picked by the operator (T611) still
+     * reflects a persona switch upstream of it. Best-effort: an override off the
+     * first-edge path isn't captured.
+     */
+    private static String personaOverrideUpTo(ChatFlowGraph graph, String targetId) {
+        Optional<ChatFlowNode> startOpt = graph.startNode();
+        if (startOpt.isEmpty()) {
+            return null;
+        }
+        String override = null;
+        Set<String> visited = new HashSet<>();
+        visited.add(startOpt.get().id());
+        ChatFlowNode node = firstTarget(graph, startOpt.get()).orElse(null);
+        int hops = 0;
+        while (node != null && hops < TRANSPARENT_WALK_MAX && visited.add(node.id())) {
+            if ("persona".equals(node.type()) && StringUtils.hasText(node.personaId())) {
+                override = node.personaId();
+            }
+            if (node.id().equals(targetId)) {
+                break;
+            }
+            node = firstTarget(graph, node).orElse(null);
+            hops++;
+        }
+        return override;
+    }
+
+    /** Passes through a valid JSON object; falls back to empty state otherwise. */
+    private static String sanitizeVariablesJson(String variablesJson) {
+        if (!StringUtils.hasText(variablesJson)) {
+            return "{}";
+        }
+        try {
+            JsonNode node = VARS_MAPPER.readTree(variablesJson);
+            return node != null && node.isObject() ? variablesJson : "{}";
+        } catch (JacksonException e) {
+            log.debug("[SystemPrompt] preview variablesJson not parseable, using empty state: {}",
+                    e.getMessage());
+            return "{}";
+        }
     }
 
     /**

@@ -61,6 +61,13 @@ export interface TurSystemPromptFlowOption {
   enabled: boolean;
 }
 
+/** A flow node the operator can pick in the preview's node selector (T611). */
+export interface TurSystemPromptFlowNode {
+  id: string;
+  label: string;
+  type: string;
+}
+
 /** Full Live Preview payload. */
 export interface TurSystemPromptPreview {
   segments: TurSystemPromptSegment[];
@@ -78,6 +85,10 @@ export interface TurSystemPromptPreview {
   estimatedCostUsd: number;
   /** Block AK/T608 — model the cost estimate is based on, or null. */
   costModelName: string | null;
+  /** Block AK/T611 — the selected flow's nodes, for the node picker; empty when no flow. */
+  flowNodes: TurSystemPromptFlowNode[];
+  /** Block AK/T611 — the flow node this preview rendered, or null when no flow. */
+  selectedNodeId: string | null;
 }
 
 /** Sentinel flowId for "preview a turn with no chat flow governing". */

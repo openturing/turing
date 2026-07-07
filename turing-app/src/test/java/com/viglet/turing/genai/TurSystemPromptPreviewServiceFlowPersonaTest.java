@@ -11,6 +11,7 @@ package com.viglet.turing.genai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,7 +28,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.genai.TurSystemPromptPreviewService.FlowPersonaDiagnostic;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.prompt.TurPromptAssembly;
+import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.persona.TurPersona;
@@ -157,5 +162,60 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
         TurAIAgent agent = agentWith(persona("p-marina", "Marina", TurPersonaKind.SPEAKER));
 
         assertThat(service.diagnoseFlowPersonas(agent)).isEmpty();
+    }
+
+    /** start → aiQuestion(n2) → aiQuestion(n3) — for the T611 node picker. */
+    private static ChatFlowGraph twoQuestionGraph() throws Exception {
+        String json = """
+                {
+                  "nodes": [
+                    {"id": "n1", "type": "start", "data": {}},
+                    {"id": "n2", "type": "aiQuestion", "data": {"label": "Ask cargo", "aiInstruction": "Ask the role"}},
+                    {"id": "n3", "type": "aiQuestion", "data": {"label": "Ask goal", "aiInstruction": "Ask the goal"}}
+                  ],
+                  "edges": [
+                    {"id": "e1", "source": "n1", "target": "n2"},
+                    {"id": "e2", "source": "n2", "target": "n3"}
+                  ]
+                }
+                """;
+        return MAPPER.readValue(json, ChatFlowGraph.class);
+    }
+
+    @Test
+    void nodePickerAndVariablesSeedTheFlowState() throws Exception {
+        TurChatFlow flow = stubSingleFlow(twoQuestionGraph(), "Concierge");
+        TurAIAgent agent = agentWith();
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+
+        TurSystemPromptPreviewDto dto = service.buildPreview(agent, flow.getId(), "n3",
+                "{\"cargo\":\"developer\"}");
+
+        ArgumentCaptor<TurPromptAssemblyContext> captor =
+                ArgumentCaptor.forClass(TurPromptAssemblyContext.class);
+        verify(promptAssemblyPipeline).assemble(captor.capture());
+        var flowContext = captor.getValue().flowContext();
+        assertThat(flowContext).isNotNull();
+        assertThat(flowContext.state().getCurrentNodeId()).isEqualTo("n3");
+        assertThat(flowContext.state().getVariablesJson()).contains("cargo").contains("developer");
+
+        assertThat(dto.selectedNodeId()).isEqualTo("n3");
+        assertThat(dto.flowNodes()).extracting(n -> n.id()).containsExactly("n2", "n3");
+    }
+
+    @Test
+    void invalidVariablesJsonFallsBackToEmptyState() throws Exception {
+        TurChatFlow flow = stubSingleFlow(twoQuestionGraph(), "Concierge");
+        TurAIAgent agent = agentWith();
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+
+        service.buildPreview(agent, flow.getId(), "n2", "not-json");
+
+        ArgumentCaptor<TurPromptAssemblyContext> captor =
+                ArgumentCaptor.forClass(TurPromptAssemblyContext.class);
+        verify(promptAssemblyPipeline).assemble(captor.capture());
+        assertThat(captor.getValue().flowContext().state().getVariablesJson()).isEqualTo("{}");
     }
 }

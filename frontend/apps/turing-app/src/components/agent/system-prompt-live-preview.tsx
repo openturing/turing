@@ -15,10 +15,21 @@ import {
   type TurSystemPromptSegment,
   type TurSystemPromptTool,
 } from "@/models/agent/system-prompt.model";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { IconClipboard, IconClock, IconCoin, IconDatabase, IconSitemap, IconTool } from "@tabler/icons-react";
+import {
+  IconClipboard,
+  IconClock,
+  IconCoin,
+  IconDatabase,
+  IconPlus,
+  IconRoute,
+  IconSitemap,
+  IconTool,
+  IconX,
+} from "@tabler/icons-react";
 import { toast } from "@viglet/viglet-design-system";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,6 +59,11 @@ interface Props {
   /** Current flow-selector state (undefined → backend default). */
   readonly flowId: string | undefined;
   readonly onFlowChange: (value: string) => void;
+  /** T611 — the picked flow node (undefined = entry node). */
+  readonly nodeId?: string | undefined;
+  readonly onNodeChange?: (nodeId: string | undefined) => void;
+  /** T611 — serialized simulated collected values ({} JSON), or undefined. */
+  readonly onVarsChange?: (vars: string | undefined) => void;
   /**
    * Render the article's own masthead (H1 title + description lede). The console
    * page has no page header, so it needs one; the bento page already supplies a
@@ -56,6 +72,9 @@ interface Props {
    */
   readonly showHeader?: boolean;
 }
+
+/** Node-picker sentinel meaning "the flow's entry node" (clears nodeId). */
+const NODE_ENTRY = "__entry__";
 
 /** Tailwind accent classes per origin — accent bar, hover tint, badge, legend dot. */
 const ORIGIN_STYLE: Record<
@@ -110,7 +129,16 @@ const LEGEND_ORDER: TurSystemPromptOrigin[] = [
   "RAG",
 ];
 
-export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChange, showHeader = true }: Props) {
+export function SystemPromptLivePreview({
+  preview,
+  isLoading,
+  flowId,
+  onFlowChange,
+  nodeId,
+  onNodeChange,
+  onVarsChange,
+  showHeader = true,
+}: Props) {
   const { t } = useTranslation();
 
   function originLabel(origin: TurSystemPromptOrigin): string {
@@ -195,6 +223,31 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
                 ))}
               </SelectContent>
             </Select>
+            {/* T611 — node picker: preview any node's turn, not just the entry. */}
+            {onNodeChange && preview.flowNodes.length > 0 && (
+              <>
+                <IconRoute className="size-4 text-muted-foreground" />
+                <Select
+                  value={nodeId ?? NODE_ENTRY}
+                  onValueChange={(v) => onNodeChange(v === NODE_ENTRY ? undefined : v)}
+                >
+                  <SelectTrigger className="w-full sm:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NODE_ENTRY}>
+                      {t("aiAgent.systemPrompt.preview.nodeEntry", { defaultValue: "Entry node (default)" })}
+                    </SelectItem>
+                    {preview.flowNodes.map((node) => (
+                      <SelectItem key={node.id} value={node.id}>
+                        {node.label}
+                        <span className="text-muted-foreground"> · {node.type}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
         ) : (
           <span />
@@ -210,6 +263,12 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
           </button>
         )}
       </div>
+
+      {/* T611 — simulated collected values: seed slots to preview a real
+          mid-conversation turn (the "Already collected" line reflects them). */}
+      {onVarsChange && preview && preview.flowNodes.length > 0 && (
+        <SimulatedVariablesEditor key={flowValue} onVarsChange={onVarsChange} />
+      )}
 
       {/* Legend — persistent color key so the origin coding reads even without hover */}
       {!isLoading && presentOrigins.length > 0 && (
@@ -281,6 +340,79 @@ export function SystemPromptLivePreview({ preview, isLoading, flowId, onFlowChan
           )}
         </article>
       )}
+    </div>
+  );
+}
+
+/**
+ * T611 — a key/value editor for the collected slot values fed into the previewed
+ * turn. Serializes non-empty rows to a JSON object and hands it up via
+ * `onVarsChange`, so the flow addendum's "Already collected" line + next-step
+ * hint reflect a real mid-conversation state. Remounted (keyed by flow) so the
+ * simulated state resets when the operator switches flows.
+ */
+function SimulatedVariablesEditor({
+  onVarsChange,
+}: Readonly<{ onVarsChange: (vars: string | undefined) => void }>) {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<Array<{ key: string; value: string }>>([]);
+
+  function push(next: Array<{ key: string; value: string }>) {
+    setRows(next);
+    const obj: Record<string, string> = {};
+    for (const r of next) {
+      const k = r.key.trim();
+      if (k) obj[k] = r.value;
+    }
+    onVarsChange(Object.keys(obj).length > 0 ? JSON.stringify(obj) : undefined);
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border bg-muted/20 px-3 py-2">
+      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <IconRoute className="size-3.5" />
+        {t("aiAgent.systemPrompt.preview.simulatedValues", {
+          defaultValue: "Simulated collected values",
+        })}
+      </div>
+      <div className="space-y-1.5">
+        {rows.map((row, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <Input
+              value={row.key}
+              onChange={(e) =>
+                push(rows.map((r, i) => (i === idx ? { ...r, key: e.target.value } : r)))
+              }
+              placeholder={t("aiAgent.systemPrompt.preview.slotName", { defaultValue: "slot name" })}
+              className="h-8 w-40 text-xs"
+            />
+            <Input
+              value={row.value}
+              onChange={(e) =>
+                push(rows.map((r, i) => (i === idx ? { ...r, value: e.target.value } : r)))
+              }
+              placeholder={t("aiAgent.systemPrompt.preview.slotValue", { defaultValue: "value" })}
+              className="h-8 flex-1 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => push(rows.filter((_, i) => i !== idx))}
+              className="rounded-md p-1 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+              aria-label={t("common.remove", { defaultValue: "Remove" })}
+            >
+              <IconX className="size-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => push([...rows, { key: "", value: "" }])}
+        className="mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+      >
+        <IconPlus className="size-3.5" />
+        {t("aiAgent.systemPrompt.preview.addValue", { defaultValue: "Add value" })}
+      </button>
     </div>
   );
 }

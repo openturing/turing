@@ -136,7 +136,12 @@
         "perTurnTokens": "{{count}} por turno",
         "estimatedCost": "≈ {{cost}}/turno",
         "tokensApprox": "aproximado",
-        "inertThisTurn": "inerte neste turno"
+        "inertThisTurn": "inerte neste turno",
+        "nodeEntry": "Nó de entrada (padrão)",
+        "simulatedValues": "Valores coletados simulados",
+        "slotName": "nome do slot",
+        "slotValue": "valor",
+        "addValue": "Adicionar valor"
       },
       "warnings": {
         "title": "Checagem de conflitos",

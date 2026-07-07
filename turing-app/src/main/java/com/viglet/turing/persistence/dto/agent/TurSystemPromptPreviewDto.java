@@ -45,6 +45,11 @@ import java.util.List;
  * @param costModelName  Block AK / T608 — the model the cost estimate is based
  *                       on (the resolved LLM instance's model), or {@code null}
  *                       when no instance/price could be resolved.
+ * @param flowNodes      Block AK / T611 — the selected flow's nodes, for the
+ *                       preview's node picker; empty when no flow governs.
+ * @param selectedNodeId Block AK / T611 — the flow node this preview rendered
+ *                       (the picked node, or the resolved entry anchor), or
+ *                       {@code null} when no flow governs.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -59,7 +64,13 @@ public record TurSystemPromptPreviewDto(
         int stableTokens,
         int cacheBreakpointIndex,
         double estimatedCostUsd,
-        String costModelName) {
+        String costModelName,
+        List<TurSystemPromptFlowNodeDto> flowNodes,
+        String selectedNodeId) {
+
+    public TurSystemPromptPreviewDto {
+        flowNodes = flowNodes == null ? List.of() : flowNodes;
+    }
 
     /** Back-compat convenience for the pre-Block-AL 5-arg call sites. */
     public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
@@ -75,5 +86,16 @@ public record TurSystemPromptPreviewDto(
             int totalTokens, int stableTokens, int cacheBreakpointIndex) {
         this(segments, tools, assembledText, flows, selectedFlowId,
                 totalTokens, stableTokens, cacheBreakpointIndex, 0.0, null);
+    }
+
+    /** Back-compat convenience for the T608 10-arg call sites (no node picker). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex,
+            double estimatedCostUsd, String costModelName) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, estimatedCostUsd, costModelName,
+                List.of(), null);
     }
 }

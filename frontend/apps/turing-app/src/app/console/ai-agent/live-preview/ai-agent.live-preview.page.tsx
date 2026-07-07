@@ -21,7 +21,18 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
   // Which chat flow governs the preview (undefined → backend default = first
   // enabled flow). Drives the segment breakdown and the assembled prompt.
   const [flowId, setFlowId] = useState<string | undefined>(undefined);
-  const { data: preview, isLoading } = useSystemPromptPreview(id, flowId);
+  // T611 — which flow node governs (undefined → entry node) + simulated
+  // collected slot values (JSON string) for a mid-conversation preview.
+  const [nodeId, setNodeId] = useState<string | undefined>(undefined);
+  const [vars, setVars] = useState<string | undefined>(undefined);
+  const { data: preview, isLoading } = useSystemPromptPreview(id, flowId, nodeId, vars);
+
+  // Switching flows invalidates the picked node (node ids are per-flow).
+  function handleFlowChange(value: string) {
+    setFlowId(value);
+    setNodeId(undefined);
+    setVars(undefined);
+  }
 
   return (
     <div className="space-y-4 px-4 lg:px-6 py-2 pb-8">
@@ -29,7 +40,10 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
         preview={preview}
         isLoading={isLoading}
         flowId={flowId}
-        onFlowChange={setFlowId}
+        onFlowChange={handleFlowChange}
+        nodeId={nodeId}
+        onNodeChange={setNodeId}
+        onVarsChange={setVars}
         // In bento the hero already shows the "Live Preview" title and reuses
         // this description as its subtitle, so suppress the article's masthead.
         showHeader={chrome !== "bento"}
