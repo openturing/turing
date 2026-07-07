@@ -106,6 +106,7 @@ public class TurChatStreamingDispatcher {
     private final TurClientToolParkRegistry clientToolParkRegistry;
     private final TurAnswerGuardrailService answerGuardrailService;
     private final TurSecondOpinionService secondOpinionService;
+    private final com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService;
 
     public TurChatStreamingDispatcher(TurLlmModelFactory llmModelFactory,
             TurLLMTokenUsageService tokenUsageService,
@@ -120,7 +121,8 @@ public class TurChatStreamingDispatcher {
             com.viglet.turing.genai.clienttool.TurClientToolService clientToolService,
             TurClientToolParkRegistry clientToolParkRegistry,
             TurAnswerGuardrailService answerGuardrailService,
-            TurSecondOpinionService secondOpinionService) {
+            TurSecondOpinionService secondOpinionService,
+            com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService) {
         this.llmModelFactory = llmModelFactory;
         this.tokenUsageService = tokenUsageService;
         this.personaToneValidator = personaToneValidator;
@@ -135,6 +137,7 @@ public class TurChatStreamingDispatcher {
         this.clientToolParkRegistry = clientToolParkRegistry;
         this.answerGuardrailService = answerGuardrailService;
         this.secondOpinionService = secondOpinionService;
+        this.promptCaptureService = promptCaptureService;
     }
 
     /**
@@ -165,6 +168,13 @@ public class TurChatStreamingDispatcher {
             TurAgentChatFlowContext flowContext,
             TurPersona effectivePersona) {
         TurAIAgent agent = turn.agent();
+
+        // T618 — capture the exact assembled prompt (system message + whole
+        // message list) at send time, before either branch touches it, so the
+        // Live Preview can replay this turn verbatim later. Opt-in per-agent +
+        // storage-backed + fail-open (never breaks the turn); same list both
+        // the CALL and STREAM branches send.
+        promptCaptureService.captureSpringAi(agent, turn.conversationId(), messages);
 
         // STREAM mode: forward each token chunk to the SSE pipeline as it
         // arrives so the bubble fills in token-by-token. We only take this

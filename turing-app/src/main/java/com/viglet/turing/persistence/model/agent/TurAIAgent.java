@@ -330,6 +330,27 @@ public class TurAIAgent implements Serializable {
     private boolean toolCallEventsEnabled = false;
 
     /**
+     * T618 / §XXXIV.6 — per-agent opt-in for true per-past-turn prompt replay.
+     * When {@code true} (and object storage is enabled), the executor captures
+     * the exact assembled system message + the T617 whole-message list at send
+     * time, keyed by conversation id + turn index, onto the pluggable
+     * {@link com.viglet.turing.service.storage.TurStorageService} — so the Live
+     * Preview can load any <em>past</em> turn verbatim instead of reconstructing
+     * the conversation's current state (T612). Because this writes on the chat
+     * hot path it is opt-in and bounded (a per-conversation turn ring, a
+     * per-entry byte cap, and a retention sweep — see
+     * {@code com.viglet.turing.genai.capture.TurPromptCaptureProperties}).
+     * Default {@code false} keeps existing agents byte-for-byte unchanged (no
+     * extra storage writes). Has no effect on a storage-disabled deployment
+     * (the capture service reports itself unavailable and every write is
+     * skipped).
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "prompt_capture_enabled", nullable = false)
+    private boolean promptCaptureEnabled = false;
+
+    /**
      * T438 / §XXII.3 — per-agent opt-in for frontend ("client") tools. When
      * {@code true} and {@link #clientToolsJson} declares at least one tool, those
      * tools are advertised to the model; a call to one parks the turn and emits a

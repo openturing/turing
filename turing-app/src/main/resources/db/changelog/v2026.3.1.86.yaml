@@ -1,0 +1,38 @@
+databaseChangeLog:
+  # T618 / §XXXIV.6 — ai_agent.prompt_capture_enabled: per-agent opt-in for true
+  # per-past-turn prompt replay. When 1 (and object storage is enabled), the
+  # executor captures the exact assembled system message + the T617 whole-message
+  # list at send time onto the pluggable storage seam, keyed by conversation id +
+  # turn index, so the Live Preview can load any past turn verbatim. Default 0
+  # keeps existing agents byte-for-byte unchanged (no extra storage writes). The
+  # captures live on storage (TurStorageService), not the primary DB — this
+  # column is only the opt-in flag.
+  #
+  # Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.86-add-ai_agent-prompt_capture_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: prompt_capture_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: prompt_capture_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: prompt_capture_enabled
+                  valueBoolean: false
+            where: prompt_capture_enabled IS NULL

@@ -118,6 +118,10 @@ class TurNativeChatExecutorTest {
     // the existing routing assertions are unchanged.
     @Mock private com.viglet.turing.genai.nativeapi.cohere.TurCohereMessagesService cohereMessagesService;
 
+    // T618 — prompt-capture mock; default agent has promptCaptureEnabled=false so
+    // isEnabled() returns false and no capture write happens on the routing tests.
+    @Mock private com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService;
+
     private TurNativeChatExecutor executor() {
         return new TurNativeChatExecutor(providerFactory, nativeClient, capabilityService,
                 openAiResponsesService, openAiComputerUseService, anthropicMessagesService,
@@ -127,7 +131,8 @@ class TurNativeChatExecutorTest {
                 capabilityResolver, toolResolver, mcpFederationDirectory, ragSearchToolService,
                 optionsParser, citationDriftService, serviceTierResolver, anthropicContextManagement,
                 memoryScopeResolver, storedCompletionsService, nativeDocumentGroundingService,
-                reasoningEffortResolver, safetyIdentifierService, liveAnswersService);
+                reasoningEffortResolver, safetyIdentifierService, liveAnswersService,
+                promptCaptureService);
     }
 
     @BeforeEach

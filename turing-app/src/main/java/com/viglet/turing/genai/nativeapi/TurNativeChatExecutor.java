@@ -125,6 +125,7 @@ public class TurNativeChatExecutor {
             reasoningEffortResolver;
     private final com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService;
     private final com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService;
+    private final com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService;
 
     /** T152 / §X.7.a — request-option key (per-agent {@code requestOptionsJson}). */
     private static final String REQUEST_OPTION_CITATIONS = "citations";
@@ -166,7 +167,8 @@ public class TurNativeChatExecutor {
             com.viglet.turing.genai.nativeapi.openai.TurReasoningEffortResolver
                     reasoningEffortResolver,
             com.viglet.turing.genai.safety.TurSafetyIdentifierService safetyIdentifierService,
-            com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService) {
+            com.viglet.turing.genai.nativeapi.liveanswers.TurLiveAnswersService liveAnswersService,
+            com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService) {
         this.providerFactory = providerFactory;
         this.nativeClient = nativeClient;
         this.capabilityService = capabilityService;
@@ -195,6 +197,7 @@ public class TurNativeChatExecutor {
         this.reasoningEffortResolver = reasoningEffortResolver;
         this.safetyIdentifierService = safetyIdentifierService;
         this.liveAnswersService = liveAnswersService;
+        this.promptCaptureService = promptCaptureService;
     }
 
     /**
@@ -347,6 +350,13 @@ public class TurNativeChatExecutor {
                     turn.systemPrompt(), lastUserMessage, groundWithDocuments);
             turn = new AssembledTurn(groundedPrompt, turn.history());
         }
+
+        // T618 — capture the assembled prompt (system message + whole message
+        // list) at send time, after the shared assembler + any live-answers
+        // grounding but before the vendor branches dispatch, so the Live Preview
+        // can replay this native turn verbatim. Opt-in + storage-backed +
+        // fail-open (never breaks the turn).
+        promptCaptureService.captureNative(agent, conversationId, turn.systemPrompt(), turn.history());
 
         // T519 / §XXVIII.15 — Cohere native citation branch. Retrieve the top-K
         // passages and run Cohere's v2/chat with them as documents; the response's

@@ -68,6 +68,8 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
     private TurAgentPersonaResolver personaResolver;
     @Mock
     private TurToolCallTraceService toolCallTraceService;
+    @Mock
+    private com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService;
 
     private TurSystemPromptPreviewService service;
 
@@ -82,7 +84,7 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
         service = new TurSystemPromptPreviewService(promptAssemblyPipeline,
                 messageAssemblyPipeline, chatFlowEngineService,
                 chatFlowRepository, priceService, new TurInertRegionDetector(),
-                personaResolver, toolCallTraceService);
+                personaResolver, toolCallTraceService, promptCaptureService);
     }
 
     /** start → persona(personaId) → aiQuestion — the canonical override path. */

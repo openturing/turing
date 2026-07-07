@@ -245,6 +245,8 @@ public class TurAIAgentAPI {
             agentEdit.setMcpNativeFederation(turAIAgent.isMcpNativeFederation());
             // T436 — live tool-call events on the chat SSE (opt-in).
             agentEdit.setToolCallEventsEnabled(turAIAgent.isToolCallEventsEnabled());
+            // T618 — capture the assembled prompt per turn for verbatim replay (opt-in).
+            agentEdit.setPromptCaptureEnabled(turAIAgent.isPromptCaptureEnabled());
             // T438 — frontend ("client") tools (opt-in) + their declarations.
             agentEdit.setClientToolsEnabled(turAIAgent.isClientToolsEnabled());
             agentEdit.setClientToolsJson(turAIAgent.getClientToolsJson());

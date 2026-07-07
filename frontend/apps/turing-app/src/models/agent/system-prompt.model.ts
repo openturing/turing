@@ -14,7 +14,9 @@ export type TurSystemPromptOrigin =
   | "MCP"
   | "FLOW"
   | "FEW_SHOT"
-  | "RAG";
+  | "RAG"
+  /** T618 — a verbatim captured past turn (the whole system message as one block). */
+  | "CAPTURED";
 
 /** Block AK/T609 — a span of a segment that's inert on the previewed turn. */
 export interface TurSystemPromptInertRegion {
@@ -47,8 +49,12 @@ export interface TurSystemPromptSegment {
   inertRegions: TurSystemPromptInertRegion[];
 }
 
-/** Source bucket for a history-prefix message (T617). */
-export type TurSystemPromptMessageOrigin = "MEMORY_SUMMARY" | "MEMORY_RELEVANCE";
+/** Source bucket for a history-prefix message (T617) / captured turn (T618). */
+export type TurSystemPromptMessageOrigin =
+  | "MEMORY_SUMMARY"
+  | "MEMORY_RELEVANCE"
+  /** T618 — a message from a verbatim captured past turn. */
+  | "CAPTURED";
 
 /**
  * Block AL/T617 — one history-prefix message the runtime prepends to the client
@@ -102,6 +108,24 @@ export interface TurSystemPromptReplay {
   personaName: string | null;
   /** The conversation's recorded tool calls, oldest first; empty when none traced. */
   toolCalls: TurSystemPromptToolCall[];
+  /** T618 — the captured turn being shown verbatim, or null for a T612 current-state replay. */
+  turnIndex: number | null;
+  /** T618 — true when assembledText/messages were loaded byte-for-byte from a captured past turn. */
+  verbatim: boolean;
+  /** T618 — epoch millis the shown turn was captured, or 0 when not applicable/unknown. */
+  capturedAt: number;
+  /** T618 — captured turns available for this conversation (newest first), for the turn picker. */
+  availableTurns: TurSystemPromptCapturedTurn[];
+}
+
+/**
+ * T618 — one selectable entry in the Live Preview's captured-turn picker.
+ * Mirrors `TurSystemPromptCapturedTurnDto`.
+ */
+export interface TurSystemPromptCapturedTurn {
+  turnIndex: number;
+  /** Epoch millis the turn was captured (0 when the backend reported no timestamp). */
+  capturedAt: number;
 }
 
 /** A chat flow the operator can pick in the preview's flow selector. */

@@ -30,21 +30,25 @@ export function useSystemPromptPreview(
 }
 
 /**
- * T612 — replay the assembled prompt from a real conversation. Enabled only when
- * a non-blank `conversationId` is supplied; changing it refetches. The result's
- * `replay` envelope carries the conversation source + its tool-call trace.
+ * T612/T618 — replay the assembled prompt from a real conversation. Enabled only
+ * when a non-blank `conversationId` is supplied; changing it (or `turnIndex`)
+ * refetches. Without `turnIndex` the result is the T612 current-state replay;
+ * with it, the T618 verbatim past-turn capture. The `replay` envelope carries
+ * the conversation source, its tool-call trace, and the available captured turns.
  */
 export function useSystemPromptReplayPreview(
   agentId: string | undefined,
   conversationId: string | undefined,
+  turnIndex?: number,
 ) {
   const trimmed = conversationId?.trim();
   return useQuery({
     queryKey:
       agentId && trimmed
-        ? queryKeys.aiAgents.systemPromptReplay(agentId, trimmed)
+        ? queryKeys.aiAgents.systemPromptReplay(agentId, trimmed, turnIndex)
         : ["ai-agents", "system-prompt", "replay", "pending"],
-    queryFn: () => service.previewReplay(agentId as string, trimmed as string),
+    queryFn: () =>
+      service.previewReplay(agentId as string, trimmed as string, turnIndex),
     enabled: Boolean(agentId) && Boolean(trimmed),
   });
 }

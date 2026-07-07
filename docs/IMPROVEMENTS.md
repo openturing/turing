@@ -2223,32 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.6 Capture the assembled prompt per turn for true replay (T618)
-
-T612 replays a conversation from its *persisted state* — the leaf flow cursor,
-collected slots and resolved persona fed back through the shared assembler — so
-the prompt shown is what the model would receive for that conversation's *next*
-turn. That is the honest ground truth the durable state can reconstruct, and it
-is enough to debug most "why did it answer that" questions, but it is **not** the
-verbatim prompt sent on an arbitrary *past* turn: by the time you inspect it the
-flow may have advanced, slots may have been overwritten, and memory may have been
-compacted. The transcript (T61) and the T427 tool-call trace record *what came
-back*, not *what was assembled and sent*.
-
-True per-turn replay needs the assembled artifact captured at send time: persist
-the exact system message (and the T617 whole-message list) per turn, keyed by
-conversation id + turn index, at the point `TurAgentChatExecutor` /
-`TurNativeChatExecutor` hand the message list to the LLM. The Live Preview then
-loads any past turn verbatim (a turn picker alongside the conversation id)
-instead of reconstructing the current state.
-
-Because this writes on the chat hot path it must be **opt-in** (a per-agent flag,
-default off — most agents never need it) and **bounded** exactly like the T427
-trace (a retention window, a per-entry size cap, and a global cap so a chatty
-deployment can't grow it without limit), and it should land on the pluggable
-**storage seam** (`TurStorageService`), not the primary DB. Until it ships,
-T612's current-state replay is the available approximation.
-
 ### XXXIV.7 Single source of truth — moved to Block AL
 
 The preview's fidelity fix (render through the real assembler, retire the

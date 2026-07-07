@@ -32,12 +32,18 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
   const [replayConversationId, setReplayConversationId] = useState<
     string | undefined
   >(undefined);
+  // T618 — which captured past turn to load verbatim (undefined → T612
+  // current-state replay). Reset when the conversation id changes.
+  const [replayTurnIndex, setReplayTurnIndex] = useState<number | undefined>(
+    undefined,
+  );
   const replaying = Boolean(replayConversationId?.trim());
 
   const synthesized = useSystemPromptPreview(id, flowId, nodeId, vars);
   const replay = useSystemPromptReplayPreview(
     id,
     replaying ? replayConversationId : undefined,
+    replaying ? replayTurnIndex : undefined,
   );
   const preview = replaying ? replay.data : synthesized.data;
   const isLoading = replaying ? replay.isLoading : synthesized.isLoading;
@@ -47,6 +53,12 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
     setFlowId(value);
     setNodeId(undefined);
     setVars(undefined);
+  }
+
+  // Changing the replayed conversation resets the captured-turn selection.
+  function handleReplayChange(value: string | undefined) {
+    setReplayConversationId(value);
+    setReplayTurnIndex(undefined);
   }
 
   return (
@@ -60,7 +72,9 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
         onNodeChange={setNodeId}
         onVarsChange={setVars}
         replayConversationId={replayConversationId}
-        onReplayChange={setReplayConversationId}
+        onReplayChange={handleReplayChange}
+        replayTurnIndex={replayTurnIndex}
+        onReplayTurnChange={setReplayTurnIndex}
         // In bento the hero already shows the "Live Preview" title and reuses
         // this description as its subtitle, so suppress the article's masthead.
         showHeader={chrome !== "bento"}

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import {
   SYSTEM_PROMPT_FLOW_NONE,
+  type TurSystemPromptCapturedTurn,
   type TurSystemPromptInertRegion,
   type TurSystemPromptMessage,
   type TurSystemPromptMessageOrigin,
@@ -81,6 +82,13 @@ interface Props {
   readonly replayConversationId?: string | undefined;
   readonly onReplayChange?: (conversationId: string | undefined) => void;
   /**
+   * T618 — the captured past turn to show verbatim (undefined = T612
+   * current-state replay). The picker is populated from
+   * `preview.replay.availableTurns`.
+   */
+  readonly replayTurnIndex?: number | undefined;
+  readonly onReplayTurnChange?: (turnIndex: number | undefined) => void;
+  /**
    * Render the article's own masthead (H1 title + description lede). The console
    * page has no page header, so it needs one; the bento page already supplies a
    * hero with the same title AND uses this description as its subtitle, so it
@@ -91,6 +99,9 @@ interface Props {
 
 /** Node-picker sentinel meaning "the flow's entry node" (clears nodeId). */
 const NODE_ENTRY = "__entry__";
+
+/** T618 — turn-picker sentinel meaning "current state (reconstructed)". */
+const TURN_CURRENT = "__current__";
 
 /** Tailwind accent classes per origin — accent bar, hover tint, badge, legend dot. */
 const ORIGIN_STYLE: Record<
@@ -133,6 +144,13 @@ const ORIGIN_STYLE: Record<
     badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-300",
     dot: "bg-emerald-500",
   },
+  // T618 — a verbatim captured past turn (the whole system message as one block).
+  CAPTURED: {
+    bar: "bg-indigo-500",
+    hover: "group-hover:bg-indigo-500/6",
+    badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-300",
+    dot: "bg-indigo-500",
+  },
 };
 
 /** Origins in the fixed order they may appear, for the legend. */
@@ -161,6 +179,12 @@ const MESSAGE_ORIGIN_STYLE: Record<
     dot: "bg-teal-500",
     badge: "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-300",
   },
+  // T618 — a message from a verbatim captured past turn.
+  CAPTURED: {
+    bar: "bg-indigo-500",
+    dot: "bg-indigo-500",
+    badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-300",
+  },
 };
 
 export function SystemPromptLivePreview({
@@ -173,6 +197,8 @@ export function SystemPromptLivePreview({
   onVarsChange,
   replayConversationId,
   onReplayChange,
+  replayTurnIndex,
+  onReplayTurnChange,
   showHeader = true,
 }: Props) {
   const { t } = useTranslation();
@@ -245,6 +271,9 @@ export function SystemPromptLivePreview({
         <ReplayInput
           value={replayConversationId}
           onChange={onReplayChange}
+          availableTurns={preview?.replay?.availableTurns ?? []}
+          turnIndex={replayTurnIndex}
+          onTurnChange={onReplayTurnChange}
         />
       )}
 
@@ -424,9 +453,17 @@ export function SystemPromptLivePreview({
 function ReplayInput({
   value,
   onChange,
+  availableTurns,
+  turnIndex,
+  onTurnChange,
 }: Readonly<{
   value: string | undefined;
   onChange: (conversationId: string | undefined) => void;
+  /** T618 — captured turns for the current conversation (newest first). */
+  availableTurns: TurSystemPromptCapturedTurn[];
+  /** T618 — the selected captured turn (undefined = current-state replay). */
+  turnIndex: number | undefined;
+  onTurnChange?: (turnIndex: number | undefined) => void;
 }>) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(value ?? "");
@@ -441,6 +478,11 @@ function ReplayInput({
     setDraft("");
     onChange(undefined);
   }
+
+  // T618 — the turn picker: "current" (T612 reconstruction) + one entry per
+  // captured past turn (T618 verbatim). Only shown once a conversation is being
+  // replayed and it has captured turns.
+  const showTurnPicker = active && onTurnChange && availableTurns.length > 0;
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
@@ -469,6 +511,41 @@ function ReplayInput({
       >
         {t("aiAgent.systemPrompt.preview.replayApply", { defaultValue: "Replay" })}
       </button>
+      {showTurnPicker && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">
+            {t("aiAgent.systemPrompt.preview.replayTurnLabel", { defaultValue: "Turn" })}
+          </span>
+          <Select
+            value={turnIndex == null ? TURN_CURRENT : String(turnIndex)}
+            onValueChange={(v) =>
+              onTurnChange(v === TURN_CURRENT ? undefined : Number(v))
+            }
+          >
+            <SelectTrigger className="h-8 w-full text-xs sm:w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TURN_CURRENT}>
+                {t("aiAgent.systemPrompt.preview.replayTurnCurrent", {
+                  defaultValue: "Current state (reconstructed)",
+                })}
+              </SelectItem>
+              {availableTurns.map((turn) => (
+                <SelectItem key={turn.turnIndex} value={String(turn.turnIndex)}>
+                  {t("aiAgent.systemPrompt.preview.replayTurnOption", {
+                    defaultValue: "Turn {{n}}{{when}} (verbatim)",
+                    n: turn.turnIndex,
+                    when: turn.capturedAt
+                      ? ` · ${new Date(turn.capturedAt).toLocaleString()}`
+                      : "",
+                  })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {active && (
         <button
           type="button"
@@ -507,14 +584,20 @@ function ReplayBanner({ replay }: Readonly<{ replay: TurSystemPromptReplay }>) {
         ) : (
           <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-300" />
         )}
-        {replay.resolved
-          ? t("aiAgent.systemPrompt.preview.replayResolved", {
-              defaultValue: "Replayed from a real conversation",
-            })
-          : t("aiAgent.systemPrompt.preview.replayUnresolved", {
+        {replay.verbatim
+          ? t("aiAgent.systemPrompt.preview.replayVerbatim", {
               defaultValue:
-                "No persisted state for this conversation — showing a plain turn",
-            })}
+                "Turn {{n}} loaded verbatim — the exact prompt sent at that turn",
+              n: replay.turnIndex ?? 0,
+            })
+          : replay.resolved
+            ? t("aiAgent.systemPrompt.preview.replayResolved", {
+                defaultValue: "Replayed from a real conversation",
+              })
+            : t("aiAgent.systemPrompt.preview.replayUnresolved", {
+                defaultValue:
+                  "No persisted state for this conversation — showing a plain turn",
+              })}
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>

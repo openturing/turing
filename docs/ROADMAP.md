@@ -261,17 +261,6 @@ fully shipped.**
 - 💭 **T602** (deps: T595, T600) **Public eval API + SDK/CLI** — `turing eval` (T125–T127) runs a named `dataset × grader stack` remotely; SDK `runEval`; a reusable CI gate over any dataset (extends T428/T430). → §XXXIII.17
 - 💭 **T603** (deps: T590, T588) **Continuous / online eval** — sample live production traffic, grade in the background with CODE+MODEL graders, and alert on quality **drift** (composes T87 sentiment + T155 citation-drift + T447 miner). "Eval in prod", not just pre-publish. → §XXXIII.18
 
-## Block AK follow-up — true per-past-turn prompt replay
-
-> T612 shipped conversation replay by feeding a conversation's *persisted state*
-> (leaf flow cursor + collected slots + resolved persona) back through the shared
-> assembler — so the prompt shown is what the model would receive for that
-> conversation's **next** turn. That is the honest ground truth the durable state
-> can reconstruct, but it is not the exact prompt sent on an arbitrary **past**
-> turn (the flow may have advanced, slots been overwritten, memory compacted).
-
-- 💭 **T618** (deps: T612, T613, T61) **Capture the assembled prompt per turn for true replay** — persist the exact assembled system message + the T617 message list at send time, keyed by conversation id + turn index, as the executor hands it to the LLM, so the Live Preview can load any **past** turn verbatim instead of reconstructing the current state. Opt-in (per-agent, default off) and bounded (retention window + per-entry + global caps, like the T427 trace); writes to the storage seam, not the primary DB — because it lands on the chat hot path. → §XXXIV.6
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

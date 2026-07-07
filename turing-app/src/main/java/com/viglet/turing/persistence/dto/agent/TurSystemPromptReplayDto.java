@@ -36,6 +36,17 @@ import java.util.List;
  *                       {@code null} when the agent has no persona.
  * @param toolCalls      the conversation's recorded tool calls, oldest first;
  *                       empty when none were traced (or the trace was evicted).
+ * @param turnIndex      T618 — the captured turn being shown verbatim, or
+ *                       {@code null} for a T612 current-state replay.
+ * @param verbatim       T618 — {@code true} when {@code assembledText}/{@code
+ *                       messages} were loaded byte-for-byte from a captured past
+ *                       turn (not reconstructed from the conversation's current
+ *                       state); the segments are then a single opaque block.
+ * @param capturedAt     T618 — epoch millis the shown turn was captured, or
+ *                       {@code 0} when not applicable / unknown.
+ * @param availableTurns T618 — the captured turns available for this conversation
+ *                       (newest first), for the preview's turn picker; empty when
+ *                       the agent never opted into capture or none were stored.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -46,9 +57,21 @@ public record TurSystemPromptReplayDto(
         String flowName,
         String nodeId,
         String personaName,
-        List<TurSystemPromptToolCallDto> toolCalls) {
+        List<TurSystemPromptToolCallDto> toolCalls,
+        Integer turnIndex,
+        boolean verbatim,
+        long capturedAt,
+        List<TurSystemPromptCapturedTurnDto> availableTurns) {
 
     public TurSystemPromptReplayDto {
         toolCalls = toolCalls == null ? List.of() : toolCalls;
+        availableTurns = availableTurns == null ? List.of() : availableTurns;
+    }
+
+    /** Back-compat convenience for the T612 6-arg call sites (no captured-turn picker). */
+    public TurSystemPromptReplayDto(String conversationId, boolean resolved, String flowName,
+            String nodeId, String personaName, List<TurSystemPromptToolCallDto> toolCalls) {
+        this(conversationId, resolved, flowName, nodeId, personaName, toolCalls,
+                null, false, 0L, List.of());
     }
 }

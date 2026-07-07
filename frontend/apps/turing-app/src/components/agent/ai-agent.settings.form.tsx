@@ -28,7 +28,7 @@ import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
+import { IconActivity, IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconHeadset, IconHistory, IconInfoCircle, IconMoon, IconPlug, IconPower, IconSettings, IconShieldLock, IconSparkles, IconWorldSearch, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -161,6 +161,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
       connectorSetupEnabled: value.connectorSetupEnabled ?? false,
       overnightImprovementEnabled: value.overnightImprovementEnabled ?? false,
       toolCallEventsEnabled: value.toolCallEventsEnabled ?? false,
+      promptCaptureEnabled: value.promptCaptureEnabled ?? false,
       skillsEnabled: value.skillsEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
@@ -678,6 +679,31 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
                       <FormItemTwoColumns.Label>{t("forms.agentSettings.enableToolActivity")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
                         {t("forms.agentSettings.enableToolActivityDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+        </Section>
+
+          <Section variant="blue" tone="blue" icon={IconHistory} title={t("forms.agentSettings.promptCapture")} description={t("forms.agentSettings.promptCaptureDesc")}>
+              <FormField
+                control={form.control}
+                name="promptCaptureEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enablePromptCapture")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.enablePromptCaptureDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

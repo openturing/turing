@@ -27,6 +27,7 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
+import com.viglet.turing.genai.capture.TurPromptCapture;
 import com.viglet.turing.genai.tool.TurChatToolCall;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyContext;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
@@ -35,6 +36,7 @@ import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptMessage;
 import com.viglet.turing.genai.prompt.TurPromptSegment;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptCapturedTurnDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowNodeDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowOptionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptInertRegionDto;
@@ -102,6 +104,7 @@ public class TurSystemPromptPreviewService {
     private final TurInertRegionDetector inertRegionDetector;
     private final TurAgentPersonaResolver personaResolver;
     private final TurToolCallTraceService toolCallTraceService;
+    private final com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService;
 
     public TurSystemPromptPreviewService(TurPromptAssemblyPipeline promptAssemblyPipeline,
             TurMessageAssemblyPipeline messageAssemblyPipeline,
@@ -110,7 +113,8 @@ public class TurSystemPromptPreviewService {
             TurLLMPriceService priceService,
             TurInertRegionDetector inertRegionDetector,
             TurAgentPersonaResolver personaResolver,
-            TurToolCallTraceService toolCallTraceService) {
+            TurToolCallTraceService toolCallTraceService,
+            com.viglet.turing.genai.capture.TurPromptCaptureService promptCaptureService) {
         this.promptAssemblyPipeline = promptAssemblyPipeline;
         this.messageAssemblyPipeline = messageAssemblyPipeline;
         this.chatFlowEngineService = chatFlowEngineService;
@@ -119,6 +123,7 @@ public class TurSystemPromptPreviewService {
         this.inertRegionDetector = inertRegionDetector;
         this.personaResolver = personaResolver;
         this.toolCallTraceService = toolCallTraceService;
+        this.promptCaptureService = promptCaptureService;
     }
 
     /** Convenience overload — previews the default flow (first enabled). */
@@ -168,9 +173,34 @@ public class TurSystemPromptPreviewService {
      */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildReplayPreview(TurAIAgent agent, String conversationId) {
+        return buildReplayPreview(agent, conversationId, null);
+    }
+
+    /**
+     * T618 — true per-past-turn replay. When {@code turnIndex} names a captured
+     * turn that still exists in the prompt-capture store, the preview shows it
+     * <em>verbatim</em> — the exact assembled system message + whole-message list
+     * frozen when the executor sent it — instead of reconstructing the
+     * conversation's current state (which T612 does when {@code turnIndex} is
+     * {@code null}). A requested turn that was pruned/evicted falls back to the
+     * current-state replay, still offering the picker. Either way the replay
+     * envelope carries {@code availableTurns} so the operator can pick another.
+     */
+    @Transactional(readOnly = true)
+    public TurSystemPromptPreviewDto buildReplayPreview(TurAIAgent agent, String conversationId,
+            Integer turnIndex) {
+        List<TurSystemPromptCapturedTurnDto> availableTurns = listCapturedTurns(agent, conversationId);
+        if (turnIndex != null && StringUtils.hasText(conversationId)) {
+            Optional<TurPromptCapture> capture =
+                    promptCaptureService.getCapture(agent.getId(), conversationId, turnIndex);
+            if (capture.isPresent()) {
+                return buildVerbatimPreview(agent, capture.get(), availableTurns);
+            }
+            // Requested turn no longer exists — fall through to current-state replay.
+        }
         if (!StringUtils.hasText(conversationId)) {
             return buildPreviewInternal(agent, FLOW_NONE, null, null,
-                    new ReplayContext(conversationId, false, null, null, List.of()));
+                    new ReplayContext(conversationId, false, null, null, List.of(), availableTurns));
         }
         // Never null — getConversationState returns an empty-field DTO for an
         // unknown conversation rather than null.
@@ -191,8 +221,82 @@ public class TurSystemPromptPreviewService {
         TurPersona persona = personaResolver.resolve(agent, conversationId);
         List<TurChatToolCall> trace = toolCallTraceService.getTrace(conversationId);
         ReplayContext replay = new ReplayContext(conversationId, resolved,
-                flowIsAgents ? state.flowName() : null, persona, trace);
+                flowIsAgents ? state.flowName() : null, persona, trace, availableTurns);
         return buildPreviewInternal(agent, flowId, nodeId, variablesJson, replay);
+    }
+
+    /**
+     * T618 — the captured turns available for {@code conversationId}, newest
+     * first, for the preview's turn picker. Empty when the agent never opted into
+     * capture, storage is disabled, or none were stored.
+     */
+    @Transactional(readOnly = true)
+    public List<TurSystemPromptCapturedTurnDto> listCapturedTurns(TurAIAgent agent, String conversationId) {
+        if (!promptCaptureService.isEnabled(agent) || !StringUtils.hasText(conversationId)) {
+            return List.of();
+        }
+        return promptCaptureService.listTurns(agent.getId(), conversationId).stream()
+                .map(ref -> new TurSystemPromptCapturedTurnDto(ref.turnIndex(), ref.capturedAt()))
+                .toList();
+    }
+
+    /**
+     * T618 — builds the preview DTO directly from a stored capture, byte-for-byte.
+     * Unlike a reconstructed preview there is no per-contributor provenance (only
+     * the final text was captured), so the system message is a single opaque
+     * segment and the whole non-system message list rides in {@code messages}.
+     */
+    private TurSystemPromptPreviewDto buildVerbatimPreview(TurAIAgent agent,
+            TurPromptCapture capture, List<TurSystemPromptCapturedTurnDto> availableTurns) {
+        String systemText = capture.systemPrompt() == null ? "" : capture.systemPrompt();
+        int systemTokens = estimateTokens(systemText);
+        List<TurSystemPromptSegmentDto> segments = List.of(new TurSystemPromptSegmentDto(
+                "CAPTURED", "Captured system prompt", systemText, true, false,
+                "Loaded verbatim from turn " + capture.turnIndex()
+                        + " — the exact system message the model received.",
+                systemTokens, "STABLE"));
+
+        List<TurSystemPromptMessageDto> messages = new ArrayList<>();
+        int totalTokens = systemTokens;
+        for (TurPromptCapture.Message message : capture.messages()) {
+            if ("system".equals(message.role())) {
+                continue; // already surfaced as the segment / assembledText
+            }
+            String content = message.content() == null ? "" : message.content();
+            int tokens = estimateTokens(content);
+            totalTokens += tokens;
+            messages.add(new TurSystemPromptMessageDto(message.role(), "CAPTURED",
+                    capturedRoleLabel(message.role()), content, tokens, false, null));
+        }
+
+        List<TurSystemPromptToolCallDto> toolCalls = new ArrayList<>();
+        for (TurChatToolCall call : toolCallTraceService.getTrace(capture.conversationId())) {
+            toolCalls.add(new TurSystemPromptToolCallDto(call.name(), call.argsSummary(),
+                    call.status(), call.durationMs() == null ? 0L : call.durationMs()));
+        }
+        TurSystemPromptReplayDto replay = new TurSystemPromptReplayDto(capture.conversationId(),
+                true, null, null, null, toolCalls, capture.turnIndex(), true,
+                capture.capturedAt(), availableTurns);
+
+        // No cost estimate / cache split on a verbatim view — those describe the
+        // live assembler's output, not a frozen snapshot. Tools panel left empty
+        // (the schema channel was not captured).
+        return new TurSystemPromptPreviewDto(segments, List.of(), systemText,
+                List.of(), null, totalTokens, systemTokens, -1, 0.0, null,
+                List.of(), null, messages, replay);
+    }
+
+    private static int estimateTokens(String text) {
+        return text == null || text.isEmpty() ? 0 : text.length() / 4;
+    }
+
+    private static String capturedRoleLabel(String role) {
+        return switch (role == null ? "" : role) {
+            case "assistant" -> "Assistant";
+            case "user" -> "User";
+            case "system" -> "System";
+            default -> role;
+        };
     }
 
     private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId,
@@ -286,9 +390,12 @@ public class TurSystemPromptPreviewService {
         }
         String flowName = replay.flowName() != null ? replay.flowName()
                 : (selectedFlow == null ? null : selectedFlow.getName());
+        // T618 — a current-state replay is not verbatim (turnIndex null), but it
+        // still advertises the captured turns so the picker can switch to one.
         return new TurSystemPromptReplayDto(replay.conversationId(), replay.resolved(),
                 flowName, flowPreview == null ? null : flowPreview.nodeId(),
-                persona == null ? null : persona.getName(), toolCalls);
+                persona == null ? null : persona.getName(), toolCalls,
+                null, false, 0L, replay.availableTurns());
     }
 
     /** Serializes a conversation's merged slot map to a JSON object string. */
@@ -312,9 +419,11 @@ public class TurSystemPromptPreviewService {
      * flow-graph walk when this is set.
      */
     private record ReplayContext(String conversationId, boolean resolved, String flowName,
-            TurPersona persona, List<TurChatToolCall> toolCalls) {
+            TurPersona persona, List<TurChatToolCall> toolCalls,
+            List<TurSystemPromptCapturedTurnDto> availableTurns) {
         ReplayContext {
             toolCalls = toolCalls == null ? List.of() : toolCalls;
+            availableTurns = availableTurns == null ? List.of() : availableTurns;
         }
     }
 
