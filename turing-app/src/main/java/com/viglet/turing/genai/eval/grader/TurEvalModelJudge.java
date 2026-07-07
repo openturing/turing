@@ -56,31 +56,44 @@ public final class TurEvalModelJudge {
     /** The strategy-specific user message: instruction/criteria/reference + transcript + answer. */
     public static String user(TurEvalModelStrategy strategy, String instruction,
             List<String> criteria, String reference, List<String> userTurns, String answer) {
-        StringBuilder sb = new StringBuilder();
-        switch (strategy) {
-            case CRITERIA -> {
-                sb.append("CHECKLIST:\n");
-                if (criteria != null) {
-                    for (String c : criteria) {
-                        sb.append("- ").append(c).append('\n');
-                    }
-                }
-                if (instruction != null && !instruction.isBlank()) {
-                    sb.append("\nCONTEXT:\n").append(instruction).append('\n');
-                }
-            }
-            case PAIRWISE -> {
-                sb.append("REFERENCE:\n").append(reference == null ? "" : reference).append('\n');
-                if (instruction != null && !instruction.isBlank()) {
-                    sb.append("\nTASK:\n").append(instruction).append('\n');
-                }
-            }
-            default -> sb.append("INSTRUCTION:\n").append(instruction == null ? "" : instruction)
-                    .append('\n');
+        String head = switch (strategy) {
+            case CRITERIA -> criteriaHead(criteria, instruction);
+            case PAIRWISE -> pairwiseHead(reference, instruction);
+            default -> defaultHead(instruction, reference);
+        };
+        return head
+                + "\nUSER TURNS:\n" + (userTurns == null ? "" : String.join("\n", userTurns))
+                + "\n\nAGENT ANSWER:\n" + (answer == null ? "" : answer);
+    }
+
+    private static String criteriaHead(List<String> criteria, String instruction) {
+        StringBuilder sb = new StringBuilder("CHECKLIST:\n");
+        if (criteria != null) {
+            criteria.forEach(c -> sb.append("- ").append(c).append('\n'));
         }
-        sb.append("\nUSER TURNS:\n").append(userTurns == null ? "" : String.join("\n", userTurns));
-        sb.append("\n\nAGENT ANSWER:\n").append(answer == null ? "" : answer);
+        appendBlock(sb, "CONTEXT", instruction);
         return sb.toString();
+    }
+
+    private static String pairwiseHead(String reference, String instruction) {
+        StringBuilder sb = new StringBuilder("REFERENCE:\n")
+                .append(reference == null ? "" : reference).append('\n');
+        appendBlock(sb, "TASK", instruction);
+        return sb.toString();
+    }
+
+    private static String defaultHead(String instruction, String reference) {
+        StringBuilder sb = new StringBuilder("INSTRUCTION:\n")
+                .append(instruction == null ? "" : instruction).append('\n');
+        // T591 — reference-answer faithfulness/correctness (LABEL / SCORE vs a reference).
+        appendBlock(sb, "REFERENCE ANSWER", reference);
+        return sb.toString();
+    }
+
+    private static void appendBlock(StringBuilder sb, String label, String text) {
+        if (text != null && !text.isBlank()) {
+            sb.append('\n').append(label).append(":\n").append(text).append('\n');
+        }
     }
 
     /** Parse a judge reply into a verdict (reuses the robust bilingual parser). */

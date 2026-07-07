@@ -65,6 +65,9 @@ public final class TurEvalBuiltinGraders {
     /** MODEL — generalized LLM judge with LABEL/SCORE/CRITERIA/PAIRWISE strategies (T590). */
     public static final String MODEL_JUDGE = "model-judge";
 
+    /** CODE — cosine similarity of answer vs a {@code reference}, via the embedding provider (T591). */
+    public static final String EMBEDDING_SIMILARITY = "embedding-similarity";
+
     /**
      * The legacy default stack. Order is cosmetic for the aggregate (mean is
      * order-independent and the overall pass is a logical AND) but kept stable

@@ -2072,21 +2072,6 @@ The user's ask: (1) let us create **extensions of the eval for each grader kind*
 and (2) give us a way to **provide a dataset to be used and tested** — done in a
 scalable, friendly, functional way.
 
-### XXXIII.5–6 MODEL graders — judge strategies, not one prompt (T590, T591)
-
-T590 generalizes the lone rubric judge into a family: `LABEL` (pass/fail),
-`SCORE` (0-1 rubric), `CRITERIA` (multi-criterion rubric, each scored), and
-`PAIRWISE`/preference (answer vs a reference). Each carries a per-grader model +
-prompt override and runs through provider **tool-calling / strict schema** — never
-free-text JSON, per the standing gpt-4o-mini pitfall. Crucially, the existing sync
-/ Batch (T159) / OpenAI-Evals (T168) execution paths fold *under* the grader
-abstraction, so any MODEL grader can be dispatched sync, at batch tier, or to a
-remote server-side grader — the offload becomes a property of the grader, not a
-separate endpoint. T591 adds reference-answer grading (dataset rows carry a golden
-answer; a MODEL grader scores faithfulness/correctness, a CODE grader scores
-embedding cosine similarity via the configured embedding provider), bridging eval
-to the Block M grounding contract.
-
 ### XXXIII.7–9 HUMAN graders — the missing third kind (T592–T594)
 
 The `deferred` flag from T586 is what lets human review be *a grader* rather than a
