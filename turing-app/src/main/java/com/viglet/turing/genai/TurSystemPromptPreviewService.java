@@ -10,13 +10,16 @@
 package com.viglet.turing.genai;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.genai.flow.ChatFlowEdge;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
@@ -105,7 +108,6 @@ public class TurSystemPromptPreviewService {
     private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId) {
         boolean usesDefault = !StringUtils.hasText(agent.getSystemPrompt());
         String base = usesDefault ? DEFAULT_SYSTEM_PROMPT.strip() : agent.getSystemPrompt();
-        TurPersona persona = agent.getDefaultPersona();
 
         List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId());
         List<TurSystemPromptFlowOptionDto> flowOptions = flows.stream()
@@ -116,8 +118,17 @@ public class TurSystemPromptPreviewService {
         // Synthesize the selected flow's entry-node state so the pipeline's flow
         // contributor produces the exact addendum the runtime would at that node
         // — no separate lookalike build.
-        FlowPreview flowPreview = selectedFlow == null ? null : buildFlowPreview(selectedFlow);
+        FlowPreview flowPreview = selectedFlow == null ? null : buildFlowPreview(agent, selectedFlow);
         TurAgentChatFlowContext flowContext = flowPreview == null ? null : flowPreview.context();
+
+        // T607 — resolve the persona the way the runtime does: a persona-type
+        // node on the path to the entry anchor switches the active voice via
+        // __activePersonaId (mirroring TurAgentPersonaResolver). Fall back to the
+        // agent default when no flow governs the turn or none applies.
+        FlowPersonaResolution personaResolution = flowPreview == null
+                ? null : flowPreview.personaResolution();
+        TurPersona persona = personaResolution != null
+                ? personaResolution.persona() : agent.getDefaultPersona();
 
         // ONE assembly, shared with the runtime. Null embedding model + null
         // query so the persona contributor skips live few-shot retrieval; null
@@ -157,9 +168,9 @@ public class TurSystemPromptPreviewService {
     private TurSystemPromptSegmentDto toDto(TurPromptSegment seg, boolean usesDefault,
             FlowPreview flowPreview) {
         String title = seg.title();
+        FlowPersonaResolution personaRes = flowPreview == null ? null : flowPreview.personaResolution();
         String note = switch (seg.origin()) {
-            case TurPromptSegment.ORIGIN_PERSONA ->
-                "Default persona — applies on every turn unless a chat flow switches it.";
+            case TurPromptSegment.ORIGIN_PERSONA -> personaNote(personaRes);
             case TurPromptSegment.ORIGIN_AGENT -> usesDefault
                     ? "Fallback default — this agent has no system prompt of its own."
                     : null;
@@ -201,44 +212,214 @@ public class TurSystemPromptPreviewService {
         return flows.stream().filter(f -> f.getEnabled() == 1).findFirst().orElse(null);
     }
 
-    private record FlowPreview(TurAgentChatFlowContext context, String nodeId) {
+    private record FlowPreview(TurAgentChatFlowContext context, String nodeId,
+            FlowPersonaResolution personaResolution) {
     }
 
     /**
-     * Synthesizes the selected flow's entry-node runtime context so the pipeline
-     * flow contributor renders the addendum exactly as the runtime would. Returns
-     * {@code null} when the flow can't be parsed or has no interactive anchor.
+     * T607 — the persona the previewed turn actually speaks with, resolved the
+     * way {@link com.viglet.turing.genai.persona.TurAgentPersonaResolver} does at
+     * runtime.
+     *
+     * @param persona        the effective persona (a valid flow override, else the
+     *                       agent default; may be {@code null}).
+     * @param requestedId    the {@code personaId} a {@code persona}-type node on
+     *                       the path requested, or {@code null} when none did.
+     * @param switchedByFlow {@code true} when a flow persona node overrode the
+     *                       default with a persona that is in the catalog and
+     *                       usable as a speaker.
+     * @param overrideMissing {@code true} when a node requested a persona the
+     *                       runtime would silently ignore (not in the agent's
+     *                       catalog, or audience-only) — the silent-fallback trap.
      */
-    private FlowPreview buildFlowPreview(TurChatFlow flow) {
+    private record FlowPersonaResolution(TurPersona persona, String requestedId,
+            boolean switchedByFlow, boolean overrideMissing) {
+    }
+
+    /**
+     * Result of walking a flow from its start node to the first interactive
+     * (anchor) node — the node whose addendum the entry turn renders — capturing
+     * any persona override applied by {@code persona}-type nodes on that path.
+     */
+    private record FlowWalk(ChatFlowNode anchor, String personaOverrideId) {
+    }
+
+    /** Guards the transparent-node walk against a pathological/looping flow. */
+    private static final int TRANSPARENT_WALK_MAX = 32;
+
+    /**
+     * Transparent node types the preview linearly follows (first outgoing edge)
+     * while walking to the entry anchor. {@code persona} is handled separately
+     * (it also records the override); {@code switch}/{@code subFlow*} are left out
+     * because their branch can't be resolved without runtime state — the walk
+     * stops there and treats them as the anchor.
+     */
+    private static final Set<String> PREVIEW_TRANSPARENT_TYPES = Set.of(
+            "slot", "writeSlot", "condition", "planningStep", "iteratePlan",
+            "functionCall", "webhook", "scheduleAgent");
+
+    /**
+     * Synthesizes the selected flow's entry-node runtime context so the pipeline
+     * flow contributor renders the addendum exactly as the runtime would, and
+     * resolves the flow-aware persona (T607). Returns {@code null} when the flow
+     * can't be parsed or has no interactive anchor.
+     */
+    private FlowPreview buildFlowPreview(TurAIAgent agent, TurChatFlow flow) {
         Optional<ChatFlowGraph> graphOpt = chatFlowEngineService.parseGraph(flow);
         if (graphOpt.isEmpty()) {
             return null;
         }
         ChatFlowGraph graph = graphOpt.get();
-        ChatFlowNode anchor = resolveAnchorNode(graph);
-        if (anchor == null) {
+        FlowWalk walk = walkToAnchor(graph);
+        if (walk.anchor() == null) {
             return null;
         }
         TurChatFlowState state = new TurChatFlowState();
         state.setFlow(flow);
-        state.setCurrentNodeId(anchor.id());
+        state.setCurrentNodeId(walk.anchor().id());
         state.setVariablesJson("{}");
-        return new FlowPreview(new TurAgentChatFlowContext(flow, graph, state, false), anchor.id());
+        FlowPersonaResolution personaResolution = resolvePersona(agent, walk.personaOverrideId());
+        return new FlowPreview(new TurAgentChatFlowContext(flow, graph, state, false),
+                walk.anchor().id(), personaResolution);
     }
 
-    private static ChatFlowNode resolveAnchorNode(ChatFlowGraph graph) {
-        Optional<ChatFlowNode> start = graph.startNode();
-        if (start.isPresent()) {
-            ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(graph, start.get()).orElse(start.get());
-            if (anchor != null) {
-                return anchor;
-            }
+    /**
+     * Walks the graph from its start node, skipping {@code persona} and other
+     * transparent nodes (following the first outgoing edge) until it reaches the
+     * first interactive node — the runtime entry anchor. Records the last
+     * {@code persona}-node override seen on that path. Falls back to the first
+     * node carrying an instruction when the graph has no start node.
+     */
+    private static FlowWalk walkToAnchor(ChatFlowGraph graph) {
+        Optional<ChatFlowNode> startOpt = graph.startNode();
+        if (startOpt.isEmpty()) {
+            ChatFlowNode fallback = graph.nodes().stream()
+                    .filter(n -> n != null && StringUtils.hasText(n.aiInstruction()))
+                    .findFirst()
+                    .orElse(null);
+            return new FlowWalk(fallback, null);
         }
-        // Fallback: first node that carries an instruction.
-        return graph.nodes().stream()
-                .filter(n -> n != null && StringUtils.hasText(n.aiInstruction()))
+        ChatFlowNode start = startOpt.get();
+        String overrideId = null;
+        Set<String> visited = new HashSet<>();
+        visited.add(start.id());
+        ChatFlowNode node = firstTarget(graph, start).orElse(null);
+        int hops = 0;
+        while (node != null && hops < TRANSPARENT_WALK_MAX && visited.add(node.id())) {
+            if ("persona".equals(node.type())) {
+                if (StringUtils.hasText(node.personaId())) {
+                    overrideId = node.personaId();
+                }
+                node = firstTarget(graph, node).orElse(null);
+                hops++;
+                continue;
+            }
+            if (PREVIEW_TRANSPARENT_TYPES.contains(node.type())) {
+                node = firstTarget(graph, node).orElse(null);
+                hops++;
+                continue;
+            }
+            break; // interactive anchor (or a branch node we can't resolve statically)
+        }
+        // Walked off the end via a transparent chain — fall back to the first-hop
+        // anchor so the preview still has a node to render.
+        ChatFlowNode anchor = node != null ? node
+                : ChatFlowOps.firstInteractiveNode(graph, start).orElse(start);
+        return new FlowWalk(anchor, overrideId);
+    }
+
+    private static Optional<ChatFlowNode> firstTarget(ChatFlowGraph graph, ChatFlowNode node) {
+        List<ChatFlowEdge> outgoing = graph.outgoingEdges(node.id());
+        if (outgoing.isEmpty()) {
+            return Optional.empty();
+        }
+        return graph.nodeById(outgoing.get(0).target());
+    }
+
+    /**
+     * Reconciles a flow persona override id against the agent's catalog exactly
+     * as {@link com.viglet.turing.genai.persona.TurAgentPersonaResolver} would:
+     * honour it only when the persona is in the catalog and usable as a speaker,
+     * otherwise fall back to the default and flag the silent fallback.
+     */
+    private FlowPersonaResolution resolvePersona(TurAIAgent agent, String overrideId) {
+        TurPersona defaultPersona = agent.getDefaultPersona();
+        if (!StringUtils.hasText(overrideId)) {
+            return new FlowPersonaResolution(defaultPersona, null, false, false);
+        }
+        TurPersona match = findInCatalog(agent, overrideId);
+        if (match != null && match.isUsableAsSpeaker()) {
+            return new FlowPersonaResolution(match, overrideId, true, false);
+        }
+        // Requested but not honourable — runtime quietly uses the default too.
+        return new FlowPersonaResolution(defaultPersona, overrideId, false, true);
+    }
+
+    private static TurPersona findInCatalog(TurAIAgent agent, String personaId) {
+        if (agent.getPersonas() == null) {
+            return null;
+        }
+        return agent.getPersonas().stream()
+                .filter(p -> personaId.equals(p.getId()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /** Origin-note for the PERSONA segment, aware of a flow persona switch. */
+    private static String personaNote(FlowPersonaResolution res) {
+        if (res != null && res.switchedByFlow()) {
+            return "Switched by the selected flow's persona node — this is the voice for the "
+                    + "previewed turn, not the agent's default persona.";
+        }
+        if (res != null && res.overrideMissing()) {
+            return "The selected flow has a persona node pointing at a persona not in this "
+                    + "agent's catalog — the runtime silently falls back to the default (shown "
+                    + "here). Fix the node's persona or add it to the agent.";
+        }
+        return "Default persona — applies on every turn unless a chat flow switches it.";
+    }
+
+    /**
+     * T607 — per-flow persona-override diagnostics for the validator. Walks every
+     * flow to its entry anchor and reports any {@code persona}-node override that
+     * the runtime would silently ignore (persona not in the agent catalog, or
+     * audience-only). Read-only; parses each flow's cached graph.
+     */
+    @Transactional(readOnly = true)
+    public List<FlowPersonaDiagnostic> diagnoseFlowPersonas(TurAIAgent agent) {
+        List<TurChatFlow> flows = chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId());
+        List<FlowPersonaDiagnostic> diagnostics = new ArrayList<>();
+        for (TurChatFlow flow : flows) {
+            Optional<ChatFlowGraph> graphOpt = chatFlowEngineService.parseGraph(flow);
+            if (graphOpt.isEmpty()) {
+                continue;
+            }
+            String overrideId = walkToAnchor(graphOpt.get()).personaOverrideId();
+            if (!StringUtils.hasText(overrideId)) {
+                continue;
+            }
+            TurPersona match = findInCatalog(agent, overrideId);
+            if (match == null) {
+                diagnostics.add(new FlowPersonaDiagnostic(flow.getName(), overrideId, true, false));
+            } else if (!match.isUsableAsSpeaker()) {
+                diagnostics.add(new FlowPersonaDiagnostic(flow.getName(), match.getName(), false, true));
+            }
+        }
+        return diagnostics;
+    }
+
+    /**
+     * One flow whose {@code persona} node points at a persona the runtime cannot
+     * honour. Consumed by {@link TurSystemPromptValidatorService}.
+     *
+     * @param flowName       the flow the misconfigured persona node lives in.
+     * @param personaRef     the offending persona id (not-in-catalog case) or the
+     *                       persona name (audience-only case).
+     * @param notInCatalog   the referenced persona id is not in the agent catalog.
+     * @param audienceOnly   the referenced persona exists but is audience-only.
+     */
+    public record FlowPersonaDiagnostic(String flowName, String personaRef,
+            boolean notInCatalog, boolean audienceOnly) {
     }
 
     private List<TurSystemPromptToolDto> buildTools(TurAIAgent agent) {

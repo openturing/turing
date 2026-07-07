@@ -162,6 +162,14 @@
             "message": "A instrução da persona padrão duplica em grande parte o system prompt do agente.",
             "hint": "Mantenha cada camada focada — o prompt do agente para escopo/comportamento, a persona para a voz — para evitar enviar o mesmo texto duas vezes."
           },
+          "flow_persona_not_in_catalog": {
+            "message": "O fluxo \"{{flow}}\" tem um nó de persona apontando para a persona \"{{persona}}\", que não está no catálogo de personas deste agente. Em tempo de execução o sistema volta silenciosamente para a persona padrão.",
+            "hint": "Adicione essa persona ao agente, ou corrija o nó para referenciar uma persona permitida."
+          },
+          "flow_persona_audience_only": {
+            "message": "O fluxo \"{{flow}}\" troca para a persona \"{{persona}}\", que é somente de audiência e não pode ser falante. Em tempo de execução o sistema volta para a persona padrão.",
+            "hint": "Use uma persona cujo tipo seja SPEAKER ou BOTH para uma troca de voz no fluxo."
+          },
           "deep_check_unavailable": {
             "message": "Nenhuma LLM padrão está configurada ou habilitada, então a análise profunda de conflitos não pode ser executada.",
             "hint": "Defina uma LLM padrão em Configurações Globais para habilitar a verificação profunda."

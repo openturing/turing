@@ -2223,16 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.1 Flow-aware persona (T607)
-
-Make the preview + validator resolve the persona the way the runtime does: walk
-the selected flow to its anchor node, apply any `persona`-node override on the
-path (mirroring `setActivePersonaVariable` → `TurAgentPersonaResolver`), and fall
-back to the default only when none applies. Label the PERSONA segment "switched by
-flow" when overridden, and warn when a node's `personaId` isn't in the agent's
-persona catalog — the exact silent-fallback that would make runtime quietly use
-the default too.
-
 ### XXXIV.2 Per-segment token accounting (T608)
 
 Show a token count + share-of-total per segment and a grand total, with an

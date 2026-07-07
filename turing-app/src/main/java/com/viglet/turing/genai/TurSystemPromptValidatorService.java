@@ -111,8 +111,38 @@ public class TurSystemPromptValidatorService {
         checkLanguageDirectiveConflict(base, personaInstruction, issues);
         checkPersonaVocabulary(persona, base, issues);
         checkRedundantInstruction(base, personaInstruction, issues);
+        checkFlowPersonaOverrides(agent, issues);
 
         return issues;
+    }
+
+    /**
+     * T607 — a chat flow's {@code persona} node can switch the active voice, but
+     * only if the referenced persona is in the agent's catalog and usable as a
+     * speaker; otherwise the runtime silently falls back to the default (the same
+     * blind spot the preview used to have). Surface those misconfigurations so the
+     * operator doesn't ship a flow that quietly speaks in the wrong voice.
+     */
+    private void checkFlowPersonaOverrides(TurAIAgent agent,
+            List<TurSystemPromptIssueDto> issues) {
+        for (TurSystemPromptPreviewService.FlowPersonaDiagnostic d
+                : previewService.diagnoseFlowPersonas(agent)) {
+            if (d.notInCatalog()) {
+                issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "flow_persona_not_in_catalog",
+                        "Flow \"" + d.flowName() + "\" has a persona node pointing at persona \""
+                                + d.personaRef() + "\", which is not in this agent's persona catalog. "
+                                + "The runtime silently falls back to the default persona.",
+                        "Add that persona to the agent, or fix the node to reference an allowed persona.",
+                        "FLOW", Map.of("flow", d.flowName(), "persona", d.personaRef())));
+            } else if (d.audienceOnly()) {
+                issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "flow_persona_audience_only",
+                        "Flow \"" + d.flowName() + "\" switches to persona \"" + d.personaRef()
+                                + "\", which is audience-only and cannot be a speaker. "
+                                + "The runtime falls back to the default persona.",
+                        "Use a persona whose kind is SPEAKER or BOTH for a flow voice switch.",
+                        "FLOW", Map.of("flow", d.flowName(), "persona", d.personaRef())));
+            }
+        }
     }
 
     private void checkEmptyPrompt(String base, List<TurSystemPromptIssueDto> issues) {

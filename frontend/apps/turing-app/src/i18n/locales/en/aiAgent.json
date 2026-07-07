@@ -162,6 +162,14 @@
             "message": "The default persona's instruction largely duplicates the agent system prompt.",
             "hint": "Keep each layer focused — the agent prompt for scope/behavior, the persona for voice — to avoid sending the same text twice."
           },
+          "flow_persona_not_in_catalog": {
+            "message": "Flow \"{{flow}}\" has a persona node pointing at persona \"{{persona}}\", which is not in this agent's persona catalog. The runtime silently falls back to the default persona.",
+            "hint": "Add that persona to the agent, or fix the node to reference an allowed persona."
+          },
+          "flow_persona_audience_only": {
+            "message": "Flow \"{{flow}}\" switches to persona \"{{persona}}\", which is audience-only and cannot be a speaker. The runtime falls back to the default persona.",
+            "hint": "Use a persona whose kind is SPEAKER or BOTH for a flow voice switch."
+          },
           "deep_check_unavailable": {
             "message": "No default LLM is configured or enabled, so the deep conflict analysis can't run.",
             "hint": "Set a default LLM in Global Settings to enable the deep check."

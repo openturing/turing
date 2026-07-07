@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -49,6 +50,10 @@ class TurSystemPromptValidatorServiceTest {
     @BeforeEach
     void setUp() {
         service = new TurSystemPromptValidatorService(previewService, llmSummaryService);
+        // T607 — validate() always consults flow persona diagnostics; default to
+        // none so the pre-existing checks stay isolated (lenient: deepCheck tests
+        // don't run validate()).
+        lenient().when(previewService.diagnoseFlowPersonas(any())).thenReturn(List.of());
     }
 
     private void stubPreview(String assembledText) {
@@ -140,6 +145,31 @@ class TurSystemPromptValidatorServiceTest {
         agent.setDefaultPersona(persona);
 
         assertThat(codes(service.validate(agent))).contains("forbidden_term_in_prompt");
+    }
+
+    @Test
+    void flowPersonaNotInCatalogWarns() {
+        stubPreview("base");
+        when(previewService.diagnoseFlowPersonas(any())).thenReturn(List.of(
+                new TurSystemPromptPreviewService.FlowPersonaDiagnostic(
+                        "Concierge", "persona-ghost", true, false)));
+
+        var issues = service.validate(agent("You are an assistant."));
+        assertThat(issues).anyMatch(i -> i.code().equals("flow_persona_not_in_catalog")
+                && i.severity().equals("WARNING")
+                && i.source().equals("FLOW")
+                && i.message().contains("Concierge"));
+    }
+
+    @Test
+    void flowPersonaAudienceOnlyWarns() {
+        stubPreview("base");
+        when(previewService.diagnoseFlowPersonas(any())).thenReturn(List.of(
+                new TurSystemPromptPreviewService.FlowPersonaDiagnostic(
+                        "Concierge", "Reader Persona", false, true)));
+
+        assertThat(codes(service.validate(agent("You are an assistant."))))
+                .contains("flow_persona_audience_only");
     }
 
     @Test
