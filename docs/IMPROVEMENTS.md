@@ -2223,14 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.3 "Inert this turn" detection (T609)
-
-When a flow is active, dim the agent-prompt regions the flow addendum neutralizes
-(welcome / first-interaction / routing scaffolding) and total their token cost, so
-the dead weight is visible. Heuristic first (the headings/anchors the flow's
-"IGNORE everything else" clause covers), with an optional author marker to tag a
-block as flow-only vs concierge-only for precise attribution.
-
 ### XXXIV.4 Cross-segment redundancy & contradiction lint (T610)
 
 Extend the existing conflict-check to run *across* segments, not within one:

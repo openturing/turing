@@ -29,6 +29,7 @@ import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptSegment;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowOptionDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptInertRegionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptSegmentDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptToolDto;
@@ -82,15 +83,18 @@ public class TurSystemPromptPreviewService {
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurLLMPriceService priceService;
+    private final TurInertRegionDetector inertRegionDetector;
 
     public TurSystemPromptPreviewService(TurPromptAssemblyPipeline promptAssemblyPipeline,
             TurChatFlowEngineService chatFlowEngineService,
             TurChatFlowRepository chatFlowRepository,
-            TurLLMPriceService priceService) {
+            TurLLMPriceService priceService,
+            TurInertRegionDetector inertRegionDetector) {
         this.promptAssemblyPipeline = promptAssemblyPipeline;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowRepository = chatFlowRepository;
         this.priceService = priceService;
+        this.inertRegionDetector = inertRegionDetector;
     }
 
     /** Convenience overload — previews the default flow (first enabled). */
@@ -225,8 +229,17 @@ public class TurSystemPromptPreviewService {
                 && flowPreview != null && flowPreview.nodeId() != null) {
             title = (title == null ? "" : title) + " → " + flowPreview.nodeId();
         }
-        return new TurSystemPromptSegmentDto(seg.origin(), title, seg.displayText(),
-                true, false, note, seg.tokens(), seg.stability().name());
+        // T609 — flag the agent-prompt regions the active flow neutralizes
+        // (welcome / first-interaction / routing scaffolding). Only when a flow
+        // governs the previewed turn; the marker-based flow-only case is detected
+        // on no-flow turns too, so run the detector on the AGENT segment always.
+        String display = seg.displayText();
+        List<TurSystemPromptInertRegionDto> inertRegions =
+                TurPromptSegment.ORIGIN_AGENT.equals(seg.origin())
+                        ? inertRegionDetector.detect(display, flowPreview != null)
+                        : List.of();
+        return new TurSystemPromptSegmentDto(seg.origin(), title, display,
+                true, false, note, seg.tokens(), seg.stability().name(), inertRegions);
     }
 
     /**

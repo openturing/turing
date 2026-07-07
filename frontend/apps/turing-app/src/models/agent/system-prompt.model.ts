@@ -16,6 +16,18 @@ export type TurSystemPromptOrigin =
   | "FEW_SHOT"
   | "RAG";
 
+/** Block AK/T609 — a span of a segment that's inert on the previewed turn. */
+export interface TurSystemPromptInertRegion {
+  label: string;
+  /** Inclusive char offset into the segment content. */
+  start: number;
+  /** Exclusive char offset into the segment content. */
+  end: number;
+  tokens: number;
+  /** Why it's inert: "heuristic" | "concierge_only" | "flow_only". */
+  reason: string;
+}
+
 /** One labeled fragment of the assembled system prompt, with provenance. */
 export interface TurSystemPromptSegment {
   origin: TurSystemPromptOrigin;
@@ -31,6 +43,8 @@ export interface TurSystemPromptSegment {
   tokens: number;
   /** Block AL/T613 — `"STABLE"` (cacheable prefix) or `"PER_TURN"`; null for info segments. */
   stability: "STABLE" | "PER_TURN" | null;
+  /** Block AK/T609 — spans inert this turn (a flow neutralizes them); empty when none. */
+  inertRegions: TurSystemPromptInertRegion[];
 }
 
 /** A tool exposed to the LLM (sent as a schema channel, not in the prompt text). */

@@ -135,7 +135,8 @@
         "stableTokens": "{{count}} cacheable prefix ({{share}}%)",
         "perTurnTokens": "{{count}} per turn",
         "estimatedCost": "≈ {{cost}}/turn",
-        "tokensApprox": "approximate"
+        "tokensApprox": "approximate",
+        "inertThisTurn": "inert this turn"
       },
       "warnings": {
         "title": "Conflict check",

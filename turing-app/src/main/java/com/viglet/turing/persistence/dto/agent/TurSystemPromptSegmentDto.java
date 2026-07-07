@@ -41,6 +41,8 @@ package com.viglet.turing.persistence.dto.agent;
  * @param stability  Block AL / T613 — {@code "STABLE"} (cacheable prefix) or
  *                   {@code "PER_TURN"} (varies per turn); {@code null} for
  *                   informational segments.
+ * @param inertRegions Block AK / T609 — spans of this segment that are inert on
+ *                   the previewed turn (a flow neutralizes them); empty when none.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -53,11 +55,22 @@ public record TurSystemPromptSegmentDto(
         boolean runtimeOnly,
         String note,
         int tokens,
-        String stability) {
+        String stability,
+        java.util.List<TurSystemPromptInertRegionDto> inertRegions) {
+
+    public TurSystemPromptSegmentDto {
+        inertRegions = inertRegions == null ? java.util.List.of() : inertRegions;
+    }
 
     /** Back-compat convenience for the pre-Block-AL 6-arg call sites. */
     public TurSystemPromptSegmentDto(String origin, String title, String content,
             boolean included, boolean runtimeOnly, String note) {
-        this(origin, title, content, included, runtimeOnly, note, 0, null);
+        this(origin, title, content, included, runtimeOnly, note, 0, null, java.util.List.of());
+    }
+
+    /** Back-compat convenience for the T613 8-arg call sites (no inert regions). */
+    public TurSystemPromptSegmentDto(String origin, String title, String content,
+            boolean included, boolean runtimeOnly, String note, int tokens, String stability) {
+        this(origin, title, content, included, runtimeOnly, note, tokens, stability, java.util.List.of());
     }
 }

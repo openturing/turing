@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import {
   SYSTEM_PROMPT_FLOW_NONE,
+  type TurSystemPromptInertRegion,
   type TurSystemPromptOrigin,
   type TurSystemPromptPreview,
   type TurSystemPromptSegment,
@@ -462,11 +463,7 @@ function SegmentPassage({
       </div>
 
       {segment.content ? (
-        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-pre:border prose-pre:bg-muted/50 prose-pre:text-foreground prose-code:text-foreground sm:prose-base">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-            {preserveSoftBreaks(segment.content)}
-          </ReactMarkdown>
-        </div>
+        <SegmentBody segment={segment} />
       ) : (
         <p className="text-sm italic text-muted-foreground/70">{emptyLabel}</p>
       )}
@@ -474,4 +471,106 @@ function SegmentPassage({
       {segment.note && <p className="mt-2 text-xs text-muted-foreground">{segment.note}</p>}
     </section>
   );
+}
+
+const PROSE_CLASSES =
+  "prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-pre:border prose-pre:bg-muted/50 prose-pre:text-foreground prose-code:text-foreground sm:prose-base";
+
+/**
+ * Renders a segment's markdown body, dimming the T609 "inert this turn" regions
+ * (welcome / first-interaction / routing scaffolding a flow neutralizes) and
+ * tagging each with its token cost. When no regions are inert it renders the
+ * body as a single markdown block (the common case).
+ */
+function SegmentBody({ segment }: Readonly<{ segment: TurSystemPromptSegment }>) {
+  const { t } = useTranslation();
+  const slices = useMemo(
+    () => sliceInert(segment.content, segment.inertRegions ?? []),
+    [segment.content, segment.inertRegions],
+  );
+
+  if (slices.length === 1 && !slices[0].inert) {
+    return (
+      <div className={PROSE_CLASSES}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+          {preserveSoftBreaks(segment.content)}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+
+  const inertLabel = t("aiAgent.systemPrompt.preview.inertThisTurn", {
+    defaultValue: "inert this turn",
+  });
+  const tokLabel = t("aiAgent.systemPrompt.preview.tokens", { defaultValue: "tok" });
+
+  return (
+    <div className="space-y-1">
+      {slices.map((slice, idx) =>
+        slice.inert ? (
+          <div
+            key={idx}
+            className="relative rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 px-3 py-1.5 opacity-50"
+            title={inertLabel}
+          >
+            <div className="mb-1 flex items-center gap-1.5">
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground line-through decoration-muted-foreground/50">
+                {inertLabel}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                ~{slice.tokens} {tokLabel}
+              </span>
+            </div>
+            <div className={PROSE_CLASSES}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                {preserveSoftBreaks(slice.text)}
+              </ReactMarkdown>
+            </div>
+          </div>
+        ) : (
+          <div key={idx} className={PROSE_CLASSES}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              {preserveSoftBreaks(slice.text)}
+            </ReactMarkdown>
+          </div>
+        ),
+      )}
+    </div>
+  );
+}
+
+interface InertSlice {
+  text: string;
+  inert: boolean;
+  tokens: number;
+}
+
+/**
+ * Splits a segment's content into ordered live / inert slices by the region
+ * offsets, clamped and de-overlapped so the slices always tile the content.
+ * Regions are heading-delimited sections, so each inert slice is self-contained
+ * markdown (a heading + its body) and renders cleanly on its own.
+ */
+function sliceInert(content: string, regions: TurSystemPromptInertRegion[]): InertSlice[] {
+  if (!regions.length) {
+    return [{ text: content, inert: false, tokens: 0 }];
+  }
+  const sorted = [...regions].sort((a, b) => a.start - b.start);
+  const slices: InertSlice[] = [];
+  let cursor = 0;
+  for (const r of sorted) {
+    const start = Math.max(cursor, Math.min(r.start, content.length));
+    const end = Math.max(start, Math.min(r.end, content.length));
+    if (start > cursor) {
+      slices.push({ text: content.slice(cursor, start), inert: false, tokens: 0 });
+    }
+    if (end > start) {
+      slices.push({ text: content.slice(start, end), inert: true, tokens: r.tokens });
+    }
+    cursor = end;
+  }
+  if (cursor < content.length) {
+    slices.push({ text: content.slice(cursor), inert: false, tokens: 0 });
+  }
+  return slices.filter((s) => s.text.length > 0);
 }

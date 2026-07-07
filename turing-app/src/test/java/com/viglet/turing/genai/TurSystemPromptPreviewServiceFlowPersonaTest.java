@@ -62,8 +62,8 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
 
     @BeforeEach
     void setUp() {
-        service = new TurSystemPromptPreviewService(
-                promptAssemblyPipeline, chatFlowEngineService, chatFlowRepository, priceService);
+        service = new TurSystemPromptPreviewService(promptAssemblyPipeline, chatFlowEngineService,
+                chatFlowRepository, priceService, new TurInertRegionDetector());
     }
 
     /** start → persona(personaId) → aiQuestion — the canonical override path. */
