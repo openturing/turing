@@ -71,6 +71,9 @@ public final class TurEvalBuiltinGraders {
     /** HUMAN — defers the case for human review (T592). */
     public static final String HUMAN_REVIEW = "human-review";
 
+    /** CODE — Block R NL→facet scorer as a grader (T601): parses a query + scores vs a schema. */
+    public static final String NL_FACET = "nl-facet";
+
     /**
      * The legacy default stack. Order is cosmetic for the aggregate (mean is
      * order-independent and the overall pass is a logical AND) but kept stable
