@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.eval.grader;
 
+import java.util.List;
 import java.util.Map;
 
 import com.viglet.turing.persistence.model.agent.TurEvalGraderConfig;
@@ -98,6 +99,18 @@ public record TurEvalGraderConfigView(
             }
         }
         return dflt;
+    }
+
+    /** String list at {@code key} (a JSON array, or a single string), else empty. */
+    public List<String> configStringList(String key) {
+        Object v = config().get(key);
+        if (v instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        if (v instanceof String s && !s.isBlank()) {
+            return List.of(s);
+        }
+        return List.of();
     }
 
     /** Boolean value at {@code key}, or {@code dflt} when absent. */

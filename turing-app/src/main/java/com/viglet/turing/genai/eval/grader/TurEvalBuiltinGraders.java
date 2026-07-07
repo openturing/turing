@@ -62,6 +62,9 @@ public final class TurEvalBuiltinGraders {
     /** CODE — a custom Groovy script ({@code script}) returning score/pass/rationale (T589). */
     public static final String GROOVY = "groovy";
 
+    /** MODEL — generalized LLM judge with LABEL/SCORE/CRITERIA/PAIRWISE strategies (T590). */
+    public static final String MODEL_JUDGE = "model-judge";
+
     /**
      * The legacy default stack. Order is cosmetic for the aggregate (mean is
      * order-independent and the overall pass is a logical AND) but kept stable
