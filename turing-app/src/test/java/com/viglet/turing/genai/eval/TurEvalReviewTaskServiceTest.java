@@ -10,6 +10,7 @@
 package com.viglet.turing.genai.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -17,17 +18,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto;
+import com.viglet.turing.persistence.dto.agent.TurEvalReviewRequest;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalReport;
 import com.viglet.turing.persistence.model.agent.TurEvalReviewTask;
+import com.viglet.turing.persistence.repository.agent.TurAgentEvalReportRepository;
 import com.viglet.turing.persistence.repository.agent.TurEvalReviewTaskRepository;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * T592 / §XXXIII.7 — the human-review task service: snapshotting a deferred case
@@ -39,11 +48,15 @@ import com.viglet.turing.persistence.repository.agent.TurEvalReviewTaskRepositor
 @ExtendWith(MockitoExtension.class)
 class TurEvalReviewTaskServiceTest {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Mock
     private TurEvalReviewTaskRepository repository;
+    @Mock
+    private TurAgentEvalReportRepository reportRepository;
 
     private TurEvalReviewTaskService service() {
-        return new TurEvalReviewTaskService(repository);
+        return new TurEvalReviewTaskService(repository, reportRepository);
     }
 
     private static TurAgentEvalCase evalCase() {
@@ -86,5 +99,50 @@ class TurEvalReviewTaskServiceTest {
                 "end", "CAPTURED");
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void submitReviewMergesVerdictIntoLatestReport() {
+        TurEvalReviewTask task = new TurEvalReviewTask();
+        task.setId("t1");
+        task.setAgentId("a1");
+        task.setCaseId("case-1");
+        task.setStatus(TurEvalReviewTask.PENDING);
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+
+        TurAgentEvalCaseResultDto pending = new TurAgentEvalCaseResultDto("case-1", "greeting",
+                false, 0d, "CAPTURED", "ABANDONED", null, List.of(), "na", null, null, true);
+        TurAgentEvalReport report = new TurAgentEvalReport();
+        report.setId("r1");
+        report.setPendingReview(true);
+        report.setResultsJson(MAPPER.writeValueAsString(List.of(pending)));
+        when(reportRepository.findFirstByTurAIAgent_IdOrderByCreatedAtDesc("a1"))
+                .thenReturn(Optional.of(report));
+
+        service().submitReview("t1", new TurEvalReviewRequest(true, 0.9, "looks fine"), "alice");
+
+        assertThat(task.getStatus()).isEqualTo(TurEvalReviewTask.REVIEWED);
+        assertThat(task.getReviewedPass()).isTrue();
+        assertThat(task.getReviewedBy()).isEqualTo("alice");
+
+        ArgumentCaptor<TurAgentEvalReport> captor = ArgumentCaptor.forClass(TurAgentEvalReport.class);
+        verify(reportRepository).save(captor.capture());
+        TurAgentEvalReport merged = captor.getValue();
+        assertThat(merged.isPendingReview()).isFalse();
+        assertThat(merged.isPassed()).isTrue();
+        assertThat(merged.getPassedCount()).isEqualTo(1);
+    }
+
+    @Test
+    void submitReviewOnAlreadyReviewedTaskConflicts() {
+        TurEvalReviewTask task = new TurEvalReviewTask();
+        task.setId("t1");
+        task.setStatus(TurEvalReviewTask.REVIEWED);
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+
+        assertThatThrownBy(() -> service().submitReview("t1",
+                new TurEvalReviewRequest(true, 1d, null), "bob"))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(reportRepository, never()).save(any());
     }
 }
