@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/queries/keys";
-import type { TurEvalReviewRequest } from "@/models/eval/eval-studio.model";
+import type {
+  TurEvalDatasetRowDraft,
+  TurEvalReviewRequest,
+} from "@/models/eval/eval-studio.model";
 import { TurEvalStudioService } from "@/services/eval/eval-studio.service";
 
 /**
@@ -22,6 +25,43 @@ export function useEvalGraderStacks() {
   return useQuery({
     queryKey: queryKeys.evalStudio.graderStacks(),
     queryFn: () => service.listGraderStacks(),
+  });
+}
+
+// ─────────────────────────── T597 LLM-assisted generation ───────────────────────────
+
+/** T597 — synthesize candidate rows for an agent (draft, not persisted). */
+export function useGenerateRows() {
+  return useMutation({
+    mutationFn: ({ agentId, count }: { agentId: string; count: number }) =>
+      service.generateRows(agentId, count),
+  });
+}
+
+/** T597 — paraphrase a dataset's rows into variants (draft, not persisted). */
+export function useAugmentDataset() {
+  return useMutation({
+    mutationFn: ({ datasetId, variants }: { datasetId: string; variants: number }) =>
+      service.augmentDataset(datasetId, variants),
+  });
+}
+
+/** T597 — persist reviewed draft rows; refreshes the dataset list. */
+export function useSaveReviewedRows() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      rows,
+      name,
+      datasetId,
+    }: {
+      rows: TurEvalDatasetRowDraft[];
+      name?: string;
+      datasetId?: string;
+    }) => service.saveReviewedRows(rows, { name, datasetId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.evalStudio.datasets() });
+    },
   });
 }
 

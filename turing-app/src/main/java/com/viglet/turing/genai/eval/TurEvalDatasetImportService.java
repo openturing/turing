@@ -101,6 +101,36 @@ public class TurEvalDatasetImportService {
         return persistDataset(name, rows);
     }
 
+    /**
+     * T597 — appends already-built canonical row nodes to an <em>existing</em>
+     * dataset (they land after the current rows, ordered) and bumps its
+     * {@code updatedAt}. Lets the reviewed output of LLM-assisted generation /
+     * augmentation ({@link TurEvalDatasetGenerationService}) grow a dataset the
+     * same way {@link #importCanonicalRows} creates one, so a generated row is
+     * shape-identical to an uploaded or mined one.
+     */
+    @Transactional
+    public TurEvalDataset appendCanonicalRows(String datasetId, List<? extends JsonNode> canonicalRows) {
+        TurEvalDataset dataset = datasetRepository.findById(datasetId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Dataset not found: " + datasetId));
+        List<TurEvalDatasetRow> rows = new ArrayList<>();
+        for (JsonNode node : canonicalRows) {
+            rows.add(buildRow(node));
+        }
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No rows to append");
+        }
+        int order = datasetRowRepository.findByTurEvalDataset_IdOrderBySortOrderAsc(datasetId).size();
+        for (TurEvalDatasetRow row : rows) {
+            row.setSortOrder(order++);
+            row.setTurEvalDataset(dataset);
+            datasetRowRepository.save(row);
+        }
+        dataset.setUpdatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        return datasetRepository.save(dataset);
+    }
+
     private TurEvalDataset persistDataset(String name, List<TurEvalDatasetRow> rows) {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         TurEvalDataset dataset = new TurEvalDataset();

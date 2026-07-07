@@ -26,12 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.genai.eval.TurEvalDatasetGenerationService;
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService;
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService.Format;
 import com.viglet.turing.genai.eval.TurEvalDatasetSourceImportService;
 import com.viglet.turing.genai.eval.TurEvalDatasetVersionService;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDiffDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetRowDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,13 +59,16 @@ public class TurEvalDatasetAPI {
     private final TurEvalDatasetImportService datasetService;
     private final TurEvalDatasetVersionService versionService;
     private final TurEvalDatasetSourceImportService sourceImportService;
+    private final TurEvalDatasetGenerationService generationService;
 
     public TurEvalDatasetAPI(TurEvalDatasetImportService datasetService,
             TurEvalDatasetVersionService versionService,
-            TurEvalDatasetSourceImportService sourceImportService) {
+            TurEvalDatasetSourceImportService sourceImportService,
+            TurEvalDatasetGenerationService generationService) {
         this.datasetService = datasetService;
         this.versionService = versionService;
         this.sourceImportService = sourceImportService;
+        this.generationService = generationService;
     }
 
     @Operation(summary = "List datasets (summaries)")
@@ -130,6 +135,32 @@ public class TurEvalDatasetAPI {
             @RequestParam(value = "limit", defaultValue = "100") int limit) {
         return datasetService.get(
                 sourceImportService.importFromFailures(agentId, name, limit).getId());
+    }
+
+    @Operation(summary = "T597 — LLM-generate candidate rows for an agent (draft, NOT persisted)")
+    @PostMapping("/generate")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public List<TurEvalDatasetRowDto> generate(@RequestParam("agentId") String agentId,
+            @RequestParam(value = "count", defaultValue = "10") int count) {
+        return generationService.generateFromAgent(agentId, count);
+    }
+
+    @Operation(summary = "T597 — LLM-paraphrase a dataset's rows into variants (draft, NOT persisted)")
+    @PostMapping("/{datasetId}/augment")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public List<TurEvalDatasetRowDto> augment(@PathVariable String datasetId,
+            @RequestParam(value = "variants", defaultValue = "2") int variants) {
+        return generationService.augmentDataset(datasetId, variants);
+    }
+
+    @Operation(summary = "T597 — persist reviewed draft rows (append to datasetId, else create)")
+    @PostMapping("/save-reviewed")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public TurEvalDatasetDto saveReviewed(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "datasetId", required = false) String datasetId,
+            @org.springframework.web.bind.annotation.RequestBody List<TurEvalDatasetRowDto> rows) {
+        return generationService.saveReviewed(name, datasetId, rows);
     }
 
     @Operation(summary = "Export a dataset as JSONL")

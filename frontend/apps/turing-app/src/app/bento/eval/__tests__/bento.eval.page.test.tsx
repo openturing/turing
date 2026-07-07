@@ -12,6 +12,9 @@ const useEvalAgreement = vi.fn();
 const useEvalCalibration = vi.fn();
 const useSampleAudit = vi.fn();
 const useAiAgents = vi.fn();
+const useGenerateRows = vi.fn();
+const useAugmentDataset = vi.fn();
+const useSaveReviewedRows = vi.fn();
 
 vi.mock("@/api/queries/eval-studio.queries", () => ({
   useEvalDatasets: () => useEvalDatasets(),
@@ -22,6 +25,9 @@ vi.mock("@/api/queries/eval-studio.queries", () => ({
   useEvalAgreement: (agentId?: string) => useEvalAgreement(agentId),
   useEvalCalibration: (agentId?: string) => useEvalCalibration(agentId),
   useSampleAudit: (agentId?: string) => useSampleAudit(agentId),
+  useGenerateRows: () => useGenerateRows(),
+  useAugmentDataset: () => useAugmentDataset(),
+  useSaveReviewedRows: () => useSaveReviewedRows(),
 }));
 
 vi.mock("@/api/queries/ai-agent.queries", () => ({
@@ -76,6 +82,25 @@ describe("BentoEvalPage", () => {
       isError: false,
       isSuccess: false,
     });
+    useGenerateRows.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+      data: undefined,
+    });
+    useAugmentDataset.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    });
+    useSaveReviewedRows.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    });
   });
 
   it("renders the Eval Studio hero and the datasets tab by default", () => {
@@ -112,6 +137,57 @@ describe("BentoEvalPage", () => {
     fireEvent.click(screen.getByText("Review inbox"));
     fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
     expect(screen.getByText("greeting")).toBeInTheDocument();
+  });
+
+  it("switches to the generate tab and shows the two source panels", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("Generate"));
+    expect(screen.getByText("Generate from an agent")).toBeInTheDocument();
+    expect(screen.getByText("Augment a dataset")).toBeInTheDocument();
+    expect(screen.getByText("No candidate rows yet")).toBeInTheDocument();
+  });
+
+  it("renders generated drafts in an editable review form and saves them", () => {
+    // The generate mutation resolves with two candidate rows.
+    useGenerateRows.mockReturnValue({
+      mutate: (_vars: unknown, opts?: { onSuccess?: (rows: unknown[]) => void }) =>
+        opts?.onSuccess?.([
+          {
+            id: null,
+            name: "happy path",
+            seedTurnsJson: '["I want to enroll"]',
+            expectedOutcome: "CAPTURED",
+            tags: "generated",
+            sortOrder: 0,
+          },
+        ]),
+      isPending: false,
+      isError: false,
+      isSuccess: true,
+      data: [{}],
+    });
+    const saveMutate = vi.fn();
+    useSaveReviewedRows.mockReturnValue({
+      mutate: saveMutate,
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    });
+
+    renderPage();
+    fireEvent.click(screen.getByText("Generate"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    // Both the tab and the action button read "Generate"; the action is the last.
+    const generateButtons = screen.getAllByRole("button", { name: /Generate$/ });
+    fireEvent.click(generateButtons[generateButtons.length - 1]);
+
+    // The draft appears in the review form...
+    expect(screen.getByDisplayValue("happy path")).toBeInTheDocument();
+    expect(screen.getByText(/candidate row\(s\)/)).toBeInTheDocument();
+
+    // ...and saving hands the reviewed rows to the mutation.
+    fireEvent.click(screen.getByText("Save reviewed rows"));
+    expect(saveMutate).toHaveBeenCalled();
   });
 
   it("shows the calibration panel with kappa metrics once an agent is selected", () => {

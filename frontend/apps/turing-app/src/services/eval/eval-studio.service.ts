@@ -3,6 +3,7 @@ import type {
   TurEvalAgreement,
   TurEvalCalibration,
   TurEvalDataset,
+  TurEvalDatasetRowDraft,
   TurEvalGraderStack,
   TurEvalReviewRequest,
   TurEvalReviewTask,
@@ -31,6 +32,50 @@ export class TurEvalStudioService {
   /** List reusable grader stacks. */
   async listGraderStacks(): Promise<TurEvalGraderStack[]> {
     const response = await axios.get<TurEvalGraderStack[]>("/eval/grader-stack");
+    return response.data;
+  }
+
+  // ─────────────────────────── T597 LLM-assisted generation ───────────────────────────
+
+  /** Synthesize candidate rows for an agent (draft — NOT persisted). */
+  async generateRows(
+    agentId: string,
+    count: number,
+  ): Promise<TurEvalDatasetRowDraft[]> {
+    const response = await axios.post<TurEvalDatasetRowDraft[]>(
+      "/eval/dataset/generate",
+      null,
+      { params: { agentId, count } },
+    );
+    return response.data;
+  }
+
+  /** Paraphrase an existing dataset's rows into variants (draft — NOT persisted). */
+  async augmentDataset(
+    datasetId: string,
+    variants: number,
+  ): Promise<TurEvalDatasetRowDraft[]> {
+    const response = await axios.post<TurEvalDatasetRowDraft[]>(
+      `/eval/dataset/${datasetId}/augment`,
+      null,
+      { params: { variants } },
+    );
+    return response.data;
+  }
+
+  /** Persist reviewed draft rows: append to datasetId, else create a new dataset. */
+  async saveReviewedRows(
+    rows: TurEvalDatasetRowDraft[],
+    options: { name?: string; datasetId?: string },
+  ): Promise<TurEvalDataset> {
+    const params: Record<string, string> = {};
+    if (options.name) params.name = options.name;
+    if (options.datasetId) params.datasetId = options.datasetId;
+    const response = await axios.post<TurEvalDataset>(
+      "/eval/dataset/save-reviewed",
+      rows,
+      { params },
+    );
     return response.data;
   }
 

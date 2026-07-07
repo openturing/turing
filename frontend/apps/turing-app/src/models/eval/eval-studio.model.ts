@@ -19,6 +19,15 @@ export interface TurEvalDatasetRow {
   sortOrder: number;
 }
 
+/**
+ * T597 — a candidate row synthesized/paraphrased by the LLM but NOT yet
+ * persisted (draft). Same shape as a saved row minus the required id (the
+ * backend returns {@code id: null}); the review form edits these before saving.
+ */
+export type TurEvalDatasetRowDraft = Omit<TurEvalDatasetRow, "id"> & {
+  id?: string | null;
+};
+
 export interface TurEvalDataset {
   id: string;
   name: string;

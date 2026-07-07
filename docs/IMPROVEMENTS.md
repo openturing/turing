@@ -2082,7 +2082,7 @@ cases migrate into a per-agent default dataset so nothing breaks. T596 is the
 literal "provide a dataset to be tested": upload CSV / JSON / JSONL / OpenAI-Evals
 JSONL, or import from anonymized production transcripts (T61) and Chat-Analytics
 failures (reuse the T447 miner), through a column-mapping step; export JSONL for
-round-tripping. T597 (💭) adds LLM-assisted generation/augmentation (synthesize
+round-tripping. T597 adds LLM-assisted generation/augmentation (synthesize
 rows from the flow/system-prompt/T386 manifest, paraphrase seed turns — never
 auto-trusted, always opens the review form, reusing the T387 pattern). T598 makes
 datasets versioned: immutable snapshots, a run pins a version, and reports name the

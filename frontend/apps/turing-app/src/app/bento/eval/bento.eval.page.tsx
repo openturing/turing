@@ -4,15 +4,17 @@ import {
   IconDatabase,
   IconFlask2,
   IconInbox,
+  IconSparkles,
   IconStack2,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
 import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.queries";
 import { BentoHero } from "@/components/bento";
+import { BentoEvalGeneratePanel } from "./bento.eval.generate-panel";
 import { BentoEvalReviewInbox } from "./bento.eval.review-inbox";
 
-type EvalTab = "datasets" | "stacks" | "review";
+type EvalTab = "datasets" | "generate" | "stacks" | "review";
 
 /**
  * T599 / §XXXIII.14 — Eval Studio. The bento home for the evaluation platform:
@@ -34,6 +36,11 @@ export default function BentoEvalPage() {
       id: "datasets",
       label: t("evalStudio.tabs.datasets", { defaultValue: "Datasets" }),
       icon: IconDatabase,
+    },
+    {
+      id: "generate",
+      label: t("evalStudio.tabs.generate", { defaultValue: "Generate" }),
+      icon: IconSparkles,
     },
     {
       id: "stacks",
@@ -105,6 +112,8 @@ export default function BentoEvalPage() {
           errorLabel={t("common.connectionError", { resource: "datasets" })}
         />
       )}
+
+      {tab === "generate" && <BentoEvalGeneratePanel />}
 
       {tab === "stacks" && (
         <AssetGrid
