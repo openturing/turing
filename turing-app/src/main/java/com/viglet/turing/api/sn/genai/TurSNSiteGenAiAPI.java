@@ -100,6 +100,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurConfigProperties configProperties;
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
+	private final com.viglet.turing.service.chatslots.TurProactiveCopilotService proactiveCopilotService;
 	private final com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
 	private final TurChatSlotExtractionService slotExtractionService;
 	private final TurChatMultiModalSlotService multiModalSlotService;
@@ -107,6 +108,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatShareOgService shareOgService;
 	private final TurAgentWorkspace agentWorkspace;
 	private final TurWorkspaceEventBus workspaceEventBus;
+	private final com.viglet.turing.genai.flow.TurConversationLock conversationLock;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -119,13 +121,15 @@ public class TurSNSiteGenAiAPI {
 			TurConfigProperties configProperties,
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
+			com.viglet.turing.service.chatslots.TurProactiveCopilotService proactiveCopilotService,
 			com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry,
 			TurChatSlotExtractionService slotExtractionService,
 			TurChatMultiModalSlotService multiModalSlotService,
 			TurChatHandoffService handoffService,
 			TurChatShareOgService shareOgService,
 			TurAgentWorkspace agentWorkspace,
-			TurWorkspaceEventBus workspaceEventBus) {
+			TurWorkspaceEventBus workspaceEventBus,
+			com.viglet.turing.genai.flow.TurConversationLock conversationLock) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -137,6 +141,7 @@ public class TurSNSiteGenAiAPI {
 		this.configProperties = configProperties;
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
+		this.proactiveCopilotService = proactiveCopilotService;
 		this.slotSseRegistry = slotSseRegistry;
 		this.slotExtractionService = slotExtractionService;
 		this.multiModalSlotService = multiModalSlotService;
@@ -144,6 +149,7 @@ public class TurSNSiteGenAiAPI {
 		this.shareOgService = shareOgService;
 		this.agentWorkspace = agentWorkspace;
 		this.workspaceEventBus = workspaceEventBus;
+		this.conversationLock = conversationLock;
 	}
 
 	/**
@@ -433,8 +439,9 @@ public class TurSNSiteGenAiAPI {
 			return new ChatResumeResponse(0, false, "conversationId is required");
 		}
 		TurChatFlowEngineService.ResumeResult result =
-				chatFlowEngineService.resumeSuspendedFlow(body.conversationId(),
-						body.slotUpdates(), body.resumeReason());
+				conversationLock.runExclusive(body.conversationId(),
+						() -> chatFlowEngineService.resumeSuspendedFlow(body.conversationId(),
+								body.slotUpdates(), body.resumeReason()));
 		return new ChatResumeResponse(result.resumed(), !result.nothingToResume(), null);
 	}
 
@@ -451,10 +458,15 @@ public class TurSNSiteGenAiAPI {
 		if (body == null) {
 			return new ChatSlotWriteResponse(0);
 		}
-		int touched = chatFlowEngineService.writeSlot(
-				body.conversationId(), body.name(), body.value(),
-				com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
-				"site=" + siteName);
+		// Serialize against the conversation's chat turn so this optimistic
+		// write cannot lost-update the cursor mid-advance (see TurConversationLock).
+		log.debug("[ConvLock] slot-write endpoint conv='{}' name='{}'",
+				body.conversationId(), body.name());
+		int touched = conversationLock.runExclusive(body.conversationId(), () ->
+				chatFlowEngineService.writeSlot(
+						body.conversationId(), body.name(), body.value(),
+						com.viglet.turing.persistence.model.agent.TurChatSlotAuditSource.ENDPOINT,
+						"site=" + siteName));
 		return new ChatSlotWriteResponse(touched);
 	}
 
@@ -486,7 +498,8 @@ public class TurSNSiteGenAiAPI {
 			return new ChatFormSubmitResponse(false, 0, 0, null, "conversationId is required");
 		}
 		TurChatFlowEngineService.FormSubmitResult result =
-				chatFlowEngineService.submitForm(body.conversationId(), body.values());
+				conversationLock.runExclusive(body.conversationId(),
+						() -> chatFlowEngineService.submitForm(body.conversationId(), body.values()));
 		return new ChatFormSubmitResponse(true, result.fieldsWritten(),
 				result.advancedStates(), result.currentNodeId(), null);
 	}
@@ -535,8 +548,10 @@ public class TurSNSiteGenAiAPI {
 						return new ChatFlowSelectResponse(false, null, null,
 								SITE + siteName + "' has no GenAI agent configured");
 					}
-					TurChatFlowEngineService.PinResult pin = chatFlowEngineService
-							.pinFlowForConversation(agent, body.conversationId(), body.flow());
+					TurChatFlowEngineService.PinResult pin = conversationLock.runExclusive(
+							body.conversationId(),
+							() -> chatFlowEngineService.pinFlowForConversation(
+									agent, body.conversationId(), body.flow()));
 					return new ChatFlowSelectResponse(pin.success(), pin.pinnedFlowId(),
 							pin.pinnedFlowName(), pin.reason());
 				})
@@ -650,6 +665,54 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * T445 / §XXIII.4 — ambient / proactive copilot stream. Opt-in per agent
+	 * ({@code proactiveEnabled}); when off the stream is empty. Subscribes to the
+	 * conversation's slot bus and runs each post-write slot map through
+	 * {@link com.viglet.turing.service.chatslots.TurProactiveCopilotService}: when
+	 * an ambient signal ({@code signal.<kind>} slot) crosses the agent's threshold
+	 * it pushes ONE throttled proactive offer. The host writes those signal slots
+	 * from real interactions (clicks/dwell/opened facets) via the existing
+	 * {@code /chat/slots} endpoint. Same 25s heartbeat + single-node caveat as the
+	 * slot streams.
+	 *
+	 * @since 2026.3.4
+	 */
+	@GetMapping(value = "/proactive/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> streamProactive(
+			@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		if (conversationId == null || conversationId.isBlank()) {
+			return Flux.empty();
+		}
+		TurAIAgent agent = turSNSearchProcess.getSNSite(siteName)
+				.map(site -> site.getTurSNSiteGenAi())
+				.map(genAi -> genAi == null ? null : genAi.getTurAIAgent())
+				.orElse(null);
+		if (agent == null || !agent.isProactiveEnabled()) {
+			// Not opted in — nothing to stream (the client closes/ignores it).
+			return Flux.empty();
+		}
+		final int threshold = agent.getProactiveThresholdSignals();
+		final long throttleMillis =
+				com.viglet.turing.service.chatslots.TurProactiveCopilotService.DEFAULT_THROTTLE_MILLIS;
+		final var state = proactiveCopilotService.newState();
+		TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> data =
+				Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId))
+						.flatMap(snapshot -> proactiveCopilotService.evaluate(state, conversationId,
+								snapshot.slots(), threshold, throttleMillis, System.currentTimeMillis())
+								.map(Flux::just).orElseGet(Flux::empty))
+						.map(suggestion -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>builder(suggestion)
+								.event("proactive-suggestion").build());
+		Flux<org.springframework.http.codec.ServerSentEvent<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>> heartbeats =
+				Flux.interval(java.time.Duration.ofSeconds(25))
+						.map(tick -> org.springframework.http.codec.ServerSentEvent
+								.<com.viglet.turing.service.chatslots.TurProactiveSuggestionDto>builder().comment(HEARTBEAT).build());
+		return Flux.merge(data, heartbeats);
+	}
+
+	/**
 	 * T113 / §IX.3.c — workspace artifact stream. The exact analogue of
 	 * {@link #streamSlots} for the per-conversation blob store (T111): emits one
 	 * server-sent event per workspace mutation so a portal can render the live
@@ -729,34 +792,83 @@ public class TurSNSiteGenAiAPI {
 	public ChatSlotExtractResponse extractSlots(@PathVariable String siteName,
 			@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
 			@RequestParam("conversationId") String conversationId,
-			@RequestParam(value = "slotNames", required = false) String slotNames) {
+			@RequestParam(value = "slotNames", required = false) String slotNames,
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
+			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
 		return turSNSearchProcess.getSNSite(siteName)
 				.map(site -> {
 					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
 					if (genAi == null || genAi.getTurAIAgent() == null) {
-						return new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
+						return ChatSlotExtractResponse.error(
 								"No AI agent configured for site '" + siteName + "'");
 					}
 					TurAIAgent agent = genAi.getTurAIAgent();
-					java.util.List<String> requested = (slotNames == null || slotNames.isBlank())
-							? java.util.List.of()
-							: java.util.Arrays.stream(slotNames.split(","))
-									.map(String::trim).filter(s -> !s.isEmpty())
-									.toList();
 					SlotExtractionResult result = slotExtractionService.extract(
-							file, agent, conversationId, requested);
-					return new ChatSlotExtractResponse(result.extracted(),
-							result.slotsWritten(), result.extractedTextChars(), null);
+							file, agent, conversationId, parseSlotNames(slotNames), confidence, nativeBinary);
+					return ChatSlotExtractResponse.from(result);
 				})
-				.orElseGet(() -> new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
-						"Site not found: " + siteName));
+				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));
+	}
+
+	private static java.util.List<String> parseSlotNames(String slotNames) {
+		return (slotNames == null || slotNames.isBlank())
+				? java.util.List.of()
+				: java.util.Arrays.stream(slotNames.split(","))
+						.map(String::trim).filter(s -> !s.isEmpty())
+						.toList();
 	}
 
 	public record ChatSlotExtractResponse(
 			java.util.Map<String, String> extracted,
 			int slotsWritten,
 			int extractedTextChars,
+			java.util.Map<String, Double> confidences,
 			String error) {
+
+		static ChatSlotExtractResponse error(String message) {
+			return new ChatSlotExtractResponse(java.util.Map.of(), 0, 0, java.util.Map.of(), message);
+		}
+
+		static ChatSlotExtractResponse from(SlotExtractionResult result) {
+			return new ChatSlotExtractResponse(result.extracted(), result.slotsWritten(),
+					result.extractedTextChars(), result.confidences(), null);
+		}
+	}
+
+	/**
+	 * Multi-document extraction (T101). Same contract as {@code /slot-extract}
+	 * but accepts several files in one request and asks the agent's LLM to
+	 * reason <em>across</em> them — the headline use case is uploading a CV plus
+	 * a job description so the model can fill a synthesised {@code skill_gap}
+	 * slot. Text documents are concatenated under delimiters; image documents
+	 * are attached as vision media. A single file behaves exactly like
+	 * {@code /slot-extract}.
+	 *
+	 * <p>Unauthenticated, same posture as the rest of
+	 * {@code /api/sn/{site}/chat/*}.
+	 *
+	 * @since 2026.3.1
+	 */
+	@PostMapping(value = "/slot-extract-multi", consumes = "multipart/form-data")
+	public ChatSlotExtractResponse extractSlotsMulti(@PathVariable String siteName,
+			@RequestParam("files") java.util.List<org.springframework.web.multipart.MultipartFile> files,
+			@RequestParam("conversationId") String conversationId,
+			@RequestParam(value = "slotNames", required = false) String slotNames,
+			@RequestParam(value = "confidence", required = false, defaultValue = "false") boolean confidence,
+			@RequestParam(value = "nativeBinary", required = false, defaultValue = "false") boolean nativeBinary) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null || genAi.getTurAIAgent() == null) {
+						return ChatSlotExtractResponse.error(
+								"No AI agent configured for site '" + siteName + "'");
+					}
+					TurAIAgent agent = genAi.getTurAIAgent();
+					SlotExtractionResult result = slotExtractionService.extractMulti(
+							files, agent, conversationId, parseSlotNames(slotNames), confidence, nativeBinary);
+					return ChatSlotExtractResponse.from(result);
+				})
+				.orElseGet(() -> ChatSlotExtractResponse.error("Site not found: " + siteName));
 	}
 
 	/**

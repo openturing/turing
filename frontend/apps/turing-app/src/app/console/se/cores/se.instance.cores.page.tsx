@@ -20,7 +20,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -269,12 +269,20 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
   );
 }
 
-export default function SEInstanceCoresPage() {
+interface SEInstanceCoresPageProps {
+  /** Override the console `SubPageHeader` (e.g. a `BentoHero` in the bento shell). */
+  header?: ReactNode;
+  /** Route base for cores navigation; defaults to the console SE instance route. */
+  baseRoute?: string;
+}
+
+export default function SEInstanceCoresPage({ header, baseRoute = ROUTES.SE_INSTANCE }: Readonly<SEInstanceCoresPageProps>) {
   const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   useSubPageBreadcrumb(t("se.cores.title"));
+  const coresRoute = `${baseRoute}/${id}/cores`;
 
   const { data: cores, isError } = useSeCores(id);
   const error = isError ? t("common.connectionError", { resource: "Solr cores" }) : null;
@@ -319,15 +327,17 @@ export default function SEInstanceCoresPage() {
   }, [allGroups, search]);
 
   return (
-    <LoadProvider checkIsNotUndefined={cores} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}/cores`}>
+    <LoadProvider checkIsNotUndefined={cores} error={error} tryAgainUrl={coresRoute}>
       {cores && cores.length > 0 ? (
         <>
-          <SubPageHeader
-            icon={IconDatabase}
-            name={t("se.cores.title")}
-            feature={t("se.cores.title")}
-            description={t("se.cores.description")}
-          />
+          {header !== undefined ? header : (
+            <SubPageHeader
+              icon={IconDatabase}
+              name={t("se.cores.title")}
+              feature={t("se.cores.title")}
+              description={t("se.cores.description")}
+            />
+          )}
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -349,7 +359,7 @@ export default function SEInstanceCoresPage() {
                   </button>
                 )}
               </div>
-              <Button variant="outline" onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores/new`)}>
+              <Button variant="outline" onClick={() => navigate(`${coresRoute}/new`)}>
                 <IconPlus className="size-4 mr-2" />
                 {t("se.cores.newCore")}
               </Button>
@@ -378,7 +388,7 @@ export default function SEInstanceCoresPage() {
           title={t("se.cores.blankTitle")}
           description={t("se.cores.blankDescription")}
           buttonText={t("se.cores.newCore")}
-          urlNew={`${ROUTES.SE_INSTANCE}/${id}/cores/new`}
+          urlNew={`${coresRoute}/new`}
         />
       )}
     </LoadProvider>

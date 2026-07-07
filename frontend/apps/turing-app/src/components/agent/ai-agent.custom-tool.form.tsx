@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
+import { BentoFormSection } from "../bento"
 
 /**
  * @since 2026.2.5
@@ -16,9 +17,11 @@ import { SectionCard } from "../ui/section-card"
 
 interface Props {
   readonly value: TurAIAgent;
+  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
+  readonly chrome?: "console" | "bento";
 }
 
-export const AIAgentCustomToolForm: React.FC<Props> = ({ value }) => {
+export const AIAgentCustomToolForm: React.FC<Props> = ({ value, chrome = "console" }) => {
   const { t } = useTranslation();
   const { data: tools = [] } = useCustomTools();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -69,16 +72,26 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value }) => {
     setSelectedIds(new Set(savedIds));
   }
 
+  const Section = ({ children }: { readonly children: React.ReactNode }) =>
+    chrome === "bento" ? (
+      <BentoFormSection icon={IconBraces} tone="rose" title={t("forms.agentCustomTool.available")} description={t("forms.agentCustomTool.availableDesc")}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant="emerald">
+        <SectionCard.Header
+          icon={IconBraces}
+          title={t("forms.agentCustomTool.available")}
+          description={t("forms.agentCustomTool.availableDesc")}
+        />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
   return (
-    <div className="px-6">
-      <div className="space-y-4 py-8">
-        <SectionCard variant="emerald">
-          <SectionCard.Header
-            icon={IconBraces}
-            title={t("forms.agentCustomTool.available")}
-            description={t("forms.agentCustomTool.availableDesc")}
-          />
-          <SectionCard.Content>
+    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
+      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+        <Section>
             {tools.length > 0 ? (
               <div className="space-y-2">
                 {tools.map((tool) => {
@@ -152,8 +165,7 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value }) => {
                 </div>
               </div>
             )}
-          </SectionCard.Content>
-        </SectionCard>
+        </Section>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

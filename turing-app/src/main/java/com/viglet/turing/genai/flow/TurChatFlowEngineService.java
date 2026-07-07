@@ -49,6 +49,7 @@ import com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog;
 import com.viglet.turing.genai.flow.router.TurChatFlowRouterMethod;
 import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
@@ -131,6 +132,39 @@ public class TurChatFlowEngineService {
     private final TurHumanApprovalNodeExecutor humanApprovalNodeExecutor;
     private final TurChatFlowTriggerRouter triggerRouter;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
+    /**
+     * T237 — opt-in per-turn node-visit log for the path-aware funnel.
+     * Field-injected (not a constructor param) so the unit tests that
+     * {@code new} this service directly compile unchanged and default the flag
+     * to {@code false} — the safe, behaviour-preserving default.
+     */
+    @org.springframework.beans.factory.annotation.Value(
+            "${turing.chat.analytics.node-visit-log.enabled:false}")
+    private boolean nodeVisitLogEnabled;
+
+    /**
+     * Used by {@link #resolveFlowForRead} to ask the JPA provider (via the
+     * standard {@link jakarta.persistence.PersistenceUnitUtil}) whether a flow
+     * is already initialized, so an already-loaded flow needs no DB round-trip.
+     * Field-injected (not a constructor param) for the same reason as
+     * {@link #nodeVisitLogEnabled}: the unit tests that {@code new} this service
+     * directly compile unchanged and leave it {@code null}, in which case
+     * {@code resolveFlowForRead} treats the passed flow as already loaded (true
+     * for the plain entities those tests use).
+     */
+    @jakarta.persistence.PersistenceUnit
+    private jakarta.persistence.EntityManagerFactory entityManagerFactory;
+
+    /**
+     * T487 / §XXVIII.2 — dedicated read-model cache for the parsed
+     * {@link ChatFlowGraph}. Field-injected (not a constructor param) for the
+     * same reason as {@link #entityManagerFactory}: the unit tests that
+     * {@code new} this service directly compile unchanged and leave it
+     * {@code null}, in which case {@link #parseGraph} falls back to the
+     * uncached parse — behaviour-identical to the pre-T487 path.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private TurChatFlowGraphCache graphCache;
 
     /**
      * T119 — node types that <em>park</em> the conversation: the engine stops
@@ -208,18 +242,94 @@ public class TurChatFlowEngineService {
         }
     }
 
-    /** Parses the flow's {@code definitionJson} into a {@link ChatFlowGraph}. */
+    /**
+     * Parses the flow's {@code definitionJson} into a {@link ChatFlowGraph}.
+     *
+     * <p>A persisted flow (id present) routes through the
+     * {@link TurChatFlowGraphCache} read-model cache (T487): the parsed graph is
+     * an immutable record tree with no JPA proxies, so a cache hit skips both the
+     * JSON parse and the {@link #resolveFlowForRead} hydration round-trip. The
+     * cache is evicted on any flow write via {@link #evictFlowDerivedCaches()}.
+     * Transient flows (no id) and unit tests that {@code new} the service without
+     * the cache bean fall back to the uncached parse.
+     */
     public Optional<ChatFlowGraph> parseGraph(TurChatFlow flow) {
+        if (graphCache != null && flow != null && flow.getId() != null) {
+            return Optional.ofNullable(graphCache.graph(flow.getId(), () -> parseGraphUncached(flow)));
+        }
+        return Optional.ofNullable(parseGraphUncached(flow));
+    }
+
+    /**
+     * Resolves the flow for out-of-session reads and deserializes its
+     * {@code definitionJson}. Returns {@code null} (rather than throwing) for a
+     * missing / blank / unparseable definition so the {@link TurChatFlowGraphCache}
+     * {@code unless} guard keeps it out of the cache.
+     */
+    private ChatFlowGraph parseGraphUncached(TurChatFlow flow) {
+        flow = resolveFlowForRead(flow);
         if (flow == null || flow.getDefinitionJson() == null || flow.getDefinitionJson().isBlank()) {
-            return Optional.empty();
+            return null;
         }
         try {
-            return Optional.of(OBJECT_MAPPER.readValue(flow.getDefinitionJson(), ChatFlowGraph.class));
+            return OBJECT_MAPPER.readValue(flow.getDefinitionJson(), ChatFlowGraph.class);
         } catch (JacksonException e) {
             log.warn("[FlowEngine] Failed to parse definitionJson for flow '{}': {}",
                     flow.getId(), e.getMessage());
-            return Optional.empty();
+            return null;
         }
+    }
+
+    /**
+     * Returns a flow whose scalar columns ({@code definitionJson}, name, …) are
+     * safe to read outside an open session.
+     *
+     * <p>Most callers pass {@code state.getFlow()} from a state loaded through a
+     * {@code JOIN FETCH} finder, so the flow is already initialized and is
+     * returned as-is — no DB round-trip. The exception is a {@code save()}
+     * result: Spring Data returns a <em>merge</em>-managed state whose
+     * {@code @ManyToOne(LAZY)} flow is an <em>uninitialized</em> proxy, and the
+     * engine parses the graph after the save commits — dereferencing that proxy
+     * would raise {@code LazyInitializationException} (we deliberately run with
+     * {@code hibernate.enable_lazy_load_no_trans=false}).
+     *
+     * <p>We detect the two cases with the standard JPA
+     * {@link jakarta.persistence.PersistenceUnitUtil#isLoaded(Object)} and, only
+     * for the uninitialized proxy, re-fetch via the JPQL
+     * {@link TurChatFlowRepository#findByIdInitialized(String)} — a query
+     * hydrates the entity, whereas {@code findById}/{@code EntityManager.find}
+     * would hand back the same uninitialized proxy from the persistence context.
+     * A transient flow (no id yet) is returned as-is; a missing row falls back
+     * to the passed instance.
+     */
+    private TurChatFlow resolveFlowForRead(TurChatFlow flow) {
+        if (flow == null || flow.getId() == null) {
+            return flow;
+        }
+        if (entityManagerFactory == null
+                || entityManagerFactory.getPersistenceUnitUtil().isLoaded(flow)) {
+            return flow;
+        }
+        return chatFlowRepository.findByIdInitialized(flow.getId()).orElse(flow);
+    }
+
+    /**
+     * Persists a runtime state and returns a result whose {@code flow} is safe
+     * to read outside the loading session. Spring Data {@code save()} merges the
+     * entity and the returned managed copy carries an <em>uninitialized</em>
+     * {@code @ManyToOne(LAZY)} flow proxy; since every state handed to a save
+     * already holds an initialized flow (loaded via a {@code JOIN FETCH} finder
+     * or passed in by the caller), we re-attach that instance onto the merge
+     * result — so {@code saved.getFlow()} is readable with no extra DB
+     * round-trip. The read-side counterpart is {@link #resolveFlowForRead}.
+     */
+    private TurChatFlowState saveState(TurChatFlowState state) {
+        TurChatFlow flow = state.getFlow();
+        TurChatFlowState saved = stateRepository.save(state); // NOSONAR — the one real save; callers use saveState(...)
+        if (saved != state && flow != null) {
+            saved.setFlow(flow);
+        }
+        return saved;
     }
 
     /**
@@ -258,7 +368,7 @@ public class TurChatFlowEngineService {
         // a flow that branches immediately on context the user already
         // provided), evaluate it before the user sends their next turn.
         ChatFlowOps.walkThroughConditions(created, graph, null);
-        TurChatFlowState saved = stateRepository.save(created);
+        TurChatFlowState saved = saveState(created);
         // First interactive node could itself be a Sub Flow (or jump to one
         // through a chain of conditions): descend immediately so the next
         // turn lands on the sub-flow's prompt.
@@ -371,7 +481,7 @@ public class TurChatFlowEngineService {
         // Persist the strategy's mutations on the active state before we
         // potentially descend into a sub-flow (descent reads state.id as the
         // child's parentStateId, so the parent must already have an id).
-        state = stateRepository.save(state);
+        state = saveState(state);
         // Walk any Sub Flow boundaries: descend on a SubFlow node, ascend on
         // an end node that has a parent state. Returns the new active leaf.
         String preWalkNodeId = state.getCurrentNodeId();
@@ -392,7 +502,19 @@ public class TurChatFlowEngineService {
         //      with "Poderia me informar se você tem um cupom?" because
         //      the engine state is still parked on switch-coupon-intent.
         if (leaf != state || !Objects.equals(preWalkNodeId, leaf.getCurrentNodeId())) {
-            leaf = stateRepository.save(leaf);
+            leaf = saveState(leaf);
+        }
+        // T237 — opt-in per-turn node-visit log: append the node this turn
+        // settled on to the leaf's path, then persist. Gated so the default
+        // (feature off) path is unchanged — no extra column write, no behaviour
+        // change. The path is snapshotted onto the submission at flow end.
+        if (nodeVisitLogEnabled) {
+            String appendedPath = TurChatFlowNodeVisitPath.append(
+                    leaf.getNodeVisitPath(), leaf.getCurrentNodeId());
+            if (!Objects.equals(appendedPath, leaf.getNodeVisitPath())) {
+                leaf.setNodeVisitPath(appendedPath);
+                leaf = saveState(leaf);
+            }
         }
         // Record a submission only when the ROOT flow has just terminated —
         // sub-flow ends pop instead of recording.
@@ -565,10 +687,10 @@ public class TurChatFlowEngineService {
             humanApprovalNodeExecutor.cancelPending(conversationId, parkedNode.id());
         }
         ChatFlowOps.advanceToFirstEdge(state, graph, parkedNode);
-        state = stateRepository.save(state);
+        state = saveState(state);
         TurChatFlowState leaf = walkTransparentNodes(state, null);
         if (leaf != state) {
-            stateRepository.save(leaf);
+            saveState(leaf);
         }
         return true;
     }
@@ -658,9 +780,9 @@ public class TurChatFlowEngineService {
     private TurChatFlowState advanceAndWalk(TurChatFlowState state, ChatFlowGraph graph,
             ChatFlowNode current) {
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        TurChatFlowState saved = stateRepository.save(state);
+        TurChatFlowState saved = saveState(state);
         TurChatFlowState leaf = walkTransparentNodes(saved, null);
-        return leaf != saved ? stateRepository.save(leaf) : saved;
+        return leaf != saved ? saveState(leaf) : saved;
     }
 
     /**
@@ -682,6 +804,47 @@ public class TurChatFlowEngineService {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * True when {@code conversationId} has a chat flow IN PROGRESS — i.e. a leaf
+     * flow state (no descendant) whose cursor sits on a non-{@code end} node.
+     * Mirrors {@link #findContinuationFlow} so callers can tell whether an
+     * incoming user message is flow INPUT (an answer to the current question)
+     * rather than a free-form query.
+     *
+     * <p>The public SN RAG path uses this to skip its relevance-gate refusal
+     * (T329) when a flow governs the turn: a flow answer like
+     * {@code "Finanças & Investimentos"} retrieves zero site documents and would
+     * otherwise be short-circuited to "...não disponível na base de dados..."
+     * BEFORE the flow ever sees it, derailing the conversation.
+     *
+     * @since 2026.3.4
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveFlow(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return false;
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        if (states.isEmpty()) {
+            return false;
+        }
+        Set<String> hasDescendant = states.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        for (TurChatFlowState state : states) {
+            if (hasDescendant.contains(state.getId())) {
+                continue;
+            }
+            Optional<ChatFlowNode> currentOpt = parseGraph(state.getFlow())
+                    .flatMap(g -> g.nodeById(state.getCurrentNodeId()));
+            if (currentOpt.isPresent() && !"end".equals(currentOpt.get().type())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -734,7 +897,7 @@ public class TurChatFlowEngineService {
                         conversationId, state.getId());
                 TurChatFlowState leaf = walkTransparentNodes(state, null);
                 if (leaf != state) {
-                    stateRepository.save(leaf);
+                    saveState(leaf);
                 }
             }
         }
@@ -784,7 +947,16 @@ public class TurChatFlowEngineService {
              * the portal can render a "Waiting for external system..."
              * banner. {@code null} means the conversation is not parked.
              */
-            String suspendedReason) {
+            String suspendedReason,
+            /**
+             * T461 (Block Z) — the active persona id resolved for this
+             * conversation (the {@code __activePersonaId} flow variable set by a
+             * persona node / override), or {@code null} when none is active.
+             * Exposed so the client analytics bus can stamp {@code persona_id}
+             * on every event and GA4 can answer "which persona variation
+             * converted" natively.
+             */
+            String personaId) {
     }
 
     /**
@@ -831,11 +1003,11 @@ public class TurChatFlowEngineService {
 
     public ConversationStateDto getConversationState(String conversationId) {
         if (conversationId == null || conversationId.isBlank()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null, null);
         }
         List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
         if (states.isEmpty()) {
-            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null);
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null, null, null);
         }
         // Skip rows that point at other rows as parent — we want the leaf.
         TurChatFlowState leaf = findLeafState(states);
@@ -843,6 +1015,11 @@ public class TurChatFlowEngineService {
         // T121 — surface the parked reason when the leaf cursor sits on a
         // suspend node. The portal renders this as a "Waiting..." banner.
         String suspendedReason = resolveLeafSuspendedReason(flow, leaf);
+        // T461 — the active persona id (the reserved __activePersonaId variable)
+        // for client-side A/B attribution. Blank-safe; null when no persona node
+        // ran in this conversation.
+        String personaId = ChatFlowOps.readVariablesJson(leaf.getVariablesJson())
+                .get(TurAgentPersonaResolver.ACTIVE_PERSONA_VAR);
         return new ConversationStateDto(
                 conversationId,
                 flow == null ? null : flow.getId(),
@@ -852,7 +1029,8 @@ public class TurChatFlowEngineService {
                         ? null : flow.getGuardrailMethod().name(),
                 flow == null ? null : flow.getExperimentKey(),
                 flow == null ? null : flow.getVariantLabel(),
-                suspendedReason);
+                suspendedReason,
+                (personaId == null || personaId.isBlank()) ? null : personaId);
     }
 
     /**
@@ -1026,7 +1204,7 @@ public class TurChatFlowEngineService {
             Map<String, String> vars = new LinkedHashMap<>(ChatFlowOps.readVariables(state));
             vars.put(name, coerced);
             ChatFlowOps.writeVariables(state, vars);
-            stateRepository.save(state);
+            saveState(state);
             touched++;
         }
         log.info("[FlowEngine.writeSlot] conv={} slot='{}' wrote {} chars across {} state(s)",
@@ -1235,10 +1413,10 @@ public class TurChatFlowEngineService {
         created.setCurrentNodeId(anchor.id());
         ChatFlowOps.writeVariables(created, seedSlots == null ? Map.of() : seedSlots);
         ChatFlowOps.walkThroughConditions(created, graph, null);
-        TurChatFlowState saved = stateRepository.save(created);
+        TurChatFlowState saved = saveState(created);
         TurChatFlowState leaf = walkTransparentNodes(saved, null);
         if (leaf != saved) {
-            stateRepository.save(leaf);
+            saveState(leaf);
         }
         return leaf;
     }
@@ -1865,7 +2043,7 @@ public class TurChatFlowEngineService {
         // Variables are NOT cleared on purpose — captured slot values are
         // conversation-scoped, so a re-triggered flow can skip aiQuestion
         // nodes whose outputVariable was already filled on a previous run.
-        TurChatFlowState saved = stateRepository.save(prior);
+        TurChatFlowState saved = saveState(prior);
         // Walk transparent nodes (conditions, switches, slot ops, satisfied
         // aiQuestions, sub-flow descent) so the next user turn lands on the
         // first node that genuinely needs the user. {@code null} aux model is
@@ -1876,7 +2054,7 @@ public class TurChatFlowEngineService {
         // here to guarantee the cursor lands on the right node when
         // loadOrInitState re-queries it on the next line of selectActiveFlow.
         TurChatFlowState walked = walkTransparentNodes(saved, null);
-        stateRepository.save(walked);
+        saveState(walked);
     }
 
     record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
@@ -1922,12 +2100,29 @@ public class TurChatFlowEngineService {
     }
 
     /**
-     * Drops every cached per-agent router index. Invoked by
-     * {@link TurChatFlowRouterEvictionListener} on {@link TurChatFlow}
-     * persist/update/remove and at the one bulk-DML delete site.
+     * Drops every flow-derived cache on a {@link TurChatFlow} write: the
+     * per-agent router index plus the Spring caches that used to be evicted by
+     * the (now removed, Block AC / T486) {@code @CacheEvict} on
+     * {@code TurChatFlowRepository} — the router-decision cache, the static
+     * head/tail prompt-addendum caches, and the T487 parsed-graph read-model
+     * cache ({@link TurChatFlowGraphCache#CACHE_NAME}). Invoked by
+     * {@link TurChatFlowRouterEvictionListener} on persist/update/remove and at
+     * the one bulk-DML delete site, so admin flow edits propagate without
+     * restart.
      */
-    public void evictRouterIndexes() {
+    public void evictFlowDerivedCaches() {
         triggerRouter.evictRouterIndexes();
+        clearCache(CACHE_ROUTER_DECISION);
+        clearCache(TurChatFlowStaticPromptCache.HEAD_CACHE);
+        clearCache(TurChatFlowStaticPromptCache.TAIL_CACHE);
+        clearCache(TurChatFlowGraphCache.CACHE_NAME);
+    }
+
+    private void clearCache(String cacheName) {
+        Cache cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     /** Test-visible accessor for the per-agent index cache size. */
@@ -1943,8 +2138,8 @@ public class TurChatFlowEngineService {
      * repeated "off-topic" messages don't burn LLM calls.
      *
      * <p>The cache is evicted on any {@link TurChatFlow} save/delete via the
-     * {@code @CacheEvict} annotations on {@link TurChatFlowRepository}, so
-     * admin edits to {@code triggerDescription} propagate without restart.
+     * {@code TurChatFlowRouterEvictionListener} JPA callback, so admin edits to
+     * {@code triggerDescription} propagate without restart.
      *
      * @since 2026.2.8
      */
@@ -2140,6 +2335,10 @@ public class TurChatFlowEngineService {
         submission.setCompletedAt(LocalDateTime.now(ZoneId.systemDefault()));
         submission.setUserId(resolveUsername());
         submission.setEndNodeId(currentNodeId);
+        // T237 — snapshot the accumulated per-turn node-visit path (null when
+        // the opt-in log is off) so the path-aware funnel can compute per-node
+        // reached / drop-off from terminal submissions.
+        submission.setNodeVisitPath(state.getNodeVisitPath());
         submissionRepository.save(submission);
         log.info("[FlowEngine] Submission recorded for flow '{}', conversation '{}', endNode '{}'",
                 flow.getId(), state.getConversationId(), currentNodeId);
@@ -2332,7 +2531,7 @@ public class TurChatFlowEngineService {
         // Sub-flow not configured / not found / would be recursive:
         // skip the node like a no-op so the parent flow doesn't stall.
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        return new WalkStep(stateRepository.save(state), false);
+        return new WalkStep(saveState(state), false);
     }
 
     private WalkStep handleSubFlowSwitchNode(TurChatFlowState state, ChatFlowGraph graph,
@@ -2357,7 +2556,7 @@ public class TurChatFlowEngineService {
         log.info("[FlowEngine] subFlowSwitch '{}' no descent — advancing on outgoing edge",
                 current.id());
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        return new WalkStep(stateRepository.save(state), false);
+        return new WalkStep(saveState(state), false);
     }
 
     private WalkStep handlePersonaNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
@@ -2366,13 +2565,13 @@ public class TurChatFlowEngineService {
             setActivePersonaVariable(state, personaId);
         }
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        return new WalkStep(stateRepository.save(state), false);
+        return new WalkStep(saveState(state), false);
     }
 
     private WalkStep handleSlotNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
         ChatFlowOps.applySlotNode(state, current);
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        state = stateRepository.save(state);
+        state = saveState(state);
         // SSE notification: a flow slot write is functionally identical to
         // slots.set / writeSlot — emit the full merged map so subscribers
         // don't have to special-case the source.
@@ -2384,7 +2583,7 @@ public class TurChatFlowEngineService {
     private WalkStep handleWriteSlotNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
         ChatFlowOps.applyWriteSlotNode(state, current);
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        state = stateRepository.save(state);
+        state = saveState(state);
         slotEventBus.publish(state.getConversationId(),
                 listSlotsForConversation(state.getConversationId()).slots());
         return new WalkStep(state, false);
@@ -2394,7 +2593,7 @@ public class TurChatFlowEngineService {
             ChatFlowNode current, ChatModel auxModel) {
         ChatFlowOps.applyPlanningStepNode(state, current, auxModel);
         ChatFlowOps.advanceToFirstEdge(state, graph, current);
-        state = stateRepository.save(state);
+        state = saveState(state);
         slotEventBus.publish(state.getConversationId(),
                 listSlotsForConversation(state.getConversationId()).slots());
         return new WalkStep(state, false);
@@ -2408,14 +2607,14 @@ public class TurChatFlowEngineService {
         if (next.isEmpty()) {
             ChatFlowOps.clearPlanIterationMarkers(state);
             ChatFlowOps.advanceToFirstEdge(state, graph, current);
-            state = stateRepository.save(state);
+            state = saveState(state);
             slotEventBus.publish(state.getConversationId(),
                     listSlotsForConversation(state.getConversationId()).slots());
             return new WalkStep(state, false);
         }
         ChatFlowOps.PlanItem item = next.get();
         ChatFlowOps.setPlanIterationMarkers(state, item);
-        state = stateRepository.save(state);
+        state = saveState(state);
         Optional<TurChatFlowState> child = enterSubFlowById(state, current.subFlowId(), current);
         if (child.isPresent()) {
             log.info("[FlowEngine] iteratePlan '{}' → item '{}' ('{}') → body subFlow '{}'",
@@ -2428,7 +2627,7 @@ public class TurChatFlowEngineService {
         log.info("[FlowEngine] iteratePlan '{}' has no usable body subFlow — completing item '{}' in place",
                 current.id(), item.id());
         ChatFlowOps.completePlanItem(state, planSlot, item.id(), current.completionMode());
-        state = stateRepository.save(state);
+        state = saveState(state);
         slotEventBus.publish(state.getConversationId(),
                 listSlotsForConversation(state.getConversationId()).slots());
         return new WalkStep(state, false);
@@ -2442,7 +2641,7 @@ public class TurChatFlowEngineService {
         } else {
             ChatFlowOps.advanceToFirstEdge(state, graph, current);
         }
-        state = stateRepository.save(state);
+        state = saveState(state);
         slotEventBus.publish(state.getConversationId(),
                 listSlotsForConversation(state.getConversationId()).slots());
         return new WalkStep(state, false);
@@ -2456,7 +2655,7 @@ public class TurChatFlowEngineService {
         } else {
             ChatFlowOps.advanceToFirstEdge(state, graph, current);
         }
-        return new WalkStep(stateRepository.save(state), false);
+        return new WalkStep(saveState(state), false);
     }
 
     private WalkStep handleScheduleAgentNode(TurChatFlowState state, ChatFlowGraph graph, ChatFlowNode current) {
@@ -2464,7 +2663,7 @@ public class TurChatFlowEngineService {
                 scheduleAgentExecutor.execute(state, current);
         switch (outcome) {
             case WAITING_FIRED -> {
-                state = stateRepository.save(state);
+                state = saveState(state);
                 // Fresh enqueue → publish so SSE subscribers (chat UI's waiting
                 // indicator, slot inspector) see the
                 // __scheduleAgent_pending_<nodeId> marker the executor wrote.
@@ -2481,13 +2680,13 @@ public class TurChatFlowEngineService {
             }
             case COMPLETED -> {
                 ChatFlowOps.advanceToFirstEdge(state, graph, current);
-                state = stateRepository.save(state);
+                state = saveState(state);
                 slotEventBus.publish(state.getConversationId(),
                         listSlotsForConversation(state.getConversationId()).slots());
             }
             case TIMEOUT -> {
                 TurScheduleAgentNodeExecutor.advanceOnTimeout(state, graph, current);
-                state = stateRepository.save(state);
+                state = saveState(state);
                 slotEventBus.publish(state.getConversationId(),
                         listSlotsForConversation(state.getConversationId()).slots());
             }
@@ -2497,7 +2696,7 @@ public class TurChatFlowEngineService {
                 } else {
                     ChatFlowOps.advanceToFirstEdge(state, graph, current);
                 }
-                state = stateRepository.save(state);
+                state = saveState(state);
             }
         }
         return new WalkStep(state, false);
@@ -2517,7 +2716,7 @@ public class TurChatFlowEngineService {
         // has landed in the approval slot, then the engine advances.
         if (humanApprovalNodeExecutor.onEnter(state, current)) {
             ChatFlowOps.advanceToFirstEdge(state, graph, current);
-            return new WalkStep(stateRepository.save(state), false);
+            return new WalkStep(saveState(state), false);
         }
         return new WalkStep(state, true);
     }
@@ -2569,7 +2768,10 @@ public class TurChatFlowEngineService {
                     subFlowId, parent.getConversationId());
             return Optional.empty();
         }
-        Optional<TurChatFlow> subFlowOpt = chatFlowRepository.findById(subFlowId);
+        // findByIdInitialized (JPQL), not findById: the sub-flow may already be
+        // an uninitialized LAZY proxy in the persistence context, and it is
+        // stored on the child state + read outside the session by callers.
+        Optional<TurChatFlow> subFlowOpt = chatFlowRepository.findByIdInitialized(subFlowId);
         if (subFlowOpt.isEmpty()) {
             log.warn("[FlowEngine] Sub Flow '{}' referenced by node '{}' not found",
                     subFlowId, sourceNode.id());
@@ -2602,7 +2804,7 @@ public class TurChatFlowEngineService {
         // the sub-flow's strategy sees what's already been collected. On
         // ascent we copy back any new captures.
         child.setVariablesJson(parent.getVariablesJson() == null ? "{}" : parent.getVariablesJson());
-        TurChatFlowState saved = stateRepository.save(child);
+        TurChatFlowState saved = saveState(child);
         log.info("[FlowEngine] Sub Flow descend: parent='{}' (flow '{}', node '{}') → child='{}' (flow '{}', node '{}')",
                 parent.getId(), parent.getFlow().getId(), parent.getCurrentNodeId(),
                 saved.getId(), subFlow.getId(), anchor.id());
@@ -2653,7 +2855,7 @@ public class TurChatFlowEngineService {
             log.info("[FlowEngine] iteratePlan ascend: child='{}' → parent='{}' completed item '{}' (changed={}) — staying on '{}'",
                     child.getId(), parent.getId(), itemId, changed, parent.getCurrentNodeId());
             stateRepository.delete(child);
-            TurChatFlowState saved = stateRepository.save(parent);
+            TurChatFlowState saved = saveState(parent);
             if (changed) {
                 slotEventBus.publish(saved.getConversationId(),
                         listSlotsForConversation(saved.getConversationId()).slots());
@@ -2667,7 +2869,7 @@ public class TurChatFlowEngineService {
                 parent.getId(), parent.getFlow().getId(),
                 previousParentNode, parent.getCurrentNodeId());
         stateRepository.delete(child);
-        return stateRepository.save(parent);
+        return saveState(parent);
     }
 
     /**

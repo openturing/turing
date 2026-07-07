@@ -14,12 +14,17 @@ const service = new TurSystemPromptService();
  * Live Preview of the assembled system prompt (segments + tools). `flowId`
  * selects which chat flow governs the previewed turn; changing it refetches.
  */
-export function useSystemPromptPreview(agentId: string | undefined, flowId?: string) {
+export function useSystemPromptPreview(
+  agentId: string | undefined,
+  flowId?: string,
+  nodeId?: string,
+  vars?: string,
+) {
   return useQuery({
     queryKey: agentId
-      ? queryKeys.aiAgents.systemPromptPreview(agentId, flowId)
+      ? queryKeys.aiAgents.systemPromptPreview(agentId, flowId, nodeId, vars)
       : ["ai-agents", "system-prompt", "preview", "pending"],
-    queryFn: () => service.preview(agentId as string, flowId),
+    queryFn: () => service.preview(agentId as string, flowId, nodeId, vars),
     enabled: Boolean(agentId),
   });
 }

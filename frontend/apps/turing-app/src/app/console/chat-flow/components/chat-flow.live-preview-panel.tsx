@@ -23,9 +23,9 @@ import type { FlowFormField, FlowNodeData } from "../types";
  * id so iterating on a node across sessions does not require re-typing
  * the same name/email/cargo.
  *
- * <p>Complementary to {@link ChatPreview} (whole-flow walk transcript):
- * this panel zooms IN on one node so authors can sanity-check tone /
- * interpolation / option chips without running a real chat turn.
+ * <p>Two modes via the header toggle: the node view (this, zoomed IN on one
+ * node) and the whole-flow transcript walk (the consolidated former
+ * ChatPreview), so authors have a single Live preview surface.
  *
  * @since 2026.3.1
  */
@@ -51,6 +51,10 @@ export function ChatFlowLivePreviewPanel({
   const { t } = useTranslation();
   const storageKey = STORAGE_PREFIX + (flowId ?? NEW_FLOW_KEY);
 
+  // "node" = preview the currently-selected node (mocked slots); "flow" = walk
+  // the whole graph from `start` as a transcript. Consolidated here so authors
+  // have a single Live preview surface for both the zoomed-in and overview views.
+  const [view, setView] = useState<"node" | "flow">("node");
   const [mockText, setMockText] = useState<string>(() => loadMocks(storageKey));
 
   // Persist to localStorage on every change so a refresh / tab switch
@@ -101,8 +105,23 @@ export function ChatFlowLivePreviewPanel({
         </Button>
       </header>
 
+      <div className="flex items-center gap-1 border-b bg-background px-3 py-2">
+        <ViewToggleButton
+          active={view === "node"}
+          onClick={() => setView("node")}
+          label={t("chatFlow.livePreview.viewNode", { defaultValue: "Node" })}
+        />
+        <ViewToggleButton
+          active={view === "flow"}
+          onClick={() => setView("flow")}
+          label={t("chatFlow.livePreview.viewFlow", { defaultValue: "Flow" })}
+        />
+      </div>
+
       <div className="flex flex-1 flex-col gap-3 overflow-auto bg-muted/30 p-4">
-        {selectedNode ? (
+        {view === "flow" ? (
+          <FlowTranscript nodes={nodes} edges={edges} interpolate={interpolate} t={t} />
+        ) : selectedNode ? (
           <>
             <NodeHeaderCard node={selectedNode} />
             <NodeRendering
@@ -498,6 +517,149 @@ function FormPreview({
       </div>
     </div>
   );
+}
+
+function ViewToggleButton({
+  active,
+  onClick,
+  label,
+}: Readonly<{ active: boolean; onClick: () => void; label: string }>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white"
+          : "rounded-md px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
+/**
+ * Whole-flow transcript: walks the graph from `start`, following the first
+ * outgoing edge at each step, and renders bot/user bubbles. {@code {{slot}}}
+ * references are interpolated against the same mock slots as the node view, so
+ * the author's mocks light up the overview too. Branching is not executed —
+ * condition/switch nodes surface their expression. (Consolidated from the old
+ * standalone ChatPreview panel.)
+ */
+function FlowTranscript({
+  nodes,
+  edges,
+  interpolate,
+  t,
+}: Readonly<{
+  nodes: Node<FlowNodeData>[];
+  edges: Edge[];
+  interpolate: (text: string | undefined | null) => React.ReactNode;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}>) {
+  const transcript = useMemo(() => buildTranscript(nodes, edges), [nodes, edges]);
+  if (transcript.length === 0) {
+    return (
+      <div className="mt-8 text-center text-sm text-muted-foreground">
+        {t("chatFlow.preview.empty")}
+      </div>
+    );
+  }
+  return (
+    <>
+      {transcript.map((entry, index) => (
+        <div
+          // eslint-disable-next-line react/no-array-index-key
+          key={index}
+          className={`max-w-[85%] rounded-lg border p-3 text-xs leading-relaxed shadow-sm ${
+            entry.actor === "bot"
+              ? "self-start bg-background"
+              : "self-end border-transparent bg-blue-500 text-white"
+          }`}
+        >
+          <div className="mb-1 text-[10px] font-semibold uppercase opacity-70">
+            {entry.actor === "bot" ? t("chatFlow.preview.bot") : t("chatFlow.preview.user")}
+          </div>
+          <div className="whitespace-pre-wrap">{interpolate(entry.text)}</div>
+        </div>
+      ))}
+      <div className="border-t pt-2 text-[11px] text-muted-foreground">
+        {t("chatFlow.preview.footer")}
+      </div>
+    </>
+  );
+}
+
+interface TranscriptEntry {
+  actor: "bot" | "user";
+  text: string;
+}
+
+function buildTranscript(nodes: Node<FlowNodeData>[], edges: Edge[]): TranscriptEntry[] {
+  const start = nodes.find((n) => n.data.type === "start");
+  if (!start) return [];
+  const outgoing = (id: string) => edges.find((e) => e.source === id);
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+
+  const entries: TranscriptEntry[] = [];
+  const visited = new Set<string>();
+  let current: Node<FlowNodeData> | undefined = start;
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    appendFromNode(entries, current.data);
+    const next = outgoing(current.id);
+    current = next ? byId.get(next.target) : undefined;
+  }
+  return entries;
+}
+
+function appendFromNode(entries: TranscriptEntry[], data: FlowNodeData) {
+  switch (data.type) {
+    case "aiQuestion":
+      entries.push({ actor: "bot", text: data.aiInstruction || data.label });
+      if (data.outputVariable) {
+        entries.push({ actor: "user", text: `<${data.outputVariable}>` });
+      }
+      break;
+    case "functionCall":
+      entries.push({ actor: "bot", text: `→ ${data.functionName ?? data.label}` });
+      if (data.aiInstruction) {
+        entries.push({ actor: "bot", text: data.aiInstruction });
+      }
+      break;
+    case "condition":
+      entries.push({ actor: "bot", text: `[${data.label}] ${data.conditionExpression ?? ""}` });
+      break;
+    case "switch": {
+      const labels = (data.switchOptions ?? []).map((o) => o.label || "—").join(" | ");
+      entries.push({ actor: "bot", text: `⇆ ${data.label}: ${labels || "(no options)"}` });
+      break;
+    }
+    case "subFlow": {
+      const target = data.subFlowName ?? data.subFlowId ?? "(not set)";
+      entries.push({ actor: "bot", text: `↳ ${data.label}: ${target}` });
+      break;
+    }
+    case "subFlowSwitch": {
+      const routes = (data.switchOptions ?? [])
+        .map((o) => `${o.label || "—"} → ${o.subFlowName ?? o.subFlowId ?? "(unset)"}`)
+        .join(" | ");
+      entries.push({ actor: "bot", text: `↳⇆ ${data.label}: ${routes || "(no options)"}` });
+      break;
+    }
+    case "slot": {
+      const op = data.slotOperation ?? "SET";
+      const name = data.slotName ?? "(no slot)";
+      const detail = op === "DELETE" ? "delete" : `= ${data.slotValue ?? "(empty)"}`;
+      entries.push({ actor: "bot", text: `⚙ ${data.label}: ${name} ${detail}` });
+      break;
+    }
+    case "start":
+    case "end":
+    case "persona":
+      break;
+  }
 }
 
 /* ─────────────────────────── helpers ─────────────────────────── */

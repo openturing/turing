@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # T605 — opt-in style->model calibration flag on ai_persona. When 1, the
+  # persona's verbosity (-> maxTokens) and tone (-> temperature) calibrate the
+  # resolved sampling params for the turn. Default 0 keeps the LLM instance's
+  # own params, so existing personas are unchanged. Idempotent: gated by
+  # columnExists not present so re-running on a reused H2 file is safe.
+
+  - changeSet:
+      id: v2026.3.1.85-add-ai_persona-calibrate_model_params
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: calibrate_model_params
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: calibrate_model_params
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

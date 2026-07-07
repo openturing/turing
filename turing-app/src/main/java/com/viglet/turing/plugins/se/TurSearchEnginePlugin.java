@@ -420,6 +420,32 @@ public interface TurSearchEnginePlugin {
     }
 
     /**
+     * T472 — counts the documents in the site's index (for the given locale)
+     * whose numeric {@code fieldName} value is <em>strictly below</em>
+     * {@code threshold}. This is the bucketing primitive behind the
+     * audience-content-fit coverage report: counting documents whose
+     * {@code content_fit_score} falls under the "too complex" / "borderline"
+     * thresholds.
+     *
+     * <p>Implemented with each engine's exclusive-upper range query (Solr
+     * {@code field:[* TO threshold}}, Elasticsearch {@code range lt}). The
+     * default returns {@code -1}, meaning "this engine cannot report range
+     * counts"; callers should treat a negative result as <em>unknown</em> and
+     * degrade gracefully (mirrors {@link #getDocumentCountWithField}).
+     *
+     * @param turSNSiteLocale the site locale whose index/core to query
+     * @param fieldName       the numeric field to range over
+     * @param threshold       exclusive upper bound
+     * @return number of documents with {@code fieldName < threshold}, or
+     *         {@code -1} if the engine does not support range counting
+     * @since 2026.3.4
+     */
+    default long getDocumentCountWithFieldBelow(TurSNSiteLocale turSNSiteLocale, String fieldName,
+            int threshold) {
+        return -1L;
+    }
+
+    /**
      * Returns system information about the search engine instance,
      * such as version, OS, JVM info, etc.
      * Keys and values are engine-specific.

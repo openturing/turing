@@ -285,7 +285,7 @@ class TurSNSiteFieldExtAPITest {
                 payload.setSnType(TurSNFieldType.SE);
                 payload.setExternalId("ext");
                 payload.setTurSNSite(site);
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.findById("id")).thenReturn(Optional.of(existing));
                 when(fieldExtRepository.findMaxFacetPosition(site)).thenReturn(Optional.of(3));
                 when(fieldRepository.findById("ext")).thenReturn(Optional.empty());
@@ -313,7 +313,7 @@ class TurSNSiteFieldExtAPITest {
                 payload.setSnType(TurSNFieldType.SE);
 
                 when(fieldExtRepository.findById("id")).thenReturn(Optional.of(existing));
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.save(ArgumentMatchers.any(TurSNSiteFieldExt.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -339,7 +339,7 @@ class TurSNSiteFieldExtAPITest {
                 payload.setSnType(TurSNFieldType.SE);
 
                 when(fieldExtRepository.findById("id")).thenReturn(Optional.of(existing));
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.save(ArgumentMatchers.any(TurSNSiteFieldExt.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -546,7 +546,7 @@ class TurSNSiteFieldExtAPITest {
                 payload.setName("title");
                 payload.setType(TurSEFieldType.STRING);
 
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(false);
                 when(fieldRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(false);
                 when(instanceRepository.findById("se-id")).thenReturn(Optional.empty());
@@ -578,7 +578,7 @@ class TurSNSiteFieldExtAPITest {
                 TurSNSiteFieldExt payload = new TurSNSiteFieldExt();
                 payload.setName("title");
 
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(true);
 
                 TurSNSiteFieldExtDto payloadDto = asDto(payload);
@@ -602,7 +602,7 @@ class TurSNSiteFieldExtAPITest {
                 TurSNSiteFieldExt payload = new TurSNSiteFieldExt();
                 payload.setName("title");
 
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(false);
                 when(fieldRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(true);
 
@@ -627,12 +627,12 @@ class TurSNSiteFieldExtAPITest {
                 TurSNSiteFieldExt payload = new TurSNSiteFieldExt();
                 payload.setName("   ");
 
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
 
                 TurSNSiteFieldExtDto payloadDto = asDto(payload);
                 assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", payloadDto))
                                 .isInstanceOf(ResponseStatusException.class);
-                assertThat(siteRepository.findByIdNoCache("site")).isPresent();
+                assertThat(siteRepository.findById("site")).isPresent();
 
                 verify(fieldRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));
                 verify(fieldExtRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));
@@ -867,7 +867,7 @@ class TurSNSiteFieldExtAPITest {
                 seInstance.setId("se-id");
 
                 when(fieldExtRepository.findById("id")).thenReturn(Optional.of(existing));
-                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldRepository.findById("ext")).thenReturn(Optional.of(field));
                 when(instanceRepository.findById("se-id")).thenReturn(Optional.of(seInstance));
 

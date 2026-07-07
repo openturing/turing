@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { IconArrowsRightLeft, IconBolt, IconFlask, IconSettings } from "@tabler/icons-react";
+import { IconArrowsRightLeft, IconBolt, IconSettings } from "@tabler/icons-react";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
@@ -26,9 +26,6 @@ import {
 } from "@/models/agent/chat-flow.model";
 
 import { ChatFlowEvalGatePanel } from "./chat-flow.eval-gate-panel";
-import { ChatFlowFunnelPanel } from "./chat-flow.funnel-panel";
-import { ChatFlowLintPanel } from "./chat-flow.lint-panel";
-import { ChatFlowTriggerConflictsPanel } from "./chat-flow.trigger-conflicts-panel";
 import { FormRow } from "./form-row";
 
 /**
@@ -68,7 +65,6 @@ function buildTriggerDescriptionFieldInstruction(spec: {
 
 interface SettingsTabProps {
   agentId: string;
-  flowId?: string;
   name: string;
   setName: (value: string) => void;
   description: string;
@@ -85,23 +81,12 @@ interface SettingsTabProps {
   setTriggerMode: (value: TurChatFlowTriggerMode) => void;
   triggerLanguage: TurChatFlowTriggerLanguage;
   setTriggerLanguage: (value: TurChatFlowTriggerLanguage) => void;
-  experimentKey: string;
-  setExperimentKey: (value: string) => void;
-  variantLabel: string;
-  setVariantLabel: (value: string) => void;
-  trafficWeight: number | null;
-  setTrafficWeight: (value: number | null) => void;
-  banditEnabled: boolean;
-  setBanditEnabled: (value: boolean) => void;
-  autoPromote: boolean;
-  setAutoPromote: (value: boolean) => void;
   slotInheritanceJson: string;
   setSlotInheritanceJson: (value: string) => void;
 }
 
 export function ChatFlowSettingsTab({
   agentId,
-  flowId,
   name,
   setName,
   description,
@@ -118,16 +103,6 @@ export function ChatFlowSettingsTab({
   setTriggerMode,
   triggerLanguage,
   setTriggerLanguage,
-  experimentKey,
-  setExperimentKey,
-  variantLabel,
-  setVariantLabel,
-  trafficWeight,
-  setTrafficWeight,
-  banditEnabled,
-  setBanditEnabled,
-  autoPromote,
-  setAutoPromote,
   slotInheritanceJson,
   setSlotInheritanceJson,
 }: Readonly<SettingsTabProps>) {
@@ -135,26 +110,11 @@ export function ChatFlowSettingsTab({
   return (
     <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
       <div className="space-y-4 px-4 lg:px-6 py-2 pb-8">
-        {/* T94 — lint findings at the very top so ERROR-class issues
-            (dead-end node, …) blocking the runtime are unmissable. Renders
-            nothing on a clean flow. */}
-        {flowId && <ChatFlowLintPanel agentId={agentId} flowId={flowId} />}
-
         {/* T287 — Agent-CI eval gate: replay the agent's golden set and block
             (or warn) on regression before publish. Hidden when no golden set
-            is configured. */}
+            is configured. The passive authoring-insight panels (lint, funnel,
+            trigger ambiguity) live on the dedicated "Analysis" tab. */}
         <ChatFlowEvalGatePanel agentId={agentId} />
-
-        {/* T85 — per-node funnel under the lint panel: cursor + completion
-            counts so the operator spots where conversations stall. Hidden
-            on a brand-new (id-less) flow and on flows without any captured
-            states/submissions yet. */}
-        {flowId && <ChatFlowFunnelPanel agentId={agentId} flowId={flowId} />}
-
-        {/* T91 — render at the top so a heavy-overlap warning is the first
-            thing the author sees when opening the editor. Renders nothing
-            until the agent has ≥ 2 conflicting trigger descriptions. */}
-        <ChatFlowTriggerConflictsPanel agentId={agentId} flowId={flowId} />
 
         {/* ── Card: General ── */}
         <SectionCard variant="blue">
@@ -351,132 +311,6 @@ export function ChatFlowSettingsTab({
                     ))}
                   </SelectContent>
                 </Select>
-              </FormRow>
-            </div>
-          </SectionCard.Content>
-        </SectionCard>
-
-        {/* ── Card: A/B experiment ── */}
-        <SectionCard variant="amber">
-          <SectionCard.Header
-            icon={IconFlask}
-            title={t("chatFlow.sections.experiment.title", {
-              defaultValue: "A/B experiment",
-            })}
-            description={t("chatFlow.sections.experiment.description", {
-              defaultValue:
-                "Group this flow with sibling flows under the same experiment key — the router will reassign conversations across variants by traffic weight. Leave the key empty to disable A/B routing.",
-            })}
-          />
-          <SectionCard.Content>
-            <div className="space-y-6">
-              <FormRow
-                htmlFor="chat-flow-experiment-key"
-                label={t("chatFlow.fields.experimentKey", { defaultValue: "Experiment key" })}
-                description={t("chatFlow.fields.experimentKeyHint", {
-                  defaultValue:
-                    "Identifier shared across all variants of one A/B test (e.g. 'pricing-page-tone'). Stable: changing it ends the experiment and starts a new one.",
-                })}
-              >
-                <Input
-                  id="chat-flow-experiment-key"
-                  value={experimentKey}
-                  onChange={(event) => setExperimentKey(event.target.value)}
-                  placeholder="e.g. programa-match-headline-2026q1"
-                  maxLength={64}
-                />
-              </FormRow>
-
-              <FormRow
-                htmlFor="chat-flow-variant-label"
-                label={t("chatFlow.fields.variantLabel", { defaultValue: "Variant label" })}
-                description={t("chatFlow.fields.variantLabelHint", {
-                  defaultValue:
-                    "This flow's arm inside the experiment ('control', 'treatment_v2', 'warmer_tone'). Surfaces as the grouping dimension in the analytics dashboard.",
-                })}
-              >
-                <Input
-                  id="chat-flow-variant-label"
-                  value={variantLabel}
-                  onChange={(event) => setVariantLabel(event.target.value)}
-                  placeholder="control"
-                  maxLength={64}
-                  disabled={!experimentKey.trim()}
-                />
-              </FormRow>
-
-              <FormRow
-                htmlFor="chat-flow-traffic-weight"
-                label={t("chatFlow.fields.trafficWeight", { defaultValue: "Traffic weight" })}
-                description={t("chatFlow.fields.trafficWeightHint", {
-                  defaultValue:
-                    "Relative weight (0-100) across variants. (50, 50) splits evenly; (90, 10) routes 90% to the first. Sums do not have to equal 100 — only ratios matter. 0 pauses this arm without deleting it.",
-                })}
-              >
-                <Input
-                  id="chat-flow-traffic-weight"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={trafficWeight ?? ""}
-                  onChange={(event) => {
-                    const raw = event.target.value;
-                    if (raw === "") {
-                      setTrafficWeight(null);
-                      return;
-                    }
-                    const parsed = Number.parseInt(raw, 10);
-                    if (!Number.isNaN(parsed)) {
-                      setTrafficWeight(Math.max(0, Math.min(100, parsed)));
-                    }
-                  }}
-                  placeholder="50"
-                  disabled={!experimentKey.trim() || banditEnabled}
-                />
-              </FormRow>
-
-              {/* T70 / §VII.8.a — Bandit (Thompson sampling) toggle. When
-                  ANY variant in the experimentKey has this on, the engine
-                  ignores traffic weights and routes via Thompson sampling
-                  on observed conversion data. Disabled until the flow is
-                  inside an experimentKey. */}
-              <FormRow
-                htmlFor="chat-flow-bandit-enabled"
-                label={t("chatFlow.fields.banditEnabled", { defaultValue: "Bandit (Thompson sampling)" })}
-                description={t("chatFlow.fields.banditEnabledHint", {
-                  defaultValue:
-                    "When enabled, the engine ignores traffic weight and adapts to observed conversion using Thompson sampling on the goal-achieved rate. Activate on at least one variant under the same experiment key to enable bandit mode.",
-                })}
-              >
-                <Switch
-                  id="chat-flow-bandit-enabled"
-                  checked={banditEnabled}
-                  onCheckedChange={setBanditEnabled}
-                  disabled={!experimentKey.trim()}
-                />
-              </FormRow>
-
-              {/* T71 / §VII.8.b — Champion-challenger auto-promotion. When ANY
-                  variant under the experimentKey opts in, the daily job
-                  promotes the significant winner to 100% traffic and archives
-                  the losers. Disabled until the flow is inside an
-                  experimentKey. */}
-              <FormRow
-                htmlFor="chat-flow-auto-promote"
-                label={t("chatFlow.fields.autoPromote", {
-                  defaultValue: "Auto-promote winner (champion-challenger)",
-                })}
-                description={t("chatFlow.fields.autoPromoteHint", {
-                  defaultValue:
-                    "When enabled, a daily job checks statistical significance and, once a winner is declared, pins it to 100% of traffic and archives the losing variants. Leave off to keep manual control — you can still promote on demand from the significance report.",
-                })}
-              >
-                <Switch
-                  id="chat-flow-auto-promote"
-                  checked={autoPromote}
-                  onCheckedChange={setAutoPromote}
-                  disabled={!experimentKey.trim()}
-                />
               </FormRow>
             </div>
           </SectionCard.Content>

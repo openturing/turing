@@ -84,6 +84,31 @@ public class TurConfigVarOnStartup {
 			"GLOBAL_CODE_INTERPRETER_SKILL_IMAGE";
 	public static final String CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE = "python:3.12-slim";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
+	/**
+	 * T517 — cross-provider per-stage model "lanes". Each holds an
+	 * {@code TurLLMInstance} id the matching pipeline stages use instead of the
+	 * default LLM; blank = fall back to {@link #DEFAULT_LLM} (legacy behaviour).
+	 */
+	public static final String MODEL_LANE_FAST = "GLOBAL_MODEL_LANE_FAST";
+	public static final String MODEL_LANE_REASONING = "GLOBAL_MODEL_LANE_REASONING";
+	public static final String MODEL_LANE_CHEAP = "GLOBAL_MODEL_LANE_CHEAP";
+	/**
+	 * T518 — cost-aware cross-provider fallback chain: a comma-separated, ordered
+	 * list of {@code TurLLMInstance} ids the meta-provider fails over to after the
+	 * primary. Blank = no chain (legacy single-model path).
+	 */
+	public static final String LLM_FALLBACK_CHAIN = "GLOBAL_LLM_FALLBACK_CHAIN";
+	/** T518 — fallback routing mode: {@code PRIORITY} (default) | {@code CHEAPEST}. */
+	public static final String LLM_FALLBACK_MODE = "GLOBAL_LLM_FALLBACK_MODE";
+	public static final String LLM_FALLBACK_MODE_DEFAULT_VALUE = "PRIORITY";
+	/**
+	 * T522 — multi-provider "second opinion": when enabled, a different-vendor
+	 * critic LLM judges the primary RAG answer and the agreement is surfaced as a
+	 * confidence signal. Default off (no extra call).
+	 */
+	public static final String SECOND_OPINION_ENABLED = "GLOBAL_SECOND_OPINION_ENABLED";
+	/** T522 — the critic {@code TurLLMInstance} id (should be a different vendor). */
+	public static final String SECOND_OPINION_LLM = "GLOBAL_SECOND_OPINION_LLM";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
 	public static final String SENDER_EMAIL = "GLOBAL_SENDER_EMAIL";
@@ -128,6 +153,14 @@ public class TurConfigVarOnStartup {
 	public static final String RAG_SN_RERANK_ENDPOINT = "GLOBAL_RAG_SN_RERANK_ENDPOINT";
 	/** T338 — rerank model name (cross-encoder / Cohere); blank uses the backend default. */
 	public static final String RAG_SN_RERANK_MODEL = "GLOBAL_RAG_SN_RERANK_MODEL";
+	/** T521 — AWS region for the managed Bedrock Rerank API ({@code BEDROCK}). */
+	public static final String RAG_SN_RERANK_REGION = "GLOBAL_RAG_SN_RERANK_REGION";
+	public static final String RAG_SN_RERANK_REGION_DEFAULT_VALUE = "us-east-1";
+	/** T521 — GCP project for the managed Vertex AI Ranking API ({@code VERTEX_AI}). */
+	public static final String RAG_SN_RERANK_VERTEX_PROJECT = "GLOBAL_RAG_SN_RERANK_VERTEX_PROJECT";
+	/** T521 — GCP location for Vertex AI Ranking (default {@code global}). */
+	public static final String RAG_SN_RERANK_VERTEX_LOCATION = "GLOBAL_RAG_SN_RERANK_VERTEX_LOCATION";
+	public static final String RAG_SN_RERANK_VERTEX_LOCATION_DEFAULT_VALUE = "global";
 	/** T339 — Cohere API key, stored encrypted; required only for the COHERE strategy. */
 	public static final String RAG_SN_RERANK_API_KEY = "GLOBAL_RAG_SN_RERANK_API_KEY";
 	/**
@@ -184,6 +217,13 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(CODE_INTERPRETER_SKILL_IMAGE, GLOBAL_PATH,
 				CODE_INTERPRETER_SKILL_IMAGE_DEFAULT_VALUE);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_FAST, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_REASONING, GLOBAL_PATH, "");
+		ensureConfigVar(MODEL_LANE_CHEAP, GLOBAL_PATH, "");
+		ensureConfigVar(LLM_FALLBACK_CHAIN, GLOBAL_PATH, "");
+		ensureConfigVar(LLM_FALLBACK_MODE, GLOBAL_PATH, LLM_FALLBACK_MODE_DEFAULT_VALUE);
+		ensureConfigVar(SECOND_OPINION_ENABLED, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(SECOND_OPINION_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");
@@ -204,6 +244,10 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(RAG_SN_RERANK_STRATEGY, GLOBAL_PATH, RAG_SN_RERANK_STRATEGY_DEFAULT_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_ENDPOINT, GLOBAL_PATH, "");
 		ensureConfigVar(RAG_SN_RERANK_MODEL, GLOBAL_PATH, "");
+		ensureConfigVar(RAG_SN_RERANK_REGION, GLOBAL_PATH, RAG_SN_RERANK_REGION_DEFAULT_VALUE);
+		ensureConfigVar(RAG_SN_RERANK_VERTEX_PROJECT, GLOBAL_PATH, "");
+		ensureConfigVar(RAG_SN_RERANK_VERTEX_LOCATION, GLOBAL_PATH,
+				RAG_SN_RERANK_VERTEX_LOCATION_DEFAULT_VALUE);
 		ensureConfigVar(RAG_SN_RERANK_API_KEY, GLOBAL_PATH, "");
 		ensureConfigVar(RAG_SN_RERANK_CACHE_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(RAG_SN_FOLLOWUPS_ENABLED, GLOBAL_PATH, FALSE_VALUE);

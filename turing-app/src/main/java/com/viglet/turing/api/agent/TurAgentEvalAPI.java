@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.genai.distillation.TurOpenAiDistillationService;
+import com.viglet.turing.genai.distillation.TurOpenAiDistillationService.DistillResult;
 import com.viglet.turing.genai.eval.TurAgentEvalGateService;
 import com.viglet.turing.genai.eval.TurAgentEvalRunnerService;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalGateDto;
@@ -45,11 +47,14 @@ public class TurAgentEvalAPI {
 
     private final TurAgentEvalRunnerService runnerService;
     private final TurAgentEvalGateService gateService;
+    private final TurOpenAiDistillationService distillationService;
 
     public TurAgentEvalAPI(TurAgentEvalRunnerService runnerService,
-            TurAgentEvalGateService gateService) {
+            TurAgentEvalGateService gateService,
+            TurOpenAiDistillationService distillationService) {
         this.runnerService = runnerService;
         this.gateService = gateService;
+        this.distillationService = distillationService;
     }
 
     @Operation(summary = "Run the agent's eval gate (replays every enabled golden set)")
@@ -57,6 +62,50 @@ public class TurAgentEvalAPI {
     @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
     public TurAgentEvalReportDto run(@PathVariable String agentId) {
         return runnerService.runAgent(agentId);
+    }
+
+    @Operation(summary = "Submit the agent's rubric judgements as a Batch (50% off, ~24h)")
+    @PostMapping("/run-batch")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public java.util.Map<String, Object> runBatch(@PathVariable String agentId) {
+        int scheduled = runnerService.submitJudgeBatch(agentId);
+        if (scheduled < 0) {
+            return java.util.Map.of("scheduled", 0,
+                    "reason", "Batch eval tier disabled or no usable batch-capable LLM");
+        }
+        return java.util.Map.of("scheduled", scheduled);
+    }
+
+    @Operation(summary = "Push the agent's rubric fixtures to the OpenAI Evals API (server-side graders)")
+    @PostMapping("/run-openai-evals")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public java.util.Map<String, Object> runOpenAiEvals(@PathVariable String agentId) {
+        return runnerService.submitToOpenAiEvals(agentId)
+                .<java.util.Map<String, Object>>map(s -> java.util.Map.of(
+                        "submitted", true,
+                        "evalId", s.evalId(),
+                        "runId", s.runId(),
+                        "reportUrl", s.reportUrl() == null ? "" : s.reportUrl(),
+                        "fixtureCount", s.fixtureCount()))
+                .orElseGet(() -> java.util.Map.of("submitted", false,
+                        "reason", "OpenAI Evals tier disabled, eval LLM not OpenAI-backed, "
+                                + "or no rubric cases"));
+    }
+
+    @Operation(summary = "Distill the agent: export Stored Completions, fine-tune, swap model if eval passes")
+    @PostMapping("/distill")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public java.util.Map<String, Object> distill(@PathVariable String agentId) {
+        DistillResult result = distillationService.distill(agentId);
+        if (!result.started()) {
+            return java.util.Map.of("started", false, "reason", result.reason());
+        }
+        return java.util.Map.of(
+                "started", true,
+                "jobId", result.job().getId(),
+                "fineTuneJobId", result.job().getFineTuneJobId(),
+                "exampleCount", result.job().getExampleCount(),
+                "baseModel", result.job().getBaseModel());
     }
 
     @Operation(summary = "Latest eval report for the agent")

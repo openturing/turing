@@ -24,7 +24,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  * three concatenated pieces (preserving the existing prompt order):
  *
  * <ol>
- *   <li><b>Head</b> — {@code === ACTIVE FLOW STEP: ... ===}, {@code Goal},
+ *   <li><b>Head</b> — {@code ## ACTIVE FLOW STEP}, {@code Goal},
  *       {@code Collect}, {@code Validate}. Derived from
  *       {@link com.viglet.turing.genai.flow.ChatFlowNode node fields}
  *       only → cacheable by {@code (flowId, nodeId)}.</li>
@@ -52,13 +52,13 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  *
  * <h2>Eviction</h2>
  *
- * Both cache names are listed in the {@code @CacheEvict} block on
- * {@link com.viglet.turing.persistence.repository.agent.TurChatFlowRepository#save(Object)}
- * and {@link com.viglet.turing.persistence.repository.agent.TurChatFlowRepository#delete(String)
- * delete(id)} so any operator edit to the flow (label, aiInstruction,
- * outputVariable, validationRule, edges, neighbor instructions)
- * propagates on the next chat turn — same convention used for
- * {@code turChatFlowRouterDecision}.
+ * Both caches are cleared by {@link TurChatFlowEngineService#evictFlowDerivedCaches()},
+ * invoked from the {@code TurChatFlowRouterEvictionListener} JPA callback on any
+ * {@link TurChatFlow} persist/update/remove and from the one bulk-DML delete
+ * site, so any operator edit to the flow (label, aiInstruction, outputVariable,
+ * validationRule, edges, neighbor instructions) propagates on the next chat turn
+ * — alongside {@code turChatFlowRouterDecision}. (Block AC / T486 moved this off
+ * the now-uncached chat-flow repository.)
  *
  * <h2>Self-injection for proxy routing</h2>
  *

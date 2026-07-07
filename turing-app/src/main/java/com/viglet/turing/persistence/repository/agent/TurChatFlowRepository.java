@@ -16,12 +16,10 @@ package com.viglet.turing.persistence.repository.agent;
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 
@@ -30,54 +28,27 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
  * @since 2026.2.5
  */
 public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String> {
-    String FIND_ALL = "turChatFlowFindAll";
-    String FIND_BY_ID = "turChatFlowFindById";
-    String FIND_BY_AGENT_ID = "turChatFlowFindByAgentId";
-
-    @Override
-    @Cacheable(FIND_ALL)
-    @NotNull
-    List<TurChatFlow> findAll();
-
-    @Override
-    @Cacheable(FIND_BY_ID)
-    @NotNull
-    Optional<TurChatFlow> findById(@NotNull String id);
-
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
-            "turChatFlowRouterDecision",
-            // T31 / §IV.5 — flow edits invalidate the cached static
-            // head/tail of the system-prompt addendum (node label,
-            // aiInstruction, validationRule, next-step preview all may
-            // have changed). Same eviction cadence as the router
-            // decision cache.
-            "turChatFlowStaticAddendumHead", "turChatFlowStaticAddendumTail" },
-            allEntries = true)
-    @NotNull
-    @Override
-    <S extends TurChatFlow> S save(@NotNull S entity);
 
     @Modifying
     @Query("delete from TurChatFlow f where f.id = ?1")
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
-            "turChatFlowRouterDecision",
-            // T31 / §IV.5 — flow edits invalidate the cached static
-            // head/tail of the system-prompt addendum (node label,
-            // aiInstruction, validationRule, next-step preview all may
-            // have changed). Same eviction cadence as the router
-            // decision cache.
-            "turChatFlowStaticAddendumHead", "turChatFlowStaticAddendumTail" },
-            allEntries = true)
     void delete(String id);
 
     /**
-     * Called once per chat turn from {@code TurAgentChatExecutor.resolveFlowContext}
-     * to enumerate the flows attached to the agent. Cached because the flow
-     * catalog changes rarely (admin edit) compared to chat turn frequency —
-     * the {@code FIND_BY_AGENT_ID} cache is evicted on any
-     * {@code save}/{@code delete} so admin edits propagate without restart.
+     * Re-fetches a flow as a fully-initialized entity by id. Unlike
+     * {@code findById} (which delegates to {@code EntityManager.find} and can
+     * return the same uninitialized {@code LAZY} proxy already present in the
+     * persistence context — e.g. the proxy on a merge-managed {@code save(...)}
+     * result), a JPQL query hydrates the entity, so its {@code definitionJson}
+     * is safe to read. Used by {@code TurChatFlowEngineService.resolveFlowForRead}.
+     * (Block AC / T486: the repository is uncached.)
      */
-    @Cacheable(FIND_BY_AGENT_ID)
+    @Query("select f from TurChatFlow f where f.id = :id")
+    Optional<TurChatFlow> findByIdInitialized(@Param("id") String id);
+
+    /**
+     * Called once per chat turn from {@code TurAgentChatExecutor.resolveFlowContext}
+     * to enumerate the flows attached to the agent.
+     */
     List<TurChatFlow> findByTurAIAgent_IdOrderByNameAsc(String agentId);
 
     /**

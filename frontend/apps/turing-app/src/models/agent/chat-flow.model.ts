@@ -165,6 +165,15 @@ export interface TurChatFlow {
    */
   autoPromote?: boolean | null;
   /**
+   * T241 / §D.11 — per-experiment success metric the bandit optimises for and
+   * the significance test defaults to. One of `GOAL_ACHIEVED`,
+   * `HANDOFF_WHATSAPP`, `LEAD_EMAIL_CAPTURED`. Null/absent means
+   * `GOAL_ACHIEVED`. Only meaningful when {@link experimentKey} is set.
+   *
+   * @since 2026.3.4
+   */
+  experimentSuccessMetric?: string | null;
+  /**
    * T93 / §VII.11.c — JSON mapping {@code {receivingSlot: sourceSlot}} of
    * slots this flow inherits from earlier flows on the same conversation.
    * {@code {"*":"*"}} = pass every captured slot through. Null/blank
@@ -191,6 +200,15 @@ export interface TurChatFlowFunnelNode {
   cursorCount: number;
   completedCount: number;
   abandonedCount: number;
+  /**
+   * T237 — path-aware counters from the opt-in per-turn node-visit log.
+   * `pathReached`: recorded paths that visited this node; `pathContinued`:
+   * of those, how many also reached a later funnel node. Drop-off is
+   * `pathReached − pathContinued` (computed client-side). Both 0 when the
+   * node-visit log is disabled.
+   */
+  pathReached: number;
+  pathContinued: number;
 }
 
 export interface TurChatFlowFunnelReport {
@@ -199,6 +217,8 @@ export interface TurChatFlowFunnelReport {
   totalStates: number;
   totalSubmissions: number;
   abandonedAtFlow: number;
+  /** T237 — terminal submissions that carried a node-visit path; 0 = log off. */
+  totalPaths: number;
   nodes: TurChatFlowFunnelNode[];
 }
 
@@ -213,8 +233,12 @@ export interface TurChatFlowLintIssue {
   edgeId: string | null;
   severity: "ERROR" | "WARNING" | "INFO";
   code: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   message: string;
+  /** English fallback; the UI prefers a `code`-keyed translation. */
   hint: string;
+  /** Interpolation values for the `code`-keyed i18n template (length, slot, type, …). */
+  params?: Record<string, string>;
 }
 
 /**

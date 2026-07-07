@@ -39,13 +39,19 @@ class TurRagSearchToolServiceTest {
     private com.viglet.turing.persistence.repository.rag.TurRagBm25CoreRepository ragBm25CoreRepository;
     @Mock
     private com.viglet.turing.plugins.se.TurSearchEnginePluginFactory searchEnginePluginFactory;
+    @Mock
+    private com.viglet.turing.genai.rag.backend.TurRetrievalBackendResolver retrievalBackendResolver;
 
     private TurRagSearchToolService service;
 
     @BeforeEach
     void setUp() {
+        // T520 — default to the built-in index (no managed override) so the
+        // existing retrieval assertions are unchanged.
+        org.mockito.Mockito.lenient().when(retrievalBackendResolver.resolveOverride())
+                .thenReturn(java.util.Optional.empty());
         service = new TurRagSearchToolService(globalSettingsService, ragContextBuilder, trainingRecordRepository,
-                snSiteGenAiRepository, ragBm25CoreRepository, searchEnginePluginFactory);
+                snSiteGenAiRepository, ragBm25CoreRepository, searchEnginePluginFactory, retrievalBackendResolver);
     }
 
     @Test

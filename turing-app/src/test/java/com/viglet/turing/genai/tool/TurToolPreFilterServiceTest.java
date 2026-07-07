@@ -155,6 +155,74 @@ class TurToolPreFilterServiceTest {
     }
 
     @Test
+    void reservesQuotaForAttachedToolsWhenNativesExceedTopK() {
+        // T424 / §XXI — many always-keep natives (12) + attached MCP-style
+        // tools (6), topK=10. Pre-T424 the attached quota was max(0, 10-12)=0,
+        // so EVERY attached tool was dropped before the LLM saw it. The reserve
+        // floor must let the top-scoring attached tools through.
+        props.setMinToolsThreshold(0);
+        props.setTopK(10);
+        props.setReserveAttached(8);
+
+        java.util.List<ToolCallback> all = new java.util.ArrayList<>();
+        java.util.Set<String> natives = new java.util.HashSet<>();
+        for (int i = 0; i < 12; i++) {
+            String n = "native_" + i;
+            natives.add(n);
+            all.add(cb(n, "Native utility tool number " + i + " unrelated to the query"));
+        }
+        all.add(cb("dspace_search_items", "Search the Insper knowledge base items by text query"));
+        all.add(cb("dspace_list_communities",
+                "List communities (canais) of the Insper knowledge base repository"));
+        all.add(cb("dspace_list_collections", "List collections of the Insper knowledge repository"));
+        all.add(cb("other_a", "Schedule a calendar invitation with attendees"));
+        all.add(cb("other_b", "Send an outbound transactional email message"));
+        all.add(cb("other_c", "Translate text between two languages"));
+
+        ToolCallback[] out = service.filter(all.toArray(new ToolCallback[0]),
+                "quais são os canais da base de conhecimento do Insper", natives);
+        List<String> names = Arrays.stream(out)
+                .map(c -> c.getToolDefinition().name())
+                .toList();
+
+        // All always-keep natives survive...
+        assertThat(names).contains("native_0", "native_11");
+        // ...AND at least one attached tool now reaches the model (pre-T424: 0).
+        long attached = names.stream().filter(n -> n.startsWith("dspace_") || n.startsWith("other_")).count();
+        assertThat(attached).isGreaterThan(0);
+        // The intent-matching dspace_ tools should win the reserved slots over
+        // the unrelated other_* ones.
+        assertThat(names).contains("dspace_search_items");
+    }
+
+    @Test
+    void reserveZeroRestoresPreT424Starvation() {
+        // Floor disabled (=0): natives ≥ topK starve the attached pool to zero,
+        // matching the documented opt-out / legacy behaviour.
+        props.setMinToolsThreshold(0);
+        props.setTopK(10);
+        props.setReserveAttached(0);
+
+        java.util.List<ToolCallback> all = new java.util.ArrayList<>();
+        java.util.Set<String> natives = new java.util.HashSet<>();
+        for (int i = 0; i < 12; i++) {
+            String n = "native_" + i;
+            natives.add(n);
+            all.add(cb(n, "Native utility tool number " + i));
+        }
+        all.add(cb("dspace_search_items", "Search the Insper knowledge base"));
+        all.add(cb("dspace_list_communities", "List communities of the Insper repository"));
+
+        ToolCallback[] out = service.filter(all.toArray(new ToolCallback[0]),
+                "canais da base de conhecimento", natives);
+        List<String> names = Arrays.stream(out)
+                .map(c -> c.getToolDefinition().name())
+                .toList();
+        assertThat(names).noneMatch(n -> n.startsWith("dspace_"));
+        assertThat(names).hasSize(12); // only the protected natives
+    }
+
+    @Test
     void emptyInputReturnsEmpty() {
         ToolCallback[] out = service.filter(new ToolCallback[0], "anything", Set.of());
         assertThat(out).isEmpty();

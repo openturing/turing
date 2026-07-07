@@ -1,0 +1,50 @@
+import { useState } from "react";
+import { Check, Copy } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/** A copy-paste command line with a copy button. */
+export function CopyCommand({
+  command,
+  className,
+}: {
+  command: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = () => {
+    navigator.clipboard
+      ?.writeText(command)
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {
+        /* clipboard blocked — no-op */
+      });
+  };
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-3 rounded-lg border border-white/15 bg-black/30 px-4 py-2.5 font-mono text-sm text-[#d7def5] backdrop-blur",
+        className
+      )}
+    >
+      <span className="select-none text-emerald-400">$</span>
+      <code className="whitespace-nowrap">{command}</code>
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label="Copy command"
+        className="ml-1 rounded-md p-1 text-[#8b94b3] transition-colors hover:bg-white/10 hover:text-white"
+      >
+        {copied ? (
+          <Check className="size-4 text-emerald-400" />
+        ) : (
+          <Copy className="size-4" />
+        )}
+      </button>
+    </div>
+  );
+}

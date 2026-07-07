@@ -45,6 +45,16 @@ public class TurGlobalSettingsAPI {
                 .codeInterpreterDockerImage(turGlobalSettingsService.getCodeInterpreterDockerImage())
                 .codeInterpreterSkillImage(turGlobalSettingsService.getCodeInterpreterSkillImage())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
+                .modelLaneFastId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.FAST))
+                .modelLaneReasoningId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.REASONING))
+                .modelLaneCheapId(turGlobalSettingsService
+                        .getModelLaneInstanceId(com.viglet.turing.system.lane.TurModelLane.CHEAP))
+                .llmFallbackChainIds(turGlobalSettingsService.getLlmFallbackChainIds())
+                .llmFallbackMode(turGlobalSettingsService.getLlmFallbackMode())
+                .secondOpinionEnabled(turGlobalSettingsService.isSecondOpinionEnabled())
+                .secondOpinionLlmId(turGlobalSettingsService.getSecondOpinionLlmId())
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
                 .llmCacheRegenerate(turGlobalSettingsService.isLlmCacheRegenerate())
@@ -63,6 +73,9 @@ public class TurGlobalSettingsAPI {
                 .ragSnRerankStrategy(turGlobalSettingsService.getRagSnRerankStrategy())
                 .ragSnRerankEndpoint(turGlobalSettingsService.getRagSnRerankEndpoint())
                 .ragSnRerankModel(turGlobalSettingsService.getRagSnRerankModel())
+                .ragSnRerankRegion(turGlobalSettingsService.getRagSnRerankRegion())
+                .ragSnRerankVertexProject(turGlobalSettingsService.getRagSnRerankVertexProject())
+                .ragSnRerankVertexLocation(turGlobalSettingsService.getRagSnRerankVertexLocation())
                 // write-only secret: never echo the key, only its set/not-set status
                 .ragSnRerankApiKey("")
                 .ragSnRerankApiKeySet(turGlobalSettingsService.isRagSnRerankApiKeySet())
@@ -88,6 +101,23 @@ public class TurGlobalSettingsAPI {
                         .updateCodeInterpreterSkillImage(globalSettings.getCodeInterpreterSkillImage()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
+                .modelLaneFastId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.FAST,
+                        globalSettings.getModelLaneFastId()))
+                .modelLaneReasoningId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.REASONING,
+                        globalSettings.getModelLaneReasoningId()))
+                .modelLaneCheapId(turGlobalSettingsService.updateModelLaneInstanceId(
+                        com.viglet.turing.system.lane.TurModelLane.CHEAP,
+                        globalSettings.getModelLaneCheapId()))
+                .llmFallbackChainIds(turGlobalSettingsService
+                        .updateLlmFallbackChainIds(globalSettings.getLlmFallbackChainIds()))
+                .llmFallbackMode(turGlobalSettingsService
+                        .updateLlmFallbackMode(globalSettings.getLlmFallbackMode()))
+                .secondOpinionEnabled(turGlobalSettingsService
+                        .updateSecondOpinionEnabled(globalSettings.isSecondOpinionEnabled()))
+                .secondOpinionLlmId(turGlobalSettingsService
+                        .updateSecondOpinionLlmId(globalSettings.getSecondOpinionLlmId()))
                 .llmCacheEnabled(turGlobalSettingsService
                         .updateLlmCacheEnabled(globalSettings.isLlmCacheEnabled()))
                 .llmCacheTtlMs(turGlobalSettingsService
@@ -124,6 +154,12 @@ public class TurGlobalSettingsAPI {
                         .updateRagSnRerankEndpoint(globalSettings.getRagSnRerankEndpoint()))
                 .ragSnRerankModel(turGlobalSettingsService
                         .updateRagSnRerankModel(globalSettings.getRagSnRerankModel()))
+                .ragSnRerankRegion(turGlobalSettingsService
+                        .updateRagSnRerankRegion(globalSettings.getRagSnRerankRegion()))
+                .ragSnRerankVertexProject(turGlobalSettingsService
+                        .updateRagSnRerankVertexProject(globalSettings.getRagSnRerankVertexProject()))
+                .ragSnRerankVertexLocation(turGlobalSettingsService
+                        .updateRagSnRerankVertexLocation(globalSettings.getRagSnRerankVertexLocation()))
                 // Write-only secret — persisted only when a non-blank value
                 // arrives, blank leaves the stored key untouched, never echoed
                 .ragSnRerankApiKey("")

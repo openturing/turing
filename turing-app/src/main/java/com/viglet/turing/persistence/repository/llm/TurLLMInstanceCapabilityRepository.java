@@ -24,9 +24,6 @@ package com.viglet.turing.persistence.repository.llm;
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.viglet.turing.persistence.model.llm.TurLLMInstanceCapability;
@@ -34,35 +31,14 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstanceCapability;
 /**
  * T132 / §X.2 — repository for the per-LLM-instance native capability matrix.
  *
- * <p>{@code findByInstanceId} is read once per native chat turn, so it is
- * cached under {@code turNativeCapability} (as documented in the
- * {@code TurNativeProviderClient} seam design). Every write evicts the whole
- * cache so a freshly-toggled capability takes effect on the next turn — the
- * cache key is the instance id, but a coarse {@code allEntries} evict keeps the
- * convention simple and matches the other LLM repositories.
- *
  * @author Alexandre Oliveira
  * @since 2026.3.1
  */
 public interface TurLLMInstanceCapabilityRepository
         extends JpaRepository<TurLLMInstanceCapability, String> {
 
-    @Cacheable("turNativeCapability")
     List<TurLLMInstanceCapability> findByInstanceId(String instanceId);
 
     Optional<TurLLMInstanceCapability> findByInstanceIdAndCapabilityKey(String instanceId,
             String capabilityKey);
-
-    @CacheEvict(value = "turNativeCapability", allEntries = true)
-    @NotNull
-    @Override
-    <S extends TurLLMInstanceCapability> S save(@NotNull S entity);
-
-    @CacheEvict(value = "turNativeCapability", allEntries = true)
-    @Override
-    void delete(@NotNull TurLLMInstanceCapability entity);
-
-    @CacheEvict(value = "turNativeCapability", allEntries = true)
-    @Override
-    void deleteById(@NotNull String id);
 }

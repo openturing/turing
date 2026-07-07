@@ -14,6 +14,7 @@ export {
   fetchAgentContextInfo,
   postChatConversation,
   postAgentChat,
+  postPersonaChat,
   postLlmChat,
   postSemanticChat,
   deleteSiteConversationState,
@@ -24,6 +25,7 @@ export {
   fetchAgentChatSlots,
   postSiteChatSlot,
   postSiteSlotExtract,
+  postSiteSlotExtractMulti,
   postSiteHandoff,
   postSiteFlowSelect,
   postSiteFormSubmit,
@@ -42,12 +44,17 @@ export {
   postSummary,
   parseHrefToParams,
   postClick,
+  fetchVoiceAvailability,
+  postVoiceSession,
+  postVoiceTranslation,
   CHAT_DISABLED_HINTS,
+  LOW_CONFIDENCE_THRESHOLD,
 } from "./core/api";
 export type {
   SearchParams,
   PostChatConversationOptions,
   PostAgentChatOptions,
+  PostPersonaChatOptions,
   PostLlmChatOptions,
   PostSemanticChatOptions,
   ChatEnabledResponse,
@@ -68,6 +75,7 @@ export type {
   FetchSimilarParams,
   TurChatSlotUploadResponse,
   PostSlotUploadOptions,
+  SlotExtractOptions,
   TurChatResumeResponse,
   TurDslSearchRequest,
   TurDslSearchHit,
@@ -76,6 +84,9 @@ export type {
   TurFeaturesInfo,
   TurSystemLocale,
   TurSummaryResult,
+  TurVoiceAvailability,
+  TurVoiceSession,
+  PostVoiceSessionOptions,
 } from "./core/api";
 
 // ── Session ──
@@ -93,7 +104,7 @@ export { resolveDocuments, resolveGroups } from "./core/resolve";
 
 // ── Hooks ──
 export { useTuringSearch } from "./hooks/use-turing-search";
-export type { UseTuringSearchReturn } from "./hooks/use-turing-search";
+export type { UseTuringSearchReturn, UseTuringSearchOptions } from "./hooks/use-turing-search";
 export { useTuringAutoComplete } from "./hooks/use-turing-autocomplete";
 export type { UseTuringAutoCompleteReturn } from "./hooks/use-turing-autocomplete";
 export { useTuringSortOptions } from "./hooks/use-turing-sort-options";
@@ -114,12 +125,61 @@ export { useTuringTabs } from "./hooks/use-turing-tabs";
 export type { UseTuringTabsReturn, UseTuringTabsOptions, TabDefinition, EnrichedTab } from "./hooks/use-turing-tabs";
 export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus, SendOverrides } from "./hooks/use-turing-chat";
+export { useGenerativeUI } from "./hooks/use-turing-generative-ui";
+export type { UseGenerativeUIReturn } from "./hooks/use-turing-generative-ui";
+export { useAnswerAsApp } from "./hooks/use-turing-answer-as-app";
+export type { UseAnswerAsAppReturn } from "./hooks/use-turing-answer-as-app";
+export { useCoBrowseSearch } from "./hooks/use-turing-co-browse";
+export type { UseCoBrowseReturn } from "./hooks/use-turing-co-browse";
+export { useTuringProactiveCopilot } from "./hooks/use-turing-proactive-copilot";
+export type {
+  TuringProactiveSuggestion,
+  UseTuringProactiveCopilotOptions,
+  UseTuringProactiveCopilotReturn,
+} from "./hooks/use-turing-proactive-copilot";
+export { useTuringUserMemory } from "./hooks/use-turing-user-memory";
+export type {
+  TuringUserMemory,
+  UseTuringUserMemoryOptions,
+  UseTuringUserMemoryReturn,
+} from "./hooks/use-turing-user-memory";
 export { useTuringLlmChat } from "./hooks/use-turing-llm-chat";
 export type {
   UseTuringLlmChatReturn,
   UseTuringLlmChatOptions,
   LlmSendOverrides,
 } from "./hooks/use-turing-llm-chat";
+
+// ── Analytics (Block Z, T463) ──
+export { useTuringAnalytics } from "./hooks/use-turing-analytics";
+export type {
+  UseTuringAnalyticsOptions,
+  UseTuringAnalyticsReturn,
+} from "./hooks/use-turing-analytics";
+export {
+  createTuringAnalytics,
+  TURING_ANALYTICS_EVENTS,
+} from "./core/analytics";
+export type {
+  TuringAnalytics,
+  TuringAnalyticsOptions,
+  TuringAnalyticsContext,
+  TuringAnalyticsEvent,
+  TuringAnalyticsEventName,
+  TuringAnalyticsSink,
+  TuringAnalyticsValue,
+} from "./core/analytics";
+export { googleAnalyticsSink, onEventSink, debugSink } from "./core/analytics-sinks";
+export type {
+  GoogleAnalyticsSinkOptions,
+  DebugSinkOptions,
+} from "./core/analytics-sinks";
+export { createAbandonmentWatcher } from "./core/analytics-lifecycle";
+export type {
+  AbandonmentOptions,
+  AbandonmentReason,
+  AbandonmentWatcher,
+} from "./core/analytics-lifecycle";
 export { useTuringSemanticChat } from "./hooks/use-turing-semantic-chat";
 export type {
   UseTuringSemanticChatReturn,
@@ -185,6 +245,13 @@ export type {
   UseTuringVoiceReturn,
   UseTuringVoiceOptions,
 } from "./hooks/use-turing-voice";
+export { useTuringRealtimeVoice } from "./hooks/use-turing-realtime-voice";
+export type {
+  UseTuringRealtimeVoiceReturn,
+  UseTuringRealtimeVoiceOptions,
+  RealtimeVoiceStatus,
+  RealtimeToolCall,
+} from "./hooks/use-turing-realtime-voice";
 export { useTuringFlowState } from "./hooks/use-turing-flow-state";
 export type {
   UseTuringFlowStateReturn,
@@ -263,6 +330,10 @@ export {
   TuringCodeBlock,
   TuringChatMessage,
   TuringSourceChips,
+  TuringToolActivity,
+  TuringGenerativeContent,
+  TuringCitedAnswer,
+  segmentCitedAnswer,
   TuringSearchBar,
   TuringResultList,
   TuringPagination,
@@ -306,6 +377,20 @@ export type {
   TuringSourceChipsIcons,
   TuringRagSource,
   TuringSourceConfidence,
+  TuringToolActivityProps,
+  TuringToolActivityClassNames,
+  TuringToolActivityLabels,
+  TuringToolActivityIcons,
+  TuringToolCall,
+  TuringGenerativeContentProps,
+  TuringGenerativeContentClassNames,
+  TuringGenerativeItem,
+  TuringGenerativeComponentProps,
+  TuringGenerativeRegistry,
+  TuringCitedAnswerProps,
+  TuringCitedAnswerClassNames,
+  TuringCitation,
+  TuringCitedMark,
   TuringSearchBarProps,
   TuringSearchBarInputProps,
   TuringResultListProps,
@@ -349,6 +434,11 @@ export type {
   TurChatConversationResponse,
   TurChatStreamEvent,
   TurChatSource,
+  TurChatCitation,
+  TurChatGrounding,
+  TurChatSecondOpinion,
+  TurSearchSuggestions,
+  TurChatToolCall,
   TurChatForm,
   TurChatFormField,
   TurChatFormSubmitResponse,

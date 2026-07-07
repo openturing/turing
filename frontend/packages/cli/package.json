@@ -1,0 +1,40 @@
+{
+  "name": "@viglet/turing-cli",
+  "version": "2026.3.6",
+  "description": "turing — the Viglet Turing ES developer CLI: scaffold, run a full local stack, deploy agents/flows/tools/skills, tail chat events, and run YAML eval suites.",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "turing": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\""
+  },
+  "keywords": [
+    "viglet",
+    "turing",
+    "cli",
+    "enterprise-search",
+    "ai-agent",
+    "eval"
+  ],
+  "author": "Alexandre Oliveira",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=26"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}

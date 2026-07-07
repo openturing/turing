@@ -17,10 +17,19 @@ export class TurSystemPromptService {
    * picks which chat flow governs the previewed turn ("__none__" = no flow,
    * omitted = first enabled flow).
    */
-  async preview(agentId: string, flowId?: string): Promise<TurSystemPromptPreview> {
+  async preview(
+    agentId: string,
+    flowId?: string,
+    nodeId?: string,
+    vars?: string,
+  ): Promise<TurSystemPromptPreview> {
+    const params: Record<string, string> = {};
+    if (flowId) params.flowId = flowId;
+    if (nodeId) params.nodeId = nodeId;
+    if (vars) params.vars = vars;
     const response = await axios.get<TurSystemPromptPreview>(
       `/ai-agent/${agentId}/system-prompt/preview`,
-      { params: flowId ? { flowId } : {} },
+      { params },
     );
     return response.data;
   }

@@ -2,24 +2,19 @@ import {
   IconBraces,
   IconBrandGraphql,
   IconBuildingStore,
-  IconChartBar,
   IconClock,
-  IconCoin,
   IconCompass,
   IconCpu2,
   IconCube,
   IconDatabase,
-  IconFileImport,
   IconFolder,
   IconGitBranch,
   IconGlobe,
   IconHome,
   IconLayoutDashboard,
   IconMessageChatbot,
-  IconMessageCircle2,
-  IconPlayerPause,
   IconPlugConnectedX,
-  IconReceiptRupee,
+  IconReportAnalytics,
   IconRobot,
   IconServer2,
   IconShieldCog,
@@ -57,7 +52,7 @@ interface SidebarNavItem {
   icon: Icon
 }
 
-const LLM_ONLY_KEYS = new Set(["chat", "tokenUsage", "costGovernance"])
+const LLM_ONLY_KEYS = new Set(["chat"])
 
 /** Maps sidebar item keys to the privilege required to view them. */
 const ITEM_PRIVILEGE: Record<string, string> = {
@@ -66,7 +61,6 @@ const ITEM_PRIVILEGE: Record<string, string> = {
   embeddingStore: "STORE_VIEW",
   aiAgent: "AI_AGENT_VIEW",
   persona: "AI_AGENT_VIEW",
-  parkedConversations: "AI_AGENT_VIEW",
   searchEngine: "SE_VIEW",
   semanticNavigation: "SN_VIEW",
 }
@@ -81,10 +75,8 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "chatWebhook", titleKey: "home.features.chatWebhook.title", url: ROUTES.CHAT_WEBHOOK_INSTANCE, icon: IconWebhook },
   { key: "persona", titleKey: "home.features.persona.title", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle },
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
-  { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
-  { key: "costGovernance", titleKey: "home.features.costGovernance.title", url: ROUTES.COST_GOVERNANCE, icon: IconCoin },
-  { key: "chatAnalytics", titleKey: "home.features.chatAnalytics.title", url: ROUTES.CHAT_ANALYTICS, icon: IconMessageCircle2 },
-  { key: "parkedConversations", titleKey: "home.features.parkedConversations.title", url: ROUTES.PARKED_CONVERSATIONS, icon: IconPlayerPause },
+  { key: "skills", titleKey: "home.features.skills.title", url: ROUTES.SKILL_ROOT, icon: IconSparkles },
+  { key: "aiAnalytics", titleKey: "home.features.aiAnalytics.title", url: ROUTES.AI_ANALYTICS_ROOT, icon: IconReportAnalytics },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 
@@ -92,17 +84,14 @@ const searchItems: SidebarNavItem[] = [
   { key: "searchEngine", titleKey: "home.features.searchEngine.title", url: "/admin/se/instance", icon: IconZoomCode },
   { key: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", url: "/admin/sn/instance", icon: IconCompass },
   { key: "integration", titleKey: "home.features.integration.title", url: "/admin/integration/instance", icon: IconPlugConnectedX },
-  { key: "pages", titleKey: "home.features.pages.title", url: ROUTES.PAGE_ROOT, icon: IconGlobe },
   { key: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
 ]
 
 const managementItems: SidebarNavItem[] = [
   { key: "assets", titleKey: "home.features.assets.title", url: ROUTES.ASSET_ROOT, icon: IconFolder },
-  { key: "skills", titleKey: "home.features.skills.title", url: ROUTES.SKILL_ROOT, icon: IconSparkles },
+  { key: "pages", titleKey: "home.features.pages.title", url: ROUTES.PAGE_ROOT, icon: IconGlobe },
   { key: "git", titleKey: "home.features.git.title", url: ROUTES.GIT_ROOT, icon: IconGitBranch },
   { key: "marketplace", titleKey: "home.features.marketplace.title", url: ROUTES.MARKETPLACE_ROOT, icon: IconBuildingStore },
-  { key: "import", titleKey: "home.features.import.title", url: "/admin/exchange/import", icon: IconFileImport },
-  { key: "logging", titleKey: "home.features.logging.title", url: "/admin/logging/instance", icon: IconReceiptRupee },
   { key: "administration", titleKey: "home.features.administration.title", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
 
@@ -148,22 +137,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     (items: SidebarNavItem[]) =>
       items.filter((item) => {
         if (LLM_ONLY_KEYS.has(item.key) && !hasEnabledLlm) return false
-        if (item.key === "pages" && !storageEnabled) return false
+        if (item.key === "skills" && !skillsEnabled) return false
         return hasPrivilege(item.key)
       }),
-    [hasEnabledLlm, storageEnabled, hasPrivilege]
+    [hasEnabledLlm, skillsEnabled, hasPrivilege]
   )
 
   const filteredManagement = React.useMemo(
     () => managementItems.filter((item) => {
       if (item.key === "assets" && !storageEnabled) return false
-      if (item.key === "skills" && !skillsEnabled) return false
+      if (item.key === "pages" && !storageEnabled) return false
       if (item.key === "git" && !gitServerEnabled) return false
       if (item.key === "marketplace" && !marketplaceEnabled) return false
       if (item.key === "administration" && !isAdmin) return false
       return true
     }),
-    [storageEnabled, skillsEnabled, gitServerEnabled, marketplaceEnabled, isAdmin]
+    [storageEnabled, gitServerEnabled, marketplaceEnabled, isAdmin]
   )
 
   const toNavItems = React.useCallback(

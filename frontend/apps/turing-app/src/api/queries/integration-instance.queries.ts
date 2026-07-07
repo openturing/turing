@@ -12,6 +12,14 @@ export function useIntegrationInstances() {
   });
 }
 
+export function useIntegrationInstance(id: string | undefined) {
+  return useQuery<TurIntegrationInstance>({
+    queryKey: id ? queryKeys.integrationInstances.detail(id) : ['integration-instances', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateIntegrationInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.integrationInstances.all() });
 }

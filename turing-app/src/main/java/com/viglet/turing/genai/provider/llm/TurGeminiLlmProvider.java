@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.google.genai.Client;
+import com.viglet.turing.genai.nativeapi.gemini.TurGeminiEmbeddingModel;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -75,8 +76,34 @@ public class TurGeminiLlmProvider implements TurGenAiLlmProvider {
 
     @Override
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
-        throw new UnsupportedOperationException(
-                "Gemini embedding via native API is not yet supported. Use a different provider for embeddings.");
+        // T495 / §X.19 — native Gemini embeddings via embedContent, with
+        // asymmetric task types (RETRIEVAL_DOCUMENT at index / RETRIEVAL_QUERY at
+        // query) and optional Matryoshka outputDimensionality.
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+
+        Client genAiClient = Client.builder()
+                .apiKey(requireApiKey(decryptedApiKey, turLLMInstance))
+                .build();
+
+        String modelName = firstNonBlank(
+                optionsParser.stringValue(options, "embeddingModel"),
+                optionsParser.stringValue(options, "model"),
+                turLLMInstance.getModelName());
+        Integer outputDimensionality = optionsParser.intValue(options, "outputDimensionality");
+
+        return new TurGeminiEmbeddingModel(genAiClient, modelName, outputDimensionality);
+    }
+
+    @Override
+    public java.util.List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        // Gemini native uses the GenAI Client (api key only); the REST list
+        // endpoint lives under the generativelanguage v1beta base. Honour an
+        // explicit baseUrl override if one was set in provider options / url.
+        String baseUrl = firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl());
+        return TurLlmModelListingSupport.gemini(baseUrl, decryptedApiKey);
     }
 
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {

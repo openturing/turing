@@ -4,6 +4,10 @@
     "blankTitle": "You don't seem to have any AI agent.",
     "blankDescription": "Create a new AI agent to orchestrate LLM instances and MCP servers.",
     "newInstance": "New AI Agent",
+    "launch": {
+      "title": "Launch",
+      "openChat": "Open chat"
+    },
     "deleted": "The {{name}} AI Agent was deleted",
     "notDeleted": "The {{name}} AI Agent was not deleted",
     "nav": {
@@ -12,6 +16,8 @@
       "languageModels": "Language Models",
       "personas": "Personas",
       "nativeTools": "Native Tools",
+      "capabilities": "Tools & Capabilities",
+      "requestOptions": "Request Options",
       "mcpServers": "MCP Servers",
       "customTools": "Custom Tools",
       "intents": "Intents",
@@ -19,7 +25,10 @@
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "analyticsIntent": "Analytics Intent",
-      "history": "History"
+      "history": "History",
+      "livePreview": "Live preview",
+      "analysis": "Analysis",
+      "triggerConflicts": "Trigger ambiguity"
     },
     "persona": {
       "title": "Personas",
@@ -41,6 +50,11 @@
       "namePlaceholder": "e.g. visitor_name",
       "nameHint": "Letters, digits and underscores; must start with a letter or underscore.",
       "descriptionPlaceholder": "Optional — what this slot captures and how flows should use it.",
+      "extractFromDocumentHint": "When on, this slot is filled automatically from an uploaded document (CV, invoice, form) even when the caller names no slots. The slots flagged here are this agent's document-extraction schema.",
+      "extractFromDocumentPlaceholder": "",
+      "validationPatternPlaceholder": "e.g. ^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$",
+      "validationPatternHint": "Optional Java regex an extracted value must fully match to be saved; also given to the model as a formatting hint.",
+      "extractBadge": "Doc schema",
       "created": "Slot \"{{name}}\" created",
       "updated": "Slot \"{{name}}\" updated",
       "deleted": "Slot \"{{name}}\" deleted",
@@ -50,7 +64,9 @@
         "name": "Name",
         "type": "Type",
         "description": "Description",
-        "actions": "Actions"
+        "actions": "Actions",
+        "extractFromDocument": "Extract from document",
+        "validationPattern": "Validation pattern"
       },
       "types": {
         "STRING": "String",
@@ -107,25 +123,88 @@
         "noFixedText": "No fixed text — depends on the live conversation.",
         "flowLabel": "Preview with chat flow",
         "flowNone": "No flow (plain turn)",
-        "flowDisabled": "disabled"
+        "flowDisabled": "disabled",
+        "copy": "Copy full prompt",
+        "copied": "Copied to clipboard",
+        "copyFailed": "Could not copy",
+        "toolsHeading": "Tools available to the model",
+        "toolsNote": "Provided to the model as function/tool schemas (not literal prompt text).",
+        "hoverHint": "Hover a passage to see where it comes from",
+        "tokens": "tok",
+        "totalTokens": "{{count}} tokens total",
+        "stableTokens": "{{count}} cacheable prefix ({{share}}%)",
+        "perTurnTokens": "{{count}} per turn",
+        "estimatedCost": "≈ {{cost}}/turn",
+        "tokensApprox": "approximate",
+        "inertThisTurn": "inert this turn",
+        "nodeEntry": "Entry node (default)",
+        "simulatedValues": "Simulated collected values",
+        "slotName": "slot name",
+        "slotValue": "value",
+        "addValue": "Add value"
       },
       "warnings": {
         "title": "Conflict check",
         "description": "Heuristic checks run automatically. Run the deep check to have the LLM look for subtler contradictions that could break a reply.",
         "count": "{{count}} issue(s) found",
         "deepCheck": "Deep check (LLM)",
-        "clean": "No conflicts detected. Run the deep check for a thorough LLM review."
+        "clean": "No conflicts detected. Run the deep check for a thorough LLM review.",
+        "codes": {
+          "empty_system_prompt": {
+            "message": "This agent has no system prompt; it falls back to a generic default.",
+            "hint": "Write a system prompt that defines the agent's scope, tone, and boundaries."
+          },
+          "system_prompt_too_long": {
+            "message": "The assembled system prompt is {{length}} characters — large prompts inflate token cost and dilute the model's attention.",
+            "hint": "Trim redundant guidance, or move stable reference material into a tool or RAG store."
+          },
+          "language_directive_conflict": {
+            "message": "Conflicting response-language directives: {{langs}}. The model gets contradictory instructions about which language to answer in.",
+            "hint": "Keep a single response-language rule across the agent prompt and the persona, or scope each one to an explicit condition."
+          },
+          "persona_vocab_contradiction": {
+            "message": "The persona lists \"{{term}}\" as both required and forbidden vocabulary.",
+            "hint": "Remove the term from one of the two lists."
+          },
+          "forbidden_term_in_prompt": {
+            "message": "The agent prompt uses \"{{term}}\", which the default persona forbids — the persona will be told to rephrase its own instructions.",
+            "hint": "Rephrase the agent prompt to avoid the forbidden term, or drop it from the persona's forbidden list."
+          },
+          "redundant_persona_instruction": {
+            "message": "The default persona's instruction largely duplicates the agent system prompt.",
+            "hint": "Keep each layer focused — the agent prompt for scope/behavior, the persona for voice — to avoid sending the same text twice."
+          },
+          "flow_persona_not_in_catalog": {
+            "message": "Flow \"{{flow}}\" has a persona node pointing at persona \"{{persona}}\", which is not in this agent's persona catalog. The runtime silently falls back to the default persona.",
+            "hint": "Add that persona to the agent, or fix the node to reference an allowed persona."
+          },
+          "flow_persona_audience_only": {
+            "message": "Flow \"{{flow}}\" switches to persona \"{{persona}}\", which is audience-only and cannot be a speaker. The runtime falls back to the default persona.",
+            "hint": "Use a persona whose kind is SPEAKER or BOTH for a flow voice switch."
+          },
+          "cross_segment_redundancy": {
+            "message": "The rule \"{{rule}}\" is repeated across {{segments}} — the model pays for the same instruction more than once (~{{tokens}} wasted tokens).",
+            "hint": "Keep the rule in one layer and delete the copies to save tokens and avoid drift."
+          },
+          "cross_segment_contradiction": {
+            "message": "Contradiction between {{segments}}: a directive is stated one way in one segment and negated in another. The model gets opposite instructions on the same point.",
+            "hint": "Reconcile the two segments so a single, consistent rule governs this behavior."
+          },
+          "deep_check_unavailable": {
+            "message": "No default LLM is configured or enabled, so the deep conflict analysis can't run.",
+            "hint": "Set a default LLM in Global Settings to enable the deep check."
+          },
+          "deep_check_failed": {
+            "hint": "Try again; if it persists, check the default LLM's status."
+          },
+          "deep_check_note": {
+            "hint": "This is the raw model analysis (it wasn't structured)."
+          }
+        }
       },
-      "finalPrompt": {
-        "title": "Final prompt",
-        "description": "The complete system message the model receives for the previewed turn, including the tool definitions sent alongside it.",
-        "preview": "Preview",
-        "raw": "Raw",
-        "copy": "Copy",
-        "copied": "Copied to clipboard",
-        "copyFailed": "Could not copy",
-        "toolsHeading": "Tools available to the model",
-        "toolsNote": "_Provided to the model as function/tool schemas (not literal prompt text)._"
+      "tabs": {
+        "editor": "Editor",
+        "conflictCheck": "Conflict check"
       }
     },
     "llm": {
@@ -135,6 +214,14 @@
     "tools": {
       "title": "Native Tools",
       "description": "Select which native tool callings are available to this agent."
+    },
+    "capabilities": {
+      "title": "Tools & Capabilities",
+      "description": "Choose, per function, who provides each capability — Turing's own tools or a provider-native one. Same-function options are mutually exclusive; everything else coexists in the same turn."
+    },
+    "requestOptions": {
+      "title": "Request Options",
+      "description": "Tune how this agent's calls are made — reasoning, output, cost/tier, safety and provenance knobs. These change request shape, not the tools the model can invoke."
     },
     "mcp": {
       "title": "MCP Servers",

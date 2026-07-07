@@ -33,13 +33,12 @@ moved — verify against `git ls-files` before acting.
 - [VIII. Strategic moves — repositioning beyond features](#viii-strategic-moves--repositioning-beyond-features)
 - [IX. Deep Agents — competitive response](#ix-deep-agents--competitive-response)
 - [X. Native LLM SDK exploitation — beyond Spring AI 2.0](#x-native-llm-sdk-exploitation--beyond-spring-ai-20)
-- [XI. Embedded LLM (Jlama) — downgraded to a spike](#xi-embedded-llm-jlama--downgraded-to-a-spike)
 - [XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped](#xii-admin-chat--vigletturing-react-sdk-convergence--shipped)
-- [XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform](#xiii-turing-as-an-mcp-server--let-claude-and-any-agent-drive-the-platform)
 - [XIV. Multi-tenancy — one shared JVM, many isolated tenants](#xiv-multi-tenancy--one-shared-jvm-many-isolated-tenants)
 - [XVI. Cost & token governance (Block L)](#xvi-cost--token-governance-block-l)
 - [XVIII. Pluggable reranker — follow-up (Block N)](#xviii-pluggable-reranker--follow-up-block-n)
 - [XX. Structured-source indexing — the cursarei / Dumont reference (Block R)](#xx-structured-source-indexing--the-cursarei--dumont-reference-block-r)
+- [XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)](#xxxiii-evaluation-platform--pluggable-graders--datasets-block-aj)
 
 ---
 
@@ -507,8 +506,9 @@ structurally with the critical patches: #1, #3, #7, #10, #12, #13.
   base class (`AbstractAgentExecutorIT`) shared, both package-private
   outside `customers/education/flow/`
 - `llm-it` profile in `turing-app/pom.xml` works locally
-- (Follow-up, out of scope) CI nightly pipeline for `-Pllm-it` with the
-  `OPENAI_API_KEY` secret
+- CI nightly pipeline for `-Pllm-it` (+ `-Pagent-eval` / `-Pnl-facet-eval`)
+  with the `OPENAI_API_KEY` secret — shipped, see
+  `.github/workflows/nightly-llm-it.yml` (T242)
 
 ---
 
@@ -1287,83 +1287,40 @@ click) trigger the resume; flow advances from the suspend point with
 the new slot values. Deep Agents implies you build this yourself with
 generic state machines. Turing makes it a one-line authoring primitive.
 
-### IX.7 Context engineering — enforceable, not advisory
+### IX.8 Developer experience — CLI follow-ups
 
-Deep Agents says it compresses / offloads / isolates / caches. All four
-are advisory ("the framework helps"). Turing's competitive move:
-**enforceable token budgets** (T123).
+The `turing` CLI + `turing eval` shipped (T125–T127); these close the
+honest gaps left in the first cut, all of which need a small **backend**
+surface the CLI can read — they can't be fixed in the CLI alone.
 
-```yaml
-# Per-agent setting:
-maxPromptTokens: 16000
-overBudgetBehavior: compact     # auto-trigger T115 summarization
-# alternatives: error | warn
-```
+#### IX.8.a Per-conversation tool-call trace (T427) — ✅ shipped
 
-If the predicted prompt exceeds budget, engine routes through
-compression *before* calling LLM. If compression doesn't bring it
-under, the configured failure mode kicks in. **Cost is a first-class
-constraint, not a metric you discover after the fact.**
+Shipped alongside Block W (T436) — see [CHANGELOG.md](CHANGELOG.md) §E.7.
 
-### IX.8 Developer experience — CLI + eval as table stakes
+#### IX.8.b `assert.outcome` terminal-state assertion (T428)
 
-#### IX.8.a `turing` CLI (T125)
+The CLI can assert slots and cursor node, but not the conversation's
+*end state* (`CAPTURED` / `ABANDONED` / `HANDOFF`). That label is already
+computed inside `TurAgentEvalRunnerService`; T428 lifts it onto a session
+read endpoint (or the existing `/state` DTO) so a fixture can assert
+`assert.outcome: CAPTURED`. Without it, "did the lead-capture flow
+actually complete?" can only be approximated via slot presence.
 
-Deep Agents has a CLI. Turing's CLI must be **strictly better** because
-it spans the whole stack:
+#### IX.8.c Global chat-event tail (T429)
 
-```bash
-$ turing init my-agent              # scaffolds agent JSON + flow + tools dir
-$ cd my-agent
-$ turing dev                        # docker-compose up: pg + solr + minio + jar
-                                    # file watcher → hot reload of flow + tools
-$ turing eval                       # run YAML eval suite
-$ turing deploy --env=staging       # push agent + flows + tools + skills
-$ turing logs --tail                # stream chat events from remote
-```
+`turing logs` rides the T120 spectator SSE stream, which is
+conversation-scoped — you must already know the `conversationId`. A
+`turing logs` with no id should tail a firehose of recent chat events
+across all conversations. T429 adds an admin SSE endpoint backed by a
+bounded in-memory ring buffer (single-node caveat shared with the slot/
+message buses) that fans recent turns out to the CLI.
 
-The differentiator: `turing dev` boots the **full Turing stack** locally
-in one command. LangChain's CLI is just the SDK harness — you still
-need your own infrastructure. Turing's CLI is closer to Supabase's CLI
-(supabase + auth + postgres + storage in one) than to LangChain's.
+#### IX.8.d `turing eval` CI gate (T430)
 
-#### IX.8.b `turing eval` (T126)
-
-YAML-defined regression suite. Generalizes the BehavioralIT pattern
-(§VI.4.3) into a customer-facing tool:
-
-```yaml
-# evals/lead-capture.eval.yaml
-fixtures:
-  - id: happy-path-cfo
-    conversation:
-      - user: "Quero saber dos seus programas"
-      - assert.assistant.matches: ".*cargo.*"      # expected to ask cargo
-      - user: "Sou CFO numa fintech"
-      - assert.slot.cargo_atual: "CFO"             # judge captured it
-      - assert.tool_called: search_ee_programs     # tool fired
-      - assert.persona_invariants:                 # tone validator passed
-          forbidden: ["talvez", "não posso"]
-  - id: rejection-path-junior
-    ...
-```
-
-Customers run `turing eval --watch` locally; CI runs on every PR;
-production conversations get one-click "save as eval fixture" (T127).
-LangSmith has eval but provider-locked; Turing's eval works across all
-6 LLM providers because Spring AI abstracts them.
-
-### IX.9 Observability interop — don't fight LangSmith, federate
-
-Customers who already invested in LangSmith dashboards / OpenTelemetry
-backends should not have to abandon them to adopt Turing.
-
-- **T128 LangSmith mirror**: optional `turing.observability.langsmith.enabled=true` + API key → every chat-pipeline event also pushed to LangSmith via their public ingest API. Customers see Turing traces in LangSmith side-by-side with their LangChain agents.
-- **T129 OTel export**: wrap `STAGE_CHAT_*` timers as OTel spans; emit to any OTLP backend. Standard transport, no provider lock-in.
-
-**Strategic principle**: lock customers in via *capability*, never via
-*format*. The Turing scorecard is irreplaceable; the trace export
-shouldn't be.
+A reusable composite GitHub Action wrapping `turing eval` against a
+deployed instance as a PR gate, plus an `npx @viglet/turing-cli`
+quickstart in the docs. Pure packaging/docs on top of T126 — the
+"every PR runs the eval suite" story from the original design.
 
 ### IX.10 What we explicitly do NOT copy from Deep Agents
 
@@ -1493,236 +1450,24 @@ instance keeps falling through to the Spring AI executor. Block F has
 **no monolithic flag day** — features ship one at a time, each guarded
 by its own capability row.
 
-### X.3 OpenAI Responses API + built-in tools (T136 remaining)
+### X.5 MCP federation — shipped (F.4)
 
-The Responses built-in tools that execute server-side — `web_search`
-(T133), `file_search` (T134), `code_interpreter` (T135),
-`image_generation` (T137), remote `mcp` (T138) — are wired through
-`TurOpenAiResponsesService`; see the CHANGELOG. The remaining one is:
+> The F.4 MCP Connector block (T144 Anthropic connector, T145 cross-vendor
+> federation, T146 public API-key-gated Turing-as-MCP-server) has shipped — see
+> [CHANGELOG.md](CHANGELOG.md) §X.5. T146 already inverts the integration story:
+> Turing's `/mcp` is a public consumption surface, so customer LLM clients
+> integrate Turing rather than the reverse — Turing competes to be the search
+> infrastructure *inside* other AI products, not only the customer-facing chat UI.
+> The inter-tenant federation directory (`directory.turing.io`, the former T192
+> bet) is **cancelled** — see STRATEGY §VIII.7.
 
-- **T136 `computer_use` — connector self-installation** (T190). The
-  market-changing application: "Connect my Confluence" → an agent
-  navigates the customer's Confluence admin UI, generates a token,
-  configures Turing's connector. Per integration the engineering
-  cost drops from "days" to "zero." Long-tail SaaS connector library
-  on demand. Unlike the other built-ins, this is **not** a one-shot
-  server-side tool — it needs a multi-turn screenshot/action loop, so
-  the capability key is advertised in the matrix but not yet wired.
-  **High-leverage demo material; production-grade reliability is
-  medium-term.**
+### X.15 The bold creative bets — shipped
 
-### X.4 Anthropic server-side tools (T139–T143)
-
-Same shape, different vendor. Important wins specific to Anthropic:
-
-- **T141 `code_execution` is FREE when paired with web_search /
-  web_fetch.** Anthropic's pricing has a deliberate carrot for the
-  retrieve-then-compute pattern. Combine with T139 / T140 and Claude
-  composes Python that reads retrieved JSON / CSV → emits a chart →
-  Turing stores it in `TurAgentWorkspace` (T111) and surfaces via
-  the workspace SSE bus (T113). All in a single Anthropic turn.
-- **T143 `computer_use_20251124` ships a server-side
-  prompt-injection classifier** that scores every screenshot
-  before passing it back to the model. Higher trust than T136
-  (OpenAI variant has no equivalent classifier). For customers
-  with stringent security review, this is the production-grade
-  computer-use path.
-- **T142 `bash` + `text_editor` enable agentic content authoring.**
-  Pair with `TurAgentWorkspace` (T111) and Claude can iteratively
-  edit a markdown playbook across multiple turns (`text_editor.create`
-  → `text_editor.str_replace` → `text_editor.view`), with the workspace
-  surfacing the live draft to the operator (T120 spectator mode).
-
-### X.5 MCP Connector — both vendors (T144–T146)
-
-OpenAI's remote `mcp` tool (T138) and Anthropic's MCP Connector (T144)
-both let the model call MCP servers directly. **T146 inverts the
-integration story** — Turing's MCP server, hosted at
-`https://<turing-host>/mcp`, becomes a **public consumption surface**
-for any MCP-compatible client (Claude Desktop, Cursor, OpenAI
-Responses agents, future ones). Instead of customers integrating
-Turing's API into their app, their LLM clients integrate Turing.
-
-The strategic shift: **Turing competes for being the search
-infrastructure inside other AI products**, not only for being the
-customer-facing chat UI. Both markets coexist; the MCP route adds a
-second.
-
-**T192 inter-tenant federation directory** at `directory.turing.io`
-is the long-shot network-effect bet. Tenants opt-in publish a
-redacted MCP server (public docs, public catalog). Subscribers add
-it to their agent's allow-list. Every customer that publishes makes
-every other customer's agents more useful. Long-tail moat.
-
-### X.6 Voice agents (T147–T151)
-
-OpenAI Realtime is bidirectional speech with native tool calling and
-reasoning. The hosted infrastructure handles the audio; Turing
-provides the tool callbacks (the same SN search tools the text chat
-uses) and the conversation orchestration. **T149 voice-first kiosk
-mode** is a high-impact demo for trade shows, lobby kiosks,
-accessibility deployments — Turing differentiates with "voice +
-enterprise search + persona-tone + citations" in one product.
-
-**T150 `gpt-realtime-translate`** is the asymmetric win: a single
-operator can serve multilingual customers in real time. Visitor speaks
-PT, agent answers PT, operator's spectator panel shows live EN
-translation. Cuts the "multilingual support staff" line item for
-customers with global footprints.
-
-**T151 voice authoring of chat-flows** ties Realtime to the existing
-chat-flow live preview (T95): admin says "add an `aiQuestion` for
-cargo, then route by role" → Realtime parses → emits JSON patch →
-graph updates live in the editor. **Authoring with voice is a
-demo-grade differentiator** in a market where everyone authors with
-forms.
-
-### X.7 Citations & verifiable RAG (T152–T155)
-
-Anthropic Citations + the new Search Results content type close the
-biggest single trust gap in enterprise RAG: **provability**. T154's
-chat UI underlines the exact span Claude derived each claim from,
-with a hover popover linking to `TurSNDocument` and a deep-link to
-the chunk position. PDF citations show `(p. 3)` chips. Combine with
-T155 citation drift detection and Turing answers the compliance
-question "can you prove what document this answer came from, and
-whether that document has changed since the answer?" with a recorded
-yes.
-
-This is **the single highest-leverage UX move in Block F** for
-enterprise-search customers. Every other RAG platform shows source
-docs separately; Turing underlines the sentence.
-
-### X.8 Batch processing + token economics (T156–T162)
-
-Both vendors offer Batch APIs at **50% off**. The candidates inside
-Turing are obvious — every workload that's bulk + non-interactive
-should go batch:
-
-- T157 nightly AI Insights generation (already shipped via
-  `TurLlmSummaryService`, just needs Batch routing).
-- T158 bulk re-embedding on model upgrade.
-- T159 eval runs (T126 regression suites).
-
-T160 service tier routing maps stages: `chat.live` → `priority`
-(interactive SLA), `chat.background` → `flex` (near-batch sync),
-default `auto`. T161 Anthropic token counting replaces the
-`cl100k_base` heuristic with the vendor's exact count, plumbed into
-the T123 budget-enforcement check. T162 surfaces a pre-flight cost
-quote in the UI for cost-sensitive deployments.
-
-**Economic impact** of Block F's batch path alone: the AI Insights
-+ classification + LLM-Judge eval workloads roughly halve in cost at
-zero quality loss. The customer doesn't notice; the bill drops.
-
-### X.9 Memory tool + context editing (T163–T166)
-
-Anthropic ships three independent context-management features that
-each solve a different long-conversation pain:
-
-- **Memory tool (T163)** — Claude gets a six-command file API
-  (view/create/str_replace/insert/delete/rename) backed by
-  `TurAgentWorkspace`. Persistent **per-conversation** memory by
-  default; per-user via `memoryScope=user` (T166). The agent learns
-  stable preferences ("Alex prefers terse answers") and surfaces them
-  via "What this agent remembers about you" disclosure with a "Forget
-  all" button (LGPD ready).
-- **Context editing (T164)** — server-side auto-evicts old tool
-  results when the window saturates, replacing them with placeholders.
-  84% token savings on long agent loops. Composes with T29
-  (Turing-side tool pre-filter) and T30 (BM25 memory retrieval) —
-  Anthropic trims inline tool outputs, Turing surfaces the right
-  retrievable older turn.
-- **Compaction (T165)** — server-side summarization of older turns.
-  Coordinates with Turing's T115 (workspace-stored compression):
-  when both are enabled, Turing wins precedence (audit trail), Anthropic
-  disabled to avoid double-summarization.
-
-### X.10 Stored Completions + Evals + Distillation flywheel (T167–T170)
-
-This is the **production self-improvement loop**:
-
-1. `storedCompletions=true` per agent → every call stored on OpenAI
-   side with structured metadata (T167).
-2. T126 eval suite + T168 server-side OpenAI graders catch regressions
-   automatically.
-3. T169 distillation: monthly export → fine-tune `gpt-4o-mini` against
-   prod-traffic-quality answers → swap `TurLLMInstance.modelId` if
-   evals pass.
-4. T170 closes the loop: operator thumb-up/down feedback feeds a
-   DPO dataset → next fine-tune incorporates the preferences.
-
-**Compounding effect**: the agent gets cheaper and better every week
-with zero engineering work. T191 explicitly wires the three together
-into "self-improving agent overnight" — the long-shot bet that's a
-genuine moat.
-
-### X.11 Predicted Outputs + strict structured outputs (T171–T174)
-
-T171 + T172 make the "regenerate-with-tweak" loop in the chat-flow
-editor (T97 variant generator), persona-prompt editor, locale-string
-editor, and the user-facing "rephrase shorter" feel **instant** instead
-of 3–5 seconds. Wherever the output mostly overlaps an input string,
-the speedup is 3–5×.
-
-T173 + T174 replace the legacy `json_object` JSON-mode workarounds
-(remembered explicitly as `feedback_gpt4o_mini_json.md` in agent
-memory) with **strict schema-validated structured outputs**. Every
-Turing path that parses LLM JSON — `LlmJudge`, T28 LLM intent
-classifier, T97 variant generator, chat-flow router decision —
-becomes deterministic by construction. The class of "the model
-returned truncated JSON, the parser exploded" bugs is gone.
-
-### X.12 Files API + native PDF (T175–T177)
-
-T175 mirrors `TurStorageService` entries into vendor Files APIs and
-caches `file_id`s. The crawler integration (T176) makes Claude's
-native PDF understanding the default for any PDF indexed against a
-Claude agent — tables, layout, figures preserved. Pair with T152
-citations and you get page-level provenance on PDF answers
-out-of-the-box. T177 dedupes across agents in the same tenant —
-one upload, many references.
-
-### X.13 Reasoning surfacing + logprobs (T178–T180)
-
-T178's "Why this answer" panel surfaces `reasoning.summary` (not raw
-chain-of-thought) for o1 / o3 / o4-mini / GPT-5 reasoning models.
-Elevates trust without exposing reasoning internals. T179 plumbs
-`reasoning.effort` per-stage (live=low, background=high, judge=medium)
-as a per-agent policy. T180 mixes `logprobs` into the T19/T24/T28
-reranker confidence score — fixes the "the LLM hedged but we still
-ranked it #1" failure mode.
-
-### X.14 Safety, compliance, multi-tenant cost (T181–T186)
-
-`safety_identifier` (T181) outsources abuse detection to OpenAI's
-edge — Turing carries less compliance burden per tenant. T182
-omni-moderation pre-filter blocks bad queries / bad indexed content
-at the multimodal level (text + image), **free at the API tier**.
-T183 + T184 + T185 build the per-tenant AI Spend dashboard backed
-by both vendors' Usage APIs, with soft budget caps that
-auto-downgrade to cheaper tiers when projections breach. **Compliance
-+ FinOps + governance, packaged as part of the chat platform** —
-the kind of "platform" attribute Deep Agents fundamentally can't
-match because it's an SDK harness.
-
-### X.15 The bold creative bets (T187–T192)
-
-Six long-shot tasks that, taken together, redefine what an
-enterprise-search-meets-AI platform looks like:
-
-1. **T187 Live answers (hybrid)** — every answer can fuse indexed,
-   web, fetched, and computed sources in one turn. Category killer.
-2. **T188 Headless MCP backbone** — Turing as the search
-   infrastructure inside other AI products. Doubles the market.
-3. **T189 Real-time multilingual call center** — voice + citations +
-   handoff. Replaces multilingual support staff.
-4. **T190 Self-installing connectors** — `computer_use` agent does
-   the integration setup. Long-tail SaaS connectors on demand.
-5. **T191 Self-improving agents overnight** — distillation + evals +
-   prod replay. Compounds with usage.
-6. **T192 Inter-tenant MCP federation** — opt-in directory at
-   `directory.turing.io`. Network effect moat.
+> T187 "Live answers (hybrid)", T188 "Headless MCP backbone", T189 "Real-time
+> multilingual call center", T190 "Self-installing connectors", and T191
+> "Self-improving agents overnight" shipped — see CHANGELOG §X.15.a … §X.15.e.
+> The one remaining long-shot, T192 inter-tenant MCP federation, is **cancelled**
+> (STRATEGY §VIII.7).
 
 ### X.16 Sequencing — what to ship first
 
@@ -1799,35 +1544,22 @@ customer value — there is no monolithic "Block F is done" gate.
 > Claude starts citing; OpenAI starts batching; the bill drops 50%.
 > That is the platform pitch."
 
----
+### X.18 Capability taxonomy & UX surfacing (T432–T435) — shipped
 
-## XI. Embedded LLM (Jlama) — downgraded to a spike
-
-> **Status (2026-06-03): cut from a committed program to a 2-3 day spike
-> (ROADMAP Block G, T193-spike).** The original §XI was a 26-task pure-Java
-> in-process inference plan (provider + per-instance model cache + Panama vector
-> bootstrap + tool-calling bridge). It is shelved because:
->
-> - Jlama upstream is stagnant — last release 2025-01-01, single maintainer.
-> - **Ollama-as-sidecar already delivers the same outcomes** (air-gapped, no API
->   key, working tool calling) in the same docker-compose, with far less risk and
->   clean Windows/CUDA support — and it is already a supported provider.
-> - Committing 8 weeks to it contradicted the "courage to deprecate" principle
->   (STRATEGY §VIII.6/§VIII.7).
->
-> **The spike's job** (T193-spike): benchmark Jlama vs Ollama-sidecar vs
-> `de.kherud:llama` for the zero-egress story (tool calling, RAM, tok/s, Windows,
-> ops burden) and pick **one** engine — only then consider re-opening a build,
-> and only for a *named* customer requirement. Default assumption: Ollama-sidecar.
-> The detailed Jlama design (former §XI.1-§XI.10) is recoverable from `git log`.
+> **Shipped (2026-06-26).** The unified capability registry/taxonomy (T432),
+> per-agent selection + union execution (T433), the capability-first agent
+> picker (T434), and the registry-driven REQUEST_OPTION settings (T435) all
+> landed — see [CHANGELOG.md](CHANGELOG.md) §X.18. The registry is the single
+> source both the agent UI and the T186 instance × capability heatmap (shipped,
+> CHANGELOG §X.14.f) render from. Design detail is recoverable from `git log`.
 
 ## XII. Admin chat ↔ `@viglet/turing-react-sdk` convergence — shipped
 
 > Block H (T219–T232) is complete: SDK gained LLM listing/context-info, per-turn
 > LLM override, real `AbortController`, multipart agent chat, plain-LLM hook, and
 > the admin `chat.page.tsx` was migrated onto the SDK with a vitest smoke suite.
-> See [CHANGELOG.md](CHANGELOG.md). Active follow-up: T243 (shared
-> `useStreamingChatCore`) — see [ROADMAP.md](ROADMAP.md).
+> T243 (shared `useStreamingChatCore`) has since shipped — see
+> [CHANGELOG.md](CHANGELOG.md).
 
 ### XII.2 Headless UI library — `@viglet/turing-react-ui` (the what/why)
 
@@ -1891,281 +1623,6 @@ Storybook as the living "two-skin" design contract, jsdom render tests for the
 headless contract, and packaging hardening (`exports` subpaths, a11y, SSR,
 bundle-size budget) before a public release.
 
-## XIII. Turing as an MCP Server — let Claude (and any agent) drive the platform
-
-> **The pitch in one line**: stop asking customers to integrate Turing
-> into their apps — let the AI client they *already pay for* (Claude
-> Desktop, Claude Code, Cursor, ChatGPT, internal agents) connect to
-> Turing in 30 seconds and search, answer, and act on their enterprise
-> content. Turing stops being "a chat UI you have to adopt" and becomes
-> **the grounding layer that lives inside whatever agent the customer
-> already uses.**
-
-> **This is the _server_ half of the unified MCP pillar** (STRATEGY §VIII.4).
-> The _client_ half — Custom Tools as portable MCP servers + a Groovy->MCP
-> exporter — is the same protocol bet in the other direction. Sell them as one
-> line: *"Turing speaks MCP both ways — your tools go out, the world's agents
-> come in."*
-
-### XIII.1 The thesis — two markets, one endpoint
-
-Turing today is consumed two ways: the public SN search/chat widget,
-and the admin console. Both require the customer to **come to Turing**.
-MCP inverts that: a `https://<host>/mcp` endpoint means **Turing goes
-to wherever the customer's intelligence already lives**.
-
-This is the §X.5 / T146 idea ("Turing's MCP server as a public
-consumption surface") promoted from a paragraph to a real plan, because
-the build cost just collapsed — see §XIII.2.
-
-- **Ganho 1 (sell to the buyer)**: "Your team already has Claude. Point
-  it at Turing and every employee can ask your intranet, your policies,
-  your product catalog — *with citations* — without you building a
-  single screen."
-- **Ganho 2 (sell to the architect)**: one MCP integration replaces N
-  bespoke REST integrations. Turing becomes one well-behaved node in a
-  multi-tool agent graph (Turing search + Jira + GitHub + Google Drive),
-  not a walled garden.
-- **Ganho 3 (sell to the CFO)**: zero net-new seats, zero net-new UI to
-  maintain. The interface is the LLM client the company already
-  standardized on. Turing monetizes the **grounding**, not the chrome.
-- **Strategic shift**: Turing competes to be the *search infrastructure
-  inside other AI products*, not only the customer-facing chat. Both
-  markets coexist; MCP adds the second one for almost free.
-
-### XIII.2 What exists today — why this is mostly transport, not a rewrite
-
-The senior-architect read: **the expensive 80% is already built.**
-
-- **The tool catalog already exists** as Spring AI `@Tool` callbacks:
-  `search_site` / `get_site_fields` / `list_sites`
-  ([`TurLLMSemanticChatAPI`](../turing-app/src/main/java/com/viglet/turing/api/llm/chat/TurLLMSemanticChatAPI.java)),
-  `search_knowledge_base` / `knowledge_base_stats` /
-  `list_knowledge_base_files` / `get_file_from_knowledge_base`
-  ([`TurRagSearchToolService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurRagSearchToolService.java)),
-  plus integration-monitoring, logging, and system-info tool services.
-  These are the *same* tools the internal Semantic-Navigation agent uses
-  — they're production-tested.
-- **Descriptions are already curated** — real tool docs live in
-  `prompts/tools/**/*.md` and are attached at runtime via
-  `TurToolDescriptionService` + `TurToolCallbackPipeline.decorate(...)`
-  (the `@Tool(description=".")` placeholders are intentional). MCP needs
-  exactly these descriptions, so we get them for free.
-- **The Spring AI MCP dependency is already on the classpath**
-  (`spring-ai-mcp` in [`turing-app/pom.xml`](../turing-app/pom.xml)) —
-  today wired only for the **consumer** path (`TurMcpServer` +
-  [`TurMcpToolCallbackService`](../turing-app/src/main/java/com/viglet/turing/genai/tool/TurMcpToolCallbackService.java),
-  where Turing calls *out* to external MCP servers). The server starter
-  is the missing half.
-
-**Therefore**: Block I is (1) add the server transport, (2) bolt on
-auth + tenant/site scoping, (3) register the already-decorated callbacks
-as the MCP tool surface, (4) add resources/prompts. We are **not**
-re-implementing search, RAG, or the agent runtime. That's the whole
-reason this is worth doing now rather than "someday".
-
-> ⚠️ **The one hard part is not the tools — it's the trust boundary.**
-> The internal agent runs the tool catalog *server-side, on behalf of a
-> known agent*. An MCP server hands that catalog to an *external,
-> partially-trusted client*. T246 (auth + scoping) is therefore the
-> real engineering, and it must land before anything leaves loopback.
-> Everything else is plumbing.
-
-### XIII.3 The surface — tools, resources, prompts
-
-MCP has three primitives; Turing should expose all three (most products
-ship only tools and leave value on the table).
-
-**Tools** (verbs the client can call):
-
-| Tool | What it does | Backed by | Scope |
-|---|---|---|---|
-| `list_sites` | Discover SN sites + locales | `TurLLMSemanticChatAPI` | read |
-| `get_site_fields` | Field map + which are facets | existing | read |
-| `search_site` | Semantic / hybrid search, faceted | existing | read |
-| `autocomplete` | Type-ahead suggestions | SN autocomplete | read |
-| `get_document` | Fetch one indexed doc by id | SN store | read |
-| `similar_documents` | KNN vector neighbors | §III vector store | read |
-| `facet_search` | Faceted drill-down | existing | read |
-| `rag_answer` (T248) | Hybrid search → grounded, **cited** answer in one call | §III RAG pipeline | read |
-| `invoke_agent` / `list_agents` (T249) | Run a whole chat-flow headlessly, return answer + slots | `TurAgentChatExecutor` | read |
-| `top_failed_searches` / `content_gaps` (T252) | "What are users asking that we can't answer?" | chat/search analytics | read |
-| `index_document` / `reindex_site` (T253) | Push/refresh content | SN indexing | **write (gated)** |
-
-**Resources** (nouns the client can read/attach — T250): expose indexed
-documents and site schemas as `turing://site/{id}/doc/{docId}` and
-`turing://site/{id}/schema`. This lets a client *attach* the source
-document to its context window, not just receive a search snippet — the
-difference between "here's a summary" and "here's the actual policy PDF,
-reason over it."
-
-**Prompts** (reusable templates — T251): publish each Persona and the
-composed system-prompt fragments as MCP prompts. One pick in Claude's
-prompt menu and the customer's brand voice + guardrails come along.
-
-### XIII.4 The scenarios — productivity gains by persona (the sales engine)
-
-Each row is a demo you can run on a customer call. The common shape:
-*the customer keeps their tool, Turing supplies the truth.*
-
-1. **Developer in Claude Code / Cursor** — "how does our auth refresh
-   flow work?" Claude calls `search_site` over the company's
-   Turing-indexed wiki + ADRs + code docs, answers *with links*, never
-   leaving the editor. **Gain**: kills the context-switch to Confluence;
-   answers are grounded in *current* internal docs, not the model's
-   stale training data.
-2. **Every employee via Claude Desktop** — the customer buys Claude for
-   the org, points it at Turing, and the whole intranet/policies/HR-FAQ
-   becomes ask-able with citations. **Gain**: enterprise search adoption
-   with *zero* UI build and zero new login — the chat the company
-   already uses *is* the search front-end.
-3. **Content / editorial ops** — "list every page that still mentions
-   the old product name, with URLs." `facet_search` + `search_site` →
-   instant content audit. **Gain**: a half-day manual crawl becomes a
-   sentence.
-4. **Bulk ingestion by agent (T253)** — "index this folder of policy
-   PDFs into the `compliance` site." Claude reads the files and calls
-   `index_document`. **Gain**: content onboarding without the admin
-   console or a connector project.
-5. **Multi-tool orchestration** — "find the incident runbook in our KB,
-   open a Jira ticket, and link the doc." Turing MCP (search) + Atlassian
-   MCP (Jira) in one Claude flow. **Gain**: Turing becomes a *composable*
-   node, not an integration dead-end.
-6. **Answer grounding / anti-hallucination** — any agent calls
-   `rag_answer` (T248) to ground a draft in enterprise truth before
-   replying. **Gain**: the citation trail is the auditable defense for
-   regulated answers.
-7. **Self-service content-gap analytics (T252)** — "what did users
-   search last week that returned nothing?" `content_gaps` → the product
-   team sees exactly what content to write next. **Gain**: turns search
-   logs into a backlog without a BI project.
-8. **Admin introspection** — "which fields on the Products site are
-   faceted?" `get_site_fields`. **Gain**: configure/debug from the same
-   chat, no console hunting.
-9. **Delegated guided flows (T249)** — an external orchestrator hands a
-   whole lead-capture / triage chat-flow to Turing via `invoke_agent`
-   and gets back the captured slots. **Gain**: reuse the customer's
-   carefully-authored flows from *outside* the Turing chat widget.
-10. **Turing-inside-an-ISV-product (B2B2C)** — a software vendor builds
-    their own AI product and uses Turing MCP as the enterprise-search
-    backend. **Gain**: Turing earns infrastructure revenue inside
-    products it doesn't have to build (the §XIII.1 strategic shift).
-
-### XIII.5 Architecture — how to build it (senior architect)
-
-- **Transport (T245)**: add `spring-ai-starter-mcp-server-webmvc`,
-  serve **Streamable HTTP** at `/mcp`. Prefer Streamable HTTP over the
-  deprecated HTTP+SSE transport from the MCP spec; keep an SSE fallback
-  only if a target client still needs it.
-- **Tool registration (T245)**: build the server's `ToolCallbackProvider`
-  from `TurToolCallbackPipeline.decorate(callbacks)` — the *same*
-  decoration path the internal agent uses, so descriptions
-  (`prompts/tools/**/*.md`), naming, and the placeholder-stripping all
-  come along. **Never** register raw `@Tool` callbacks with the `"."`
-  descriptions. This is a project invariant (see `agents.md`).
-- **One catalog, two consumers**: the internal Semantic-Nav agent and
-  the external MCP server should resolve tools through the *same*
-  factory so a new tool shows up in both surfaces. Avoid a parallel
-  hand-maintained MCP tool list — that's how the surfaces drift.
-- **Large catalogs (T254)**: reuse **tool pre-filtering (T29)** so a
-  client connecting to a tenant with dozens of tools gets a relevant
-  subset, not a 60-tool wall that blows the client's tool budget.
-- **Observability (T254)**: emit per-tool MCP call metrics by reusing
-  the **T88 tool-latency** accumulator and **T32 meters** — the MCP
-  surface must be as observable as the internal agent (p95 per tool,
-  error rate, calls per tenant).
-- **Resources/prompts (T250/T251)**: back resources with the SN store +
-  schema introspection already used by `get_site_fields`; back prompts
-  with the persona/system-prompt composition from §IV.5 + the persona
-  domain.
-- **Reuse, don't fork**: `invoke_agent` (T249) routes through
-  `TurAgentChatExecutor` (do not duplicate the flow runtime); `rag_answer`
-  (T248) routes through the §III RAG pipeline.
-
-### XIII.6 Security, multi-tenancy & governance (the part that earns the enterprise check)
-
-This is where the deal is won or lost in an enterprise review.
-
-- **Auth (T246)**: implement the **MCP authorization spec** — Turing is
-  an OAuth 2.1 **resource server** validating Keycloak-issued bearer
-  tokens on `/mcp`. No anonymous access to a non-loopback endpoint, ever.
-- **Scoping**: token → tenant → role → **allowed sites** + **allowed
-  tools**. A marketing token sees the public catalog + read tools; an
-  ops token additionally sees ingestion tools. Scoping is enforced
-  server-side *inside* each tool callback, not just at the endpoint —
-  defense in depth.
-- **Read-only by default**: write/ingestion tools (T253) require an
-  explicit write scope and stay off until a customer opts in. Same
-  posture as the storage + Code-Interpreter sandbox lessons (§VII).
-- **Per-tenant endpoints (T254)**: SaaS gets
-  `https://<tenant>.turing.cloud/mcp`; the token decides which sites are
-  even *visible*, so a misconfigured client can't enumerate another
-  tenant's content.
-- **Rate limiting & cost**: a public MCP surface is a new attack/cost
-  surface. Per-token rate limits + the existing multi-tenant cost
-  controls (§X.14) apply here too.
-- **Auditability**: every MCP tool call is attributable to a token →
-  user → tenant, and lands in the same audit trail as internal tool
-  calls. This is the line that closes regulated verticals.
-
-### XIII.7 DX & distribution — remove the last 30 seconds of friction
-
-- **One-click client config (T255)**: the admin generates ready-to-paste
-  `mcp.json` for Claude Desktop / Claude Code / Cursor — endpoint, auth
-  hint, recommended tool subset. The gap between "we bought Turing" and
-  "my Claude can search it" should be a copy-paste, not a docs safari.
-- **Federation directory (T256, xref §X.5 T192)**: tenants opt-in to
-  publish a *redacted* public MCP server (public docs, public catalog)
-  to `directory.turing.io`; subscribers add it to their agent's
-  allow-list. Every publisher makes every subscriber's agents more
-  useful — a long-tail network-effect moat that pure-API competitors
-  can't replicate.
-
-### XIII.8 Sequencing — what to ship first
-
-1. **T245** — transport + register the decorated catalog, **bound to
-   loopback**. Demo-able same week against a local Claude Desktop /
-   Claude Code. Proves the catalog reuse with near-zero new code.
-2. **T246** — auth + scoping. The gate. Nothing reaches a non-loopback
-   address before this is green.
-3. **T247 + T248** — the read search surface + `rag_answer`. This is the
-   "point Claude at your intranet, get cited answers" demo — the core
-   sales moment.
-4. **T249 + T250 + T251** — agents, resources, prompts. Depth that
-   separates Turing from a thin search API.
-5. **T252** — analytics tools. Easy, high-perceived-value, content-team
-   love.
-6. **T253 + T254** — gated writes + per-tenant SaaS. The monetizable,
-   enterprise-grade surface.
-7. **T255 + T256** — DX polish + the federation long-shot.
-
-**Convicted first move**: ship **T245 against loopback** to prove the
-"the tools we already have just *become* an MCP server" thesis in a
-single demo, then immediately fund **T246** because every dollar of
-this only unlocks once the trust boundary is real.
-
-### XIII.9 The narrative — one paragraph
-
-> "Turing already speaks MCP — as a client. It calls out to external
-> tool servers today through `TurMcpToolCallbackService`. Block I flips
-> the arrow: the same production-tested tool catalog the internal agent
-> uses — `search_site`, `get_site_fields`, `search_knowledge_base`, the
-> integration/logging/system-info tools, all already decorated with
-> curated descriptions through `TurToolCallbackPipeline` — gets
-> re-exposed at `https://<host>/mcp` so the AI client the customer
-> already pays for can drive Turing directly. No new chat UI to build,
-> no new seats to buy, one MCP integration instead of N REST ones. The
-> hard 80% (the tools, the descriptions, the RAG pipeline, the agent
-> runtime) is done; the work is transport, an OAuth-2.1 trust boundary
-> with per-tenant/per-site scoping, and the resources/prompts that turn
-> a search API into a first-class agent surface. The strategic payoff:
-> Turing stops competing only to be the customer's chat window and
-> starts competing to be the **grounding layer inside every other AI
-> product** — a second market, opened for the cost of plumbing we mostly
-> already own."
-
----
-
 ## XIV. Multi-tenancy — SHIPPED (Block J, T257–T284)
 
 > Shipped 2026-06-11. The design rationale that lived here is preserved in git
@@ -2226,122 +1683,6 @@ not about correctness of the single-service flow:
 > cost data survives `turing.logging.engine=none`, which the "always works / $0
 > local" goal requires. No active backlog remains here.
 
-## XIX. Open-core publish mechanics (Block P)
-
-> Added 2026-06-15. The *how* for the §XI source split (private `turing` →
-> public `turing-ce`). Engineering design only; business/license rationale lives
-> in [STRATEGY.md](STRATEGY.md) §XI.
-
-### XIX.1 Source of truth + direction
-
-Private `turing` is the **only** place development happens. `turing-ce` is a
-generated artifact — never accept commits there as truth. The flow is strictly
-one-way (private → public); community PRs are *backported* into private `main`
-(§XIX.5), never merged as the public repo's own history.
-
-### XIX.2 The denylist — the single rule
-
-The checked-in [`ce-exclude.txt`](../ce-exclude.txt) at the private repo root is
-the authoritative boundary (T356 ✅), reviewed on every release. It is the single
-source of the public/private rule; the publish script (T357) applies it and the
-secret-scan gate (T358) is only the backstop. Highlights:
-
-- `docs/STRATEGY.md`, `docs/IMPROVEMENTS.md`, `docs/ROADMAP.md`,
-  `docs/products/**` — the thinking docs (§XI.1 test #1).
-- Internal AI/contributor instructions (`agents.md`, `CLAUDE.md`,
-  `.claude-instructions`, copilot-instructions), internal publish workflows +
-  the GitHub Pages site, any secret/credential/`.env.local`/keystore, scratch
-  dirs.
-
-It is gitignore-style: default-**deny** all of `docs/**` design content with
-explicit re-includes for the user-facing docs (CHANGELOG, RAG_HYBRID_CONFIG,
-MULTI_TENANCY, chat-flow samples), default-**allow** for code. The public README
-is a *separate curated file* (`README.ce.adoc`), not the internal `README.adoc`.
-
-### XIX.3 Squash-snapshot, not history mirror
-
-Implemented in [`scripts/publish-ce.sh`](../scripts/publish-ce.sh) (T357 ✅).
-The publish builds a clean tree at the release ref (`git archive`), applies the
-denylist extracted from that same ref, and **appends a single squashed commit**
-("Release vX.Y.Z") onto turing-ce's default branch — discarding private history
-(§XI.2). Each release == exactly one public commit, leak-proof by construction.
-`git filter-repo --invert-paths` is the fallback if a full filtered history is
-ever wanted, but the snapshot model is simpler and cannot leak a commit title.
-
-The curated public README ([`README.ce.adoc`](../README.ce.adoc), T359 ✅) is
-promoted by the script to `README.adoc` in the public tree; the internal
-`README.adoc` is excluded by the denylist.
-
-### XIX.4 Secret-scan gate (safety net)
-
-Implemented in [`scripts/publish-ce.sh`](../scripts/publish-ce.sh) `run_secret_scan`
-(T358 ✅). Two layers run over the *assembled* tree (after the denylist has
-already removed the known-private paths) and the publish **fails closed** on any
-hit:
-
-1. **Built-in pattern scan** (always on, no external dep) — internal hostnames,
-   customer names, and high-signal secret markers from the itself-denylisted
-   [`scripts/ce-deny-patterns.txt`](../scripts/ce-deny-patterns.txt). This is the
-   layer the entropy scanners can't provide; the pattern file is where the
-   maintainer curates real customer/host names *without* committing PII to the
-   public tree.
-2. **gitleaks / trufflehog** for entropy + known credential formats; a real run
-   of one of these is mandatory before `--push` (override: `--allow-no-scan`).
-   gitleaks runs with [`scripts/gitleaks.toml`](../scripts/gitleaks.toml) (built-in
-   ruleset + a tight allowlist for known false positives — H2/Liquibase
-   auto-generated `CONSTRAINT_*` PK names and Hibernate `FK*` names that the
-   `generic-api-key` rule would otherwise flag across `db/changelog/**`).
-
-Matches are redacted in the output so a secret can't re-leak through a CI log.
-The denylist is the policy; the scanner is the backstop — a missed path must
-never reach a public, indexed, un-deletable mirror.
-
-### XIX.5 Contribution inflow + CLA
-
-Implemented (T361 ✅): [`CONTRIBUTING.md`](../CONTRIBUTING.md) + the verbatim
-[`DCO`](../DCO) 1.1 text + a [`PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)
-checklist all live in the private repo root and are **not** denylisted, so they
-flow into the `turing-ce` snapshot. CONTRIBUTING documents the snapshot/backport
-flow from the contributor's POV (open PRs on `turing-ce`; a maintainer integrates
-accepted changes and they ship in a following release) and requires a **DCO
-sign-off** (`git commit -s`) on every commit instead of a separate CLA. The DCO
-keeps contributions under Apache 2.0 and, with the single copyright owner,
-preserves the relicensing option (§XI.4) — the *rationale* stays private; the
-public doc only states the sign-off requirement. Enforcement can be added later
-via the DCO GitHub App on `turing-ce` (UI-installed, no in-repo workflow).
-
-### XIX.6 CI wiring
-
-Implemented in [`publish-ce.yml`](../.github/workflows/publish-ce.yml) (T360 ✅),
-beside [`publish-docker.yml`](../.github/workflows/publish-docker.yml) (which
-already names `openviglet/turing-ce` for the *image*). The source publish is the
-same idea for the *tree*: it installs gitleaks (making the T358 scan real),
-resolves the release ref, and runs `scripts/publish-ce.sh --push`.
-
-Trigger is **`workflow_dispatch`** only (with a `push` boolean defaulting to a
-dry run). There is deliberately **no on-tag trigger on the private repo**:
-release tags/Releases are created on `turing-ce` itself by
-[`publish.yml`](../.github/workflows/publish.yml)
-(`gh release create --repo openviglet/turing-ce`), not on `turing` — so a private
-on-tag hook would never fire. The source publish is therefore the manual/dry-run
-entry point and the building block the release pipeline calls; at release time it
-must run **before** `gh release create` so the public tag points at the snapshot.
-
-The snapshot lands on a `turing-ce` branch whose name **mirrors the branch the
-run was dispatched from** (`github.ref_name`): a run on `2026.3` publishes to a
-`2026.3` branch on `turing-ce`, **created as an orphan** if it does not exist so
-it never inherits another branch's history.
-
-Push reuses the existing **`GH_PKG_TOKEN`** secret: a cross-repo write credential
-is **required** because the default `GITHUB_TOKEN` is scoped to the private
-`turing` repo and cannot push to `turing-ce` — even within the same org.
-`GH_PKG_TOKEN` already pushes git content to `turing-ce` (the github-pages branch
-and releases), so it has the needed `contents: write` scope. The token is
-injected via git's `insteadOf` rewrite so it never reaches a log; an SSH deploy
-key on `turing-ce` is the equivalent alternative.
-
----
-
 ## XX. Structured-source indexing — the cursarei / Dumont reference (Block R)
 
 > **Origin.** The [cursarei](https://cursarei.com.br) project independently built a
@@ -2387,3 +1728,584 @@ are integration seams, not new primitives. **T393** shipped the `viglet-core` li
 neutral grounding + manifest kernel is now `viglet-core-manifest`; see CHANGELOG). None of
 these block the Dumont collection work — a sidecar
 (D10) can index into a hand-provisioned site before T382 lands.
+
+## XXII. Agent↔UI transparency & client tools — AG-UI parity (Block W)
+
+> **Why now.** A capability review against CopilotKit's **AG-UI** protocol
+> (the bi-directional agent↔frontend event standard) found Turing's JS SDK at
+> near-parity on the common copilot surface — token streaming, bi-directional
+> shared state (**Slots** ≈ `STATE_SNAPSHOT`/`STATE_DELTA`, with the T63 delta
+> SSE), generative-ish UI (rich content + native forms T107 + option chips),
+> multimodal upload (T401), and per-conversation artifacts (**Workspace** T113,
+> which AG-UI has no equivalent for). Two AG-UI capabilities are genuinely
+> **absent**, and they are exactly the ones that make an agent feel like a
+> transparent collaborator rather than a black box:
+>
+> 1. **Live tool-call visibility** — AG-UI streams `TOOL_CALL_START / _ARGS / _END`
+>    so the UI can show "the agent is calling `search_flights`…". Turing runs the
+>    whole tool loop **server-side** (`TurToolExecutionLoop`, see
+>    [project_rc1_tool_execution_loop]) and the client only ever sees the final
+>    text. The data exists server-side (T427 already computes a per-conversation
+>    tool-call trace); it is simply never put on the live SSE.
+> 2. **Frontend-defined ("client") tools** — AG-UI's `useCopilotAction` lets a
+>    tool live in the **frontend**: the agent requests it, the browser executes
+>    it (read the DOM, call a first-party API the server can't reach, render a
+>    component), and the result is fed back into the loop. Turing has **no**
+>    mechanism for the agent to invoke client code; Slots + forms are a
+>    data-driven contour, not a tool-call round-trip.
+>
+> **Non-goal clarification.** Turing is **the backend** — it is *not* trying to
+> become a protocol adapter that fronts LangGraph/CrewAI/Mastra (AG-UI's other
+> selling point). The goal here is UI-observable parity for Turing's *own*
+> agent runtime, not multi-runtime federation. The optional canonical-protocol
+> adapter (§XXII.6) is a 💭 bet, deliberately separated.
+
+### XXII.6 Canonical AG-UI protocol adapter (T441, 💭 bet)
+
+Optional, strategic: an endpoint that re-encodes Turing's chat stream into the
+**canonical AG-UI event schema** (`RUN_STARTED`, `TEXT_MESSAGE_*`,
+`TOOL_CALL_*`, `STATE_SNAPSHOT`/`STATE_DELTA`, `MESSAGES_SNAPSHOT`, …) so
+CopilotKit's off-the-shelf React/Angular clients connect to a Turing agent with
+zero Turing-SDK code. This is a distribution play (meet developers in the
+ecosystem they already use), not core parity — depends on T436+T438 existing
+first, and should only be promoted from 💭 if a named integration asks for it.
+
+## XXVII. Public site & top-of-funnel conversion (Block AB)
+
+> The marketing site (`turing.viglet.org`) as a conversion surface, not a
+> brochure. Strategy/positioning is in [STRATEGY.md](STRATEGY.md) §XIV; this is
+> the build rationale. Task status lives only in [ROADMAP.md](ROADMAP.md).
+
+### XXVII.0 The gap & the framing
+
+Benchmarking the site against Meilisearch, Supabase, Dify, PostHog, Deep Agents
+and AG-UI showed the conversion blocker is **positioning → proof →
+time-to-first-value**, not visual design (full analysis in §XIV). The build
+answers the five 10-second questions a visitor asks, and turns artifacts we
+already maintain (stars, CLI, ROADMAP/CHANGELOG) into trust signals.
+
+The home of the site is `frontend/apps/site` (React 19 + Vite + Tailwind v4 +
+shadcn, standalone, no SDK/backend dependency). Content lives in one place,
+`src/lib/site-content.ts`; sections are thin renderers in
+`src/components/sections/`. Deploy: `pnpm build:site` → `apps/site/dist/*` copied
+to the Pages root by `publish-github-pages.yml`.
+
+### XXVII.1 Repositioning & structure (shipped, T473–T476)
+
+- **Analogy hero** — *"the open-source, self-hosted alternative to Algolia — with
+  AI agents built in"* (§XIV.2). One line answers category + differentiation.
+- **Search it → Ask it → Automate it → Run it** — four outcome pillars replace a
+  flat feature grid, selling breadth as depth without diluting the message.
+- **"Why Turing" comparison** — defensible, high-level table (Turing vs hosted
+  SaaS vs DIY) with an explicit "as of 2026, verify vendor capabilities" caveat;
+  attributes chosen to be true (license, hosting, data residency, unified
+  agent+search) rather than feature trivia that ages or misleads.
+- **In-page interactive search demo** — client-side filtering of a small sample
+  corpus (`SEARCH_DOCS`) so the hero shows the product working with zero backend
+  (the Meilisearch movie-demo pattern). It is explicitly labelled "sample data."
+- **Near-free trust wins** — live GitHub-stars badge (`api.github.com`, graceful
+  fallback), copy-paste quickstart (`npx @viglet/turing-cli init`), public
+  Roadmap/Changelog links to the **canonical GitHub-rendered** markdown (not
+  duplicated into the site — founding anti-duplication rule), and the CLI
+  showcase section + the published `@viglet/turing-cli` README.
+
+### XXVII.2 The live-demo linchpin (T477–T478)
+
+The defining bet (§XIV.3): a *truly* live demo. Today the marketplace example
+sites at `/marketplace/*` are static SPA shells (`VITE_API_URL=/api` against
+GitHub Pages → no backend), so they return nothing — our biggest latent proof
+asset is dead.
+
+- **T477** — stand up a **public read-only Turing instance** with CORS + rate
+  limiting, seeded with demo content; read-only/anonymous scope only, no write
+  surface. **Realized in `viglet/cloud`** as a dedicated throwaway instance
+  (`docker compose --profile demo`): a separate `turing-demo` + isolated
+  `solr-demo`, `TURING_KEYCLOAK=false`/no-tenancy, **ephemeral tmpfs** store +
+  index (wiped on recreate), `cap_drop: ALL`/`no-new-privileges`/mem-cpu-pids
+  caps, **no `docker.sock`** (Code Interpreter DOCKER + skills off by
+  construction), behind an nginx **deny-by-default allowlist** vhost
+  (`demo.turing.viglet.org` → only `/api/sn/*`, `/csrf`, `…/semantic-chat`;
+  admin/login/oauth/actuator/write → 404) with per-IP rate limits, plus a
+  **systemd timer that recreates + re-seeds** periodically (the self-heal). Seed
+  imports an export ZIP; `docker/DEMO.md` documents the model + host go-live steps
+  (DNS, real TLS, seed bundle + import-endpoint/auth confirmation, demo-agent
+  budget cap). The **Block Y "Atlas Store" showcase (T451–T457)** remains the
+  richest seed source. Pending = those host steps, not platform code.
+- **T478** — ⏳ the hero `SearchDemo` (real search) **and** a live cited-chat
+  assistant run on **`@viglet/turing-sdk`** (dogfooding — `createTuringClient` +
+  `fetchSearch`/`resolveDocuments` and `createChatController`), with a "built
+  with the SDK" code reveal showing the exact driving code next to the working
+  widget. Both gated on `VITE_TURING_DEMO_URL` + `VITE_TURING_DEMO_SITE` with
+  scripted/sample fallback so the page never looks broken offline; they activate
+  when pointed at the live T477 instance. Remaining: point the marketplace SPAs
+  at the instance.
+
+### XXVII.3 Proof & deeper funnel (T479–T482)
+
+- **T479** — "Switching from Algolia / Elasticsearch?" migration landing
+  (Meilisearch/Supabase pattern): mapping table + import path + "your data stays
+  in your infra" angle.
+- **T480** — hosted **"try it free"** path via Viglet Cloud (the dual-path CTA
+  Meilisearch/Supabase use: self-host docs **and** a hosted sandbox), so visitors
+  who won't install can still reach first value.
+- **T481** — real **social proof** surface: adopters/logos, testimonials, and
+  quantified case studies (the Dify model: "18,000 hours saved"). Gated on having
+  real design partners — never fabricated.
+- **T482** — deep **comparison/FAQ** pages (vs Algolia, Elastic, DIY-RAG,
+  LangChain) that proactively answer objections, as Deep Agents/AG-UI do.
+- **T483** — seed the demo with **Turing's own documentation** so the live search
+  and assistant answer real questions about Turing itself — self-referential
+  proof ("the site is Turing answering about Turing"). A content/seed decision
+  (export the docs site → a `demo-seed` ZIP), not platform code.
+- **T484** — upgrade the hero search to **real facets + autocomplete +
+  spell-check** via the SDK (`createAutoComplete`, `fetchSpellCheck`, live facet
+  groups), showing production search depth instead of the sample facet chips.
+- **T485** — **"similar documents"** ("related by AI") on a result click via
+  `createSimilarController`, surfacing semantic relatedness in the demo.
+
+**Non-goals:** do not duplicate ROADMAP/CHANGELOG content into the site (link to
+GitHub); do not fabricate proof (logos/metrics) before real adopters exist; do
+not over-claim in the comparison table (keep it defensible + dated).
+
+## XXVIII. Provider coverage + cross-vendor capability exploitation (Block AD)
+
+Turing already wires 6 chat provider types (`openai`, `anthropic`, `gemini`,
+`gemini-openai`, `ollama`, `embedded`) through `TurGenAiLlmProvider` /
+`TurGenAiLlmProviderFactory`, with embeddings on OpenAI/Azure/Ollama and Cohere
+present **only** as a Block N reranker strategy. Block AD is deliberately *not*
+"add provider X like the others." Block F.16 set the pattern: wiring a vendor is
+table stakes; the value is in the **distinctive primitive each one brings** and
+the **net-new product bridges** built on it. So this block has three layers —
+the seams, the primitive-exploitation tasks, and the cross-vendor bridges — all
+opt-in behind the existing two-level capability gate; empty/legacy config leaves
+every current path byte-for-byte unchanged.
+
+**Why these and not others:** the selection is driven by the product being an
+*enterprise-search / RAG* platform — so the gaps that matter are an enterprise
+gateway (Bedrock), a retrieval-specialist embed/rerank vendor (Voyage), a
+GDPR-native European provider (Mistral), the GCP enterprise path (Vertex), and
+the one-seam unlock of the entire OpenAI-compatible long tail. Pure-chat
+novelty for its own sake is out of scope.
+
+### Foundation — the provider seams
+
+_Shipped (T505–T510) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
+
+### Exploit distinctive primitives — net-new retrieval capabilities
+
+_Shipped (T511–T515) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
+
+### Cross-vendor bridges — the bold bets
+
+_Shipped (T516–T522) — see [CHANGELOG.md](CHANGELOG.md) Block AD._
+
+**Non-goals:** don't add a provider with no distinctive primitive or enterprise
+reason just to lengthen the list (pure-chat clones belong behind T505's generic
+seam, not as bespoke providers); don't make any new capability default-on (every
+one is gated); don't let the managed-RAG seam (T520) fork the retrieval core —
+it's an alternative backend, not a rewrite.
+
+## XXIX. Documentation parity & didactic refresh — post-T410 (Block AE) — ✅ SHIPPED
+
+> **Block AE (T524–T538) shipped 2026-06-30.** Per the founding rule, the detailed
+> design rationale was removed once the block shipped. What shipped is indexed in
+> [`CHANGELOG.md`](CHANGELOG.md) → Block AE; the living coverage gate is
+> `docs-turing/COVERAGE.md` (every shipped block/feature → its doc page, or an
+> explicit "deliberately internal" row). The house-style + didactic checklist that
+> guided the round now lives on, applied, across the `docs-turing` pages themselves.
+
+## XXX. Domain layer — bounded completion, stop-criteria & enforcement (Block AF)
+
+> **Block AF (T540–T546) shipped 2026-07-02.** Per the founding rule, the design
+> rationale was removed once the block shipped. The full decision — do NOT take
+> the hexagonal migration to 100%; the value is the immutable/lazy-proxy-free/
+> cacheable read model, so records + ports are bounded to hot / cached /
+> cross-aggregate / LazyInit-prone reads while JPA repositories keep admin/CRUD
+> and **all** writes — lives in the ADR:
+> [`docs/adr/0001-domain-layer-bounded-completion.md`](adr/0001-domain-layer-bounded-completion.md),
+> mirrored into `agents.md` and enforced by `TurDomainLayerConventionsTest`
+> (T545). T546 collapsed the one pure-ceremony port (`TurCustomTool`, no mocking
+> need) to a mapper-backed reader; the end state is **7 ports + 8 records + 1
+> reader**. What shipped is indexed in [`CHANGELOG.md`](CHANGELOG.md) → Block AF.
+
+## XXXI. Bento UI — complete the interface migration (Block AG)
+
+> Design rationale for Block AG (T547–T572). The goal is to take the Bento
+> redesign from a 3-screen `/bento` "Preview" to **100% of the admin
+> interface**, then retire the legacy console. Guiding words from the ask:
+> **fluido, conciso, amigável**.
+
+### XXXI.0 Where we are
+
+Bento is a **parallel** route tree mounted at `/bento` (see
+`app/routes/bento.routes.tsx`), rendered inside `BentoRootPage` — a frosted-glass
+shell with a sticky blurred header, ambient gradient blobs, iOS-style
+route-hierarchy "up" navigation, a dark-mode toggle and a user menu. It carries a
+"Preview" badge and does **not** replace the console. Migrated so far:
+
+- `bento/home` — a launcher mosaic of feature tiles (privilege-gated), with an
+  inline `ChatStarter` when a default agent + enabled LLM exist.
+- `bento/ai-agent` — list (`bento-grid` of tiles) + detail dashboard.
+- `bento/llm` — list + instance detail + form.
+
+The **detail pattern is settled and worth codifying** because it's what makes the
+rest cheap:
+
+- `BentoHero` owns the entity identity — `BentoInlineEdit` title/description,
+  a `BentoHeroIconPicker` (Iconify), and a status pill. In *existing* mode each
+  field commits immediately via the update mutation (type → blur → saved); in
+  *new* mode fields stage locally and the form's Save creates the entity.
+- A scroll-linked **hero → sticky `BentoSaveBar` morph** driven by a single
+  `--bento-fade` CSS custom property on `<html>` (rAF loop, zero React re-renders
+  during scroll) — Save/Cancel live in the hero and fade into a fixed bar.
+- Destructive actions live in a `⋮` `BentoActionsMenu`, never in the save bar.
+- `BentoFormSection` groups the remaining fields under a tonal icon chip and
+  **wraps the existing react-hook-form `FormField`/`Input`/`Select`/`Switch`
+  unchanged** — so migrating a screen is re-skinning its layout, not rewriting
+  its logic or validation.
+
+The read paths already use React Query hooks (`api/queries/*.queries.ts`), which
+the bento pages consume directly — no data-layer work per screen.
+
+> **T547 shipped** — architecture & cutover decision now lives in ADR
+> `docs/adr/0002-bento-ui-migration-cutover.md` (Bento-as-primary, route-swap +
+> `<Navigate>` redirects, closed surface inventory). See CHANGELOG Block AG.
+
+> **T548 shipped** — the shared scaffold (`BentoEntityShell` + `BentoListPage` +
+> `BentoEntityTile`) is extracted and the LLM + AI-Agent surfaces re-skinned onto
+> it as proof. Each Phase 1–4 screen is now a thin config + its `BentoFormSection`
+> field groups. See CHANGELOG Block AG.
+
+> **T549 shipped** — persistent frosted `BentoNavRail` (fixed left icon rail,
+> desktop) over the migrated surfaces + a zero-dep `⌘K` `BentoCommandPalette`
+> reaching every area (unmigrated ones link out to the console until they
+> migrate). Both driven by a single `bento-nav.config.ts` registry that mirrors
+> the console `AppSidebar` taxonomy. See CHANGELOG Block AG.
+
+> **T550 shipped** — conventions codified in
+> [`components/bento/CONVENTIONS.md`](../frontend/apps/turing-app/src/components/bento/CONVENTIONS.md)
+> (i18n key reuse + object-form `t` defaults, a11y baseline, reduced-motion
+> guard extended to the ambient blobs, responsive rules) + vitest coverage for
+> all shared components under `components/bento/__tests__/`. **Phase 0 is
+> complete** — Phases 1–4 now fan out against the scaffold. See CHANGELOG Block AG.
+
+### XXXI.5 Phases 1 & the simple-CRUD tail (T551–T556, T562)
+
+These are the BYO-infra and plain entity CRUDs — SE, Embedding Store, Embedding
+Model, Token, Integration, MCP Server, Custom Tool, Routine, Chat Webhook,
+Persona, Git, Page. Each is the LLM pattern: list of tiles → hero-driven detail →
+`BentoFormSection`s wrapping the current fields. Grouped ~2 per task so each is a
+shippable PR. Custom Tool and Skill keep their code editors inside a section (the
+editor component is reused as-is). BYO-infra screens must keep the `T372`
+GLOBAL-is-read-only behavior in the bento CRUD.
+
+### XXXI.6 Semantic Navigation (T557–T559)
+
+The heaviest area. Three tasks: the **instance** CRUD (identity + engine/store
+bindings + config sections), the **fields** sub-CRUD (a nested editor — best
+rendered as its own bento sub-surface, not a modal — plus the T388 coverage bars
+and T386 manifest plan/diff), and the **onboarding wizard** re-skinned as a bento
+stepper. Splitting keeps each PR reviewable.
+
+### XXXI.7 Editors & browsers (T560–T561)
+
+Skill (the T318 mini-VS-Code file-tree + editor) and Asset (file browser) aren't
+form CRUDs — they're app-like surfaces. They mainly need to sit correctly inside
+the bento shell (full-height layout inside the frosted chrome, the
+`turing-resizable-panel` `overflowHidden` gotcha) rather than adopt the
+hero/save-bar pattern. Reachable via T549 nav, not the home mosaic.
+
+### XXXI.8 Functional & dashboard surfaces (T563–T566)
+
+Chat, Conversation detail, the AI-Analytics dashboards (cost-governance,
+chat-analytics, parked-conversations, capability-matrix), GraphQL explorer,
+Dashboard, Marketplace, Voice Kiosk, Global Settings, Import/Exchange, Logging,
+System Info. These are read-mostly / bespoke; the work is hosting them in the
+bento shell + nav and applying the frosted-tile visual language to their existing
+charts/panels — not the CRUD scaffold. Chart color rules follow the dataviz
+guidance and the brand blue→indigo palette.
+
+### XXXI.9 Admin & tenancy (T567–T568)
+
+Admin settings (users/groups/roles/settings/tokens), Tenant settings, Tenant
+admin, User account. The only subtlety is preserving the existing **Keycloak-vs-
+JPA dependent-query pattern** (see `api/queries/admin.queries.ts`) — the bento
+re-skin must not collapse the source discriminator that toggles cleanly between
+backends.
+
+### XXXI.10 Cutover & retirement (T569–T572)
+
+Once every surface exists in bento: flip `/bento` to be the default entry, add
+`console/*` → `/bento/*` redirects, drop the "Preview" badge (T569); delete the
+migrated console pages and prune dead routes/components/imports (T570); a full
+a11y + responsive + performance (lazy-load/bundle) + e2e smoke pass across the
+whole surface (T571); and a delight polish round — consistent empty-states, a
+keyboard-shortcut guide, reduced-motion audit, first-run tour (T572, 💭). Only
+after T570 is the console truly retired; until then it stays live as the fallback.
+
+## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
+
+### XXXIII.0 The problem — eval is two hard-wired islands
+
+Two independent eval subsystems shipped and both bake in *how* a case is scored:
+
+- **Block K — Agent-CI eval** (T285–T288, `genai/eval/`). `TurAgentEvalRunnerService`
+  replays each `TurAgentEvalCase` through the real executor and scores it on
+  exactly **four baked-in dimensions** in one `scoreCase(...)` method: `slots`
+  (deterministic diff), `outcome`, `node` (all deterministic), and `rubric` (one
+  bilingual LLM judge, `TurEvalJudgePrompt`). You cannot add, remove, weight, or
+  swap a grader without editing that method. There is **no human grader**. A
+  "dataset" is golden cases typed inline into a single agent's set — not
+  uploadable, not reusable across agents, not versioned. Aggregation is a hardcoded
+  all-dimensions-must-match. Two offload paths already exist (T159 Batch judge,
+  T168 OpenAI Evals) but only for the rubric judge, bolted on beside the runner.
+- **Block R — NL→facet eval** (T385/T407, `sn/dsl/eval/`). A separate, pure
+  deterministic scorer (`TurNLFacetEvalScorer`) with its own fixture record, its
+  own report, its own API and Maven profile — a parallel universe.
+
+The canonical framing (OpenAI Evals, Anthropic, Langfuse, promptfoo, DeepEval)
+splits graders into **three kinds**: **model** (LLM-as-judge), **code**
+(deterministic/programmatic) and **human** (review). Turing today has model + code
+fused into one method and no human path, and its datasets are second-class.
+
+The user's ask: (1) let us create **extensions of the eval for each grader kind**,
+and (2) give us a way to **provide a dataset to be used and tested** — done in a
+scalable, friendly, functional way.
+
+### XXXIII.1–2 The grader SPI is the whole lever (T586, T587)
+
+The single highest-leverage move is to turn the four hardcoded dimensions into a
+**seam**. One interface:
+
+```java
+public interface TurEvalGrader {
+    TurEvalGraderKind kind();              // MODEL | CODE | HUMAN
+    String graderId();                     // "slot-match", "regex", "rubric-score", "human-review", …
+    boolean supports(TurEvalGraderConfig config);
+    TurEvalGraderResult grade(TurEvalGradingContext ctx);
+}
+```
+
+- `TurEvalGradingContext` carries everything the runner already computes per case —
+  the case, replayed user turns, captured slots, final node id, resolved outcome,
+  the concatenated assistant transcript, and (Phase 4) the bound dataset row — so a
+  grader is a pure function of context + its own config.
+- `TurEvalGraderResult(double score, boolean passed, String verdict, String
+  rationale, boolean deferred)`. `deferred=true` is what makes the **human** kind
+  possible without special-casing it everywhere: the runner records the result as
+  `PENDING_REVIEW` and moves on.
+- `TurEvalGraderRegistry` resolves the ordered grader list for a set from its
+  `TurEvalGraderConfig` rows; `scoreCase` becomes a loop over that list feeding a
+  weighted aggregate + a per-stack blocking policy (T600).
+
+**Back-compat is the non-negotiable constraint.** With **no** `TurEvalGraderConfig`
+rows, the registry returns the exact legacy stack (SlotMatch + Outcome + Node as
+CODE graders, Rubric as a MODEL grader) and the aggregate is the current
+all-must-match average. So T586 is a pure refactor: every existing report, the
+green-baseline/regression logic, the gate, and the `-Pagent-eval` IT stay
+byte-identical. T587 then persists the config (per set, optional per-case override)
+and rides the existing `TurAIAgentExchange` export so evals travel with the agent.
+
+### XXXIII.3–4 CODE graders — deterministic, CI-safe, extensible (T588, T589)
+
+The CODE kind is the CI-cheap backbone (no LLM, runs on every PR). T588 ships a
+built-in library keyed by `graderId` + `configJson`: exact/contains/regex on the
+final answer, JSON-path and slot equality with tolerance, numeric range, the
+generalized outcome/node graders, and — composing what already exists —
+latency-budget and `tool_called` assertions off the T427 tool-call trace and T88
+latency samples. T589 opens the CODE kind to **user extension** without a backend
+change: a Groovy `grade(ctx) -> {score, pass, rationale}` reusing the Custom Tool
+sandbox and the `TurToolCallbackPipeline` safe-binding model (the same trust
+boundary we already accept for custom tools), opt-in, errors-as-fail. This is the
+"create extensions of the eval" ask for the deterministic kind.
+
+### XXXIII.5–6 MODEL graders — judge strategies, not one prompt (T590, T591)
+
+T590 generalizes the lone rubric judge into a family: `LABEL` (pass/fail),
+`SCORE` (0-1 rubric), `CRITERIA` (multi-criterion rubric, each scored), and
+`PAIRWISE`/preference (answer vs a reference). Each carries a per-grader model +
+prompt override and runs through provider **tool-calling / strict schema** — never
+free-text JSON, per the standing gpt-4o-mini pitfall. Crucially, the existing sync
+/ Batch (T159) / OpenAI-Evals (T168) execution paths fold *under* the grader
+abstraction, so any MODEL grader can be dispatched sync, at batch tier, or to a
+remote server-side grader — the offload becomes a property of the grader, not a
+separate endpoint. T591 adds reference-answer grading (dataset rows carry a golden
+answer; a MODEL grader scores faithfulness/correctness, a CODE grader scores
+embedding cosine similarity via the configured embedding provider), bridging eval
+to the Block M grounding contract.
+
+### XXXIII.7–9 HUMAN graders — the missing third kind (T592–T594)
+
+The `deferred` flag from T586 is what lets human review be *a grader* rather than a
+bolt-on. T592's human-review grader emits `PENDING_REVIEW` and persists a
+`TurEvalReviewTask` per case-result; the report gains a `PENDING_REVIEW` status and
+the gate policy per stack is *warn* or *block-until-reviewed*. T593 makes it
+friendly: a bento review inbox where a reviewer sees the replayed transcript,
+expected-vs-actual, and the per-grader breakdown, submits `{pass, score, notes}`,
+and can **promote the row into the golden dataset** in one click — closing the loop
+from "a human noticed this was wrong" to "it's now a regression test". T594 (💭)
+adds inter-annotator agreement and a sample-based human audit of MODEL-graded runs
+so the LLM judge can be *calibrated* to human labels — the standard answer to "can
+we trust the model grader?".
+
+### XXXIII.10–13 Datasets — first-class, provided, versioned (T595–T598)
+
+The second half of the ask. Today a golden case is a child row of one agent's set.
+T595 promotes it: `TurEvalDataset` + `TurEvalDatasetRow` is a reusable,
+**agent-decoupled** collection (input turns + expected slots/outcome/node/reference
+answer + tags/metadata); an eval set binds `dataset + grader stack`. Existing inline
+cases migrate into a per-agent default dataset so nothing breaks. T596 is the
+literal "provide a dataset to be tested": upload CSV / JSON / JSONL / OpenAI-Evals
+JSONL, or import from anonymized production transcripts (T61) and Chat-Analytics
+failures (reuse the T447 miner), through a column-mapping step; export JSONL for
+round-tripping. T597 (💭) adds LLM-assisted generation/augmentation (synthesize
+rows from the flow/system-prompt/T386 manifest, paraphrase seed turns — never
+auto-trusted, always opens the review form, reusing the T387 pattern). T598 makes
+datasets versioned: immutable snapshots, a run pins a version, and reports name the
+version they ran against so regression comparisons are honest.
+
+### XXXIII.14–18 UX, consolidation & scale (T599–T603)
+
+T599 gives eval its own home — an **Eval Studio** bento page (`/bento/eval`):
+datasets, grader stacks, run history, per-case drill-down with the per-grader
+breakdown, the human-review inbox, and a score/regression timeline. The flow-editor
+gate panel shrinks to a status badge that links here. T600 makes grader **stacks**
+reusable named templates with weighted aggregation and per-grader thresholds
+(retiring the hardcoded all-must-pass). T601 pays off the platform by folding the
+Block R NL→facet island onto the same model — its scorer becomes a CODE grader and
+its pack a dataset, so chat-flow and SN evals share one Studio and one gate. T602
+(💭) exposes it through `turing eval` / the SDK for CI over any dataset; T603 (💭)
+extends grading from pre-publish to **online/continuous** — sampling live traffic
+and alerting on drift (composing T87 sentiment, T155 citation-drift, T447 miner).
+
+**Design invariants for the whole block:** every layer is opt-in and fail-open —
+empty/legacy config runs the exact current path; CODE graders stay LLM-free so PR
+CI is zero-cost; MODEL graders never use free-text JSON; the grounding hard-fail
+(Block R) and "propose, never auto-apply" (T447) postures carry over to dataset
+generation and self-tuning.
+
+## XXXIV. Live Preview as a per-turn prompt-diagnostics surface (Block AK)
+
+### XXXIV.0 The problem — the preview reads, but doesn't diagnose
+
+The System-Prompt **Live Preview** (`TurSystemPromptPreviewService` →
+`SystemPromptLivePreview`) reverses the opaque assembled system message into
+labeled provenance segments (PERSONA / AGENT / MCP / FLOW). A redesign made it a
+readable, Medium-style flowing article (rendered Markdown, per-passage hover
+provenance, origin legend) instead of one scrolling `<pre>` per fragment. That
+alone turned it into a tool people actually read — and reading it surfaced real,
+quantifiable problems on a live agent (the Insper multi-flow concierge):
+
+- **~40–50% of an active-flow turn is inert or duplicated.** The agent prompt
+  hard-codes a whole "first-interaction / welcome / 3-experiences" section that the
+  flow addendum *explicitly orders the model to ignore* ("IGNORE TODO O RESTO …
+  siga o Goal"). On every active-flow turn that is ~800 tokens of dead weight the
+  model still has to attend to.
+- **Rules are paid for 2–3×.** The forbidden-vocabulary list (`talvez`,
+  `impossível`, `não sei`, …) appears in the Persona block *and* the agent "REGRAS
+  DURAS"; "never ask for CPF/card" and "never cite competitors" likewise. Same
+  rule, multiple segments.
+- **The node label was pure cost.** The flow addendum emitted
+  `=== ACTIVE FLOW STEP: <label> ===` — literal `===` (not Markdown) plus a
+  Portuguese node label inside an English scaffold, when behavior is driven
+  entirely by the `Goal:` line and the Hard rules already tell the model to ignore
+  persona/role framing. (Fixed ahead of this block: the delimiter is now a Markdown
+  `## ACTIVE FLOW STEP` heading and the label is dropped.)
+- **The preview lies about the persona.** `buildPreviewInternal` hardcodes
+  `agent.getDefaultPersona()`, but at runtime `TurAgentPersonaResolver.resolve()`
+  reads a `__activePersonaId` set by a `persona`-type flow node — so a flow can
+  switch Marina → Professor Insper and the preview would still show Marina.
+  `TurSystemPromptValidatorService` has the same blind spot.
+
+The insight: the Live Preview is the natural place to *optimize the turn*. It
+should answer three questions per turn — **what does the model actually receive,
+what does it cost, and what is wasted** — not just "what does a plain entry-turn
+look like". This block builds that. All additions are read-only/opt-in and never
+change the assembled prompt itself (that stays the faithful ground truth).
+
+### XXXIV.6 Replay the actual assembled prompt (T612, 💭)
+
+The ultimate ground truth: instead of synthesizing an entry-turn, capture and
+render the real system message sent on a chosen past conversation turn (from
+transcripts / the T427 tool-call trace) so the preview shows exactly what
+happened — the artifact you need when debugging a specific bad reply.
+
+### XXXIV.7 Single source of truth — moved to Block AL
+
+The preview's fidelity fix (render through the real assembler, retire the
+reconstruction) is not a preview feature — it's the assembly pipeline itself.
+It lives in **Block AL §XXXV** as **T613**, and every surface here (persona
+T607, token metrics T608, inert T609, lint T610, replay T612) becomes a *view
+over that one true assembly*.
+
+**Design invariants for Block AK:** read-only and opt-in; the assembled prompt is
+never mutated for display (the preview must stay a faithful mirror of what the
+model receives — Block AL T613 makes that literal by reusing the runtime
+assembler); token counting is best-effort/provider-approximate and must never
+block the page; lint + inert-detection are advisory (they never rewrite the
+prompt).
+
+## XXXV. Prompt assembly as a composable, cache-friendly pipeline (Block AL)
+
+### XXXV.0 The root cause behind every Block AK symptom
+
+There are **two** prompt-builders today, and that is the bug factory:
+
+- **Runtime** — `TurChatPromptAssembler.assemble(TurChatPromptRequest, files,
+  selectedSkillId)`, the one method both executors call (`TurAgentChatExecutor`
+  for the Spring-AI path, `TurNativeChatExecutor` for the native path). Via
+  `TurPersonaPromptComposer.compose` it glues
+  `persona-static + few-shot + "----" + (agent-base + mcp + flow-addendum)`,
+  resolving persona (`TurAgentPersonaResolver`), flow context, MCP, skills,
+  memory/compaction and few-shot — and returns the exact `List<Message>` sent to
+  the LLM.
+- **Preview** — `TurSystemPromptPreviewService.buildPreviewInternal` *rebuilds a
+  lookalike* separately (`compose(defaultPersona, null, null,
+  base + mcp + flowText)`). Every place the two disagree is a latent bug: the
+  persona lie we hit, and every future one as the assembler grows.
+
+The user's framing (verbatim intent): *somewhere Java assembles the whole turn and
+sends it to the LLM — use that method as the evidence, drive it TDD-style by
+injecting test parameters, validate the method + the final prompt, and show the
+truly faithful prompt.* Exactly right — and the scalable form of it is a pipeline,
+not a second call site.
+
+> **T613 (SPI + single-pass assembler) and T614 (stability-classed ordering +
+> cache breakpoint) shipped** — see CHANGELOG Block AL. The `TurPromptContributor`
+> SPI, the single-pass `TurPromptAssemblyPipeline`, the six built-in contributors,
+> the byte-identical legacy join, the preview rendering the same segments, and the
+> opt-in STABLE-first reorder + `cacheBreakpointIndex` are all in. **T615 also
+> shipped** — the pre-pipeline concatenation and its
+> `turing.prompt.assembly.pipeline-enabled` escape hatch were deleted, so the
+> pipeline is now the single system-prompt assembly path. The subsections that
+> specified all three were removed per the "no shipped reports in IMPROVEMENTS"
+> rule. **T616 also shipped** — the T115 memory summary and T30 relevance turns now
+> assemble through a message-level SPI (`TurMessageContributor` /
+> `TurMessageAssemblyPipeline`), so the whole message list has one assembly point.
+> What remains below is the unshipped tail (T617).
+
+### XXXV.3 Retire the message-pipeline escape hatch + mirror the full list (T617, 💭)
+
+T616 collapsed the turn's *message list* onto one path: the system message comes
+from `TurPromptAssemblyPipeline`, and the history prefix (T115 memory summary + T30
+relevance turns) from `TurMessageAssemblyPipeline`, both fanned out through the
+assembler's single `user`/`assistant` conversion. Two loose ends remain before the
+block is truly closed:
+
+- **The escape hatch.** T616 shipped gated behind
+  `turing.prompt.assembly.message-pipeline-enabled=true`, with the inline
+  `buildMemoryPrefixLegacy` retained for rollback. As T615 did for T613's flag, once
+  the message pipeline has soaked in production, delete the inline path and the flag
+  so there is genuinely one path, not two.
+- **Preview fidelity.** The Live Preview still mirrors only the *system* message. It
+  should also render the history-prefix messages the `TurMessageAssemblyPipeline`
+  emits (with their `origin`/`label` provenance), so an operator inspects the whole
+  message list — the same no-drift guarantee T613 gave the system prompt, extended
+  end-to-end.
+
+**Design invariants for the block:** foundational + incremental + gated —
+contributors are introduced behind the current assembler and migrated one at a
+time, feature-flagged so the exact current message list can be restored; the
+empty/default pipeline is byte-identical; any reordering changes what the model
+sees, so each step re-validates like the flow-heading change did; the preview never
+mutates the assembled prompt (it is a mirror).

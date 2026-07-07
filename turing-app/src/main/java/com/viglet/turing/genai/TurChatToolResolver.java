@@ -15,13 +15,18 @@ package com.viglet.turing.genai;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.clienttool.TurClientToolService;
 import com.viglet.turing.genai.flow.ChatFlowNode;
+import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
 import com.viglet.turing.genai.skill.activation.TurRunSkillToolCallback;
 import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
@@ -63,6 +68,8 @@ public class TurChatToolResolver {
     private final TurPersonaBrandContextProvider personaBrandContextProvider;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurSkillRunnerService skillRunnerService;
+    private final TurClientToolService clientToolService;
+    private final com.viglet.turing.genai.handoff.TurAgentHandoffService agentHandoffService;
 
     public TurChatToolResolver(TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -71,7 +78,9 @@ public class TurChatToolResolver {
             TurToolPreFilterService toolPreFilterService,
             TurPersonaBrandContextProvider personaBrandContextProvider,
             TurChatPipelineObservation chatPipelineObservation,
-            TurSkillRunnerService skillRunnerService) {
+            TurSkillRunnerService skillRunnerService,
+            TurClientToolService clientToolService,
+            com.viglet.turing.genai.handoff.TurAgentHandoffService agentHandoffService) {
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
@@ -80,6 +89,8 @@ public class TurChatToolResolver {
         this.personaBrandContextProvider = personaBrandContextProvider;
         this.chatPipelineObservation = chatPipelineObservation;
         this.skillRunnerService = skillRunnerService;
+        this.clientToolService = clientToolService;
+        this.agentHandoffService = agentHandoffService;
     }
 
     /**
@@ -116,10 +127,25 @@ public class TurChatToolResolver {
      *
      * @since 2026.3.1
      */
-    private ToolCallback[] mcpCallbacks(TurAIAgent agent) {
-        return agent.getMcpServers() == null || agent.getMcpServers().isEmpty()
-                ? new ToolCallback[0]
-                : mcpToolCallbackService.getToolCallbacks(agent.getMcpServers());
+    private ToolCallback[] mcpCallbacks(TurAIAgent agent, Set<String> excludeMcpServerIds) {
+        Set<TurMcpServer> servers = agent.getMcpServers();
+        if (servers == null || servers.isEmpty()) {
+            return new ToolCallback[0];
+        }
+        // T145 / §X.5.b — when a native turn federates some of the agent's MCP
+        // servers to the vendor (OpenAI remote mcp / Anthropic connector), those
+        // servers are excluded here so they aren't ALSO wired as Turing MCP
+        // client tools. COMMAND (stdio) servers — never federated — stay.
+        Set<TurMcpServer> effective = servers;
+        if (excludeMcpServerIds != null && !excludeMcpServerIds.isEmpty()) {
+            effective = servers.stream()
+                    .filter(s -> s != null && !excludeMcpServerIds.contains(s.getId()))
+                    .collect(java.util.stream.Collectors.toSet());
+            if (effective.isEmpty()) {
+                return new ToolCallback[0];
+            }
+        }
+        return mcpToolCallbackService.getToolCallbacks(effective);
     }
 
     private ToolCallback[] customCallbacks(TurAIAgent agent) {
@@ -170,24 +196,155 @@ public class TurChatToolResolver {
         return alwaysKeep;
     }
 
+    /**
+     * Matches the "trigger words" line of an MCP server's {@code llmInstructions}
+     * — {@code Palavras-gatilho: …} / {@code Trigger words: …} /
+     * {@code Keywords: …} — capturing the comma/semicolon list that follows.
+     * Single-line (the list lives on one line); locale-insensitive on the label.
+     */
+    private static final Pattern TRIGGER_LINE = Pattern.compile(
+            "(?im)(?:palavras?[ -]?gatilhos?|gatilhos?|trigger\\s*words?|keywords?)\\s*:?\\s*(.+)");
+
+    /**
+     * T424 / §XXI part (b) — names of the tools belonging to attached MCP
+     * servers whose declared trigger words (or title tokens) appear in the
+     * user message. These are unioned into the pre-filter's always-keep set so
+     * an intent-matched server's tools are never dropped, steering weak models
+     * to the right namespace instead of a semantically-close built-in.
+     *
+     * <p>Per-server so a multi-server agent only boosts the server the message
+     * actually hit. The {@code getToolCallbacks(Set.of(server))} call lists the
+     * matched server's tools (cheap on the already-open MCP client); it only
+     * fires on a trigger match, so unrelated turns pay nothing.
+     *
+     * <p>Package-private for unit testing in isolation.
+     */
+    Set<String> triggerBoostedMcpToolNames(TurAIAgent agent, String userMessage) {
+        Set<TurMcpServer> servers = agent.getMcpServers();
+        if (servers == null || servers.isEmpty() || userMessage == null || userMessage.isBlank()) {
+            return Set.of();
+        }
+        String haystack = userMessage.toLowerCase(Locale.ROOT);
+        Set<String> boosted = new HashSet<>();
+        for (TurMcpServer server : servers) {
+            if (server != null && server.getEnabled() == 1 && serverTriggersMatch(server, haystack)) {
+                addServerToolNames(server, boosted);
+                log.info("[ToolBoost] MCP server '{}' triggers matched — boosting its tools",
+                        server.getTitle());
+            }
+        }
+        return boosted;
+    }
+
+    /** Collects the (non-blank) tool names exposed by one MCP server into {@code sink}. */
+    private void addServerToolNames(TurMcpServer server, Set<String> sink) {
+        for (ToolCallback cb : mcpToolCallbackService.getToolCallbacks(Set.of(server))) {
+            try {
+                String name = cb.getToolDefinition().name();
+                if (name != null && !name.isBlank()) {
+                    sink.add(name);
+                }
+            } catch (RuntimeException e) {
+                log.debug("[ToolBoost] could not read MCP tool name: {}", e.getMessage());
+            }
+        }
+    }
+
+    /** True when any of {@code server}'s trigger phrases / title tokens occur in {@code lowerMessage}. */
+    private static boolean serverTriggersMatch(TurMcpServer server, String lowerMessage) {
+        for (String trigger : extractTriggers(server)) {
+            if (trigger.length() >= 3 && lowerMessage.contains(trigger)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Trigger phrases for a server: the comma/semicolon list from a
+     * {@link #TRIGGER_LINE} in {@code llmInstructions} (lowercased), plus the
+     * distinctive tokens (≥ 4 chars) of the server title as a fallback so a
+     * server without an explicit trigger line still boosts on its own name.
+     */
+    private static Set<String> extractTriggers(TurMcpServer server) {
+        Set<String> triggers = new HashSet<>();
+        String instructions = server.getLlmInstructions();
+        if (instructions != null && !instructions.isBlank()) {
+            Matcher m = TRIGGER_LINE.matcher(instructions);
+            if (m.find()) {
+                for (String part : m.group(1).split("[,;]")) {
+                    String t = part.trim().toLowerCase(Locale.ROOT);
+                    if (t.length() >= 3) {
+                        triggers.add(t);
+                    }
+                }
+            }
+        }
+        String title = server.getTitle();
+        if (title != null && !title.isBlank()) {
+            for (String token : title.toLowerCase(Locale.ROOT).split("\\s+")) {
+                String clean = token.replaceAll("[^\\p{L}\\p{Nd}]", "");
+                if (clean.length() >= 4) {
+                    triggers.add(clean);
+                }
+            }
+        }
+        return triggers;
+    }
+
     public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
             String userMessage, ChatFlowNode activeNode, String selectedSkillId) {
+        return resolve(agent, activePersona, userMessage, activeNode, selectedSkillId, Set.of());
+    }
+
+    /**
+     * T145 / §X.5.b overload — same as
+     * {@link #resolve(TurAIAgent, TurPersona, String, ChatFlowNode, String)} but
+     * excludes the given MCP server ids from the Turing MCP <em>client</em> path.
+     * The native chat executor passes the ids of the agent's MCP servers it
+     * federated to the vendor this turn, so they aren't double-wired (vendor
+     * connector + Turing client). Empty set = no exclusion (every caller below
+     * the native path).
+     */
+    public ToolCallback[] resolve(TurAIAgent agent, TurPersona activePersona,
+            String userMessage, ChatFlowNode activeNode, String selectedSkillId,
+            Set<String> excludeMcpServerIds) {
         long t0 = System.currentTimeMillis();
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
                 ? new ToolCallback[0]
                 : nativeToolService.getToolCallbacks(selectedNativeTools);
-        ToolCallback[] mcpCallbacks = mcpCallbacks(agent);
+        ToolCallback[] mcpCallbacks = mcpCallbacks(agent, excludeMcpServerIds);
         ToolCallback[] customCallbacks = customCallbacks(agent);
         ToolCallback[] personaBrandCallbacks =
                 personaBrandContextProvider.getToolCallbacks(activePersona);
         ToolCallback[] skillCallbacks = skillCallbacks(agent, selectedSkillId);
+        // T438 — frontend ("client") tools. Advertised to the model so it can
+        // call them; the call parks the turn (it is never run server-side).
+        ToolCallback[] clientCallbacks = clientToolService.isEnabled(agent)
+                ? clientToolService.buildToolCallbacks(agent)
+                : new ToolCallback[0];
+        // T448 — agent-to-agent handoff: the router's delegate_to_agent tool.
+        ToolCallback[] handoffCallbacks = agentHandoffService.buildToolCallbacks(agent);
         ToolCallback[] decorated = toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks,
-                        skillCallbacks)
+                        skillCallbacks, clientCallbacks, handoffCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
         Set<String> alwaysKeep = buildAlwaysKeep(selectedNativeTools, skillCallbacks, activeNode);
+        // Client tools are author-declared (not domain-relevance ranked) — keep
+        // them past the BM25 pre-filter so the model always sees what it may call.
+        alwaysKeep.addAll(clientToolService.namesFor(agent));
+        // T448 — keep delegate_to_agent past the pre-filter so the router always
+        // sees it (it's configured, not domain-relevance ranked).
+        if (handoffCallbacks.length > 0) {
+            alwaysKeep.add(com.viglet.turing.genai.handoff.TurDelegateAgentToolCallback.TOOL_NAME);
+        }
+        // T424 / §XXI part (b) — trigger boost: when the user message hits an
+        // attached MCP server's declared trigger words (or its title), promote
+        // that server's tools into the always-keep set so the pre-filter can
+        // never drop them and the model is steered to that namespace.
+        alwaysKeep.addAll(triggerBoostedMcpToolNames(agent, userMessage));
         ToolCallback[] filtered = toolPreFilterService.filter(decorated, userMessage, alwaysKeep);
         long elapsed = System.currentTimeMillis() - t0;
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_TOOLS, elapsed);

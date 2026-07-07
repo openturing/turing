@@ -13,7 +13,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,7 +53,7 @@ public class TurAIAgentSlot implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -66,6 +66,27 @@ public class TurAIAgentSlot implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 16)
     private TurAIAgentSlotType type = TurAIAgentSlotType.STRING;
+
+    /**
+     * T100 — when {@code true}, this slot is a default target of document
+     * extraction ({@code POST /chat/slot-extract}) even when the caller passes
+     * no explicit {@code slotNames}. The set of slots flagged this way is the
+     * agent's <em>document schema</em>. Backwards-compatible opt-in: when an
+     * agent has <em>no</em> flagged slot, extraction falls back to the legacy
+     * behaviour of targeting the whole slot catalog.
+     */
+    @Column(name = "extract_from_document", nullable = false)
+    private boolean extractFromDocument = false;
+
+    /**
+     * T100 — optional Java regex an extracted value must fully match to be
+     * persisted. When set, document/vision extraction drops a value that does
+     * not match (logged, not written) so malformed fills never reach the slot.
+     * Also surfaced to the LLM as a formatting hint in the extraction prompt.
+     * Null/blank means no validation.
+     */
+    @Column(name = "validation_pattern", length = 500)
+    private String validationPattern;
 
     /**
      * Owning AI agent. Hidden from JSON because the client always knows the

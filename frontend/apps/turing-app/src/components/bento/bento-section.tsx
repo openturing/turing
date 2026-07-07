@@ -1,10 +1,18 @@
+import { IconChevronRight } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 export interface BentoSectionProps {
   /** Section heading — small uppercase eyebrow above the title. */
   eyebrow?: string;
   title: string;
   description?: string;
+  /**
+   * When set, the title becomes a link to this route (e.g. the section's area
+   * hub) with a chevron affordance. Used on the home overview so each section
+   * heading drills into its dedicated hub page.
+   */
+  titleHref?: string;
   /** Tile children — should be `BentoTile` / `BentoCountTile` instances. */
   children: ReactNode;
   /** Override the grid template. Defaults to a 2/4/6-col responsive bento grid. */
@@ -33,9 +41,13 @@ export function BentoSection({
   eyebrow,
   title,
   description,
+  titleHref,
   children,
   gridClassName = DEFAULT_GRID_CLASSES,
 }: Readonly<BentoSectionProps>) {
+  const heading = (
+    <h2 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h2>
+  );
   return (
     <section className="mb-8 md:mb-10">
       <header className="bento-shell-header mb-4 flex flex-col gap-0.5">
@@ -44,7 +56,20 @@ export function BentoSection({
             {eyebrow}
           </span>
         )}
-        <h2 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h2>
+        {titleHref ? (
+          <Link
+            to={titleHref}
+            className="group inline-flex w-fit items-center gap-1 text-foreground transition-colors hover:text-primary"
+          >
+            {heading}
+            <IconChevronRight
+              size={20}
+              className="text-muted-foreground transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1"
+            />
+          </Link>
+        ) : (
+          heading
+        )}
         {description && (
           <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
         )}

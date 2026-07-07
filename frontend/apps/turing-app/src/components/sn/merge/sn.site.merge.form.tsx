@@ -19,11 +19,12 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { SmartDescription } from "@/components/ui/smart-description"
 import { Label } from "@/components/ui/label"
-import { SectionCard } from "@/components/ui/section-card"
 import {
     Table,
     TableBody,
@@ -40,7 +41,7 @@ import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turSNSiteMergeService = new TurSNSiteMergeService();
@@ -52,15 +53,20 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
+    /** Render chrome. console = StickyPageHeader + SectionCards; bento = BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+    chrome?: SNFormChrome;
 }
 
-export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteMerge>({
         defaultValues: value,
     });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/merge-providers`;
+    const urlBase = `${baseRoute}/${snSiteId}/merge-providers`;
     const [addFieldOpen, setAddFieldOpen] = useState(false);
     const [newFieldName, setNewFieldName] = useState("");
 
@@ -111,31 +117,49 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
 
     const overwrittenFields = form.watch("overwrittenFields") || [];
 
+    const isBento = chrome === "bento";
+
+    const actions = (
+        <>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.mergeProviders.feature")} name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+            </GradientButton>
+        </>
+    );
+
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconGitMerge}
-                        feature={t("sn.mergeProviders.feature")}
-                        description={t("sn.mergeProviders.description")}
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <BentoHero
+                        eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.mergeProviders.feature")}</Link>}
+                        leading={
+                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                                <IconGitMerge size={24} />
+                            </span>
+                        }
+                        title={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")}
+                        subtitle={t("sn.mergeProviders.description")}
+                        trailing={actions}
                     />
-                    <StickyPageHeader.Actions>
-                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.mergeProviders.feature")} name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconGitMerge}
+                            feature={t("sn.mergeProviders.feature")}
+                            description={t("sn.mergeProviders.description")}
+                        />
+                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                 {/* Providers Section */}
-                <SectionCard variant="blue">
-                    <SectionCard.Header icon={IconGitMerge} title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconGitMerge} tone="blue" title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")}>
                         <FormField
                             control={form.control}
                             name="providerFrom"
@@ -170,13 +194,10 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                 </FormItem>
                             )}
                         />
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Relations Section */}
-                <SectionCard variant="violet">
-                    <SectionCard.Header icon={IconLink} title={t("forms.snMerge.relationMapping")} description={t("forms.snMerge.relationMappingDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconLink} tone="violet" title={t("forms.snMerge.relationMapping")} description={t("forms.snMerge.relationMappingDesc")}>
                         <FormField
                             control={form.control}
                             name="relationFrom"
@@ -211,13 +232,10 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                 </FormItem>
                             )}
                         />
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Description Section */}
-                <SectionCard variant="emerald">
-                    <SectionCard.Header icon={IconFileText} title={t("forms.snMerge.aboutMerge")} description={t("forms.snMerge.aboutMergeDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconFileText} tone="emerald" title={t("forms.snMerge.aboutMerge")} description={t("forms.snMerge.aboutMergeDesc")}>
                         <FormField
                             control={form.control}
                             name="description"
@@ -242,13 +260,10 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                 </FormItem>
                             )}
                         />
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Overwritten Fields Section */}
-                <SectionCard variant="amber">
-                    <SectionCard.Header icon={IconReplace} title={t("forms.snMerge.fieldsToOverwrite")} description={t("forms.snMerge.fieldsToOverwriteDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconReplace} tone="amber" title={t("forms.snMerge.fieldsToOverwrite")} description={t("forms.snMerge.fieldsToOverwriteDesc")}>
                         <div className="flex items-center justify-between mb-4">
                             <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
                                 <DialogTrigger asChild>
@@ -317,8 +332,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                 </TableBody>
                             </Table>
                         )}
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Action Footer */}
             </form>

@@ -51,7 +51,13 @@ export function ChatFlowFunnelPanel({
       <SectionCard.Content>
         <ul className="space-y-2">
           {report.nodes.map((node) => (
-            <FunnelRow key={node.nodeId} node={node} maxCount={maxCount} />
+            <FunnelRow
+              key={node.nodeId}
+              node={node}
+              maxCount={maxCount}
+              showPath={report.totalPaths > 0}
+              t={t}
+            />
           ))}
         </ul>
       </SectionCard.Content>
@@ -62,9 +68,20 @@ export function ChatFlowFunnelPanel({
 function FunnelRow({
   node,
   maxCount,
-}: Readonly<{ node: TurChatFlowFunnelNode; maxCount: number }>) {
+  showPath,
+  t,
+}: Readonly<{
+  node: TurChatFlowFunnelNode;
+  maxCount: number;
+  showPath: boolean;
+  t: (key: string, opts?: { defaultValue?: string }) => string;
+}>) {
   const total = node.cursorCount + node.completedCount;
   const widthPct = Math.round((total / maxCount) * 100);
+  // T237 — path-aware drop-off: of the conversations that reached this node,
+  // what share never progressed to a later step.
+  const dropOff = Math.max(0, node.pathReached - node.pathContinued);
+  const dropOffPct = node.pathReached > 0 ? Math.round((dropOff / node.pathReached) * 100) : 0;
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-2 space-y-1">
       <div className="flex items-center gap-2 flex-wrap">
@@ -76,12 +93,18 @@ function FunnelRow({
         </span>
         <span className="text-xs text-muted-foreground ml-auto shrink-0 font-mono">
           {node.cursorCount > 0 && (
-            <span className="text-amber-600 dark:text-amber-400" title="parked">
+            <span
+              className="text-amber-600 dark:text-amber-400"
+              title={t("chatFlow.funnel.parked", { defaultValue: "parked" })}
+            >
               ●{node.cursorCount}
             </span>
           )}
           {node.completedCount > 0 && (
-            <span className="text-emerald-600 dark:text-emerald-400 ml-2" title="completed">
+            <span
+              className="text-emerald-600 dark:text-emerald-400 ml-2"
+              title={t("chatFlow.funnel.completed", { defaultValue: "completed" })}
+            >
               ✓{node.completedCount}
             </span>
           )}
@@ -94,6 +117,37 @@ function FunnelRow({
           style={{ width: `${widthPct}%` }}
         />
       </div>
+      {showPath && node.pathReached > 0 && (
+        <div className="flex items-center gap-2 pt-0.5">
+          <span
+            className="text-muted-foreground shrink-0 font-mono text-[10px]"
+            title={t("chatFlow.funnel.reachedContinued", {
+              defaultValue: "reached this node → continued past it",
+            })}
+          >
+            {node.pathReached}→{node.pathContinued}
+          </span>
+          <div
+            className="h-1 flex-1 overflow-hidden rounded-full bg-muted/40"
+            title={t("chatFlow.funnel.dropOffAt", {
+              defaultValue: "drop-off at this node",
+            })}
+          >
+            <div
+              className="h-full bg-gradient-to-r from-rose-500 to-red-600"
+              style={{ width: `${dropOffPct}%` }}
+            />
+          </div>
+          <span
+            className={`shrink-0 font-mono text-[10px] ${
+              dropOffPct >= 50 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+            }`}
+            title={t("chatFlow.funnel.dropOffPct", { defaultValue: "drop-off %" })}
+          >
+            {dropOffPct}%
+          </span>
+        </div>
+      )}
     </li>
   );
 }

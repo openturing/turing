@@ -128,6 +128,7 @@ export default function AnalyticsIntentListPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={intents} error={error}>
+      <div className="px-4 lg:px-6 py-2 pb-8">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -139,14 +140,15 @@ export default function AnalyticsIntentListPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
+          <GradientButton
             variant="outline"
+            size="sm"
             onClick={onReindex}
             disabled={reindexMutation.isPending}>
             <IconRefresh className="mr-2 h-4 w-4" />
             {t("analyticsIntent.reindex")}
-          </Button>
-          <GradientButton onClick={openNew}>
+          </GradientButton>
+          <GradientButton size="sm" onClick={openNew}>
             <IconPlus className="mr-2 h-4 w-4" />
             {t("analyticsIntent.newInstance")}
           </GradientButton>
@@ -218,6 +220,7 @@ export default function AnalyticsIntentListPage() {
           onDelete={onDelete}
         />
       )}
+      </div>
     </LoadProvider>
   );
 }
@@ -313,10 +316,10 @@ function AnalyticsIntentDialog({ open, onOpenChange, intent, onChange, onSave }:
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <GradientButton variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
-          </Button>
-          <GradientButton onClick={onSave}>{t("common.save")}</GradientButton>
+          </GradientButton>
+          <GradientButton size="sm" onClick={onSave}>{t("common.save")}</GradientButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

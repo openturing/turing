@@ -121,7 +121,7 @@ public class TurRagBm25CoreAPI {
      * another {@code @Transactional} method (which would bypass the proxy).
      */
     private ResponseEntity<List<CoreStatusDto>> buildCoreStatus(String siteId) {
-        Optional<TurSNSite> siteOpt = turSNSiteRepository.findByIdNoCache(siteId);
+        Optional<TurSNSite> siteOpt = turSNSiteRepository.findById(siteId);
         if (siteOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -166,7 +166,7 @@ public class TurRagBm25CoreAPI {
     @Transactional
     @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public ResponseEntity<List<CoreStatusDto>> provisionCores(@PathVariable String siteId) {
-        Optional<TurSNSite> siteOpt = turSNSiteRepository.findByIdNoCache(siteId);
+        Optional<TurSNSite> siteOpt = turSNSiteRepository.findById(siteId);
         if (siteOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -209,7 +209,7 @@ public class TurRagBm25CoreAPI {
     @Transactional
     @Secured({ "ROLE_ADMIN", "SN_EDIT" })
     public ResponseEntity<Void> deprovisionCores(@PathVariable String siteId) {
-        Optional<TurSNSite> siteOpt = turSNSiteRepository.findByIdNoCache(siteId);
+        Optional<TurSNSite> siteOpt = turSNSiteRepository.findById(siteId);
         if (siteOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

@@ -1,6 +1,5 @@
 "use client"
 import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
-import { useSystemPromptPreview } from "@/api/queries/system-prompt.queries"
 import { ROUTES } from "@/app/routes.const"
 import {
   Form,
@@ -12,24 +11,31 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { PromptEditor } from "@/components/ui/prompt-editor"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
 import { toast } from "@viglet/viglet-design-system"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
-import { SystemPromptFinalPrompt } from "./system-prompt-final-prompt"
-import { SystemPromptLivePreview } from "./system-prompt-live-preview"
 import { SystemPromptWarningsPanel } from "./system-prompt-warnings-panel"
 
 const urlBase = ROUTES.AI_AGENT_INSTANCE
 
 interface Props {
   value: TurAIAgent;
+  /**
+   * Which shell the form lives in. In "bento" the console `StickyPageHeader`
+   * is dropped (the bento page supplies its own `BentoHero`) and Save/Cancel
+   * render as a footer action row instead.
+   */
+  chrome?: "console" | "bento";
+  /** Route base for the Cancel navigation — defaults to the console list. */
+  baseRoute?: string;
 }
 
 /**
@@ -68,14 +74,24 @@ function buildSystemPromptFieldInstruction(spec: {
   ].join("\n");
 }
 
-export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
+export const AIAgentSystemPromptForm: React.FC<Props> = ({ value, chrome = "console", baseRoute = urlBase }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const updateMutation = useUpdateAiAgent();
-  // Which chat flow governs the preview (undefined → backend default = first
-  // enabled flow). Drives both the segment breakdown and the final prompt.
-  const [flowId, setFlowId] = useState<string | undefined>(undefined);
-  const { data: preview, isLoading: previewLoading } = useSystemPromptPreview(value.id, flowId);
+  const isBento = chrome === "bento";
+
+  const actions = (
+    <>
+      <GradientButton type="submit" size="sm">
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(baseRoute)}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
 
   // Whole agent in form state (defaultValues) so a save round-trips every
   // field the update endpoint reads — we only render the systemPrompt field.
@@ -106,87 +122,91 @@ export const AIAgentSystemPromptForm: React.FC<Props> = ({ value }) => {
     <div className="space-y-4 px-4 lg:px-6 pb-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <StickyPageHeader>
-            <StickyPageHeader.Title
-              icon={IconFileText}
-              feature={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
-              description={t("aiAgent.systemPrompt.description", {
-                defaultValue: "The behavioral contract sent to the model on every turn.",
-              })}
-            />
-            <StickyPageHeader.Actions>
-              <GradientButton type="submit" size="sm">
-                <IconDeviceFloppy className="size-4" />
-                {t("forms.formActions.saveChanges")}
-              </GradientButton>
-              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                <IconX className="size-4" />
-                {t("forms.formActions.cancel")}
-              </GradientButton>
-            </StickyPageHeader.Actions>
-          </StickyPageHeader>
-
-          <SectionCard variant="violet">
-            <SectionCard.Header
-              icon={IconFileText}
-              title={t("forms.agentSettings.systemPrompt")}
-              description={t("forms.agentSettings.systemPromptDesc")}
-            />
-            <SectionCard.Content>
-              <FormField
-                control={form.control}
-                name="systemPrompt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
-                    <FormDescription>{t("forms.agentSettings.instructionDesc")}</FormDescription>
-                    <FormControl>
-                      <PromptEditor
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        fieldRef={field.ref}
-                        placeholder={t("forms.agentSettings.instructionPlaceholder")}
-                        hint={t("forms.agentSettings.instructionHint")}
-                        metaPrompt={{
-                          brief: form.watch("systemPromptMetaPrompt") ?? "",
-                          onBriefChange: (v) =>
-                            form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
-                          fieldInstruction: buildSystemPromptFieldInstruction({
-                            title: form.watch("title"),
-                            agentDescription: form.watch("description"),
-                          }),
-                          tone: "violet",
-                          triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
-                          title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
-                          description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
-                          placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
-                          hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
-                          generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          {isBento ? (
+            <div className="flex items-center justify-end gap-3">{actions}</div>
+          ) : (
+            <StickyPageHeader>
+              <StickyPageHeader.Title
+                icon={IconFileText}
+                feature={t("aiAgent.systemPrompt.title", { defaultValue: "System Prompt" })}
+                description={t("aiAgent.systemPrompt.description", {
+                  defaultValue: "The behavioral contract sent to the model on every turn.",
+                })}
               />
-            </SectionCard.Content>
-          </SectionCard>
+              <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+            </StickyPageHeader>
+          )}
+
+          <Tabs defaultValue="editor" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="editor">
+                {t("aiAgent.systemPrompt.tabs.editor", { defaultValue: "Editor" })}
+              </TabsTrigger>
+              <TabsTrigger value="conflict">
+                {t("aiAgent.systemPrompt.tabs.conflictCheck", { defaultValue: "Conflict check" })}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="editor" className="space-y-4">
+              <SectionCard variant="violet">
+                <SectionCard.Header
+                  icon={IconFileText}
+                  title={t("forms.agentSettings.systemPrompt")}
+                  description={t("forms.agentSettings.systemPromptDesc")}
+                />
+                <SectionCard.Content>
+                  <FormField
+                    control={form.control}
+                    name="systemPrompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
+                        <FormDescription>{t("forms.agentSettings.instructionDesc")}</FormDescription>
+                        <FormControl>
+                          <PromptEditor
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            fieldRef={field.ref}
+                            placeholder={t("forms.agentSettings.instructionPlaceholder")}
+                            hint={t("forms.agentSettings.instructionHint")}
+                            metaPrompt={{
+                              brief: form.watch("systemPromptMetaPrompt") ?? "",
+                              onBriefChange: (v) =>
+                                form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
+                              fieldInstruction: buildSystemPromptFieldInstruction({
+                                title: form.watch("title"),
+                                agentDescription: form.watch("description"),
+                              }),
+                              tone: "violet",
+                              triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
+                              title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
+                              description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
+                              placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
+                              hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
+                              generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </SectionCard.Content>
+              </SectionCard>
+            </TabsContent>
+
+            {/* Conflict validation reflects the SAVED configuration — it
+                refetches automatically after a save (the update mutation
+                invalidates the ai-agents query tree). Its buttons are
+                type="button", so living inside the <form> never triggers an
+                accidental submit. The segment-by-segment Live Preview moved to
+                its own page under the agent's "Chat" sidebar group. */}
+            <TabsContent value="conflict" className="space-y-4">
+              <SystemPromptWarningsPanel agentId={value.id} />
+            </TabsContent>
+          </Tabs>
         </form>
       </Form>
-
-      {/* Live Preview (segment breakdown), conflict validation, and the final
-          assembled prompt reflect the SAVED configuration — they refetch
-          automatically after a save (the update mutation invalidates the
-          ai-agents query tree). The final prompt is intentionally last: it's
-          the bottom-line "this is what the model sees". */}
-      <SystemPromptLivePreview
-        preview={preview}
-        isLoading={previewLoading}
-        flowId={flowId}
-        onFlowChange={setFlowId}
-      />
-      <SystemPromptWarningsPanel agentId={value.id} />
-      <SystemPromptFinalPrompt preview={preview} isLoading={previewLoading} />
     </div>
   );
 };

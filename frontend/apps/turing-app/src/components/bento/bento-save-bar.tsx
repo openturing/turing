@@ -2,6 +2,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { BentoStatusMarker } from "./bento-status-marker";
 
 export interface BentoSaveBarProps {
   /** Headline shown alongside the badges. Renders only when provided. */
@@ -12,6 +13,10 @@ export interface BentoSaveBarProps {
   onCancel?: () => void;
   loading?: boolean;
   disabled?: boolean;
+  /** Show the amber "unsaved changes" marker next to the title. */
+  dirty?: boolean;
+  /** Show the red "title required" marker (takes precedence over `dirty`). */
+  titleMissing?: boolean;
 }
 
 export interface BentoSaveBarBadgeProps {
@@ -36,6 +41,8 @@ function BentoSaveBar({
   onCancel,
   loading,
   disabled,
+  dirty,
+  titleMissing,
 }: Readonly<BentoSaveBarProps>) {
   const { t } = useTranslation();
 
@@ -47,6 +54,7 @@ function BentoSaveBar({
             {title}
           </h3>
         )}
+        <BentoStatusMarker titleMissing={titleMissing} dirty={dirty} />
         {badges && <div className="flex shrink-0 items-center gap-1.5">{badges}</div>}
       </div>
       <div className="flex shrink-0 gap-2">

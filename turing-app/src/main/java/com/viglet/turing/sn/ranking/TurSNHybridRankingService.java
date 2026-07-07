@@ -120,8 +120,21 @@ public class TurSNHybridRankingService {
         if (!mode.isHybrid()) {
             return false;
         }
-        return StringUtils.hasText(globalSettingsService.getDefaultEmbeddingModelId())
+        return StringUtils.hasText(resolveEmbeddingModelId(turSNSite))
                 && StringUtils.hasText(globalSettingsService.getDefaultEmbeddingStoreId());
+    }
+
+    /**
+     * T513 / §XXVIII.9 — the embedding model this site indexes and queries
+     * through: its per-site {@link TurSNSiteGenAi#getEmbeddingModelId() domain
+     * override} when set, otherwise the Global Settings platform default.
+     */
+    private String resolveEmbeddingModelId(TurSNSite turSNSite) {
+        TurSNSiteGenAi genAi = turSNSite.getTurSNSiteGenAi();
+        if (genAi != null && StringUtils.hasText(genAi.getEmbeddingModelId())) {
+            return genAi.getEmbeddingModelId();
+        }
+        return globalSettingsService.getDefaultEmbeddingModelId();
     }
 
     private static TurSNRankingMode modeOf(TurSNSite turSNSite) {
@@ -319,8 +332,11 @@ public class TurSNHybridRankingService {
      */
     private List<String> rerank(TurRagRerankStrategyType strategy, String query,
             List<Document> fused, Map<String, TurSEResult> byId, List<String> fusedOrder) {
+        // T517 — the LLM reranker rides the REASONING model lane (falls back to
+        // the default LLM when the lane is unbound).
         ChatModel chatModel = strategy == TurRagRerankStrategyType.LLM
-                ? defaultChatModelResolver.resolve().orElse(null)
+                ? defaultChatModelResolver.resolve(
+                        com.viglet.turing.system.lane.TurModelStage.RERANK).orElse(null)
                 : null;
         List<Document> candidates = new ArrayList<>(fused.size());
         for (Document d : fused) {
@@ -494,7 +510,7 @@ public class TurSNHybridRankingService {
     }
 
     private RagInfrastructure infraFor(TurSNSite turSNSite) {
-        String embeddingModelId = globalSettingsService.getDefaultEmbeddingModelId();
+        String embeddingModelId = resolveEmbeddingModelId(turSNSite);
         String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
         if (!StringUtils.hasText(embeddingModelId) || !StringUtils.hasText(storeId)) {
             return null;

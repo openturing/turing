@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # --- T508 / §XXVIII.4: Cohere full LLM vendor (Command chat + Embed v4) ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent.
+  - changeSet:
+      id: v2026.3.1.80-01-add-cohere-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'COHERE'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: COHERE
+              - column:
+                  name: description
+                  value: "Cohere — Command chat + Embed v4 (OpenAI-compatible endpoint)"
+              - column:
+                  name: plugin
+                  value: cohere
+              - column:
+                  name: title
+                  value: "Cohere"
+              - column:
+                  name: website
+                  value: "https://cohere.com"

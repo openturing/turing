@@ -13,7 +13,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,7 +65,7 @@ public class TurTenant implements Serializable {
     public static final String DEFAULT_TENANT_ID = "DEFAULT";
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 

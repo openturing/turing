@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,7 +51,7 @@ public class TurRole implements Serializable {
 
 	@Setter
 	@Id
-	@TurAssignableUuidGenerator
+	@VigletAssignableUuidGenerator
 	@GeneratedValue(generator = "UUID")
 
 	@Column(updatable = false, nullable = false)

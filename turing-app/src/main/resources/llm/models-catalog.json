@@ -1,0 +1,87 @@
+{
+  "_comment": "Curated fallback model catalog for the LLM-instance model picker (T577). Keyed by provider plugin type (lower-case, as resolved by TurGenAiLlmProviderFactory). Used when a live vendor query returns nothing (no API key, offline, or a provider without a list endpoint). The combobox is editable, so an id not listed here can still be typed. Keep current on redeploy.",
+  "openai": [
+    { "id": "gpt-4.1", "label": "GPT-4.1" },
+    { "id": "gpt-4.1-mini", "label": "GPT-4.1 mini" },
+    { "id": "gpt-4.1-nano", "label": "GPT-4.1 nano" },
+    { "id": "gpt-4o", "label": "GPT-4o" },
+    { "id": "gpt-4o-mini", "label": "GPT-4o mini" },
+    { "id": "o3", "label": "o3" },
+    { "id": "o4-mini", "label": "o4-mini" },
+    { "id": "text-embedding-3-small", "label": "text-embedding-3-small (embedding)" },
+    { "id": "text-embedding-3-large", "label": "text-embedding-3-large (embedding)" }
+  ],
+  "anthropic": [
+    { "id": "claude-opus-4-1-20250805", "label": "Claude Opus 4.1" },
+    { "id": "claude-sonnet-4-5-20250929", "label": "Claude Sonnet 4.5" },
+    { "id": "claude-sonnet-4-20250514", "label": "Claude Sonnet 4" },
+    { "id": "claude-opus-4-20250514", "label": "Claude Opus 4" },
+    { "id": "claude-3-7-sonnet-20250219", "label": "Claude Sonnet 3.7" },
+    { "id": "claude-3-5-haiku-20241022", "label": "Claude Haiku 3.5" }
+  ],
+  "gemini": [
+    { "id": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" },
+    { "id": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
+    { "id": "gemini-2.0-flash", "label": "Gemini 2.0 Flash" },
+    { "id": "gemini-2.0-flash-lite", "label": "Gemini 2.0 Flash-Lite" },
+    { "id": "gemini-1.5-pro", "label": "Gemini 1.5 Pro" },
+    { "id": "gemini-1.5-flash", "label": "Gemini 1.5 Flash" },
+    { "id": "gemini-embedding-001", "label": "gemini-embedding-001 (embedding)" },
+    { "id": "text-embedding-004", "label": "text-embedding-004 (embedding)" }
+  ],
+  "gemini-openai": [
+    { "id": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" },
+    { "id": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
+    { "id": "gemini-2.0-flash", "label": "Gemini 2.0 Flash" },
+    { "id": "gemini-1.5-pro", "label": "Gemini 1.5 Pro" },
+    { "id": "gemini-1.5-flash", "label": "Gemini 1.5 Flash" }
+  ],
+  "ollama": [
+    { "id": "llama3.2", "label": "Llama 3.2" },
+    { "id": "llama3.1", "label": "Llama 3.1" },
+    { "id": "mistral", "label": "Mistral" },
+    { "id": "qwen2.5", "label": "Qwen 2.5" },
+    { "id": "gemma2", "label": "Gemma 2" },
+    { "id": "phi3", "label": "Phi-3" },
+    { "id": "nomic-embed-text", "label": "nomic-embed-text (embedding)" }
+  ],
+  "openai-compatible": [],
+  "bedrock": [
+    { "id": "anthropic.claude-3-5-sonnet-20241022-v2:0", "label": "Claude 3.5 Sonnet v2" },
+    { "id": "anthropic.claude-3-5-haiku-20241022-v1:0", "label": "Claude 3.5 Haiku" },
+    { "id": "amazon.titan-embed-text-v2:0", "label": "Titan Text Embeddings v2 (embedding)" },
+    { "id": "meta.llama3-1-70b-instruct-v1:0", "label": "Llama 3.1 70B Instruct" },
+    { "id": "mistral.mistral-large-2407-v1:0", "label": "Mistral Large" }
+  ],
+  "cohere": [
+    { "id": "command-a-03-2025", "label": "Command A" },
+    { "id": "command-r-plus", "label": "Command R+" },
+    { "id": "command-r", "label": "Command R" },
+    { "id": "embed-v4.0", "label": "Embed v4 (embedding)" },
+    { "id": "embed-multilingual-v3.0", "label": "Embed Multilingual v3 (embedding)" },
+    { "id": "rerank-v3.5", "label": "Rerank v3.5 (rerank)" }
+  ],
+  "mistral": [
+    { "id": "mistral-large-latest", "label": "Mistral Large" },
+    { "id": "mistral-small-latest", "label": "Mistral Small" },
+    { "id": "open-mistral-nemo", "label": "Mistral Nemo" },
+    { "id": "codestral-latest", "label": "Codestral" },
+    { "id": "mistral-embed", "label": "Mistral Embed (embedding)" }
+  ],
+  "voyage": [
+    { "id": "voyage-3-large", "label": "voyage-3-large (embedding)" },
+    { "id": "voyage-3", "label": "voyage-3 (embedding)" },
+    { "id": "voyage-3-lite", "label": "voyage-3-lite (embedding)" },
+    { "id": "voyage-code-3", "label": "voyage-code-3 (embedding)" },
+    { "id": "voyage-multimodal-3", "label": "voyage-multimodal-3 (multimodal embedding)" },
+    { "id": "rerank-2", "label": "rerank-2 (rerank)" },
+    { "id": "rerank-2-lite", "label": "rerank-2-lite (rerank)" }
+  ],
+  "vertex-ai": [
+    { "id": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" },
+    { "id": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
+    { "id": "gemini-2.0-flash", "label": "Gemini 2.0 Flash" },
+    { "id": "gemini-1.5-pro", "label": "Gemini 1.5 Pro" },
+    { "id": "text-embedding-005", "label": "text-embedding-005 (embedding)" }
+  ]
+}

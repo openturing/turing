@@ -28,7 +28,7 @@ import java.util.Set;
 import org.hibernate.annotations.Fetch;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -56,7 +56,7 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	@Setter
 	@Id
-	@TurAssignableUuidGenerator
+	@VigletAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

@@ -21,6 +21,7 @@ import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurAgentChatRequest;
+import com.viglet.turing.genai.TurChatProviderErrorMapper;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.nativeapi.TurNativeChatExecutor;
 import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
@@ -73,6 +74,7 @@ public class TurAIAgentChatAPI {
     private final TurAgentWorkspace agentWorkspace;
     private final TurWorkspaceEventBus workspaceEventBus;
     private final TurChatSlotSseRegistry slotSseRegistry;
+    private final com.viglet.turing.genai.safety.TurModerationService moderationService;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentRepositoryPort turAIAgentRepositoryPort,
@@ -87,7 +89,8 @@ public class TurAIAgentChatAPI {
             TurCodeInterpreterUrlSigner urlSigner,
             TurAgentWorkspace agentWorkspace,
             TurWorkspaceEventBus workspaceEventBus,
-            TurChatSlotSseRegistry slotSseRegistry) {
+            TurChatSlotSseRegistry slotSseRegistry,
+            com.viglet.turing.genai.safety.TurModerationService moderationService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -102,6 +105,7 @@ public class TurAIAgentChatAPI {
         this.agentWorkspace = agentWorkspace;
         this.workspaceEventBus = workspaceEventBus;
         this.slotSseRegistry = slotSseRegistry;
+        this.moderationService = moderationService;
     }
 
     public record AgentChatRequest(
@@ -194,26 +198,14 @@ public class TurAIAgentChatAPI {
         log.info("[AgentChat] Agent '{}' received request with {} messages, {} files, LLM: {}",
                 agent.getTitle(), request.messages().size(), fileCount, turLLMInstance.getTitle());
 
-        // Cookie-binding for /api/v2/code-interpreter/ signed URLs. Path-
-        // scoped so the cookie never travels to unrelated endpoints, and
-        // HttpOnly so JavaScript can't read it (defense against XSS-based
-        // cookie theft). SameSite=Lax keeps the cookie attached on top-
-        // level navigations (the visitor clicking a download link in the
-        // chat transcript) while blocking it on cross-origin AJAX from
-        // a different site — exactly the boundary we want.
-        if (urlSigner.isCookieBound() && request.conversationId() != null
-                && !request.conversationId().isBlank()) {
-            Cookie cookie = new Cookie(TurCodeInterpreterUrlSigner.CONV_COOKIE,
-                    request.conversationId());
-            cookie.setHttpOnly(true);
-            // Secure only when the (possibly proxy-forwarded) request arrived over
-            // HTTPS, so the cookie still works on plain-HTTP/dev deployments while
-            // being TLS-only in production.
-            cookie.setSecure(httpRequest.isSecure());
-            cookie.setPath("/api/v2/code-interpreter");
-            cookie.setMaxAge((int) Math.min(Integer.MAX_VALUE, urlSigner.getTtlSeconds()));
-            cookie.setAttribute("SameSite", "Lax");
-            response.addCookie(cookie);
+        bindCodeInterpreterCookie(request, httpRequest, response);
+
+        // T182 / §X.14.b — omni-moderation pre-filter on the user's query. When
+        // the latest user turn is flagged, short-circuit with a refusal SSE turn
+        // instead of calling the LLM. Opt-in + fail-open (see TurModerationService).
+        Flux<ChatResponse> moderationRefusal = moderationRefusalIfFlagged(agent, request, httpRequest);
+        if (moderationRefusal != null) {
+            return moderationRefusal;
         }
 
         // All the tool resolution + chat model + streaming logic is centralized
@@ -232,20 +224,106 @@ public class TurAIAgentChatAPI {
         // here and falls through to the unchanged Spring AI executor below.
         boolean plainTurn = (files == null || files.isEmpty())
                 && (request.flowId() == null || request.flowId().isBlank());
+        Flux<ChatResponse> stream = null;
         if (plainTurn) {
             var nativeStream = nativeChatExecutor.tryExecute(agent, turLLMInstance, mapped, null,
                     request.conversationId());
             if (nativeStream.isPresent()) {
-                return nativeStream.get()
+                stream = nativeStream.get()
                         .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
             }
         }
+        if (stream == null) {
+            stream = agentChatExecutor.execute(
+                            new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
+                                    request.conversationId(), request.flowId(), files),
+                            request.forcedVariant(), request.selectedSkillId())
+                    .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
+        }
 
-        return agentChatExecutor.execute(
-                        new TurAgentChatRequest(agent, turLLMInstance, mapped, null,
-                                request.conversationId(), request.flowId(), files),
-                        request.forcedVariant(), request.selectedSkillId())
-                .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
+        // The response is already streaming as text/event-stream, so the global
+        // exception advice can no longer write a JSON ProblemDetail body when a
+        // provider error fires mid-stream — the stream just breaks and the UI
+        // renders a blank assistant reply. Convert the error to a readable
+        // assistant turn so the visitor sees *why* the turn failed (e.g. an
+        // OpenAI "organization must be verified" 403) instead of nothing.
+        String agentTitle = agent.getTitle();
+        java.util.Locale locale = httpRequest.getLocale();
+        return stream.onErrorResume(err -> {
+            log.error("[AgentChat] Agent '{}' stream failed: {}", agentTitle, err.getMessage(), err);
+            return Flux.just(new ChatResponse("assistant",
+                    TurChatProviderErrorMapper.toUserMessage(err, locale), "token"));
+        });
+    }
+
+    /**
+     * Cookie-binding for {@code /api/v2/code-interpreter/} signed URLs. Path-
+     * scoped so the cookie never travels to unrelated endpoints, and HttpOnly so
+     * JavaScript can't read it (defense against XSS-based cookie theft).
+     * SameSite=Lax keeps the cookie attached on top-level navigations (the
+     * visitor clicking a download link in the chat transcript) while blocking it
+     * on cross-origin AJAX from a different site — exactly the boundary we want.
+     */
+    private void bindCodeInterpreterCookie(AgentChatRequest request,
+            HttpServletRequest httpRequest, HttpServletResponse response) {
+        if (!urlSigner.isCookieBound() || request.conversationId() == null
+                || request.conversationId().isBlank()) {
+            return;
+        }
+        Cookie cookie = new Cookie(TurCodeInterpreterUrlSigner.CONV_COOKIE, request.conversationId());
+        cookie.setHttpOnly(true);
+        // Secure only when the (possibly proxy-forwarded) request arrived over
+        // HTTPS, so the cookie still works on plain-HTTP/dev deployments while
+        // being TLS-only in production.
+        cookie.setSecure(httpRequest.isSecure());
+        cookie.setPath("/api/v2/code-interpreter");
+        cookie.setMaxAge((int) Math.min(Integer.MAX_VALUE, urlSigner.getTtlSeconds()));
+        cookie.setAttribute("SameSite", "Lax");
+        response.addCookie(cookie);
+    }
+
+    /**
+     * T182 / §X.14.b — when moderation is enabled and the latest user message is
+     * flagged, return a single refusal SSE turn; otherwise {@code null} so the
+     * caller proceeds with the normal chat pipeline.
+     */
+    private Flux<ChatResponse> moderationRefusalIfFlagged(TurAIAgent agent,
+            AgentChatRequest request, HttpServletRequest httpRequest) {
+        if (!moderationService.isEnabled()) {
+            return null;
+        }
+        var verdict = moderationService.moderate(lastUserMessage(request.messages()));
+        if (!verdict.flagged()) {
+            return null;
+        }
+        log.info("[AgentChat] Agent '{}' query blocked by moderation (categories: {})",
+                agent.getTitle(), verdict.categories());
+        return Flux.just(new ChatResponse("assistant",
+                moderationRefusalMessage(httpRequest.getLocale())));
+    }
+
+    /** The most recent {@code user}-role message in the request, or empty string. */
+    private static String lastUserMessage(List<ChatMessageItem> messages) {
+        if (messages == null) {
+            return "";
+        }
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatMessageItem item = messages.get(i);
+            if (item != null && "user".equalsIgnoreCase(item.role()) && item.content() != null) {
+                return item.content();
+            }
+        }
+        return "";
+    }
+
+    /** A localized refusal shown when a query is blocked by moderation (pt/es/en). */
+    private static String moderationRefusalMessage(java.util.Locale locale) {
+        String lang = locale == null ? "en" : locale.getLanguage();
+        return switch (lang) {
+            case "pt" -> "Não posso ajudar com essa solicitação.";
+            case "es" -> "No puedo ayudar con esa solicitud.";
+            default -> "I can't help with that request.";
+        };
     }
 
     /**

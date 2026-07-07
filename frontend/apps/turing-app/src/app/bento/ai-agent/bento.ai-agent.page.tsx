@@ -6,10 +6,16 @@ import { LoadProvider } from "@/components/loading-provider";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { toast } from "@viglet/viglet-design-system";
 import {
+  IconAdjustments,
+  IconAlertTriangle,
   IconBraces,
   IconBulb,
+  IconChartBar,
   IconCpu2,
+  IconEye,
+  IconFileText,
   IconHistory,
+  IconLayoutList,
   IconRobot,
   IconServer2,
   IconSettings,
@@ -17,12 +23,12 @@ import {
   IconSparkles,
   IconTool,
   IconTrash,
+  IconUserCircle,
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-
-const ADMIN_INSTANCE = ROUTES.AI_AGENT_INSTANCE;
+import { AiAgentLaunchBar } from "./ai-agent.launch.bar";
 
 export default function BentoAIAgentPage() {
   const { id } = useParams() as { id: string };
@@ -47,7 +53,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const enabled = agent.enabled === 1;
-  const adminBase = `${ADMIN_INSTANCE}/${agent.id}`;
+  const bentoBase = `${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agent.id}`;
 
   const updateMutation = useUpdateAiAgent();
   const deleteMutation = useDeleteAiAgent();
@@ -97,6 +103,8 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
     mcp: agent.mcpServers?.length ?? 0,
     custom: agent.customTools?.length ?? 0,
     nativeTools: agent.nativeTools ? agent.nativeTools.split(",").filter(Boolean).length : 0,
+    personas: agent.personas?.length ?? 0,
+    capabilities: agent.nativeCapabilities ? agent.nativeCapabilities.split(",").filter(Boolean).length : 0,
   }), [agent]);
 
   return (
@@ -181,14 +189,16 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         trigger={<span className="hidden" aria-hidden />}
       />
 
+      <AiAgentLaunchBar agent={agent} />
+
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         {/* HERO: System prompt — large 2x2 frosted tile */}
         <BentoTile
-          to={`${adminBase}/settings`}
-          icon={IconSettings}
+          to={`${bentoBase}/system-prompt`}
+          icon={IconFileText}
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-3 lg:row-span-2"
-          eyebrow={t("aiAgent.settings.title")}
+          eyebrow={t("aiAgent.nav.systemPrompt")}
           title={agent.systemPrompt ? "System prompt" : "Set up your system prompt"}
         >
           <p className="line-clamp-5 text-sm text-muted-foreground">
@@ -196,13 +206,13 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           </p>
         </BentoTile>
 
-        {/* RAG state */}
+        {/* Settings + RAG state */}
         <BentoTile
-          to={`${adminBase}/settings`}
-          icon={IconSparkles}
+          to={`${bentoBase}/settings`}
+          icon={IconSettings}
           tone="indigo"
           span="col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-3 lg:row-span-1"
-          eyebrow="RAG"
+          eyebrow={t("aiAgent.settings.title")}
           title={agent.ragEnabled ? "Retrieval augmented" : "RAG disabled"}
         >
           <p className="text-sm text-muted-foreground">
@@ -213,7 +223,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoCountTile
-          to={`${adminBase}/llm`}
+          to={`${bentoBase}/llm`}
           icon={IconCpu2}
           tone="violet"
           label={t("aiAgent.nav.languageModels")}
@@ -221,7 +231,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1 lg:col-span-1 lg:row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/tools`}
+          to={`${bentoBase}/tools`}
           icon={IconTool}
           tone="emerald"
           label={t("aiAgent.nav.nativeTools")}
@@ -229,7 +239,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/mcp`}
+          to={`${bentoBase}/mcp`}
           icon={IconServer2}
           tone="amber"
           label={t("aiAgent.nav.mcpServers")}
@@ -237,16 +247,48 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
           span="col-span-1 row-span-1"
         />
         <BentoCountTile
-          to={`${adminBase}/custom-tool`}
+          to={`${bentoBase}/custom-tool`}
           icon={IconBraces}
           tone="rose"
           label={t("aiAgent.nav.customTools")}
           count={counts.custom}
           span="col-span-1 row-span-1"
         />
+        <BentoCountTile
+          to={`${bentoBase}/persona`}
+          icon={IconUserCircle}
+          tone="violet"
+          label={t("aiAgent.nav.personas")}
+          count={counts.personas}
+          span="col-span-1 row-span-1"
+        />
+        <BentoCountTile
+          to={`${bentoBase}/capabilities`}
+          icon={IconSparkles}
+          tone="blue"
+          label={t("aiAgent.nav.capabilities")}
+          count={counts.capabilities}
+          span="col-span-1 row-span-1"
+        />
+        <BentoTile
+          to={`${bentoBase}/request-options`}
+          icon={IconAdjustments}
+          tone="slate"
+          span="col-span-1 row-span-1"
+          eyebrow={t("aiAgent.settings.title")}
+          title={t("aiAgent.nav.requestOptions")}
+        />
+        <BentoTile
+          to={`${bentoBase}/slot`}
+          icon={IconLayoutList}
+          tone="blue"
+          span="col-span-1 row-span-1"
+          eyebrow={t("aiAgent.nav.chat")}
+          title={t("aiAgent.nav.slots")}
+        />
 
         <BentoTile
-          to={`${adminBase}/intent`}
+          to={`${bentoBase}/intent`}
           icon={IconBulb}
           tone="amber"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
@@ -259,7 +301,7 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoTile
-          to={`${adminBase}/chat-flow`}
+          to={`${bentoBase}/chat-flow`}
           icon={IconSitemap}
           tone="indigo"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
@@ -272,15 +314,54 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
         </BentoTile>
 
         <BentoTile
-          to={`${adminBase}/history`}
+          to={`${bentoBase}/history`}
           icon={IconHistory}
           tone="slate"
           span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
-          eyebrow={t("aiAgent.nav.chat")}
+          eyebrow={t("aiAgent.nav.analysis")}
           title={t("aiAgent.nav.history")}
         >
           <p className="text-sm text-muted-foreground">
             Past conversations grouped by completed flow runs.
+          </p>
+        </BentoTile>
+
+        <BentoTile
+          to={`${bentoBase}/live-preview`}
+          icon={IconEye}
+          tone="indigo"
+          span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
+          eyebrow={t("aiAgent.nav.analysis")}
+          title={t("aiAgent.nav.livePreview")}
+        >
+          <p className="text-sm text-muted-foreground">
+            The assembled system message for a previewed turn, broken down by origin.
+          </p>
+        </BentoTile>
+
+        <BentoTile
+          to={`${bentoBase}/trigger-conflicts`}
+          icon={IconAlertTriangle}
+          tone="amber"
+          span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
+          eyebrow={t("aiAgent.nav.analysis")}
+          title={t("aiAgent.nav.triggerConflicts")}
+        >
+          <p className="text-sm text-muted-foreground">
+            Chat flows whose trigger descriptions overlap enough that the router may swing between them.
+          </p>
+        </BentoTile>
+
+        <BentoTile
+          to={`${bentoBase}/analytics-intent`}
+          icon={IconChartBar}
+          tone="blue"
+          span="col-span-2 row-span-1 lg:col-span-2 lg:row-span-1"
+          eyebrow={t("aiAgent.nav.analysis")}
+          title={t("aiAgent.nav.analyticsIntent")}
+        >
+          <p className="text-sm text-muted-foreground">
+            The per-agent analytics intent catalog used by the MLT intent classifier.
           </p>
         </BentoTile>
       </div>
@@ -298,7 +379,7 @@ function NewAgentBento() {
       </div>
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         <BentoTile
-          to={`${ADMIN_INSTANCE}/new/settings`}
+          to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/new/settings`}
           icon={IconSettings}
           tone="blue"
           span="col-span-2 row-span-2 md:col-span-4 md:row-span-2"

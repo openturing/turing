@@ -4,6 +4,7 @@ import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
 import com.viglet.turing.genai.TurRagUtils;
+import com.viglet.turing.genai.ocr.TurMistralOcrService;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
 import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
 import com.viglet.turing.service.storage.TurStorageService;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
@@ -38,6 +40,7 @@ public class TurAssetTrainingService {
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
     private final TurAssetTrainingRecordRepository trainingRecordRepository;
+    private final TurMistralOcrService mistralOcrService;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "asset-training");
@@ -51,11 +54,13 @@ public class TurAssetTrainingService {
     public TurAssetTrainingService(TurStorageService storageService,
                                     TurGlobalSettingsService globalSettingsService,
                                     TurRagContextBuilder ragContextBuilder,
-                                    TurAssetTrainingRecordRepository trainingRecordRepository) {
+                                    TurAssetTrainingRecordRepository trainingRecordRepository,
+                                    TurMistralOcrService mistralOcrService) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
+        this.mistralOcrService = mistralOcrService;
     }
 
     public TurAssetTrainingStatus getStatus() {
@@ -177,8 +182,17 @@ public class TurAssetTrainingService {
 
         log.info("[AssetTraining] Processing file: {} (type={}, size={})", objectName, file.contentType(), file.size());
 
+        byte[] fileBytes;
         try (InputStream is = storageService.downloadObject(objectName)) {
-            String text = TurFileUtils.parseDocument(is).orElse("");
+            fileBytes = is.readAllBytes();
+        }
+        {
+            String text = TurFileUtils.parseDocument(new ByteArrayInputStream(fileBytes)).orElse("");
+            // T515 / §XXVIII.11 — augment Tika with Mistral OCR for scanned PDFs /
+            // image-only docs Tika couldn't read. No-op (returns the Tika text)
+            // when OCR is disabled, the file isn't OCR-eligible, or Tika already
+            // got text — so the common text-document path is unchanged.
+            text = mistralOcrService.augment(text, fileBytes, file.contentType(), fileName);
             if (text.isBlank()) {
                 log.info("[AssetTraining] Skipped (no text extracted): {}", objectName);
                 infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
@@ -203,8 +217,14 @@ public class TurAssetTrainingService {
 
             log.info("[AssetTraining] Reindexing {} chunks for: {} (replaces previous embeddings)",
                     documents.size(), objectName);
-            ragContextBuilder.reindexByMetadata(infra, documents, OBJECT_NAME_FIELD, objectName);
-            log.info("[AssetTraining] Successfully stored {} chunks for: {}", documents.size(), objectName);
+            // T512 / §XXVIII.8 — when the configured embedding model is a
+            // contextualized model (voyage-context-3), embed all chunks of this
+            // document together so each vector carries the surrounding context;
+            // otherwise this is identical to reindexByMetadata (per-chunk embed).
+            boolean contextual = ragContextBuilder.reindexByMetadataContextual(
+                    infra, documents, OBJECT_NAME_FIELD, objectName);
+            log.info("[AssetTraining] Successfully stored {} chunks for: {} (contextual={})",
+                    documents.size(), objectName, contextual);
 
             // Upsert training record
             TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();

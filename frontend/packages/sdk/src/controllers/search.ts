@@ -3,8 +3,11 @@ import {
   fetchChat,
   fetchSearch,
   parseHrefToParams,
+  postClick,
   type SearchParams,
 } from "../api";
+import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../analytics";
+import { getOrCreateTurSession, TUR_SESSION_DEFAULT_COOKIE_NAME } from "../session";
 import { resolveDocuments, resolveGroups } from "../resolve";
 import { createStore, type Store } from "../store";
 import type {
@@ -56,13 +59,34 @@ export interface SearchController extends Store<SearchControllerState> {
   changeSort(sort: string): Promise<void>;
   /** Go to a specific page. */
   goToPage(page: number): Promise<void>;
+  /**
+   * T462 — record a result click. Mirrors `postClick` (server CTR) **and**
+   * emits `turing_search_result_click` in one call, so a host wires click
+   * tracking once and both the server analytics and GA4 funnel light up.
+   */
+  trackResultClick(documentId: string, position: number, term?: string): void;
+}
+
+export interface SearchControllerOptions {
+  /**
+   * T462 (Block Z) — canonical analytics bus. When set, the controller emits
+   * `turing_search` / `turing_search_no_results` / `turing_search_refined` and
+   * (via {@link SearchController.trackResultClick}) `turing_search_result_click`.
+   * The bus context is stamped with the `TUR_SESSION` id so a later chat lead
+   * stitches back to the originating search.
+   */
+  readonly analytics?: TuringAnalytics;
+  /** Cookie used for cross-surface session stitching. Defaults to `TUR_SESSION`. */
+  readonly sessionCookieName?: string;
 }
 
 export function createSearchController(
   client: TuringClient,
   config: TuringConfig,
   initialParams?: Partial<SearchParams>,
+  options: SearchControllerOptions = {},
 ): SearchController {
+  const { analytics, sessionCookieName = TUR_SESSION_DEFAULT_COOKIE_NAME } = options;
   const defaultParams: SearchParams = {
     q: "*",
     p: "1",
@@ -81,9 +105,35 @@ export function createSearchController(
     params: defaultParams,
   });
 
+  // T462 — stamp the cross-surface session id so search events stitch to a
+  // later chat lead (both key off the same `TUR_SESSION` cookie). Minting here
+  // means a search-first visitor's session is already established when chat
+  // starts. No-op (null id) outside a browser.
+  if (analytics) {
+    analytics.setContext({ site: config.site, sessionId: getOrCreateTurSession({ name: sessionCookieName }) ?? undefined });
+  }
+  // Last real (non-wildcard) query, for refinement detection.
+  let lastNonEmptyQuery: string | null = null;
+
   // Monotonic request id — the closure equivalent of `useRef(0)`. A late
   // response from a superseded request is dropped.
   let latestRequestId = 0;
+
+  /** Emits the canonical search events after a successful result set. */
+  function emitSearchEvents(query: string, resultCount: number): void {
+    if (!analytics || !query || query === "*") return;
+    if (lastNonEmptyQuery && lastNonEmptyQuery !== query) {
+      analytics.emit(TURING_ANALYTICS_EVENTS.searchRefined, {
+        from: lastNonEmptyQuery,
+        to: query,
+      });
+    }
+    analytics.emit(TURING_ANALYTICS_EVENTS.search, { query, results: resultCount });
+    if (resultCount === 0) {
+      analytics.emit(TURING_ANALYTICS_EVENTS.searchNoResults, { query });
+    }
+    lastNonEmptyQuery = query;
+  }
 
   async function executeSearch(searchParams: SearchParams): Promise<void> {
     const requestId = ++latestRequestId;
@@ -102,13 +152,19 @@ export function createSearchController(
 
       if (requestId !== latestRequestId) return;
 
+      const documents = resolveDocuments(searchResult);
       store.setState({
         data: searchResult,
         chat: chatResult,
-        documents: resolveDocuments(searchResult),
+        documents,
         groups: resolveGroups(searchResult),
         status: "success",
       });
+
+      // T462 — emit the search funnel events. `count` is the total hit count
+      // (across pages); fall back to the resolved page when absent.
+      const resultCount = searchResult?.queryContext?.count ?? documents.length;
+      emitSearchEvents(q, resultCount);
     } catch (err) {
       if (requestId !== latestRequestId) return;
       store.setState({
@@ -131,5 +187,21 @@ export function createSearchController(
     changeSort: (sort) => executeSearch({ ...store.getState().params, sort }),
     goToPage: (page) =>
       executeSearch({ ...store.getState().params, p: String(page) }),
+    trackResultClick: (documentId, position, term) => {
+      const params = store.getState().params;
+      const query = term ?? params.q ?? "";
+      // Server CTR (fire-and-forget; swallows its own errors).
+      void postClick(client, config.site, {
+        term: query,
+        documentId,
+        position,
+        locale: params._setlocale,
+      });
+      analytics?.emit(TURING_ANALYTICS_EVENTS.searchResultClick, {
+        query,
+        document_id: documentId,
+        position,
+      });
+    },
   };
 }

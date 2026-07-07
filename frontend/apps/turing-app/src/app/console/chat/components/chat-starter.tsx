@@ -4,7 +4,7 @@ import { IconMessageChatbot } from "@tabler/icons-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, LLM_STORAGE_KEY } from "../chat.types"
+import { CHAT_INITIAL_PROMPT_KEY, LLM_STORAGE_KEY } from "../chat.types"
 import { ChatInput } from "./chat-input"
 import { ChatSuggestions } from "./chat-suggestions"
 
@@ -19,6 +19,12 @@ interface ChatStarterProps {
   readonly agentId?: string
   /** Model label to show below the input */
   readonly modelLabel?: string
+  /**
+   * Base chat route to navigate to in navigate-mode. Defaults to the bento
+   * chat (`/bento/chat`); when {@link agentId} is set the starter appends
+   * `/agent/:agentId` for the deterministic agent-scoped URL (T580).
+   */
+  readonly chatRoute?: string
   /** Whether to show the icon and heading */
   readonly showHeader?: boolean
   /**
@@ -40,7 +46,7 @@ interface ChatStarterProps {
  * - Navigate mode (home page): stores prompt in sessionStorage and navigates to chat
  * - In-place mode (chat page): calls onSendInPlace directly
  */
-export function ChatStarter({ defaultLlmId, agentId, modelLabel, showHeader = true, onSendInPlace, attachments }: ChatStarterProps) {
+export function ChatStarter({ defaultLlmId, agentId, modelLabel, showHeader = true, onSendInPlace, attachments, chatRoute = ROUTES.BENTO_CHAT }: ChatStarterProps) {
   const [input, setInput] = useState("")
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -53,13 +59,10 @@ export function ChatStarter({ defaultLlmId, agentId, modelLabel, showHeader = tr
     if (defaultLlmId) {
       localStorage.setItem(LLM_STORAGE_KEY, defaultLlmId)
     }
-    if (agentId) {
-      sessionStorage.setItem(CHAT_INITIAL_AGENT_KEY, agentId)
-    } else {
-      sessionStorage.removeItem(CHAT_INITIAL_AGENT_KEY)
-    }
+    // T580 — the agent rides in the URL now (deterministic + shareable); only
+    // the one-shot auto-send prompt still hands off via sessionStorage.
     sessionStorage.setItem(CHAT_INITIAL_PROMPT_KEY, prompt)
-    navigate(ROUTES.CHAT_ROOT)
+    navigate(agentId ? `${ROUTES.BENTO_CHAT_AGENT}/${agentId}` : chatRoute)
   }
 
   function handleSend() {

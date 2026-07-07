@@ -51,10 +51,35 @@ turing:
     # the token's authorities. Default false keeps the T245 loopback-only dev
     # posture. A remote deployment sets require-auth=true + loopback-only=false.
     require-auth: false
+    # T146 — public consumption surface: when true (with require-auth=true), /mcp
+    # also accepts a Turing API key (TurDevToken) in the `Key` header, so external
+    # MCP clients (Claude Desktop, Cursor, OpenAI Responses) can use a static key.
+    # API-key principals are read-only; write tools still require an OAuth
+    # mcp:write scope. Default false: OAuth is the only accepted credential.
+    api-key-enabled: false
     # T253 — gated write/ingestion tools (index_document, deindex_document,
     # reindex_site). Default false: they are not even registered. When true they
     # appear but still require the mcp:write scope per call. Read-only by default.
     write-enabled: false
+  # E.8 / §IX.9 — observability interop (opt-in, fail-open trace exports). Lock in
+  # via capability, never via format: both are off by default and never disturb a
+  # chat turn when the backend is slow or unreachable.
+  # - spans (T129): emit the chat-pipeline stage timers as OpenTelemetry spans (via
+  #   the micrometer-tracing OTel bridge), exported to any OTLP backend when
+  #   OTEL_EXPORTER_OTLP_ENDPOINT is set. The LLM call already has its own span
+  #   (turing.llm.calls); timer metrics are unaffected either way.
+  # - langsmith (T128): mirror each completed chat turn as a run in a LangSmith
+  #   project (POST {api-url}/runs/batch). Metadata-only by design (model, provider,
+  #   tokens, cost, agent, stage) — no message content, to keep conversation PII out
+  #   of a third-party trace store. A blank api-key is a no-op.
+  observability:
+    spans:
+      enabled: false
+    langsmith:
+      enabled: false
+      api-key: ${LANGSMITH_API_KEY:}
+      api-url: https://api.smith.langchain.com
+      project: turing
   keycloak: false
   keycloak-admin-id:
   authentication:
@@ -103,6 +128,11 @@ turing:
       cpus: "1.0"               # CPU quota per execution
       pids-limit: 128           # max PIDs (fork-bomb containment)
       probe-timeout-seconds: 8  # timeout for the "Check Docker" availability probe
+      # T239 — opt-in extra isolation (both off by default; the baseline T80
+      # hardening of --cap-drop ALL + no-new-privileges + --read-only +
+      # Docker's built-in seccomp always applies):
+      runtime: ""               # OCI runtime; "runsc" = gVisor (must be installed on the host). Empty = host default (runc).
+      seccomp-profile: ""       # host path to a tighter seccomp profile JSON. Empty = Docker's built-in default profile. Ignored under gVisor.
     native:
       # Per-execution CPU/RAM caps for the NATIVE host-subprocess path (Linux
       # only). DOCKER mode already caps via the container runtime, so these
@@ -145,6 +175,14 @@ turing:
       cookie-name: TUR_SESSION
       # Cookie lifetime in seconds. Default: 30 days (2592000).
       ttl-seconds: 2592000
+    analytics:
+      # T237 — opt-in per-turn node-visit log. When true, the engine appends
+      # the node each turn settles on to the conversation's path on
+      # chat_flow_state and snapshots it onto chat_flow_submission at flow end,
+      # enabling the path-aware funnel's per-node reached / drop-off counts.
+      # Default false: no extra column writes, V1 funnel behaviour unchanged.
+      node-visit-log:
+        enabled: false
     # Note (post-T16): `turing.chat.inverted-harness.enabled` and
     # `turing.chat.judge-retry.enabled` no longer exist. The inverted
     # harness (advance before LLM, single LLM call, no regen) and the
@@ -289,7 +327,7 @@ spring:
       hibernate:
         "[globally_quoted_identifiers]": true
         "[format_sql]": false
-        "[enable_lazy_load_no_trans]": true
+        "[enable_lazy_load_no_trans]": false
         "[generate_statistics]": false
       "[jakarta.persistence.sharedCache.mode]": ALL
     hibernate:

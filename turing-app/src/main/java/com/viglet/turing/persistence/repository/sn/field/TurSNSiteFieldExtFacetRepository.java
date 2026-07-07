@@ -23,9 +23,6 @@ package com.viglet.turing.persistence.repository.sn.field;
 import java.util.Locale;
 import java.util.Set;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -33,21 +30,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 
 public interface TurSNSiteFieldExtFacetRepository extends JpaRepository<TurSNSiteFieldExtFacet, String> {
 
-    String FIND_BY_TUR_SN_SITE_FIELD_EXT = "turSNSiteFieldExtFacetFindByTurSNSiteFieldExt";
-    String FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE = "turSNSiteFieldExtFacetFindByTurSNSiteFieldExtAndLocale";
-
-    @Cacheable(FIND_BY_TUR_SN_SITE_FIELD_EXT)
     Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExt(TurSNSiteFieldExt turSNSiteFieldExt);
 
-    @Cacheable(FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE)
     Set<TurSNSiteFieldExtFacet> findByTurSNSiteFieldExtAndLocale(TurSNSiteFieldExt turSNSiteFieldExt, Locale locale);
-
-    @CacheEvict(value = { FIND_BY_TUR_SN_SITE_FIELD_EXT, FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE }, allEntries = true)
-    @NotNull
-    @Override
-    <S extends TurSNSiteFieldExtFacet> S save(@NotNull S entity);
-
-    @Override
-    @CacheEvict(value = { FIND_BY_TUR_SN_SITE_FIELD_EXT, FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE }, allEntries = true)
-    void delete(@NotNull TurSNSiteFieldExtFacet turSNSiteFieldExtFacet);
 }

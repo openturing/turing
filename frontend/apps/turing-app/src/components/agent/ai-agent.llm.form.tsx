@@ -9,12 +9,15 @@ import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
+import { BentoFormSection } from "../bento"
 
 interface Props {
   value: TurAIAgent;
+  /** Render inside the bento shell (frosted BentoFormSection) instead of the console SectionCard. */
+  chrome?: "console" | "bento";
 }
 
-export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
+export const AIAgentLlmForm: React.FC<Props> = ({ value, chrome = "console" }) => {
   const { t } = useTranslation();
   const { data: llmInstances = [] } = useLlmInstances();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,16 +68,26 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
     setSelectedIds(new Set(savedIds));
   }
 
+  const Section = ({ children }: { readonly children: React.ReactNode }) =>
+    chrome === "bento" ? (
+      <BentoFormSection icon={IconCpu2} tone="violet" title={t("forms.agentLlm.available")} description={t("forms.agentLlm.availableDesc")}>
+        {children}
+      </BentoFormSection>
+    ) : (
+      <SectionCard variant="violet">
+        <SectionCard.Header
+          icon={IconCpu2}
+          title={t("forms.agentLlm.available")}
+          description={t("forms.agentLlm.availableDesc")}
+        />
+        <SectionCard.Content>{children}</SectionCard.Content>
+      </SectionCard>
+    );
+
   return (
-    <div className="px-6">
-      <div className="space-y-4 py-8">
-        <SectionCard variant="violet">
-          <SectionCard.Header
-            icon={IconCpu2}
-            title={t("forms.agentLlm.available")}
-            description={t("forms.agentLlm.availableDesc")}
-          />
-          <SectionCard.Content>
+    <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "px-6"}>
+      <div className={chrome === "bento" ? "space-y-4 md:space-y-5" : "space-y-4 py-8"}>
+        <Section>
             {llmInstances.length > 0 ? (
               <div className="space-y-2">
                 {llmInstances.map((llm) => {
@@ -142,8 +155,7 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
                 </div>
               </div>
             )}
-          </SectionCard.Content>
-        </SectionCard>
+        </Section>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>

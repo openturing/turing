@@ -1,10 +1,38 @@
-import ReactMarkdown, { defaultUrlTransform, type Options } from "react-markdown";
+import ReactMarkdown, { type Options } from "react-markdown";
 
 /**
  * One-or-more leading `sandbox:` prefixes plus any following slashes.
  * Local copy of the SDK's resolver (see {@link resolveSandboxUrl}).
  */
 const SANDBOX_PREFIX = /^(?:\s*sandbox:\/*)+/i;
+
+/**
+ * XSS-safe URL sanitizer — a local re-implementation of `react-markdown`'s
+ * `defaultUrlTransform`. Inlined (instead of importing the named export) so this
+ * module carries only the DEFAULT `react-markdown` import: a barrel consumer
+ * that never renders markdown (so `react-markdown` — an OPTIONAL peer — isn't
+ * installed) still builds. A static named import of `defaultUrlTransform` fails
+ * the bundler's optional-peer stub with `MISSING_EXPORT`. Behaviour matches
+ * upstream: only safe protocols (or protocol-relative / fragment / query / path
+ * forms where no scheme precedes the first `/ ? #`) pass; anything else → "".
+ */
+const SAFE_URL_PROTOCOL = /^(https?|ircs?|mailto|xmpp)$/i;
+function sanitizeUrl(value: string): string {
+  const colon = value.indexOf(":");
+  const questionMark = value.indexOf("?");
+  const numberSign = value.indexOf("#");
+  const slash = value.indexOf("/");
+  if (
+    colon < 0 ||
+    (slash > -1 && colon > slash) ||
+    (questionMark > -1 && colon > questionMark) ||
+    (numberSign > -1 && colon > numberSign) ||
+    SAFE_URL_PROTOCOL.test(value.slice(0, colon))
+  ) {
+    return value;
+  }
+  return "";
+}
 
 function originOf(baseUrl: string): string {
   try {
@@ -78,9 +106,9 @@ export interface TuringMarkdownProps {
   encodeUrlSpaces?: boolean;
   /**
    * Override the URL transform entirely. Default resolves the `sandbox:` scheme
-   * (honouring {@link baseUrl}) and then applies `react-markdown`'s
-   * `defaultUrlTransform` for XSS-safe sanitization. Pass the SDK's
-   * `resolveSandboxUrl` to keep a single source of truth.
+   * (honouring {@link baseUrl}) and then applies the same XSS-safe sanitization
+   * as `react-markdown`'s `defaultUrlTransform` (see {@link sanitizeUrl}). Pass
+   * the SDK's `resolveSandboxUrl` to keep a single source of truth.
    */
   urlTransform?: (url: string) => string;
   /** When set, wraps the rendered markdown in a `<div>` with this class. */
@@ -114,7 +142,7 @@ export function TuringMarkdown({
   className,
 }: Readonly<TuringMarkdownProps>) {
   const transform =
-    urlTransform ?? ((url: string) => defaultUrlTransform(resolveSandboxUrl(url, baseUrl)));
+    urlTransform ?? ((url: string) => sanitizeUrl(resolveSandboxUrl(url, baseUrl)));
   const source = encodeUrlSpaces ? encodeMarkdownLinkUrls(children) : children;
   const rendered = (
     <ReactMarkdown

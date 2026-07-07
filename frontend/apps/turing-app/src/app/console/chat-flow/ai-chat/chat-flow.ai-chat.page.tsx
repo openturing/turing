@@ -49,7 +49,12 @@ const NODE_X_STEP = 260;
 const NODE_X_ORIGIN = 80;
 const NODE_Y_ORIGIN = 240;
 
-export default function ChatFlowAiChatPage() {
+interface ChatFlowAiChatPageProps {
+  /** Base route for navigation (defaults to the console AI agent list). */
+  readonly baseRoute?: string;
+}
+
+export default function ChatFlowAiChatPage({ baseRoute = ROUTES.AI_AGENT_INSTANCE }: ChatFlowAiChatPageProps = {}) {
   const { id: agentId } = useParams() as { id: string };
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -74,7 +79,7 @@ export default function ChatFlowAiChatPage() {
     applyState,
   });
 
-  const flowListUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
+  const flowListUrl = `${baseRoute}/${agentId}/chat-flow`;
 
   async function onSave() {
     if (!flow.name?.trim()) {
@@ -117,6 +122,7 @@ export default function ChatFlowAiChatPage() {
             subtitle={t("chatFlow.aiChat.panelSubtitle")}
             placeholder={t("chatFlow.aiChat.placeholder")}
             emptyState={t("chatFlow.aiChat.empty")}
+            enableVoice
           />
         }
       >

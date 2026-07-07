@@ -82,7 +82,7 @@ class TurRagBm25CoreAPITest {
                 mock(TurRagBm25CoreProvisioner.class),
                 mock(TurGlobalSettingsService.class),
                 mock(TurRagContextBuilder.class));
-        when(siteRepo.findByIdNoCache("missing")).thenReturn(Optional.empty());
+        when(siteRepo.findById("missing")).thenReturn(Optional.empty());
 
         ResponseEntity<List<TurRagBm25CoreAPI.CoreStatusDto>> res = api.listCores("missing");
 
@@ -99,7 +99,7 @@ class TurRagBm25CoreAPITest {
                 mock(TurRagBm25CoreProvisioner.class),
                 settings,
                 mock(TurRagContextBuilder.class));
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(new TurSNSite()));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(new TurSNSite()));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("");
 
         ResponseEntity<List<TurRagBm25CoreAPI.CoreStatusDto>> res = api.listCores("site");
@@ -119,7 +119,7 @@ class TurRagBm25CoreAPITest {
                 settings, builder);
 
         TurSNSite site = new TurSNSite();
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(site));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(site));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         // Locales: pt-BR (provisioned) + en-US (no row yet).
         when(localeRepo.findByTurSNSite(any(Sort.class), any())).thenReturn(List.of(
@@ -170,7 +170,7 @@ class TurRagBm25CoreAPITest {
                 mock(TurRagContextBuilder.class));
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(new TurSNSiteGenAi()); // no ragSeInstance
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(site));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(site));
 
         ResponseEntity<List<TurRagBm25CoreAPI.CoreStatusDto>> res = api.provisionCores("site");
 
@@ -200,7 +200,7 @@ class TurRagBm25CoreAPITest {
                 null, null, null, store, "cred", "col");
         when(builder.buildFromGlobalSettings()).thenReturn(Optional.of(infra));
 
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(site));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(site));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         when(localeRepo.findByTurSNSite(any(Sort.class), any())).thenReturn(List.of(
                 localeFor("pt-BR"), localeFor("en-US")));
@@ -229,7 +229,7 @@ class TurRagBm25CoreAPITest {
         genAi.setRagSeInstance(seInstance);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(site));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(site));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         TurStoreInstance store = new TurStoreInstance();
         store.setId("store-1");
@@ -258,7 +258,7 @@ class TurRagBm25CoreAPITest {
         var builder = mock(TurRagContextBuilder.class);
         var api = newApi(siteRepo, localeRepo, mock(TurRagBm25CoreRepository.class),
                 provisioner, settings, builder);
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(new TurSNSite()));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(new TurSNSite()));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         TurStoreInstance store = new TurStoreInstance();
         store.setId("store-1");
@@ -282,7 +282,7 @@ class TurRagBm25CoreAPITest {
         var builder = mock(TurRagContextBuilder.class);
         var api = newApi(siteRepo, mock(TurSNSiteLocaleRepository.class),
                 mock(TurRagBm25CoreRepository.class), provisioner, settings, builder);
-        when(siteRepo.findByIdNoCache("site")).thenReturn(Optional.of(new TurSNSite()));
+        when(siteRepo.findById("site")).thenReturn(Optional.of(new TurSNSite()));
         when(settings.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         when(builder.buildFromGlobalSettings()).thenReturn(Optional.empty());
 

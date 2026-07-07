@@ -3,7 +3,7 @@ package com.viglet.turing.persistence.model.mcp;
 import java.io.Serial;
 import java.io.Serializable;
 
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.core.tenancy.VigletTenantOwnedInfra;
 
 import jakarta.persistence.Column;
@@ -24,7 +24,7 @@ public class TurMcpServer implements Serializable, VigletTenantOwnedInfra {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -84,6 +84,18 @@ public class TurMcpServer implements Serializable, VigletTenantOwnedInfra {
     @Enumerated(EnumType.STRING)
     @Column(name = "connection_type", nullable = false, length = 10)
     private TurMcpServerConnectionType connectionType;
+
+    /**
+     * T294 — wire transport for {@code HTTP} servers (SSE vs Streamable HTTP).
+     * Nullable: a {@code null} value (legacy rows, {@code COMMAND} servers)
+     * is treated as {@link TurMcpServerTransportType#SSE} at runtime, so the
+     * column is purely opt-in and existing servers are unaffected.
+     *
+     * @since 2026.3.4
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transport_type", length = 20)
+    private TurMcpServerTransportType transportType;
 
     @Column(nullable = false)
     private int enabled;

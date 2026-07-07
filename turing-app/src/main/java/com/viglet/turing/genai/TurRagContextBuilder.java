@@ -221,4 +221,70 @@ public class TurRagContextBuilder {
         }
         infra.vectorStore().add(documents);
     }
+
+    /**
+     * T512 / §XXVIII.8 — re-index a document's chunks, using contextualized
+     * embeddings when the configured embedding model supports them (Voyage
+     * {@code voyage-context-3}). The chunks of one logical document are embedded
+     * <i>together</i> so each vector carries the surrounding context, then the
+     * precomputed vectors are upserted. When the model is a plain per-chunk
+     * model — or the contextual call fails — this falls back to the standard
+     * {@link #reindexByMetadata} path, so the feature is opt-in (it is the
+     * embedding-model choice that turns it on) and fail-soft.
+     *
+     * @param documents     the ordered chunks of <b>one</b> source document
+     * @return {@code true} when the contextual path was used; {@code false} when
+     *         it fell back to per-chunk embedding
+     * @since 2026.3.4
+     */
+    public boolean reindexByMetadataContextual(RagInfrastructure infra, List<Document> documents,
+            String metadataKey, String metadataValue) {
+        if (infra == null || documents == null || documents.isEmpty()) {
+            reindexByMetadata(infra, documents, metadataKey, metadataValue);
+            return false;
+        }
+        com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel contextual =
+                com.viglet.turing.genai.provider.llm.TurContextualEmbeddingModel.of(infra.embeddingModel());
+        if (contextual == null) {
+            reindexByMetadata(infra, documents, metadataKey, metadataValue);
+            return false;
+        }
+        try {
+            List<String> chunkTexts = documents.stream()
+                    .map(d -> d.getText() == null ? "" : d.getText())
+                    .toList();
+            List<float[]> vectors = contextual.embedDocumentChunks(chunkTexts);
+            if (vectors.size() != documents.size()) {
+                log.warn("Contextual embedding returned {} vectors for {} chunks (collection='{}') — "
+                                + "falling back to per-chunk embedding",
+                        vectors.size(), documents.size(), infra.collectionName());
+                reindexByMetadata(infra, documents, metadataKey, metadataValue);
+                return false;
+            }
+            if (StringUtils.hasText(metadataKey) && StringUtils.hasText(metadataValue)) {
+                try {
+                    infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
+                            infra.collectionName(), metadataKey, metadataValue);
+                } catch (Exception e) {
+                    log.warn("Failed to delete previous embeddings for {}={} (collection='{}'): {}",
+                            metadataKey, metadataValue, infra.collectionName(), e.getMessage());
+                }
+            }
+            List<com.viglet.turing.genai.provider.store.TurStoreExportRecord> records =
+                    new java.util.ArrayList<>(documents.size());
+            for (int i = 0; i < documents.size(); i++) {
+                Document doc = documents.get(i);
+                records.add(new com.viglet.turing.genai.provider.store.TurStoreExportRecord(
+                        doc.getId(), doc.getText(), vectors.get(i), doc.getMetadata()));
+            }
+            infra.storeProvider().importChunks(infra.storeInstance(), infra.storeCredential(),
+                    infra.collectionName(), records, infra.embeddingModel());
+            return true;
+        } catch (RuntimeException e) {
+            log.warn("Contextual re-index failed (collection='{}'): {} — falling back to per-chunk embedding",
+                    infra.collectionName(), e.getMessage());
+            reindexByMetadata(infra, documents, metadataKey, metadataValue);
+            return false;
+        }
+    }
 }

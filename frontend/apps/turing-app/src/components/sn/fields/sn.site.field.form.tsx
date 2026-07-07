@@ -11,12 +11,13 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
   Input
 } from "@/components/ui/input"
-import { SectionCard } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -40,7 +41,7 @@ import {
   useForm
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 const turSNFieldService = new TurSNFieldService();
 const turSNFieldTypeService = new TurSNFieldTypeService();
@@ -51,9 +52,18 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  /**
+   * Base SN instance route the field list lives under. Defaults to the console
+   * (`ROUTES.SN_INSTANCE`); the Bento field editor (T558) passes
+   * `ROUTES.BENTO_SN_INSTANCE` so save/cancel navigate back inside the shell.
+   */
+  baseRoute?: string;
+  /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
+   *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+  chrome?: SNFormChrome;
 }
 
-export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen }) => {
+export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -86,7 +96,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
     normalizeCurrencyString,
     normalizeDecimalString,
   } = useGlobalDecimalSeparator();
-  const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/field`;
+  const urlBase = `${baseRoute}/${snSiteId}/field`;
   const navigate = useNavigate()
   const selectedFieldType = form.watch("type");
   const isDecimalType = selectedFieldType === "FLOAT" || selectedFieldType === "DOUBLE";
@@ -162,6 +172,22 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
     }
   }
 
+  const isBento = chrome === "bento";
+
+  const actions = (
+    <>
+      {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+      <GradientButton type="submit" size="sm" loading={isSubmitting} disabled={isSubmitting}>
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" disabled={isSubmitting} onClick={() => navigate(urlBase)}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
+
   return (
     <>
       {isLoading ? (
@@ -189,29 +215,31 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-            <StickyPageHeader>
-              <StickyPageHeader.Title
-                icon={IconAlignBoxCenterStretch}
-                feature={t("sn.fields.feature")}
-                description={snField.description}
+          <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+            {isBento ? (
+              <BentoHero
+                eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.fields.title")}</Link>}
+                leading={
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                    <IconAlignBoxCenterStretch size={24} />
+                  </span>
+                }
+                title={snField.name || t("common.new")}
+                subtitle={t("sn.fields.description")}
+                trailing={actions}
               />
-              <StickyPageHeader.Actions>
-                {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                <GradientButton type="submit" size="sm" loading={isSubmitting} disabled={isSubmitting}>
-                  <IconDeviceFloppy className="size-4" />
-                  {t("forms.formActions.saveChanges")}
-                </GradientButton>
-                <GradientButton type="button" variant="outline" size="sm" disabled={isSubmitting} onClick={() => navigate(urlBase)}>
-                  <IconX className="size-4" />
-                  {t("forms.formActions.cancel")}
-                </GradientButton>
-              </StickyPageHeader.Actions>
-            </StickyPageHeader>
+            ) : (
+              <StickyPageHeader>
+                <StickyPageHeader.Title
+                  icon={IconAlignBoxCenterStretch}
+                  feature={t("sn.fields.feature")}
+                  description={snField.description}
+                />
+                <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+              </StickyPageHeader>
+            )}
             {/* General Configuration */}
-            <SectionCard variant="blue">
-              <SectionCard.Header icon={IconSettings} title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")} />
-              <SectionCard.Content>
+            <SNFormSection chrome={chrome} icon={IconSettings} tone="blue" title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")}>
                 {/* Name */}
                 <FormField
                   control={form.control}
@@ -465,8 +493,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
                     </FormItemTwoColumns>
                   )}
                 />
-              </SectionCard.Content>
-            </SectionCard>
+            </SNFormSection>
             {/* Action Footer */}
           </form>
         </Form>

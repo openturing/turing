@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # T501 / §X.19 — index-time native video/audio understanding config on
+  # sn_site_genai.
+  #
+  # One opt-in column gates running Gemini video/audio understanding on a media
+  # document as it is indexed, appending the timestamped transcript + scene
+  # description to the document's text field so the clip's content becomes
+  # searchable:
+  #   mediaUnderstandingIndexingEnabled — master switch (default false ⇒ indexing
+  #                                       path unchanged; no understanding call).
+  #
+  # Gemini-only and fail-open at runtime (a non-Gemini agent / non-media document /
+  # understanding error simply skips). camelCase per the project's literal JPA
+  # naming convention; idempotent via columnExists + onFail:MARK_RAN.
+  - changeSet:
+      id: v2026.3.1.76-add-sn-site-genai-mediaUnderstandingIndexingEnabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: mediaUnderstandingIndexingEnabled
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: mediaUnderstandingIndexingEnabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T501/§X.19 opt-in for index-time Gemini video/audio understanding (transcript + scenes into the text field)."

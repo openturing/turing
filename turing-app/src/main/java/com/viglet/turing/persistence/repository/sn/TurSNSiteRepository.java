@@ -24,9 +24,6 @@ package com.viglet.turing.persistence.repository.sn;
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,27 +31,34 @@ import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
-	@Override
-	@Cacheable("turSNSitefindAll")
-	@NotNull
-	List<TurSNSite> findAll(@NotNull Sort name);
 
-	@Cacheable("turSNSitefindAByCreatedBy")
 	List<TurSNSite> findByCreatedBy(Sort name, String createdBy);
 
-	@Override
-	@Cacheable("turSNSitefindById")
-	@NotNull
-	Optional<TurSNSite> findById(@NotNull String id);
-
-	@Cacheable("turSNSitefindByName")
 	Optional<TurSNSite> findByName(String name);
 
-	@Cacheable("turSNSitefindByNameIgnoreCase")
 	Optional<TurSNSite> findByNameIgnoreCase(String name);
 
-	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
-	Optional<TurSNSite> findByIdNoCache(@Param("id") String id);
+	/**
+	 * Loads a site with its <em>to-one</em> GenAI graph fetched in one query —
+	 * {@code turSEInstance}, {@code turSNSiteGenAi}, and the GenAI's
+	 * {@code turAIAgent} + {@code ragSeInstance}. Intended for the admin
+	 * load-mutate-map paths (T488 / §XXVIII.3) that map the site to a DTO or
+	 * build an insights prompt: the mapper/prompt-builder dereferences these
+	 * associations, so fetching them up front avoids the N+1 round-trips a plain
+	 * {@code findById} would incur inside the transaction. Only {@code @ManyToOne}/
+	 * {@code @OneToOne} associations are fetched — the {@code @OneToMany}
+	 * collections stay lazy (multiple-bag fetch would throw) and resolve through
+	 * the open session of the calling {@code @Transactional} method.
+	 */
+	@Query("""
+			SELECT s FROM TurSNSite s
+			LEFT JOIN FETCH s.turSEInstance
+			LEFT JOIN FETCH s.turSNSiteGenAi genAi
+			LEFT JOIN FETCH genAi.turAIAgent
+			LEFT JOIN FETCH genAi.ragSeInstance
+			WHERE s.id = :id
+			""")
+	Optional<TurSNSite> findByIdWithGenAi(@Param("id") String id);
 
 	/**
 	 * Returns every site eagerly loaded with its locales, intended for the
@@ -63,24 +67,10 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	 * Hibernate session closes. Only the locale association is fetched — all
 	 * other {@code @OneToMany} collections remain lazy and untouched.
 	 */
-	@Cacheable("turSNSitefindAllForListing")
 	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales ORDER BY LOWER(s.name)")
 	List<TurSNSite> findAllForListing();
 
 	// T262 / §XIV.2.6 — findAllForListingByCreatedBy (the legacy createdBy
 	// pseudo-tenant filter) is retired; isolation is the Hibernate @TenantId
 	// discriminator, applied automatically to findAllForListing().
-
-	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing" }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNSite> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
-			"turSNSitefindAllForListing" }, allEntries = true)
-	void delete(@NotNull TurSNSite turSNSite);
 }

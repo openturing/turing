@@ -106,6 +106,9 @@
       "title": "Configurações",
       "description": "Configure o site de Navegação Semântica."
     },
+    "launch": {
+      "title": "Busca ao vivo"
+    },
     "behavior": {
       "title": "Comportamento",
       "description": "Como a busca se comportará durante a pesquisa."
@@ -343,6 +346,22 @@
       "unsupported": "Este mecanismo de busca não reporta a presença de campos, então a cobertura está indisponível.",
       "empty": "Nenhum campo para medir ainda.",
       "emptyDescription": "Habilite campos e indexe documentos — a completude aparecerá aqui."
+    },
+    "contentFit": {
+      "title": "Adequação ao Público",
+      "description": "O quanto o conteúdo indexado corresponde à persona de público-alvo, avaliado no momento da indexação.",
+      "disabledTitle": "Avaliação de adequação desativada",
+      "disabledHint": "Ative \"Adequação ao Público\" nas configurações de GenAI e escolha uma persona de público, depois reindexe para gerar as pontuações.",
+      "persona": "Persona de público",
+      "tooComplex": "Muito complexo",
+      "borderline": "Limítrofe",
+      "good": "Boa adequação",
+      "scored": "documentos avaliados",
+      "ofTotal": "de {{total}} indexados",
+      "tooComplexSummary": "{{percent}}% do conteúdo avaliado é muito complexo para {{persona}}",
+      "tooComplexSummaryNoPersona": "{{percent}}% do conteúdo avaliado é muito complexo para seu público",
+      "unsupported": "Este mecanismo de busca não consegue contar a pontuação por faixa, então o detalhamento fica indisponível.",
+      "notScored": "Nenhum documento avaliado ainda — reindexe após ativar a avaliação de adequação."
     }
   }
 }

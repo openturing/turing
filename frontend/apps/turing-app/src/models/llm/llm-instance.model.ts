@@ -22,6 +22,13 @@ export interface TurLLMInstance {
   maxRetries: number;
   contextWindow: number;
   toolsEnabled: boolean;
+  /**
+   * T431 — allow sending raw document binaries (PDF/DOCX) to this provider's
+   * native file input for document-to-slot extraction (T103) instead of Tika
+   * text extraction. Only enable for providers that support document input
+   * (Anthropic / Gemini / OpenAI).
+   */
+  fileUploadEnabled?: boolean;
   apiKey?: string;
   providerOptionsJson?: string;
   icon?: string | null;

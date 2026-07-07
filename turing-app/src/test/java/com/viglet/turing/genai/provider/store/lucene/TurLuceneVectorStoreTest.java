@@ -85,6 +85,28 @@ class TurLuceneVectorStoreTest {
     }
 
     @Test
+    void addPrecomputed_usesSuppliedVector_notTheEmbeddingModel() {
+        // The doc text is "banana" but we deliberately store it with the "apple"
+        // vector — proving addPrecomputed bypasses the embedding model entirely.
+        store.addPrecomputed(
+                List.of(new Document("p1", "banana", Map.of())),
+                List.of(new float[] { 1f, 0f, 0f }));
+
+        // A query that embeds to the apple vector must find it via the stored vector.
+        List<Document> results = store.similaritySearch(
+                SearchRequest.builder().query("apple").topK(5).build());
+        assertThat(results).extracting(Document::getId).contains("p1");
+    }
+
+    @Test
+    void addPrecomputed_mismatchedLengths_throws() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+                store.addPrecomputed(
+                        List.of(new Document("x", "apple", Map.of())),
+                        List.of()));
+    }
+
+    @Test
     void add_then_similaritySearch_returnsClosestDoc() {
         store.add(List.of(
                 new Document("d1", "apple", Map.of()),

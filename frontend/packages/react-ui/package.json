@@ -1,13 +1,15 @@
 {
   "name": "@viglet/turing-react-ui",
-  "version": "2026.3.1",
+  "version": "2026.3.4",
   "description": "Headless React UI primitives for Viglet Turing ES — design-agnostic chat / rich-content components (e.g. TuringHtmlSandbox) shared across the admin console and viglet.com. No API or axios dependency; skin via classNames / labels / icons.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
-  "files": ["dist/**/*"],
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -112,22 +114,22 @@
     }
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "10.4.5",
-    "@storybook/addon-docs": "^10.4.5",
-    "@storybook/addon-links": "^10.4.5",
-    "@storybook/react-vite": "^10.4.5",
+    "@storybook/addon-a11y": "10.4.6",
+    "@storybook/addon-docs": "^10.4.6",
+    "@storybook/addon-links": "^10.4.6",
+    "@storybook/react-vite": "^10.4.6",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^6.0.3",
     "jsdom": "^29.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "storybook": "^10.4.5",
+    "storybook": "^10.4.6",
     "typescript": "^5.6.0",
-    "vite": "^8.0.7",
+    "vite": "^8.0.16",
     "vitest": "^4.1.9"
   },
   "publishConfig": {
@@ -166,5 +168,12 @@
       "TuringWorkspacePanelView.js": 1400
     }
   },
-  "keywords": ["viglet", "turing", "react", "ui", "headless", "chat"]
+  "keywords": [
+    "viglet",
+    "turing",
+    "react",
+    "ui",
+    "headless",
+    "chat"
+  ]
 }

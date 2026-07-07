@@ -20,17 +20,9 @@
  */
 package com.viglet.turing.persistence.repository.sn.field;
 
-import static com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository.FIND_BY_FIELD_EXTS_WITH_DETAILS;
-import static com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository.FIND_BY_FIELD_EXT_WITH_DETAILS;
-import static com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository.FIND_BY_TUR_SN_SITE_FIELD_EXT;
-import static com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository.FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE;
-
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -43,44 +35,25 @@ import com.viglet.turing.sn.TurSNFieldType;
 
 public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFieldExt, String> {
 
-	String FIND_BY_TUR_SN_SITE = "turSNSiteFieldExtFindByTurSNSite";
-	String FIND_BY_TUR_SN_SITE_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndEnabled";
-	String FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndFacetAndEnabled";
-	String FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION = "findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition";
-	String FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE = "findByTurSNSiteAndFacetAndEnabledAndType";
-	String FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndHlAndEnabled";
-	String FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndMltAndEnabled";
-	String FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndRequiredAndEnabled";
-	String FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED = "turSNSiteFieldExtFindByTurSNSiteAndNameAndFacetAndEnabled";
-
-	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteFieldExt> findByTurSNSite(Sort sort, TurSNSite turSNSite);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndEnabled(TurSNSite turSNSite, int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabled(TurSNSite turSNSite, int facet, int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndNameAndFacetAndEnabled(TurSNSite turSNSite, String name, int facet,
 			int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledOrderByFacetPosition(TurSNSite turSNSite, int facet,
 			int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndFacetAndEnabledAndType(TurSNSite turSNSite, int facet, int enabled,
 			TurSEFieldType type);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndHlAndEnabled(TurSNSite turSNSite, int hl, int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndMltAndEnabled(TurSNSite turSNSite, int mlt, int enabled);
 
-	@Cacheable(FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED)
 	List<TurSNSiteFieldExt> findByTurSNSiteAndRequiredAndEnabled(TurSNSite turSNSite, int required, int enabled);
 
 	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
@@ -88,57 +61,11 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 	@Query("SELECT MAX(t.facetPosition) FROM TurSNSiteFieldExt t where t.turSNSite = ?1")
 	Optional<Integer> findMaxFacetPosition(TurSNSite turSNSite);
 
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE, FIND_BY_TUR_SN_SITE_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION,
-			FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE,
-			FIND_BY_FIELD_EXTS_WITH_DETAILS,
-			FIND_BY_FIELD_EXT_WITH_DETAILS }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurSNSiteFieldExt> S save(@NotNull S entity);
-
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE, FIND_BY_TUR_SN_SITE_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION,
-			FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE,
-			FIND_BY_FIELD_EXTS_WITH_DETAILS,
-			FIND_BY_FIELD_EXT_WITH_DETAILS }, allEntries = true)
-	void delete(@NotNull TurSNSiteFieldExt turSNSiteFieldExt);
-
 	@Modifying
 	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.id = ?1")
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE, FIND_BY_TUR_SN_SITE_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION,
-			FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE,
-			FIND_BY_FIELD_EXTS_WITH_DETAILS,
-			FIND_BY_FIELD_EXT_WITH_DETAILS }, allEntries = true)
 	void delete(String turSnSiteFieldId);
 
 	@Modifying
 	@Query("delete from TurSNSiteFieldExt ssfe where ssfe.turSNSite= ?1 and ssfe.snType = ?2")
-	@CacheEvict(value = { FIND_BY_TUR_SN_SITE, FIND_BY_TUR_SN_SITE_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_MLT_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_REQUIRED_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_AND_TYPE,
-			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED_ORDER_BY_FACET_POSITION,
-			FIND_BY_TUR_SN_SITE_AND_NAME_AND_FACET_AND_ENABLED,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT,
-			FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE,
-			FIND_BY_FIELD_EXTS_WITH_DETAILS,
-			FIND_BY_FIELD_EXT_WITH_DETAILS }, allEntries = true)
 	void deleteByTurSNSiteAndSnType(TurSNSite turSNSite, TurSNFieldType turSNFieldType);
 }

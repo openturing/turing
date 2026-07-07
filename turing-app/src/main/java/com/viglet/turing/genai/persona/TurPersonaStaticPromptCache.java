@@ -46,11 +46,11 @@ import com.viglet.turing.persistence.model.persona.TurPersonaTone;
  *
  * The {@code turPersonaStaticPrompt} cache is keyed by
  * {@link TurPersona#id persona id}. Eviction is wired in
- * {@link com.viglet.turing.persistence.repository.persona.TurPersonaRepository}
- * — the same {@code @Caching}/{@code @CacheEvict} chain that already
- * invalidates {@code turPersonafindById} on persona save/delete, so an
- * operator editing the persona's instruction / tone / vocabulary sees the
- * change reflected on the next chat turn without an app restart.
+ * {@link TurPersonaStaticPromptEvictionListener} (a JPA entity callback on
+ * {@link TurPersona}), plus an explicit {@code @CacheEvict} on the bulk-DML
+ * delete endpoint, so an operator editing the persona's instruction / tone /
+ * vocabulary sees the change reflected on the next chat turn without an app
+ * restart. (Block AC / T486 moved this off the now-uncached persona repository.)
  *
  * <h2>Why a separate bean</h2>
  *
@@ -67,7 +67,7 @@ import com.viglet.turing.persistence.model.persona.TurPersonaTone;
 @Component
 public class TurPersonaStaticPromptCache {
 
-    /** Public cache name — referenced from {@code TurPersonaRepository} evictions. */
+    /** Public cache name — evicted by {@link TurPersonaStaticPromptEvictionListener}. */
     public static final String CACHE_NAME = "turPersonaStaticPrompt";
 
     /**

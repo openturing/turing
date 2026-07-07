@@ -337,11 +337,11 @@ public class TurSNSiteContentExchangeService {
      * field partitioning) so existing content is re-embedded without
      * re-importing from sources.
      * <p>
-     * Loads the site by id <i>inside</i> the transaction (with
-     * {@code findByIdNoCache} to bypass the {@link com.viglet.turing.persistence.repository.sn.TurSNSiteRepository}
-     * cache that returns entities attached to closed sessions) so lazy
-     * associations like {@code turSNSiteLocales} and {@code turSNSiteFields}
-     * resolve correctly when this runs on a virtual thread without OSIV.
+     * Loads the site by id <i>inside</i> the transaction so lazy associations
+     * like {@code turSNSiteLocales} and {@code turSNSiteFields} resolve correctly
+     * when this runs on a virtual thread without OSIV. Repositories are uncached
+     * (T488 / §XXVIII.3), so a plain {@code findById} returns a session-attached
+     * entity.
      * <p>
      * Progress is stored under {@code taskId} via the same
      * {@link ContentExchangeProgress} channel used by export/import, so the
@@ -352,7 +352,7 @@ public class TurSNSiteContentExchangeService {
      */
     @Transactional(readOnly = true)
     public int reindexVectorStore(String siteId, String taskId) {
-        TurSNSite turSNSite = turSNSiteRepository.findByIdNoCache(siteId).orElse(null);
+        TurSNSite turSNSite = turSNSiteRepository.findById(siteId).orElse(null);
         if (turSNSite == null) {
             log.warn("RAG reindex skipped: site '{}' not found", siteId);
             progressMap.put(taskId, new ContentExchangeProgress(

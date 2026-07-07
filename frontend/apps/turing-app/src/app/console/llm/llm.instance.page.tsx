@@ -1,5 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
-import { LLMInstanceForm } from "@/components/llm/llm.instance.form";
+import { LLMInstanceFormLayout } from "@/components/llm/llm.instance.form.layout";
 import { LoadProvider } from "@/components/loading-provider";
 import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
@@ -37,7 +37,7 @@ export default function LLMInstancePage() {
   }, [id])
   return (
     <LoadProvider checkIsNotUndefined={llmInstance} error={error} tryAgainUrl={`${ROUTES.LLM_INSTANCE}/${id}`}>
-      {llmInstance && <LLMInstanceForm value={llmInstance} isNew={isNew} />}
+      {llmInstance && <LLMInstanceFormLayout value={llmInstance} isNew={isNew} />}
     </LoadProvider>
   )
 }

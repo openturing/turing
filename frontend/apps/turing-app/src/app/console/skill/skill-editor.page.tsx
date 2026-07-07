@@ -109,7 +109,25 @@ function buildTree(nodes: TurSkillFileNode[]): TreeNode[] {
   return roots
 }
 
-export default function SkillEditorPage() {
+interface SkillEditorPageProps {
+  /**
+   * Skills list route the "back" button + save redirects navigate to. Defaults
+   * to the console (`ROUTES.SKILL_ROOT`); the Bento skill editor (T560) passes
+   * `ROUTES.BENTO_SKILL` so it stays inside the shell.
+   */
+  baseRoute?: string
+  /**
+   * Root height/frame classes. Defaults to the console full-viewport IDE; the
+   * Bento variant passes a shell-aware height + a frosted frame so the editor
+   * fits inside the padded bento main column instead of overflowing it.
+   */
+  containerClassName?: string
+}
+
+export default function SkillEditorPage({
+  baseRoute = ROUTES.SKILL_ROOT,
+  containerClassName = "flex flex-col h-[calc(100vh-3.5rem)]",
+}: Readonly<SkillEditorPageProps> = {}) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -278,10 +296,10 @@ export default function SkillEditorPage() {
     ))
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className={containerClassName}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b px-4 lg:px-6 py-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.SKILL_ROOT)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(baseRoute)}>
           <IconArrowLeft className="size-4! mr-1.5" />
           Skills
         </Button>

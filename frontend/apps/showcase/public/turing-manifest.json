@@ -1,0 +1,12 @@
+{
+  "name": "atlas-store",
+  "version": "2026.3.1",
+  "author": "Alexandre Oliveira",
+  "repository": "https://github.com/openviglet/turing",
+  "description": "Atlas Store — the Viglet Turing ES reference showcase (stresses the maximum platform surface).",
+  "buildDate": "2026-06-29T14:04:47.137Z",
+  "snSite": "atlas-store",
+  "locale": "en_US",
+  "framework": "react",
+  "buildTool": "vite"
+}

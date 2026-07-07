@@ -8,7 +8,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { SectionCard } from "@/components/ui/section-card"
 import {
     Table,
     TableBody,
@@ -31,6 +30,7 @@ import { IconCirclePlus, IconFilter, IconTrash, IconX } from "@tabler/icons-reac
 import React, { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
+import { SNSiteSearchRuleSection, type SNSectionChrome } from "./sn.site.search.rule.section"
 
 const ALL_PARAMETERS: TurSNSiteSearchRuleParameter[] = ["QUERY", "FILTER_QUERY", "SORT", "LOCALE"];
 const OPERATORS: TurSNSiteSearchRuleOperator[] = ["EQUALS", "CONTAINS", "STARTS_WITH", "MATCHES_ANY", "IS_EMPTY"];
@@ -180,9 +180,10 @@ interface Props {
     fieldOptions: TurSNSiteSearchRuleFieldOption[];
     customSorts: TurSNSiteCustomSort[];
     siteLocales: TurSNSiteLocale[];
+    chrome?: SNSectionChrome;
 }
 
-export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions, customSorts, siteLocales }) => {
+export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions, customSorts, siteLocales, chrome = "console" }) => {
     const { t } = useTranslation();
     const conditions = form.watch("conditions") || [];
 
@@ -317,9 +318,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
     }
 
     return (
-        <SectionCard variant="amber">
-            <SectionCard.Header icon={IconFilter} title={t("sn.searchRule.conditions")} description={t("sn.searchRule.conditionsDesc")} />
-            <SectionCard.Content>
+        <SNSiteSearchRuleSection chrome={chrome} icon={IconFilter} tone="amber" title={t("sn.searchRule.conditions")} description={t("sn.searchRule.conditionsDesc")}>
                 <div className="space-y-4">
                     {groupedConditions.map((group, groupIdx) => {
                         const hasCustomLayout = group.parameter === "SORT" || group.parameter === "LOCALE";
@@ -412,7 +411,6 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
                         ))}
                     </div>
                 )}
-            </SectionCard.Content>
-        </SectionCard>
+        </SNSiteSearchRuleSection>
     );
 };

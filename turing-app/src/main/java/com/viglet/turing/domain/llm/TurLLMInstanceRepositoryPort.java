@@ -21,8 +21,10 @@ import java.util.Optional;
 
 /**
  * Domain-side port for retrieving {@link TurLLMInstanceDomain} aggregates.
- * Read-only: write paths and any flow that needs the encrypted API key still
- * go through the JPA repository and {@code TurSecretCryptoService}.
+ * Read-only <b>by design, permanently</b>: write paths and any flow that needs
+ * the encrypted API key go through the JPA repository and
+ * {@code TurSecretCryptoService}. Ports will not grow {@code save} /
+ * {@code delete}. See {@code docs/adr/0001-domain-layer-bounded-completion.md}.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6

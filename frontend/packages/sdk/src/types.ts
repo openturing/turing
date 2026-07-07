@@ -233,12 +233,126 @@ export interface TurChatConversationMessage {
  *   so the SDK can render a native multi-field form;
  * - `type === "sources"` (T292) carries a JSON-encoded {@link TurChatSource}[]
  *   array of the RAG provenance behind the answer;
+ * - `type === "citations"` (T152) carries a JSON-encoded {@link TurChatCitation}[]
+ *   of the per-sentence Anthropic citations grounding the answer;
+ * - `type === "tool_call"` (T436) carries a JSON-encoded {@link TurChatToolCall}
+ *   lifecycle event (a tool starting or finishing) so the UI can show live tool
+ *   activity;
  * - otherwise `content` is assistant text to append.
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
-  type?: "token" | "options" | "form" | "sources";
+  type?:
+    | "token"
+    | "options"
+    | "form"
+    | "sources"
+    | "citations"
+    | "searchSuggestions"
+    | "reasoning"
+    | "tool_call"
+    | "client_tool_call"
+    | "grounding"
+    | "secondOpinion";
+}
+
+/**
+ * T522 / §XXVIII.18 — the multi-provider "second opinion" verdict carried by the
+ * `"secondOpinion"` SSE event, emitted only when the cross-check is enabled. A
+ * cheap model from a DIFFERENT vendor critiqued the answer; the chat UI renders
+ * an "agrees / disagrees" confidence badge beside the bubble. Mirrors the backend
+ * `TurSecondOpinion`.
+ */
+export interface TurChatSecondOpinion {
+  /** `true` when the cross-vendor critic judged the answer accurate + supported. */
+  agree: boolean;
+  /** Optional calibrated confidence in `[0,1]`, when available. */
+  confidence?: number | null;
+  /** The critic's one-line reason (for the hover/tooltip). */
+  rationale?: string | null;
+  /** The critic model name. */
+  criticModel?: string | null;
+  /** The critic's vendor/plugin type (always different from the answerer's). */
+  criticVendor?: string | null;
+}
+
+/**
+ * T516 / §XXVIII.12 — the answer-grounding guardrail verdict carried by the
+ * `"grounding"` SSE event, emitted only when the guardrail is enabled and
+ * flagged something. Mirrors the backend `TurAnswerGuardrailVerdict`. The chat
+ * UI renders a confidence badge beside the answer (e.g. "⚠ not grounded" or a
+ * flagged-category chip); a clean answer emits no event at all.
+ */
+export interface TurChatGrounding {
+  /** `false` when the answer is not supported by the retrieved context. */
+  grounded: boolean;
+  /** Contextual-grounding confidence in `[0,1]`, when assessed. */
+  groundingScore?: number | null;
+  /** Answer↔query relevance confidence in `[0,1]`, when assessed. */
+  relevanceScore?: number | null;
+  /** Recommended action: `"PASS"`, `"FLAG"`, or `"BLOCK"`. */
+  action: "PASS" | "FLAG" | "BLOCK";
+  /** Flagged content/PII categories (e.g. `"ungrounded"`, `"pii:EMAIL"`). */
+  categories: string[];
+  /** Masked answer variant when the guardrail redacted PII, else null. */
+  redactedAnswer?: string | null;
+  /** Which guardrail backend produced this verdict. */
+  strategy: "NONE" | "BEDROCK" | "OPENAI_MODERATION" | "MISTRAL_MODERATION";
+}
+
+/**
+ * T490 / §X.19 — Google Search Suggestion chips carried by the
+ * `"searchSuggestions"` SSE event, emitted when a Gemini turn used the
+ * `google_search` grounding tool. Google's terms of service **require**
+ * rendering these chips whenever a grounded answer is shown; the headless UI
+ * renders `renderedContent` (a self-contained HTML/CSS fragment) verbatim.
+ * Mirrors the backend `TurGeminiGroundingDecoder.SearchSuggestions` record.
+ */
+export interface TurSearchSuggestions {
+  /** Self-contained HTML/CSS fragment for the Google-mandated chips (render as-is). */
+  renderedContent?: string | null;
+  /** The web-search queries the model ran (a textual fallback / debug aid). */
+  queries?: string[];
+}
+
+/**
+ * T438 — payload of the `"client_tool_call"` SSE event: the agent asked the
+ * <em>browser</em> to run a frontend tool and the turn parked. The SDK runs the
+ * registered handler for {@link #name}, POSTs the result to
+ * `/v2/chat/client-tool-result`, and the continuation streams back. Distinct
+ * from {@link TurChatToolCall} (which is read-only tool <em>activity</em>).
+ */
+export interface TurClientToolCall {
+  /** Correlates the call with its result POST; keyed park on the server. */
+  callId: string;
+  /** The frontend tool the agent invoked (must be a registered handler). */
+  name: string;
+  /** Raw JSON arguments string the model passed (parse before calling the handler). */
+  args: string;
+}
+
+/**
+ * T436 — one tool-call lifecycle event carried by the `"tool_call"` SSE event,
+ * and (merged by `callId`) the shape surfaced on
+ * {@link TurChatConversationResponse.toolCalls}. Mirrors the backend
+ * `TurChatToolCall` record. The headless `TuringToolActivity` atom renders the
+ * running/finished tool list from these. Emitted only when the agent opts into
+ * `toolCallEventsEnabled`; arguments are redacted/truncated server-side.
+ */
+export interface TurChatToolCall {
+  /** Unique id of this invocation within the turn (correlates start/end). */
+  callId: string;
+  /** Tool name (matches the server `ToolDefinition.name()`). */
+  name: string;
+  /** `"start"` when the tool begins, `"end"` when it completes or fails. */
+  phase: "start" | "end";
+  /** Redacted/truncated argument digest — present on `start`; never raw secrets. */
+  argsSummary?: string | null;
+  /** `"ok"` | `"error"` — present on `end`. */
+  status?: string | null;
+  /** End-to-end call duration in ms — present on `end`. */
+  durationMs?: number | null;
 }
 
 /**
@@ -260,6 +374,38 @@ export interface TurChatSource {
   score?: number | null;
   /** `true` when this chunk reached the answer via the keyword (BM25) fallback only. */
   keywordOnly?: boolean;
+}
+
+/**
+ * T152 / §X.7.a — one per-sentence citation returned by Anthropic Citations,
+ * carried by the `"citations"` SSE event. Mirrors the backend `TurChatCitation`
+ * record. The citation-aware chat UI (T154) underlines `citedText` in the
+ * answer and deep-links to `url`.
+ */
+export interface TurChatCitation {
+  /** Zero-based index into the document blocks sent for the turn. */
+  documentIndex: number;
+  /** Stable id of the cited source (resolved from the retrieved passage). */
+  sourceId?: string | null;
+  /** Title Claude echoed back, or the source title as a fallback. */
+  documentTitle?: string | null;
+  /** Deep link to the cited source, when available. */
+  url?: string | null;
+  /** The exact span of the source the claim was grounded on. */
+  citedText: string;
+  /** Start char offset (`char`) or start page (`page`), when present. */
+  startIndex?: number | null;
+  /** End char offset (`char`) or end page (`page`), when present. */
+  endIndex?: number | null;
+  /** `"char"`, `"page"` (PDF), or `"search_result"` location type. */
+  locationType?: string;
+  /**
+   * T154 — start char offset of the cited claim in the assistant answer text.
+   * The citation-aware UI underlines `answer.slice(answerStart, answerEnd)`.
+   */
+  answerStart?: number | null;
+  /** T154 — end char offset of the cited claim in the assistant answer text. */
+  answerEnd?: number | null;
 }
 
 /**
@@ -311,6 +457,46 @@ export interface TurChatConversationResponse {
   form?: TurChatForm;
   /** RAG provenance behind the answer (T292), if any. */
   sources?: TurChatSource[];
+  /** Per-sentence Anthropic citations grounding the answer (T152), if any. */
+  citations?: TurChatCitation[];
+  /**
+   * T490 / §X.19 — Google Search Suggestion chips for a Gemini `google_search`
+   * grounded answer, if any. Google's ToS require rendering these whenever the
+   * grounded answer is shown.
+   */
+  searchSuggestions?: TurSearchSuggestions;
+  /**
+   * T178 / §X.13.a — the OpenAI reasoning model's summary of how it reached the
+   * answer (the `"reasoning"` SSE event), if the agent opted into the
+   * `reasoning-summary` request option. The UI renders it as the collapsible
+   * "Why this answer" panel.
+   */
+  reasoning?: string;
+  /**
+   * Tool calls the agent made during the turn (T436), merged by `callId` so
+   * each entry carries its latest phase/status/duration. Present only when the
+   * agent has `toolCallEventsEnabled`.
+   */
+  toolCalls?: TurChatToolCall[];
+  /**
+   * T438 — set when the turn parked on a frontend ("client") tool: the stream
+   * ended with a `client_tool_call` event instead of a final answer. The SDK
+   * runs the registered handler and resumes via `/v2/chat/client-tool-result`.
+   */
+  clientToolCall?: TurClientToolCall;
+  /**
+   * T516 / §XXVIII.12 — the answer-grounding guardrail verdict, present only
+   * when the guardrail is enabled and flagged the answer (ungrounded / unsafe /
+   * PII). The UI renders a confidence badge beside the answer; a clean answer
+   * leaves this undefined.
+   */
+  grounding?: TurChatGrounding;
+  /**
+   * T522 / §XXVIII.18 — the cross-vendor "second opinion" verdict, present only
+   * when the check is enabled and produced a signal. The UI renders an
+   * agrees/disagrees confidence badge beside the answer.
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 /** Result of {@link createChatController}'s `submitForm` round-trip (T107). */

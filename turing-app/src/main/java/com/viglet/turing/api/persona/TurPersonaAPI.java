@@ -11,6 +11,7 @@ package com.viglet.turing.api.persona;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +29,7 @@ import com.viglet.turing.genai.authoring.AiAuthoringRequest;
 import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.TurAiAuthoringService;
 import com.viglet.turing.genai.authoring.persona.PersonaGeneration;
+import com.viglet.turing.genai.persona.TurPersonaStaticPromptCache;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.persona.TurPersonaMapper;
 import com.viglet.turing.persistence.model.persona.TurPersona;
@@ -199,6 +201,11 @@ public class TurPersonaAPI {
     @Operation(summary = "Delete a Persona")
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "AI_AGENT_DELETE"})
+    // Bulk-DML delete(id) bypasses JPA entity callbacks, so the
+    // TurPersonaStaticPromptEvictionListener never fires on this path; evict the
+    // persona static-prompt cache explicitly so a deleted persona leaves no stale
+    // composed block behind.
+    @CacheEvict(value = TurPersonaStaticPromptCache.CACHE_NAME, allEntries = true)
     public boolean turPersonaDelete(@PathVariable String id) {
         turPersonaRepository.delete(id);
         return true;
@@ -229,6 +236,12 @@ public class TurPersonaAPI {
         to.setMandatoryTerms(from.getMandatoryTerms());
         to.setForbiddenTerms(from.getForbiddenTerms());
         to.setEnabled(from.getEnabled());
+        // Block AA / §XXVI.1 — audience facet. Default SPEAKER when the client
+        // omits the discriminator so legacy persona forms stay unchanged.
+        to.setPersonaKind(from.getPersonaKind() == null
+                ? com.viglet.turing.persistence.model.persona.TurPersonaKind.SPEAKER
+                : from.getPersonaKind());
+        to.setAudience(from.getAudience());
     }
 
     private com.viglet.turing.persistence.model.store.TurStoreInstance resolveStore(String id) {

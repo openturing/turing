@@ -78,8 +78,7 @@ import lombok.extern.slf4j.Slf4j;
  * </ul>
  *
  * <p>Eviction: piggybacks on the {@code turAnalyticsIntentMLTIndex}
- * Spring cache name declared on
- * {@link TurAnalyticsIntentRepository#LUCENE_INDEX} — admin saves and
+ * Spring cache name — admin saves and
  * deletes trigger {@link #evictAll()} via {@link TurAnalyticsIntentEvictionListener}
  * (same JPA {@code @EntityListeners} pattern T27 uses for the chat-flow
  * router cache).

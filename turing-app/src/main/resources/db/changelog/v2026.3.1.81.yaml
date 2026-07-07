@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # --- T509 / §XXVIII.5: Mistral AI LLM vendor (chat + embeddings) ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent.
+  - changeSet:
+      id: v2026.3.1.81-01-add-mistral-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'MISTRAL'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: MISTRAL
+              - column:
+                  name: description
+                  value: "Mistral AI — European/GDPR-native chat + embeddings (OpenAI-compatible)"
+              - column:
+                  name: plugin
+                  value: mistral
+              - column:
+                  name: title
+                  value: "Mistral AI"
+              - column:
+                  name: website
+                  value: "https://mistral.ai"

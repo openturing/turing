@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 2026.2.5
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record ChatFlowNode(String id, String type, NodeData data) {
+public record ChatFlowNode(String id, String type, NodeData data) implements Serializable {
 
     public ChatFlowNode {
         data = data == null
@@ -534,7 +535,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             List<FormField> formFields,
             String planSchema,
             String completionMode,
-            HumanApprovalConfig humanApproval) {
+            HumanApprovalConfig humanApproval) implements Serializable {
 
         /**
          * Back-compat constructor for callers/tests predating the T119
@@ -712,7 +713,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record HumanApprovalConfig(String channel, String target, String template,
-            String approvalSlot, Integer timeoutSeconds, String timeoutBehavior) {
+            String approvalSlot, Integer timeoutSeconds, String timeoutBehavior)
+            implements Serializable {
     }
 
     /**
@@ -741,7 +743,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FormField(String name, String label, String type, Boolean required,
-            String placeholder, String validationRule, List<String> options) {
+            String placeholder, String validationRule, List<String> options)
+            implements Serializable {
 
         public FormField {
             options = options == null ? List.of() : options;
@@ -771,7 +774,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
      * @since 2026.3.1
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record NodeVariant(String label, Integer weight, String aiInstruction) {
+    public record NodeVariant(String label, Integer weight, String aiInstruction)
+            implements Serializable {
     }
 
     /**
@@ -788,7 +792,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
      * @since 2026.2.7
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record SwitchOption(String id, String label, String subFlowId) {
+    public record SwitchOption(String id, String label, String subFlowId)
+            implements Serializable {
 
         /** Back-compat constructor for callers/tests that predate {@code subFlowId} (T47). */
         public SwitchOption(String id, String label) {

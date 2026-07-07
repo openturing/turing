@@ -12,7 +12,7 @@ import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
@@ -39,7 +39,7 @@ public class TurAIAgent implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -86,6 +86,198 @@ public class TurAIAgent implements Serializable {
     private boolean richContentEnabled = false;
 
     /**
+     * T442 / §XXIII.1 — per-agent opt-in for "answer-as-an-app": built-in
+     * generative-UI client tools ({@code comparison_table}, {@code spec_card},
+     * {@code configurator}) that let the model assemble a live mini-app from a
+     * typed SN search result set instead of returning prose. When {@code true}
+     * the built-in tools are advertised (folded into the T438 client-tool set,
+     * so they park + resume the same way) and the agent's system prompt is
+     * augmented with {@code prompts/answer-as-app.md}. Independent of
+     * {@link #clientToolsEnabled}: an operator can enable answer-as-app without
+     * declaring any custom client tools. Default {@code false} keeps existing
+     * agents byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "answer_as_app_enabled", nullable = false)
+    private boolean answerAsAppEnabled = false;
+
+    /**
+     * T443 / §XXIII.2 — per-agent opt-in for "co-browse": built-in client tools
+     * ({@code set_search_query}, {@code toggle_facet}, {@code clear_facets},
+     * {@code set_sort}, {@code set_page}) that let the agent drive the host page's
+     * REAL search UI (query, facet checkboxes, sort, page) instead of replying in
+     * a parallel box — "filter to the red ones under R$50" flips the actual
+     * facets and updates the URL. When {@code true} the built-in tools are folded
+     * into the advertised client-tool set (T438 park/resume) and the system
+     * prompt gains {@code prompts/co-browse.md}. Independent of
+     * {@link #clientToolsEnabled}. Default {@code false} keeps existing agents
+     * byte-for-byte unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "co_browse_enabled", nullable = false)
+    private boolean coBrowseEnabled = false;
+
+    /**
+     * T445 / §XXIII.4 — per-agent opt-in for the "ambient / proactive copilot".
+     * When {@code true}, a server-sent {@code /chat/proactive/stream} watches the
+     * conversation's slot bus (T63) for ambient interaction signals (slots named
+     * {@code signal.<kind>} carrying an interaction count, written by the host via
+     * {@code useTuringClickTracking}/dwell) and, once a signal count crosses
+     * {@link #proactiveThresholdSignals}, pushes ONE throttled proactive offer
+     * ("I noticed you've looked at several return-policy items — want help?").
+     * Default {@code false}: no proactive stream, existing behaviour unchanged. A
+     * proactive agent that interrupts constantly is worse than none, hence opt-in
+     * + threshold + throttle.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "proactive_enabled", nullable = false)
+    private boolean proactiveEnabled = false;
+
+    /**
+     * T445 / §XXIII.4 — how many ambient interaction signals of one kind must
+     * accumulate before the proactive copilot offers help. Default 3. Only used
+     * when {@link #proactiveEnabled}.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "proactive_threshold_signals", nullable = false)
+    private int proactiveThresholdSignals = 3;
+
+    /**
+     * T446 / §XXIII.5 — per-agent opt-in for cross-conversation personal memory.
+     * When {@code true}, the built-in {@code recall_user_memory} / {@code
+     * remember_fact} client tools are advertised and {@code prompts/user-memory.md}
+     * is injected, so the agent can persist and recall durable facts about a user
+     * across sessions (the host SDK supplies the stable userId and calls the
+     * {@code /sn/{site}/user-memory} endpoints). Default {@code false} keeps
+     * existing agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "user_memory_enabled", nullable = false)
+    private boolean userMemoryEnabled = false;
+
+    /**
+     * T447 / §XXIII.6 — per-agent opt-in for the self-tuning loop. When
+     * {@code true}, a scheduled job mines recent failed conversations, drafts a
+     * revised system prompt, scores it against the agent's golden sets (Block K),
+     * and — only if it scores better — opens a PR-style "suggested change" in the
+     * admin for human approval (never auto-applied). Requires at least one enabled
+     * golden set + a usable LLM. Default {@code false} keeps existing agents
+     * unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "self_tuning_enabled", nullable = false)
+    private boolean selfTuningEnabled = false;
+
+    /**
+     * T448 / §XXIII.7 — per-agent opt-in for agent-to-agent handoff. When
+     * {@code true} (and {@link #specialistAgentIds} lists at least one agent), this
+     * agent becomes a router: it gets a {@code delegate_to_agent} tool that runs a
+     * listed specialist agent on a sub-task and returns its answer — the handoff is
+     * visible via the T436 tool-call events. Recursion is bounded by the shared
+     * {@code agent.invoke} depth cap. Default {@code false} keeps existing agents
+     * unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "agent_handoff_enabled", nullable = false)
+    private boolean agentHandoffEnabled = false;
+
+    /**
+     * T450 / §XXIII.9 — per-agent opt-in for the embeddable "action widget". When
+     * {@code true} the built-in host-action client tools ({@code navigate},
+     * {@code fill_form}, {@code click_element}, {@code add_to_cart}) are advertised,
+     * so the embedded SDK widget can ACT on the host page (an action layer over any
+     * website, no browser extension) — the host wires the matching handlers via the
+     * vanilla SDK's {@code createHostActions}. Default {@code false} keeps existing
+     * agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "action_widget_enabled", nullable = false)
+    private boolean actionWidgetEnabled = false;
+
+    /**
+     * T187 / §X.15.a — per-agent opt-in for "Live answers" hybrid mode. When
+     * {@code true} on a native OpenAI/Anthropic turn, the executor fuses four
+     * information sources into ONE answer: (a) the indexed knowledge base (top-K
+     * SN/RAG passages injected as grounding context, the leg the OpenAI Responses
+     * path otherwise lacks), (b) {@code web_search} citations, (c) live data via
+     * {@code web_fetch}, and (d) computed analytics via {@code code_execution}.
+     * It is a composition layer over the two-level capability gate: it injects the
+     * knowledge-base grounding + a fusion-guidance prompt ({@code prompts/live-answers.md})
+     * and instructs the model to weave whichever of its admin-selected native tools
+     * are relevant into a single cited reply — it does NOT force-enable a capability
+     * the instance doesn't support. To avoid double-grounding it skips the grounding
+     * block when the Anthropic citations / native-PDF document path is already
+     * attaching passages. Default {@code false} keeps existing agents unchanged.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "live_answers_enabled", nullable = false)
+    private boolean liveAnswersEnabled = false;
+
+    /**
+     * T189 / §X.15.c — per-agent opt-in for "Call-center augmentation". When
+     * {@code true}, the {@code /call-center/assist} endpoint is enabled for this
+     * agent: an operator's transcribed customer utterance is translated into the
+     * operator's working language (T150), answered with citations from the
+     * customer's index (T248 cited RAG), and the answer is translated back into
+     * the customer's language so the operator can relay it. Pure composition of
+     * shipped services; default {@code false} keeps the endpoint closed (403) for
+     * existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "call_center_enabled", nullable = false)
+    private boolean callCenterEnabled = false;
+
+    /**
+     * T190 / §X.15.d — per-agent opt-in for "self-installing connectors". When
+     * {@code true}, the {@code /connector} endpoints are enabled for this agent so
+     * it can walk a customer through connecting a third-party system ("connect my
+     * Notion"): surface the vendor's token-generation steps and TEST the supplied
+     * credential before it is saved/enabled through the existing integration /
+     * MCP-server CRUD. When a real computer-use driver (T136) is deployed the
+     * steps can be driven in a browser; with the no-op default it degrades to
+     * guided instructions + the connection probe. Default {@code false} keeps the
+     * endpoints closed (403) for existing agents.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "connector_setup_enabled", nullable = false)
+    private boolean connectorSetupEnabled = false;
+
+    /**
+     * T191 / §X.15.e — per-agent opt-in for "self-improvement overnight". When
+     * {@code true} (and the distillation tier is enabled), a nightly job distills
+     * the agent's recent production traffic (T167 stored completions) into a
+     * fine-tuned candidate, scores it against the agent's eval golden sets, and —
+     * only if it beats the incumbent — opens a {@code DISTILLATION_CANDIDATE}
+     * suggestion for human approval (never auto-applied). Default {@code false}
+     * keeps existing agents out of the nightly loop.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "overnight_improvement_enabled", nullable = false)
+    private boolean overnightImprovementEnabled = false;
+
+    /**
+     * T448 / §XXIII.7 — CSV of specialist agent ids this router may delegate to
+     * (the allowlist for {@code delegate_to_agent}). Only consulted when
+     * {@link #agentHandoffEnabled}. Null/blank = no delegation.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "specialist_agent_ids", length = 2000)
+    private String specialistAgentIds;
+
+    /**
      * T323 / §IX.4.d — per-agent opt-in for Anthropic-compatible skills. When
      * {@code true} (and the skill sandbox is available — object storage
      * configured AND Code Interpreter mode {@code DOCKER}), every enabled,
@@ -103,6 +295,65 @@ public class TurAIAgent implements Serializable {
      */
     @Column(name = "skills_enabled", nullable = false)
     private boolean skillsEnabled = false;
+
+    /**
+     * T145 / §X.5.b — when {@code true}, the agent's attached MCP servers (the
+     * {@link #mcpServers} allow-list) are <em>federated</em> to whichever native
+     * vendor handles the turn: the OpenAI Responses remote {@code mcp} tool
+     * (T138) or the Anthropic MCP Connector (T144). On such a native turn the
+     * same servers are <em>not</em> also wired as Turing-side MCP client tools
+     * (the {@code TurNativeChatExecutor} suppresses the client callbacks to avoid
+     * double-wiring). {@code false} (default) keeps the legacy behaviour: MCP
+     * servers are reached only through Turing's in-process MCP client, and the
+     * vendor-native MCP comes solely from the per-instance capability config.
+     * Has no effect on non-native (Spring AI) turns, where MCP servers always
+     * ride as client tools.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "mcp_native_federation", nullable = false)
+    private boolean mcpNativeFederation = false;
+
+    /**
+     * T436 / §XXII.1 — per-agent opt-in for live tool-call events on the chat
+     * SSE. When {@code true}, every server-side tool invocation in a CALL-mode
+     * turn emits a structured {@code "tool_call"} event ({@code start} then
+     * {@code end}, with a redacted arg digest, status, and duration) so the UI
+     * can show "the agent is calling {@code search_knowledge_base}…" while the
+     * tool loop runs. Default {@code false} keeps existing streams byte-for-byte
+     * identical (no extra SSE events). Independent of the read-only T427 trace,
+     * which is always recorded; this flag only governs the <em>live</em> stream.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "tool_call_events_enabled", nullable = false)
+    private boolean toolCallEventsEnabled = false;
+
+    /**
+     * T438 / §XXII.3 — per-agent opt-in for frontend ("client") tools. When
+     * {@code true} and {@link #clientToolsJson} declares at least one tool, those
+     * tools are advertised to the model; a call to one parks the turn and emits a
+     * {@code client_tool_call} SSE event for the browser to run (resumed via
+     * {@code POST /api/v2/chat/client-tool-result}). Default {@code false} keeps
+     * the turn server-only (no client round-trip).
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "client_tools_enabled", nullable = false)
+    private boolean clientToolsEnabled = false;
+
+    /**
+     * T438 / §XXII.3 — JSON array declaring this agent's client tools:
+     * {@code [{"name":"…","description":"…","schema":{…}}]}. {@code schema} is the
+     * JSON-Schema for the tool's input parameters, advertised to the model. Only
+     * declared names are callable; an unknown name is rejected on resume.
+     * {@code longtext} for cross-DB portability. Null/blank → no client tools.
+     *
+     * @since 2026.3.4
+     */
+    @Lob
+    @Column(name = "client_tools_json")
+    private String clientToolsJson;
 
     /**
      * When {@code true}, the agent enqueues every chat turn into the chat
@@ -325,6 +576,20 @@ public class TurAIAgent implements Serializable {
     private TurSubmissionRetention submissionRetention = TurSubmissionRetention.RETAIN_FOREVER;
 
     /**
+     * T166 / §X.9.d — scope for the Anthropic memory tool (T163) file area.
+     * {@code CONVERSATION} (default) keeps the {@code memory/} scratchpad isolated
+     * per conversation; {@code USER} shares it across every conversation a given
+     * authenticated end user has with the agent (per-Keycloak-{@code sub}), so the
+     * agent remembers stable preferences. Falls back to per-conversation when no
+     * stable user identity is resolvable. Stored as a string to avoid ordinal drift.
+     *
+     * @since 2026.3.4
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "memory_scope", length = 20, nullable = false)
+    private TurMemoryScope memoryScope = TurMemoryScope.CONVERSATION;
+
+    /**
      * T66 / §VII.6.g — age threshold in days used only when
      * {@link #submissionRetention} is {@code RETAIN_DAYS}. Null or
      * non-positive disables the time-based purge (effectively
@@ -337,6 +602,41 @@ public class TurAIAgent implements Serializable {
 
     @Column(length = 2000)
     private String nativeTools;
+
+    /**
+     * T433 / §X.18.b — the per-agent selection of <em>provider-native</em>
+     * capabilities (a CSV of {@link com.viglet.turing.genai.nativeapi.TurNativeCapability}
+     * keys, e.g. {@code "anthropic-web-search,anthropic-code-execution"}),
+     * mirroring {@link #nativeTools}. It is a subset of what the agent's LLM
+     * instance is technically capable of (the per-instance matrix, T132); the
+     * native executor resolves {@code agentSelected ∩ instanceCapable}.
+     *
+     * <p><b>Opt-in / legacy.</b> {@code null} means the agent has made no
+     * explicit selection — the native path keeps its pre-T433 winner-takes-all
+     * behaviour (every instance-enabled native capability is used, no Turing
+     * tools attached). A non-null value (even an empty string) opts into the
+     * T433 "capacidade é mutex, resto coexiste" path: only the selected
+     * provider-native capabilities run, and the agent's Turing/MCP/custom tools
+     * whose {@code function} isn't claimed by a selected native pick are
+     * attached and run through the native tool-execution loop.
+     *
+     * @since 2026.3.4
+     */
+    @Column(length = 2000)
+    private String nativeCapabilities;
+
+    /**
+     * T435 / §X.18.d — per-agent {@code REQUEST_OPTION} selections as a JSON
+     * object keyed by capability key (e.g.
+     * {@code {"reasoning-effort":"high","citations":"true"}}). Rendered by the
+     * registry-driven "Request Options" settings; each F.13 request-shape task
+     * (T152/T160/T164/…) reads its own key when building the provider request.
+     * {@code null} = no options set.
+     *
+     * @since 2026.3.4
+     */
+    @Column(columnDefinition = "longtext")
+    private String requestOptionsJson;
 
     /**
      * Whether the underlying LLM round-trip uses Spring AI's blocking

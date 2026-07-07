@@ -409,6 +409,8 @@ public class TurAIAgentImportService {
             agent.setChatMemoryCompressionAsync(a.getChatMemoryCompressionAsync());
         }
         agent.setNativeTools(a.getNativeTools());
+        agent.setNativeCapabilities(a.getNativeCapabilities());
+        agent.setRequestOptionsJson(a.getRequestOptionsJson());
         agent.setPythonRequirements(a.getPythonRequirements());
         // T66 / §VII.6.g — null-guarded so pre-T66 exports keep the entity
         // default (RETAIN_FOREVER) instead of nulling a non-null column.
@@ -416,6 +418,11 @@ public class TurAIAgentImportService {
             agent.setSubmissionRetention(a.getSubmissionRetention());
         }
         agent.setSubmissionRetentionDays(a.getSubmissionRetentionDays());
+        // T166 / §X.9.d — null-guarded so pre-T166 exports keep the entity
+        // default (CONVERSATION) instead of nulling a non-null column.
+        if (a.getMemoryScope() != null) {
+            agent.setMemoryScope(a.getMemoryScope());
+        }
     }
 
     private static void wireAgentReferences(TurAIAgent agent, TurAIAgentExchange a, ResolvedRefs refs) {

@@ -1,5 +1,7 @@
 packages:
   - "apps/turing-app"
+  - "apps/site"
+  - "apps/showcase"
   - "apps/marketplace/*"
   - "packages/*"
 
@@ -10,3 +12,14 @@ allowBuilds:
   esbuild: true
   "@swc/core": true
   "@tailwindcss/oxide": true
+
+minimumReleaseAgeExclude:
+  - '@viglet/viglet-design-system@2026.3.2'
+
+# Force a single @codemirror/view copy. @codemirror/language@6.12.3 pulled in
+# 6.41.1 while @uiw/react-codemirror / codemirror@6.0.2 used 6.43.0. Two view
+# copies make CodeMirror silently drop the syntax-highlighting ViewPlugin
+# (built against the other copy), so the Custom Tool Groovy editor rendered
+# uncolored even though autocomplete (state/facet-based) still worked.
+overrides:
+  "@codemirror/view": "6.43.0"

@@ -137,6 +137,9 @@ public class TurSNGenAi {
     private final TurAgentChatExecutor agentChatExecutor;
     private final com.viglet.turing.system.TurGlobalSettingsService globalSettingsService;
     private final com.viglet.turing.genai.rag.TurRagReranker ragReranker;
+    private final com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+    private final com.viglet.turing.genai.safety.TurModerationService moderationService;
+    private final TurSNFullContextService fullContextService;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
@@ -145,7 +148,10 @@ public class TurSNGenAi {
             TurRagFacetExtractor facetExtractor,
             TurAgentChatExecutor agentChatExecutor,
             com.viglet.turing.system.TurGlobalSettingsService globalSettingsService,
-            com.viglet.turing.genai.rag.TurRagReranker ragReranker) {
+            com.viglet.turing.genai.rag.TurRagReranker ragReranker,
+            com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService,
+            com.viglet.turing.genai.safety.TurModerationService moderationService,
+            TurSNFullContextService fullContextService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -154,6 +160,9 @@ public class TurSNGenAi {
         this.agentChatExecutor = agentChatExecutor;
         this.globalSettingsService = globalSettingsService;
         this.ragReranker = ragReranker;
+        this.chatFlowEngineService = chatFlowEngineService;
+        this.moderationService = moderationService;
+        this.fullContextService = fullContextService;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -242,9 +251,17 @@ public class TurSNGenAi {
         // impossible to hallucinate around (vs. relying on the model obeying the
         // refusal instruction in DEFAULT_BEHAVIOR_PROMPT). No `sources[]` event —
         // there is no provenance to report.
-        if (relevantDocuments.isEmpty()) {
-            log.debug("RAG chat streaming: 0 documents passed the relevance gate — "
-                    + "returning deterministic refusal (locale={})", locale);
+        // T329 relevance-gate refusal — but NEVER when a chat flow is governing
+        // this conversation. A flow answer (e.g. a switch-option chip like
+        // "Finanças & Investimentos") retrieves zero site documents, so the gate
+        // would short-circuit to the refusal BEFORE the executor runs the flow
+        // advance — the answer is dropped and the flow stalls on its question.
+        // With an active flow, the message is flow INPUT: hand it to the
+        // executor (which captures it via the LlmJudge and routes the switch),
+        // grounding the turn on whatever docs exist (here: none).
+        if (relevantDocuments.isEmpty() && !chatFlowEngineService.hasActiveFlow(conversationId)) {
+            log.debug("RAG chat streaming: 0 documents passed the relevance gate and no active "
+                    + "flow — returning deterministic refusal (locale={})", locale);
             return reactor.core.publisher.Flux.just(
                     new TurAgentChatExecutor.ChatResponse(ASSISTANT, localizedRefusal(locale)));
         }
@@ -494,6 +511,19 @@ public class TurSNGenAi {
     private List<Document> retrieveDocuments(TurGenAiContext context,
             String latestUserQuery,
             java.util.Map<String, List<String>> filters) {
+        // T500 — full-context (retrieval-free) answering: only on the unfiltered
+        // conversational path (an explicit facet filter is a deliberate narrowing
+        // we must respect). When the site opted in and the whole corpus fits the
+        // token budget, ground over every chunk and skip top-K + rerank entirely.
+        // Fail-open: declines to empty → the normal top-K path below runs unchanged.
+        boolean callerFilters = filters != null && !filters.isEmpty();
+        if (!callerFilters) {
+            java.util.Optional<List<Document>> fullCorpus =
+                    fullContextService.tryFullContext(context, latestUserQuery);
+            if (fullCorpus.isPresent()) {
+                return fullCorpus.get();
+            }
+        }
         java.util.Map<String, List<String>> effectiveFilters = filters;
         boolean autoExtracted = false;
         if (effectiveFilters == null || effectiveFilters.isEmpty()) {
@@ -982,6 +1012,10 @@ public class TurSNGenAi {
         Object sourceId = metadata.get(SOURCE_ID);
         String idPrefix = sourceId == null ? null : sourceId.toString();
         List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata, idPrefix);
+        // T182 / §X.14.b — moderate crawler-discovered chunks (over a configurable
+        // size) before they reach the index; flagged chunks are dropped. No-op +
+        // fail-open when moderation is disabled (see TurModerationService).
+        documents = moderationService.filterModeratedChunks(documents, Document::getText);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
         if (log.isDebugEnabled()) {
             log.debug("RAG indexing metadata for Object ID '{}': {}", sourceId, metadata);

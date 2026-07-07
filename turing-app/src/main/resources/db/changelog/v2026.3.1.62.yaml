@@ -1,0 +1,139 @@
+databaseChangeLog:
+  # Block AA / T464 / §XXVI.1 — audience-profile facet on ai_persona.
+  # Opt-in personaKind discriminator (default SPEAKER = legacy voice personas
+  # untouched) plus the TurPersonaAudience @Embeddable columns, populated only
+  # for AUDIENCE/BOTH personas. Each column is added idempotently (gated by
+  # columnExists not present) so re-running on a reused H2 file is safe.
+  # Column names match the ai_persona table's existing snake_case convention.
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-persona_kind
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: persona_kind
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: persona_kind
+                  type: varchar(16)
+                  defaultValue: SPEAKER
+        - update:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: persona_kind
+                  value: SPEAKER
+            where: persona_kind IS NULL
+        - addNotNullConstraint:
+            tableName: ai_persona
+            columnName: persona_kind
+            columnDataType: varchar(16)
+            defaultNullValue: SPEAKER
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-reading_level
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: reading_level
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: reading_level
+                  type: varchar(16)
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-domain_expertise
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: domain_expertise
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: domain_expertise
+                  type: varchar(16)
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-vocabulary_ceiling
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: vocabulary_ceiling
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: vocabulary_ceiling
+                  type: longtext
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-comprehension_notes
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: comprehension_notes
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: comprehension_notes
+                  type: longtext
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-accessibility_notes
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: accessibility_notes
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: accessibility_notes
+                  type: longtext
+
+  - changeSet:
+      id: v2026.3.1.62-add-ai_persona-primary_language
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_persona
+                columnName: primary_language
+      changes:
+        - addColumn:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: primary_language
+                  type: varchar(8)

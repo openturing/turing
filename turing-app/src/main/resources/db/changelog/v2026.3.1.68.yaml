@@ -1,0 +1,71 @@
+databaseChangeLog:
+  # T175 / §X.12.a — vendor Files-API upload cache.
+  #
+  # llm_vendor_file caches the file_id returned when a binary is mirrored into
+  # an OpenAI / Anthropic Files API, keyed by (pluginType, instanceId,
+  # contentHash) so the same bytes upload once per vendor account. The native
+  # PDF grounding path (T176) reads this cache before re-uploading; T177 reuses
+  # the contentHash key for cross-agent dedup within a tenant.
+  #
+  # Idempotent: gated by tableExists not present. Portable types only
+  # (varchar / bigint / timestamp).
+
+  - changeSet:
+      id: v2026.3.1.68-create-llm_vendor_file
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: llm_vendor_file
+      changes:
+        - createTable:
+            tableName: llm_vendor_file
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: pluginType
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instanceId
+                  type: varchar(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: contentHash
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendorFileId
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fileName
+                  type: varchar(512)
+              - column:
+                  name: contentType
+                  type: varchar(128)
+              - column:
+                  name: sizeBytes
+                  type: bigint
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiresAt
+                  type: timestamp
+        - addUniqueConstraint:
+            tableName: llm_vendor_file
+            columnNames: pluginType, instanceId, contentHash
+            constraintName: uq_llm_vendor_file

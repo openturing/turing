@@ -40,8 +40,10 @@ class TurMcpToolCallbackServiceTest {
     }
 
     private static TurMcpServerDomain serverDomain(String id, String title) {
+        // (id, title, description, icon, url, command, args, type,
+        //  connectionType, transportType, enabled)
         return new TurMcpServerDomain(id, title, null, null, null, null, null,
-                null, null, 1);
+                null, null, null, 1);
     }
 
     @Test

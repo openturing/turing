@@ -38,6 +38,7 @@ prefer Option A for production EDS sites where you control the asset.
 |-------|------|---------------|
 | `turing-search` | [`blocks/turing-search/`](blocks/turing-search/) | `createSearchController` + `createAutoComplete`, repainting the DOM via `subscribe`, facet/pagination `navigate`. |
 | `turing-chat` | [`blocks/turing-chat/`](blocks/turing-chat/) | `createChatController` with token-by-token streaming (`onToken`), suggestion chips, `sessionStorage` persistence. |
+| `turing-analytics` | [`blocks/turing-analytics/`](blocks/turing-analytics/) | `createTuringAnalytics` + `googleAnalyticsSink` (Block Z): one bus shared by search + chat emits canonical events to GA4/GTM, **auto-detecting** the host `window.gtag` / `dataLayer` (zero config). Stitches the `search → chat → lead` funnel via `TUR_SESSION`. |
 
 Copy a block folder into your EDS project's `blocks/` directory. Authors then
 add a block by name; the first authored row carries the Turing **API base URL**

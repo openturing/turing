@@ -189,6 +189,50 @@ class TurPersonaToneValidatorTest {
         assertThat(r.sanitizedText()).doesNotContain("competitivo").doesNotContain("competitiva");
     }
 
+    // ── Multi-word PHRASE terms (regression: over-masking via per-stem bag) ──
+
+    @Test
+    void multiWordPhrase_doesNotMaskInnocentWordsSharingAStem() {
+        // Regression: forbidding refusal/sales PHRASES must NOT mask every
+        // standalone "ajudar" / "sou" / "te" just because those stems appear
+        // inside the phrases. The greeting below contains all three innocent
+        // words and the bot did NOT utter any forbidden phrase, so it must
+        // pass through verbatim.
+        TurPersona p = persona("não posso ajudar|sou consultor|vou te vender");
+        String greeting = "Opa! Sou o Lucas, me formei no MBA Executivo em 2024. "
+                + "Quando entrei aqui no site eu também tava perdido entre os programas, "
+                + "então deixa eu te ajudar a achar o seu. Como você se chama?";
+        TurPersonaValidationResult r = validator.validate(p, greeting);
+        assertThat(r.passed()).isTrue();
+        assertThat(r.sanitizedText()).isEqualTo(greeting).doesNotContain("[***]");
+        assertThat(r.violations()).isEmpty();
+    }
+
+    @Test
+    void multiWordPhrase_masksOnlyWhenFullPhrasePresent() {
+        TurPersona p = persona("não posso ajudar|sou consultor|vou te vender");
+        TurPersonaValidationResult r = validator.validate(p,
+                "Desculpe, não posso ajudar com isso — sou consultor e vou te vender o plano.");
+        assertThat(r.passed()).isFalse();
+        assertThat(r.violations())
+                .containsExactlyInAnyOrder("não posso ajudar", "sou consultor", "vou te vender");
+        assertThat(r.sanitizedText())
+                .doesNotContain("não posso ajudar")
+                .doesNotContain("sou consultor")
+                .doesNotContain("vou te vender")
+                .contains("[***]");
+    }
+
+    @Test
+    void multiWordPhrase_matchesAcrossFlexibleWhitespaceAndCase() {
+        // The LLM may emit collapsed spacing / newlines / different casing.
+        TurPersona p = persona("sou consultor");
+        TurPersonaValidationResult r = validator.validate(p, "Na verdade, Sou\n  Consultor aqui.");
+        assertThat(r.passed()).isFalse();
+        assertThat(r.violations()).containsExactly("sou consultor");
+        assertThat(r.sanitizedText()).contains("[***]");
+    }
+
     /** Helper — builds a TurPersona with the given forbidden-term spec. */
     private static TurPersona persona(String forbiddenTerms) {
         TurPersona p = new TurPersona();

@@ -21,7 +21,10 @@ import java.util.Optional;
 
 /**
  * Domain-side port for retrieving {@link TurAIAgentDomain} aggregates.
- * Read-only.
+ * Read-only <b>by design, permanently</b> — writes stay on the JPA repository
+ * ({@code @Transactional} + {@code LEFT JOIN FETCH}, per T488); ports will not
+ * grow {@code save} / {@code delete}. See
+ * {@code docs/adr/0001-domain-layer-bounded-completion.md}.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6

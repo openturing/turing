@@ -1,7 +1,9 @@
-import { useCallback, useRef, useState } from "react";
-import { fetchChat, fetchSearch, parseHrefToParams, type SearchParams } from "../core/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchChat, fetchSearch, parseHrefToParams, postClick, type SearchParams } from "../core/api";
 import { useTuringContext } from "../core/use-turing-context";
 import { resolveDocuments, resolveGroups } from "../core/resolve";
+import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../core/analytics";
+import { getOrCreateTurSession } from "../core/session";
 import type {
   ResolvedDocument,
   ResolvedGroup,
@@ -37,6 +39,21 @@ export interface UseTuringSearchReturn {
   changeSort: (sort: string) => Promise<void>;
   /** Go to specific page */
   goToPage: (page: number) => Promise<void>;
+  /**
+   * T462/T463 — record a result click: mirrors `postClick` (server CTR) **and**
+   * emits `turing_search_result_click` when an `analytics` bus is supplied.
+   */
+  trackResultClick: (documentId: string, position: number, term?: string) => void;
+}
+
+export interface UseTuringSearchOptions {
+  /**
+   * T463 (Block Z) — canonical analytics bus (from {@link useTuringAnalytics}).
+   * When set, the hook emits `turing_search` / `turing_search_no_results` /
+   * `turing_search_refined` and stamps the `TUR_SESSION` id for cross-surface
+   * stitching with chat. No-op when absent.
+   */
+  readonly analytics?: TuringAnalytics;
 }
 
 /**
@@ -56,9 +73,21 @@ export interface UseTuringSearchReturn {
  */
 export function useTuringSearch(
   initialParams?: Partial<SearchParams>,
+  options: UseTuringSearchOptions = {},
 ): UseTuringSearchReturn {
   const { config } = useTuringContext();
+  const { analytics } = options;
   const abortRef = useRef(0);
+  // Last real (non-wildcard) query, for refinement detection.
+  const lastQueryRef = useRef<string | null>(null);
+
+  // T463 — stamp the cross-surface session id so a later chat lead stitches
+  // back to the originating search (both key off the `TUR_SESSION` cookie).
+  useEffect(() => {
+    if (analytics) {
+      analytics.setContext({ site: config.site, sessionId: getOrCreateTurSession() ?? undefined });
+    }
+  }, [analytics, config.site]);
 
   const defaultParams: SearchParams = {
     q: "*",
@@ -96,18 +125,33 @@ export function useTuringSearch(
 
         if (requestId !== abortRef.current) return;
 
+        const resolved = resolveDocuments(searchResult);
         setData(searchResult);
         setChatData(chatResult);
-        setDocuments(resolveDocuments(searchResult));
+        setDocuments(resolved);
         setGroups(resolveGroups(searchResult));
         setStatus("success");
+
+        // T463 — search funnel events. `count` is the total hit count.
+        if (analytics && q && q !== "*") {
+          const resultCount = searchResult?.queryContext?.count ?? resolved.length;
+          const prev = lastQueryRef.current;
+          if (prev && prev !== q) {
+            analytics.emit(TURING_ANALYTICS_EVENTS.searchRefined, { from: prev, to: q });
+          }
+          analytics.emit(TURING_ANALYTICS_EVENTS.search, { query: q, results: resultCount });
+          if (resultCount === 0) {
+            analytics.emit(TURING_ANALYTICS_EVENTS.searchNoResults, { query: q });
+          }
+          lastQueryRef.current = q;
+        }
       } catch (err) {
         if (requestId !== abortRef.current) return;
         setError(err instanceof Error ? err.message : "Search failed");
         setStatus("error");
       }
     },
-    [config.site],
+    [config.site, analytics],
   );
 
   const search = useCallback(
@@ -143,6 +187,24 @@ export function useTuringSearch(
     [executeSearch, params],
   );
 
+  const trackResultClick = useCallback(
+    (documentId: string, position: number, term?: string) => {
+      const query = term ?? params.q ?? "";
+      void postClick(config.site, {
+        term: query,
+        documentId,
+        position,
+        locale: params._setlocale,
+      });
+      analytics?.emit(TURING_ANALYTICS_EVENTS.searchResultClick, {
+        query,
+        document_id: documentId,
+        position,
+      });
+    },
+    [config.site, params, analytics],
+  );
+
   return {
     status,
     data,
@@ -157,5 +219,6 @@ export function useTuringSearch(
     changeLocale,
     changeSort,
     goToPage,
+    trackResultClick,
   };
 }

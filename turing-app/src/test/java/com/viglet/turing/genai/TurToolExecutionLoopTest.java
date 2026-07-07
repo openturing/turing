@@ -10,6 +10,7 @@
 package com.viglet.turing.genai;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -28,6 +29,8 @@ import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
+
+import com.viglet.turing.genai.clienttool.TurClientToolParkException;
 
 import reactor.core.publisher.Flux;
 
@@ -175,6 +178,68 @@ class TurToolExecutionLoopTest {
                 .as("a tool-free answer needs exactly one model call")
                 .isEqualTo(1);
         assertThat(result.getResult().getOutput().getText()).isEqualTo("resposta direta");
+    }
+
+    private static final String CLIENT_TOOL = "get_user_location";
+
+    private static ChatResponse clientToolCallResponse() {
+        AssistantMessage.ToolCall toolCall =
+                new AssistantMessage.ToolCall("call_loc", "function", CLIENT_TOOL, "{\"hint\":\"city\"}");
+        AssistantMessage message = AssistantMessage.builder()
+                .content("")
+                .toolCalls(List.of(toolCall))
+                .build();
+        return new ChatResponse(List.of(new Generation(message)));
+    }
+
+    @Test
+    void callWithClientTools_parksOnClientToolCall() {
+        RecordingToolCallback tool = new RecordingToolCallback();
+        QueueChatModel model = new QueueChatModel();
+        model.enqueue(clientToolCallResponse());
+
+        TurClientToolParkException park = catchThrowableOfType(
+                TurClientToolParkException.class,
+                () -> new TurToolExecutionLoop().callWithClientTools(
+                        model, promptWith(tool), java.util.Set.of(CLIENT_TOOL)));
+
+        assertThat(park).isNotNull();
+        assertThat(park.toolCall().name()).isEqualTo(CLIENT_TOOL);
+        assertThat(park.toolCall().id()).isEqualTo("call_loc");
+        assertThat(park.toolCall().arguments()).contains("city");
+        assertThat(park.assistantMessage()).isNotNull();
+        assertThat(park.promptMessages()).isNotEmpty();
+        // A client tool must NOT be executed server-side.
+        assertThat(tool.invocations()).isZero();
+        // The model was called once (produced the client-tool request) and not re-called.
+        assertThat(model.callCount()).isEqualTo(1);
+    }
+
+    @Test
+    void callWithClientTools_passesThroughServerToolsAndAnswers() {
+        RecordingToolCallback tool = new RecordingToolCallback();
+        QueueChatModel model = new QueueChatModel();
+        // A server tool call (not a client tool) runs normally, then the model answers.
+        model.enqueue(toolCallResponse(), textResponse("pronto"));
+
+        ChatResponse result = new TurToolExecutionLoop().callWithClientTools(
+                model, promptWith(tool), java.util.Set.of(CLIENT_TOOL));
+
+        assertThat(tool.invocations()).isEqualTo(1);
+        assertThat(result.getResult().getOutput().getText()).isEqualTo("pronto");
+    }
+
+    @Test
+    void callWithClientTools_emptyNames_behavesLikePlainCall() {
+        RecordingToolCallback tool = new RecordingToolCallback();
+        QueueChatModel model = new QueueChatModel();
+        model.enqueue(textResponse("direto"));
+
+        ChatResponse result = new TurToolExecutionLoop().callWithClientTools(
+                model, promptWith(tool), java.util.Set.of());
+
+        assertThat(result.getResult().getOutput().getText()).isEqualTo("direto");
+        assertThat(model.callCount()).isEqualTo(1);
     }
 
     @Test

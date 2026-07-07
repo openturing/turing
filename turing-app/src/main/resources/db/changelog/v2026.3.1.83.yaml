@@ -1,0 +1,24 @@
+databaseChangeLog:
+  # T513 / §XXVIII.9 — per-site domain-specialized embedding model override on
+  # sn_site_genai. Null/blank falls back to the Global Settings default embedding
+  # model, so existing sites are unchanged. Column name matches the table's
+  # existing camelCase convention (e.g. contentFitPersonaId, snRankingMode).
+  # Idempotent: gated by columnExists not present so re-running on a reused H2
+  # file is safe.
+
+  - changeSet:
+      id: v2026.3.1.83-add-sn_site_genai-embeddingModelId
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: embeddingModelId
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: embeddingModelId
+                  type: varchar(40)

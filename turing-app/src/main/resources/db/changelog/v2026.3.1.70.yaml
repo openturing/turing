@@ -1,0 +1,84 @@
+databaseChangeLog:
+  # T183 / §X.14.c — vendor-reported daily AI usage/cost.
+  #
+  # One row per (day x vendor x workspace x model x service tier) of the
+  # authoritative billing figures imported nightly from a provider's Admin/Usage
+  # API (Anthropic first). Distinct from the per-turn estimate in
+  # llm_token_usage (Block L) — this is the vendor's own number, the source of
+  # truth the T184 AI-Spend widget reconciles against.
+  #
+  # Idempotent: a single changeset gated by "table not present". longtext is not
+  # needed (all columns are bounded); types are lowercase portable Liquibase
+  # types per TurLiquibaseChangelogAgnosticTest.
+
+  - changeSet:
+      id: v2026.3.1.70-create-tur_ai_usage_daily
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_ai_usage_daily
+      changes:
+        - createTable:
+            tableName: tur_ai_usage_daily
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: usage_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendor_id
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: workspace_id
+                  type: varchar(255)
+              - column:
+                  name: model_name
+                  type: varchar(100)
+              - column:
+                  name: service_tier
+                  type: varchar(40)
+              - column:
+                  name: input_tokens
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: output_tokens
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cost_usd
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: tur_ai_usage_daily
+            indexName: idx_ai_usage_daily_vendor_date
+            columns:
+              - column:
+                  name: vendor_id
+              - column:
+                  name: usage_date

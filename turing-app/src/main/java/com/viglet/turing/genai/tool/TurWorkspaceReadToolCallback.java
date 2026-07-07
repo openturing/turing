@@ -20,6 +20,7 @@ import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.DefaultToolMetadata;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
 
@@ -122,7 +123,8 @@ public class TurWorkspaceReadToolCallback implements ToolCallback {
             return null;
         }
         try {
-            Map<String, Object> args = objectMapper.readValue(toolInput, Map.class);
+            Map<String, Object> args = objectMapper.readValue(toolInput, new TypeReference<Map<String, Object>>() {
+            });
             Object key = args.get("key");
             if (key == null) {
                 return null;

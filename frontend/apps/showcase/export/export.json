@@ -1,0 +1,256 @@
+{
+  "se": [
+    {
+      "id": "00000000-0000-0000-0000-lucene000a71",
+      "title": "Lucene (Atlas Store)",
+      "description": "Local Lucene instance for the Atlas Store showcase",
+      "enabled": 1,
+      "endpointUrl": "./turing-sample",
+      "turSEVendor": { "id": "LUCENE" }
+    }
+  ],
+  "snSites": [
+    {
+      "id": "a715c0de-0000-4000-a000-atlasstore001",
+      "name": "atlas-store",
+      "description": "Atlas Store — the Viglet Turing ES reference catalog. A 200-product commerce copilot that stresses the maximum platform surface: typed fields (CURRENCY price, FLOAT rating, INT reviews, BOOL on-sale, DATE release, multi-valued color/material/tags), faceted + hybrid search, RAG chat, agents and skills.",
+      "icon": "tabler:building-store",
+      "rowsPerPage": 12,
+      "wildcardNoResults": 1,
+      "wildcardAlways": 0,
+      "exactMatch": 0,
+      "exactMatchField": "exact_match",
+      "facet": true,
+      "facetType": "AND",
+      "facetItemType": "OR",
+      "facetSort": "COUNT",
+      "hl": true,
+      "hlPre": "<mark>",
+      "hlPost": "</mark>",
+      "mlt": true,
+      "itemsPerFacet": 50,
+      "spellCheck": 1,
+      "spellCheckFixes": 3,
+      "spotlightWithResults": null,
+      "searchTemplate": "atlas-store",
+      "thesaurus": false,
+      "defaultField": "_text_",
+      "defaultTitleField": "title",
+      "defaultTextField": "text",
+      "defaultDescriptionField": "description",
+      "defaultDateField": "release_date",
+      "defaultImageField": "image",
+      "defaultURLField": "url",
+      "turSEInstance": "00000000-0000-0000-0000-lucene000a71",
+      "turSNRankingExpressions": [],
+      "turSNSiteMergeProviders": [],
+      "turSNSiteSpotlights": [
+        {
+          "id": "spot-atls-0001-0001-000000000001",
+          "name": "Headphones",
+          "description": "Spotlight for the catalog's hero category",
+          "language": "en_US",
+          "turSNSiteSpotlightTerms": [
+            { "name": "headphones" },
+            { "name": "wireless headphones" },
+            { "name": "noise canceling" }
+          ],
+          "turSNSiteSpotlightDocuments": [
+            {
+              "title": "Atlas Store — Headphones Buying Guide",
+              "type": "product",
+              "position": 1,
+              "link": "/guides/headphones",
+              "referenceId": "guide-headphones"
+            }
+          ]
+        }
+      ],
+      "turSNSiteCustomSorts": [
+        {
+          "id": "csort-atls-0001-000000000001",
+          "name": "price-low-high",
+          "description": "Price (low to high)",
+          "items": [
+            { "id": "csi-atls-0001", "fieldName": "price_amount", "sortOrder": "ASC", "position": 1 }
+          ]
+        },
+        {
+          "id": "csort-atls-0002-000000000002",
+          "name": "price-high-low",
+          "description": "Price (high to low)",
+          "items": [
+            { "id": "csi-atls-0002", "fieldName": "price_amount", "sortOrder": "DESC", "position": 1 }
+          ]
+        },
+        {
+          "id": "csort-atls-0003-000000000003",
+          "name": "top-rated",
+          "description": "Top rated",
+          "items": [
+            { "id": "csi-atls-0003", "fieldName": "rating", "sortOrder": "DESC", "position": 1 }
+          ]
+        },
+        {
+          "id": "csort-atls-0004-000000000004",
+          "name": "most-reviewed",
+          "description": "Most reviewed",
+          "items": [
+            { "id": "csi-atls-0004", "fieldName": "review_count", "sortOrder": "DESC", "position": 1 }
+          ]
+        },
+        {
+          "id": "csort-atls-0005-000000000005",
+          "name": "newest",
+          "description": "Newest arrivals",
+          "items": [
+            { "id": "csi-atls-0005", "fieldName": "release_date", "sortOrder": "DESC", "position": 1 }
+          ]
+        }
+      ],
+      "turSNSiteLocales": [
+        {
+          "id": "loc-atls-en-000000000001",
+          "language": "en_US",
+          "core": "atlas-store_en_US"
+        }
+      ],
+      "turSNSiteFields": [
+        { "id": "asf-001", "name": "title", "type": "TEXT", "multiValued": 0, "description": "Product name" },
+        { "id": "asf-002", "name": "description", "type": "TEXT", "multiValued": 0, "description": "Short product description" },
+        { "id": "asf-003", "name": "text", "type": "TEXT", "multiValued": 0, "description": "Full product narrative" },
+        { "id": "asf-004", "name": "url", "type": "STRING", "multiValued": 0, "description": "Canonical product URL" },
+        { "id": "asf-005", "name": "image", "type": "STRING", "multiValued": 0, "description": "Product image URL" },
+        { "id": "asf-006", "name": "sku", "type": "STRING", "multiValued": 0, "description": "Stock keeping unit" },
+        { "id": "asf-007", "name": "brand", "type": "STRING", "multiValued": 0, "description": "Brand" },
+        { "id": "asf-008", "name": "category", "type": "STRING", "multiValued": 0, "description": "Top-level category" },
+        { "id": "asf-009", "name": "subcategory", "type": "STRING", "multiValued": 0, "description": "Subcategory" },
+        { "id": "asf-010", "name": "price", "type": "CURRENCY", "multiValued": 0, "description": "Price (amount,ISO4217)" },
+        { "id": "asf-011", "name": "list_price", "type": "CURRENCY", "multiValued": 0, "description": "List price (amount,ISO4217)" },
+        { "id": "asf-012", "name": "price_amount", "type": "FLOAT", "multiValued": 0, "description": "Numeric price for sort/range" },
+        { "id": "asf-013", "name": "list_price_amount", "type": "FLOAT", "multiValued": 0, "description": "Numeric list price" },
+        { "id": "asf-014", "name": "currency", "type": "STRING", "multiValued": 0, "description": "ISO 4217 currency code" },
+        { "id": "asf-015", "name": "rating", "type": "FLOAT", "multiValued": 0, "description": "Average rating (0-5)" },
+        { "id": "asf-016", "name": "review_count", "type": "INT", "multiValued": 0, "description": "Number of reviews" },
+        { "id": "asf-017", "name": "availability", "type": "STRING", "multiValued": 0, "description": "Stock status" },
+        { "id": "asf-018", "name": "on_sale", "type": "BOOL", "multiValued": 0, "description": "On sale" },
+        { "id": "asf-019", "name": "color", "type": "STRING", "multiValued": 1, "description": "Available colors" },
+        { "id": "asf-020", "name": "material", "type": "STRING", "multiValued": 1, "description": "Materials" },
+        { "id": "asf-021", "name": "tags", "type": "STRING", "multiValued": 1, "description": "Feature tags" },
+        { "id": "asf-022", "name": "weight_kg", "type": "FLOAT", "multiValued": 0, "description": "Weight in kilograms" },
+        { "id": "asf-023", "name": "release_date", "type": "DATE", "multiValued": 0, "description": "Release date" },
+        { "id": "asf-024", "name": "type", "type": "STRING", "multiValued": 0, "description": "Content type" }
+      ],
+      "turSNSiteFieldExts": [
+        {
+          "id": "afe-001", "externalId": "asf-008", "name": "category", "description": "Category",
+          "facetName": "Category", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 1,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "afe-002", "externalId": "asf-009", "name": "subcategory", "description": "Subcategory",
+          "facetName": "Subcategory", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 2,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "afe-003", "externalId": "asf-007", "name": "brand", "description": "Brand",
+          "facetName": "Brand", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 3,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "afe-004", "externalId": "asf-017", "name": "availability", "description": "Availability",
+          "facetName": "Availability", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 4,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "afe-005", "externalId": "asf-019", "name": "color", "description": "Color",
+          "facetName": "Color", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": "OR",
+          "facetSort": "COUNT", "facetPosition": 5,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "afe-006", "externalId": "asf-021", "name": "tags", "description": "Features",
+          "facetName": "Features", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": "OR",
+          "facetSort": "COUNT", "facetPosition": 6,
+          "secondaryFacet": true, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "afe-007", "externalId": "asf-020", "name": "material", "description": "Material",
+          "facetName": "Material", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": "OR",
+          "facetSort": "ALPHABETICAL", "facetPosition": 7,
+          "secondaryFacet": true, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "afe-008", "externalId": "asf-018", "name": "on_sale", "description": "On Sale",
+          "facetName": "On Sale", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "BOOL", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 8,
+          "secondaryFacet": true, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "afe-009", "externalId": "asf-023", "name": "release_date", "description": "Release Year",
+          "facetName": "Release Year", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "DATE", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "YEAR", "facetType": "AND", "facetItemType": null,
+          "facetSort": "DEFAULT", "facetPosition": 9,
+          "secondaryFacet": true, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "afe-010", "externalId": "asf-001", "name": "title", "description": "Title",
+          "facetName": "Title", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 1,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        },
+        {
+          "id": "afe-011", "externalId": "asf-002", "name": "description", "description": "Description",
+          "facetName": "Description", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        },
+        {
+          "id": "afe-012", "externalId": "asf-003", "name": "text", "description": "Body",
+          "facetName": "Body", "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        }
+      ]
+    }
+  ]
+}

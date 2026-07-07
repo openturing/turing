@@ -96,7 +96,8 @@ public class TurAbBanditService {
         if (variants.size() == 1) {
             return variants.get(0);
         }
-        Map<String, long[]> statsByLabel = loadStats(experimentKey);
+        TurExperimentSignificanceService.SuccessMetric metric = resolveSuccessMetric(variants);
+        Map<String, long[]> statsByLabel = loadStats(experimentKey, metric);
         Random r = rng != null ? rng : ThreadLocalRandom.current();
         TurChatFlow best = variants.get(0);
         double bestScore = Double.NEGATIVE_INFINITY;
@@ -131,15 +132,32 @@ public class TurAbBanditService {
         return false;
     }
 
-    private Map<String, long[]> loadStats(String experimentKey) {
+    /**
+     * Resolves the experiment-wide success metric from the variants (T241):
+     * the first arm that declares a non-blank
+     * {@code experimentSuccessMetric}. Per-flow storage, but the experiment
+     * is scored on a single metric, so the first declaration wins; absent any
+     * declaration the default is {@code GOAL_ACHIEVED}.
+     */
+    static TurExperimentSignificanceService.SuccessMetric resolveSuccessMetric(
+            List<TurChatFlow> variants) {
+        for (TurChatFlow v : variants) {
+            String declared = v.getExperimentSuccessMetric();
+            if (declared != null && !declared.isBlank()) {
+                return TurExperimentSignificanceService.SuccessMetric.fromNameOrDefault(declared);
+            }
+        }
+        return TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED;
+    }
+
+    private Map<String, long[]> loadStats(String experimentKey,
+            TurExperimentSignificanceService.SuccessMetric metric) {
         Map<String, long[]> out = new HashMap<>();
         try {
             Instant from = Instant.now().minusSeconds(DEFAULT_LOOKBACK_DAYS * 24L * 3600L);
             Instant to = Instant.now();
             List<TurExperimentSignificanceService.VariantStat> rows =
-                    significanceService.collectVariantStats(experimentKey,
-                            TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED,
-                            from, to);
+                    significanceService.collectVariantStats(experimentKey, metric, from, to);
             for (TurExperimentSignificanceService.VariantStat row : rows) {
                 out.put(row.variantLabel(),
                         new long[] { row.sessions(), row.successes() });

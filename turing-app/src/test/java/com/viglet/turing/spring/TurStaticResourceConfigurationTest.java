@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistration;
@@ -42,10 +43,12 @@ class TurStaticResourceConfigurationTest {
     private ResourceHandlerRegistration resourceHandlerRegistration;
     @Mock
     private ResourceChainRegistration resourceChainRegistration;
+    @Mock
+    private AsyncTaskExecutor mvcAsyncTaskExecutor;
 
     @BeforeEach
     void setUp() {
-        configuration = new TurStaticResourceConfiguration();
+        configuration = new TurStaticResourceConfiguration(mvcAsyncTaskExecutor);
     }
 
     @Test

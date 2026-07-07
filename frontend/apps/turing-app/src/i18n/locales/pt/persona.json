@@ -1,9 +1,73 @@
 {
   "persona": {
     "title": "Persona",
+    "notFound": {
+      "title": "Persona não encontrada",
+      "description": "Esta persona não existe mais ou não está disponível."
+    },
     "blankTitle": "Você ainda não tem nenhuma persona.",
     "blankDescription": "Crie um perfil de voz reutilizável para aplicar tom, vocabulário e contexto de marca consistentes nos seus agentes de IA.",
     "newInstance": "Nova Persona",
+    "sidebar": {
+      "general": "Geral",
+      "systemInstruction": "Instrução do Sistema",
+      "style": "Diretrizes de Estilo",
+      "audience": "Perfil de Audiência",
+      "notebook": "Caderno de Avaliação",
+      "fitReport": "Relatório de Adequação de Audiência",
+      "guidelines": "Diretrizes da Persona"
+    },
+    "launch": {
+      "title": "Ações",
+      "openChat": "Abrir chat",
+      "validateContent": "Validar conteúdo",
+      "audienceOnly": "Disponível para personas de audiência",
+      "personaDialogue": "Diálogo entre personas",
+      "soon": "Em breve"
+    },
+    "validate": {
+      "title": "Validar conteúdo",
+      "subtitle": "Adicione documentos, links ou conteúdo indexado e pontue o quão bem ele se adequa à audiência desta persona."
+    },
+    "dialogue": {
+      "title": "Diálogo entre personas",
+      "subtitle": "Escolha um tema e duas ou mais personas e veja-as conversarem, turno a turno.",
+      "setupTitle": "Configurar a conversa",
+      "setupDesc": "Cada persona é obrigada a terminar toda resposta com uma pergunta, para o diálogo continuar sempre.",
+      "needTwo": "Você precisa de pelo menos duas personas falantes (SPEAKER ou BOTH) para rodar um diálogo.",
+      "topic": "Tema",
+      "topicPlaceholder": "ex.: Uma startup deveria adotar a semana de quatro dias?",
+      "speakers": "Personas",
+      "selectPersona": "Selecione uma persona",
+      "addSpeaker": "Adicionar persona",
+      "removeSpeaker": "Remover persona",
+      "turns": "Turnos",
+      "model": "Modelo",
+      "selectModel": "Selecione um modelo",
+      "noLlm": "Nenhuma instância de LLM habilitada está disponível.",
+      "run": "Iniciar diálogo",
+      "running": "Conversando…",
+      "thinking": "A próxima persona está pensando…",
+      "transcriptTitle": "Transcrição",
+      "failed": "O diálogo falhou.",
+      "partial": "O diálogo parou antes do fim: {{error}}"
+    },
+    "dashboard": {
+      "systemInstructionSet": "Contrato de voz definido",
+      "systemInstructionEmpty": "Defina o contrato de voz",
+      "systemInstructionHint": "A instrução do sistema prependida aos chats que adotam esta persona.",
+      "styleTitle": "Estilo & voz",
+      "verbosityLevel": "Verbosidade {{level}}/5",
+      "guidelinesTitle": "Diretrizes",
+      "guidelinesHint": "Termos obrigatórios e proibidos.",
+      "termCount": "{{mandatory}} obrigatórios · {{forbidden}} proibidos",
+      "audienceTitle": "Perfil de audiência",
+      "audienceHint": "Para quem esta persona lê.",
+      "notebookTitle": "Caderno de avaliação",
+      "notebookHint": "Fontes usadas para pontuar a adequação de conteúdo.",
+      "fitReportTitle": "Relatório de adequação",
+      "fitReportHint": "Quão bem o conteúdo atende esta audiência."
+    },
     "deleted": "A persona {{name}} foi removida",
     "notDeleted": "A persona {{name}} não foi removida",
     "aiChat": {
@@ -25,6 +89,47 @@
       "NARRATIVE": "Narrativo",
       "PERSUASIVE": "Persuasivo",
       "INSTRUCTIONAL": "Instrucional"
+    },
+    "kinds": {
+      "SPEAKER": "Locutor (voz)",
+      "AUDIENCE": "Audiência (leitor)",
+      "BOTH": "Ambos (par)"
+    },
+    "readingLevels": {
+      "ELEMENTARY": "Fundamental I",
+      "MIDDLE": "Fundamental II",
+      "SECONDARY": "Ensino médio",
+      "UNDERGRADUATE": "Graduação",
+      "GRADUATE": "Pós / especialista"
+    },
+    "domainExpertise": {
+      "NOVICE": "Iniciante",
+      "BEGINNER": "Básico",
+      "INTERMEDIATE": "Intermediário",
+      "ADVANCED": "Avançado",
+      "EXPERT": "Especialista"
+    },
+    "sourceTypes": {
+      "SN_DOC": "Documento indexado",
+      "ASSET": "Arquivo enviado",
+      "URL": "URL da web"
+    },
+    "sourceStatus": {
+      "PENDING": "Pendente",
+      "EXTRACTED": "Extraído",
+      "FAILED": "Falhou"
+    },
+    "misfitReason": {
+      "too-complex": "muito complexo",
+      "jargon": "jargão",
+      "tone": "tom",
+      "missing-context": "falta contexto"
+    },
+    "fromAudio": {
+      "trigger": "Criar a partir de áudio",
+      "working": "Transcrevendo…",
+      "drafted": "Rascunho de persona pronto — revise e salve",
+      "failed": "Não foi possível criar uma persona a partir do áudio"
     }
   }
 }

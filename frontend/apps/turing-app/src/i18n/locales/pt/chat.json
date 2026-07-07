@@ -14,6 +14,12 @@
     "deleteSession": "Excluir sessão",
     "selectModel": "Selecione um modelo...",
     "newChat": "Novo Chat",
+    "noModelSelected": "Nenhum modelo selecionado",
+    "persona": {
+      "ask": "Converse com {{persona}}",
+      "usingModel": "Conversando com esta persona usando {{model}}",
+      "subtitle": "Converse diretamente com uma persona para testar sua voz"
+    },
     "chatTab": "Chat",
     "semanticTab": "Semântico",
     "semanticTabShort": "SN",
@@ -32,6 +38,40 @@
       "confidenceMedium": "Confiança média",
       "confidenceLow": "Baixa confiança"
     },
+    "citations": {
+      "heading": "Citações",
+      "source": "Fonte",
+      "page": "p.",
+      "open": "Abrir fonte"
+    },
+    "searchSuggestions": {
+      "heading": "Pesquisa Google"
+    },
+    "reasoning": {
+      "heading": "Por que esta resposta"
+    },
+    "grounding": {
+      "ungrounded": "Não fundamentada nas fontes",
+      "flagged": "Sinalizada pela proteção",
+      "tooltip": "Veredito da proteção de fundamentação da resposta"
+    },
+    "secondOpinion": {
+      "agree": "Segunda opinião concorda",
+      "disagree": "Segunda opinião discorda",
+      "tooltip": "Um modelo de outro fornecedor revisou esta resposta"
+    },
+    "tools": {
+      "heading": "Ferramentas",
+      "calling": "Chamando",
+      "running": "executando",
+      "done": "concluído",
+      "error": "falhou"
+    },
+    "rephrase": {
+      "shorter": "Reescrever mais curto",
+      "shorterLabel": "Mais curto",
+      "failed": "Não foi possível reescrever"
+    },
     "selectModelToStart": "Selecione um modelo para começar...",
     "selectModelToChat": "Selecione um modelo de linguagem para começar a conversar.",
     "selectModelToExplore": "Selecione um modelo de linguagem para começar a explorar.",
@@ -39,6 +79,11 @@
     "askAboutContent": "Faça perguntas sobre seu conteúdo indexado.",
     "askAnythingAgent": "Pergunte qualquer coisa que este agente possa ajudar.",
     "askAboutSemantic": "Pergunte sobre seu conteúdo de navegação semântica...",
+    "costGate": {
+      "title": "Confirmar custo do turno",
+      "body": "Este turno deve custar cerca de ${{cost}} ({{tokens}} tokens de entrada){{approx}}, acima do limite de {{cap}} por turno. Enviar mesmo assim?",
+      "confirm": "Enviar mesmo assim"
+    },
     "askAgent": "Pergunte ao {{agent}}...",
     "usingModel": "Usando {{model}} ({{vendor}})",
     "usingModelForSN": "Faça perguntas sobre seu conteúdo indexado. Usando {{model}}.",

@@ -26,6 +26,9 @@ interface NavMainItem {
   url?: string;
   icon?: React.ElementType;
   children?: NavMainItem[];
+  /** When true, the item stays visible while creating a new entity (`isNew`).
+   *  Defaults to the legacy `url === "/detail"` heuristic when omitted. */
+  showOnNew?: boolean;
 }
 
 interface InternalSidebarProps {
@@ -59,8 +62,13 @@ const isItemActive = (
   urlBase: string | undefined,
   pathname: string,
 ): boolean => {
-  if (item.url && pathname.startsWith((urlBase ?? "") + item.url)) {
-    return true;
+  if (item.url) {
+    const target = (urlBase ?? "") + item.url;
+    // Match on segment boundaries only, so `/field` does not also light up
+    // when the path is `/field-coverage` (both share the `/field` prefix).
+    if (pathname === target || pathname.startsWith(target + "/")) {
+      return true;
+    }
   }
   return item.children?.some((c) => isItemActive(c, urlBase, pathname)) ?? false;
 };
@@ -183,7 +191,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
         {(() => {
           const allItems = data?.navMain ?? [];
           const visibleItems = isNew
-            ? allItems.filter((item) => item.url === "/detail")
+            ? allItems.filter((item) => item.showOnNew ?? item.url === "/detail")
             : allItems;
           // Items with a url stay in the main feature group; items without
           // one (group labels) become their own SidebarGroup below.

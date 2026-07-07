@@ -34,6 +34,16 @@ export type TurSubmissionRetention =
   | "RETAIN_DAYS"
   | "DELETE_AFTER_EXPORT";
 
+/**
+ * T166 / §X.9.d — scope for the Anthropic memory tool (T163) file area.
+ * - "CONVERSATION" — memory isolated per conversation (default).
+ * - "USER"         — memory shared across every conversation an authenticated
+ *                    end user has with the agent (per-Keycloak-`sub`); falls
+ *                    back to per-conversation when no stable identity exists.
+ * @since 2026.3.4
+ */
+export type TurMemoryScope = "CONVERSATION" | "USER";
+
 export interface TurAIAgent {
   id: string;
   title: string;
@@ -45,8 +55,20 @@ export interface TurAIAgent {
   ragEnabled: boolean;
   /** Opt-in: augments the system prompt with the ```html / ```d2 live-preview rendering guidance so the agent can emit interactive blocks (games, demos, Chart.js, diagrams). Default false. */
   richContentEnabled?: boolean;
+  /** T187: opt-in "Live answers" hybrid mode. On a native OpenAI/Anthropic turn the agent fuses the indexed knowledge base + web_search + web_fetch + code_execution into ONE cited answer (injects [KB-n] grounding + a fusion-guidance prompt; the web/code tools come from the agent's selected native capabilities). Default false. */
+  liveAnswersEnabled?: boolean;
+  /** T189: opt-in real-time multilingual call-center augmentation. Enables `POST /call-center/assist`, which translates a transcribed customer utterance into the operator's language, answers it with citations from the index, and translates the answer back. Default false (endpoint returns 403). */
+  callCenterEnabled?: boolean;
+  /** T190: opt-in self-installing connectors. Enables the `/connector` catalog/guide/test endpoints so the agent can walk a customer through connecting a third-party system (token-generation steps + connection test before save/enable). When a real computer-use driver is deployed the steps can be driven in a browser; otherwise guided. Default false (endpoints return 403). */
+  connectorSetupEnabled?: boolean;
+  /** T191: opt-in overnight self-improvement. A nightly job distills the agent's recent production traffic into a fine-tuned candidate, scores it against the eval golden sets, and — only if it beats the incumbent — opens a DISTILLATION_CANDIDATE suggestion for human approval (never auto-applied). Requires the distillation tier enabled + an OpenAI-backed eval LLM. Default false. */
+  overnightImprovementEnabled?: boolean;
+  /** T436: opt-in to live `tool_call` events on the chat SSE so the UI can show the agent's tool activity ("calling search_knowledge_base…") while the tool loop runs. Applies to CALL-mode turns. Default false (streams stay byte-identical). */
+  toolCallEventsEnabled?: boolean;
   /** T323: opt-in to Anthropic-compatible skills. When enabled (and the skill sandbox + a Default LLM are available), every enabled skill is offered to the agent's chat turns via the `run_skill` tool; the skill always runs on the Global Settings Default LLM. Default false. */
   skillsEnabled?: boolean;
+  /** T145: opt-in to cross-vendor MCP federation. On a native OpenAI/Anthropic turn the agent's selected HTTP MCP servers are called directly by the provider (OpenAI remote mcp tool / Anthropic MCP Connector) instead of Turing's MCP client. Default false. */
+  mcpNativeFederation?: boolean;
   /** Persists every chat turn to the configured logging engine (mongodb/redis), keyed by conversationId. No-op when turing.logging.engine == none. */
   chatMemoryEnabled: boolean;
   /** Worker flush cadence in minutes. */
@@ -117,6 +139,20 @@ export interface TurAIAgent {
    */
   budgetDowngradeLlmId?: string | null;
   nativeTools?: string | null;
+  /**
+   * T433 / §X.18.b — per-agent selection of provider-native capabilities (CSV of
+   * `TurNativeCapability` keys, mirroring {@link nativeTools}). `null`/undefined =
+   * no explicit selection (legacy winner-takes-all native path); a non-null value
+   * (even "") opts into the "capacidade é mutex, resto coexiste" execution model.
+   * Written by the Tools & Capabilities picker (T434). @since 2026.3.4
+   */
+  nativeCapabilities?: string | null;
+  /**
+   * T435 / §X.18.d — per-agent REQUEST_OPTION selections as a JSON object keyed by
+   * capability key (e.g. `{"reasoning-effort":"high","citations":"true"}`). Written
+   * by the registry-driven Request Options settings; `null` = none. @since 2026.3.4
+   */
+  requestOptionsJson?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
   /**
@@ -130,6 +166,11 @@ export interface TurAIAgent {
    * @since 2026.3.1
    */
   submissionRetentionDays?: number | null;
+  /**
+   * T166 / §X.9.d — scope for the Anthropic memory tool (T163). Defaults to
+   * `CONVERSATION`. @since 2026.3.4
+   */
+  memoryScope?: TurMemoryScope;
   // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
   // moved from TurAIAgent to TurSNSiteGenAi — see sn-site-genai.model.ts.
   /**

@@ -132,6 +132,25 @@ public class TurSolr {
         }
     }
 
+    /**
+     * T472 — counts documents whose {@code fieldName} value is strictly below
+     * {@code threshold} using Solr's exclusive-upper range filter
+     * ({@code field:[* TO threshold}}). Returns {@code -1} on error so coverage
+     * callers can treat it as "unknown".
+     */
+    public long getDocumentTotalWithFieldBelow(TurSolrInstance turSolrInstance, String fieldName,
+            int threshold) {
+        try {
+            SolrQuery query = new SolrQuery().setQuery("*:*").setRows(0)
+                    .addFilterQuery(fieldName + ":[* TO " + threshold + "}");
+            return executeSolrQuery(turSolrInstance, query)
+                    .map(queryResponse -> queryResponse.getResults().getNumFound()).orElse(0L);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return -1L;
+        }
+    }
+
     public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
             Map<String, Object> attributes) {
         turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);

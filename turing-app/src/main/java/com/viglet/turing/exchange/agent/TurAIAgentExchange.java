@@ -61,10 +61,16 @@ public class TurAIAgentExchange {
     // T309 / §IX.3.f — run compression off the hot path (default true).
     private Boolean chatMemoryCompressionAsync;
     private String nativeTools;
+    // T433 / §X.18.b — per-agent provider-native capability selection (CSV).
+    private String nativeCapabilities;
+    // T435 / §X.18.d — per-agent REQUEST_OPTION selections (JSON object).
+    private String requestOptionsJson;
     private String pythonRequirements;
     // T66 / §VII.6.g — submission retention policy travels with the agent.
     private com.viglet.turing.persistence.model.agent.TurSubmissionRetention submissionRetention;
     private Integer submissionRetentionDays;
+    // T166 / §X.9.d — memory tool scope travels with the agent.
+    private com.viglet.turing.persistence.model.agent.TurMemoryScope memoryScope;
 
     // ─── reference IDs (entities live at envelope root) ───────────────
     private List<String> personaIds = new ArrayList<>();
@@ -110,9 +116,12 @@ public class TurAIAgentExchange {
         e.chatMemoryCompressionInterval = agent.getChatMemoryCompressionInterval();
         e.chatMemoryCompressionAsync = agent.isChatMemoryCompressionAsync();
         e.nativeTools = agent.getNativeTools();
+        e.nativeCapabilities = agent.getNativeCapabilities();
+        e.requestOptionsJson = agent.getRequestOptionsJson();
         e.pythonRequirements = agent.getPythonRequirements();
         e.submissionRetention = agent.getSubmissionRetention();
         e.submissionRetentionDays = agent.getSubmissionRetentionDays();
+        e.memoryScope = agent.getMemoryScope();
 
         if (agent.getPersonas() != null) {
             agent.getPersonas().forEach(p -> e.personaIds.add(p.getId()));

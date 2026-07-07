@@ -8,8 +8,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/app/routes.const";
+import { useFeatures } from "@/api/queries/features.queries";
 import { useCurrentUser } from "@/contexts/user.context";
-import { IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { IconBuildingCommunity, IconBuildingSkyscraper, IconLogout, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { UserAvatar } from "@viglet/viglet-design-system";
@@ -26,6 +27,9 @@ export function BentoUserMenu() {
   const { user } = useCurrentUser();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: features } = useFeatures();
+  const tenancyEnabled = features?.tenancyEnabled === true;
+  const platformAdmin = features?.platformAdmin === true;
 
   const fullName =
     `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
@@ -85,12 +89,30 @@ export function BentoUserMenu() {
 
         <DropdownMenuGroup>
           <DropdownMenuItem
-            onSelect={() => navigate(ROUTES.USER_ACCOUNT)}
+            onSelect={() => navigate(ROUTES.BENTO_USER_ACCOUNT)}
             className="bento-dropdown-item cursor-pointer gap-2 px-3 py-2"
           >
             <IconUserCircle size={18} />
             {t("nav.account")}
           </DropdownMenuItem>
+          {tenancyEnabled && (
+            <DropdownMenuItem
+              onSelect={() => navigate(ROUTES.BENTO_TENANT_SETTINGS)}
+              className="bento-dropdown-item cursor-pointer gap-2 px-3 py-2"
+            >
+              <IconBuildingCommunity size={18} />
+              {t("nav.organizations", { defaultValue: "Organizations" })}
+            </DropdownMenuItem>
+          )}
+          {tenancyEnabled && platformAdmin && (
+            <DropdownMenuItem
+              onSelect={() => navigate(ROUTES.BENTO_TENANT_ADMIN)}
+              className="bento-dropdown-item cursor-pointer gap-2 px-3 py-2"
+            >
+              <IconBuildingSkyscraper size={18} />
+              {t("nav.tenantAdmin", { defaultValue: "Tenant administration" })}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />

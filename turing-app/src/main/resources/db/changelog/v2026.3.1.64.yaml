@@ -1,0 +1,55 @@
+databaseChangeLog:
+  # T472 / §XXVI.9 — index-time content-fit signal config on sn_site_genai.
+  #
+  # Two opt-in columns drive the audience-fit signal computed at index time and
+  # surfaced in the content-fit coverage report:
+  #   contentFitIndexingEnabled — master switch (default false ⇒ indexing path
+  #                               unchanged, no field provisioned, no scorer run).
+  #   contentFitPersonaId        — TurPersona id used as the reader proxy
+  #                               (AUDIENCE/BOTH personas). Null/blank disables
+  #                               the signal even when the switch is on.
+  #
+  # camelCase per the project's literal JPA naming convention; idempotent via
+  # columnExists + onFail:MARK_RAN.
+  - changeSet:
+      id: v2026.3.1.64-add-sn-site-genai-contentFitIndexingEnabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: contentFitIndexingEnabled
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: contentFitIndexingEnabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T472/§XXVI.9 opt-in for the index-time content-fit (readability) signal."
+
+  - changeSet:
+      id: v2026.3.1.64-add-sn-site-genai-contentFitPersonaId
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: contentFitPersonaId
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: contentFitPersonaId
+                  type: varchar(40)
+                  remarks: "T472/§XXVI.9 target-audience TurPersona id read as the reader proxy by the index-time scorer."

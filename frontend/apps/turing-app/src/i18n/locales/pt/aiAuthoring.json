@@ -6,6 +6,9 @@
     "thinking": "Pensando…",
     "empty": "Inicie a conversa para preencher o formulário.",
     "expand": "Abrir painel IA",
-    "collapse": "Fechar painel IA"
+    "collapse": "Fechar painel IA",
+    "voiceStart": "Ditar por voz",
+    "voiceStop": "Parar ditado",
+    "listening": "Ouvindo… fale sua instrução"
   }
 }

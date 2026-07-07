@@ -77,6 +77,8 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
     private static final String DEFAULT_COLLECTION = "turing";
     private static final String BASE_PATH_OPTION = "basePath";
     private static final String COLLECTION_NAME_OPTION = "collectionName";
+    /** T514 — provider option selecting scalar quantization ({@code none}/{@code int8}/{@code int4}/{@code seven_bit}/{@code binary}). */
+    private static final String QUANTIZATION_OPTION = "quantization";
 
     /**
      * Metadata keys used to identify a logical document across its chunks, checked in order.
@@ -120,7 +122,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         Path basePath = resolveBasePath(turStoreInstance, options);
         String collectionName = resolveCollectionName(turStoreInstance, options, collectionNameOverride);
-        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName, resolveQuantization(options));
         return new TurLuceneVectorStore(index, embeddingModel, collectionName);
     }
 
@@ -138,7 +140,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
                     .sorted()
                     .forEach(dir -> {
                         String name = dir.getFileName().toString();
-                        TurLuceneVectorIndex index = openIndex(basePath, name);
+                        TurLuceneVectorIndex index = openIndex(basePath, name, resolveQuantization(options));
                         long chunkCount = safeNumDocs(index);
                         long documentCount = safeDistinctDocumentCount(index);
                         if (documentCount == 0) {
@@ -159,7 +161,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
             String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         Path basePath = resolveBasePath(turStoreInstance, options);
-        openIndex(basePath, collectionName);
+        openIndex(basePath, collectionName, resolveQuantization(options));
         log.info("[Lucene] Created collection '{}' at {}", collectionName, basePath);
     }
 
@@ -169,7 +171,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
             String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         Path basePath = resolveBasePath(turStoreInstance, options);
-        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName, resolveQuantization(options));
         try {
             index.clear();
             log.info("[Lucene] Cleared collection '{}'", collectionName);
@@ -216,7 +218,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
             String metadataValue) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         Path basePath = resolveBasePath(turStoreInstance, options);
-        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName, resolveQuantization(options));
         try {
             org.apache.lucene.index.Term term = new org.apache.lucene.index.Term(
                     TurLuceneVectorStore.METADATA_FIELD_PREFIX + metadataKey,
@@ -258,7 +260,7 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
             Map<String, List<String>> filters) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         Path basePath = resolveBasePath(turStoreInstance, options);
-        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName, resolveQuantization(options));
 
         int safePageSize = Math.clamp(pageSize, 1, 200);
         int safePage = Math.max(0, page);
@@ -281,6 +283,61 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
                     collectionName, page, pageSize, e.getMessage());
             return new TurStoreChunkPage(List.of(), -1L);
         }
+    }
+
+    /**
+     * F.7 / §X.8.c — bulk upsert with precomputed vectors (and re-embed for any
+     * record missing one). Fills the Lucene gap that previously left
+     * {@code importChunks} unimplemented: records that already carry an
+     * {@code embedding} are written verbatim via
+     * {@link TurLuceneVectorStore#addPrecomputed}, so a batch re-embedding job
+     * (T158) can write its vectors back; records without an embedding fall back
+     * to synchronous embedding via {@code embeddingModel} (when supplied).
+     */
+    @Override
+    public com.viglet.turing.genai.provider.store.TurStoreImportResult importChunks(
+            TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            Iterable<com.viglet.turing.genai.provider.store.TurStoreExportRecord> records,
+            EmbeddingModel embeddingModel) {
+        TurLuceneVectorStore store = (TurLuceneVectorStore) createVectorStore(
+                turStoreInstance, embeddingModel, decryptedCredential, collectionName);
+
+        List<org.springframework.ai.document.Document> precomputedDocs = new ArrayList<>();
+        List<float[]> precomputedVectors = new ArrayList<>();
+        List<org.springframework.ai.document.Document> toEmbed = new ArrayList<>();
+        int total = 0;
+        int failed = 0;
+
+        for (var rec : records) {
+            total++;
+            if (rec == null || rec.id() == null) {
+                failed++;
+                continue;
+            }
+            org.springframework.ai.document.Document doc = org.springframework.ai.document.Document.builder()
+                    .id(rec.id())
+                    .text(rec.content() == null ? "" : rec.content())
+                    .metadata(rec.metadata() == null ? Map.of() : rec.metadata())
+                    .build();
+            if (rec.embedding() != null && rec.embedding().length > 0) {
+                precomputedDocs.add(doc);
+                precomputedVectors.add(rec.embedding());
+            } else if (embeddingModel != null) {
+                toEmbed.add(doc);
+            } else {
+                failed++;
+            }
+        }
+
+        store.addPrecomputed(precomputedDocs, precomputedVectors);
+        if (!toEmbed.isEmpty()) {
+            store.add(toEmbed);
+        }
+        int imported = precomputedDocs.size() + toEmbed.size();
+        return new com.viglet.turing.genai.provider.store.TurStoreImportResult(
+                total, imported, precomputedDocs.size(), toEmbed.size(), failed);
     }
 
     /**
@@ -330,18 +387,32 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         return orBuilder.build();
     }
 
-    private TurLuceneVectorIndex openIndex(Path basePath, String collectionName) {
+    /**
+     * T514 — opens (or returns the cached) per-collection index, configuring the
+     * scalar-quantized codec on first open when {@code quantization != NONE}. The
+     * codec is decided once at open time because a Lucene {@link IndexWriter}
+     * holds an exclusive lock per directory — so all callers for one store
+     * instance must pass the same (instance-derived) quantization, and the first
+     * opener wins for the lifetime of the cached handle.
+     */
+    private TurLuceneVectorIndex openIndex(Path basePath, String collectionName,
+            TurLuceneQuantization quantization) {
         String key = cacheKey(basePath, collectionName);
         return indexCache.computeIfAbsent(key, k -> {
             Path indexPath = basePath.resolve(collectionName);
             try {
                 Files.createDirectories(indexPath);
-                log.info("[Lucene] Opening vector index at {}", indexPath);
-                return new TurLuceneVectorIndex(indexPath);
+                log.info("[Lucene] Opening vector index at {} (quantization={})", indexPath, quantization);
+                return new TurLuceneVectorIndex(indexPath, quantization);
             } catch (IOException e) {
                 throw new TurRuntimeException("Failed to open Lucene vector index at " + indexPath, e);
             }
         });
+    }
+
+    /** T514 — resolves the scalar-quantization mode from the store's {@code quantization} provider option. */
+    private TurLuceneQuantization resolveQuantization(Map<String, Object> options) {
+        return TurLuceneQuantization.fromOption(optionsParser.stringValue(options, QUANTIZATION_OPTION));
     }
 
     private long safeNumDocs(TurLuceneVectorIndex index) {

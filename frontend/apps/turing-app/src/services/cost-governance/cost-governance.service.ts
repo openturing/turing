@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {
+  TurAgentBudgetStatus,
   TurCostReport,
   TurDailyCostPoint,
   TurLLMPrice,
@@ -17,6 +18,11 @@ export class TurCostGovernanceService {
     if (to) params.to = to;
     const response = await axios.get<TurCostReport>("/v2/llm/cost/summary", { params });
     return response.data;
+  }
+
+  async getBudgetStatus(): Promise<TurAgentBudgetStatus[]> {
+    const response = await axios.get<TurAgentBudgetStatus[]>("/v2/llm/cost/budget-status");
+    return response.data ?? [];
   }
 
   async getTimeseries(from?: string, to?: string): Promise<TurDailyCostPoint[]> {

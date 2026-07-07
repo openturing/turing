@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconWorld } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
@@ -16,8 +17,17 @@ const LANGUAGES = [
  *
  * @since 2026.1.14
  */
-export default function UserPreferencesPage() {
+/**
+ * @param header Optional header override. Console renders the default
+ *   {@link SubPageHeader}; the Bento account surface (T568) passes `null`.
+ */
+export default function UserPreferencesPage({ header }: Readonly<{ header?: ReactNode }> = {}) {
     const { t, i18n } = useTranslation();
+
+    // Bento surfaces pass an explicit `header` (a BentoHero or `null`); the
+    // console leaves it undefined. In bento the body is a frosted card instead
+    // of a bare centered column.
+    const isBento = header !== undefined;
 
     useSubPageBreadcrumb(t("account.preferences.title"));
 
@@ -28,13 +38,15 @@ export default function UserPreferencesPage() {
 
     return (
         <>
-            <SubPageHeader
-                icon={IconWorld}
-                name={t("account.preferences.title")}
-                feature={t("account.preferences.title")}
-                description={t("account.preferences.description")}
-            />
-            <div className="max-w-2xl mx-auto py-8 px-6">
+            {header !== undefined ? header : (
+                <SubPageHeader
+                    icon={IconWorld}
+                    name={t("account.preferences.title")}
+                    feature={t("account.preferences.title")}
+                    description={t("account.preferences.description")}
+                />
+            )}
+            <div className={isBento ? "bento-tile bento-glass rounded-3xl p-6 md:p-8" : "max-w-2xl mx-auto py-8 px-6"}>
                 <div className="space-y-2">
                     <Label htmlFor="language">{t("account.preferences.language")}</Label>
                     <p className="text-sm text-muted-foreground mb-2">

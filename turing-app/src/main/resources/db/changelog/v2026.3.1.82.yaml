@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # --- T510 / §XXVIII.6: Google Vertex AI LLM vendor (enterprise Gemini on GCP) ---
+  # Fresh installs are seeded by TurLLMVendorOnStartup; this row is for existing
+  # installs whose llm_vendor table is already populated. Idempotent.
+  - changeSet:
+      id: v2026.3.1.82-01-add-vertex-ai-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        and:
+          - not:
+              - sqlCheck:
+                  expectedResult: "0"
+                  sql: "SELECT COUNT(*) FROM llm_vendor"
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'VERTEX_AI'"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: VERTEX_AI
+              - column:
+                  name: description
+                  value: "Google Vertex AI — enterprise Gemini on GCP (IAM/VPC-SC/CMEK, regional endpoints)"
+              - column:
+                  name: plugin
+                  value: vertex-ai
+              - column:
+                  name: title
+                  value: "Google Vertex AI"
+              - column:
+                  name: website
+                  value: "https://cloud.google.com/vertex-ai"

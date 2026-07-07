@@ -12,6 +12,14 @@ export function useTokenInstances() {
   });
 }
 
+export function useTokenInstance(id: string | undefined) {
+  return useQuery<TurTokenInstance>({
+    queryKey: id ? queryKeys.tokenInstances.detail(id) : ['token-instances', 'detail', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id),
+  });
+}
+
 function invalidateTokenInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.tokenInstances.all() });
 }

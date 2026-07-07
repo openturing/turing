@@ -4,6 +4,10 @@
     "blankTitle": "Você ainda não possui nenhum agente de IA.",
     "blankDescription": "Crie um novo agente de IA para orquestrar instâncias de LLM e servidores MCP.",
     "newInstance": "Novo Agente de IA",
+    "launch": {
+      "title": "Abrir",
+      "openChat": "Abrir chat"
+    },
     "deleted": "O Agente de IA {{name}} foi excluído",
     "notDeleted": "O Agente de IA {{name}} não foi excluído",
     "nav": {
@@ -12,6 +16,8 @@
       "languageModels": "Modelos de Linguagem",
       "personas": "Personas",
       "nativeTools": "Ferramentas Nativas",
+      "capabilities": "Ferramentas e Capacidades",
+      "requestOptions": "Opções de Requisição",
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
       "intents": "Intents",
@@ -19,7 +25,10 @@
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "analyticsIntent": "Intent de Analytics",
-      "history": "Histórico"
+      "history": "Histórico",
+      "livePreview": "Prévia ao vivo",
+      "analysis": "Análise",
+      "triggerConflicts": "Ambiguidade de gatilho"
     },
     "persona": {
       "title": "Personas",
@@ -41,6 +50,11 @@
       "namePlaceholder": "ex.: nome_visitante",
       "nameHint": "Letras, dígitos e underscores; deve começar com letra ou underscore.",
       "descriptionPlaceholder": "Opcional — o que este slot captura e como os flows devem usá-lo.",
+      "extractFromDocumentHint": "Quando ativo, este slot é preenchido automaticamente a partir de um documento enviado (currículo, nota fiscal, formulário) mesmo que o chamador não informe slots. Os slots marcados aqui formam o esquema de extração de documentos deste agente.",
+      "extractFromDocumentPlaceholder": "",
+      "validationPatternPlaceholder": "ex.: ^[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}$",
+      "validationPatternHint": "Regex Java opcional que o valor extraído deve corresponder integralmente para ser salvo; também é passado ao modelo como dica de formato.",
+      "extractBadge": "Esquema doc",
       "created": "Slot \"{{name}}\" criado",
       "updated": "Slot \"{{name}}\" atualizado",
       "deleted": "Slot \"{{name}}\" excluído",
@@ -50,7 +64,9 @@
         "name": "Nome",
         "type": "Tipo",
         "description": "Descrição",
-        "actions": "Ações"
+        "actions": "Ações",
+        "extractFromDocument": "Extrair de documento",
+        "validationPattern": "Padrão de validação"
       },
       "types": {
         "STRING": "Texto curto",
@@ -107,25 +123,88 @@
         "noFixedText": "Sem texto fixo — depende da conversa ao vivo.",
         "flowLabel": "Pré-visualizar com chat flow",
         "flowNone": "Sem flow (turno simples)",
-        "flowDisabled": "desabilitado"
+        "flowDisabled": "desabilitado",
+        "copy": "Copiar prompt completo",
+        "copied": "Copiado para a área de transferência",
+        "copyFailed": "Não foi possível copiar",
+        "toolsHeading": "Ferramentas disponíveis para o modelo",
+        "toolsNote": "Fornecidas ao modelo como esquemas de função/ferramenta (não como texto literal do prompt).",
+        "hoverHint": "Passe o mouse sobre um trecho para ver de onde ele vem",
+        "tokens": "tok",
+        "totalTokens": "{{count}} tokens no total",
+        "stableTokens": "{{count}} prefixo cacheável ({{share}}%)",
+        "perTurnTokens": "{{count}} por turno",
+        "estimatedCost": "≈ {{cost}}/turno",
+        "tokensApprox": "aproximado",
+        "inertThisTurn": "inerte neste turno",
+        "nodeEntry": "Nó de entrada (padrão)",
+        "simulatedValues": "Valores coletados simulados",
+        "slotName": "nome do slot",
+        "slotValue": "valor",
+        "addValue": "Adicionar valor"
       },
       "warnings": {
         "title": "Checagem de conflitos",
         "description": "Checagens heurísticas rodam automaticamente. Rode a checagem profunda para o LLM procurar contradições mais sutis que possam quebrar uma resposta.",
         "count": "{{count}} problema(s) encontrado(s)",
         "deepCheck": "Checagem profunda (LLM)",
-        "clean": "Nenhum conflito detectado. Rode a checagem profunda para uma revisão completa pelo LLM."
+        "clean": "Nenhum conflito detectado. Rode a checagem profunda para uma revisão completa pelo LLM.",
+        "codes": {
+          "empty_system_prompt": {
+            "message": "Este agente não tem system prompt; ele recai para um padrão genérico.",
+            "hint": "Escreva um system prompt que defina o escopo, o tom e os limites do agente."
+          },
+          "system_prompt_too_long": {
+            "message": "O system prompt montado tem {{length}} caracteres — prompts grandes aumentam o custo de tokens e diluem a atenção do modelo.",
+            "hint": "Reduza orientações redundantes, ou mova material de referência estável para uma ferramenta ou store de RAG."
+          },
+          "language_directive_conflict": {
+            "message": "Diretivas de idioma de resposta conflitantes: {{langs}}. O modelo recebe instruções contraditórias sobre em qual idioma responder.",
+            "hint": "Mantenha uma única regra de idioma de resposta entre o prompt do agente e a persona, ou restrinja cada uma a uma condição explícita."
+          },
+          "persona_vocab_contradiction": {
+            "message": "A persona lista \"{{term}}\" como vocabulário obrigatório e proibido ao mesmo tempo.",
+            "hint": "Remova o termo de uma das duas listas."
+          },
+          "forbidden_term_in_prompt": {
+            "message": "O prompt do agente usa \"{{term}}\", que a persona padrão proíbe — a persona será instruída a reescrever as próprias instruções.",
+            "hint": "Reescreva o prompt do agente para evitar o termo proibido, ou remova-o da lista de proibidos da persona."
+          },
+          "redundant_persona_instruction": {
+            "message": "A instrução da persona padrão duplica em grande parte o system prompt do agente.",
+            "hint": "Mantenha cada camada focada — o prompt do agente para escopo/comportamento, a persona para a voz — para evitar enviar o mesmo texto duas vezes."
+          },
+          "flow_persona_not_in_catalog": {
+            "message": "O fluxo \"{{flow}}\" tem um nó de persona apontando para a persona \"{{persona}}\", que não está no catálogo de personas deste agente. Em tempo de execução o sistema volta silenciosamente para a persona padrão.",
+            "hint": "Adicione essa persona ao agente, ou corrija o nó para referenciar uma persona permitida."
+          },
+          "flow_persona_audience_only": {
+            "message": "O fluxo \"{{flow}}\" troca para a persona \"{{persona}}\", que é somente de audiência e não pode ser falante. Em tempo de execução o sistema volta para a persona padrão.",
+            "hint": "Use uma persona cujo tipo seja SPEAKER ou BOTH para uma troca de voz no fluxo."
+          },
+          "cross_segment_redundancy": {
+            "message": "A regra \"{{rule}}\" está repetida em {{segments}} — o modelo paga pela mesma instrução mais de uma vez (~{{tokens}} tokens desperdiçados).",
+            "hint": "Mantenha a regra em uma única camada e remova as cópias para economizar tokens e evitar divergência."
+          },
+          "cross_segment_contradiction": {
+            "message": "Contradição entre {{segments}}: uma diretiva é afirmada em um segmento e negada em outro. O modelo recebe instruções opostas sobre o mesmo ponto.",
+            "hint": "Reconcilie os dois segmentos para que uma única regra consistente controle esse comportamento."
+          },
+          "deep_check_unavailable": {
+            "message": "Nenhuma LLM padrão está configurada ou habilitada, então a análise profunda de conflitos não pode ser executada.",
+            "hint": "Defina uma LLM padrão em Configurações Globais para habilitar a verificação profunda."
+          },
+          "deep_check_failed": {
+            "hint": "Tente novamente; se persistir, verifique o status da LLM padrão."
+          },
+          "deep_check_note": {
+            "hint": "Esta é a análise bruta do modelo (não veio estruturada)."
+          }
+        }
       },
-      "finalPrompt": {
-        "title": "Prompt final",
-        "description": "A mensagem de sistema completa que o modelo recebe no turno pré-visualizado, incluindo as definições de ferramentas enviadas junto.",
-        "preview": "Prévia",
-        "raw": "Texto",
-        "copy": "Copiar",
-        "copied": "Copiado para a área de transferência",
-        "copyFailed": "Não foi possível copiar",
-        "toolsHeading": "Ferramentas disponíveis ao modelo",
-        "toolsNote": "_Fornecidas ao modelo como schemas de função/ferramenta (não como texto literal do prompt)._"
+      "tabs": {
+        "editor": "Editor",
+        "conflictCheck": "Checagem de conflitos"
       }
     },
     "llm": {
@@ -135,6 +214,14 @@
     "tools": {
       "title": "Ferramentas Nativas",
       "description": "Selecione quais chamadas de ferramentas nativas estão disponíveis para este agente."
+    },
+    "capabilities": {
+      "title": "Ferramentas e Capacidades",
+      "description": "Escolha, por função, quem fornece cada capacidade — as ferramentas do Turing ou uma nativa do provedor. Opções da mesma função são mutuamente exclusivas; o restante coexiste no mesmo turno."
+    },
+    "requestOptions": {
+      "title": "Opções de Requisição",
+      "description": "Ajuste como as chamadas deste agente são feitas — raciocínio, saída, custo/tier, segurança e proveniência. Mudam o formato da requisição, não as ferramentas que o modelo pode invocar."
     },
     "mcp": {
       "title": "Servidores MCP",

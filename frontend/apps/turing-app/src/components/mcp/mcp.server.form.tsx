@@ -78,6 +78,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
       args: value.args ?? "",
       type: value.type ?? "SYNC",
       connectionType: value.connectionType ?? "HTTP",
+      transportType: value.transportType ?? "SSE",
     });
   }, [value])
 
@@ -324,6 +325,48 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                       />
                     </div>
                   </div>
+                  {/* T294 — wire transport, HTTP servers only. SSE is the
+                      legacy default; STREAMABLE_HTTP opts into the newer
+                      single-endpoint protocol. */}
+                  {selectedConnectionType === "HTTP" && (
+                    <div className="w-full flex flex-row justify-between items-center gap-4">
+                      <div className="flex flex-col">
+                        <FormLabel>{t("forms.mcp.transportType")}</FormLabel>
+                        <FormDescription>
+                          {t("forms.mcp.transportTypeDesc")}
+                        </FormDescription>
+                      </div>
+                      <div className="flex-1 max-w-xs">
+                        <FormField
+                          control={form.control}
+                          name="transportType"
+                          render={({ field }) => (
+                            <FormItem className="mb-0">
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value ?? "SSE"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t("forms.mcp.selectTransportType")} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem key="SSE" value="SSE">
+                                    {t("forms.mcp.transportSse")}
+                                  </SelectItem>
+                                  <SelectItem key="STREAMABLE_HTTP" value="STREAMABLE_HTTP">
+                                    {t("forms.mcp.transportStreamableHttp")}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="w-full flex flex-row justify-between items-center gap-4">
                     <div className="flex flex-col">
                       <FormLabel>{t("forms.mcp.type")}</FormLabel>

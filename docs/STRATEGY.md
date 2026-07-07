@@ -104,8 +104,9 @@ bet on the same protocol:
    in 30 seconds and searches/answers/acts on enterprise content with
    citations. Turing stops being "a chat UI you must adopt" and becomes
    the grounding layer inside whatever agent the customer already runs.
-   Full plan in [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIII; tasks in
-   [ROADMAP.md](ROADMAP.md) Block I.
+   The both-ways `/mcp` core **shipped** — see [CHANGELOG.md](CHANGELOG.md)
+   → Block I; the remaining per-tenant SaaS + federation expansion is
+   **cancelled** (§VIII.7).
 
 **Why one pillar, not two**: the same protocol investment (transport,
 auth, tool/resource/prompt schema) serves both. Sell it as one line —
@@ -153,11 +154,12 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    Turned capabilities already shipped (LLM-judge + analytics + transcripts
    + T94 lint) into the trust unlock for regulated verticals: a
    non-engineer changes a prompt and a golden-set eval gate proves no
-   regression before publish. The next anchor is now the MCP pillar (#2).
-2. ⭐ **MCP pillar (Block I + the §VIII.4 Groovy→MCP exporter)** — highest
-   *distribution* leverage at lowest build cost (mostly transport — see
-   §XIII.2). Ride the adoption curve of Claude/Cursor/ChatGPT instead of
-   asking customers to adopt our UI.
+   regression before publish. The next live anchor is now Block M (#3).
+2. ✅/✖ **MCP pillar (Block I)** — the both-ways `/mcp` core **shipped**
+   (T245–T253 + T146 + the §VIII.4 Groovy→MCP exporter); the *remaining*
+   expansion (per-tenant SaaS endpoints + the federation directory) is
+   **cancelled** — see "Cancelled" below. The distribution bet is realized by
+   the shipped surface; no further Block I build is scheduled.
 3. **Block M — Verifiable answers (T292–T293)** — provider-agnostic
    provenance UI over existing RAG hits. Cheap, visible, and the
    Education/Finance trust differentiator vs source-less ChatGPT.
@@ -167,12 +169,27 @@ Cutting saves ciclo. Hesitation costs forever-maintenance.
    any bank/hospital conversation; also seeds Agent CI's anonymized
    golden sets.
 
-**Downgraded (courage to deprecate, applied to our own roadmap):**
-- **Jlama (former Block G, T193–T218) → a 2–3 day spike (T193-spike).**
-  Upstream is stagnant (last release 2025-01-01); **Ollama-as-sidecar**
-  already delivers air-gapped + tool-calling with far less risk. Do not
-  commit an 8-week pure-Java inference build before a spike beats that
-  default for a *named* customer requirement.
+**Cancelled (courage to deprecate, applied to our own roadmap):**
+- **Embedded LLM / Jlama (former Block G, T193–T218, then the T193 spike)
+  — cancelled, not on the roadmap.** Upstream is stagnant (last release
+  2025-01-01) and **Ollama-as-sidecar** already delivers the air-gapped +
+  tool-calling story in the same docker-compose with far less risk, so the
+  zero-egress deployment need is already met. Revisit only if a *named*
+  customer requires a pure-Java in-process engine that Ollama cannot serve.
+  Jlama design detail remains in `git log` (former §XI).
+- **Block I remaining (T254 per-tenant SaaS MCP endpoints + T192 inter-tenant
+  federation directory) — cancelled.** The MCP-server *core* shipped (Turing's
+  both-ways `/mcp`, T245–T253 + T146); the per-tenant SaaS endpoint scaling and
+  the `directory.turing.io` federation network-effect bet are dropped — no named
+  customer is asking, and the shipped surface already covers the integration
+  story. Reopen only on a concrete multi-tenant SaaS demand. Design in `git log`
+  (former §XIII).
+- **Block P remaining (T362 license posture, T363 private Eval-engine carve-out,
+  T364 point GEO at `turing-ce`) — cancelled.** The publish *mechanics* shipped
+  (T356–T361); the open remainder were "decide later" strategy calls — settle by
+  default: **stay Apache 2.0**, keep the Eval engine in-tree, no further open-core
+  surgery until Turing Cloud is real revenue AND a competitor hosts the CE. Design
+  in `git log` (former §XIX).
 
 **Defer**: T80–T82 (Code Interpreter sandbox) shipped. Most remaining
 Block D/F items wait on a customer to ask for them twice before
@@ -360,9 +377,9 @@ to surface in answers; off-domain mentions (X.1 #1) and live-retrieval surfaces
 
 > Added 2026-06-15. The boundary + license posture for separating the public
 > community edition from confidential strategy. Implements the open-core model
-> §VIII/§IX assume but never specced mechanically. Tasks in
-> [ROADMAP.md](ROADMAP.md) Block P; publish mechanics design in
-> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XIX.
+> §VIII/§IX assume but never specced mechanically. Publish mechanics **shipped**
+> (T356–T361) — see [CHANGELOG.md](CHANGELOG.md) → Block P; the remaining
+> open-core decisions are **cancelled** (§VIII.7) — default is stay Apache 2.0.
 
 ### XI.1 The boundary principle — hide *thinking* and *revenue*, not *cleverness*
 
@@ -606,3 +623,91 @@ inherit it. **Sequencing caution:** this is a *positioning* sharpening of an exi
 not a reason to out-prioritize the convicted §VIII.7 anchors (MCP pillar, verifiable
 answers, cost governance) — pull Block R forward when a named catalog customer (cursarei,
 or a second aggregator) asks, consistent with the §IX "asks twice" discipline.
+
+---
+
+## XIV. The public site & top-of-funnel conversion (`turing.viglet.org`)
+
+> Why a stranger who lands on the site should *want* the product. Engineering
+> tasks live in [ROADMAP.md](ROADMAP.md) Block AB; design rationale in
+> [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXVII. This section is the positioning bet.
+
+### XIV.1 The honest diagnosis
+
+The old site was a polished feature brochure. Benchmarking against the closest
+peers — **Meilisearch** (OSS search, dev-first), **Supabase** (OSS dev gold
+standard), **Dify** (broad OSS LLM/agent platform), **PostHog** (OSS,
+transparent), plus the originally-cited **LangChain Deep Agents** and
+**CopilotKit AG-UI** — surfaced that the gap is **not design**. It is, in order:
+**positioning clarity → proof → time-to-first-value.** A visitor decides in
+~10s and the site must answer five questions it previously didn't: *what
+category is this, why this over X, does it actually work, how cheap is it to
+start, is it for me?*
+
+Strategic asymmetry to respect: Deep Agents and AG-UI are **narrow** products (a
+harness; a protocol) and are easy to make instantly desirable. Turing is a
+**broad platform**, so the site must work *harder* on focus and proof — breadth
+alone reads as "heavy and complex."
+
+### XIV.2 The wedge — positioning by analogy
+
+The single highest-leverage move (validated by Supabase's "open source Firebase
+alternative" and Meilisearch's stance) is **positioning by analogy**, which
+answers *category* and *differentiation* in one line. The chosen hero:
+
+> **The open-source, self-hosted alternative to Algolia — with AI agents built in.**
+
+This is consistent with the existing §VIII.1 *Turing Search* SKU and the §X GEO
+"alternative to Algolia/Coveo" line — now made the front-door message rather than
+a buried SEO phrase. The platform breadth becomes depth ("and it also does
+RAG / agents / skills / MCP"), structured as four outcomes: **Search it → Ask it
+→ Automate it → Run it.**
+
+**ICP:** developers and platform teams who would otherwise (a) pay a hosted
+search SaaS but can't send data to someone else's cloud, or (b) hand-assemble a
+RAG/agent stack (LangChain + a vector DB) over weeks. The wedge against both:
+*open source + self-hosted + agents and search unified.*
+
+### XIV.3 The defining bet — a live demo, because we lack proof
+
+Reading Algolia against Meilisearch is instructive: **the market leader dropped
+its live search demo** (it has 18,000 customers as proof); **the OSS challenger
+keeps one** (it doesn't). Demo and proof are substitutes for trust. Turing has
+*neither* social proof nor a live demo today — so the live, in-page demo is not
+optional, it is the cheapest trust we can manufacture. Shipped first as a
+client-side sample-data search in the hero; it becomes *truly* live once pointed
+at a public read-only instance (Block AB T477/T478).
+
+**Linchpin dependency:** the marketplace example sites at
+`turing.viglet.org/marketplace/*` are currently **static SPA shells with no
+backend** (`VITE_API_URL=/api` against GitHub Pages → 404). They are our biggest
+latent proof asset and are effectively dead. A public demo instance is the first
+domino — it backs both the hero demo and the marketplace examples, and the
+**Block Y showcase app ("Atlas Store", T451–T457)** is the natural backend.
+
+### XIV.4 Near-free trust wins we already own
+
+PostHog *weaponizes* transparency; we maintain the same artifacts in-repo and
+were hiding them. Exposed on the site at ~zero cost: a **live GitHub-stars
+badge**, a **copy-paste quickstart** (`npx @viglet/turing-cli init …`), and
+public **Roadmap / Changelog** links (to the canonical GitHub-rendered
+`docs/ROADMAP.md` and `docs/CHANGELOG.md` — *not* duplicated into the site, per
+the founding anti-duplication rule). A careful, defensible **comparison table**
+(Turing vs hosted SaaS vs DIY) makes the wedge legible without over-claiming.
+
+### XIV.5 Phasing (months, not PRs)
+
+- **Phase 0 (shipped, T473–T476):** the `frontend/apps/site` React/Vite/shadcn
+  app, the analogy hero + Search→Ask→Automate→Run pillars + comparison, the
+  sample-data live demo, stars badge, copy-paste quickstart, Roadmap/Changelog
+  links, CLI section.
+- **Phase 1 (T477–T478):** public read-only demo instance; wire the hero +
+  marketplace demos to it (real semantic search, not sample data).
+- **Phase 2 (T479–T482):** "Switching from Algolia/Elastic?" migration page;
+  hosted "try it" path via Viglet Cloud; real social proof (adopters,
+  testimonials, quantified case studies à la Dify); deep comparison/FAQ pages.
+
+**Sequencing caution (per §IX "asks twice"):** Phase 0 is cheap and compounds
+every other bet, so it ships now. Phases 1–2 trade real effort/infra — pull them
+forward as inbound interest or a named design-partner justifies, not
+speculatively.

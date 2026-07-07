@@ -19,7 +19,7 @@ import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.viglet.turing.genai.flow.TurChatFlowRouterEvictionListener;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,7 +53,7 @@ public class TurChatFlow implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -277,6 +277,26 @@ public class TurChatFlow implements Serializable {
      */
     @Column(name = "autoPromote")
     private Boolean autoPromote;
+
+    /**
+     * T241 / §D.11 — per-experiment success metric the bandit optimises for
+     * and the significance test defaults to. Stores a
+     * {@code TurExperimentSignificanceService.SuccessMetric} name
+     * ({@code GOAL_ACHIEVED} / {@code HANDOFF_WHATSAPP} /
+     * {@code LEAD_EMAIL_CAPTURED}). When at least one variant under the same
+     * {@code experimentKey} declares one, every arm of that experiment is
+     * scored on it; {@code null} (the default) means {@code GOAL_ACHIEVED},
+     * so existing experiments are unaffected.
+     *
+     * <p>Per-flow (not per-experimentKey) for storage symmetry with the other
+     * A/B columns; the bandit resolves the experiment-wide value as the first
+     * non-blank arm. Free string rather than a JPA enum so an unknown value
+     * degrades to the default instead of failing entity load.
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "experimentSuccessMetric", length = 32)
+    private String experimentSuccessMetric;
 
     /**
      * T93 / §VII.11.c — cross-flow slot inheritance. JSON object whose keys

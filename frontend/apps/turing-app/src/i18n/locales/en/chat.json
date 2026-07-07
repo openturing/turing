@@ -14,6 +14,12 @@
     "deleteSession": "Delete session",
     "selectModel": "Select a model...",
     "newChat": "New Chat",
+    "noModelSelected": "No model selected",
+    "persona": {
+      "ask": "Talk to {{persona}}",
+      "usingModel": "Talking to this persona using {{model}}",
+      "subtitle": "Talk directly to a persona to test its voice"
+    },
     "chatTab": "Chat",
     "semanticTab": "Semantic",
     "semanticTabShort": "SN",
@@ -32,6 +38,40 @@
       "confidenceMedium": "Medium confidence",
       "confidenceLow": "Low confidence"
     },
+    "citations": {
+      "heading": "Citations",
+      "source": "Source",
+      "page": "p.",
+      "open": "Open source"
+    },
+    "searchSuggestions": {
+      "heading": "Google Search"
+    },
+    "reasoning": {
+      "heading": "Why this answer"
+    },
+    "grounding": {
+      "ungrounded": "Not grounded in sources",
+      "flagged": "Flagged by guardrail",
+      "tooltip": "Answer-grounding guardrail verdict"
+    },
+    "secondOpinion": {
+      "agree": "Second opinion agrees",
+      "disagree": "Second opinion disagrees",
+      "tooltip": "A different-vendor model reviewed this answer"
+    },
+    "tools": {
+      "heading": "Tools",
+      "calling": "Calling",
+      "running": "running",
+      "done": "done",
+      "error": "failed"
+    },
+    "rephrase": {
+      "shorter": "Rephrase shorter",
+      "shorterLabel": "Shorter",
+      "failed": "Could not rephrase"
+    },
     "selectModelToStart": "Select a model to start...",
     "selectModelToChat": "Select a language model to start chatting.",
     "selectModelToExplore": "Select a language model to start exploring.",
@@ -39,6 +79,11 @@
     "askAboutContent": "Ask questions about your indexed content.",
     "askAnythingAgent": "Ask anything this agent can help with.",
     "askAboutSemantic": "Ask about your semantic navigation content...",
+    "costGate": {
+      "title": "Confirm turn cost",
+      "body": "This turn is projected to cost about ${{cost}} ({{tokens}} input tokens){{approx}}, above the {{cap}} per-turn limit. Send anyway?",
+      "confirm": "Send anyway"
+    },
     "askAgent": "Ask {{agent}}...",
     "usingModel": "Using {{model}} ({{vendor}})",
     "usingModelForSN": "Ask questions about your indexed content. Using {{model}}.",

@@ -1,0 +1,48 @@
+databaseChangeLog:
+  # T448 / §XXIII.7 — agent-to-agent handoff: per-agent opt-in flag + a CSV
+  # allowlist of specialist agent ids. Default off / null keeps existing agents
+  # unchanged. Idempotent: each column gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.60-add-ai_agent-agent_handoff_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: agent_handoff_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: agent_handoff_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: agent_handoff_enabled
+                  valueBoolean: false
+            where: agent_handoff_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.60-add-ai_agent-specialist_agent_ids
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: specialist_agent_ids
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: specialist_agent_ids
+                  type: VARCHAR(2000)

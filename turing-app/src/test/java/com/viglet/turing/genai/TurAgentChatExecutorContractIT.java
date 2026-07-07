@@ -9,16 +9,10 @@
  */
 package com.viglet.turing.genai;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.transaction.ConfigurableTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionExecutionListener;
 
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
 import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
@@ -59,6 +53,9 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
 
     @org.springframework.beans.factory.annotation.Autowired
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+
+    @Autowired
+    private TurChatFlowStateRepository stateRepository;
 
     /**
      * Patch #18 — fallback HEURISTIC quando strategy bean missing
@@ -430,47 +427,71 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
         seeded.setVariablesJson("{\"__force_route\":\"lucas\"}");
         stateRepoSpy.save(seeded);
 
-        // Register a TransactionExecutionListener on the production
-        // transaction manager to count afterCommit events. Removed in
-        // finally so it doesn't leak across tests sharing this context.
-        if (!(txManager instanceof ConfigurableTransactionManager configurable)) {
-            org.junit.jupiter.api.Assertions.fail(
-                    "Expected the production PlatformTransactionManager to implement "
-                            + "ConfigurableTransactionManager (Spring 6.2+) so the test can attach a "
-                            + "TransactionExecutionListener. Got: " + txManager.getClass().getName());
-            return;
-        }
-        java.util.concurrent.atomic.AtomicInteger commitCount =
+        // Instrument stateRepository.save() to record the IDENTITY of the
+        // transaction each save runs in. T13's contract is that all in-walk
+        // saves (strategy mutation + persona/switch landing) coalesce into
+        // advance()'s single @Transactional — so every save must observe the
+        // SAME physical transaction.
+        //
+        // Why not count global afterCommit events (the previous approach)?
+        // Read-only read-model loads on the turn path (T487) also open and
+        // commit transactions, so "global commits < saves" broke without any
+        // coalescing regression (it was seeing 4 commits for 3 saves). And
+        // counting distinct transaction *names* wouldn't detect a regression
+        // either: if the boundary reverted, each save would open its own
+        // implicit transaction, all named after the same repository method.
+        // So we tag each distinct *physical* transaction with a UUID bound as
+        // a transaction-scoped resource (unbound on completion) and assert
+        // exactly one tag was minted across all in-walk saves.
+        java.util.Set<String> savingTxIds =
+                java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+        java.util.concurrent.atomic.AtomicInteger savesOutsideTx =
                 new java.util.concurrent.atomic.AtomicInteger();
-        TransactionExecutionListener listener = new TransactionExecutionListener() {
-            @Override
-            public void afterCommit(org.springframework.transaction.TransactionExecution tx, Throwable error) {
-                if (error == null) {
-                    commitCount.incrementAndGet();
-                }
-            }
-        };
-        java.util.Collection<TransactionExecutionListener> originalListeners =
-                new java.util.ArrayList<>(configurable.getTransactionExecutionListeners());
+        Object txTagKey = new Object();
 
-        // Reset spy counter AFTER the seed save and BEFORE the runTurn so
-        // counts reflect just the executor turn. The afterCommit counter
-        // starts at zero by construction; nothing in the test reset path
-        // commits between here and runTurn.
+        // Reset spy counter AFTER the seed save and BEFORE the runTurn so the
+        // capture reflects just the executor turn.
         org.mockito.Mockito.clearInvocations(stateRepoSpy);
-        configurable.addListener(listener);
+        // @MockitoSpyBean on a Spring Data repository is an INTERFACE spy: its
+        // default answer delegates to the real bean (that's why unstubbed
+        // saves persist), but invocation.callRealMethod() can't be used —
+        // save() is abstract on the interface. Route through the spy's
+        // delegating default answer so our side-effect wrapper still persists.
+        org.mockito.stubbing.Answer<?> delegateToRealSave =
+                org.mockito.Mockito.mockingDetails(stateRepoSpy)
+                        .getMockCreationSettings().getDefaultAnswer();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            if (org.springframework.transaction.support.TransactionSynchronizationManager
+                            .isActualTransactionActive()
+                    && org.springframework.transaction.support.TransactionSynchronizationManager
+                            .isSynchronizationActive()) {
+                if (!org.springframework.transaction.support.TransactionSynchronizationManager
+                        .hasResource(txTagKey)) {
+                    String tag = java.util.UUID.randomUUID().toString();
+                    org.springframework.transaction.support.TransactionSynchronizationManager
+                            .bindResource(txTagKey, tag);
+                    savingTxIds.add(tag);
+                    org.springframework.transaction.support.TransactionSynchronizationManager
+                            .registerSynchronization(
+                                    new org.springframework.transaction.support.TransactionSynchronization() {
+                                        @Override
+                                        public void afterCompletion(int status) {
+                                            org.springframework.transaction.support
+                                                    .TransactionSynchronizationManager
+                                                    .unbindResourceIfPossible(txTagKey);
+                                        }
+                                    });
+                }
+            } else {
+                savesOutsideTx.incrementAndGet();
+            }
+            return delegateToRealSave.answer(invocation);
+        }).when(stateRepoSpy).save(org.mockito.ArgumentMatchers.any());
         harness().queueResponse("Qual é o seu objetivo de carreira?");
 
-        try {
-            runTurn(agent, llm,
-                    java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
-                    null, conv, imp.flow().getId());
-        } finally {
-            // Detach: TransactionExecutionListener has no removeListener,
-            // so we restore the original list to leave the manager clean
-            // for sibling tests.
-            configurable.setTransactionExecutionListeners(originalListeners);
-        }
+        runTurn(agent, llm,
+                java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
+                null, conv, imp.flow().getId());
 
         // 1. The strategy save + the in-walk saves (persona-lucas landing
         //    + switch-route landing) must each have hit stateRepository.save —
@@ -479,17 +500,21 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
                 org.mockito.ArgumentCaptor.forClass(
                         com.viglet.turing.persistence.model.agent.TurChatFlowState.class);
         org.mockito.Mockito.verify(stateRepoSpy, org.mockito.Mockito.atLeast(2)).save(captor.capture());
-        int saveCount = captor.getAllValues().size();
 
-        // 2. The COALESCE invariant: total afterCommit count during the
-        //    turn must be STRICTLY LESS than save count. If T13 reverted,
-        //    each save would commit standalone and commitCount == saveCount.
-        org.assertj.core.api.Assertions.assertThat(commitCount.get())
-                .as("Post-T13 @Transactional advance(...) must coalesce in-walk saves into "
-                        + "fewer commits than saves. Got %d saves but %d commits — if these are "
-                        + "equal, the advance() @Transactional boundary regressed.",
-                        saveCount, commitCount.get())
-                .isLessThan(saveCount);
+        // 2. The COALESCE invariant: every in-walk save ran inside a
+        //    transaction (never standalone) AND all of them shared ONE
+        //    physical transaction — advance()'s @Transactional. If T13
+        //    reverted, each save would open its own implicit transaction and
+        //    savingTxIds would hold more than one tag.
+        org.assertj.core.api.Assertions.assertThat(savesOutsideTx.get())
+                .as("Every in-walk save must run inside advance()'s @Transactional, "
+                        + "never in a standalone implicit transaction")
+                .isZero();
+        org.assertj.core.api.Assertions.assertThat(savingTxIds)
+                .as("Post-T13 advance(...) must coalesce all in-walk saves into a SINGLE "
+                        + "physical transaction; got %d distinct saving transactions",
+                        savingTxIds.size())
+                .hasSize(1);
 
         // 3. The final persisted state must reflect the FULL walk — cursor
         //    landed on ai-objetivo (the post-walk interactive node) and
@@ -513,9 +538,6 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
 
     @MockitoSpyBean
     private TurChatFlowStateRepository stateRepoSpy;
-
-    @Autowired
-    private PlatformTransactionManager txManager;
 
     @Autowired
     private org.springframework.context.ApplicationContext applicationContext;
@@ -572,12 +594,111 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   navegação, não race condition.
      */
     @Test
-    @Disabled("Skeleton — body deferred. Requires harness-it/nested-sub-flow.chat-flow.json "
-            + "(3 nested flows A→B→C) + extending ChatFlowImportTestUtil to remap subFlowId "
-            + "across the bundle the same way personaId is already remapped. ~2h infra + ~1h body. "
-            + "Indirect coverage exists in TurChatFlowSubFlowEngineIT (single-level ascent) — "
-            + "the multi-level chain case here is the gap.")
     void cascadesAscentThroughChainOfTerminatedSubFlows_landsOnTopLevelNextNode() {
-        fail("Not implemented — see @Disabled message for the deferred-work scope.");
+        // Build a depth-3 chain A → B → C where the two inner flows are
+        // "pass-through" (start → … → end with no interactive node):
+        //   C: startC → endC
+        //   B: startB → subFlow(C) → endB
+        //   A: startA → subFlow(B) → ai-confirma (aiQuestion) → endA
+        //
+        // A single loadOrInitState(A) descends A→B→C, hits C's end (parent
+        // set) → ascends to B, B's next is endB → ascends AGAIN to A, whose
+        // next node after the SubFlow node is the interactive ai-confirma,
+        // where the walk parks. Two cascade ascents in one init, zero LLM
+        // calls (the empty sub-flows need no guardrail decision). This locks
+        // the MULTI-level ascent that TurChatFlowSubFlowEngineIT only covers
+        // one level deep — the gap the original skeleton named.
+        //
+        // The skeleton originally scoped a JSON fixture + ChatFlowImportTestUtil
+        // subFlowId remapping; the programmatic build below (mirroring
+        // TurChatFlowSubFlowEngineIT's graph builders) reaches the same
+        // invariant without either, and runs in the default mock-harness
+        // suite (no OPENAI_API_KEY needed).
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent =
+                createAgent("contract-cascade-ascent", null);
+
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowC = saveCascadeFlow(agent,
+                "cascade-C — pass-through",
+                """
+                {"nodes":[
+                  {"id":"startC","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"endC","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[{"id":"eC","source":"startC","target":"endC"}]}
+                """);
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowB = saveCascadeFlow(agent,
+                "cascade-B — subFlow(C) then end",
+                """
+                {"nodes":[
+                  {"id":"startB","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"subB","type":"subFlow","data":{"label":"SUB FLOW","type":"subFlow","subFlowId":"%s","subFlowName":"C"}},
+                  {"id":"endB","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[
+                  {"id":"eB1","source":"startB","target":"subB"},
+                  {"id":"eB2","source":"subB","target":"endB"}
+                ]}
+                """.formatted(flowC.getId()));
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowA = saveCascadeFlow(agent,
+                "cascade-A — subFlow(B) then ai-confirma",
+                """
+                {"nodes":[
+                  {"id":"startA","type":"start","data":{"label":"INÍCIO","type":"start"}},
+                  {"id":"subA","type":"subFlow","data":{"label":"SUB FLOW","type":"subFlow","subFlowId":"%s","subFlowName":"B"}},
+                  {"id":"ai-confirma","type":"aiQuestion","data":{"label":"CONFIRMA","type":"aiQuestion","aiInstruction":"Confirme os dados coletados.","outputVariable":"confirma"}},
+                  {"id":"endA","type":"end","data":{"label":"FIM","type":"end"}}
+                ],"edges":[
+                  {"id":"eA1","source":"startA","target":"subA"},
+                  {"id":"eA2","source":"subA","target":"ai-confirma"},
+                  {"id":"eA3","source":"ai-confirma","target":"endA"}
+                ]}
+                """.formatted(flowB.getId()));
+
+        String conv = "conv-cascade-ascent-" + java.util.UUID.randomUUID();
+        com.viglet.turing.genai.flow.ChatFlowGraph graphA =
+                chatFlowEngineService.parseGraph(flowA).orElseThrow();
+        com.viglet.turing.persistence.model.agent.TurChatFlowState leaf =
+                chatFlowEngineService.loadOrInitState(conv, flowA, graphA).orElseThrow();
+
+        // 1. Final state landed back on the TOP-LEVEL flow A (sobe DUAS vezes).
+        org.assertj.core.api.Assertions.assertThat(leaf.getFlow().getId())
+                .as("cascade ascent must land back on the top-level flow A")
+                .isEqualTo(flowA.getId());
+        // 2. Resumed on A's node AFTER the SubFlow node — the interactive
+        //    ai-confirma, NOT an end node.
+        org.assertj.core.api.Assertions.assertThat(leaf.getCurrentNodeId())
+                .as("must resume on A's node after the SubFlow node, not on an end")
+                .isEqualTo("ai-confirma");
+        // 3. The parent chain is fully drained (chain esvaziada).
+        org.assertj.core.api.Assertions.assertThat(leaf.getParentStateId())
+                .as("parent chain must be empty after cascading all the way up")
+                .isNull();
+        // 4. Both intermediate child states (B, C) were deleted on ascent — only
+        //    the single A leaf row survives for the conversation.
+        org.assertj.core.api.Assertions.assertThat(stateRepository.findByConversationId(conv))
+                .as("both ascended sub-flow states must be deleted — one row remains")
+                .hasSize(1)
+                .first()
+                .satisfies(s -> org.assertj.core.api.Assertions.assertThat(s.getId())
+                        .isEqualTo(leaf.getId()));
+    }
+
+    /**
+     * Persists a {@link com.viglet.turing.persistence.model.agent.TurChatFlow}
+     * owned by {@code agent} with a HEURISTIC guardrail and a one-off name.
+     * The cascade-ascent test never reaches an interactive node's advance —
+     * it parks on init — so the guardrail method is immaterial; HEURISTIC
+     * just avoids needing an LLM bean.
+     */
+    private com.viglet.turing.persistence.model.agent.TurChatFlow saveCascadeFlow(
+            com.viglet.turing.persistence.model.agent.TurAIAgent agent,
+            String name, String definitionJson) {
+        com.viglet.turing.persistence.model.agent.TurChatFlow flow =
+                new com.viglet.turing.persistence.model.agent.TurChatFlow();
+        flow.setName(name + " — " + java.util.UUID.randomUUID().toString().substring(0, 6));
+        flow.setEnabled(1);
+        flow.setGuardrailMethod(
+                com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.HEURISTIC);
+        flow.setDefinitionJson(definitionJson);
+        flow.setTurAIAgent(agent);
+        return chatFlowRepository.save(flow);
     }
 }

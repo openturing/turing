@@ -1,0 +1,31 @@
+databaseChangeLog:
+  # T450 / §XXIII.9 — embeddable action widget: per-agent opt-in flag that
+  # advertises the built-in host-action client tools. Default off keeps existing
+  # agents unchanged. Idempotent: gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.61-add-ai_agent-action_widget_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: action_widget_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: action_widget_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: action_widget_enabled
+                  valueBoolean: false
+            where: action_widget_enabled IS NULL

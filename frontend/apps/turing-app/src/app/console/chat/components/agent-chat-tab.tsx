@@ -9,11 +9,25 @@ import {
   type ChatMessage as TuringChatMessage,
 } from "@viglet/turing-react-sdk"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  fetchPreflightCost,
+  type TurPreflightQuote,
+} from "@/services/agent/agent-preflight-cost.service"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import type { TurSkillSummary } from "@/models/skill/skill.model"
-import { estimateTokens, toAdminMessages } from "../chat.types"
+import { TurChatFeedbackService } from "@/services/agent/chat-feedback.service"
+import { TurChatRephraseService } from "@/services/agent/chat-rephrase.service"
+import { estimateTokens, toAdminMessages, type ChatMessage } from "../chat.types"
 import { ChatEmptyState } from "./chat-empty-state"
 import { ChatInput } from "./chat-input"
 import { ChatMessageList } from "./chat-message-list"
@@ -195,12 +209,37 @@ export function AgentChatTab({
     }
   }, [status, onResponseComplete])
 
+  // T162 / §X.8.g — pre-flight cost gate. Holds the pending text + quote while
+  // the user confirms a turn projected to breach the agent's per-turn soft cap.
+  const [costGate, setCostGate] = useState<{ text: string; quote: TurPreflightQuote } | null>(null)
+
+  const dispatchSend = useCallback(
+    (text: string) => {
+      setInput("")
+      void send(text)
+    },
+    [send],
+  )
+
   const handleSend = useCallback(() => {
     const text = input.trim()
     if (!text || isStreaming || !llmInstanceId) return
-    setInput("")
-    void send(text)
-  }, [input, isStreaming, llmInstanceId, send])
+    // Quote first; only gate when the projected cost breaches the soft cap.
+    void fetchPreflightCost(agent.id, text).then((quote) => {
+      if (quote.enabled && quote.overSoftCap) {
+        setCostGate({ text, quote })
+      } else {
+        dispatchSend(text)
+      }
+    })
+  }, [input, isStreaming, llmInstanceId, agent.id, dispatchSend])
+
+  const confirmCostGate = useCallback(() => {
+    if (costGate) {
+      dispatchSend(costGate.text)
+      setCostGate(null)
+    }
+  }, [costGate, dispatchSend])
 
   const handleOptionClick = useCallback(
     (label: string) => {
@@ -232,7 +271,74 @@ export function AgentChatTab({
     }
   }, [resetFlow, t])
 
-  const adminMessages = useMemo(() => toAdminMessages(messages), [messages])
+  // F.10 / T172 — local presentational overrides for answers the operator
+  // asked to rephrase (keyed by message id). Kept out of the SDK-managed
+  // transcript so it never affects what's sent on the next turn.
+  const [rephrasedById, setRephrasedById] = useState<Record<string, string>>({})
+  const adminMessages = useMemo(
+    () =>
+      toAdminMessages(messages).map((m) =>
+        rephrasedById[m.id] ? { ...m, content: rephrasedById[m.id] } : m,
+      ),
+    [messages, rephrasedById],
+  )
+
+  // F.9 / T170 — record an operator thumb-up/down as a DPO preference signal.
+  // The rated answer's prompt is the nearest preceding user turn. Direct service
+  // call (this component isn't React-Query-wrapped — same pattern as preflight cost).
+  const handleFeedback = useCallback(
+    (message: ChatMessage, rating: "UP" | "DOWN") => {
+      const idx = adminMessages.findIndex((m) => m.id === message.id)
+      let prompt = ""
+      for (let i = idx - 1; i >= 0; i--) {
+        if (adminMessages[i].role === "user") {
+          prompt = adminMessages[i].content
+          break
+        }
+      }
+      if (!prompt) return
+      new TurChatFeedbackService()
+        .record(agent.id, { conversationId, prompt, answer: message.content, rating })
+        .then(() => toast.success(t("chat.feedback.thanks", { defaultValue: "Thanks for the feedback" })))
+        .catch(() => toast.error(t("chat.feedback.failed", { defaultValue: "Could not save feedback" })))
+    },
+    [adminMessages, agent.id, conversationId, t],
+  )
+
+  // F.10 / T172 — rewrite an assistant answer in place (shorter/…). Resolves the
+  // prompt as the nearest preceding user turn, asks the backend (Predicted
+  // Outputs fast-path when the agent opted in), and applies the rewrite as a
+  // local override on that message.
+  const handleRephrase = useCallback(
+    async (message: ChatMessage, style: string) => {
+      const idx = adminMessages.findIndex((m) => m.id === message.id)
+      let prompt = ""
+      for (let i = idx - 1; i >= 0; i--) {
+        if (adminMessages[i].role === "user") {
+          prompt = adminMessages[i].content
+          break
+        }
+      }
+      try {
+        const result = await new TurChatRephraseService().rephrase(agent.id, {
+          conversationId,
+          llmInstanceId,
+          prompt,
+          answer: message.content,
+          style,
+        })
+        if (result.success && result.rephrased) {
+          setRephrasedById((prev) => ({ ...prev, [message.id]: result.rephrased as string }))
+        } else {
+          toast.error(result.error ?? t("chat.rephrase.failed", { defaultValue: "Could not rephrase" }))
+        }
+      } catch {
+        toast.error(t("chat.rephrase.failed", { defaultValue: "Could not rephrase" }))
+      }
+    },
+    [adminMessages, agent.id, conversationId, llmInstanceId, t],
+  )
+
   const tokens = useMemo(
     () => estimateTokens(messages.map((m) => m.content).join("")),
     [messages],
@@ -258,6 +364,8 @@ export function AgentChatTab({
             assistantIcon={agent.icon}
             endRef={endRef}
             onOptionClick={handleOptionClick}
+            onFeedback={handleFeedback}
+            onRephrase={handleRephrase}
           />
         )}
       </div>
@@ -352,6 +460,33 @@ export function AgentChatTab({
           </div>
         </div>
       </div>
+
+      {/* T162 / §X.8.g — pre-flight cost confirmation gate. */}
+      <Dialog open={costGate !== null} onOpenChange={(open) => !open && setCostGate(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("chat.costGate.title", { defaultValue: "Confirm turn cost" })}</DialogTitle>
+            <DialogDescription>
+              {t("chat.costGate.body", {
+                defaultValue:
+                  "This turn is projected to cost about ${{cost}} ({{tokens}} input tokens){{approx}}, above the {{cap}} per-turn limit. Send anyway?",
+                cost: costGate ? costGate.quote.estimatedCostUsd.toFixed(2) : "0.00",
+                tokens: costGate ? costGate.quote.inputTokens : 0,
+                approx: costGate && !costGate.quote.exact ? " (estimated)" : "",
+                cap: costGate?.quote.softCapUsd != null ? `$${costGate.quote.softCapUsd.toFixed(2)}` : "",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCostGate(null)}>
+              {t("common.cancel", { defaultValue: "Cancel" })}
+            </Button>
+            <Button onClick={confirmCostGate}>
+              {t("chat.costGate.confirm", { defaultValue: "Send anyway" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

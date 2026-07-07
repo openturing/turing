@@ -212,6 +212,13 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
         return OptionalInt.empty();
     }
 
+    @Override
+    public List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = firstNonBlank(optionsParser.stringValue(options, BASE_URL), turLLMInstance.getUrl());
+        return TurLlmModelListingSupport.ollama(baseUrl);
+    }
+
     private List<String> parseStopSequences(String rawStop) {
         if (!StringUtils.hasText(rawStop)) {
             return List.of();

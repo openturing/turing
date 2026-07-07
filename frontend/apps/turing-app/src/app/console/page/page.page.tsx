@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
+import { PageHeader } from "@/components/page-header";
 import { DialogDelete } from "@/components/dialog.delete";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import type { TurPageSite } from "@/models/page/page-site.model";
 import { TurPageService } from "@/services/page/page.service";
 
@@ -95,30 +95,26 @@ export default function PagePage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">{t("page.title")}</h2>
-          <p className="text-muted-foreground">{t("page.description")}</p>
-        </div>
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".zip"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          <Button onClick={() => fileInputRef.current?.click()}>
-            <IconUpload className="mr-2 h-4 w-4" />
-            {t("page.uploadButton")}
-          </Button>
-        </div>
-      </div>
+    <>
+      <PageHeader turIcon={IconGlobe} title={t("page.title")}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".zip"
+          className="hidden"
+          aria-label={t("page.uploadButton")}
+          onChange={handleFileSelect}
+        />
+        <Button onClick={() => fileInputRef.current?.click()}>
+          <IconUpload className="mr-2 h-4 w-4" />
+          {t("page.uploadButton")}
+        </Button>
+      </PageHeader>
 
-      <Separator />
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        <p className="text-muted-foreground">{t("page.description")}</p>
 
-      {loading ? (
+        {loading ? (
         <div className="text-muted-foreground text-center py-8">
           {t("page.loading")}
         </div>
@@ -238,6 +234,7 @@ export default function PagePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

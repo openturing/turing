@@ -10,6 +10,8 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import {
@@ -19,7 +21,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { SectionCard } from "@/components/ui/section-card"
 import { SmartDescription } from "@/components/ui/smart-description"
 import {
     Table,
@@ -40,7 +41,7 @@ import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turSNSiteCustomSortService = new TurSNSiteCustomSortService();
@@ -52,15 +53,21 @@ interface Props {
     onDelete?: () => void;
     open?: boolean;
     setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+    /** SN instance base route for save/cancel navigation. Defaults to the
+     *  console; the Bento surface passes `ROUTES.BENTO_SN_INSTANCE` (T576). */
+    baseRoute?: string;
+    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
+     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+    chrome?: SNFormChrome;
 }
 
-export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
+export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteCustomSort>({
         defaultValues: value,
     });
     const navigate = useNavigate();
-    const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/custom-sort`;
+    const urlBase = `${baseRoute}/${snSiteId}/custom-sort`;
     const [fieldOptions, setFieldOptions] = useState<TurSNSiteCustomSortFieldOption[]>([]);
 
     const { fields, append, remove, swap, update } = useFieldArray({
@@ -133,31 +140,49 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
         }
     }
 
+    const isBento = chrome === "bento";
+
+    const actions = (
+        <>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.customSort.title")} name={value?.name || t("sn.customSort.newCustomSort")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+            </GradientButton>
+        </>
+    );
+
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconArrowsSort}
-                        feature={t("sn.customSort.title")}
-                        description={t("sn.customSort.description")}
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <BentoHero
+                        eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.customSort.title")}</Link>}
+                        leading={
+                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                                <IconArrowsSort size={24} />
+                            </span>
+                        }
+                        title={value?.name || t("sn.customSort.newCustomSort")}
+                        subtitle={t("sn.customSort.description")}
+                        trailing={actions}
                     />
-                    <StickyPageHeader.Actions>
-                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.customSort.title")} name={value?.name || t("sn.customSort.newCustomSort")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconArrowsSort}
+                            feature={t("sn.customSort.title")}
+                            description={t("sn.customSort.description")}
+                        />
+                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                 {/* Details Section */}
-                <SectionCard variant="blue">
-                    <SectionCard.Header icon={IconArrowsSort} title={t("sn.customSort.details")} description={t("sn.customSort.detailsDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconArrowsSort} tone="blue" title={t("sn.customSort.details")} description={t("sn.customSort.detailsDesc")}>
                         <FormField
                             control={form.control}
                             name="name"
@@ -199,13 +224,10 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                 </FormItem>
                             )}
                         />
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Sort Levels Section */}
-                <SectionCard variant="violet">
-                    <SectionCard.Header icon={IconFileText} title={t("sn.customSort.sortLevels")} description={t("sn.customSort.sortLevelsDesc")} />
-                    <SectionCard.Content>
+                <SNFormSection chrome={chrome} icon={IconFileText} tone="violet" title={t("sn.customSort.sortLevels")} description={t("sn.customSort.sortLevelsDesc")}>
                         <div className="flex items-center justify-between mb-4">
                             <GradientButton variant="outline" type="button" onClick={addSortLevel} disabled={fieldOptions.length === 0}>
                                 <IconCirclePlus className="h-4 w-4 mr-2" />
@@ -303,8 +325,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                 </TableBody>
                             </Table>
                         )}
-                    </SectionCard.Content>
-                </SectionCard>
+                </SNFormSection>
 
                 {/* Action Footer */}
             </form>

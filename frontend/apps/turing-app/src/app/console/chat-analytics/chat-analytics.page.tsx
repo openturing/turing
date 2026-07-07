@@ -11,8 +11,10 @@ import {
 import { useChatSlotAudit } from "@/api/queries/chat-session.queries";
 import type { TurChatSlotAuditEntry } from "@/services/chat/chat-slot-audit.service";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -48,11 +50,16 @@ import type {
 import {
   IconBroadcast,
   IconChartLine,
+  IconChevronLeft,
+  IconChevronRight,
   IconFlask,
   IconGauge,
   IconMessageOff,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconPlayerSkipForward,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -247,9 +254,13 @@ function RouterDecisionsCard({
 interface DetailPanelProps {
   conversationId: string | null;
   onClose: () => void;
+  /** Loaded session window — used to resolve sub-agent children (T240). */
+  sessions: TurChatAnalyticsSession[];
+  /** Drill into another conversation in-place (parent / child link, T240). */
+  onOpenConversation: (id: string) => void;
 }
 
-function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
+function DetailPanel({ conversationId, onClose, sessions, onOpenConversation }: Readonly<DetailPanelProps>) {
   const { data, isLoading, isError } = useChatAnalyticsTranscript(conversationId);
   // T86 — overlay the T60 slot audit trail so each transcript message
   // sits next to the slot writes that happened around that turn. Polling
@@ -259,6 +270,13 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
   // T89 — the router decisions for this conversation (candidates + scores +
   // winner + method). The complaint-triage view: "why did it send me here?"
   const { data: routerDecisions } = useChatAnalyticsRouterDecisions(conversationId);
+
+  // T240 — sub-agent children: sessions spawned by this conversation
+  // (parentConversationId === this id). Resolved from the loaded window;
+  // the parent link below comes straight off the transcript session record.
+  const childSessions = conversationId
+    ? sessions.filter((s) => s.parentConversationId === conversationId)
+    : [];
 
   return (
     <Sheet open={Boolean(conversationId)} onOpenChange={(open) => !open && onClose()}>
@@ -308,6 +326,71 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 />
               </CardContent>
             </Card>
+
+            {/* T240 / §IX.2.c — sub-agent orchestration links. Renders only
+                when this conversation is a child (has a parent orchestrator)
+                or a parent (spawned sub-agent invocations). Each id drills
+                into that conversation in-place. */}
+            {(data.session.parentConversationId || childSessions.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Sub-agent orchestration</CardTitle>
+                  <CardDescription>
+                    {data.session.parentConversationId
+                      ? "Spawned by an orchestrator agent via agent.invoke (T110)."
+                      : `Orchestrator — spawned ${childSessions.length} sub-agent invocation${
+                          childSessions.length === 1 ? "" : "s"
+                        } (T110).`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {data.session.parentConversationId && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">Invoked by orchestrator</p>
+                      <button
+                        type="button"
+                        className="text-primary font-mono text-xs underline underline-offset-2 hover:opacity-80"
+                        onClick={() => onOpenConversation(data.session.parentConversationId!)}
+                      >
+                        {data.session.parentConversationId}
+                      </button>
+                    </div>
+                  )}
+                  {childSessions.length > 0 && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">
+                        Sub-agent invocations ({childSessions.length})
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {childSessions.map((child) => (
+                          <li
+                            key={child.conversationId}
+                            className="flex items-center justify-between gap-2"
+                          >
+                            <button
+                              type="button"
+                              title={child.conversationId}
+                              className="text-primary truncate font-mono text-xs underline underline-offset-2 hover:opacity-80"
+                              onClick={() => onOpenConversation(child.conversationId)}
+                            >
+                              {child.agentTitle ?? child.agentId ?? child.conversationId}
+                            </button>
+                            {child.outcome && (
+                              <span className="text-muted-foreground shrink-0 text-xs">
+                                {child.outcome}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-muted-foreground/70 mt-1 text-[11px]">
+                        Resolved from the loaded session window.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>
@@ -503,6 +586,13 @@ function SentimentTrajectoryChart({
  * NODE / TOOL / ENDPOINT / EXTRACT), and the payload (message text or
  * the {@code (old → new)} slot delta).
  */
+type TimelineEvent =
+  | { kind: "message"; ts: number; tsRaw: string | null; role: string; content: string }
+  | { kind: "audit"; ts: number; tsRaw: string | null; entry: TurChatSlotAuditEntry };
+
+/** Step interval (ms) for the T238 auto-play scrubber. */
+const REPLAY_PLAY_INTERVAL_MS = 900;
+
 function ReplayTimeline({
   messages,
   audit,
@@ -510,36 +600,67 @@ function ReplayTimeline({
   messages: ReadonlyArray<{ timestamp?: string | null; role?: string | null; content?: string | null }>;
   audit: ReadonlyArray<TurChatSlotAuditEntry>;
 }>) {
-  type TimelineEvent =
-    | { kind: "message"; ts: number; tsRaw: string | null; role: string; content: string }
-    | { kind: "audit"; ts: number; tsRaw: string | null; entry: TurChatSlotAuditEntry };
-
-  const parseTs = (v?: string | null): { ts: number; raw: string | null } => {
-    if (!v) return { ts: 0, raw: null };
-    const t = Date.parse(v);
-    return { ts: Number.isNaN(t) ? 0 : t, raw: v };
-  };
-
-  const events: TimelineEvent[] = [];
-  messages.forEach((m, idx) => {
-    const { ts, raw } = parseTs(m.timestamp);
-    // No timestamp on a message → push to the end so ordering still falls
-    // back to the source order without exploding sort comparators.
-    events.push({
-      kind: "message",
-      ts: ts || Number.MAX_SAFE_INTEGER - (messages.length - idx),
-      tsRaw: raw,
-      role: m.role ?? "unknown",
-      content: m.content ?? "",
+  const events = useMemo<TimelineEvent[]>(() => {
+    const parseTs = (v?: string | null): { ts: number; raw: string | null } => {
+      if (!v) return { ts: 0, raw: null };
+      const t = Date.parse(v);
+      return { ts: Number.isNaN(t) ? 0 : t, raw: v };
+    };
+    const out: TimelineEvent[] = [];
+    messages.forEach((m, idx) => {
+      const { ts, raw } = parseTs(m.timestamp);
+      // No timestamp on a message → push to the end so ordering still falls
+      // back to the source order without exploding sort comparators.
+      out.push({
+        kind: "message",
+        ts: ts || Number.MAX_SAFE_INTEGER - (messages.length - idx),
+        tsRaw: raw,
+        role: m.role ?? "unknown",
+        content: m.content ?? "",
+      });
     });
-  });
-  audit.forEach((a) => {
-    const { ts, raw } = parseTs(a.ts);
-    events.push({ kind: "audit", ts, tsRaw: raw, entry: a });
-  });
-  events.sort((a, b) => a.ts - b.ts);
+    audit.forEach((a) => {
+      const { ts, raw } = parseTs(a.ts);
+      out.push({ kind: "audit", ts, tsRaw: raw, entry: a });
+    });
+    out.sort((a, b) => a.ts - b.ts);
+    return out;
+  }, [messages, audit]);
 
-  if (events.length === 0) {
+  // T238 — scrubber. `cursor` is the number of revealed events; `null` means
+  // "show all" (the default, so the static timeline is unchanged until the
+  // operator scrubs). Play auto-advances one event per tick until the end.
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const total = events.length;
+  const revealedCount = cursor ?? total;
+
+  // A new conversation (different event set) resets the scrubber so the
+  // cursor never points past a shorter timeline.
+  const eventsKey = total > 0 ? `${total}:${events[0].ts}:${events[total - 1].ts}` : "0";
+  const prevKeyRef = useRef(eventsKey);
+  useEffect(() => {
+    if (prevKeyRef.current !== eventsKey) {
+      prevKeyRef.current = eventsKey;
+      setCursor(null);
+      setPlaying(false);
+    }
+  }, [eventsKey]);
+
+  // Auto-advance: one step per REPLAY_PLAY_INTERVAL_MS while playing; stop at
+  // the end. Keyed on revealedCount so each tick schedules the next single
+  // step rather than a runaway interval.
+  useEffect(() => {
+    if (!playing) return undefined;
+    if (revealedCount >= total) {
+      setPlaying(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setCursor(revealedCount + 1), REPLAY_PLAY_INTERVAL_MS);
+    return () => clearTimeout(id);
+  }, [playing, revealedCount, total]);
+
+  if (total === 0) {
     return (
       <Card>
         <CardHeader>
@@ -553,6 +674,28 @@ function ReplayTimeline({
       </Card>
     );
   }
+
+  const togglePlay = () => {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    // Restart from the first event when at (or past) the end or showing all.
+    if (cursor === null || cursor >= total) setCursor(1);
+    setPlaying(true);
+  };
+  const step = (delta: number) => {
+    setPlaying(false);
+    setCursor(Math.min(total, Math.max(1, revealedCount + delta)));
+  };
+  const showAll = () => {
+    setPlaying(false);
+    setCursor(null);
+  };
+
+  const visibleEvents = events.slice(0, revealedCount);
+  const cursorStamp = formatTimestamp(events[revealedCount - 1]?.tsRaw ?? null);
+  const scrubbing = cursor !== null;
 
   const sourceBadgeClass: Record<string, string> = {
     NODE: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
@@ -570,20 +713,90 @@ function ReplayTimeline({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
-          Replay timeline ({events.length} event{events.length === 1 ? "" : "s"})
+          Replay timeline ({total} event{total === 1 ? "" : "s"})
         </CardTitle>
         <CardDescription>
           Messages + slot writes interleaved by timestamp so each turn sits next to the slots it wrote.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {events.map((ev, idx) => {
+        {/* T238 — scrubber: step / play through the timeline one event at a
+            time, or show all. Default is "show all" so the static view is
+            unchanged until the operator scrubs. */}
+        <div className="bg-muted/30 mb-1 flex flex-wrap items-center gap-2 rounded-md border p-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            onClick={togglePlay}
+            aria-label={playing ? "Pause replay" : "Play replay"}
+          >
+            {playing ? <IconPlayerPause className="size-4" /> : <IconPlayerPlay className="size-4" />}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            onClick={() => step(-1)}
+            disabled={revealedCount <= 1}
+            aria-label="Previous event"
+          >
+            <IconChevronLeft className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            onClick={() => step(1)}
+            disabled={scrubbing && revealedCount >= total}
+            aria-label="Next event"
+          >
+            <IconChevronRight className="size-4" />
+          </Button>
+          <div className="min-w-[8rem] flex-1 px-1">
+            <Slider
+              min={1}
+              max={total}
+              step={1}
+              value={[revealedCount]}
+              onValueChange={(v) => {
+                setPlaying(false);
+                setCursor(v[0] >= total ? null : v[0]);
+              }}
+              aria-label="Replay position"
+            />
+          </div>
+          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+            {revealedCount} / {total}
+          </span>
+          {cursorStamp && (
+            <span className="text-muted-foreground shrink-0 text-xs">{cursorStamp}</span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 px-2"
+            onClick={showAll}
+            disabled={!scrubbing}
+          >
+            <IconPlayerSkipForward className="size-4" />
+            Show all
+          </Button>
+        </div>
+        {visibleEvents.map((ev, idx) => {
+          const isCurrent = scrubbing && idx === revealedCount - 1;
           const stamp = formatTimestamp(ev.tsRaw);
           if (ev.kind === "message") {
             return (
               <div
                 key={`m-${idx}`}
-                className="rounded-md border bg-background/40 p-3"
+                className={`rounded-md border bg-background/40 p-3${
+                  isCurrent ? " ring-primary/60 ring-2" : ""
+                }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <Badge variant={ev.role === "assistant" ? SUCCESS : NEUTRAL}>
@@ -600,7 +813,9 @@ function ReplayTimeline({
           return (
             <div
               key={`a-${e.id}`}
-              className="rounded-md border border-dashed bg-muted/10 px-3 py-2 text-xs space-y-1"
+              className={`rounded-md border border-dashed bg-muted/10 px-3 py-2 text-xs space-y-1${
+                isCurrent ? " ring-primary/60 ring-2" : ""
+              }`}
             >
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${badgeClass}`}>
@@ -1299,7 +1514,12 @@ export default function ChatAnalyticsPage() {
         </CardContent>
       </Card>
 
-      <DetailPanel conversationId={selectedId} onClose={() => setSelectedId(null)} />
+      <DetailPanel
+        conversationId={selectedId}
+        onClose={() => setSelectedId(null)}
+        sessions={sessions ?? []}
+        onOpenConversation={setSelectedId}
+      />
     </div>
   );
 }

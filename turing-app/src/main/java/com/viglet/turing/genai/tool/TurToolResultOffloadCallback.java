@@ -19,6 +19,7 @@ import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
+import com.viglet.turing.observability.TurChatPipelineObservation;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,11 +77,19 @@ public class TurToolResultOffloadCallback implements ToolCallback {
     private final ToolCallback delegate;
     private final TurAgentWorkspace workspace;
     private final int inlineMaxChars;
+    /** T124 — nullable; when present, records offloaded bytes. */
+    private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurToolResultOffloadCallback(ToolCallback delegate, TurAgentWorkspace workspace, int inlineMaxChars) {
+        this(delegate, workspace, inlineMaxChars, null);
+    }
+
+    public TurToolResultOffloadCallback(ToolCallback delegate, TurAgentWorkspace workspace, int inlineMaxChars,
+            TurChatPipelineObservation chatPipelineObservation) {
         this.delegate = delegate;
         this.workspace = workspace;
         this.inlineMaxChars = inlineMaxChars;
+        this.chatPipelineObservation = chatPipelineObservation;
     }
 
     @Override
@@ -121,6 +130,10 @@ public class TurToolResultOffloadCallback implements ToolCallback {
         try {
             byte[] payload = result.getBytes(StandardCharsets.UTF_8);
             workspace.put(agentId, conversationId, key, payload, "application/json");
+            // T124 — bytes moved out of the prompt into the workspace.
+            if (chatPipelineObservation != null) {
+                chatPipelineObservation.recordToolOffloadBytes(payload.length);
+            }
             long sizeKb = Math.max(1, Math.round(payload.length / 1024.0));
             log.info("[ToolOffload] tool='{}' conv={} offloaded {} chars → workspace://{}",
                     toolName, conversationId, result.length(), key);
@@ -152,9 +165,21 @@ public class TurToolResultOffloadCallback implements ToolCallback {
      * order, names/definitions preserved.
      */
     public static ToolCallback[] wrap(ToolCallback[] callbacks, TurAgentWorkspace workspace, int inlineMaxChars) {
+        return wrap(callbacks, workspace, inlineMaxChars, null);
+    }
+
+    /**
+     * Wraps every callback with the offload decorator, threading a
+     * {@link TurChatPipelineObservation} (T124) so each successful offload
+     * records the moved bytes. A {@code null} observation disables the metric
+     * (used by unit tests that construct the decorator directly).
+     */
+    public static ToolCallback[] wrap(ToolCallback[] callbacks, TurAgentWorkspace workspace, int inlineMaxChars,
+            TurChatPipelineObservation chatPipelineObservation) {
         ToolCallback[] wrapped = new ToolCallback[callbacks.length];
         for (int i = 0; i < callbacks.length; i++) {
-            wrapped[i] = new TurToolResultOffloadCallback(callbacks[i], workspace, inlineMaxChars);
+            wrapped[i] = new TurToolResultOffloadCallback(callbacks[i], workspace, inlineMaxChars,
+                    chatPipelineObservation);
         }
         return wrapped;
     }

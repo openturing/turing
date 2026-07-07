@@ -1,9 +1,73 @@
 {
   "persona": {
     "title": "Persona",
+    "notFound": {
+      "title": "Persona not found",
+      "description": "This persona no longer exists or is not available."
+    },
     "blankTitle": "You don't seem to have any persona.",
     "blankDescription": "Create a reusable voice profile to apply consistent tone, vocabulary and brand context across your AI agents.",
     "newInstance": "New Persona",
+    "sidebar": {
+      "general": "General",
+      "systemInstruction": "System Instruction",
+      "style": "Style Guidelines",
+      "audience": "Audience Profile",
+      "notebook": "Evaluation Notebook",
+      "fitReport": "Audience-Fit Report",
+      "guidelines": "Persona Guidelines"
+    },
+    "launch": {
+      "title": "Launch",
+      "openChat": "Open chat",
+      "validateContent": "Validate content",
+      "audienceOnly": "Available for audience personas",
+      "personaDialogue": "Persona dialogue",
+      "soon": "Soon"
+    },
+    "validate": {
+      "title": "Validate content",
+      "subtitle": "Add documents, links or indexed content and score how well it fits this persona's audience."
+    },
+    "dialogue": {
+      "title": "Persona dialogue",
+      "subtitle": "Pick a topic and two or more personas and watch them talk it through, turn by turn.",
+      "setupTitle": "Set up the conversation",
+      "setupDesc": "Each persona must end every reply with a question, so the dialogue keeps flowing.",
+      "needTwo": "You need at least two speaker personas (SPEAKER or BOTH) to run a dialogue.",
+      "topic": "Topic",
+      "topicPlaceholder": "e.g. Should a startup adopt a four-day work week?",
+      "speakers": "Speakers",
+      "selectPersona": "Select a persona",
+      "addSpeaker": "Add persona",
+      "removeSpeaker": "Remove speaker",
+      "turns": "Turns",
+      "model": "Model",
+      "selectModel": "Select a model",
+      "noLlm": "No enabled LLM instance is available.",
+      "run": "Start dialogue",
+      "running": "Talking…",
+      "thinking": "The next persona is thinking…",
+      "transcriptTitle": "Transcript",
+      "failed": "The dialogue failed.",
+      "partial": "The dialogue stopped early: {{error}}"
+    },
+    "dashboard": {
+      "systemInstructionSet": "Voice contract defined",
+      "systemInstructionEmpty": "Set the voice contract",
+      "systemInstructionHint": "The system instruction prepended to chats that adopt this persona.",
+      "styleTitle": "Style & voice",
+      "verbosityLevel": "Verbosity {{level}}/5",
+      "guidelinesTitle": "Guidelines",
+      "guidelinesHint": "Mandatory and forbidden terms.",
+      "termCount": "{{mandatory}} mandatory · {{forbidden}} forbidden",
+      "audienceTitle": "Audience profile",
+      "audienceHint": "Who this persona reads for.",
+      "notebookTitle": "Evaluation notebook",
+      "notebookHint": "Sources used to score content fit.",
+      "fitReportTitle": "Audience-fit report",
+      "fitReportHint": "How well content matches this audience."
+    },
     "deleted": "The {{name}} persona was deleted",
     "notDeleted": "The {{name}} persona was not deleted",
     "aiChat": {
@@ -25,6 +89,47 @@
       "NARRATIVE": "Narrative",
       "PERSUASIVE": "Persuasive",
       "INSTRUCTIONAL": "Instructional"
+    },
+    "kinds": {
+      "SPEAKER": "Speaker (voice)",
+      "AUDIENCE": "Audience (reader)",
+      "BOTH": "Both (peer)"
+    },
+    "readingLevels": {
+      "ELEMENTARY": "Elementary",
+      "MIDDLE": "Middle school",
+      "SECONDARY": "Secondary / high school",
+      "UNDERGRADUATE": "Undergraduate",
+      "GRADUATE": "Graduate / specialist"
+    },
+    "domainExpertise": {
+      "NOVICE": "Novice",
+      "BEGINNER": "Beginner",
+      "INTERMEDIATE": "Intermediate",
+      "ADVANCED": "Advanced",
+      "EXPERT": "Expert"
+    },
+    "sourceTypes": {
+      "SN_DOC": "Indexed document",
+      "ASSET": "Uploaded file",
+      "URL": "Web URL"
+    },
+    "sourceStatus": {
+      "PENDING": "Pending",
+      "EXTRACTED": "Extracted",
+      "FAILED": "Failed"
+    },
+    "misfitReason": {
+      "too-complex": "too complex",
+      "jargon": "jargon",
+      "tone": "tone",
+      "missing-context": "missing context"
+    },
+    "fromAudio": {
+      "trigger": "Derive from audio",
+      "working": "Transcribing…",
+      "drafted": "Draft persona ready — review and save",
+      "failed": "Could not derive a persona from the audio"
     }
   }
 }

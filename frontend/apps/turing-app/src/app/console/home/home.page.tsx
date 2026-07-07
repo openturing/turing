@@ -8,11 +8,14 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
+import { TurFeaturesService } from "@/services/system/features.service"
 import type { Icon } from "@tabler/icons-react"
 import {
   IconBook,
+  IconBraces,
   IconBrandGraphql,
-  IconChartBar,
+  IconBuildingStore,
+  IconClock,
   IconCompass,
   IconCpu2,
   IconCube,
@@ -20,13 +23,19 @@ import {
   IconExternalLink,
   IconFileImport,
   IconFolder,
+  IconGitBranch,
+  IconGlobe,
   IconHome,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
+  IconReportAnalytics,
   IconRobot,
   IconServer2,
   IconShieldCog,
+  IconSparkles,
+  IconUserCircle,
+  IconWebhook,
   IconZoomCode
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
@@ -36,6 +45,7 @@ import { NavLink } from "react-router-dom"
 const turLLMInstanceService = new TurLLMInstanceService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
 const turAIAgentService = new TurAIAgentService()
+const turFeaturesService = new TurFeaturesService()
 
 interface FeatureCard {
   titleKey: string
@@ -45,6 +55,8 @@ interface FeatureCard {
   privilege?: string
   /** Only show when at least one LLM instance is enabled */
   requiresLlm?: boolean
+  /** Only show when the named platform feature flag is enabled */
+  requiresFeature?: "storage" | "git" | "marketplace" | "skills"
   /** External documentation URL */
   docUrl?: string
 }
@@ -66,8 +78,13 @@ const SECTIONS: FeatureSection[] = [
       { titleKey: "home.features.embeddingModel.title", descriptionKey: "home.features.embeddingModel.description", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube, privilege: "EMBEDDING_VIEW", docUrl: "https://docs.viglet.org/turing/embedding-models" },
       { titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", url: "/admin/store/instance", icon: IconDatabase, privilege: "STORE_VIEW", docUrl: "https://docs.viglet.org/turing/embedding-stores" },
       { titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.org/turing/mcp-servers" },
+      { titleKey: "home.features.customTool.title", descriptionKey: "home.features.customTool.description", url: ROUTES.CUSTOM_TOOL_INSTANCE, icon: IconBraces, docUrl: "https://docs.viglet.org/turing/custom-tools" },
+      { titleKey: "home.features.routine.title", descriptionKey: "home.features.routine.description", url: ROUTES.ROUTINE_INSTANCE, icon: IconClock, docUrl: "https://docs.viglet.org/turing/routines" },
+      { titleKey: "home.features.chatWebhook.title", descriptionKey: "home.features.chatWebhook.description", url: ROUTES.CHAT_WEBHOOK_INSTANCE, icon: IconWebhook, docUrl: "https://docs.viglet.org/turing/webhooks" },
+      { titleKey: "home.features.persona.title", descriptionKey: "home.features.persona.description", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.org/turing/personas" },
       { titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.org/turing/ai-agents" },
-      { titleKey: "home.features.tokenUsage.title", descriptionKey: "home.features.tokenUsage.description", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, docUrl: "https://docs.viglet.org/turing/token-usage" },
+      { titleKey: "home.features.skills.title", descriptionKey: "home.features.skills.description", url: ROUTES.SKILL_ROOT, icon: IconSparkles, requiresFeature: "skills", docUrl: "https://docs.viglet.org/turing/skills" },
+      { titleKey: "home.features.aiAnalytics.title", descriptionKey: "home.features.aiAnalytics.description", url: ROUTES.AI_ANALYTICS_ROOT, icon: IconReportAnalytics, docUrl: "https://docs.viglet.org/turing/token-usage" },
       { titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, docUrl: "https://docs.viglet.org/turing/chat" },
     ],
   },
@@ -87,9 +104,12 @@ const SECTIONS: FeatureSection[] = [
     descriptionKey: "home.sections.management.description",
     gradient: "from-slate-600 to-slate-700",
     items: [
-      { titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", url: ROUTES.ASSET_ROOT, icon: IconFolder, docUrl: "https://docs.viglet.org/turing/assets" },
-      { titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", url: "/admin/exchange/import", icon: IconFileImport, docUrl: "https://docs.viglet.org/turing/import-export" },
-      { titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", url: "/admin/logging/instance", icon: IconReceiptRupee, docUrl: "https://docs.viglet.org/turing/logging" },
+      { titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", url: ROUTES.ASSET_ROOT, icon: IconFolder, requiresFeature: "storage", docUrl: "https://docs.viglet.org/turing/assets" },
+      { titleKey: "home.features.pages.title", descriptionKey: "home.features.pages.description", url: ROUTES.PAGE_ROOT, icon: IconGlobe, requiresFeature: "storage", docUrl: "https://docs.viglet.org/turing/spa-pages" },
+      { titleKey: "home.features.git.title", descriptionKey: "home.features.git.description", url: ROUTES.GIT_ROOT, icon: IconGitBranch, requiresFeature: "git" },
+      { titleKey: "home.features.marketplace.title", descriptionKey: "home.features.marketplace.description", url: ROUTES.MARKETPLACE_ROOT, icon: IconBuildingStore, requiresFeature: "marketplace" },
+      { titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", url: ROUTES.EXCHANGE_IMPORT, icon: IconFileImport, docUrl: "https://docs.viglet.org/turing/import-export" },
+      { titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", url: ROUTES.LOGGING_INSTANCE, icon: IconReceiptRupee, docUrl: "https://docs.viglet.org/turing/logging" },
       { titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog, docUrl: "https://docs.viglet.org/turing/administration-guide" },
     ],
   },
@@ -110,6 +130,18 @@ export default function HomePage() {
   const [hasEnabledLlm, setHasEnabledLlm] = useState(false)
   const [defaultAgent, setDefaultAgent] = useState<TurAIAgent | null>(null)
   const [chatLlmId, setChatLlmId] = useState<string | null>(null)
+  const [features, setFeatures] = useState({ storage: false, git: false, marketplace: false, skills: false })
+
+  useEffect(() => {
+    turFeaturesService.getFeatures()
+      .then((f) => setFeatures({
+        storage: f.storageEnabled ?? false,
+        git: f.gitServerEnabled ?? false,
+        marketplace: f.marketplaceEnabled ?? false,
+        skills: f.skillsEnabled ?? false,
+      }))
+      .catch(() => { /* features endpoint unavailable — leave all gated features hidden */ })
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -141,10 +173,11 @@ export default function HomePage() {
       ...sec,
       items: sec.items.filter((item) => {
         if (item.requiresLlm && !hasEnabledLlm) return false
+        if (item.requiresFeature && !features[item.requiresFeature]) return false
         return true
       }),
     })).filter((sec) => sec.items.length > 0),
-    [hasEnabledLlm]
+    [hasEnabledLlm, features]
   )
 
   const canAccess = (item: FeatureCard) =>

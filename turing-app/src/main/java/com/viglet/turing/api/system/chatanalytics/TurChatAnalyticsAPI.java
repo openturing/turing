@@ -74,6 +74,7 @@ public class TurChatAnalyticsAPI {
     private final com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService;
     private final com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog;
     private final com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry;
+    private final com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
             TurChatMemoryStore chatMemoryStore,
@@ -82,11 +83,13 @@ public class TurChatAnalyticsAPI {
             com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService,
             com.viglet.turing.service.chatanalytics.TurChampionChallengerService championChallengerService,
             com.viglet.turing.genai.flow.router.TurChatFlowRouterDecisionLog routerDecisionLog,
-            com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry) {
+            com.viglet.turing.service.chatslots.TurChatSlotSseRegistry slotSseRegistry,
+            com.viglet.turing.service.chatanalytics.TurToolCallTraceService toolCallTraceService) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
         this.agentRepository = agentRepository;
         this.personaRepository = personaRepository;
+        this.toolCallTraceService = toolCallTraceService;
         this.significanceService = significanceService;
         this.championChallengerService = championChallengerService;
         this.routerDecisionLog = routerDecisionLog;
@@ -510,6 +513,24 @@ public class TurChatAnalyticsAPI {
         body.put("session", session);
         body.put("messages", messages);
         return ResponseEntity.ok(body);
+    }
+
+    /**
+     * T427 — the tools that actually executed in a conversation, in order
+     * (name, redacted arg digest, ok/err, duration). Read-only and process-local
+     * (the same in-memory store the live T436 {@code tool_call} events drain
+     * into), so a live event and this trace describe each invocation identically.
+     *
+     * <p>Backs {@code turing eval}'s {@code assert.tool_called} so the assertion
+     * is exact rather than inferred from slot-audit {@code TOOL} writes; also a
+     * per-conversation tool timeline for observability. Always 200 — an unknown
+     * or tool-free conversation simply returns an empty list.
+     */
+    @GetMapping(value = "/sessions/{conversationId}/tool-calls",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<com.viglet.turing.genai.tool.TurChatToolCall>> toolCalls(
+            @PathVariable String conversationId) {
+        return ResponseEntity.ok(toolCallTraceService.getTrace(conversationId));
     }
 
     private static Instant parseInstant(String value, Instant fallback) {

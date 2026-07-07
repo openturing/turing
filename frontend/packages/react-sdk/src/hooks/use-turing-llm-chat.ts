@@ -1,7 +1,12 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { postLlmChat } from "../core/api";
 import type { TurChatConversationMessage } from "../core/types";
-import type { ChatMessage, ChatStatus } from "./use-turing-chat";
+import {
+  newId,
+  useStreamingChatCore,
+  type ChatMessage,
+  type ChatStatus,
+} from "./streaming-chat-core";
 
 /**
  * Per-call overrides accepted by {@link UseTuringLlmChatReturn#send}. Today
@@ -56,34 +61,18 @@ export interface UseTuringLlmChatReturn {
 
 const DEFAULT_MAX_MESSAGES = 50;
 
-function newId(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function patchMessage(
-  messages: ChatMessage[],
-  id: string,
-  mutator: (msg: ChatMessage) => ChatMessage,
-): ChatMessage[] {
-  const idx = messages.findIndex((m) => m.id === id);
-  if (idx === -1) return messages;
-  const updated = [...messages];
-  updated[idx] = mutator(updated[idx]);
-  return updated;
-}
-
-function isAbortError(err: unknown): boolean {
-  if (err instanceof DOMException && err.name === "AbortError") return true;
-  return err instanceof Error && err.name === "AbortError";
-}
-
 /**
  * Plain-LLM chat hook backed by {@code POST /v2/llm/{id}/chat} — no agent,
  * no site, no chat-flow context. Used by admin console UIs that need a
  * direct "talk to the raw model" channel (sandbox mode, title generator,
  * etc.); the public search chat should stay on {@link useTuringChat}.
  *
- * <p>Shape mirrors {@link UseTuringChatReturn} minus the fields that have
+ * <p>The streaming/bubble/abort state machine lives in
+ * {@link useStreamingChatCore} (T243), shared with {@code useTuringChat};
+ * this hook only adds the plain-LLM transport and its file-attachment
+ * override.
+ *
+ * <p>Shape mirrors {@code UseTuringChatReturn} minus the fields that have
  * no meaning here: {@code enabled} (no GenAI-enabled probe), {@code
  * disabledReason} (same), {@code conversationId} (the endpoint is
  * stateless), {@code resetFlow} (no flow runtime to clear).
@@ -109,28 +98,23 @@ export function useTuringLlmChat(
 ): UseTuringLlmChatReturn {
   const { llmInstanceId, maxMessages = DEFAULT_MAX_MESSAGES } = options;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [status, setStatus] = useState<ChatStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  // Cross-send guards mirror the useTuringChat implementation: a request
-  // counter to drop late chunks from a previous send, an aborted flag, and
-  // a per-send AbortController so stop()/reset() actually cancel the
-  // in-flight fetch instead of just gating state mutations.
-  const requestRef = useRef(0);
-  const abortedRef = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const messagesRef = useRef<ChatMessage[]>(messages);
-
-  const handleSendError = useCallback((err: unknown, requestId: number) => {
-    if (requestId !== requestRef.current || abortedRef.current) return;
-    if (isAbortError(err)) {
-      setStatus("idle");
-      return;
-    }
-    setError(err instanceof Error ? err.message : "Chat request failed");
-    setStatus("error");
-  }, []);
+  const core = useStreamingChatCore({ maxMessages });
+  const {
+    messages,
+    status,
+    error,
+    messagesRef,
+    beginSend,
+    commitMessages,
+    openAssistantBubble,
+    appendToken,
+    patchAssistant,
+    isStale,
+    handleSendError,
+    setStatus,
+    stop,
+    reset,
+  } = core;
 
   const send = useCallback(
     async (rawContent: string, overrides?: LlmSendOverrides) => {
@@ -144,19 +128,8 @@ export function useTuringLlmChat(
         timestamp: Date.now(),
       };
 
-      const requestId = ++requestRef.current;
-      abortedRef.current = false;
-      abortControllerRef.current?.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      setError(null);
-      setStatus("loading");
-
-      const all = [...messagesRef.current, userMsg];
-      const nextMessages =
-        all.length > maxMessages ? all.slice(-maxMessages) : all;
-      messagesRef.current = nextMessages;
-      setMessages(nextMessages);
+      const { requestId, controller } = beginSend();
+      const nextMessages = commitMessages([...messagesRef.current, userMsg]);
 
       try {
         const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
@@ -164,71 +137,38 @@ export function useTuringLlmChat(
           content: m.content,
         }));
 
-        const assistantId = newId();
-        const assistantMsgInitial: ChatMessage = {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-          timestamp: Date.now(),
-        };
-        const streamingHistory = [...messagesRef.current, assistantMsgInitial];
-        const initialWithReply =
-          streamingHistory.length > maxMessages
-            ? streamingHistory.slice(-maxMessages)
-            : streamingHistory;
-        messagesRef.current = initialWithReply;
-        setMessages(initialWithReply);
-
-        const onToken = (token: string) => {
-          if (requestId !== requestRef.current || abortedRef.current) return;
-          setMessages((prev) =>
-            patchMessage(prev, assistantId, (m) => ({
-              ...m,
-              content: m.content + token,
-            })),
-          );
-        };
+        const assistantId = openAssistantBubble();
 
         const res = await postLlmChat(llmInstanceId, wire, {
-          onToken,
+          onToken: (token) => appendToken(assistantId, requestId, token),
           signal: controller.signal,
           files: overrides?.files,
         });
 
-        if (requestId !== requestRef.current || abortedRef.current) return;
+        if (isStale(requestId)) return;
 
-        setMessages((prev) =>
-          patchMessage(prev, assistantId, (m) => ({
-            ...m,
-            content: res?.content ?? m.content,
-          })),
-        );
+        patchAssistant(assistantId, (m) => ({
+          ...m,
+          content: res?.content ?? m.content,
+        }));
         setStatus("success");
       } catch (err) {
         handleSendError(err, requestId);
       }
     },
-    [llmInstanceId, maxMessages, handleSendError],
+    [
+      llmInstanceId,
+      beginSend,
+      commitMessages,
+      messagesRef,
+      openAssistantBubble,
+      appendToken,
+      patchAssistant,
+      isStale,
+      handleSendError,
+      setStatus,
+    ],
   );
-
-  const stop = useCallback(() => {
-    abortedRef.current = true;
-    requestRef.current++;
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    setStatus("idle");
-  }, []);
-
-  const reset = useCallback(() => {
-    abortedRef.current = true;
-    requestRef.current++;
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    messagesRef.current = [];
-    setMessages([]);
-    setError(null);
-    setStatus("idle");
-  }, []);
 
   return {
     messages,

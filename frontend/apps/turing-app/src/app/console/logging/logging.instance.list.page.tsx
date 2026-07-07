@@ -1,3 +1,4 @@
+import { ROUTES } from "@/app/routes.const";
 import { GridList } from "@/components/grid.list";
 import { useTranslation } from "react-i18next";
 
@@ -8,17 +9,17 @@ export default function LoggingInstanceListPage() {
     id: "1",
     name: t("logging.turingServer"),
     description: t("logging.turingServerDesc"),
-    url: "/admin/logging/instance/server",
+    url: `${ROUTES.LOGGING_INSTANCE}/server`,
   }, {
     id: "2",
     name: t("logging.indexing"),
     description: t("logging.indexingDesc"),
-    url: "/admin/logging/instance/indexing",
+    url: `${ROUTES.LOGGING_INSTANCE}/indexing`,
   }, {
     id: "3",
     name: t("logging.aem"),
     description: t("logging.aemDesc"),
-    url: "/admin/logging/instance/aem",
+    url: `${ROUTES.LOGGING_INSTANCE}/aem`,
   }];
 
   return <GridList gridItemList={gridItemList} />

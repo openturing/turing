@@ -3,6 +3,12 @@ export type TurGlobalDecimalSeparator = "DOT" | "COMMA";
 export type TurEmailProviderType = "BREVO";
 
 /**
+ * T518 — cost-aware fallback routing: `PRIORITY` tries the chain in configured
+ * order; `CHEAPEST` orders candidates by ascending price (cheapest serves first).
+ */
+export type TurLlmFallbackMode = "PRIORITY" | "CHEAPEST";
+
+/**
  * T80 — where the Code Interpreter runs visitor-/agent-generated Python.
  * `NATIVE` = host subprocess (legacy default, no runtime isolation);
  * `DOCKER` = each execution runs in a throwaway hardened container.
@@ -11,10 +17,20 @@ export type TurCodeInterpreterExecutionMode = "NATIVE" | "DOCKER";
 
 /**
  * T337 — SN RAG reranker backend. `LLM` borrows a chat model to rank snippet
- * numbers (legacy default); `CROSS_ENCODER` calls a self-hosted `/rerank`
- * endpoint; `COHERE` uses the managed Cohere Rerank API.
+ * numbers (legacy default); `LLM_LOGPROBS` (T180) is an OpenAI-only confidence
+ * reranker that blends per-candidate yes/no `top_logprobs` into the retrieval
+ * order; `CROSS_ENCODER` calls a self-hosted `/rerank` endpoint; `COHERE` uses
+ * the managed Cohere Rerank API; `VOYAGE` (T507) uses the managed Voyage AI
+ * Rerank API (`rerank-2.5`).
  */
-export type TurRagRerankStrategy = "LLM" | "CROSS_ENCODER" | "COHERE";
+export type TurRagRerankStrategy =
+  | "LLM"
+  | "LLM_LOGPROBS"
+  | "CROSS_ENCODER"
+  | "COHERE"
+  | "VOYAGE"
+  | "BEDROCK"
+  | "VERTEX_AI";
 
 export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
@@ -46,6 +62,22 @@ export interface TurGlobalSettings {
    */
   codeInterpreterSkillImage?: string;
   defaultLlmId?: string;
+  /**
+   * T517 — cross-provider per-stage model "lanes". Each holds an LLM instance
+   * id (blank = fall back to `defaultLlmId`): `FAST` for interactive micro-calls
+   * (autocomplete / spell / query-rewrite), `REASONING` for router / rerank /
+   * judge, `CHEAP` for background work (nightly summarization / insights).
+   */
+  modelLaneFastId?: string;
+  modelLaneReasoningId?: string;
+  modelLaneCheapId?: string;
+  /**
+   * T518 — cost-aware cross-provider fallback chain (ordered LLM instance ids
+   * the meta-provider fails over to after the primary) + routing mode. Empty
+   * chain = no fallback (legacy single-model path).
+   */
+  llmFallbackChainIds?: string[];
+  llmFallbackMode?: TurLlmFallbackMode;
   llmCacheEnabled?: boolean;
   llmCacheTtlMs?: number;
   llmCacheRegenerate?: boolean;
@@ -75,8 +107,14 @@ export interface TurGlobalSettings {
   ragSnRerankStrategy?: TurRagRerankStrategy;
   /** T338 — self-hosted cross-encoder `/rerank` endpoint URL. */
   ragSnRerankEndpoint?: string;
-  /** T338 — rerank model name (cross-encoder / Cohere); blank = backend default. */
+  /** T338 — rerank model name (cross-encoder / Cohere / Bedrock ARN / Vertex model); blank = default. */
   ragSnRerankModel?: string;
+  /** T521 — AWS region for the managed Bedrock Rerank API (`BEDROCK`). */
+  ragSnRerankRegion?: string;
+  /** T521 — GCP project for the managed Vertex AI Ranking API (`VERTEX_AI`). */
+  ragSnRerankVertexProject?: string;
+  /** T521 — GCP location for Vertex AI Ranking (default `global`). */
+  ragSnRerankVertexLocation?: string;
   /**
    * T339 — Cohere API key. Write-only: sent on update, never returned on read
    * (always blank in GET). A blank value on save leaves the stored key intact.

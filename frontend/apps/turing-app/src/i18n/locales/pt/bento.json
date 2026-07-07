@@ -1,0 +1,34 @@
+{
+  "bento": {
+    "nav": {
+      "label": "Navegação principal"
+    },
+    "palette": {
+      "title": "Paleta de comandos",
+      "description": "Busque e navegue para qualquer área",
+      "placeholder": "Buscar áreas…",
+      "search": "Buscar",
+      "open": "Abrir paleta de comandos",
+      "noResults": "Nenhum resultado",
+      "opensConsole": "Abre no console"
+    },
+    "saveBar": {
+      "unsaved": "Alterações não salvas",
+      "titleRequired": "Título obrigatório"
+    },
+    "layout": {
+      "customize": "Personalizar layout",
+      "editHint": "Arraste os blocos para reordenar · escolha P / M / G para redimensionar",
+      "dragToReorder": "Arraste para reordenar",
+      "sizeGroup": "Tamanho do bloco",
+      "size": {
+        "small": "Pequeno",
+        "medium": "Médio",
+        "large": "Grande"
+      },
+      "save": "Salvar layout",
+      "saveGlobal": "Definir como padrão para todos",
+      "reset": "Restaurar padrão"
+    }
+  }
+}

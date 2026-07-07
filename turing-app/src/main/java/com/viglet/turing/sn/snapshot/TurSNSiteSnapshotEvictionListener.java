@@ -23,6 +23,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.genai.tool.TurSNSiteConfigCache;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.observability.TurSearchPipelineObservation;
 
@@ -38,12 +39,15 @@ import jakarta.persistence.PostUpdate;
  * {@code @CacheEvict} — the JPA layer fires the callback regardless of which
  * service or controller saved the entity.
  *
+ * <p>It also drops the T487 Semantic Navigation field-config read-model cache
+ * ({@link com.viglet.turing.genai.tool.TurSNSiteConfigCache#FIELD_CONFIG_CACHE})
+ * on the same events — that cache projects the same SN site + field graph, so it
+ * must invalidate whenever the snapshot does.
+ *
  * <p>The eviction is intentionally coarse (clear the whole snapshot cache):
  * {@code (siteId, locale)} entries cannot be selectively dropped without
  * inspecting each entity's relationship graph, and the snapshot rebuilds in a
- * single round-trip on the next search. The trade-off matches the existing
- * {@code allEntries = true} pattern used by the per-method
- * {@code @CacheEvict} annotations on the SN repositories.
+ * single round-trip on the next search.
  *
  * <p>Hibernate (via Spring Boot's auto-configured {@code SpringBeanContainer})
  * resolves the listener through the application context, so constructor
@@ -94,6 +98,14 @@ public class TurSNSiteSnapshotEvictionListener {
             if (observation != null) {
                 observation.recordSnapshotOutcome(TurMeterNames.OUTCOME_EVICT);
             }
+        }
+        // T487 — the Semantic Navigation field-config read-model cache depends on
+        // the same SN entity graph (site + fields), so any write that evicts the
+        // search snapshot must also drop the memoized field config. Coarse,
+        // whole-cache clear: it rebuilds in one round-trip on the next tool call.
+        Cache fieldConfigCache = cm.getCache(TurSNSiteConfigCache.FIELD_CONFIG_CACHE);
+        if (fieldConfigCache != null) {
+            fieldConfigCache.clear();
         }
     }
 }

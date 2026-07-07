@@ -1,5 +1,6 @@
 package com.viglet.turing.genai.provider.llm;
 
+import java.util.List;
 import java.util.OptionalInt;
 
 import org.springframework.ai.chat.model.ChatModel;
@@ -52,5 +53,24 @@ public interface TurGenAiLlmProvider {
      */
     default OptionalInt fetchContextWindow(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         return OptionalInt.empty();
+    }
+
+    /**
+     * Lists the models the vendor exposes for this instance, for the
+     * admin model-picker (T577). Providers that can query the vendor API
+     * (OpenAI-family, Anthropic, Gemini, Ollama) override this and return
+     * a live list; the rest inherit the empty default and the discovery
+     * service falls back to the bundled static catalog.
+     *
+     * <p><b>Contract:</b> implementations MUST be resilient — a missing
+     * API key, network failure, or unexpected response shape returns an
+     * empty list (never throws), so the caller can degrade to the static
+     * catalog. {@code decryptedApiKey} may be {@code null}/blank when the
+     * instance hasn't been given a key yet.
+     *
+     * @since 2026.3.4
+     */
+    default List<TurLlmModelOption> listModels(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        return List.of();
     }
 }

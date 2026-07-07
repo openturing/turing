@@ -4,7 +4,9 @@
     "description": "Design conversational flows your AI agent will follow.",
     "tabs": {
       "settings": "Settings",
-      "diagram": "Diagram"
+      "diagram": "Diagram",
+      "analysis": "Analysis",
+      "experiment": "A/B experiment"
     },
     "sections": {
       "general": {
@@ -14,6 +16,14 @@
       "trigger": {
         "title": "Auto-trigger",
         "description": "When and how often the LLM router should activate this flow."
+      },
+      "experiment": {
+        "description": "Group this flow with sibling flows under the same experiment key — the router will reassign conversations across variants by traffic weight. Leave the key empty to disable A/B routing.",
+        "title": "A/B experiment"
+      },
+      "slotInheritance": {
+        "description": "When the engine routes a visitor onto this flow from a different flow on the same conversation, decide which already-captured slots carry over. Empty = no inheritance.",
+        "title": "Slot inheritance"
       }
     },
     "newInstance": "New Chat Flow",
@@ -48,7 +58,26 @@
       "helpWriteTriggerHint": "Tip: also describe what should NOT trigger this flow, not only what should.",
       "helpWriteTriggerGenerate": "Generate description",
       "triggerMode": "Trigger Mode",
-      "triggerLanguage": "Trigger language"
+      "triggerLanguage": "Trigger language",
+      "autoPromote": "Auto-promote winner (champion-challenger)",
+      "autoPromoteHint": "When enabled, a daily job checks statistical significance and, once a winner is declared, pins it to 100% of traffic and archives the losing variants. Leave off to keep manual control — you can still promote on demand from the significance report.",
+      "banditEnabled": "Bandit (Thompson sampling)",
+      "banditEnabledHint": "When enabled, the engine ignores traffic weight and adapts to observed conversion using Thompson sampling on the goal-achieved rate. Activate on at least one variant under the same experiment key to enable bandit mode.",
+      "experimentKey": "Experiment key",
+      "experimentKeyHint": "Identifier shared across all variants of one A/B test (e.g. 'pricing-page-tone'). Stable: changing it ends the experiment and starts a new one.",
+      "preserveAllSlots": "Preserve all session slots",
+      "preserveAllSlotsHint": "Bring every slot captured in earlier flows on this conversation through to this flow. Writes the wildcard mapping {\\\"*\\\":\\\"*\\\"}. Toggle off to author a specific slot map below.",
+      "slotInheritanceJson": "Custom mapping (advanced)",
+      "slotInheritanceJsonHint": "JSON object {\"receivingSlot\":\"sourceSlot\"}. Use the same name on both sides for a straight pass-through; use different names to rename, e.g. {\"position\":\"cargo_atual\"}. Slots not in the map are NOT inherited.",
+      "successMetric": "Success metric",
+      "successMetricGoalAchieved": "Goal achieved",
+      "successMetricHandoff": "Handoff requested",
+      "successMetricHint": "Which conversion the bandit optimises for and the significance test scores. Goal achieved is the default; the others activate once the analytics store persists those signals.",
+      "successMetricLead": "Lead email captured",
+      "trafficWeight": "Traffic weight",
+      "trafficWeightHint": "Relative weight (0-100) across variants. (50, 50) splits evenly; (90, 10) routes 90% to the first. Sums do not have to equal 100 — only ratios matter. 0 pauses this arm without deleting it.",
+      "variantLabel": "Variant label",
+      "variantLabelHint": "This flow's arm inside the experiment ('control', 'treatment_v2', 'warmer_tone'). Surfaces as the grouping dimension in the analytics dashboard."
     },
     "triggerModes": {
       "ONCE": {
@@ -108,9 +137,37 @@
     "actions": {
       "save": "Save",
       "saving": "Saving…",
-      "preview": "Preview",
+      "livePreview": "Live preview",
       "exportJson": "Export JSON",
-      "importJson": "Import JSON"
+      "importJson": "Import JSON",
+      "generateVariant": "Generate variant"
+    },
+    "livePreview": {
+      "viewNode": "Node",
+      "viewFlow": "Flow",
+      "captureInto": "(visitor reply captured into ",
+      "captureOnly": "(visitor reply, not captured)",
+      "clearMocks": "Clear",
+      "close": "Close",
+      "conditionEvaluates": "Evaluates: ",
+      "empty": "Select a node on the canvas to preview what the visitor sees on it.",
+      "endHint": "Conversation ends here. Slots are recorded as a submission.",
+      "form": "native form",
+      "formInput": "{{type}} input",
+      "functionCall": "Calls tool ",
+      "mocksLabel": "Mock slots (one per line: key=value)",
+      "nextHint": "Next: {{id}} ({{type}})",
+      "persona": "Switches voice to ",
+      "slotOp": "Internal: ",
+      "startHint": "Conversation begins here.",
+      "subFlow": "Hands off to sub-flow ",
+      "subFlowSwitch": "Routes by ",
+      "switchOn": "Switch on slot ",
+      "switchUnmocked": " (slot not mocked — preview cannot resolve the branch)",
+      "title": "Live preview",
+      "user": "user",
+      "validation": "Validation: ",
+      "writeSlot": "Internal: writes "
     },
     "selector": {
       "label": "Chat Flow",
@@ -279,7 +336,41 @@
       "slotValue": "Value",
       "slotValuePlaceholder": "Literal value to write",
       "slotValueHint": "Stored verbatim in the conversation state; downstream Switch or AI Question nodes can read it.",
-      "slotOverrideHint": "When checked, overwrite the slot even if it already had a value; otherwise the node no-ops to preserve the existing value."
+      "slotOverrideHint": "When checked, overwrite the slot even if it already had a value; otherwise the node no-ops to preserve the existing value.",
+      "completionMode": "On item completion",
+      "completionModeHint": "After the body sub-flow finishes an item: mark it done (keeps an auditable plan) or remove it (queue-drain). Both terminate the loop.",
+      "convertToForm": "Convert {{count}} questions to a form",
+      "convertToFormConfirm": "Convert",
+      "convertToFormDescription": "These {{count}} consecutive questions become one multi-field form. The collapse stops because {{reason}}.",
+      "convertToFormTitle": "Convert to a native form",
+      "formFieldAdd": "Add field",
+      "formFieldLabelPlaceholder": "Label",
+      "formFieldRemove": "Remove field",
+      "formFieldRequired": "Required",
+      "formFieldSlotPlaceholder": "Pick a slot…",
+      "formFieldUndeclared": "not declared",
+      "formFields": "Form fields (native form)",
+      "formFieldsEmpty": "No fields yet — this formCapture behaves as a single-field capture. Add fields to render a native multi-field form.",
+      "inlineOptions": "Suggested chips (one per line)",
+      "inlineOptionsHint": "Rendered as clickable chips under the assistant message. Clicking sends the label as the user reply — does not branch the flow.",
+      "iteratePlanBody": "Body sub-flow",
+      "iteratePlanBodyHint": "Runs once per pending item. The current item is exposed to the sub-flow as {{__planItemTitle}} / {{__planItemId}}.",
+      "iteratePlanSlotHint": "Slot to read the plan from — must match the Planning Step that produced it (default __plan).",
+      "planRegenerate": "Always regenerate the plan",
+      "planRegenerateHint": "When off (default), a plan already present in the slot is kept across re-entries. When on, the step regenerates the plan every time it runs.",
+      "planSchema": "Item schema (optional)",
+      "planSchemaHint": "Free-form hint steering the JSON item shape. The backend normalizes the model's output to {id, title, status} regardless — leave blank for the default.",
+      "planSlot": "Plan slot",
+      "planSlotHint": "Conversation slot that receives the JSON plan (default __plan). Point a downstream Iterate Plan node at the same slot.",
+      "planningGoal": "Planning goal",
+      "planningGoalHint": "The LLM decomposes this goal into a typed TODO list (id, title, status) written into the plan slot below.",
+      "planningGoalPlaceholder": "Break the user's goal into 3-6 concrete, ordered steps.",
+      "tidyLabels": "Tidy labels with AI",
+      "tidyLabelsBusy": "Tidying labels…",
+      "tidyLabelsDone": "Labels tidied — review below.",
+      "tidyLabelsError": "Could not tidy labels.",
+      "writeSlotValueHint": "Supports {{slotName}} template references — resolved at write time using the conversation's current variable map. Unknown slots resolve to the empty string.",
+      "writeSlotValuePlaceholder": "Hello {{name}}! Welcome to {{area_label}}."
     },
     "preview": {
       "title": "Chat Preview",
@@ -315,6 +406,88 @@
       "saveFailed": "Could not save chat flow.",
       "saving": "Saving…",
       "saveAndOpen": "Save & Open in Editor"
+    },
+    "bundleImported": "Imported {{count}} chat flow(s).",
+    "funnel": {
+      "description": "{{parked}} parked · {{completed}} completed · {{abandoned}} abandoned",
+      "title": "Funnel — drop-off & completion",
+      "parked": "parked",
+      "completed": "completed",
+      "reachedContinued": "reached this node → continued past it",
+      "dropOffAt": "drop-off at this node",
+      "dropOffPct": "drop-off %"
+    },
+    "lint": {
+      "description": "{{count}} issue(s) detected on this flow. Fix the ERROR ones before saving — the runtime will stall on them.",
+      "title": "Authoring warnings",
+      "node": "node",
+      "edge": "edge",
+      "codes": {
+        "ai_instruction_too_long": {
+          "message": "aiInstruction is {{length}} chars (soft limit {{limit}})",
+          "hint": "Tighten the instruction or split the node — verbose addenda inflate token cost and dilute the model's attention."
+        },
+        "unused_output_variable": {
+          "message": "Slot '{{slot}}' is captured here but never read downstream",
+          "hint": "Either consume it (use {{slotRef}} in another node, drive a switch on it, or declare it as an inheritance source on another flow) or remove the outputVariable."
+        },
+        "dead_end_node": {
+          "message": "Node has no outgoing edge — the conversation stalls when it reaches here",
+          "hint": "Wire an edge to the next node, or change the type to 'end' if this is a legitimate terminal."
+        },
+        "edge_without_label": {
+          "message": "Edge from {{type}} node has no sourceHandle and no label",
+          "hint": "Pick which branch this edge represents ('yes'/'no' for condition, an option id for switch) — the runtime cannot disambiguate without one."
+        },
+        "form_field_blank_name": {
+          "message": "A form field has no slot name — its value cannot be captured",
+          "hint": "Pick a declared slot for every field on the form."
+        },
+        "form_field_duplicate_name": {
+          "message": "Two form fields write the same slot '{{slot}}' — the later value wins",
+          "hint": "Give each field its own slot, or remove the duplicate field."
+        },
+        "form_field_unknown_slot": {
+          "message": "Form field writes slot '{{slot}}' which is not declared on the agent",
+          "hint": "Declare the slot in the agent's slot catalog so the value lands in the typed schema and is readable downstream."
+        },
+        "planning_step_unused_plan": {
+          "message": "Plan slot '{{slot}}' is generated here but never iterated or read downstream",
+          "hint": "Add an iteratePlan node reading this slot, or render it with {{slotRef}} — otherwise the planning LLM call is wasted."
+        },
+        "iterate_plan_no_body": {
+          "message": "iteratePlan has no body sub-flow — it will mark every plan item done without executing anything",
+          "hint": "Set the node's sub-flow (subFlowId) to the flow that should run once per plan item."
+        },
+        "trigger_conflict": {
+          "message": "Trigger description overlaps with flow '{{other}}' ({{pct}}% Jaccard)"
+        }
+      }
+    },
+    "triggerConflicts": {
+      "description": "The procedural router cannot reliably separate these flows on overlapping user messages — it falls back to the LLM router each time. Add distinguishing vocabulary or a negative-list clause to one side.",
+      "title": "Trigger description ambiguity",
+      "emptyTitle": "No trigger ambiguity detected",
+      "emptyDescription": "The procedural router can separate this agent's chat flows on their trigger descriptions. New overlaps will surface here.",
+      "overlapStats": "{{percent}}% overlap · {{count}} shared stems",
+      "collidesWith": "Collides with"
+    },
+    "variant": {
+      "description": "Describe the tone, length, or audience change you want. The LLM rewrites only the user-facing copy — node ids, edges, slots, and tool calls stay the same.",
+      "generate": "Generate",
+      "generateFailed": "Failed to generate variant.",
+      "instructionsLabel": "Instructions",
+      "instructionsPlaceholder": "e.g. 'more casual tone, 30% shorter, target Gen Z' or 'translate to Portuguese'",
+      "nameLabel": "New flow name (optional)",
+      "namePlaceholder": "{{name}} (variant)",
+      "ready": "Variant ready",
+      "regenerate": "Regenerate",
+      "rewrittenCount": "{{count}} node(s) rewritten.",
+      "saveAndOpen": "Save and open",
+      "saveFailed": "Failed to save variant.",
+      "saved": "Variant '{{name}}' created (disabled — review and enable).",
+      "savedDisabledHint": "Saved variants land disabled so you can review the rewrite in the editor before enabling.",
+      "title": "Generate variant of '{{name}}'"
     }
   }
 }

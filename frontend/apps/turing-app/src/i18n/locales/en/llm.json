@@ -4,6 +4,12 @@
     "blankTitle": "You don't seem to have any language model instance.",
     "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
     "newInstance": "New language model instance",
-    "newLanguageModel": "New Language Model"
+    "newLanguageModel": "New Language Model",
+    "sidebar": {
+      "general": "General",
+      "model": "Model Settings",
+      "generation": "Generation Parameters",
+      "capabilities": "Native Capabilities"
+    }
   }
 }

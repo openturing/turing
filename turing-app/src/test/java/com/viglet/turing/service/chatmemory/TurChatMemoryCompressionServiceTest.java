@@ -83,7 +83,8 @@ class TurChatMemoryCompressionServiceTest {
         chatModel = mock(ChatModel.class);
 
         service = new TurChatMemoryCompressionService(store, workspace, llmInstanceRepository,
-                llmModelFactory, secretCryptoService, tokenUsageService, globalSettingsService, worker);
+                llmModelFactory, secretCryptoService, tokenUsageService, globalSettingsService, worker,
+                new com.viglet.turing.observability.TurChatPipelineObservation(null));
         // @PostConstruct doesn't run outside Spring — set the prompt directly.
         ReflectionTestUtils.setField(service, "compressionSystemPrompt", "Summarize the older turns.");
 

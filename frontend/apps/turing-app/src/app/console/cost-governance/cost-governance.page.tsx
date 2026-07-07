@@ -25,10 +25,13 @@ import {
     IconCoin,
     IconCpu2,
     IconFileText,
+    IconLogin2,
+    IconLogout2,
     IconPlus,
     IconTrash,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
     CartesianGrid,
@@ -90,8 +93,9 @@ function SummaryCard({ title, value, icon: Icon, color, bgColor, ringColor }: Re
 }
 
 function CostChart({ points }: Readonly<{ points: TurDailyCostPoint[] }>) {
+    const { t } = useTranslation();
     if (points.length === 0) {
-        return <p className="text-muted-foreground py-8 text-center text-sm">No spend in this period.</p>;
+        return <p className="text-muted-foreground py-8 text-center text-sm">{t("costGovernance.noSpend")}</p>;
     }
     const data = points.map((p) => ({ date: p.date.slice(5), cost: Number(p.costUsd.toFixed(6)) }));
     return (
@@ -104,7 +108,7 @@ function CostChart({ points }: Readonly<{ points: TurDailyCostPoint[] }>) {
                         tickFormatter={(v: number) => formatUsd(v)} />
                     <Tooltip
                         contentStyle={{ background: "var(--card)", border: "1px solid var(--border)" }}
-                        formatter={(v) => [formatUsd(Number(v) || 0), "Cost"]} />
+                        formatter={(v) => [formatUsd(Number(v) || 0), t("costGovernance.costTooltip")]} />
                     <Line type="monotone" dataKey="cost" stroke="#6366f1" strokeWidth={2}
                         isAnimationActive={false} dot={false} />
                 </LineChart>
@@ -115,6 +119,7 @@ function CostChart({ points }: Readonly<{ points: TurDailyCostPoint[] }>) {
 
 /** Inline editor for one or more price rows + an add-model form. */
 function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; onChanged: () => void }>) {
+    const { t } = useTranslation();
     const [draft, setDraft] = useState<Record<string, { input: string; output: string }>>({});
     const [newRow, setNewRow] = useState({ vendorId: "", modelName: "", input: "", output: "" });
 
@@ -149,16 +154,16 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                 inputPricePerMillion: Number(d.input) || 0,
                 outputPricePerMillion: Number(d.output) || 0,
             });
-            toast.success(`Saved price for ${p.modelName}`);
+            toast.success(t("costGovernance.priceTable.saved", { model: p.modelName }));
             onChanged();
         } catch {
-            toast.error("Failed to save price");
+            toast.error(t("costGovernance.priceTable.saveFailed"));
         }
     };
 
     const addRow = async () => {
         if (!newRow.vendorId.trim() || !newRow.modelName.trim()) {
-            toast.error("Vendor and model are required");
+            toast.error(t("costGovernance.priceTable.required"));
             return;
         }
         try {
@@ -169,11 +174,11 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                 outputPricePerMillion: Number(newRow.output) || 0,
                 currency: "USD",
             });
-            toast.success(`Added price for ${newRow.modelName}`);
+            toast.success(t("costGovernance.priceTable.added", { model: newRow.modelName }));
             setNewRow({ vendorId: "", modelName: "", input: "", output: "" });
             onChanged();
         } catch {
-            toast.error("Failed to add price");
+            toast.error(t("costGovernance.priceTable.addFailed"));
         }
     };
 
@@ -181,10 +186,10 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
         if (!p.id) return;
         try {
             await service.deletePrice(p.id);
-            toast.success(`Removed price for ${p.modelName}`);
+            toast.success(t("costGovernance.priceTable.removed", { model: p.modelName }));
             onChanged();
         } catch {
-            toast.error("Failed to remove price");
+            toast.error(t("costGovernance.priceTable.removeFailed"));
         }
     };
 
@@ -192,11 +197,11 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Model</TableHead>
-                    <TableHead className="text-right">Input $/1M</TableHead>
-                    <TableHead className="text-right">Output $/1M</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("costGovernance.priceTable.vendor")}</TableHead>
+                    <TableHead>{t("costGovernance.priceTable.model")}</TableHead>
+                    <TableHead className="text-right">{t("costGovernance.priceTable.inputPrice")}</TableHead>
+                    <TableHead className="text-right">{t("costGovernance.priceTable.outputPrice")}</TableHead>
+                    <TableHead className="text-right">{t("costGovernance.priceTable.actions")}</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -218,9 +223,9 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                             </TableCell>
                             <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                    <Button size="sm" variant="outline" onClick={() => saveRow(p)}>Save</Button>
+                                    <Button size="sm" variant="outline" onClick={() => saveRow(p)}>{t("costGovernance.priceTable.save")}</Button>
                                     <Button size="sm" variant="ghost" onClick={() => removeRow(p)}
-                                        title="Delete">
+                                        title={t("costGovernance.priceTable.delete")}>
                                         <IconTrash className="size-4" />
                                     </Button>
                                 </div>
@@ -231,11 +236,11 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                 {/* Add-model row */}
                 <TableRow>
                     <TableCell>
-                        <Input placeholder="openai" value={newRow.vendorId} className="w-28"
+                        <Input placeholder={t("costGovernance.priceTable.vendorPlaceholder")} value={newRow.vendorId} className="w-28"
                             onChange={(e) => setNewRow((r) => ({ ...r, vendorId: e.target.value }))} />
                     </TableCell>
                     <TableCell>
-                        <Input placeholder="gpt-4o" value={newRow.modelName} className="w-40"
+                        <Input placeholder={t("costGovernance.priceTable.modelPlaceholder")} value={newRow.modelName} className="w-40"
                             onChange={(e) => setNewRow((r) => ({ ...r, modelName: e.target.value }))} />
                     </TableCell>
                     <TableCell className="text-right">
@@ -250,7 +255,7 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
                     </TableCell>
                     <TableCell className="text-right">
                         <Button size="sm" onClick={addRow}>
-                            <IconPlus className="size-4 mr-1" /> Add
+                            <IconPlus className="size-4 mr-1" /> {t("costGovernance.priceTable.add")}
                         </Button>
                     </TableCell>
                 </TableRow>
@@ -260,6 +265,7 @@ function PriceEditor({ prices, onChanged }: Readonly<{ prices: TurLLMPrice[]; on
 }
 
 export default function CostGovernancePage() {
+    const { t } = useTranslation();
     const [from, setFrom] = useState(isoDaysAgo(30));
     const [to, setTo] = useState(todayIso());
     const [report, setReport] = useState<TurCostReport | null>(null);
@@ -303,48 +309,56 @@ export default function CostGovernancePage() {
             {/* Date range */}
             <div className="flex flex-wrap items-end gap-3">
                 <div className="flex flex-col gap-1">
-                    <label htmlFor="cost-from" className="text-xs text-muted-foreground">From</label>
+                    <label htmlFor="cost-from" className="text-xs text-muted-foreground">{t("costGovernance.dateFrom")}</label>
                     <Input id="cost-from" type="date" value={from} className="w-40"
                         max={to} onChange={(e) => setFrom(e.target.value)} />
                 </div>
                 <div className="flex flex-col gap-1">
-                    <label htmlFor="cost-to" className="text-xs text-muted-foreground">To</label>
+                    <label htmlFor="cost-to" className="text-xs text-muted-foreground">{t("costGovernance.dateTo")}</label>
                     <Input id="cost-to" type="date" value={to} className="w-40"
                         min={from} onChange={(e) => setTo(e.target.value)} />
                 </div>
             </div>
 
             {loading ? (
-                <div className="text-muted-foreground py-16 text-center text-sm">Loading spend…</div>
+                <div className="text-muted-foreground py-16 text-center text-sm">{t("costGovernance.loading")}</div>
             ) : !report ? (
-                <div className="text-muted-foreground py-16 text-center text-sm">Failed to load spend.</div>
+                <div className="text-muted-foreground py-16 text-center text-sm">{t("costGovernance.loadFailed")}</div>
             ) : (
                 <>
                     {/* Summary cards */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <SummaryCard title="Total cost" value={formatUsd(report.totalCostUsd)}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <SummaryCard title={t("costGovernance.cards.totalCost")} value={formatUsd(report.totalCostUsd)}
                             icon={IconCoin} color="text-violet-600 dark:text-violet-400"
                             bgColor="from-violet-500/10 to-purple-500/10 dark:from-violet-500/20 dark:to-purple-500/20"
                             ringColor="ring-violet-500/10 dark:ring-violet-400/10" />
-                        <SummaryCard title="Total tokens" value={formatTokens(report.totalTokens)}
-                            icon={IconCpu2} color="text-emerald-600 dark:text-emerald-400"
-                            bgColor="from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20"
-                            ringColor="ring-emerald-500/10 dark:ring-emerald-400/10" />
-                        <SummaryCard title="Requests" value={report.totalRequests.toLocaleString()}
-                            icon={IconFileText} color="text-blue-600 dark:text-blue-400"
-                            bgColor="from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20"
-                            ringColor="ring-blue-500/10 dark:ring-blue-400/10" />
-                        <SummaryCard title="Avg / request" value={formatUsd(avgPerRequest)}
+                        <SummaryCard title={t("costGovernance.cards.avgPerRequest")} value={formatUsd(avgPerRequest)}
                             icon={IconCoin} color="text-amber-600 dark:text-amber-400"
                             bgColor="from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20"
                             ringColor="ring-amber-500/10 dark:ring-amber-400/10" />
+                        <SummaryCard title={t("costGovernance.cards.requests")} value={report.totalRequests.toLocaleString()}
+                            icon={IconFileText} color="text-blue-600 dark:text-blue-400"
+                            bgColor="from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20"
+                            ringColor="ring-blue-500/10 dark:ring-blue-400/10" />
+                        <SummaryCard title={t("costGovernance.cards.inputTokens")} value={formatTokens(report.totalInputTokens)}
+                            icon={IconLogin2} color="text-emerald-600 dark:text-emerald-400"
+                            bgColor="from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-emerald-500/20"
+                            ringColor="ring-emerald-500/10 dark:ring-emerald-400/10" />
+                        <SummaryCard title={t("costGovernance.cards.outputTokens")} value={formatTokens(report.totalOutputTokens)}
+                            icon={IconLogout2} color="text-amber-600 dark:text-amber-400"
+                            bgColor="from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20"
+                            ringColor="ring-amber-500/10 dark:ring-amber-400/10" />
+                        <SummaryCard title={t("costGovernance.cards.totalTokens")} value={formatTokens(report.totalTokens)}
+                            icon={IconCpu2} color="text-emerald-600 dark:text-emerald-400"
+                            bgColor="from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-emerald-500/20"
+                            ringColor="ring-emerald-500/10 dark:ring-emerald-400/10" />
                     </div>
 
                     {/* Daily cost chart */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Daily spend</CardTitle>
-                            <CardDescription>USD cost per day across all providers (local / unpriced = $0).</CardDescription>
+                            <CardTitle>{t("costGovernance.dailySpend")}</CardTitle>
+                            <CardDescription>{t("costGovernance.dailySpendDesc")}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <CostChart points={points} />
@@ -354,11 +368,11 @@ export default function CostGovernancePage() {
                     {/* By agent */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Spend by agent</CardTitle>
+                            <CardTitle>{t("costGovernance.byAgent")}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <BreakdownTable
-                                head={["Agent", "Cost", "Tokens", "Requests"]}
+                                head={[t("costGovernance.columns.agent"), t("costGovernance.columns.cost"), t("costGovernance.columns.tokens"), t("costGovernance.columns.requests")]}
                                 rows={report.byAgent.map((r) => [
                                     r.agentTitle, formatUsd(r.costUsd), formatTokens(r.totalTokens),
                                     r.requestCount.toLocaleString(),
@@ -370,27 +384,28 @@ export default function CostGovernancePage() {
                     <div className="grid gap-6 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Spend by model</CardTitle>
+                                <CardTitle>{t("costGovernance.byModel")}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <BreakdownTable
-                                    head={["Model", "Cost", "Tokens"]}
+                                    head={[t("costGovernance.columns.model"), t("costGovernance.columns.cost"), t("costGovernance.columns.input"), t("costGovernance.columns.output"), t("costGovernance.columns.tokens")]}
                                     rows={report.byModel.map((r) => [
                                         `${r.vendorId} / ${r.modelName}`, formatUsd(r.costUsd),
+                                        formatTokens(r.inputTokens), formatTokens(r.outputTokens),
                                         formatTokens(r.totalTokens),
                                     ])} />
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Spend by stage</CardTitle>
-                                <CardDescription>Live vs. background vs. skill.</CardDescription>
+                                <CardTitle>{t("costGovernance.byStage")}</CardTitle>
+                                <CardDescription>{t("costGovernance.byStageDesc")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <BreakdownTable
-                                    head={["Stage", "Cost", "Tokens"]}
+                                    head={[t("costGovernance.columns.stage"), t("costGovernance.columns.cost"), t("costGovernance.columns.tokens")]}
                                     rows={report.byStage.map((r) => [
-                                        r.stage ?? "(untagged)", formatUsd(r.costUsd),
+                                        r.stage ?? t("costGovernance.untagged"), formatUsd(r.costUsd),
                                         formatTokens(r.totalTokens),
                                     ])} />
                             </CardContent>
@@ -402,9 +417,9 @@ export default function CostGovernancePage() {
             {/* Price table editor */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Model price table</CardTitle>
+                    <CardTitle>{t("costGovernance.priceTable.title")}</CardTitle>
                     <CardDescription>
-                        USD per 1M tokens. Edits apply to the next chat turn; local / embedded models cost $0.
+                        {t("costGovernance.priceTable.description")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -416,8 +431,9 @@ export default function CostGovernancePage() {
 }
 
 function BreakdownTable({ head, rows }: Readonly<{ head: string[]; rows: string[][] }>) {
+    const { t } = useTranslation();
     if (rows.length === 0) {
-        return <p className="text-muted-foreground py-4 text-center text-sm">No data.</p>;
+        return <p className="text-muted-foreground py-4 text-center text-sm">{t("costGovernance.noData")}</p>;
     }
     return (
         <Table>

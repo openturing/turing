@@ -173,7 +173,7 @@ public class TurSNSiteFieldExtAPI {
         return this.turSNSiteFieldExtRepository.findById(id).map(existing -> {
             updateFieldExtProperties(existing, payload);
 
-            turSNSiteRepository.findByIdNoCache(snSiteId).ifPresent(turSNSite -> {
+            turSNSiteRepository.findById(snSiteId).ifPresent(turSNSite -> {
                 existing.setFacetPosition(calculateFacetPositionForUpdate(payload, turSNSite));
                 this.turSNSiteFieldExtRepository.save(existing);
                 this.updateExternalField(payload, turSNSite);
@@ -187,7 +187,7 @@ public class TurSNSiteFieldExtAPI {
     @DeleteMapping("/{id}")
     public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
         return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExt -> {
-            turSNSiteRepository.findByIdNoCache(snSiteId)
+            turSNSiteRepository.findById(snSiteId)
                     .ifPresent(turSNSite -> turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId())
                             .ifPresent(turSNSiteField -> this.deleteSolrSchema(turSNSite, turSNSiteField)));
             if (TurSNFieldType.SE.equals(turSNSiteFieldExt.getSnType())) {
@@ -334,7 +334,7 @@ public class TurSNSiteFieldExtAPI {
     }
 
     private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt fieldExt) {
-        return turSNSiteRepository.findByIdNoCache(snSiteId)
+        return turSNSiteRepository.findById(snSiteId)
                 .map(turSNSite -> createSEFieldForSite(turSNSite, fieldExt))
                 .orElse(TurSNSiteFieldExt.builder().build());
     }

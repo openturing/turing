@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T433 / §X.18.b — per-agent provider-native capability selection.
+  #
+  # nativeCapabilities — CSV of TurNativeCapability keys the agent has explicitly
+  #                      selected (a subset of what its LLM instance is capable
+  #                      of, per the T132 matrix), mirroring the existing
+  #                      nativeTools column. NULL means "no explicit selection":
+  #                      the native path keeps its pre-T433 winner-takes-all
+  #                      behaviour, so existing agents are unaffected. A non-null
+  #                      value opts into the "capacidade é mutex, resto coexiste"
+  #                      execution model (TurNativeChatExecutor resolves
+  #                      agentSelected ∩ instanceCapable and attaches the agent's
+  #                      Turing/MCP/custom tools whose function isn't claimed).
+
+  - changeSet:
+      id: v2026.3.1.47-add-ai_agent-nativeCapabilities
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: nativeCapabilities
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: nativeCapabilities
+                  type: varchar(2000)
+                  remarks: "T433 per-agent provider-native capability selection (CSV of capability keys; NULL = legacy winner-takes-all)."

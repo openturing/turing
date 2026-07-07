@@ -58,6 +58,20 @@ public class TurMcpServerProperty {
     private boolean requireAuth = false;
 
     /**
+     * T146 / §X.5.c — when {@code true} (and {@link #requireAuth}{@code =true}),
+     * {@code /mcp} additionally accepts a Turing <em>API key</em> ({@code TurDevToken})
+     * presented in the {@code Key} header (or {@code apiKey} query parameter), so a
+     * public MCP client (Claude Desktop, Cursor, an OpenAI Responses agent) can
+     * consume Turing's read tools with a static key instead of a full OAuth flow.
+     * An API-key principal is granted <b>read-only</b> MCP access; the gated write
+     * tools still require an OAuth token carrying {@link #writeScope}. Default
+     * {@code false}: the OAuth 2.1 resource server (T246) is the only accepted
+     * credential. Has no effect when {@code requireAuth=false} (the loopback gate
+     * already permits the path).
+     */
+    private boolean apiKeyEnabled = false;
+
+    /**
      * T246 — the granted authority a token must hold to invoke a <em>write</em>
      * MCP tool (the gated ingestion tools land in T253). Read tools never require
      * it. Spring maps an OAuth2 {@code scope}/{@code scp} claim value {@code x}

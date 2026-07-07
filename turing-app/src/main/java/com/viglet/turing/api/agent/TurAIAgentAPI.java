@@ -170,6 +170,10 @@ public class TurAIAgentAPI {
             agentEdit.setSystemPromptMetaPrompt(turAIAgent.getSystemPromptMetaPrompt());
             agentEdit.setEnabled(turAIAgent.getEnabled());
             agentEdit.setNativeTools(turAIAgent.getNativeTools());
+            // T433 / §X.18.b — per-agent provider-native capability selection.
+            agentEdit.setNativeCapabilities(turAIAgent.getNativeCapabilities());
+            // T435 / §X.18.d — per-agent REQUEST_OPTION selections.
+            agentEdit.setRequestOptionsJson(turAIAgent.getRequestOptionsJson());
             agentEdit.setLlmInstances(resolveRelations(
                     turAIAgent.getLlmInstances(), turLLMInstanceRepository));
             agentEdit.setMcpServers(resolveRelations(
@@ -218,9 +222,32 @@ public class TurAIAgentAPI {
             // Field-by-field copy like the other toggles — omitting it would
             // silently drop the switch on save.
             agentEdit.setRichContentEnabled(turAIAgent.isRichContentEnabled());
+            // T442 — answer-as-an-app generative-UI client tools (opt-in).
+            agentEdit.setAnswerAsAppEnabled(turAIAgent.isAnswerAsAppEnabled());
+            // T443 — co-browse: agent drives the host page's real search UI (opt-in).
+            agentEdit.setCoBrowseEnabled(turAIAgent.isCoBrowseEnabled());
+            // T445 — ambient / proactive copilot (opt-in) + its signal threshold.
+            agentEdit.setProactiveEnabled(turAIAgent.isProactiveEnabled());
+            agentEdit.setProactiveThresholdSignals(turAIAgent.getProactiveThresholdSignals());
+            // T446 — cross-conversation personal memory (opt-in).
+            agentEdit.setUserMemoryEnabled(turAIAgent.isUserMemoryEnabled());
+            // T447 — self-tuning loop (opt-in; opens human-approved suggestions).
+            agentEdit.setSelfTuningEnabled(turAIAgent.isSelfTuningEnabled());
+            // T448 — agent-to-agent handoff (opt-in) + the specialist allowlist.
+            agentEdit.setAgentHandoffEnabled(turAIAgent.isAgentHandoffEnabled());
+            agentEdit.setSpecialistAgentIds(turAIAgent.getSpecialistAgentIds());
+            // T450 — embeddable action widget (opt-in host-action client tools).
+            agentEdit.setActionWidgetEnabled(turAIAgent.isActionWidgetEnabled());
             // T323 — skills opt-in (run_skill delegation to the Default LLM).
             // Field-by-field copy like the other toggles.
             agentEdit.setSkillsEnabled(turAIAgent.isSkillsEnabled());
+            // T145 — federate the agent's MCP servers to the native vendor.
+            agentEdit.setMcpNativeFederation(turAIAgent.isMcpNativeFederation());
+            // T436 — live tool-call events on the chat SSE (opt-in).
+            agentEdit.setToolCallEventsEnabled(turAIAgent.isToolCallEventsEnabled());
+            // T438 — frontend ("client") tools (opt-in) + their declarations.
+            agentEdit.setClientToolsEnabled(turAIAgent.isClientToolsEnabled());
+            agentEdit.setClientToolsJson(turAIAgent.getClientToolsJson());
             // Chat memory configuration — silently dropped before this fix,
             // which is why toggling the UI switch had no effect after save.
             agentEdit.setChatMemoryEnabled(turAIAgent.isChatMemoryEnabled());
@@ -250,6 +277,12 @@ public class TurAIAgentAPI {
                 agentEdit.setSubmissionRetention(turAIAgent.getSubmissionRetention());
             }
             agentEdit.setSubmissionRetentionDays(turAIAgent.getSubmissionRetentionDays());
+            // T166 / §X.9.d — memory tool scope (CONVERSATION / USER). Same
+            // field-by-field copy contract: a null DTO value keeps the
+            // previously-persisted scope (older clients).
+            if (turAIAgent.getMemoryScope() != null) {
+                agentEdit.setMemoryScope(turAIAgent.getMemoryScope());
+            }
             // T19/T24 reposition (2026.2.7) — ragBm25Fallback and
             // ragHybridSearch moved to TurSNSiteGenAi; no longer copied
             // here. See TurSNSiteGenAi field javadoc + TurSNSiteAPI for

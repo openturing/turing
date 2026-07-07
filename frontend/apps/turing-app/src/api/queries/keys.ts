@@ -23,6 +23,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.skills.all(), 'detail', id] as const,
     files: (id: string) => [...queryKeys.skills.all(), 'files', id] as const,
     file: (id: string, path: string) => [...queryKeys.skills.all(), 'file', id, path] as const,
+    uiComponents: (id: string) => [...queryKeys.skills.all(), 'ui-components', id] as const,
   },
   snSites: {
     all: () => ['sn-sites'] as const,
@@ -32,6 +33,10 @@ export const queryKeys = {
   snSiteFieldCoverage: {
     all: () => ['sn-site-field-coverage'] as const,
     bySite: (siteId: string) => [...queryKeys.snSiteFieldCoverage.all(), 'site', siteId] as const,
+  },
+  snSiteContentFit: {
+    all: () => ['sn-site-content-fit'] as const,
+    bySite: (siteId: string) => [...queryKeys.snSiteContentFit.all(), 'site', siteId] as const,
   },
   locales: {
     all: () => ['locales'] as const,
@@ -46,12 +51,26 @@ export const queryKeys = {
     list: () => [...queryKeys.llmInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.llmInstances.all(), 'detail', id] as const,
   },
+  llmInstanceCapabilities: {
+    all: () => ['llm-instance-capabilities'] as const,
+    list: (instanceId: string) =>
+      [...queryKeys.llmInstanceCapabilities.all(), 'list', instanceId] as const,
+  },
+  // T577 — selectable models per vendor for the model picker. Keyed by vendor +
+  // instance + endpoint + whether a key is present (never the key value itself),
+  // so toggling any of those refetches without caching secrets.
+  llmModels: {
+    all: () => ['llm-models'] as const,
+    list: (params: { vendorId: string; instanceId?: string; url?: string; hasKey: boolean }) =>
+      [...queryKeys.llmModels.all(), params] as const,
+  },
   aiAgents: {
     all: () => ['ai-agents'] as const,
     list: () => [...queryKeys.aiAgents.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.aiAgents.all(), 'detail', id] as const,
-    systemPromptPreview: (id: string, flowId?: string) =>
-      [...queryKeys.aiAgents.all(), 'system-prompt', 'preview', id, flowId ?? 'default'] as const,
+    systemPromptPreview: (id: string, flowId?: string, nodeId?: string, vars?: string) =>
+      [...queryKeys.aiAgents.all(), 'system-prompt', 'preview', id,
+        flowId ?? 'default', nodeId ?? 'entry', vars ?? 'empty'] as const,
     systemPromptValidate: (id: string) =>
       [...queryKeys.aiAgents.all(), 'system-prompt', 'validate', id] as const,
   },
@@ -59,6 +78,12 @@ export const queryKeys = {
     all: () => ['personas'] as const,
     list: () => [...queryKeys.personas.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.personas.all(), 'detail', id] as const,
+  },
+  // T447 — self-tuning suggestions, scoped per agent.
+  agentSuggestions: {
+    all: () => ['agent-suggestions'] as const,
+    list: (agentId: string) =>
+      [...queryKeys.agentSuggestions.all(), 'list', agentId] as const,
   },
   seInstances: {
     all: () => ['se-instances'] as const,
@@ -201,5 +226,10 @@ export const queryKeys = {
   parkedConversations: {
     all: () => ['parked-conversations'] as const,
     list: () => [...queryKeys.parkedConversations.all(), 'list'] as const,
+  },
+  // T575 — customizable Bento list layout, scoped per list surface.
+  bentoLayout: {
+    all: () => ['bento-layout'] as const,
+    byList: (listId: string) => [...queryKeys.bentoLayout.all(), listId] as const,
   },
 } as const;

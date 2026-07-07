@@ -65,7 +65,8 @@ public class TurLLMCostAPI {
     }
 
     public record ModelCostRow(String vendorId, String modelName,
-            double costUsd, long totalTokens, long requestCount) {
+            double costUsd, long totalTokens, long requestCount,
+            long inputTokens, long outputTokens) {
     }
 
     public record StageCostRow(String stage,
@@ -85,6 +86,8 @@ public class TurLLMCostAPI {
             String periodEnd,
             double totalCostUsd,
             long totalTokens,
+            long totalInputTokens,
+            long totalOutputTokens,
             long totalRequests,
             List<AgentCostRow> byAgent,
             List<ModelCostRow> byModel,
@@ -123,9 +126,16 @@ public class TurLLMCostAPI {
         }
 
         List<ModelCostRow> byModel = new ArrayList<>();
+        long totalInputTokens = 0;
+        long totalOutputTokens = 0;
         for (Object[] row : tokenUsageRepository.findCostByModel(start, end)) {
+            long inputTokens = lng(row[5]);
+            long outputTokens = lng(row[6]);
+            // byModel is exhaustive over all rows → its input/output sums are the grand totals.
+            totalInputTokens += inputTokens;
+            totalOutputTokens += outputTokens;
             byModel.add(new ModelCostRow((String) row[0], (String) row[1],
-                    num(row[2]), lng(row[3]), lng(row[4])));
+                    num(row[2]), lng(row[3]), lng(row[4]), inputTokens, outputTokens));
         }
 
         List<StageCostRow> byStage = new ArrayList<>();
@@ -141,7 +151,7 @@ public class TurLLMCostAPI {
         return new CostReport(
                 start.toLocalDate().toString(),
                 end.toLocalDate().minusDays(1).toString(),
-                totalCost, totalTokens, totalReqs,
+                totalCost, totalTokens, totalInputTokens, totalOutputTokens, totalReqs,
                 byAgent, byModel, byStage, byTenant);
     }
 
@@ -157,6 +167,46 @@ public class TurLLMCostAPI {
                     num(row[1]), lng(row[2]), lng(row[3])));
         }
         return points;
+    }
+
+    /**
+     * T184 / §X.14.d — per-agent budget status for the AI-Spend card's alert
+     * thresholds: month-to-date spend vs the agent's {@code monthlyBudgetUsd}
+     * plus a linear projection to month-end. Only agents with a positive monthly
+     * budget are returned (the gate is off otherwise). Mirrors the read the
+     * T291 turn-time {@code TurChatCostBudgetGate} does, surfaced for the UI.
+     */
+    public record AgentBudgetStatus(String agentId, String agentTitle,
+            double monthlyBudgetUsd, double monthToDateSpendUsd, double projectedMonthEndUsd,
+            boolean overBudget, boolean projectedOverBudget,
+            Double perTurnSoftCapUsd, boolean downgradeConfigured) {
+    }
+
+    @GetMapping("/budget-status")
+    public List<AgentBudgetStatus> budgetStatus() {
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+        LocalDateTime monthStart = today.withDayOfMonth(1).atStartOfDay();
+        int dayOfMonth = today.getDayOfMonth();
+        int daysInMonth = today.lengthOfMonth();
+
+        List<AgentBudgetStatus> out = new ArrayList<>();
+        for (TurAIAgent agent : agentRepository.findAll()) {
+            Double budget = agent.getMonthlyBudgetUsd();
+            if (budget == null || budget <= 0) {
+                continue;
+            }
+            double spent = tokenUsageRepository.sumCostByAgentSince(agent.getId(), monthStart);
+            double projected = dayOfMonth > 0 ? spent / dayOfMonth * daysInMonth : spent;
+            String downgradeId = agent.getBudgetDowngradeLlmId();
+            out.add(new AgentBudgetStatus(agent.getId(),
+                    agent.getTitle() == null ? agent.getId() : agent.getTitle(),
+                    budget, spent, projected,
+                    spent >= budget, projected >= budget,
+                    agent.getPerTurnSoftCapUsd(),
+                    downgradeId != null && !downgradeId.isBlank()));
+        }
+        out.sort((a, b) -> Double.compare(b.monthToDateSpendUsd(), a.monthToDateSpendUsd()));
+        return out;
     }
 
     private LocalDateTime parseFrom(String from) {

@@ -6,8 +6,21 @@ import type {
 } from "@/models/agent/agent-eval.model";
 
 /**
+ * F.9 / §X.10.c — result of a distill request (T169): the started job, or a
+ * reason it didn't start (tier off, non-OpenAI LLM, too few stored completions).
+ */
+export interface TurAgentDistillResult {
+  started: boolean;
+  reason?: string;
+  jobId?: string;
+  fineTuneJobId?: string;
+  exampleCount?: number;
+  baseModel?: string;
+}
+
+/**
  * T285–T288 / §XV — client for the Agent-CI eval endpoints (golden-set CRUD,
- * gate status, run, latest report).
+ * gate status, run, latest report). F.9 / T169 adds the distill trigger.
  *
  * @since 2026.3.1
  */
@@ -67,6 +80,17 @@ export class TurAgentEvalService {
   async available(agentId: string): Promise<boolean> {
     const response = await axios.get<boolean>(
       `/ai-agent/${agentId}/eval/available`,
+    );
+    return response.data;
+  }
+
+  /**
+   * F.9 / T169 — distill the agent: export its Stored Completions, submit a
+   * fine-tuning job, and (once it finishes) swap the model if the eval passes.
+   */
+  async distill(agentId: string): Promise<TurAgentDistillResult> {
+    const response = await axios.post<TurAgentDistillResult>(
+      `/ai-agent/${agentId}/eval/distill`,
     );
     return response.data;
   }

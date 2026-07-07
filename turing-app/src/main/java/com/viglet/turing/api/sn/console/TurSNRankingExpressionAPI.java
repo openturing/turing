@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -98,7 +97,6 @@ public class TurSNRankingExpressionAPI {
 
     @Operation(summary = "Update a Semantic Navigation Ranking Expression")
     @PutMapping("/{id}")
-    @CacheEvict(value = { TurSNRankingConditionRepository.FIND_BY_TUR_SN_RANKING_EXPRESSION }, allEntries = true)
     public TurSNRankingExpressionDto turSNRankingExpressionUpdate(@PathVariable String id,
             @RequestBody TurSNRankingExpressionDto turSNRankingExpressionDto,
             @PathVariable String snSiteId) {
@@ -132,8 +130,6 @@ public class TurSNRankingExpressionAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Ranking Expression")
     @DeleteMapping("/{id}")
-    @CacheEvict(value = { "ranking_expression",
-            TurSNRankingExpressionRepository.FIND_BY_TUR_SN_SITE }, allEntries = true)
     public boolean turSNRankingExpressionDelete(@PathVariable String id, @PathVariable String snSiteId) {
         return turSNSiteRepository.findById(snSiteId).map(site -> {
             turSNRankingExpressionRepository.deleteById(id);

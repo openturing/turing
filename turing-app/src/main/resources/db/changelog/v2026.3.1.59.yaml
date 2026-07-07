@@ -1,0 +1,115 @@
+databaseChangeLog:
+  # T447 / §XXIII.6 — self-tuning agent: per-agent opt-in flag + the
+  # agent_suggestion table (PR-style suggested changes). Default off keeps
+  # existing agents unchanged. Idempotent: gated by columnExists / tableExists.
+
+  - changeSet:
+      id: v2026.3.1.59-add-ai_agent-self_tuning_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: self_tuning_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: self_tuning_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: self_tuning_enabled
+                  valueBoolean: false
+            where: self_tuning_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.59-create-agent_suggestion-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: agent_suggestion
+      changes:
+        - createTable:
+            tableName: agent_suggestion
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: VARCHAR(40)
+              - column:
+                  name: agentId
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kind
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currentValue
+                  type: longtext
+              - column:
+                  name: proposedValue
+                  type: longtext
+              - column:
+                  name: rationale
+                  type: longtext
+              - column:
+                  name: baselineScore
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: proposedScore
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: decidedAt
+                  type: bigint
+
+  - changeSet:
+      id: v2026.3.1.59-index-agent_suggestion-agent-status
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - indexExists:
+                indexName: idx_agent_suggestion_agent_status
+      changes:
+        - createIndex:
+            indexName: idx_agent_suggestion_agent_status
+            tableName: agent_suggestion
+            columns:
+              - column:
+                  name: agentId
+              - column:
+                  name: status

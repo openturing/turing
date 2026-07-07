@@ -79,7 +79,7 @@ class TurSkillRunnerServiceTest {
     // genuine @Tool methods deterministically. Null deps are fine — tool
     // discovery only reflects over the methods, it never invokes them.
     private final TurDslToolService dslToolService =
-            new TurDslToolService(null, null, null, null, null);
+            new TurDslToolService(null, null, null, null, null, null);
 
     @BeforeEach
     void setUp() {

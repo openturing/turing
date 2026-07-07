@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 
@@ -23,17 +25,30 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowState;
  */
 public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowState, String> {
 
-    Optional<TurChatFlowState> findByConversationIdAndFlow_Id(String conversationId, String flowId);
+    /**
+     * The engine immediately dereferences {@code state.getFlow()} (its
+     * {@code definitionJson}, id, trigger mode, …) outside the loading
+     * transaction, so the {@code @ManyToOne(LAZY)} flow is {@code JOIN
+     * FETCH}-ed here. This makes the read self-contained — it does not rely
+     * on {@code hibernate.enable_lazy_load_no_trans}, which is disabled.
+     */
+    @Query("select s from TurChatFlowState s join fetch s.flow f "
+            + "where s.conversationId = :conversationId and f.id = :flowId")
+    Optional<TurChatFlowState> findByConversationIdAndFlow_Id(
+            @Param("conversationId") String conversationId, @Param("flowId") String flowId);
 
     /**
      * All persisted states for a given conversation across every flow of a
      * given agent. Used by the auto-trigger router to detect (a) any flow
      * still in progress (so the router shouldn't pick a different one) and
      * (b) which flows have already completed (so {@code ONCE} flows are
-     * filtered out).
+     * filtered out). {@code flow} is {@code JOIN FETCH}-ed — see
+     * {@link #findByConversationIdAndFlow_Id}.
      */
+    @Query("select s from TurChatFlowState s join fetch s.flow f "
+            + "where s.conversationId = :conversationId and f.turAIAgent.id = :agentId")
     List<TurChatFlowState> findByConversationIdAndFlow_TurAIAgent_Id(
-            String conversationId, String agentId);
+            @Param("conversationId") String conversationId, @Param("agentId") String agentId);
 
     /**
      * All states ever recorded for a flow, newest first. The submissions
@@ -49,7 +64,8 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      *
      * @since 2026.2.6
      */
-    List<TurChatFlowState> findByParentStateId(String parentStateId);
+    @Query("select s from TurChatFlowState s join fetch s.flow where s.parentStateId = :parentStateId")
+    List<TurChatFlowState> findByParentStateId(@Param("parentStateId") String parentStateId);
 
     /**
      * Every in-progress flow state attached to a conversation, regardless of
@@ -58,7 +74,8 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      *
      * @since 2026.2.7
      */
-    List<TurChatFlowState> findByConversationId(String conversationId);
+    @Query("select s from TurChatFlowState s join fetch s.flow where s.conversationId = :conversationId")
+    List<TurChatFlowState> findByConversationId(@Param("conversationId") String conversationId);
 
     /**
      * T122 — every state for a given flow whose cursor currently sits on one

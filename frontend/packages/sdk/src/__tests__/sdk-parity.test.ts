@@ -54,6 +54,8 @@ const PUBLIC_ENDPOINTS: readonly EndpointContract[] = [
   { method: "GET", path: "/sn/{site}/chat/enabled", fn: "fetchChatEnabled" },
   { method: "POST", path: "/sn/{site}/chat/conversation", fn: "postChatConversation" },
   { method: "POST", path: "/v2/ai-agent/{agentId}/chat", fn: "postAgentChat" },
+  { method: "POST", path: "/v2/persona/{personaId}/chat", fn: "postPersonaChat" }, // T579
+
   { method: "POST", path: "/v2/llm/{id}/chat", fn: "postLlmChat" },
   { method: "POST", path: "/v2/llm/{id}/semantic-chat", fn: "postSemanticChat" }, // T404
   { method: "DELETE", path: "/sn/{site}/chat/conversation-state", fn: "deleteSiteConversationState" },
@@ -69,6 +71,7 @@ const PUBLIC_ENDPOINTS: readonly EndpointContract[] = [
   { method: "GET", path: "/v2/ai-agent/{agentId}/chat-slots", fn: "fetchAgentChatSlots" },
   { method: "POST", path: "/sn/{site}/chat/slots", fn: "postSiteChatSlot" },
   { method: "POST", path: "/sn/{site}/chat/slot-extract", fn: "postSiteSlotExtract" },
+  { method: "POST", path: "/sn/{site}/chat/slot-extract-multi", fn: "postSiteSlotExtractMulti" }, // T101
   { method: "POST", path: "/sn/{site}/chat/slot-upload", fn: "postSiteSlotUpload" }, // T401
   // ── LLM / platform discovery ──
   { method: "GET", path: "/llm", fn: "fetchLlmInstances" },

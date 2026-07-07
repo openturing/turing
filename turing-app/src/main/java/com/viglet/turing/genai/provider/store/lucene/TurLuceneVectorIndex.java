@@ -66,10 +66,26 @@ public class TurLuceneVectorIndex {
     private final AtomicReference<DirectoryReader> directoryReader;
 
     public TurLuceneVectorIndex(Path indexPath) throws IOException {
+        this(indexPath, TurLuceneQuantization.NONE);
+    }
+
+    /**
+     * T514 / §XXVIII.10 — opens the index, optionally configuring a scalar-quantized
+     * KNN codec on the writer ({@code quantization != NONE}) so newly written
+     * segments store quantized vectors. {@link TurLuceneQuantization#NONE} keeps
+     * the default {@code float32} codec — byte-for-byte the legacy behaviour.
+     */
+    public TurLuceneVectorIndex(Path indexPath, TurLuceneQuantization quantization) throws IOException {
         this.indexPath = indexPath;
         this.directory = FSDirectory.open(indexPath);
         IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
         config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+        if (quantization != null) {
+            quantization.buildCodec().ifPresent(codec -> {
+                config.setCodec(codec);
+                log.info("[LuceneVectorIndex] Vector quantization '{}' enabled at {}", quantization, indexPath);
+            });
+        }
         this.indexWriter = new IndexWriter(directory, config);
         this.indexWriter.commit();
         this.directoryReader = new AtomicReference<>(DirectoryReader.open(indexWriter));

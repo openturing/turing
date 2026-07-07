@@ -19,6 +19,7 @@ import com.viglet.turing.persistence.model.mcp.TurMcpServerConnectionType;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
 import io.modelcontextprotocol.json.McpJsonDefaults;
@@ -122,23 +123,24 @@ public class TurMcpToolCallbackService {
         return client;
     }
 
-    // MCP SDK 2.0.0-RC1 deprecated HttpClientSseClientTransport in favour of
-    // HttpClientStreamableHttpTransport. We deliberately keep the SSE transport:
-    // it speaks the legacy two-endpoint HTTP+SSE protocol our configured MCP
-    // servers expose (GET /sse opens the stream + an `endpoint` event tells the
-    // client where to POST messages), whereas Streamable HTTP is a different
-    // wire protocol on a single endpoint (default /mcp) and does NOT fall back
-    // to the legacy handshake — pointing it at an SSE-only server would break
-    // the connection. Switching is therefore a per-server protocol decision,
-    // not a mechanical deprecation fix.
+    // T294 — per-server HTTP transport choice. Streamable HTTP and legacy
+    // SSE are DIFFERENT wire protocols, not interchangeable: SSE is the
+    // two-endpoint handshake (GET /sse opens the stream + an `endpoint` event
+    // tells the client where to POST), whereas Streamable HTTP is a single
+    // endpoint (default /mcp) with no fallback to the SSE handshake — pointing
+    // it at an SSE-only server would break the connection. So each HTTP server
+    // declares its transport via TurMcpServer.transportType; a null value
+    // (legacy rows) defaults to SSE so existing servers are unaffected.
     //
-    // The deprecation is a plain @Deprecated (NOT forRemoval), so the API is
-    // not going away in the short term and suppressing the warning is the
-    // sanctioned approach until our MCP servers move to Streamable HTTP.
-    // Tracked: docs/ROADMAP.md T294 (per-server transport opt-in).
+    // HttpClientSseClientTransport is @Deprecated (NOT forRemoval) in MCP SDK
+    // 2.0.0; we still offer it as an explicit per-server choice, so the
+    // suppression stays as long as SSE remains selectable.
     @SuppressWarnings("deprecation")
     private McpClientTransport createTransport(TurMcpServerDomain server) {
         if (server.connectionType() == TurMcpServerConnectionType.HTTP) {
+            if (server.isStreamableHttp()) {
+                return HttpClientStreamableHttpTransport.builder(server.url()).build();
+            }
             return HttpClientSseClientTransport.builder(server.url()).build();
         } else {
             String[] args = server.args() != null && !server.args().isBlank()

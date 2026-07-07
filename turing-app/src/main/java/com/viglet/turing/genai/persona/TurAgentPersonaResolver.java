@@ -77,8 +77,23 @@ public class TurAgentPersonaResolver {
     public TurPersona resolve(TurAIAgent agent, String conversationId) {
         if (agent == null) return null;
         TurPersona override = readOverride(agent, conversationId);
-        if (override != null) return override;
-        return agent.getDefaultPersona();
+        if (override != null) return asSpeaker(agent, override);
+        return asSpeaker(agent, agent.getDefaultPersona());
+    }
+
+    /**
+     * Block AA / §XXVI.1 guard: an {@code AUDIENCE}-only persona models a
+     * reader, never a voice. If one is wired as an agent's default (or a flow
+     * override resolves to one), reject it rather than silently composing an
+     * empty voice — log and fall through to the LLM's default voice.
+     */
+    private TurPersona asSpeaker(TurAIAgent agent, TurPersona persona) {
+        if (persona == null) return null;
+        if (persona.isUsableAsSpeaker()) return persona;
+        log.warn("[PersonaResolver] persona {} (kind={}) is audience-only and "
+                        + "cannot be an agent {} voice; ignoring",
+                persona.getId(), persona.getPersonaKind(), agent.getId());
+        return null;
     }
 
     private TurPersona readOverride(TurAIAgent agent, String conversationId) {

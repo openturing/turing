@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -966,5 +968,39 @@ class TurCodeInterpreterToolServiceTest {
         method.invoke(service, reader, buffer);
         // Buffer should not exceed MAX_OUTPUT_LENGTH significantly
         assertThat(buffer.length()).isLessThan(largeContent.length());
+    }
+
+    // ───────────────────────── T239 — extra sandbox hardening ─────────────────────────
+
+    @Test
+    void extraHardeningAddsNothingWhenBothUnset() {
+        List<String> cmd = new ArrayList<>();
+        TurCodeInterpreterToolService.appendExtraSandboxHardening(cmd, "", null);
+        assertThat(cmd).isEmpty();
+        TurCodeInterpreterToolService.appendExtraSandboxHardening(cmd, "   ", "  ");
+        assertThat(cmd).isEmpty();
+    }
+
+    @Test
+    void extraHardeningAddsGvisorRuntime() {
+        List<String> cmd = new ArrayList<>();
+        TurCodeInterpreterToolService.appendExtraSandboxHardening(cmd, "runsc", "");
+        assertThat(cmd).containsExactly("--runtime", "runsc");
+    }
+
+    @Test
+    void extraHardeningAddsSeccompProfile() {
+        List<String> cmd = new ArrayList<>();
+        TurCodeInterpreterToolService.appendExtraSandboxHardening(cmd, "", "/etc/turing/seccomp.json");
+        assertThat(cmd).containsExactly("--security-opt", "seccomp=/etc/turing/seccomp.json");
+    }
+
+    @Test
+    void extraHardeningAddsBothAndTrims() {
+        List<String> cmd = new ArrayList<>();
+        TurCodeInterpreterToolService.appendExtraSandboxHardening(cmd, " runsc ", " /p/sc.json ");
+        assertThat(cmd).containsExactly(
+                "--runtime", "runsc",
+                "--security-opt", "seccomp=/p/sc.json");
     }
 }

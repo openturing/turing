@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.api.asset.TurAssetItem;
+import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.service.storage.TurStorageContentTypes;
 import com.viglet.turing.service.storage.TurStorageService;
 
@@ -52,13 +53,16 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
     private final TurStorageService storageService;
     private final TurAgentWorkspaceUrlSigner urlSigner;
     private final TurWorkspaceEventBus eventBus;
+    private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurAgentWorkspaceService(TurStorageService storageService,
             TurAgentWorkspaceUrlSigner urlSigner,
-            TurWorkspaceEventBus eventBus) {
+            TurWorkspaceEventBus eventBus,
+            TurChatPipelineObservation chatPipelineObservation) {
         this.storageService = storageService;
         this.urlSigner = urlSigner;
         this.eventBus = eventBus;
+        this.chatPipelineObservation = chatPipelineObservation;
     }
 
     @Override
@@ -85,6 +89,8 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
         // query param; only metadata + a signed URL travel, never the bytes.
         eventBus.publish(TurWorkspaceEvent.put(conversationId, safeKey, type, body.length,
                 buildSignedUrl(safeAgent, safeConv, safeKey)));
+        // T124 — context-engineering metrics: one put + bytes stored.
+        chatPipelineObservation.recordWorkspacePut(body.length);
     }
 
     @Override
@@ -94,7 +100,10 @@ public class TurAgentWorkspaceService implements TurAgentWorkspace {
         }
         String objectName = scopedKey(agentId, conversationId, key);
         try (InputStream in = storageService.downloadObject(objectName)) {
-            return Optional.of(in.readAllBytes());
+            byte[] bytes = in.readAllBytes();
+            // T124 — count successful reads (blob present); misses fall through.
+            chatPipelineObservation.recordWorkspaceGet();
+            return Optional.of(bytes);
         } catch (Exception e) {
             // Missing key, disabled storage, or backend error — callers treat
             // all three as "not present" rather than propagating.

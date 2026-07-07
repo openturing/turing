@@ -13,7 +13,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,7 +57,7 @@ public class TurChatFlowSubmission implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -91,4 +91,17 @@ public class TurChatFlowSubmission implements Serializable {
      */
     @Column(name = "endNodeId", nullable = false, length = 100)
     private String endNodeId;
+
+    /**
+     * T237 / §VII.10.b — JSON array of the interactive node ids this
+     * conversation visited, in order, snapshotted from the live
+     * {@code chat_flow_state} accumulator at flow end. Powers the path-aware
+     * funnel's per-node reached / drop-off counts. {@code null} when the
+     * per-turn node-visit log is disabled (opt-in via
+     * {@code turing.chat.analytics.node-visit-log.enabled}).
+     *
+     * @since 2026.3.4
+     */
+    @Column(name = "nodeVisitPath", columnDefinition = "longtext")
+    private String nodeVisitPath;
 }

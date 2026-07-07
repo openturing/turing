@@ -3,7 +3,12 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
-export default function GraphiQLPage() {
+/**
+ * @param className Root container classes. Defaults to the console's
+ *   flex-fill height (works inside the SidebarInset flex column); the Bento
+ *   shell passes an explicit height since it has no flex-1 ancestor (T576).
+ */
+export default function GraphiQLPage({ className = "flex flex-1 flex-col h-[calc(100vh-theme(spacing.16))] w-full" }: Readonly<{ className?: string }> = {}) {
     const { theme } = useTheme()
     const iframeRef = useRef<HTMLIFrameElement>(null)
     const { t } = useTranslation()
@@ -28,7 +33,7 @@ export default function GraphiQLPage() {
     }, [theme])
 
     return (
-        <div className="flex flex-1 flex-col h-[calc(100vh-theme(spacing.16))] w-full">
+        <div className={className}>
             <iframe
                 ref={iframeRef}
                 src="/graphiql"

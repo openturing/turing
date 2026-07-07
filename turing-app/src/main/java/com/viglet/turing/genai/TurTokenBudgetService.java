@@ -14,8 +14,10 @@ import java.util.List;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAgentOverBudgetBehavior;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,8 +28,11 @@ import lombok.extern.slf4j.Slf4j;
  * has {@code maxPromptTokens > 0} and the estimate exceeds the budget, the
  * {@link TurAgentOverBudgetBehavior} configured on the agent decides
  * whether to short-circuit the call (ERROR), log + proceed (WARN), or
- * compact (V1 degrades COMPACT to WARN with a notice — T115 will land
- * the real compression).
+ * compact ({@link Decision#COMPACT} — the executor routes through the
+ * T115-backed {@code TurPromptCompactor} before the LLM call). The
+ * service itself never compacts; it only reports the {@link Decision} so
+ * the (potentially expensive, LLM-calling) compaction stays on the
+ * executor's hot path where it can re-check the budget afterwards.
  *
  * <p>Estimator: simple {@code chars / 4} heuristic. The OpenAI {@code
  * cl100k_base} tokenizer averages ~4 chars/token across English+code;
@@ -49,6 +54,18 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurTokenBudgetService {
 
+    /** T161 — per-agent Request Option key that opts into exact token counting. */
+    private static final String REQUEST_OPTION_TOKEN_COUNTING = "token-counting";
+
+    private final TurTokenCountingService tokenCountingService;
+    private final TurProviderOptionsParser optionsParser;
+
+    public TurTokenBudgetService(TurTokenCountingService tokenCountingService,
+            TurProviderOptionsParser optionsParser) {
+        this.tokenCountingService = tokenCountingService;
+        this.optionsParser = optionsParser;
+    }
+
     /** Outcome of a budget check. */
     public enum Decision {
         /** Budget disabled or prompt fits. */
@@ -56,7 +73,13 @@ public class TurTokenBudgetService {
         /** Over budget; logged + proceeding. */
         WARN,
         /** Over budget; caller must short-circuit (throw or surface error). */
-        ERROR
+        ERROR,
+        /**
+         * Over budget; caller must route the prompt through the T115-backed
+         * compactor before the LLM call, then proceed (best-effort — if the
+         * compaction can't bring it under budget the turn still runs).
+         */
+        COMPACT
     }
 
     /** Result envelope returned by {@link #check(TurAIAgent, List)}. */
@@ -70,11 +93,21 @@ public class TurTokenBudgetService {
      * requires aborting the LLM call).
      */
     public CheckResult check(TurAIAgent agent, List<Message> messages) {
+        return check(agent, null, messages);
+    }
+
+    /**
+     * T161 / §X.8.f — budget check that uses the vendor's <b>exact</b> token
+     * count when the agent enables the {@code token-counting} Request Option and
+     * its instance supports it (Anthropic); otherwise the {@code chars/4}
+     * heuristic. Same {@link Decision} semantics as {@link #check(TurAIAgent, List)}.
+     */
+    public CheckResult check(TurAIAgent agent, TurLLMInstance instance, List<Message> messages) {
         int budget = agent == null ? 0 : agent.getMaxPromptTokens();
         if (budget <= 0) {
             return new CheckResult(Decision.WITHIN_BUDGET, 0, 0);
         }
-        int estimate = estimateTokens(messages);
+        int estimate = resolveTokenCount(agent, instance, messages);
         if (estimate <= budget) {
             return new CheckResult(Decision.WITHIN_BUDGET, estimate, budget);
         }
@@ -88,12 +121,12 @@ public class TurTokenBudgetService {
                 yield new CheckResult(Decision.ERROR, estimate, budget);
             }
             case COMPACT -> {
-                // V1: T115 workspace-backed compression not shipped yet —
-                // degrade to WARN with a notice so operators know what to
-                // expect on rollout.
-                log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — COMPACT requested but T115 not yet shipped; proceeding as WARN",
+                // T115 has shipped: hand COMPACT back to the executor so it can
+                // route the prompt through TurPromptCompactor (summarize the
+                // older middle turns) and re-check the budget before the call.
+                log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — COMPACT mode, routing through compactor",
                         agent.getId(), estimate, budget);
-                yield new CheckResult(Decision.WARN, estimate, budget);
+                yield new CheckResult(Decision.COMPACT, estimate, budget);
             }
             case WARN -> {
                 log.warn("[TokenBudget] agent='{}' prompt over budget: estimate={} > max={} — WARN mode, proceeding",
@@ -101,6 +134,27 @@ public class TurTokenBudgetService {
                 yield new CheckResult(Decision.WARN, estimate, budget);
             }
         };
+    }
+
+    /**
+     * Exact vendor count when the agent opted into {@code token-counting} and
+     * the instance supports it; the {@code chars/4} heuristic otherwise.
+     */
+    private int resolveTokenCount(TurAIAgent agent, TurLLMInstance instance, List<Message> messages) {
+        if (instance != null && isTokenCountingEnabled(agent)
+                && tokenCountingService.isExactAvailable(instance)) {
+            return tokenCountingService.count(instance, messages);
+        }
+        return estimateTokens(messages);
+    }
+
+    private boolean isTokenCountingEnabled(TurAIAgent agent) {
+        String json = agent == null ? null : agent.getRequestOptionsJson();
+        if (json == null || json.isBlank()) {
+            return false;
+        }
+        Object value = optionsParser.parse(json).get(REQUEST_OPTION_TOKEN_COUNTING);
+        return value != null && "true".equalsIgnoreCase(value.toString().trim());
     }
 
     /**

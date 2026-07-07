@@ -62,9 +62,8 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
  * from {@code systemInstruction} through {@code Brand Context}) is built
  * by {@link TurPersonaStaticPromptCache#composeStaticBlock(TurPersona)},
  * which is a Spring {@code @Cacheable} method keyed by persona id. Persona
- * edits invalidate that cache via the existing
- * {@link com.viglet.turing.persistence.repository.persona.TurPersonaRepository}
- * {@code @CacheEvict} chain. The few-shot block stays uncached — it
+ * edits invalidate that cache via
+ * {@link TurPersonaStaticPromptEvictionListener}. The few-shot block stays uncached — it
  * depends on the user query (vector store retrieval) — and so does the
  * base-prompt suffix (per-turn RAG context).
  *
@@ -73,6 +72,14 @@ import com.viglet.turing.persistence.model.persona.TurPersona;
  */
 @Component
 public class TurPersonaPromptComposer {
+
+    /**
+     * The delimiter inserted between the persona head (static block + few-shot)
+     * and the wrapped base prompt. Exposed so the Block AL contributor pipeline
+     * ({@code TurPromptAssemblyPipeline}) reproduces the exact same wrap
+     * byte-for-byte.
+     */
+    public static final String PERSONA_BASE_SEPARATOR = "\n\n----\n";
 
     private final TurPersonaFewShotRetriever fewShotRetriever;
     private final TurPersonaStaticPromptCache staticPromptCache;
@@ -107,25 +114,35 @@ public class TurPersonaPromptComposer {
         // intra-class `this.method()` calls.
         StringBuilder sb = new StringBuilder(staticPromptCache.composeStaticBlock(persona));
 
-        appendFewShotBlock(sb, persona, embeddingModel, userQuery);
+        sb.append(fewShotBlock(persona, embeddingModel, userQuery));
 
         if (StringUtils.hasText(basePrompt)) {
-            sb.append("\n\n----\n").append(basePrompt);
+            sb.append(PERSONA_BASE_SEPARATOR).append(basePrompt);
         }
 
         return sb.toString();
     }
 
-    private void appendFewShotBlock(StringBuilder sb, TurPersona persona,
-            TurEmbeddingModel embeddingModel, String userQuery) {
-        if (persona.getFewShotStore() == null || embeddingModel == null
+    /**
+     * The per-turn few-shot block (empty string when the persona has no
+     * few-shot store, no embedding model / user query is supplied, or the
+     * retrieval returns nothing). Exposed so the Block AL persona contributor
+     * emits it as its own {@code PER_TURN} segment — one source of truth for the
+     * exact few-shot text, shared with {@link #compose}.
+     *
+     * @since 2026.3.4
+     */
+    public String fewShotBlock(TurPersona persona, TurEmbeddingModel embeddingModel,
+            String userQuery) {
+        if (persona == null || persona.getFewShotStore() == null || embeddingModel == null
                 || !StringUtils.hasText(userQuery)) {
-            return;
+            return "";
         }
         List<Document> docs = fewShotRetriever.retrieve(persona, embeddingModel, userQuery);
         if (docs.isEmpty()) {
-            return;
+            return "";
         }
+        StringBuilder sb = new StringBuilder();
         sb.append("\n\n# Few-Shot Examples\n");
         sb.append("Mirror the tone and structure of the examples below when answering:\n\n");
         for (int i = 0; i < docs.size(); i++) {
@@ -138,5 +155,6 @@ public class TurPersonaPromptComposer {
             }
             sb.append(text.trim()).append('\n');
         }
+        return sb.toString();
     }
 }

@@ -1,5 +1,5 @@
 import { IconDeviceFloppy, IconLoader2, IconLock } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
@@ -22,7 +22,12 @@ const turUserService = new TurUserService();
  *
  * @since 2026.1.14
  */
-export default function UserProfilePage() {
+/**
+ * @param header Optional header override. Console renders the default
+ *   {@link SubPageHeader}; the Bento account surface (T568) passes `null` so the
+ *   sidebar-coupled header is omitted (its tab-bar already labels the section).
+ */
+export default function UserProfilePage({ header }: Readonly<{ header?: ReactNode }> = {}) {
     const { t } = useTranslation();
     const { refreshUser } = useCurrentUser();
     const [user, setUser] = useState<TurUser | null>(null);
@@ -37,6 +42,10 @@ export default function UserProfilePage() {
 
     useSubPageBreadcrumb(t("account.profile.title"));
 
+    // Bento surfaces pass an explicit `header` (a BentoHero or `null`); the
+    // console leaves it undefined. In bento the body is a frosted card instead
+    // of a bare centered column.
+    const isBento = header !== undefined;
     const isOAuth2 = !!user?.realm;
 
     useEffect(() => {
@@ -133,13 +142,15 @@ export default function UserProfilePage() {
 
     return (
         <>
-            <SubPageHeader
-                icon={IconUser}
-                name={t("account.profile.title")}
-                feature={t("account.profile.title")}
-                description={isOAuth2 ? t("account.profile.descriptionOAuth2") : t("account.profile.description")}
-            />
-            <div className="max-w-2xl mx-auto py-8 px-6">
+            {header !== undefined ? header : (
+                <SubPageHeader
+                    icon={IconUser}
+                    name={t("account.profile.title")}
+                    feature={t("account.profile.title")}
+                    description={isOAuth2 ? t("account.profile.descriptionOAuth2") : t("account.profile.description")}
+                />
+            )}
+            <div className={isBento ? "bento-tile bento-glass rounded-3xl p-6 md:p-8" : "max-w-2xl mx-auto py-8 px-6"}>
                 {/* Avatar + username */}
                 <AvatarField
                     avatarUrl={avatarUrl}

@@ -22,11 +22,15 @@ import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.properties.TurConfigProperties;
+
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 
 /**
  * Records latency of the agent chat pipeline stages around the LLM call
@@ -48,9 +52,48 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 public class TurChatPipelineObservation {
 
     private final MeterRegistry meterRegistry;
+    private final ObservationRegistry observationRegistry;
 
-    public TurChatPipelineObservation(@Autowired(required = false) MeterRegistry meterRegistry) {
+    /**
+     * T129 / §IX.9.b — when {@code true}, {@link #record(String, Supplier)}
+     * additionally emits an OpenTelemetry span per stage (via the
+     * micrometer-tracing OTel bridge) so chat turns can be traced end-to-end in
+     * any OTLP backend. The timer metric is recorded identically either way.
+     */
+    private final boolean spansEnabled;
+
+    /**
+     * Primary (Spring) constructor. {@code ObservationRegistry} and the config
+     * are optional so unit tests and slices that bypass the full observability
+     * stack still get a working bean.
+     */
+    @Autowired
+    public TurChatPipelineObservation(@Autowired(required = false) MeterRegistry meterRegistry,
+            @Autowired(required = false) ObservationRegistry observationRegistry,
+            @Autowired(required = false) TurConfigProperties configProperties) {
+        this(meterRegistry, observationRegistry, resolveSpansEnabled(configProperties));
+    }
+
+    /** Back-compat / test convenience: metrics only, no span export. */
+    public TurChatPipelineObservation(MeterRegistry meterRegistry) {
+        this(meterRegistry, null, false);
+    }
+
+    /** Canonical field-setting constructor — package-private for span-export tests. */
+    TurChatPipelineObservation(MeterRegistry meterRegistry, ObservationRegistry observationRegistry,
+            boolean spansEnabled) {
         this.meterRegistry = meterRegistry != null ? meterRegistry : new SimpleMeterRegistry();
+        this.observationRegistry = observationRegistry != null
+                ? observationRegistry
+                : ObservationRegistry.NOOP;
+        this.spansEnabled = spansEnabled;
+    }
+
+    private static boolean resolveSpansEnabled(TurConfigProperties configProperties) {
+        return configProperties != null
+                && configProperties.getObservability() != null
+                && configProperties.getObservability().getSpans() != null
+                && configProperties.getObservability().getSpans().isEnabled();
     }
 
     /**
@@ -63,6 +106,9 @@ public class TurChatPipelineObservation {
     // ripple through every search/chat call site for a naming nit, so it is kept.
     @SuppressWarnings("java:S6213")
     public <T> T record(String stage, Supplier<T> supplier) {
+        if (spansEnabled) {
+            return recordWithSpan(stage, supplier);
+        }
         Timer.Sample sample = Timer.start(meterRegistry);
         String status = TurMeterNames.STATUS_SUCCESS;
         try {
@@ -74,6 +120,32 @@ public class TurChatPipelineObservation {
             sample.stop(meterRegistry.timer(TurMeterNames.CHAT_PIPELINE,
                     Tags.of(TurMeterNames.TAG_STAGE, stage,
                             TurMeterNames.TAG_STATUS, status)));
+        }
+    }
+
+    /**
+     * T129 — span-emitting variant of {@link #record(String, Supplier)}: runs
+     * the stage inside a Micrometer {@link Observation} named
+     * {@link TurMeterNames#CHAT_PIPELINE} with the same {@code stage}/{@code status}
+     * low-cardinality tags. The {@code DefaultMeterObservationHandler} records a
+     * timer identical to the metrics-only path, and the OTel bridge turns the
+     * observation into a span exported via OTLP. Mirrors the pattern in
+     * {@link TurLlmObservation#observeCall}.
+     */
+    private <T> T recordWithSpan(String stage, Supplier<T> supplier) {
+        Observation observation = Observation.createNotStarted(TurMeterNames.CHAT_PIPELINE, observationRegistry)
+                .lowCardinalityKeyValue(TurMeterNames.TAG_STAGE, stage);
+        observation.start();
+        try {
+            T result = supplier.get();
+            observation.lowCardinalityKeyValue(TurMeterNames.TAG_STATUS, TurMeterNames.STATUS_SUCCESS);
+            return result;
+        } catch (RuntimeException e) {
+            observation.lowCardinalityKeyValue(TurMeterNames.TAG_STATUS, TurMeterNames.STATUS_ERROR);
+            observation.error(e);
+            throw e;
+        } finally {
+            observation.stop();
         }
     }
 
@@ -179,5 +251,60 @@ public class TurChatPipelineObservation {
                 .baseUnit("tools")
                 .register(meterRegistry)
                 .record(outputCount);
+    }
+
+    /**
+     * T124 / §IX.7.b — records one artifact write to a conversation
+     * {@link com.viglet.turing.genai.workspace.TurAgentWorkspace}: bumps the
+     * put counter and adds the payload size to the bytes-stored counter.
+     *
+     * @param bytes payload length written (a value &le; 0 only bumps the count).
+     * @since 2026.3.1
+     */
+    public void recordWorkspacePut(long bytes) {
+        meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_PUTS).increment();
+        if (bytes > 0) {
+            meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_BYTES).increment(bytes);
+        }
+    }
+
+    /**
+     * T124 / §IX.7.b — records one successful workspace read (blob present).
+     *
+     * @since 2026.3.1
+     */
+    public void recordWorkspaceGet() {
+        meterRegistry.counter(TurMeterNames.CHAT_WORKSPACE_GETS).increment();
+    }
+
+    /**
+     * T124 / §IX.7.b — records bytes the T114 decorator moved out of the
+     * prompt into the workspace on a successful large-tool-result offload.
+     *
+     * @param bytes offloaded payload length (a value &le; 0 is ignored).
+     * @since 2026.3.1
+     */
+    public void recordToolOffloadBytes(long bytes) {
+        if (bytes > 0) {
+            meterRegistry.counter(TurMeterNames.CHAT_TOOLS_OFFLOADED_BYTES).increment(bytes);
+        }
+    }
+
+    /**
+     * T124 / §IX.7.b — records the compressed/original character ratio of a
+     * memory-compression summary (T115) or budget-driven prompt compaction
+     * (T123). No sample is recorded when {@code originalChars <= 0}.
+     *
+     * @param originalChars   character count of the text fed to the summarizer.
+     * @param compressedChars character count of the resulting summary.
+     * @since 2026.3.1
+     */
+    public void recordCompressionRatio(long originalChars, long compressedChars) {
+        if (originalChars <= 0) {
+            return;
+        }
+        DistributionSummary.builder(TurMeterNames.CHAT_MEMORY_COMPRESSION_RATIO)
+                .register(meterRegistry)
+                .record((double) compressedChars / (double) originalChars);
     }
 }

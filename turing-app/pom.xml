@@ -23,6 +23,10 @@
         <sonar.cpd.exclusions>**/persistence/dto/**,**/persistence/model/**
         </sonar.cpd.exclusions>
         <skip.npm>false</skip.npm>
+        <!-- Skip Surefire (unit tests) only, while leaving Failsafe ITs to run.
+             Use `mvn verify -DskipUTs=true` to run integration tests without
+             re-running the full unit-test suite. -->
+        <skipUTs>false</skipUTs>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -203,6 +207,10 @@
         <dependency>
             <groupId>com.viglet.core</groupId>
             <artifactId>viglet-core-manifest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.viglet.core</groupId>
+            <artifactId>viglet-core-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>com.viglet.turing</groupId>
@@ -541,7 +549,7 @@
         <dependency>
             <groupId>com.openai</groupId>
             <artifactId>openai-java-client-okhttp</artifactId>
-            <version>4.39.1</version>
+            <version>4.41.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -557,11 +565,34 @@
         <dependency>
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java-client-okhttp</artifactId>
-            <version>2.40.1</version>
+            <version>2.45.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-google-genai</artifactId>
+        </dependency>
+        <!--
+            T506 / §XXVIII.2 — AWS Bedrock Converse provider. A gateway over
+            Claude/Llama/Mistral/Nova on one endpoint, authenticated by IAM
+            (region + credentials provider chain), not an API key. Pulls the AWS
+            SDK bedrockruntime client transitively. Version managed by
+            spring-ai-bom.
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-bedrock-converse</artifactId>
+        </dependency>
+        <!--
+            T520 / §XXVIII.16 — AWS Bedrock Knowledge Bases as a managed retrieval
+            backend (the `Retrieve` API). Not pulled by spring-ai (only the
+            bedrockruntime Converse client is), so the agent-runtime client is
+            declared explicitly, pinned to the same AWS SDK version spring-ai-bom
+            resolves for bedrockruntime (2.41.22).
+        -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockagentruntime</artifactId>
+            <version>2.41.22</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -719,6 +750,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.6</version>
+                <configuration>
+                    <!-- `-DskipUTs=true` skips unit tests (Surefire) but not
+                         integration tests (Failsafe). -->
+                    <skip>${skipUTs}</skip>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

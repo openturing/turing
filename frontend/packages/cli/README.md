@@ -1,0 +1,122 @@
+# @viglet/turing-cli
+
+> `turing` — the [Viglet Turing ES](https://turing.viglet.org) developer CLI.
+
+Scaffold an agent project, run a full local stack, deploy agents/flows/tools/skills
+to any environment, tail live chat events, and run YAML eval suites in CI.
+
+Zero runtime dependencies (ships as compiled ESM, `tsc`-only). Requires **Node ≥ 26**.
+
+## Install
+
+```bash
+npm i -g @viglet/turing-cli
+# or run without installing
+npx @viglet/turing-cli init my-copilot
+```
+
+This exposes the `turing` binary.
+
+## Quick start
+
+```bash
+turing init my-copilot      # scaffold an agent project
+cd my-copilot
+turing dev                  # boot a local Turing stack (Docker Compose)
+turing deploy --env=local   # push agent + flows + tools + skills
+turing eval                 # run the YAML eval suites in evals/
+```
+
+## Project layout
+
+`turing init <name>` scaffolds:
+
+| Path                  | Purpose                                                              |
+| --------------------- | ------------------------------------------------------------------- |
+| `agent.json`          | The AI Agent definition (system prompt, flags, native tools).       |
+| `flows/`              | `*.chat-flow.json` chat flows (author with `@viglet/turing-flow-dsl`). |
+| `tools/`              | `*.groovy` custom-tool scripts.                                     |
+| `skills/`             | Anthropic-compatible skill folders (one per subdirectory).          |
+| `evals/`              | `*.eval.yaml` regression suites.                                    |
+| `turing.config.json`  | Instance URL(s) per environment + the deployed agent id.            |
+| `docker-compose.dev.yml` | Local stack used by `turing dev`.                               |
+
+## Commands
+
+### `turing init <name> [--dir <path>] [--force]`
+
+Scaffold a new agent project directory. `--force` overwrites an existing folder.
+
+### `turing dev [--file <compose>] [--detach] [--watch]`
+
+Boot a local Turing stack via Docker Compose. `--detach` runs in the background;
+`--watch` redeploys the project on file changes.
+
+### `turing deploy [--env <name>] [connection flags]`
+
+Push the project — agent, flows, tools and skills — to the environment named in
+`turing.config.json` (e.g. `--env=local`, `--env=staging`).
+
+### `turing eval [path] [--watch] [connection flags]`
+
+Discover, run and report `*.eval.yaml` suites (defaults to `./evals/`). Exits
+non-zero when any fixture fails, so it drops straight into CI.
+
+### `turing eval record <conversationId> [--out <file>] [connection flags]`
+
+Capture a real conversation from a running instance into an eval suite, e.g.
+`turing eval record abc123 --out evals/from-prod.eval.yaml`.
+
+### `turing logs --conversation <id> [--slots] [connection flags]`
+
+Tail live chat events (SSE) for a conversation. `--slots` also streams slot updates.
+
+## Eval suites
+
+Eval suites are `*.eval.yaml` files: a list of `fixtures`, each a sequence of
+`user` turns and `assert.*` checks run against a live agent.
+
+```yaml
+# evals/smoke.eval.yaml — run with: turing eval
+fixtures:
+  - id: greeting
+    steps:
+      - user: "Hello, can you help me?"
+      - assert.assistant.matches: ".+"
+      - assert.persona.forbidden: ["I cannot help", "I'm just an AI"]
+```
+
+Available assertions include `assistant.matches` / `assistant.not_matches`,
+`assistant.contains` / `assistant.not_contains`, `slot`, `tool_called` /
+`tool_not_called`, `persona.required` / `persona.forbidden`, and `node`.
+
+## Configuration & authentication
+
+`turing.config.json` holds non-secret settings — the project name, the deployed
+`agentId`, and a URL per environment:
+
+```json
+{
+  "name": "my-copilot",
+  "agentId": "",
+  "envs": {
+    "local": { "url": "http://localhost:2700" },
+    "staging": { "url": "https://staging.turing.example.com" }
+  }
+}
+```
+
+Credentials are **never** written to `turing.config.json`. Provide them via the
+environment or flags:
+
+| Variable / flag             | Use                                              |
+| --------------------------- | ------------------------------------------------ |
+| `TURING_URL`                | Override the target instance URL.                |
+| `TURING_TOKEN`              | Dev token (from the admin console) for unattended / CI use. |
+| `TURING_USERNAME` / `TURING_PASSWORD` | Basic auth for interactive use.        |
+| `TURING_ENV`                | Default `--env` when omitted.                    |
+| `--url`, `--token`, `--username`, `--password` | Per-command overrides.        |
+
+## License
+
+Apache-2.0 — © Viglet. Part of the [Viglet Turing ES](https://github.com/openviglet/turing) project.

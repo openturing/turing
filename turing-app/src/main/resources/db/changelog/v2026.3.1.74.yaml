@@ -1,0 +1,58 @@
+databaseChangeLog:
+  # T191 / §X.15.e — self-improving agents overnight. Two additive, idempotent
+  # columns: the per-agent opt-in flag, and the propose-only marker on a
+  # distillation job. Both default off → existing agents/jobs unchanged.
+
+  - changeSet:
+      id: v2026.3.1.74-add-ai_agent-overnight_improvement_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: overnight_improvement_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: overnight_improvement_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: overnight_improvement_enabled
+                  valueBoolean: false
+            where: overnight_improvement_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.74-add-distillation_job-proposeOnly
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: distillation_job
+                columnName: proposeOnly
+      changes:
+        - addColumn:
+            tableName: distillation_job
+            columns:
+              - column:
+                  name: proposeOnly
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: distillation_job
+            columns:
+              - column:
+                  name: proposeOnly
+                  valueBoolean: false
+            where: proposeOnly IS NULL

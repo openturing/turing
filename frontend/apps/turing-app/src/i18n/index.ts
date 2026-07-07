@@ -11,7 +11,9 @@ import enAiAuthoring from "./locales/en/aiAuthoring.json";
 import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
 import enChatFlow from "./locales/en/chatFlow.json";
+import enCapabilityMatrix from "./locales/en/capabilityMatrix.json";
 import enCommon from "./locales/en/common.json";
+import enCostGovernance from "./locales/en/costGovernance.json";
 import enCustomTool from "./locales/en/customTool.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enDialog from "./locales/en/dialog.json";
@@ -22,6 +24,7 @@ import enGit from "./locales/en/git.json";
 import enGlobalSettings from "./locales/en/globalSettings.json";
 import enGraphql from "./locales/en/graphql.json";
 import enHome from "./locales/en/home.json";
+import enVoiceKiosk from "./locales/en/voiceKiosk.json";
 import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
 import enSetup from "./locales/en/setup.json";
@@ -46,6 +49,7 @@ import enSystemInfo from "./locales/en/systemInfo.json";
 import enTheme from "./locales/en/theme.json";
 import enTokenUsage from "./locales/en/tokenUsage.json";
 import enParkedConversations from "./locales/en/parkedConversations.json";
+import enBento from "./locales/en/bento.json";
 
 // Portuguese segments
 import ptAccount from "./locales/pt/account.json";
@@ -55,7 +59,9 @@ import ptAiAuthoring from "./locales/pt/aiAuthoring.json";
 import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
 import ptChatFlow from "./locales/pt/chatFlow.json";
+import ptCapabilityMatrix from "./locales/pt/capabilityMatrix.json";
 import ptCommon from "./locales/pt/common.json";
+import ptCostGovernance from "./locales/pt/costGovernance.json";
 import ptCustomTool from "./locales/pt/customTool.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptDialog from "./locales/pt/dialog.json";
@@ -66,6 +72,7 @@ import ptGit from "./locales/pt/git.json";
 import ptGlobalSettings from "./locales/pt/globalSettings.json";
 import ptGraphql from "./locales/pt/graphql.json";
 import ptHome from "./locales/pt/home.json";
+import ptVoiceKiosk from "./locales/pt/voiceKiosk.json";
 import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
 import ptSetup from "./locales/pt/setup.json";
@@ -90,15 +97,17 @@ import ptSystemInfo from "./locales/pt/systemInfo.json";
 import ptTheme from "./locales/pt/theme.json";
 import ptTokenUsage from "./locales/pt/tokenUsage.json";
 import ptParkedConversations from "./locales/pt/parkedConversations.json";
+import ptBento from "./locales/pt/bento.json";
 
 const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enAnalyticsIntent, ...enApiToken, ...enAdmin, ...enAccount,
-  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations,
-  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
+  ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage, ...enParkedConversations, ...enCostGovernance,
+  ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn, ...enCapabilityMatrix,
   ...enPage, ...enGit, ...enMarketplace, ...enPersona, ...enRoutine, ...enWebhook,
+  ...enVoiceKiosk, ...enBento,
 };
 
 const pt = {
@@ -106,9 +115,10 @@ const pt = {
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptAnalyticsIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
-  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations,
-  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
+  ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage, ...ptParkedConversations, ...ptCostGovernance,
+  ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn, ...ptCapabilityMatrix,
   ...ptPage, ...ptGit, ...ptMarketplace, ...ptPersona, ...ptRoutine, ...ptWebhook,
+  ...ptVoiceKiosk, ...ptBento,
 };
 
 /**

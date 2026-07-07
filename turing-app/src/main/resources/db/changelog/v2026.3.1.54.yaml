@@ -1,0 +1,50 @@
+databaseChangeLog:
+  # T438 / §XXII.3 — frontend ("client") tools: per-agent opt-in flag +
+  # JSON declarations. Default off / null keeps the turn server-only. The
+  # parked-turn store is in-memory (single-node MVP), so no schema for it.
+  #
+  # Idempotent: each column gated by columnExists not present.
+
+  - changeSet:
+      id: v2026.3.1.54-add-ai_agent-client_tools_enabled
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: client_tools_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: client_tools_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - update:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: client_tools_enabled
+                  valueBoolean: false
+            where: client_tools_enabled IS NULL
+
+  - changeSet:
+      id: v2026.3.1.54-add-ai_agent-client_tools_json
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: client_tools_json
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: client_tools_json
+                  type: longtext

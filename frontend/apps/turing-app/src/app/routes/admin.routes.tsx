@@ -11,14 +11,20 @@ const AdminRolesListPage = lazy(() => import("../console/admin-settings/admin.ro
 const AdminUserPage = lazy(() => import("../console/admin-settings/admin.user.page"))
 const AdminUsersListPage = lazy(() => import("../console/admin-settings/admin.users.list.page"))
 const GlobalSettingsPage = lazy(() => import("../console/system/global-settings.page"))
+const GenAiSettingsPage = lazy(() => import("../console/system/genai-settings.page"))
 const SystemInfoPage = lazy(() => import("../console/system/system-info.page"))
 const TokenInstanceListPage = lazy(() => import("../console/token/token.instance.list.page"))
 const TokenInstancePage = lazy(() => import("../console/token/token.instance.page"))
+const ExchangeImportSubPage = lazy(() => import("../console/exchange/exchange.import.sub.page"))
+const LoggingInstanceSubPage = lazy(() => import("../console/logging/logging.instance.sub.page"))
+const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"))
+const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"))
+const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"))
 
 export const AdminRoutes = (
     <Route path={ROUTES.ADMIN_ROOT} element={<AdminSettingsRootPage />}>
         <Route element={<AdminSettingsPage />}>
-            <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/users`} replace />} />
+            <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/settings`} replace />} />
             <Route path="users" element={<AdminUsersListPage />} />
             <Route path="users/:username" element={<AdminUserPage />} />
             <Route path="groups" element={<AdminGroupsListPage />} />
@@ -28,7 +34,13 @@ export const AdminRoutes = (
             <Route path="tokens" element={<TokenInstanceListPage />} />
             <Route path="tokens/:id" element={<TokenInstancePage />} />
             <Route path="settings" element={<GlobalSettingsPage />} />
+            <Route path="genai" element={<GenAiSettingsPage />} />
             <Route path="system-info" element={<SystemInfoPage />} />
+            <Route path="import" element={<ExchangeImportSubPage />} />
+            <Route path="logging" element={<LoggingInstanceSubPage />} />
+            <Route path="logging/server" element={<LoggingServerPage />} />
+            <Route path="logging/aem" element={<LoggingAemPage />} />
+            <Route path="logging/indexing" element={<LoggingIndexingPage />} />
         </Route>
     </Route>
 )

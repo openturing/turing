@@ -12,12 +12,15 @@ package com.viglet.turing.persistence.model.persona;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.viglet.turing.genai.persona.TurPersonaStaticPromptEvictionListener;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.core.jpa.VigletAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
@@ -52,12 +55,13 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "ai_persona")
+@EntityListeners(TurPersonaStaticPromptEvictionListener.class)
 public class TurPersona implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
-    @TurAssignableUuidGenerator
+    @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
@@ -71,6 +75,23 @@ public class TurPersona implements Serializable {
 
     @Column(length = 500)
     private String description;
+
+    /**
+     * Block AA / §XXVI.1 — what this persona is usable <em>for</em>. Default
+     * {@link TurPersonaKind#SPEAKER} keeps every existing voice persona, agent
+     * attachment, and prompt-composition path byte-for-byte unchanged. Only
+     * {@code AUDIENCE}/{@code BOTH} personas carry an {@link #audience} facet.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "persona_kind", length = 16, nullable = false)
+    private TurPersonaKind personaKind = TurPersonaKind.SPEAKER;
+
+    /**
+     * The reader/audience facet — populated only when {@link #personaKind} is
+     * {@code AUDIENCE} or {@code BOTH}; read only by the content-fit evaluator.
+     */
+    @Embedded
+    private TurPersonaAudience audience;
 
     @Lob
     @Column(name = "system_instruction")
@@ -98,6 +119,16 @@ public class TurPersona implements Serializable {
     @Column(nullable = false)
     private int enabled = 1;
 
+    /**
+     * T605 — opt-in style→model calibration. When {@code 1}, the persona's style
+     * guidelines calibrate the resolved sampling params for the turn
+     * ({@link #verbosity} → {@code maxTokens}, {@link #tone} → {@code temperature},
+     * see {@code TurPersonaModelCalibration}). Default {@code 0} keeps the LLM
+     * instance's own params, so existing personas are byte-for-byte unchanged.
+     */
+    @Column(name = "calibrate_model_params", nullable = false)
+    private int calibrateModelParams = 0;
+
     @ManyToOne
     @JoinColumn(name = "few_shot_store_id")
     private TurStoreInstance fewShotStore;
@@ -105,4 +136,24 @@ public class TurPersona implements Serializable {
     @ManyToOne
     @JoinColumn(name = "brand_context_mcp_server_id")
     private TurMcpServer brandContextMcpServer;
+
+    /**
+     * True when this persona may be used as an agent's voice. Null-kind is
+     * treated as the legacy {@code SPEAKER} contract so pre-Block-AA rows stay
+     * usable. The prompt composer and agent attachment gate on this.
+     */
+    public boolean isUsableAsSpeaker() {
+        return personaKind == null
+                || personaKind == TurPersonaKind.SPEAKER
+                || personaKind == TurPersonaKind.BOTH;
+    }
+
+    /**
+     * True when this persona carries an audience facet that the content-fit
+     * evaluator may read.
+     */
+    public boolean isUsableAsAudience() {
+        return personaKind == TurPersonaKind.AUDIENCE
+                || personaKind == TurPersonaKind.BOTH;
+    }
 }

@@ -87,10 +87,8 @@ public class TurSNSiteFieldExtRepositoryAdapter implements TurSNSiteFieldExtRepo
 
     @Override
     public boolean existsBySnSiteIdAndHlAndEnabled(String snSiteId, int hl, int enabled) {
-        // Routes through the repository's @Cacheable findByTurSNSiteAndHlAndEnabled
-        // so the search hot path stays backed by the same field-extension cache
-        // the JPA repo exposes; emptiness check at the boundary keeps the port
-        // contract a pure boolean.
+        // Routes through the repository's findByTurSNSiteAndHlAndEnabled finder;
+        // emptiness check at the boundary keeps the port contract a pure boolean.
         return !turSNSiteFieldExtRepository
                 .findByTurSNSiteAndHlAndEnabled(stub(snSiteId), hl, enabled).isEmpty();
     }

@@ -6,6 +6,9 @@
     "thinking": "Thinking…",
     "empty": "Start the conversation to populate the form.",
     "expand": "Open AI panel",
-    "collapse": "Close AI panel"
+    "collapse": "Close AI panel",
+    "voiceStart": "Dictate by voice",
+    "voiceStop": "Stop dictation",
+    "listening": "Listening… speak your instruction"
   }
 }

@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.sn.TurSNSiteDataCollectorService;
+import com.viglet.turing.sn.TurSNSiteInsightsPromptBuilder;
 import com.viglet.turing.system.TurLlmSummaryService;
 
 /**
@@ -31,7 +31,7 @@ class TurSNSiteSummaryAPITest {
     @Mock
     private TurSNSiteRepository snSiteRepository;
     @Mock
-    private TurSNSiteDataCollectorService siteDataCollectorService;
+    private TurSNSiteInsightsPromptBuilder insightsPromptBuilder;
     @Mock
     private TurLlmSummaryService llmSummaryService;
 
@@ -73,8 +73,9 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnBadRequestWhenNoDefaultLlm() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
-        when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
+        when(insightsPromptBuilder.build(site)).thenReturn(
+                new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(
                         false, "No default LLM configured in Global Settings.", null, false));
@@ -90,8 +91,9 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnSuccessWithContent() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
-        when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
+        when(insightsPromptBuilder.build(site)).thenReturn(
+                new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(true, null, "AI summary", true));
 
@@ -108,8 +110,9 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldPassRegenerateFlag() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
-        when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
+        when(insightsPromptBuilder.build(site)).thenReturn(
+                new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(true)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(true, null, "Regenerated", true));
 
@@ -123,8 +126,9 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnErrorOnFailure() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
-        when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
+        when(snSiteRepository.findByIdWithGenAi("site-1")).thenReturn(Optional.of(site));
+        when(insightsPromptBuilder.build(site)).thenReturn(
+                new TurSNSiteInsightsPromptBuilder.InsightsPrompt("site-1", "System prompt", "Site data"));
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(
                         false, "Failed to generate summary: timeout", null, false));

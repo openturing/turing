@@ -3,7 +3,10 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/queries/keys";
-import type { TurSkillSummary } from "@/models/skill/skill.model";
+import type {
+  TurSkillSummary,
+  TurSkillUiComponent,
+} from "@/models/skill/skill.model";
 import { TurSkillService } from "@/services/skill/skill.service";
 
 const service = new TurSkillService();
@@ -27,6 +30,15 @@ export function useSkillFiles(id: string | undefined) {
   return useQuery({
     queryKey: id ? queryKeys.skills.files(id) : ["skills", "files", "pending"],
     queryFn: () => service.listFiles(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+/** T449 — the UI components a skill ships, for registering generative renderers. */
+export function useSkillUiComponents(id: string | undefined) {
+  return useQuery<TurSkillUiComponent[]>({
+    queryKey: id ? queryKeys.skills.uiComponents(id) : ["skills", "ui-components", "pending"],
+    queryFn: () => service.uiComponents(id as string),
     enabled: Boolean(id),
   });
 }

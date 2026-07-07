@@ -30,6 +30,26 @@ import java.util.List;
  *                       selector.
  * @param selectedFlowId the flow whose addendum is folded into this preview, or
  *                       {@code null} when previewing a no-flow turn.
+ * @param totalTokens    Block AL / T613 — best-effort total {@code chars/4} token
+ *                       estimate across the assembled (non-informational) segments.
+ * @param stableTokens   Block AL / T614 — token estimate of the STABLE
+ *                       (cacheable-prefix) segments; the share a provider prefix
+ *                       cache could reuse across turns.
+ * @param cacheBreakpointIndex Block AL / T614 — segment index at which the
+ *                       PER_TURN tail begins under cache-optimized ordering, or
+ *                       {@code -1} in legacy order (STABLE prefix not contiguous).
+ * @param estimatedCostUsd Block AK / T608 — best-effort USD cost of sending this
+ *                       assembled system prompt once (input tokens only) at the
+ *                       agent's first enabled LLM instance's configured price;
+ *                       {@code 0.0} when the model is unpriced or local.
+ * @param costModelName  Block AK / T608 — the model the cost estimate is based
+ *                       on (the resolved LLM instance's model), or {@code null}
+ *                       when no instance/price could be resolved.
+ * @param flowNodes      Block AK / T611 — the selected flow's nodes, for the
+ *                       preview's node picker; empty when no flow governs.
+ * @param selectedNodeId Block AK / T611 — the flow node this preview rendered
+ *                       (the picked node, or the resolved entry anchor), or
+ *                       {@code null} when no flow governs.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -39,5 +59,43 @@ public record TurSystemPromptPreviewDto(
         List<TurSystemPromptToolDto> tools,
         String assembledText,
         List<TurSystemPromptFlowOptionDto> flows,
-        String selectedFlowId) {
+        String selectedFlowId,
+        int totalTokens,
+        int stableTokens,
+        int cacheBreakpointIndex,
+        double estimatedCostUsd,
+        String costModelName,
+        List<TurSystemPromptFlowNodeDto> flowNodes,
+        String selectedNodeId) {
+
+    public TurSystemPromptPreviewDto {
+        flowNodes = flowNodes == null ? List.of() : flowNodes;
+    }
+
+    /** Back-compat convenience for the pre-Block-AL 5-arg call sites. */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId) {
+        this(segments, tools, assembledText, flows, selectedFlowId, 0, 0, -1);
+    }
+
+    /** Back-compat convenience for the T613/T614 8-arg call sites (no cost). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, 0.0, null);
+    }
+
+    /** Back-compat convenience for the T608 10-arg call sites (no node picker). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex,
+            double estimatedCostUsd, String costModelName) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, estimatedCostUsd, costModelName,
+                List.of(), null);
+    }
 }

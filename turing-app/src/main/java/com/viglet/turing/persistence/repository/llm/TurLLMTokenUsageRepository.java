@@ -97,7 +97,9 @@ public interface TurLLMTokenUsageRepository extends JpaRepository<TurLLMTokenUsa
                    u.modelName AS modelName,
                    SUM(u.costUsd) AS costUsd,
                    SUM(u.totalTokens) AS totalTokens,
-                   COUNT(u) AS requestCount
+                   COUNT(u) AS requestCount,
+                   SUM(u.inputTokens) AS inputTokens,
+                   SUM(u.outputTokens) AS outputTokens
             FROM TurLLMTokenUsage u
             WHERE u.createdAt >= :start AND u.createdAt < :end
             GROUP BY u.vendorId, u.modelName

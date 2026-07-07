@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
+import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurGenAiProperty.TurGenAiToolResultOffloadProperty;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
@@ -63,17 +64,20 @@ public class TurToolCallbackPipeline {
     private final TurAgentWorkspace agentWorkspace;
     private final TurStorageService storageService;
     private final TurConfigProperties configProperties;
+    private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurToolCallbackPipeline(TurToolDescriptionService toolDescriptionService,
             @Autowired(required = false) TurChatAnalyticsService analyticsService,
             TurAgentWorkspace agentWorkspace,
             TurStorageService storageService,
-            TurConfigProperties configProperties) {
+            TurConfigProperties configProperties,
+            TurChatPipelineObservation chatPipelineObservation) {
         this.toolDescriptionService = toolDescriptionService;
         this.analyticsService = analyticsService;
         this.agentWorkspace = agentWorkspace;
         this.storageService = storageService;
         this.configProperties = configProperties;
+        this.chatPipelineObservation = chatPipelineObservation;
     }
 
     /**
@@ -105,7 +109,8 @@ public class TurToolCallbackPipeline {
             // model can pull an offloaded payload back. workspace_read is
             // appended AFTER offload wrapping so its own (potentially large)
             // output is never re-offloaded — that would defeat the read.
-            ToolCallback[] offloaded = TurToolResultOffloadCallback.wrap(raw, agentWorkspace, inlineMax);
+            ToolCallback[] offloaded = TurToolResultOffloadCallback.wrap(raw, agentWorkspace, inlineMax,
+                    chatPipelineObservation);
             base = Arrays.copyOf(offloaded, offloaded.length + 1);
             base[offloaded.length] = new TurWorkspaceReadToolCallback(agentWorkspace);
         }

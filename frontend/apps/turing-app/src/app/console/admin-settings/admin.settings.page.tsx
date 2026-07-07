@@ -3,9 +3,12 @@ import { SubPage } from "@/components/sub.page";
 import { useCurrentUser } from "@/contexts/user.context";
 import {
     IconCode,
+    IconFileImport,
     IconInfoCircle,
+    IconReceiptRupee,
     IconSettings,
     IconShieldCog,
+    IconSparkles,
     IconUsers,
     IconUsersGroup,
     IconUserShield,
@@ -26,6 +29,11 @@ export default function AdminSettingsPage() {
                 title: t("admin.settings"),
                 url: "/settings",
                 icon: IconSettings,
+            },
+            {
+                title: t("admin.genAi"),
+                url: "/genai",
+                icon: IconSparkles,
             },
             ...(showAuthManagement ? [
                 {
@@ -48,6 +56,16 @@ export default function AdminSettingsPage() {
                 title: t("apiToken.title"),
                 url: "/tokens",
                 icon: IconCode,
+            },
+            {
+                title: t("home.features.import.title"),
+                url: "/import",
+                icon: IconFileImport,
+            },
+            {
+                title: t("home.features.logging.title"),
+                url: "/logging",
+                icon: IconReceiptRupee,
             },
             {
                 title: t("admin.systemInfo.title"),

@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # T145 / §X.5.b — cross-vendor MCP federation.
+  #
+  # mcp_native_federation — when true, the agent's attached MCP servers
+  #                         (ai_agent_mcp_server allow-list) are passed to
+  #                         whichever native vendor handles the turn (OpenAI
+  #                         remote mcp tool / Anthropic MCP Connector) instead of
+  #                         being reached through Turing's in-process MCP client.
+  #                         Default false keeps the legacy client-tool behaviour,
+  #                         so existing agents are byte-for-byte unaffected.
+
+  - changeSet:
+      id: v2026.3.1.49-add-ai_agent-mcp_native_federation
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: mcp_native_federation
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: mcp_native_federation
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+                  remarks: "T145 federate the agent's MCP servers to the native vendor (OpenAI remote mcp / Anthropic connector) instead of Turing's MCP client."

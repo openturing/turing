@@ -3,8 +3,12 @@ import {
   deleteAgentFlowState,
   deleteSiteConversationState,
   fetchChatEnabled,
+  fetchSiteChatSlots,
+  fetchSiteChatState,
   postAgentChat,
+  postPersonaChat,
   postChatConversation,
+  postClientToolResult,
   type ChatDisabledReason,
 } from "../api";
 import {
@@ -13,13 +17,78 @@ import {
   getOrCreateTurSession,
 } from "../session";
 import { postSiteFormSubmit } from "../api";
+import { TURING_ANALYTICS_EVENTS, type TuringAnalytics } from "../analytics";
+import {
+  createAbandonmentWatcher,
+  type AbandonmentOptions,
+  type AbandonmentWatcher,
+} from "../analytics-lifecycle";
 import { createStore, type Store } from "../store";
 import type {
+  TurChatCitation,
   TurChatConversationMessage,
   TurChatForm,
   TurChatFormSubmitResponse,
+  TurChatGrounding,
+  TurChatSecondOpinion,
   TurChatSource,
+  TurChatToolCall,
+  TurClientToolCall,
 } from "../types";
+
+/**
+ * T439 — a frontend ("client") tool handler: runs in the browser when the agent
+ * calls the tool, receiving the parsed arguments and returning the result fed
+ * back to the agent. May be async; a thrown error is reported to the agent as a
+ * tool error (it decides whether to retry/abandon) rather than surfacing in the UI.
+ */
+export type ClientToolHandler = (args: unknown) => unknown | Promise<unknown>;
+
+/** Client-tool registration accepting either a bare handler or a `{schema, handler}` object. */
+export type ClientToolRegistration =
+  | ClientToolHandler
+  | { handler: ClientToolHandler; schema?: unknown };
+
+function asClientToolHandler(registration: ClientToolRegistration): ClientToolHandler {
+  return typeof registration === "function" ? registration : registration.handler;
+}
+
+/** Cap on chained client-tool round-trips in a single turn (runaway guard). */
+const MAX_CLIENT_TOOL_HOPS = 10;
+
+/**
+ * Runs the registered handler for a {@link TurClientToolCall} and normalizes the
+ * outcome to a `{result}` or `{error}`. A missing handler or a thrown handler is
+ * reported as an `error` so the agent (not the UI) decides how to recover.
+ */
+async function runClientToolHandler(
+  handlers: Map<string, ClientToolHandler>,
+  call: TurClientToolCall,
+): Promise<{ result?: unknown; error?: string }> {
+  const handler = handlers.get(call.name);
+  if (!handler) {
+    return { error: `No client tool handler registered for '${call.name}'` };
+  }
+  let parsedArgs: unknown;
+  try {
+    parsedArgs = call.args ? JSON.parse(call.args) : {};
+  } catch {
+    parsedArgs = call.args; // hand the raw string through when args isn't JSON
+  }
+  try {
+    return { result: await handler(parsedArgs) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** Merges two tool-call lists by `callId` (later entries win). */
+function mergeToolCallLists(a: TurChatToolCall[], b: TurChatToolCall[]): TurChatToolCall[] {
+  const byId = new Map<string, TurChatToolCall>();
+  for (const c of a) byId.set(c.callId, c);
+  for (const c of b) byId.set(c.callId, c);
+  return [...byId.values()];
+}
 
 /**
  * Vanilla chat controller — the framework-agnostic equivalent of the React
@@ -64,9 +133,45 @@ export interface ChatMessage extends TurChatConversationMessage {
    * chips below the bubble; each entry maps to a retrieved chunk.
    */
   sources?: TurChatSource[];
+  /**
+   * Per-sentence Anthropic citations behind this assistant answer (T152).
+   * The citation-aware chat UI (T154) underlines the cited span and links to
+   * the source.
+   */
+  citations?: TurChatCitation[];
+  /**
+   * Live tool-call activity behind this assistant turn (T436), merged by
+   * `callId`. Populated incrementally as `tool_call` events stream in (so a UI
+   * can show "calling search_knowledge_base…" while the answer is prepared) and
+   * finalized when the turn completes. Present only when the agent has
+   * `toolCallEventsEnabled`.
+   */
+  toolCalls?: TurChatToolCall[];
+  /**
+   * T516 / §XXVIII.12 — the answer-grounding guardrail verdict for this turn,
+   * present only when the guardrail is enabled and flagged the answer. The UI
+   * renders a confidence badge beside the bubble.
+   */
+  grounding?: TurChatGrounding;
+  /**
+   * T522 / §XXVIII.18 — the cross-vendor "second opinion" verdict for this turn,
+   * present only when the check is enabled and produced a signal.
+   */
+  secondOpinion?: TurChatSecondOpinion;
 }
 
 export interface ChatControllerAgent {
+  readonly id: string;
+  readonly llmInstanceId: string;
+  readonly allowOverride?: boolean;
+}
+
+/**
+ * Block AI / §XXXII.2 (T579) — persona subject: talk directly to a persona
+ * (`POST /v2/persona/{id}/chat`). A peer of {@link ChatControllerAgent}; pass
+ * exactly one of `agent` / `persona`. Persona turns are stateless.
+ */
+export interface ChatControllerPersona {
   readonly id: string;
   readonly llmInstanceId: string;
   readonly allowOverride?: boolean;
@@ -105,10 +210,50 @@ export interface ChatControllerOptions {
   readonly readAbVariantFromUrl?: boolean;
   /** Opt into agent mode. */
   readonly agent?: ChatControllerAgent;
+  /**
+   * Block AI / §XXXII.2 (T579) — opt into persona mode (`POST /v2/persona/{id}/chat`).
+   * Mutually exclusive with {@link agent}; when both are set, `persona` wins.
+   * Persona turns are stateless (flow / variant options are ignored).
+   */
+  readonly persona?: ChatControllerPersona;
   /** Controlled conversation id (host owns the session lifecycle). */
   readonly conversationId?: string;
   /** Seed the message list at construction. */
   readonly initialMessages?: ChatMessage[];
+  /**
+   * T439 — frontend ("client") tool handlers, keyed by tool name. When the agent
+   * (which must declare the tool, `clientToolsEnabled`) calls one, the controller
+   * runs the handler and POSTs its result so the turn continues. Equivalent to
+   * calling {@link ChatController.registerClientTool} for each entry; mirrors
+   * CopilotKit's `useCopilotAction` ergonomics.
+   */
+  readonly clientTools?: Record<string, ClientToolRegistration>;
+  /**
+   * T458 (Block Z) — canonical analytics bus. When provided, the controller
+   * emits `turing_chat_start` (first user message), `turing_chat_message_sent`
+   * (every send, with the running turn count) and keeps the bus's context
+   * envelope (`conversationId`/`sessionId`) in sync. No-op when absent, so
+   * existing embeds are unchanged. Create it with `createTuringAnalytics()` and
+   * attach a sink (e.g. `googleAnalyticsSink()`).
+   */
+  readonly analytics?: TuringAnalytics;
+  /**
+   * T460 (Block Z) — client-side abandonment detection. When `analytics` is set
+   * this defaults **on**: a started conversation (≥1 user message) that ends
+   * without a conversion emits a single `turing_chat_abandoned` on tab hide,
+   * page unload, or idle timeout — the drop-off signal the server can't see.
+   * Pass `false` to disable, or an object to tune `idleMs` / `onHidden` /
+   * `onUnload`. No effect without `analytics` or outside a browser.
+   */
+  readonly abandonment?: AbandonmentOptions | boolean;
+  /**
+   * T461 (Block Z) — slot names that count as a conversion (e.g. `["email",
+   * "phone"]`). When any is written during the conversation, the controller
+   * emits a single `turing_chat_lead_captured`. A native form submit (T107) is
+   * always treated as a lead when this list is empty, or when it writes one of
+   * these slots. No effect without `analytics`.
+   */
+  readonly goalSlots?: ReadonlyArray<string>;
 }
 
 export interface ChatControllerState {
@@ -140,6 +285,13 @@ export interface ChatController extends Store<ChatControllerState> {
     values: Record<string, string>,
     overrides?: SendOverrides,
   ): Promise<TurChatFormSubmitResponse | null>;
+  /**
+   * T439 — register a frontend ("client") tool handler the agent can invoke.
+   * Replaces any prior handler for {@code name}. Returns an unregister function.
+   */
+  registerClientTool(name: string, handler: ClientToolHandler): () => void;
+  /** Remove a previously-registered client-tool handler. */
+  unregisterClientTool(name: string): void;
   /** Abort the in-flight assistant turn. */
   stop(): void;
   /** Clear all messages and reset error state. */
@@ -256,9 +408,23 @@ export function createChatController(
     maxMessages = DEFAULT_MAX_MESSAGES,
     flowId,
     agent,
+    persona,
     conversationId: controlledConversationId,
     initialMessages,
+    clientTools,
+    analytics,
+    abandonment,
+    goalSlots = [],
   } = options;
+
+  // T439 — registered client-tool handlers, seeded from `options.clientTools`
+  // and mutable via registerClientTool/unregisterClientTool.
+  const clientToolHandlers = new Map<string, ClientToolHandler>();
+  if (clientTools) {
+    for (const [name, registration] of Object.entries(clientTools)) {
+      clientToolHandlers.set(name, asClientToolHandler(registration));
+    }
+  }
 
   // T73: forced A/B variant. Explicit option wins; otherwise auto-detect the
   // `?_ab_variant=<label>` URL param unless the host opted out. Resolved once
@@ -267,14 +433,21 @@ export function createChatController(
     options.forcedVariant ??
     (options.readAbVariantFromUrl === false ? undefined : readAbVariantFromLocation());
 
-  const agentId = agent?.id;
-  const agentLlmInstanceId = agent?.llmInstanceId;
+  // Persona mode wins over agent mode when both subjects are (mis)configured.
+  const personaId = persona?.id;
+  const personaLlmInstanceId = persona?.llmInstanceId;
+  const isPersonaMode = Boolean(personaId && personaLlmInstanceId);
+  const agentId = isPersonaMode ? undefined : agent?.id;
+  const agentLlmInstanceId = isPersonaMode ? undefined : agent?.llmInstanceId;
   const isAgentMode = Boolean(agentId && agentLlmInstanceId);
+  // Both persona and agent mode carry an explicit LLM, so neither needs the
+  // site name or the RAG-enabled probe.
+  const isSubjectMode = isAgentMode || isPersonaMode;
 
-  if (!site && !isAgentMode) {
+  if (!site && !isSubjectMode) {
     throw new Error(
       "createChatController in site mode requires `options.site`. " +
-        "Either pass it or pass `options.agent` to use agent mode.",
+        "Either pass it or pass `options.agent` / `options.persona`.",
     );
   }
 
@@ -284,7 +457,7 @@ export function createChatController(
     : { conversationId: controlledConversationId ?? null, messages: initialMessages ?? [] };
 
   const store = createStore<ChatControllerState>({
-    enabled: isAgentMode ? true : null,
+    enabled: isSubjectMode ? true : null,
     disabledReason: null,
     messages: initialPersisted.messages,
     status: "idle",
@@ -305,6 +478,105 @@ export function createChatController(
   let messages = initialPersisted.messages;
   let conversationId: string | null = initialPersisted.conversationId;
 
+  // T458 — analytics lifecycle bookkeeping. `chatStarted` gates the once-per-
+  // conversation `turing_chat_start`; `userTurns` rides along on every event.
+  let chatStarted = false;
+  let userTurns = 0;
+  // Seed the bus envelope with the identity known at construction. The
+  // conversation/session id is stamped lazily in `send` once resolved.
+  analytics?.setContext({ site: site || undefined, agentId });
+
+  // T460 — abandonment / engagement detection. `converted` (set by T461 on a
+  // lead capture / handoff) and `abandonmentFired` (once-only) guard the fire;
+  // `convStartedAt` measures elapsed time; `lastNodeId` is the last flow step
+  // reached (populated by T461's step tracking) reported in the event.
+  const abandonmentEnabled = Boolean(analytics) && abandonment !== false;
+  const abandonmentOptions: AbandonmentOptions =
+    typeof abandonment === "object" ? abandonment : {};
+  let abandonmentWatcher: AbandonmentWatcher | null = null;
+  let abandonmentFired = false;
+  let converted = false;
+  let convStartedAt = 0;
+  let lastNodeId: string | null = null;
+
+  function fireAbandonment(reason: string): void {
+    if (!analytics || abandonmentFired || converted || userTurns < 1) return;
+    abandonmentFired = true;
+    analytics.emit(TURING_ANALYTICS_EVENTS.chatAbandoned, {
+      reason,
+      turns: userTurns,
+      last_step: userTurns,
+      last_node_id: lastNodeId ?? undefined,
+      elapsed_ms: convStartedAt ? Date.now() - convStartedAt : undefined,
+    });
+  }
+
+  // T461 — A/B attribution fires once per conversation, then every event
+  // carries the stamped experiment/variant/persona via the bus context.
+  let abAssigned = false;
+
+  /**
+   * Emits a single `turing_chat_lead_captured` and marks the conversation
+   * converted (so abandonment never fires afterwards). Idempotent.
+   */
+  function emitLeadCaptured(reason: string, extra?: Record<string, string | number>): void {
+    if (!analytics || converted) return;
+    converted = true;
+    analytics.emit(TURING_ANALYTICS_EVENTS.chatLeadCaptured, {
+      reason,
+      turns: userTurns,
+      ...extra,
+    });
+  }
+
+  /**
+   * T461 — best-effort, fire-and-forget post-turn analytics (site mode only,
+   * where `/chat/state` + `/chat/slots` are scoped). Resolves A/B attribution
+   * (stamps the bus context + emits `turing_ab_variant_assigned` once), emits a
+   * `turing_chat_step` when the flow cursor advances, and emits
+   * `turing_chat_lead_captured` when a configured goal slot is written. Never
+   * throws into the UI — analytics is additive.
+   */
+  async function runAnalyticsPostTurn(cid: string): Promise<void> {
+    if (!analytics || !site) return;
+    try {
+      const state = await fetchSiteChatState(client, site, cid);
+      const hasAb = Boolean(state.experimentKey || state.variantLabel || state.personaId);
+      if (!abAssigned && hasAb) {
+        abAssigned = true;
+        analytics.setContext({
+          experimentKey: state.experimentKey ?? undefined,
+          variantLabel: state.variantLabel ?? undefined,
+          personaId: state.personaId ?? undefined,
+        });
+        analytics.emit(TURING_ANALYTICS_EVENTS.abVariantAssigned);
+      } else if (state.personaId && analytics.getContext().personaId !== state.personaId) {
+        // Persona can switch mid-conversation — keep the stamp current.
+        analytics.setContext({ personaId: state.personaId });
+      }
+      if (state.currentNodeId && state.currentNodeId !== lastNodeId) {
+        lastNodeId = state.currentNodeId;
+        analytics.emit(TURING_ANALYTICS_EVENTS.chatStep, {
+          node_id: state.currentNodeId,
+          flow_id: state.flowId ?? undefined,
+          flow_name: state.flowName ?? undefined,
+          step: userTurns,
+        });
+      }
+      if (goalSlots.length > 0 && !converted) {
+        const slotsRes = await fetchSiteChatSlots(client, site, cid);
+        const slots = slotsRes?.slots ?? {};
+        const hit = goalSlots.find((name) => {
+          const value = slots[name];
+          return typeof value === "string" && value.trim() !== "";
+        });
+        if (hit) emitLeadCaptured("goal_slot", { goal_slot: hit });
+      }
+    } catch {
+      // best-effort — a failed state/slots read must not break analytics
+    }
+  }
+
   function commitMessages(next: ChatMessage[], status?: ChatStatus): void {
     messages = next;
     if (persistKey) savePersisted(persistKey, { conversationId, messages: next });
@@ -321,8 +593,8 @@ export function createChatController(
     store.setState({ conversationId: id });
   }
 
-  // Resolve enabled flag once (skipped in agent mode). Fire-and-forget.
-  if (isAgentMode || !site) {
+  // Resolve enabled flag once (skipped in agent/persona mode). Fire-and-forget.
+  if (isSubjectMode || !site) {
     store.setState({ enabled: true });
   } else {
     fetchChatEnabled(client, site)
@@ -359,8 +631,11 @@ export function createChatController(
     const content = rawContent.trim();
     if (!content) return;
 
+    const baseLlmInstanceId = personaLlmInstanceId ?? agentLlmInstanceId;
     const effectiveLlmInstanceId =
-      overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
+      overrides?.llmInstanceId && (agentId || personaId)
+        ? overrides.llmInstanceId
+        : baseLlmInstanceId;
 
     const userMsg: ChatMessage = {
       id: newId(),
@@ -389,6 +664,34 @@ export function createChatController(
       newId();
     if (activeConversationId !== conversationId) {
       setConversationId(activeConversationId);
+    }
+
+    // T458 — keep the analytics envelope in sync, then emit the chat lifecycle
+    // events. `turing_chat_start` fires once per conversation; every send emits
+    // `turing_chat_message_sent` with the running user-turn count.
+    if (analytics) {
+      analytics.setContext({
+        conversationId: activeConversationId,
+        sessionId: activeConversationId,
+      });
+      userTurns += 1;
+      if (!chatStarted) {
+        chatStarted = true;
+        convStartedAt = Date.now();
+        analytics.emit(TURING_ANALYTICS_EVENTS.chatStart, {
+          mode: isPersonaMode ? "persona" : isAgentMode ? "agent" : "site",
+        });
+        // T460 — arm the abandonment watcher once the conversation is real.
+        if (abandonmentEnabled && !abandonmentWatcher) {
+          abandonmentWatcher = createAbandonmentWatcher(fireAbandonment, abandonmentOptions);
+        }
+      }
+      analytics.emit(TURING_ANALYTICS_EVENTS.chatMessageSent, {
+        turn: userTurns,
+        length: content.length,
+      });
+      // Each message is engagement — reset the idle clock.
+      abandonmentWatcher?.ping();
     }
 
     const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
@@ -441,39 +744,109 @@ export function createChatController(
         );
       };
 
-      const res =
-        agentId && effectiveLlmInstanceId
-          ? await postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              signal: controller.signal,
-            })
-          : await postChatConversation(client, site, wire, locale, {
-              conversationId: activeConversationId,
-              flowId,
-              forcedVariant,
-              onToken,
-              signal: controller.signal,
-            });
+      // T436 — patch the live tool-call list onto the in-flight assistant bubble
+      // as `tool_call` events arrive, so a UI can show running tool activity
+      // before the answer text streams in. `all` is already merged by callId.
+      const onToolCall = (_call: TurChatToolCall, all: TurChatToolCall[]) => {
+        if (requestId !== latestRequestId || aborted) return;
+        commitMessages(
+          patchMessage(messages, assistantId, (m) => ({ ...m, toolCalls: all })),
+        );
+      };
+
+      // Picks the transport for this turn: persona (T579, stateless), else
+      // agent, else the site RAG endpoint.
+      const dispatchSubjectTurn = () => {
+        if (personaId && effectiveLlmInstanceId) {
+          return postPersonaChat(client, personaId, effectiveLlmInstanceId, wire, {
+            onToken,
+            onToolCall,
+            signal: controller.signal,
+          });
+        }
+        if (agentId && effectiveLlmInstanceId) {
+          return postAgentChat(client, agentId, effectiveLlmInstanceId, wire, {
+            conversationId: activeConversationId,
+            flowId,
+            forcedVariant,
+            onToken,
+            onToolCall,
+            signal: controller.signal,
+          });
+        }
+        return postChatConversation(client, site, wire, locale, {
+          conversationId: activeConversationId,
+          flowId,
+          forcedVariant,
+          onToken,
+          onToolCall,
+          signal: controller.signal,
+        });
+      };
+      let res = await dispatchSubjectTurn();
+
+      // T516 — carry the last leg's guardrail verdict (set just below).
+      let aggregatedGrounding: TurChatGrounding | undefined = res?.grounding;
+      // T522 — carry the last leg's second-opinion verdict.
+      let aggregatedSecondOpinion: TurChatSecondOpinion | undefined = res?.secondOpinion;
 
       if (requestId !== latestRequestId || aborted) return;
+
+      // T438 / T439 — drive any client-tool round-trips. The turn parked with a
+      // `client_tool_call` instead of an answer: run the registered handler,
+      // POST its result, and consume the continuation into the same bubble
+      // (tokens append live via `onToken`). Repeat until the agent answers or a
+      // hop cap trips. `content` is accumulated across legs.
+      let aggregatedContent = res?.content ?? "";
+      let aggregatedToolCalls: TurChatToolCall[] = res?.toolCalls ?? [];
+      let hops = 0;
+      while (res?.clientToolCall && hops < MAX_CLIENT_TOOL_HOPS) {
+        hops += 1;
+        const call = res.clientToolCall;
+        const { result, error } = await runClientToolHandler(clientToolHandlers, call);
+        res = await postClientToolResult(
+          client,
+          { conversationId: activeConversationId, callId: call.callId, result, error },
+          { onToken, onToolCall, signal: controller.signal },
+        );
+        if (requestId !== latestRequestId || aborted) return;
+        aggregatedContent += res?.content ?? "";
+        if (res?.toolCalls?.length) {
+          aggregatedToolCalls = mergeToolCallLists(aggregatedToolCalls, res.toolCalls);
+        }
+        if (res?.grounding) {
+          aggregatedGrounding = res.grounding;
+        }
+        if (res?.secondOpinion) {
+          aggregatedSecondOpinion = res.secondOpinion;
+        }
+      }
 
       const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
       const finalForm = res?.form && res.form.fields?.length > 0 ? res.form : undefined;
       const finalSources = res?.sources && res.sources.length > 0 ? res.sources : undefined;
+      const finalCitations =
+        res?.citations && res.citations.length > 0 ? res.citations : undefined;
+      const finalToolCalls = aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined;
       commitMessages(
         patchMessage(messages, assistantId, (m) => ({
           ...m,
-          content: res?.content ?? m.content,
+          content: aggregatedContent || m.content,
           options: finalOptions,
           form: finalForm,
           sources: finalSources,
+          citations: finalCitations,
+          // keep the live-accumulated toolCalls if the final response omitted them
+          toolCalls: finalToolCalls ?? m.toolCalls,
+          grounding: aggregatedGrounding,
+          secondOpinion: aggregatedSecondOpinion,
         })),
         "success",
       );
       store.setState({ activeForm: finalForm ?? null });
+      // T461 — fire-and-forget funnel-step / A/B attribution / goal-slot
+      // conversion off the freshly-updated server state. Site mode only.
+      if (analytics && site) void runAnalyticsPostTurn(activeConversationId);
     } catch (err) {
       handleSendError(err, requestId);
     }
@@ -518,6 +891,14 @@ export function createChatController(
     }
     if (requestId !== latestRequestId || aborted) return result;
 
+    // T461 — a native form capture (T107) is a conversion: when no goal slots
+    // are configured, any submit counts; otherwise only one that writes a goal
+    // slot does.
+    if (analytics) {
+      const isLead = goalSlots.length === 0 || goalSlots.some((name) => name in values);
+      if (isLead) emitLeadCaptured("form");
+    }
+
     const effectiveLlmInstanceId =
       overrides?.llmInstanceId && agentId ? overrides.llmInstanceId : agentLlmInstanceId;
     const wire: TurChatConversationMessage[] = messages.map((m) => ({
@@ -541,6 +922,18 @@ export function createChatController(
     latestRequestId++;
     abortController?.abort();
     abortController = null;
+    // T458 — a reset starts a fresh conversation; re-arm the start event.
+    chatStarted = false;
+    userTurns = 0;
+    // T460 — tear down the old watcher and clear the abandonment/conversion
+    // guards so the next conversation is tracked from scratch.
+    abandonmentWatcher?.stop();
+    abandonmentWatcher = null;
+    abandonmentFired = false;
+    converted = false;
+    abAssigned = false;
+    convStartedAt = 0;
+    lastNodeId = null;
     commitMessages([]);
     store.setState({ error: null, status: "idle", isStreaming: false, activeForm: null });
   }
@@ -566,6 +959,18 @@ export function createChatController(
     latestRequestId++;
     abortController?.abort();
     abortController = null;
+    // T460 — release lifecycle listeners so we don't leak across mounts.
+    abandonmentWatcher?.stop();
+    abandonmentWatcher = null;
+  }
+
+  function registerClientTool(name: string, handler: ClientToolHandler): () => void {
+    clientToolHandlers.set(name, handler);
+    return () => unregisterClientTool(name);
+  }
+
+  function unregisterClientTool(name: string): void {
+    clientToolHandlers.delete(name);
   }
 
   return {
@@ -574,6 +979,8 @@ export function createChatController(
     subscribe: store.subscribe,
     send,
     submitForm,
+    registerClientTool,
+    unregisterClientTool,
     stop,
     reset,
     resetFlow,

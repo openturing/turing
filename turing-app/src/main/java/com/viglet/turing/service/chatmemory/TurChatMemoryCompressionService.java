@@ -33,6 +33,7 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurTokenBudgetService;
 import com.viglet.turing.genai.workspace.TurAgentWorkspace;
+import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -101,6 +102,7 @@ public class TurChatMemoryCompressionService {
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurChatMemoryCompressionWorker compressionWorker;
+    private final TurChatPipelineObservation chatPipelineObservation;
 
     /** Per-conversation last-summary cache for the interval guard. */
     private final ConcurrentHashMap<String, CachedSummary> cache = new ConcurrentHashMap<>();
@@ -125,7 +127,8 @@ public class TurChatMemoryCompressionService {
             TurSecretCryptoService secretCryptoService,
             TurLLMTokenUsageService tokenUsageService,
             TurGlobalSettingsService globalSettingsService,
-            TurChatMemoryCompressionWorker compressionWorker) {
+            TurChatMemoryCompressionWorker compressionWorker,
+            TurChatPipelineObservation chatPipelineObservation) {
         this.store = store;
         this.workspace = workspace;
         this.llmInstanceRepository = llmInstanceRepository;
@@ -134,6 +137,7 @@ public class TurChatMemoryCompressionService {
         this.tokenUsageService = tokenUsageService;
         this.globalSettingsService = globalSettingsService;
         this.compressionWorker = compressionWorker;
+        this.chatPipelineObservation = chatPipelineObservation;
     }
 
     @PostConstruct
@@ -297,12 +301,36 @@ public class TurChatMemoryCompressionService {
             persistToWorkspace(job.agentId(), job.conversationId(), job.coveredTo(), summary);
             cache.put(job.conversationId(),
                     new CachedSummary(System.currentTimeMillis(), job.coveredTo(), summary));
+            // T124 — compressed/original character ratio (lower is better).
+            chatPipelineObservation.recordCompressionRatio(job.olderText().length(), summary.length());
             log.info("[ChatMemoryCompression] conv '{}': summarized older pool (covered 1–{}) into {} chars",
                     job.conversationId(), job.coveredTo(), summary.length());
             return summary;
         } finally {
             inFlight.remove(job.conversationId());
         }
+    }
+
+    /**
+     * T123 — on-demand summarization of an arbitrary block of conversation
+     * text for the budget-driven {@link com.viglet.turing.genai.TurPromptCompactor}.
+     * Reuses the same {@code prompts/chat-memory-compression.md} system prompt
+     * and LLM-instance resolution as the scheduled older-pool summary, but is
+     * triggered by the executor's over-budget path rather than the recent-N
+     * threshold — so it runs synchronously and ignores the per-conversation
+     * interval cache. Returns {@code null} on any failure (blank input, no
+     * usable LLM instance, or a call error) so the caller can fall back to the
+     * uncompacted prompt.
+     *
+     * @param compressionLlmId explicit summary LLM id, or null → Global default.
+     * @param text             the conversation text to summarize.
+     * @return the summary text, or {@code null} on any failure.
+     */
+    public String summarizeText(String compressionLlmId, String text) {
+        if (text == null || text.isBlank() || compressionSystemPrompt.isBlank()) {
+            return null;
+        }
+        return callLlm(compressionLlmId, text);
     }
 
     private String callLlm(String compressionLlmId, String olderText) {

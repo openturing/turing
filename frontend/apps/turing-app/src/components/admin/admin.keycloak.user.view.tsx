@@ -7,34 +7,44 @@ import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
 import {
     IconArrowLeft, IconKey, IconMail, IconShieldCheck, IconUser, IconUsersGroup, IconUserShield,
 } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 interface Props {
     value: TurKeycloakUser;
+    /** List route the Back button returns to. Defaults to the console admin
+     *  users list; the Bento surface passes its own route (T567). */
+    listRoute?: string;
+    /** Optional header override. The console renders its own sidebar-coupled
+     *  {@link StickyPageHeader}; Bento passes a `BentoHero` (T567). */
+    header?: ReactNode;
 }
 
-export const AdminKeycloakUserView: React.FC<Props> = ({ value }) => {
+export const AdminKeycloakUserView: React.FC<Props> = ({ value, listRoute = ROUTES.ADMIN_USERS, header }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const isBento = header !== undefined;
 
     const fullName = [value.firstName, value.lastName].filter(Boolean).join(" ");
 
     return (
-        <div className="space-y-4 px-4 lg:px-6 pb-8">
-            <StickyPageHeader>
-                <StickyPageHeader.Title
-                    icon={IconUser}
-                    feature="User"
-                    description={t("admin.users.keycloakViewDescription")}
-                />
-                <StickyPageHeader.Actions>
-                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_USERS)}>
-                        <IconArrowLeft className="size-4" />
-                        {t("forms.formActions.back", "Back")}
-                    </GradientButton>
-                </StickyPageHeader.Actions>
-            </StickyPageHeader>
+        <div className={isBento ? "flex flex-col gap-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+            {isBento ? header : (
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconUser}
+                        feature="User"
+                        description={t("admin.users.keycloakViewDescription")}
+                    />
+                    <StickyPageHeader.Actions>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                            <IconArrowLeft className="size-4" />
+                            {t("forms.formActions.back", "Back")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
+            )}
 
             <SectionCard variant="blue">
                 <SectionCard.Header

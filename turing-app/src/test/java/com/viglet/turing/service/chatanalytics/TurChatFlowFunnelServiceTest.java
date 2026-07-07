@@ -26,6 +26,7 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.agent.TurChatFlowSubmission;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowSubmissionRepository;
@@ -140,6 +141,81 @@ class TurChatFlowFunnelServiceTest {
         assertThat(report.nodes()).hasSize(1);
         assertThat(report.nodes().get(0).cursorCount()).isZero();
         assertThat(report.nodes().get(0).completedCount()).isZero();
+    }
+
+    private static TurChatFlowSubmission submissionWithPath(String pathJson) {
+        TurChatFlowSubmission s = new TurChatFlowSubmission();
+        s.setNodeVisitPath(pathJson);
+        return s;
+    }
+
+    @Test
+    void pathAwareFunnelCountsReachedAndContinued() {
+        // T237 — three conversations with recorded node-visit paths:
+        //   A → ai-name, ai-cargo, end   (completed)
+        //   B → ai-name, ai-cargo        (dropped at the role step)
+        //   C → ai-name                  (dropped at the name step)
+        TurChatFlow flow = new TurChatFlow();
+        flow.setId("f1");
+        flow.setName("Lead capture");
+        ChatFlowGraph graph = new ChatFlowGraph(
+                List.of(
+                        node("start", "start", "Start"),
+                        node("ai-name", "aiQuestion", "Name"),
+                        node("ai-cargo", "aiQuestion", "Role"),
+                        node("end", "end", "End")),
+                List.<ChatFlowEdge>of());
+        when(chatFlowRepository.findById("f1")).thenReturn(Optional.of(flow));
+        when(chatFlowEngineService.parseGraph(flow)).thenReturn(Optional.of(graph));
+        when(stateRepository.countByCurrentNodeForFlow("f1")).thenReturn(List.of());
+        when(submissionRepository.countByEndNodeForFlow("f1")).thenReturn(List.of());
+        when(submissionRepository.findByFlow_IdOrderByCompletedAtDesc("f1")).thenReturn(List.of(
+                submissionWithPath("[\"ai-name\",\"ai-cargo\",\"end\"]"),
+                submissionWithPath("[\"ai-name\",\"ai-cargo\"]"),
+                submissionWithPath("[\"ai-name\"]")));
+
+        TurChatFlowFunnelService.FunnelReport report = service.computeFunnel("f1").orElseThrow();
+        assertThat(report.totalPaths()).isEqualTo(3);
+
+        var byId = report.nodes().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        TurChatFlowFunnelService.FunnelNode::nodeId, n -> n));
+        // ai-name: all 3 reached; A+B progressed past it; C dropped.
+        assertThat(byId.get("ai-name").pathReached()).isEqualTo(3);
+        assertThat(byId.get("ai-name").pathContinued()).isEqualTo(2);
+        assertThat(byId.get("ai-name").pathDropOff()).isEqualTo(1);
+        // ai-cargo: A+B reached; only A progressed; B dropped.
+        assertThat(byId.get("ai-cargo").pathReached()).isEqualTo(2);
+        assertThat(byId.get("ai-cargo").pathContinued()).isEqualTo(1);
+        assertThat(byId.get("ai-cargo").pathDropOff()).isEqualTo(1);
+        // end: only A reached; nothing later to continue to.
+        assertThat(byId.get("end").pathReached()).isEqualTo(1);
+        assertThat(byId.get("end").pathContinued()).isZero();
+        assertThat(byId.get("end").pathDropOff()).isEqualTo(1);
+    }
+
+    @Test
+    void pathStatsZeroWhenNoPathsRecorded() {
+        // Node-visit log disabled → submissions carry no path → totalPaths 0
+        // and the path-aware counters stay zero (falls back to V1 view).
+        TurChatFlow flow = new TurChatFlow();
+        flow.setId("f1");
+        flow.setName("No paths");
+        ChatFlowGraph graph = new ChatFlowGraph(
+                List.of(node("ai-name", "aiQuestion", "Name")),
+                List.<ChatFlowEdge>of());
+        when(chatFlowRepository.findById("f1")).thenReturn(Optional.of(flow));
+        when(chatFlowEngineService.parseGraph(flow)).thenReturn(Optional.of(graph));
+        when(stateRepository.countByCurrentNodeForFlow("f1")).thenReturn(List.of());
+        when(submissionRepository.countByEndNodeForFlow("f1")).thenReturn(List.of());
+        when(submissionRepository.findByFlow_IdOrderByCompletedAtDesc("f1")).thenReturn(List.of(
+                submissionWithPath(null),
+                submissionWithPath("")));
+
+        TurChatFlowFunnelService.FunnelReport report = service.computeFunnel("f1").orElseThrow();
+        assertThat(report.totalPaths()).isZero();
+        assertThat(report.nodes().get(0).pathReached()).isZero();
+        assertThat(report.nodes().get(0).pathContinued()).isZero();
     }
 
     @Test

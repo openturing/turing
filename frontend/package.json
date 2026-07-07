@@ -11,12 +11,18 @@
     "build": "pnpm install && turbo run build && node scripts/build-status.mjs",
     "build:react-sdk": "turbo run build --filter=@viglet/turing-react-sdk && node scripts/build-status.mjs",
     "build:sdk": "turbo run build --filter=@viglet/turing-sdk && node scripts/build-status.mjs",
+    "build:cli": "turbo run build --filter=@viglet/turing-cli && node scripts/build-status.mjs",
+    "test:cli": "pnpm --filter @viglet/turing-cli test",
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
+    "build:site": "turbo run build --filter=turing-site && node scripts/build-status.mjs",
+    "build:showcase": "turbo run build --filter=turing-showcase && node scripts/build-status.mjs",
     "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
     "build-storybook:react-ui": "turbo run build-storybook --filter=@viglet/turing-react-ui",
     "package:marketplace": "pnpm --filter @viglet/turing-react-sdk run build && pnpm --filter=\"./apps/marketplace/*\" run package",
     "dev:app": "turbo run dev --filter=turing-app",
+    "dev:site": "turbo run dev --filter=turing-site",
+    "dev:showcase": "turbo run dev --filter=turing-showcase",
     "dev:sdk": "turbo run dev --filter=@viglet/turing-sdk",
     "dev:mythical-creatures": "turbo run dev --filter=turing-example-mythical-creatures",
     "dev:space-missions": "turbo run dev --filter=turing-example-space-missions",
@@ -28,11 +34,11 @@
     "size:react-ui": "pnpm --filter @viglet/turing-react-ui run build && pnpm --filter @viglet/turing-react-ui run size",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo run build --filter=@viglet/turing-react-ui --filter=@viglet/turing-react-sdk --filter=@viglet/turing-sdk && changeset publish"
+    "release": "turbo run build --filter=@viglet/turing-react-ui --filter=@viglet/turing-react-sdk --filter=@viglet/turing-sdk --filter=@viglet/turing-cli && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",
-    "turbo": "^2.9.18"
+    "turbo": "^2.10.2"
   },
   "engines": {
     "node": ">=26",

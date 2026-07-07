@@ -42,7 +42,7 @@
         <spring-boot.version>4.1.0</spring-boot.version>
         <!-- viglet-core is now an external project (github.com/openviglet/viglet-core),
              published to GitHub Packages and versioned independently from Turing. -->
-        <viglet-core.version>2026.3.8</viglet-core.version>
+        <viglet-core.version>2026.3.10</viglet-core.version>
         <sonar.organization>viglet</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -51,7 +51,7 @@
         <!-- Versions not managed by Spring Boot BOM -->
         <elasticsearch.version>9.4.2</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
-        <lucene.version>10.4.0</lucene.version>
+        <lucene.version>10.5.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.3</minio.version>
         <mongodb.version>5.8.0</mongodb.version>
@@ -62,29 +62,12 @@
         <tika.version>3.3.1</tika.version>
         <jgit.version>7.7.0.202606012155-r</jgit.version>
     </properties>
-    <repositories>
-        <!-- viglet-core is published here. GitHub Packages requires auth even to
-             download: add a matching <server id="github-viglet-core"> with a PAT
-             (read:packages) to ~/.m2/settings.xml. Local builds resolve the same
-             version from ~/.m2 (mvn install) without hitting this repo. -->
-        <repository>
-            <id>github-viglet-core</id>
-            <name>GitHub openviglet viglet-core</name>
-            <url>https://maven.pkg.github.com/openviglet/viglet-core</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.10.0</version>
+                <version>0.11.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>

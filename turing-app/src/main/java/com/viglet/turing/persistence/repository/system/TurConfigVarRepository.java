@@ -20,33 +20,9 @@
  */
 package com.viglet.turing.persistence.repository.system;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 
 public interface TurConfigVarRepository extends JpaRepository<TurConfigVar, String> {
-	@Override
-	@Cacheable("turConfigVarfindAll")
-	@NotNull
-	List<TurConfigVar> findAll();
-
-	@Override
-	@Cacheable("turConfigVarfindById")
-	@NotNull
-	Optional<TurConfigVar> findById(@NotNull String id);
-
-	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
-	@NotNull
-	@Override
-	<S extends TurConfigVar> S save(@NotNull S entity);
-
-	@Override
-	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
-	void delete(@NotNull TurConfigVar turConfigVar);
 }

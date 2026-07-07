@@ -9,7 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
+import { ModelCombobox } from "@/components/ui/model-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useLlmModels } from "@/api/queries/llm-model.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
@@ -102,10 +104,27 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
   const [maxTokensInput, setMaxTokensInput] = useState<string>("")
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const selectedVendorId = form.watch("turLLMVendor.id")
+  const watchedUrl = form.watch("url")
+  const watchedApiKey = form.watch("apiKey")
   const navigate = useNavigate()
 
   const createMutation = useCreateLlmInstance()
   const updateMutation = useUpdateLlmInstance()
+
+  // T577 — models for the picker: live from the vendor when a key is available
+  // (typed here, or reused from the saved instance), else the static catalog.
+  const {
+    data: modelList,
+    isFetching: modelsLoading,
+    refetch: refetchModels,
+  } = useLlmModels({
+    vendorId: selectedVendorId,
+    instanceId: isNew ? undefined : value.id,
+    apiKey: watchedApiKey,
+    url: watchedUrl,
+    providerOptionsJson: value.providerOptionsJson,
+    enabled: Boolean(selectedVendorId),
+  })
 
   useEffect(() => {
     turLLMVendorService.query().then(setVendors)
@@ -286,7 +305,9 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
    *
    * No React state for the animation — CSS does the work.
    */
-  const showSaveBar = isNew || form.formState.isDirty
+  // Save bar is present on any editable detail page so it stays suspended on
+  // scroll; Save is disabled until there is something to persist.
+  const showSaveBar = true
 
   return (
     <Form {...form}>
@@ -301,7 +322,9 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
             <div className="bento-fade-in fixed inset-x-0 top-20 z-20 mx-auto w-full max-w-7xl px-4 md:px-8">
               <BentoSaveBar
                 title={stagedTitle || (isNew ? t("llm.newLanguageModel") : t("llm.title"))}
-                disabled={titleMissing}
+                disabled={titleMissing || (!isNew && !form.formState.isDirty)}
+                titleMissing={titleMissing}
+                dirty={isNew || form.formState.isDirty}
                 loading={isSubmitting}
                 badges={vendorLabel && <BentoSaveBar.Badge>{vendorLabel}</BentoSaveBar.Badge>}
                 onCancel={() => navigate(urlBase)}
@@ -395,7 +418,14 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                 <FormLabel>{t("forms.llm.modelName")}</FormLabel>
                 <p className="text-sm text-muted-foreground">{t("forms.llm.modelNameDesc")}</p>
                 <FormControl>
-                  <Input placeholder={t("forms.llm.modelNamePlaceholder")} type="text" autoComplete="one-time-code" className="w-full" {...field} />
+                  <ModelCombobox
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    options={modelList?.models ?? []}
+                    isLoading={modelsLoading}
+                    source={modelList?.source}
+                    onOpen={() => refetchModels()}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -630,6 +660,29 @@ export const BentoLLMInstanceForm: React.FC<Props> = ({ value, isNew, staged, on
                   <FormItemTwoColumns.Label>{t("forms.llm.toolsEnabled")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description className="mt-1 text-sm font-normal">
                     {t("forms.llm.toolsEnabledDesc")}
+                  </FormItemTwoColumns.Description>
+                </FormItemTwoColumns.Left>
+                <FormItemTwoColumns.Right>
+                  <FormControl>
+                    <GradientSwitch
+                      checked={field.value === true}
+                      onCheckedChange={(checked) => field.onChange(checked)}
+                    />
+                  </FormControl>
+                </FormItemTwoColumns.Right>
+                <FormMessage />
+              </FormItemTwoColumns>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="fileUploadEnabled"
+            render={({ field }) => (
+              <FormItemTwoColumns>
+                <FormItemTwoColumns.Left>
+                  <FormItemTwoColumns.Label>{t("forms.llm.fileUploadEnabled")}</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Description className="mt-1 text-sm font-normal">
+                    {t("forms.llm.fileUploadEnabledDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>

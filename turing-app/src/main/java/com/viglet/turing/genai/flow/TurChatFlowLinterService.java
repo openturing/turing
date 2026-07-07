@@ -160,7 +160,9 @@ public class TurChatFlowLinterService {
                         "aiInstruction is " + instr.length() + " chars (soft limit "
                                 + AI_INSTRUCTION_LIMIT + ")",
                         "Tighten the instruction or split the node — verbose addenda inflate"
-                                + " token cost and dilute the model's attention."));
+                                + " token cost and dilute the model's attention.",
+                        java.util.Map.of("length", String.valueOf(instr.length()),
+                                "limit", String.valueOf(AI_INSTRUCTION_LIMIT))));
             }
         }
     }
@@ -184,7 +186,8 @@ public class TurChatFlowLinterService {
                         "Slot '" + slot + "' is captured here but never read downstream",
                         "Either consume it (use {{" + slot + "}} in another node, drive a switch on it,"
                                 + " or declare it as an inheritance source on another flow) or remove the"
-                                + " outputVariable."));
+                                + " outputVariable.",
+                        java.util.Map.of("slot", slot)));
             }
         }
     }
@@ -294,7 +297,8 @@ public class TurChatFlowLinterService {
                         edge.source(), edge.id(), WARNING, "edge_without_label",
                         "Edge from " + type + " node has no sourceHandle and no label",
                         "Pick which branch this edge represents ('yes'/'no' for condition, an option"
-                                + " id for switch) — the runtime cannot disambiguate without one."));
+                                + " id for switch) — the runtime cannot disambiguate without one.",
+                        java.util.Map.of("type", type)));
             }
         }
     }
@@ -372,7 +376,8 @@ public class TurChatFlowLinterService {
                     "form_field_duplicate_name",
                     "Two form fields write the same slot '" + trimmed
                             + "' — the later value wins",
-                    "Give each field its own slot, or remove the duplicate field."));
+                    "Give each field its own slot, or remove the duplicate field.",
+                    java.util.Map.of("slot", trimmed)));
         }
         if (declaredSlots != null && !declaredSlots.contains(trimmed)) {
             out.add(new TurChatFlowLintIssueDto(node.id(), null, WARNING,
@@ -380,7 +385,8 @@ public class TurChatFlowLinterService {
                     "Form field writes slot '" + trimmed
                             + "' which is not declared on the agent",
                     "Declare the slot in the agent's slot catalog so the value lands in the"
-                            + " typed schema and is readable downstream."));
+                            + " typed schema and is readable downstream.",
+                    java.util.Map.of("slot", trimmed)));
         }
     }
 
@@ -415,7 +421,8 @@ public class TurChatFlowLinterService {
                         "Plan slot '" + planSlotName(node) + "' is generated here but never iterated"
                                 + " or read downstream",
                         "Add an iteratePlan node reading this slot, or render it with {{"
-                                + planSlotName(node) + "}} — otherwise the planning LLM call is wasted."));
+                                + planSlotName(node) + "}} — otherwise the planning LLM call is wasted.",
+                        java.util.Map.of("slot", planSlotName(node))));
             }
             if (ITERATE_PLAN.equals(node.type())
                     && (node.subFlowId() == null || node.subFlowId().isBlank())) {
@@ -470,11 +477,14 @@ public class TurChatFlowLinterService {
             if (!involvesThisFlow) continue;
             String other = flow.getId().equals(c.flowAId()) ? c.flowBName() : c.flowAName();
             String severity = "HIGH".equals(c.severity()) ? ERROR : WARNING;
+            long pct = Math.round(c.similarity() * 100);
             out.add(new TurChatFlowLintIssueDto(
                     null, null, severity, "trigger_conflict",
                     "Trigger description overlaps with flow '" + other + "' ("
-                            + Math.round(c.similarity() * 100) + "% Jaccard)",
-                    c.suggestion()));
+                            + pct + "% Jaccard)",
+                    c.suggestion(),
+                    java.util.Map.of("other", other == null ? "" : other,
+                            "pct", String.valueOf(pct))));
         }
     }
 

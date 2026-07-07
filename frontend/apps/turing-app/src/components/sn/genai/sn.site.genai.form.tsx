@@ -1,3 +1,4 @@
+import { ROUTES } from "@/app/routes.const"
 import {
     Dialog,
     DialogContent,
@@ -30,37 +31,48 @@ import type {
     TurSNSiteGenAi,
 } from "@/models/sn/sn-site-genai.model"
 import { useUpdateSnSite } from "@/api/queries/sn-site.queries"
+import { usePersonas } from "@/api/queries/persona.queries"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
+import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import { postLlmChat } from "@viglet/turing-react-sdk"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconArrowsSort, IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMovie, IconRefresh, IconSparkles, IconUserSearch, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { Link } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { BentoHero } from "@/components/bento"
+import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { Button } from "../../ui/button"
 import { StickyPageHeader } from "../../sticky-page-header"
 import { GradientButton } from "../../ui/gradient-button"
-import { SectionCard } from "../../ui/section-card"
 import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
 const turAIAgentService = new TurAIAgentService();
 const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
+const turEmbeddingModelService = new TurEmbeddingModelService();
 
 const NONE_VALUE = "__none__";
 
 interface Props {
     snSite: TurSNSite;
+    /** SN instance base route for the bento back-link. Defaults to console. */
+    baseRoute?: string;
+    /** Render chrome. `console` = StickyPageHeader + SectionCards; `bento` =
+     *  BentoHero + frosted BentoFormSection cards (T576). Defaults to console. */
+    chrome?: SNFormChrome;
 }
 
-export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
+export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN_INSTANCE, chrome = "console" }) => {
     const { t } = useTranslation();
     const updateMutation = useUpdateSnSite();
     const form = useForm<TurSNSiteGenAi>({
@@ -68,8 +80,16 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             ...snSite.turSNSiteGenAi
         },
     });
+    // T472 — audience personas (kind AUDIENCE/BOTH) selectable as the
+    // index-time content-fit reader proxy.
+    const { data: personas } = usePersonas();
+    const audiencePersonas = (personas ?? []).filter(
+        (p) => p.personaKind === "AUDIENCE" || p.personaKind === "BOTH",
+    );
     const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
     const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
+    // T513 — embedding models selectable as a per-site domain embedder override.
+    const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [ragCores, setRagCores] = useState<TurRagBm25CoreStatus[]>([]);
     const [isProvisioning, setIsProvisioning] = useState(false);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
@@ -100,6 +120,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
         });
+        turEmbeddingModelService
+            .query()
+            .then((all) => setEmbeddingModels(all.filter((m) => m.enabled === 1)))
+            .catch((err) => console.error("Failed to load embedding models", err));
     }, []);
 
     useEffect(() => {
@@ -119,6 +143,16 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             // T383 — public SN search ranking mode; LEGACY keeps the historical
             // lexical-only ranking so a pre-T383 binding renders the legacy state.
             snRankingMode: snSite.turSNSiteGenAi?.snRankingMode ?? "LEGACY",
+            // T513 — per-site domain embedding model override; null = platform default.
+            embeddingModelId: snSite.turSNSiteGenAi?.embeddingModelId ?? null,
+            // T472 — index-time content-fit signal; off by default so a pre-T472
+            // binding renders the disabled state and the indexing path is unchanged.
+            contentFitIndexingEnabled: snSite.turSNSiteGenAi?.contentFitIndexingEnabled ?? false,
+            contentFitPersonaId: snSite.turSNSiteGenAi?.contentFitPersonaId ?? null,
+            // T501 — index-time Gemini video/audio understanding; off by default so
+            // a pre-T501 binding renders disabled and the indexing path is unchanged.
+            mediaUnderstandingIndexingEnabled:
+                snSite.turSNSiteGenAi?.mediaUnderstandingIndexingEnabled ?? false,
         });
     }, [snSite]);
 
@@ -297,32 +331,50 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
     const canGenerate = !!defaultLlmId && !!snSite.description && !isGenerating;
 
+    const isBento = chrome === "bento";
+
+    const actions = (
+        <>
+            <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+            </GradientButton>
+        </>
+    );
+
     return (
         <>
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader>
-                    <StickyPageHeader.Title
-                        icon={IconCpu2}
-                        feature={t("sn.genai.title")}
-                        description={t("sn.genai.description")}
+            <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
+                {isBento ? (
+                    <BentoHero
+                        eyebrow={<Link to={`${baseRoute}/${snSite.id}`} className="hover:text-foreground">{t("sn.title")}</Link>}
+                        leading={
+                            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md">
+                                <IconCpu2 size={24} />
+                            </span>
+                        }
+                        title={t("sn.genai.title")}
+                        subtitle={t("sn.genai.description")}
+                        trailing={actions}
                     />
-                    <StickyPageHeader.Actions>
-                        <GradientButton type="submit" size="sm">
-                            <IconDeviceFloppy className="size-4" />
-                            {t("forms.formActions.saveChanges")}
-                        </GradientButton>
-                        <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
-                            <IconX className="size-4" />
-                            {t("forms.formActions.cancel")}
-                        </GradientButton>
-                    </StickyPageHeader.Actions>
-                </StickyPageHeader>
+                ) : (
+                    <StickyPageHeader>
+                        <StickyPageHeader.Title
+                            icon={IconCpu2}
+                            feature={t("sn.genai.title")}
+                            description={t("sn.genai.description")}
+                        />
+                        <StickyPageHeader.Actions>{actions}</StickyPageHeader.Actions>
+                    </StickyPageHeader>
+                )}
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
-                        <SectionCard variant="amber">
-                            <SectionCard.Header icon={IconFileDescription} title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")} />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconFileDescription} tone="amber" title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="sitePrompt"
@@ -367,13 +419,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                 : t("forms.snGenai.generatePromptHint")}
                                     </span>
                                 </div>
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* Section 2: AI Agent (single source of truth for LLM, embedding, store and RAG flag) */}
-                        <SectionCard variant="violet">
-                            <SectionCard.Header icon={IconBrain} title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")} />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconBrain} tone="violet" title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="turAIAgent"
@@ -473,20 +522,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </span>
                                     </div>
                                 )}
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T19/T24 — Hybrid Retrieval card.
                             Only meaningful when the bound agent has RAG enabled;
                             disabled state when ragEnabled is false makes the
                             UI track the runtime gating exactly. */}
-                        <SectionCard variant="blue">
-                            <SectionCard.Header
-                                icon={IconSparkles}
-                                title={t("forms.snGenai.hybridTitle")}
-                                description={t("forms.snGenai.hybridDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconSparkles} tone="blue" title={t("forms.snGenai.hybridTitle")} description={t("forms.snGenai.hybridDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="ragBm25Fallback"
@@ -770,8 +812,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </div>
                                     </>
                                 )}
-                            </SectionCard.Content>
-                        </SectionCard>
+                        </SNFormSection>
 
                         {/* T383 / §XX.3 — ranking mode for the PUBLIC SN search
                             (faceted catalog results). Independent of the RAG
@@ -781,13 +822,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             documents are embedded into a per-site collection as
                             they are indexed, and fused with BM25 via RRF when the
                             sort is relevance. */}
-                        <SectionCard variant="blue">
-                            <SectionCard.Header
-                                icon={IconArrowsSort}
-                                title={t("forms.snGenai.snRankingTitle")}
-                                description={t("forms.snGenai.snRankingDesc")}
-                            />
-                            <SectionCard.Content>
+                        <SNFormSection chrome={chrome} icon={IconArrowsSort} tone="blue" title={t("forms.snGenai.snRankingTitle")} description={t("forms.snGenai.snRankingDesc")}>
                                 <FormField
                                     control={form.control}
                                     name="snRankingMode"
@@ -836,8 +871,175 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                            </SectionCard.Content>
-                        </SectionCard>
+
+                                {/* T513 / §XXVIII.9 — per-site domain-specialized
+                                    embedding model. When set, this site indexes AND
+                                    queries its vector collection through the chosen
+                                    embedder (e.g. voyage-law / voyage-code / voyage-finance);
+                                    blank falls back to the Global Settings default.
+                                    Only meaningful when a hybrid ranking mode is on. */}
+                                <FormField
+                                    control={form.control}
+                                    name="embeddingModelId"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.domainEmbeddingModel")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.domainEmbeddingModelDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <Select
+                                                    value={field.value ?? NONE_VALUE}
+                                                    onValueChange={(val) =>
+                                                        field.onChange(val === NONE_VALUE ? null : val)
+                                                    }
+                                                    disabled={(form.watch("snRankingMode") ?? "LEGACY") === "LEGACY"}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={t("forms.snGenai.domainEmbeddingModelNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value={NONE_VALUE}>
+                                                            {t("forms.snGenai.domainEmbeddingModelNone")}
+                                                        </SelectItem>
+                                                        {embeddingModels.map((model) => (
+                                                            <SelectItem key={model.id} value={model.id}>
+                                                                {model.modelName}
+                                                                {model.modelReference ? ` (${model.modelReference})` : ""}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                        </SNFormSection>
+
+                        {/* T472 / §XXVI.9 — index-time audience content-fit signal.
+                            Scores each document's readability against an AUDIENCE
+                            persona as it is indexed and stores content_fit_score;
+                            surfaced in the Field Coverage dashboard. Independent of
+                            the RAG / ranking cards above. */}
+                        <SNFormSection chrome={chrome} icon={IconUserSearch} tone="emerald" title={t("forms.snGenai.contentFitTitle")} description={t("forms.snGenai.contentFitDesc")}>
+                                <FormField
+                                    control={form.control}
+                                    name="contentFitIndexingEnabled"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.contentFitEnable")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.contentFitEnableDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === true ? "default" : "outline"}
+                                                        onClick={() => field.onChange(field.value !== true)}
+                                                    >
+                                                        {field.value === true
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="contentFitPersonaId"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.contentFitPersona")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.contentFitPersonaDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <Select
+                                                    value={field.value ?? NONE_VALUE}
+                                                    onValueChange={(val) =>
+                                                        field.onChange(val === NONE_VALUE ? null : val)
+                                                    }
+                                                    disabled={
+                                                        form.watch("contentFitIndexingEnabled") !== true
+                                                        || audiencePersonas.length === 0
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={t("forms.snGenai.contentFitPersonaNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value={NONE_VALUE}>
+                                                            {t("forms.snGenai.contentFitPersonaNone")}
+                                                        </SelectItem>
+                                                        {audiencePersonas.map((persona) => (
+                                                            <SelectItem key={persona.id} value={persona.id}>
+                                                                {persona.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                {audiencePersonas.length === 0 && (
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {t("forms.snGenai.contentFitNoPersonas")}
+                                                    </p>
+                                                )}
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                        </SNFormSection>
+
+                        {/* T501 / §X.19 — index-time native video/audio understanding.
+                            When a site's GenAI agent is a Gemini instance, a media
+                            document's clip is transcribed + scene-described as it is
+                            indexed and appended to the text field, so the clip's
+                            content is searchable. Gemini-only, fail-open, off by default. */}
+                        <SNFormSection chrome={chrome} icon={IconMovie} tone="emerald" title={t("forms.snGenai.mediaUnderstandingTitle")} description={t("forms.snGenai.mediaUnderstandingDesc")}>
+                                <FormField
+                                    control={form.control}
+                                    name="mediaUnderstandingIndexingEnabled"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.mediaUnderstandingEnable")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.mediaUnderstandingEnableDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === true ? "default" : "outline"}
+                                                        onClick={() => field.onChange(field.value !== true)}
+                                                    >
+                                                        {field.value === true
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                        </SNFormSection>
 
                     </div>
 

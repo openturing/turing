@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.tool;
 
 import com.viglet.turing.genai.TurRagContextBuilder;
+import com.viglet.turing.genai.citation.TurCitationDocument;
 import com.viglet.turing.genai.provider.store.lucene.TurLuceneVectorStore;
 import com.viglet.turing.genai.rag.TurRagRrf;
 import com.viglet.turing.genai.rag.TurRagSource;
@@ -72,19 +73,22 @@ public class TurRagSearchToolService {
     private final TurSNSiteGenAiRepository snSiteGenAiRepository;
     private final TurRagBm25CoreRepository ragBm25CoreRepository;
     private final TurSearchEnginePluginFactory searchEnginePluginFactory;
+    private final com.viglet.turing.genai.rag.backend.TurRetrievalBackendResolver retrievalBackendResolver;
 
     public TurRagSearchToolService(TurGlobalSettingsService globalSettingsService,
                                     TurRagContextBuilder ragContextBuilder,
                                     TurAssetTrainingRecordRepository trainingRecordRepository,
                                     TurSNSiteGenAiRepository snSiteGenAiRepository,
                                     TurRagBm25CoreRepository ragBm25CoreRepository,
-                                    TurSearchEnginePluginFactory searchEnginePluginFactory) {
+                                    TurSearchEnginePluginFactory searchEnginePluginFactory,
+                                    com.viglet.turing.genai.rag.backend.TurRetrievalBackendResolver retrievalBackendResolver) {
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
         this.snSiteGenAiRepository = snSiteGenAiRepository;
         this.ragBm25CoreRepository = ragBm25CoreRepository;
         this.searchEnginePluginFactory = searchEnginePluginFactory;
+        this.retrievalBackendResolver = retrievalBackendResolver;
     }
 
     public boolean isAvailable() {
@@ -130,6 +134,61 @@ public class TurRagSearchToolService {
     }
 
     /**
+     * T152 / §X.7.a — retrieve the top-K knowledge-base passages for a query and
+     * adapt them into {@link TurCitationDocument}s, for the citations-aware native
+     * Anthropic path (passages attached to the prompt as {@code document} content
+     * blocks). This is the same retrieval the {@code search_knowledge_base} tool
+     * runs, but invoked up-front by the executor (the native function-tool loop
+     * carries no {@link ToolContext}, so citations can't ride the tool result).
+     *
+     * <p>Uses the post-T24 default retrieval flags (BM25 + hybrid fusion over the
+     * embedded Lucene index, degrading to vector-only); returns an empty list —
+     * never throws — when RAG is disabled, unconfigured, the query is blank, or
+     * retrieval fails, so the caller simply runs an uncited turn.
+     *
+     * @since 2026.3.4
+     */
+    public List<TurCitationDocument> retrievePassagesForCitations(String query, int topK) {
+        return TurCitationDocument.fromDocuments(retrieveRawForCitations(query, topK));
+    }
+
+    /**
+     * T155 / §X.7.d — the raw {@link Document} hits behind
+     * {@link #retrievePassagesForCitations}, retrieved through the exact same
+     * default-flags path so the citation-drift scan re-resolves a citation
+     * against precisely what produced it. Returning the raw documents (rather
+     * than {@link TurCitationDocument}) keeps the per-chunk metadata the scan
+     * needs to detect drift — {@code source_id} for matching and
+     * {@code modification_date} for the "re-indexed since the answer" test.
+     *
+     * <p>Returns an empty list — never throws — when RAG is disabled,
+     * unconfigured, the query is blank, or retrieval fails, so callers degrade
+     * to "could not re-verify" rather than failing the scan.
+     *
+     * @since 2026.3.4
+     */
+    public List<Document> retrieveRawForCitations(String query, int topK) {
+        if (!isAvailable() || query == null || query.isBlank()) {
+            return List.of();
+        }
+        int k = (topK > 0) ? Math.min(topK, 20) : 5;
+        try {
+            TurRagContextBuilder.RagInfrastructure infra = ragContextBuilder.buildFromGlobalSettings()
+                    .orElse(null);
+            if (infra == null) {
+                return List.of();
+            }
+            AgentRagFlags flags = AgentRagFlags.defaults();
+            RetrievalResult retrieval = retrieveDocuments(query, k, flags.bm25Enabled(),
+                    flags.hybridEnabled(), flags, infra, null);
+            return retrieval.results();
+        } catch (Exception e) {
+            log.warn("[RAG] Citation retrieval failed for query '{}': {}", query, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
      * Outcome of a retrieval pass: the matched documents and whether the result
      * set came from a BM25 keyword fallback (which flips the "keyword-only"
      * header in {@link #formatResults}).
@@ -154,6 +213,30 @@ public class TurRagSearchToolService {
      */
     private RetrievalResult retrieveDocuments(String query, int topK, boolean bm25Enabled, boolean hybridEnabled,
             AgentRagFlags flags, TurRagContextBuilder.RagInfrastructure infra, ToolContext toolContext) {
+        // T520 / §XXVIII.16 — when a managed retrieval backend (e.g. Bedrock
+        // Knowledge Bases) is configured + available, it serves the passages
+        // instead of the built-in index; its documents flow through the rest of
+        // the pipeline (rerank / sources / citations) unchanged. Empty override
+        // (the default BUILT_IN) → the built-in path below runs byte-for-byte
+        // unchanged. Fail-safe: a backend error degrades to the built-in index.
+        var backendOverride = retrievalBackendResolver.resolveOverride();
+        if (backendOverride.isPresent()) {
+            try {
+                List<Document> managed = backendOverride.get().retrieve(
+                        new com.viglet.turing.genai.rag.backend.TurRetrievalRequest(
+                                query, topK, resolveLocale(toolContext).toLanguageTag()));
+                if (!managed.isEmpty()) {
+                    log.debug("[RAG] managed backend {} returned {} result(s) for '{}'",
+                            backendOverride.get().getType(), managed.size(), query);
+                    return new RetrievalResult(managed, false);
+                }
+                log.debug("[RAG] managed backend {} returned no results for '{}'; using built-in index",
+                        backendOverride.get().getType(), query);
+            } catch (RuntimeException e) {
+                log.warn("[RAG] managed backend {} failed ({}); falling back to built-in index",
+                        backendOverride.get().getType(), e.getMessage());
+            }
+        }
         VectorStore vectorStore = infra.vectorStore();
         boolean useHybrid = bm25Enabled && hybridEnabled;
         boolean useSeHybrid = useHybrid
@@ -294,6 +377,10 @@ public class TurRagSearchToolService {
 
             if (sourceCollector != null) {
                 sourceCollector.add(TurRagSource.fromDocument(doc));
+                // T516 — also tee the chunk text so the answer-grounding
+                // guardrail can validate the answer against it (server-side
+                // only; the chunk text never rides the sources[] SSE event).
+                sourceCollector.addContext(doc.getText());
             }
 
             sb.append("--- Document ").append(i + 1).append(" ---\n");

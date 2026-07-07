@@ -25,6 +25,12 @@ export interface BentoInlineEditProps {
    * makes sense. The user sees a focused input on landing.
    */
   autoFocus?: boolean;
+  /**
+   * Render as plain, non-editable text — no click-to-edit affordance.
+   * Used by read-only surfaces (e.g. the shared GLOBAL BYO-infra pool
+   * when the caller is not a platform admin).
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -43,6 +49,7 @@ export function BentoInlineEdit({
   className = "",
   ariaLabel,
   autoFocus = false,
+  readOnly = false,
 }: Readonly<BentoInlineEditProps>) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(autoFocus);
@@ -92,6 +99,17 @@ export function BentoInlineEdit({
   }
 
   const isEmpty = !value;
+
+  // Read-only: plain text, no click target, no hover affordance. Kept
+  // typographically identical to the editable display via `className`.
+  if (readOnly) {
+    return (
+      <span className={`block w-full ${className}`} aria-label={ariaLabel}>
+        {value || <span className="text-muted-foreground/80">{placeholder ?? "—"}</span>}
+      </span>
+    );
+  }
+
   const sharedClass = `w-full bg-transparent outline-none border-b transition-colors duration-200 ${className}`;
   /*
    * Empty display state needs a permanent visual cue so the user

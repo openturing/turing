@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -39,12 +39,22 @@ jobs:
         env:
           STORYBOOK_BASE: /react-sdk/
 
+      - name: Build marketing site (root)
+        working-directory: frontend
+        run: pnpm run build:site
+
       - name: Package Marketplace examples
         working-directory: frontend
         run: pnpm run package:marketplace
 
       - name: Assemble site
         run: |
+          # Marketing site (React/Vite) at the root — includes index.html,
+          # hashed assets and the static files from apps/site/public
+          # (robots.txt, sitemap.xml, llms.txt, favicons).
+          mkdir -p _site
+          cp -r frontend/apps/site/dist/* _site/
+
           # Storybook
           mkdir -p _site/react-sdk
           cp -r frontend/packages/react-sdk/storybook-static/* _site/react-sdk/
@@ -69,9 +79,6 @@ jobs:
               cp "$app_dir/README.md" "_site/marketplace/$project/" 2>/dev/null || true
             fi
           done
-
-      - name: Copy static pages assets
-        run: cp .github/pages/* _site/
 
       - name: Deploy to openviglet/turing-ce (github-pages branch)
         uses: peaceiris/actions-gh-pages@v4

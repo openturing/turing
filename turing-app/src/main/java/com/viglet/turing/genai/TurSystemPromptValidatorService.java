@@ -23,8 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.genai.prompt.TurPromptSegment;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptIssueDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptSegmentDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.system.TurLlmSummaryService;
@@ -111,8 +113,196 @@ public class TurSystemPromptValidatorService {
         checkLanguageDirectiveConflict(base, personaInstruction, issues);
         checkPersonaVocabulary(persona, base, issues);
         checkRedundantInstruction(base, personaInstruction, issues);
+        checkFlowPersonaOverrides(agent, issues);
+        checkCrossSegment(preview, issues);
 
         return issues;
+    }
+
+    // ─────────────────── T610 — cross-segment lint ───────────────────
+
+    /** Segment origins that carry authored rule text (not informational). */
+    private static final Set<String> RULE_ORIGINS = Set.of("PERSONA", AGENT, "MCP", "FLOW");
+    /** Minimum normalized-line length to consider a line a "rule" worth matching. */
+    private static final int MIN_RULE_LEN = 15;
+    /** Minimum directive-core length before a polarity contradiction is reported. */
+    private static final int MIN_CORE_LEN = 12;
+
+    /** Polarity-negation markers (EN/PT) — their presence flips a directive. */
+    private static final Set<String> NEGATIONS = Set.of("never", "not", "dont", "cannot", "cant",
+            "no", "avoid", "nunca", "jamais", "nao", "evite", "evitar");
+    /** Filler/intensifier words stripped so opposite-polarity cores align. */
+    private static final Set<String> FILLERS = Set.of("do", "does", "please", "always", "must",
+            "should", "sempre", "deve", "favor", "por");
+
+    /**
+     * T610 — cross-segment redundancy + contradiction lint. The other checks look
+     * <em>within</em> one fragment; this one compares the assembled segments
+     * (persona / agent / MCP / active-flow addendum) against each other to catch a
+     * rule paid for 2–3× (duplicated forbidden vocab, "never ask CPF" in both the
+     * persona and the agent) and a directive stated one way in one segment and
+     * negated in another. Operates on the segments the preview already assembled —
+     * no re-parsing of the flattened string.
+     */
+    private void checkCrossSegment(TurSystemPromptPreviewDto preview,
+            List<TurSystemPromptIssueDto> issues) {
+        List<RuleLine> lines = new ArrayList<>();
+        for (TurSystemPromptSegmentDto seg : preview.segments()) {
+            if (!seg.included() || seg.runtimeOnly() || !StringUtils.hasText(seg.content())
+                    || !RULE_ORIGINS.contains(seg.origin())) {
+                continue;
+            }
+            for (String raw : seg.content().split("\\r?\\n")) {
+                String normalized = normalizeRule(raw);
+                if (normalized.length() < MIN_RULE_LEN) {
+                    continue;
+                }
+                boolean[] negated = { false };
+                String core = directiveCore(normalized, negated);
+                lines.add(new RuleLine(seg.origin(), raw.strip(), normalized, core, negated[0]));
+            }
+        }
+        detectCrossSegmentRedundancy(lines, issues);
+        detectCrossSegmentContradiction(lines, issues);
+    }
+
+    /** One authored rule line from a segment, normalized for cross-comparison. */
+    private record RuleLine(String origin, String raw, String normalized, String core,
+            boolean negated) {
+    }
+
+    /** A normalized rule line repeated across ≥2 segments is duplicated token cost. */
+    private void detectCrossSegmentRedundancy(List<RuleLine> lines,
+            List<TurSystemPromptIssueDto> issues) {
+        Map<String, List<RuleLine>> byNormalized = new LinkedHashMap<>();
+        for (RuleLine line : lines) {
+            byNormalized.computeIfAbsent(line.normalized(), k -> new ArrayList<>()).add(line);
+        }
+        for (Map.Entry<String, List<RuleLine>> entry : byNormalized.entrySet()) {
+            List<RuleLine> group = entry.getValue();
+            Set<String> origins = new LinkedHashSet<>();
+            group.forEach(l -> origins.add(l.origin()));
+            if (origins.size() < 2) {
+                continue;
+            }
+            int wastedTokens = TurPromptSegment.estimateTokens(group.get(0).raw()) * (group.size() - 1);
+            String where = String.join(" + ", origins);
+            String snippet = truncate(group.get(0).raw(), 80);
+            issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "cross_segment_redundancy",
+                    "The rule \"" + snippet + "\" is repeated across " + where
+                            + " — the model is paying for the same instruction "
+                            + group.size() + "× (~" + wastedTokens + " wasted tokens).",
+                    "Keep the rule in one layer and delete the copies to save tokens and avoid drift.",
+                    where, Map.of("rule", snippet, "segments", where,
+                            "tokens", String.valueOf(wastedTokens))));
+        }
+    }
+
+    /** Same directive core stated affirmatively in one segment and negated in another. */
+    private void detectCrossSegmentContradiction(List<RuleLine> lines,
+            List<TurSystemPromptIssueDto> issues) {
+        Map<String, List<RuleLine>> byCore = new LinkedHashMap<>();
+        for (RuleLine line : lines) {
+            if (line.core().length() >= MIN_CORE_LEN) {
+                byCore.computeIfAbsent(line.core(), k -> new ArrayList<>()).add(line);
+            }
+        }
+        Set<String> reported = new LinkedHashSet<>();
+        for (List<RuleLine> group : byCore.values()) {
+            RuleLine affirmative = group.stream().filter(l -> !l.negated()).findFirst().orElse(null);
+            RuleLine negated = group.stream().filter(l -> l.negated()).findFirst().orElse(null);
+            if (affirmative == null || negated == null
+                    || affirmative.origin().equals(negated.origin())) {
+                continue;
+            }
+            String where = affirmative.origin() + " ↔ " + negated.origin();
+            if (!reported.add(where + "::" + affirmative.core())) {
+                continue;
+            }
+            issues.add(new TurSystemPromptIssueDto(SEV_ERROR, "cross_segment_contradiction",
+                    "Contradiction between " + where + ": \"" + truncate(affirmative.raw(), 60)
+                            + "\" vs \"" + truncate(negated.raw(), 60)
+                            + "\". The model gets opposite instructions on the same point.",
+                    "Reconcile the two segments so a single, consistent rule governs this behavior.",
+                    where, Map.of("segments", where)));
+        }
+    }
+
+    /** Lower-cases, strips markdown list/heading/emphasis markup, collapses spaces. */
+    static String normalizeRule(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String s = raw.strip()
+                .replaceAll("^[#>\\-*+\\d.\\)\\s]+", "")   // leading heading/list markers
+                .replace("*", "").replace("_", "").replace("`", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ")
+                .replaceAll("[.:;!?\"']+$", "")
+                .strip();
+        return s;
+    }
+
+    /**
+     * Reduces a normalized rule to its directive "core" by dropping polarity
+     * markers + fillers, and reports (out-param) whether a negation was present —
+     * so "always ask for cpf" and "never ask for cpf" share the core "ask for cpf"
+     * with opposite polarity.
+     */
+    static String directiveCore(String normalized, boolean[] negatedOut) {
+        StringBuilder core = new StringBuilder();
+        for (String word : normalized.split(" ")) {
+            String w = word.replaceAll("[^\\p{L}]", "");
+            if (w.isEmpty()) {
+                continue;
+            }
+            if (NEGATIONS.contains(w)) {
+                negatedOut[0] = true;
+                continue;
+            }
+            if (FILLERS.contains(w)) {
+                continue;
+            }
+            core.append(core.isEmpty() ? "" : " ").append(w);
+        }
+        return core.toString();
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) {
+            return "";
+        }
+        String t = s.strip();
+        return t.length() <= max ? t : t.substring(0, max - 1) + "…";
+    }
+
+    /**
+     * T607 — a chat flow's {@code persona} node can switch the active voice, but
+     * only if the referenced persona is in the agent's catalog and usable as a
+     * speaker; otherwise the runtime silently falls back to the default (the same
+     * blind spot the preview used to have). Surface those misconfigurations so the
+     * operator doesn't ship a flow that quietly speaks in the wrong voice.
+     */
+    private void checkFlowPersonaOverrides(TurAIAgent agent,
+            List<TurSystemPromptIssueDto> issues) {
+        for (TurSystemPromptPreviewService.FlowPersonaDiagnostic d
+                : previewService.diagnoseFlowPersonas(agent)) {
+            if (d.notInCatalog()) {
+                issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "flow_persona_not_in_catalog",
+                        "Flow \"" + d.flowName() + "\" has a persona node pointing at persona \""
+                                + d.personaRef() + "\", which is not in this agent's persona catalog. "
+                                + "The runtime silently falls back to the default persona.",
+                        "Add that persona to the agent, or fix the node to reference an allowed persona.",
+                        "FLOW", Map.of("flow", d.flowName(), "persona", d.personaRef())));
+            } else if (d.audienceOnly()) {
+                issues.add(new TurSystemPromptIssueDto(SEV_WARNING, "flow_persona_audience_only",
+                        "Flow \"" + d.flowName() + "\" switches to persona \"" + d.personaRef()
+                                + "\", which is audience-only and cannot be a speaker. "
+                                + "The runtime falls back to the default persona.",
+                        "Use a persona whose kind is SPEAKER or BOTH for a flow voice switch.",
+                        "FLOW", Map.of("flow", d.flowName(), "persona", d.personaRef())));
+            }
+        }
     }
 
     private void checkEmptyPrompt(String base, List<TurSystemPromptIssueDto> issues) {
@@ -130,7 +320,7 @@ public class TurSystemPromptValidatorService {
                     "The assembled system prompt is " + assembled.length()
                             + " characters — large prompts inflate token cost and dilute the model's attention.",
                     "Trim redundant guidance, or move stable reference material into a tool or RAG store.",
-                    AGENT));
+                    AGENT, Map.of("length", String.valueOf(assembled.length()))));
         }
     }
 
@@ -150,7 +340,7 @@ public class TurSystemPromptValidatorService {
                             + ". The model gets contradictory instructions about which language to answer in.",
                     "Keep a single response-language rule across the agent prompt and the persona, "
                             + "or scope each one to an explicit condition.",
-                    source));
+                    source, Map.of("langs", String.join(", ", all))));
         }
     }
 
@@ -168,7 +358,7 @@ public class TurSystemPromptValidatorService {
                 issues.add(new TurSystemPromptIssueDto(SEV_ERROR, "persona_vocab_contradiction",
                         "The persona lists \"" + term + "\" as both required and forbidden vocabulary.",
                         "Remove the term from one of the two lists.",
-                        PERSONA));
+                        PERSONA, Map.of("term", term)));
             }
         }
         // A forbidden term used verbatim in the agent prompt undercuts the ban.
@@ -179,7 +369,7 @@ public class TurSystemPromptValidatorService {
                             "The agent prompt uses \"" + term
                                     + "\", which the default persona forbids — the persona will be told to rephrase its own instructions.",
                             "Rephrase the agent prompt to avoid the forbidden term, or drop it from the persona's forbidden list.",
-                            AGENT));
+                            AGENT, Map.of("term", term)));
                 }
             }
         }

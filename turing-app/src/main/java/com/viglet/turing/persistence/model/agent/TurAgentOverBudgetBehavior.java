@@ -15,11 +15,10 @@ package com.viglet.turing.persistence.model.agent;
  * a string column (see {@link TurAIAgent#overBudgetBehavior}) so
  * adding new modes later doesn't risk ordinal drift.
  *
- * <p>{@link #COMPACT} is reserved for a future revision that auto-triggers
- * the T115 workspace-backed history compression; the V1 path treats it as
- * a synonym for {@link #WARN} (proceed with a logged notice) so flow
- * authors can pre-pick the mode they'll want when T115 lands and the
- * upgrade just flips the runtime behaviour.
+ * <p>{@link #COMPACT} routes the over-budget prompt through the T115-backed
+ * {@code TurPromptCompactor} (summarizing the older middle turns) before the
+ * LLM call, then proceeds best-effort even if the compaction can't bring the
+ * estimate under budget.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -30,8 +29,9 @@ public enum TurAgentOverBudgetBehavior {
     /** Short-circuit the LLM call and surface an error to the caller. */
     ERROR,
     /**
-     * Reserved for T115 workspace-backed compression. In V1 the executor
-     * logs a "compact-not-implemented" notice and degrades to {@link #WARN}.
+     * Route the prompt through the T115-backed {@code TurPromptCompactor}
+     * (summarize the older middle turns) before the LLM call, then proceed
+     * best-effort even if it's still over budget.
      */
     COMPACT
 }

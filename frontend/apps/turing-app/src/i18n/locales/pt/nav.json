@@ -1,6 +1,10 @@
 {
   "nav": {
     "account": "Conta",
+    "organizations": "Organizações",
+    "organizationsDesc": "Alterne a organização ativa ou crie uma nova.",
+    "tenantAdmin": "Administração de tenants",
+    "tenantAdminDesc": "Gestão de tenants em toda a plataforma: suspender, reativar ou personificar.",
     "logOut": "Sair"
   }
 }

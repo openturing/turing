@@ -15,7 +15,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { ChatFlowLivePreviewPanel } from "./chat-flow.live-preview-panel";
-import { ChatPreview } from "./chat-preview";
 import { edgeTypes } from "./flow-edges";
 import { FlowProperties } from "./flow-properties";
 import { FlowSidebar } from "./flow-sidebar";
@@ -31,7 +30,6 @@ interface DiagramTabProps {
   edges: Edge[];
   zoomPercent: number;
   selectedNode: Node<FlowNodeData> | null;
-  previewOpen: boolean;
   livePreviewOpen: boolean;
   onNodesChange: (changes: NodeChange<Node<FlowNodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
@@ -44,7 +42,6 @@ interface DiagramTabProps {
   updateNodeData: (nodeId: string, patch: Partial<FlowNodeData>) => void;
   applyGraph: (nodes: Node<FlowNodeData>[], edges: Edge[], selectId: string | null) => void;
   setSelectedNodeId: (id: string | null) => void;
-  setPreviewOpen: (open: boolean) => void;
   setLivePreviewOpen: (open: boolean) => void;
 }
 
@@ -63,7 +60,6 @@ export function ChatFlowDiagramTab({
   edges,
   zoomPercent,
   selectedNode,
-  previewOpen,
   livePreviewOpen,
   onNodesChange,
   onEdgesChange,
@@ -76,7 +72,6 @@ export function ChatFlowDiagramTab({
   updateNodeData,
   applyGraph,
   setSelectedNodeId,
-  setPreviewOpen,
   setLivePreviewOpen,
 }: Readonly<DiagramTabProps>) {
   const { t } = useTranslation();
@@ -134,15 +129,9 @@ export function ChatFlowDiagramTab({
           currentFlowId={currentFlowId}
         />
 
-        {previewOpen && (
-          <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />
-        )}
-
-        {/* T95 — node-focused live preview. Separate from ChatPreview
-            because they answer different questions: ChatPreview is the
-            whole-flow transcript walk, this panel zooms in on the selected
-            node with mocked slots so authors iterate in <300ms without
-            running a real LLM turn. */}
+        {/* T95 — Live preview. A single surface with two modes: a node-focused
+            view (mocked slots, <300ms, no real LLM turn) and a whole-flow
+            transcript walk (the consolidated former ChatPreview). */}
         {livePreviewOpen && (
           <ChatFlowLivePreviewPanel
             selectedNode={selectedNode}

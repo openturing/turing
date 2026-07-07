@@ -100,7 +100,7 @@ export function SystemPromptWarningsPanel({ agentId }: Props) {
         {issues.length > 0 && (
           <ul className="space-y-3">
             {issues.map((issue, idx) => (
-              <IssueRow key={`${issue.code}-${issue.source}-${idx}`} issue={issue} />
+              <IssueRow key={`${issue.code}-${issue.source}-${idx}`} issue={issue} t={t} />
             ))}
           </ul>
         )}
@@ -109,9 +109,49 @@ export function SystemPromptWarningsPanel({ agentId }: Props) {
   );
 }
 
-function IssueRow({ issue }: Readonly<{ issue: TurSystemPromptIssue }>) {
+/**
+ * Translates an issue by its `code`, feeding the backend's interpolation
+ * params. If the result still carries an un-interpolated `{{placeholder}}`
+ * (e.g. an older backend that doesn't send `params` yet), fall back to the
+ * backend's own message — which already embeds the real values — so the user
+ * never sees a raw `{{length}}` token.
+ */
+function resolveIssueText(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  key: string,
+  params: Record<string, string> | undefined,
+  fallback: string,
+): string {
+  const out = t(key, { ...params, defaultValue: fallback });
+  return /\{\{.+?\}\}/.test(out) ? fallback : out;
+}
+
+function IssueRow({
+  issue,
+  t,
+}: Readonly<{
+  issue: TurSystemPromptIssue;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}>) {
   const isError = issue.severity === "ERROR";
   const isInfo = issue.severity === "INFO";
+  // Prefer a code-keyed translation (with the backend's interpolation params);
+  // fall back to the backend message/hint. Deep-LLM findings are already in
+  // the prompt's language and have no translation key, so they fall through.
+  const message = resolveIssueText(
+    t,
+    `aiAgent.systemPrompt.warnings.codes.${issue.code}.message`,
+    issue.params,
+    issue.message,
+  );
+  const hint = issue.hint
+    ? resolveIssueText(
+        t,
+        `aiAgent.systemPrompt.warnings.codes.${issue.code}.hint`,
+        issue.params,
+        issue.hint,
+      )
+    : "";
   return (
     <li className="rounded-md border border-border/60 bg-background/60 p-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -130,8 +170,8 @@ function IssueRow({ issue }: Readonly<{ issue: TurSystemPromptIssue }>) {
           </span>
         )}
       </div>
-      <div className="text-sm whitespace-pre-wrap break-words">{issue.message}</div>
-      {issue.hint && <p className="text-xs text-muted-foreground">{issue.hint}</p>}
+      <div className="text-sm whitespace-pre-wrap break-words">{message}</div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </li>
   );
 }

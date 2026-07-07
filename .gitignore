@@ -12,7 +12,6 @@
 /.settings
 /.project
 /.gradle/
-/.claude
 .sts4-cache
 .metals
 .bloop
@@ -85,6 +84,9 @@ turing-react-sdk/debug-storybook.log
 /frontend/.turbo
 /frontend/apps/marketplace/space-missions/dist
 frontend/apps/marketplace/space-missions/space-missions.zip
+/frontend/apps/showcase/dist
+/frontend/apps/showcase/.turbo
+frontend/apps/showcase/atlas-store.zip
 /frontend/apps/marketplace/vinyl-records/dist
 /frontend/apps/turing-app/.__mf__temp
 /frontend/packages/react-sdk/.turbo
@@ -102,3 +104,5 @@ frontend/apps/marketplace/vinyl-records/vinyl-records.zip
 /frontend/packages/react-ui/dist
 /frontend/packages/react-ui/.turbo
 scripts/sonar/scan.log
+/frontend/packages/cli/dist
+/frontend/packages/cli/.turbo

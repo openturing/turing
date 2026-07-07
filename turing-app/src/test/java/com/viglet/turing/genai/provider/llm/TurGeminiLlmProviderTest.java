@@ -65,14 +65,22 @@ class TurGeminiLlmProviderTest {
     }
 
     @Test
-    void testCreateEmbeddingModel_unsupported() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> provider.createEmbeddingModel(instance, "dummy-key"));
+    void testCreateEmbeddingModel_returnsNativeModel() {
+        // T495 — Gemini embeddings are now supported via embedContent.
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+
+        var model = provider.createEmbeddingModel(instance, "dummy-key");
+
+        assertNotNull(model);
+        assertEquals(com.viglet.turing.genai.nativeapi.gemini.TurGeminiEmbeddingModel.class,
+                model.getClass());
     }
 
     @Test
-    void testCreateEmbeddingModel_unsupported_withNullKey() {
-        assertThrows(UnsupportedOperationException.class,
+    void testCreateEmbeddingModel_missingApiKey() {
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+
+        assertThrows(IllegalStateException.class,
                 () -> provider.createEmbeddingModel(instance, null));
     }
 

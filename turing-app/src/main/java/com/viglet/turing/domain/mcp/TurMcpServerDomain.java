@@ -17,6 +17,7 @@
 package com.viglet.turing.domain.mcp;
 
 import com.viglet.turing.persistence.model.mcp.TurMcpServerConnectionType;
+import com.viglet.turing.persistence.model.mcp.TurMcpServerTransportType;
 import com.viglet.turing.persistence.model.mcp.TurMcpServerType;
 
 /**
@@ -37,10 +38,20 @@ public record TurMcpServerDomain(
         String args,
         TurMcpServerType type,
         TurMcpServerConnectionType connectionType,
+        TurMcpServerTransportType transportType,
         int enabled) {
 
     /** True when the MCP server is enabled for runtime use (admin toggle). */
     public boolean isEnabled() {
         return enabled == 1;
+    }
+
+    /**
+     * T294 — true when this HTTP server should use the Streamable HTTP
+     * transport. A {@code null} {@link #transportType} (legacy rows, COMMAND
+     * servers) means the legacy SSE transport, so callers default to SSE.
+     */
+    public boolean isStreamableHttp() {
+        return transportType == TurMcpServerTransportType.STREAMABLE_HTTP;
     }
 }

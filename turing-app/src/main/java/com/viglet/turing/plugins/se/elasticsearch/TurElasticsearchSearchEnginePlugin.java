@@ -696,6 +696,15 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
                 .orElse(-1L);
     }
 
+    @Override
+    public long getDocumentCountWithFieldBelow(TurSNSiteLocale turSNSiteLocale, String fieldName,
+            int threshold) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(instance -> turElasticsearch.getDocumentTotalWithFieldBelow(instance, fieldName,
+                        threshold))
+                .orElse(-1L);
+    }
+
     // ---- System info -----------------------------------------------------
 
     @Override

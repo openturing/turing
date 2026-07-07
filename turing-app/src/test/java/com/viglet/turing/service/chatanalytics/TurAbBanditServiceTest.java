@@ -170,6 +170,55 @@ class TurAbBanditServiceTest {
         }
     }
 
+    // ─────────────────────────── T241 — per-experiment success metric ───────────────────────────
+
+    @Test
+    void resolveSuccessMetricDefaultsToGoalAchievedWhenNoneDeclared() {
+        List<TurChatFlow> variants = List.of(variant("A", true), variant("B", true));
+        assertThat(TurAbBanditService.resolveSuccessMetric(variants))
+                .isEqualTo(TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED);
+    }
+
+    @Test
+    void resolveSuccessMetricReadsFirstDeclaredArm() {
+        TurChatFlow a = variant("A", true); // no metric
+        TurChatFlow b = variant("B", true);
+        b.setExperimentSuccessMetric("HANDOFF_WHATSAPP");
+        assertThat(TurAbBanditService.resolveSuccessMetric(List.of(a, b)))
+                .isEqualTo(TurExperimentSignificanceService.SuccessMetric.HANDOFF_WHATSAPP);
+    }
+
+    @Test
+    void resolveSuccessMetricFallsBackToDefaultOnUnknownName() {
+        TurChatFlow a = variant("A", true);
+        a.setExperimentSuccessMetric("NOT_A_REAL_METRIC");
+        assertThat(TurAbBanditService.resolveSuccessMetric(List.of(a)))
+                .isEqualTo(TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED);
+    }
+
+    @Test
+    void pickVariantScoresOnTheDeclaredExperimentMetric() {
+        // The declared metric must be the one the bandit asks the analytics
+        // store for — otherwise the experiment optimises the wrong conversion.
+        when(significanceService.collectVariantStats(eq("exp"),
+                eq(TurExperimentSignificanceService.SuccessMetric.LEAD_EMAIL_CAPTURED),
+                any(), any()))
+                .thenReturn(List.of(
+                        new TurExperimentSignificanceService.VariantStat("A", 100, 90, 0.9),
+                        new TurExperimentSignificanceService.VariantStat("B", 100, 10, 0.1)));
+        TurChatFlow a = variant("A", true);
+        a.setExperimentSuccessMetric("LEAD_EMAIL_CAPTURED");
+        TurChatFlow b = variant("B", true);
+        // Picks must converge to A using the LEAD metric stats — proving the
+        // stub keyed on LEAD_EMAIL_CAPTURED is the one consulted.
+        TurAbBanditService svc = bandit(42L);
+        int aPicks = 0;
+        for (int i = 0; i < 200; i++) {
+            if ("A".equals(svc.pickVariant(List.of(a, b), "exp").getId())) aPicks++;
+        }
+        assertThat(aPicks).isGreaterThan(190);
+    }
+
     @Test
     void pickVariantHandlesMissingStatsForOneVariant() {
         // C has stats; D has none → D gets Beta(1, 1) prior.

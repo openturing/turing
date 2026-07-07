@@ -12,43 +12,19 @@ package com.viglet.turing.persistence.repository.persona;
 import java.util.List;
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.viglet.turing.persistence.model.persona.TurPersona;
-import org.springframework.cache.annotation.Caching;
 
 /**
- * Repository for {@link TurPersona}. Mirrors the {@code TurAIAgentRepository}
- * caching convention — every read is cached, every write evicts every
- * persona cache.
- *
- * <p>Writes also nuke the agent caches ({@code turAIAgentfindAll} and
- * {@code turAIAgentfindById}) because cached agent entities EAGER-fetch
- * their persona references — without this, an updated persona's
- * {@code systemInstruction} would still be served from the agent's
- * cached entity tree, and chats would keep speaking in the old voice.
+ * Repository for {@link TurPersona}.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
  */
 public interface TurPersonaRepository extends JpaRepository<TurPersona, String> {
-    @Override
-    @Cacheable("turPersonafindAll")
-    List<TurPersona> findAll();
-
-    @Cacheable("turPersonafindAllSorted")
-    List<TurPersona> findAll(@NotNull Sort sort);
-
-    @Override
-    @Cacheable("turPersonafindById")
-    @NotNull
-    Optional<TurPersona> findById(@NotNull String id);
 
     /**
      * Case-insensitive lookup used by the chat-flow import pipeline to de-duplicate
@@ -58,7 +34,6 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
      *
      * @since 2026.2.7
      */
-    @Cacheable("turPersonafindByNameIgnoreCase")
     Optional<TurPersona> findByNameIgnoreCase(String name);
 
     /**
@@ -73,31 +48,7 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     /** Used by the store delete path (persona few-shot store). @since 2026.2.8 */
     List<TurPersona> findByFewShotStore_Id(String storeId);
 
-    @Caching(evict = {
-            @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-                    "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
-            @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
-                    allEntries = true),
-            // T31 / §IV.5 — persona edits change the composed static
-            // prompt block; the cache must drop alongside the persona
-            // lookups so the next chat turn sees the new voice.
-            @CacheEvict(value = "turPersonaStaticPrompt", allEntries = true)
-    })
-    @NotNull
-    @Override
-    <S extends TurPersona> S save(@NotNull S entity);
-
     @Modifying
     @Query("delete from TurPersona p where p.id = ?1")
-    @Caching(evict = {
-            @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-                    "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
-            @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
-                    allEntries = true),
-            // T31 / §IV.5 — persona edits change the composed static
-            // prompt block; the cache must drop alongside the persona
-            // lookups so the next chat turn sees the new voice.
-            @CacheEvict(value = "turPersonaStaticPrompt", allEntries = true)
-    })
     void delete(String id);
 }

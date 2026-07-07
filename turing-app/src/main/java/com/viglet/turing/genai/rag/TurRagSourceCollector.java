@@ -40,12 +40,32 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class TurRagSourceCollector {
 
     private final List<TurRagSource> sources = new CopyOnWriteArrayList<>();
+    /**
+     * T516 / §XXVIII.12 — the retrieved chunks' <em>text</em>, captured in
+     * parallel with the provenance so the answer-grounding guardrail can check
+     * the answer against the context it was supposed to be grounded in. This
+     * text never leaves the server (the {@code sources[]} SSE event carries only
+     * provenance) — it is drained by the dispatcher straight into the guardrail.
+     */
+    private final List<String> contextTexts = new CopyOnWriteArrayList<>();
 
     /** Appends one chunk's provenance. */
     public void add(TurRagSource source) {
         if (source != null) {
             sources.add(source);
         }
+    }
+
+    /** Appends one retrieved chunk's text for grounding (skips blank). */
+    public void addContext(String text) {
+        if (text != null && !text.isBlank()) {
+            contextTexts.add(text);
+        }
+    }
+
+    /** Immutable snapshot of the retrieved chunk texts collected so far. */
+    public List<String> contextSnapshot() {
+        return List.copyOf(contextTexts);
     }
 
     /** Appends a batch of chunk provenance (skips {@code null} entries). */

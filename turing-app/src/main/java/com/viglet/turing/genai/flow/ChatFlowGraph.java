@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * @since 2026.2.5
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record ChatFlowGraph(List<ChatFlowNode> nodes, List<ChatFlowEdge> edges) {
+public record ChatFlowGraph(List<ChatFlowNode> nodes, List<ChatFlowEdge> edges)
+        implements Serializable {
 
     public ChatFlowGraph {
         nodes = nodes == null ? List.of() : nodes;

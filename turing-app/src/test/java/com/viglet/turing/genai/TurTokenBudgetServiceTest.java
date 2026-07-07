@@ -18,18 +18,22 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import static org.mockito.Mockito.mock;
+
+import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAgentOverBudgetBehavior;
 
 /**
  * Pins the T123 token-budget contract: budget=0 disables the check,
  * estimator follows chars/4 with ceiling, the three over-budget
- * behaviours map to WITHIN_BUDGET / WARN / ERROR correctly, and the
- * COMPACT v1 mode degrades to WARN with a logged notice.
+ * behaviours map to WITHIN_BUDGET / WARN / ERROR / COMPACT correctly.
  */
 class TurTokenBudgetServiceTest {
 
-    private final TurTokenBudgetService service = new TurTokenBudgetService();
+    // instance is always null in these tests → heuristic path (exact counting untouched).
+    private final TurTokenBudgetService service = new TurTokenBudgetService(
+            mock(TurTokenCountingService.class), new TurProviderOptionsParser());
 
     private static TurAIAgent agent(int max, TurAgentOverBudgetBehavior behavior) {
         TurAIAgent a = new TurAIAgent();
@@ -90,11 +94,13 @@ class TurTokenBudgetServiceTest {
     }
 
     @Test
-    void overBudgetCompactDegradesToWarnInV1() {
+    void overBudgetCompactReturnsCompactDecision() {
         TurTokenBudgetService.CheckResult r = service.check(agent(1, TurAgentOverBudgetBehavior.COMPACT),
                 messages("this is too long"));
-        // V1: COMPACT not yet implemented — logged + behave as WARN.
-        assertThat(r.decision()).isEqualTo(TurTokenBudgetService.Decision.WARN);
+        // T115 shipped — the executor routes COMPACT through TurPromptCompactor.
+        assertThat(r.decision()).isEqualTo(TurTokenBudgetService.Decision.COMPACT);
+        assertThat(r.estimatedTokens()).isGreaterThan(1);
+        assertThat(r.budget()).isEqualTo(1);
     }
 
     @Test
