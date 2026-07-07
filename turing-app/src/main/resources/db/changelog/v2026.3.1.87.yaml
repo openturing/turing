@@ -1,0 +1,100 @@
+databaseChangeLog:
+  # T587 / §XXXIII.2 (Block AJ) — grader-stack config per eval set.
+  #
+  #   tur_eval_grader_config — one grader entry of a set's stack (graderId +
+  #   order + per-instance configJson + weight/threshold/blocking). A row with a
+  #   null/blank caseId is set-level; a row carrying a caseId overrides it for
+  #   that case. With no enabled rows the registry uses the legacy default stack,
+  #   so existing sets are byte-identical (T586).
+  #
+  # Column names match the JPA field names exactly (camelCase) — Hibernate maps
+  # literally. Join column uses the explicit @JoinColumn name (eval_set_id). Big
+  # text uses longtext (H2 + MySQL + Postgres portable). FK ON DELETE CASCADE so
+  # the bulk-DML agent delete (which chains agent -> set) cleans up configs.
+  # Idempotent: gated by tableExists / foreignKeyConstraintExists.
+
+  - changeSet:
+      id: v2026.3.1.87-create-tur_eval_grader_config
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_grader_config
+      changes:
+        - createTable:
+            tableName: tur_eval_grader_config
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+              - column:
+                  name: kind
+                  type: varchar(16)
+              - column:
+                  name: graderId
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: configJson
+                  type: longtext
+              - column:
+                  name: weight
+                  type: double
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: threshold
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: blocking
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sortOrder
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: caseId
+                  type: varchar(36)
+              - column:
+                  name: eval_set_id
+                  type: varchar(36)
+
+  - changeSet:
+      id: v2026.3.1.87-fk-eval_grader_config-set
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_eval_grader_config_set
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_eval_grader_config
+            baseColumnNames: eval_set_id
+            referencedTableName: tur_agent_eval_set
+            referencedColumnNames: id
+            constraintName: fk_eval_grader_config_set
+            onDelete: CASCADE

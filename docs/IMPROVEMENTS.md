@@ -2072,40 +2072,6 @@ The user's ask: (1) let us create **extensions of the eval for each grader kind*
 and (2) give us a way to **provide a dataset to be used and tested** — done in a
 scalable, friendly, functional way.
 
-### XXXIII.1–2 The grader SPI is the whole lever (T586, T587)
-
-The single highest-leverage move is to turn the four hardcoded dimensions into a
-**seam**. One interface:
-
-```java
-public interface TurEvalGrader {
-    TurEvalGraderKind kind();              // MODEL | CODE | HUMAN
-    String graderId();                     // "slot-match", "regex", "rubric-score", "human-review", …
-    boolean supports(TurEvalGraderConfig config);
-    TurEvalGraderResult grade(TurEvalGradingContext ctx);
-}
-```
-
-- `TurEvalGradingContext` carries everything the runner already computes per case —
-  the case, replayed user turns, captured slots, final node id, resolved outcome,
-  the concatenated assistant transcript, and (Phase 4) the bound dataset row — so a
-  grader is a pure function of context + its own config.
-- `TurEvalGraderResult(double score, boolean passed, String verdict, String
-  rationale, boolean deferred)`. `deferred=true` is what makes the **human** kind
-  possible without special-casing it everywhere: the runner records the result as
-  `PENDING_REVIEW` and moves on.
-- `TurEvalGraderRegistry` resolves the ordered grader list for a set from its
-  `TurEvalGraderConfig` rows; `scoreCase` becomes a loop over that list feeding a
-  weighted aggregate + a per-stack blocking policy (T600).
-
-**Back-compat is the non-negotiable constraint.** With **no** `TurEvalGraderConfig`
-rows, the registry returns the exact legacy stack (SlotMatch + Outcome + Node as
-CODE graders, Rubric as a MODEL grader) and the aggregate is the current
-all-must-match average. So T586 is a pure refactor: every existing report, the
-green-baseline/regression logic, the gate, and the `-Pagent-eval` IT stay
-byte-identical. T587 then persists the config (per set, optional per-case override)
-and rides the existing `TurAIAgentExchange` export so evals travel with the agent.
-
 ### XXXIII.3–4 CODE graders — deterministic, CI-safe, extensible (T588, T589)
 
 The CODE kind is the CI-cheap backbone (no LLM, runs on every PR). T588 ships a

@@ -11,6 +11,7 @@ package com.viglet.turing.genai.eval.grader;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
+import com.viglet.turing.persistence.model.agent.TurEvalGraderConfig;
 
 /**
  * T586 / §XXXIII.1 — discovers every {@link TurEvalGrader} bean and resolves
@@ -54,11 +57,48 @@ public class TurEvalGraderRegistry {
     }
 
     /**
-     * Resolves the ordered grader stack to run for {@code evalCase}. Until
-     * per-set / per-case grader config lands (T587) this is always the legacy
-     * default stack (any built-in id that isn't wired is skipped defensively).
+     * Resolves the ordered grader stack to run for {@code evalCase} of {@code
+     * set}. When the set carries no enabled {@link TurEvalGraderConfig} rows
+     * (T587) this is the legacy {@link TurEvalBuiltinGraders#DEFAULT_STACK
+     * default stack}, so scoring is byte-identical to the pre-config path.
+     *
+     * <p>When it does carry config: set-level rows (null/blank {@code caseId})
+     * are taken in {@code sortOrder}, then per-case override rows (matching
+     * {@code evalCase}) replace / append by {@code graderId}. Unknown grader ids
+     * are skipped defensively (e.g. a config-only grader not yet on the
+     * classpath). An empty resolution falls back to the default stack.
      */
-    public List<TurEvalGrader> resolveGraders(TurAgentEvalCase evalCase) {
+    public List<TurEvalGrader> resolveStack(TurAgentEvalSet set, TurAgentEvalCase evalCase) {
+        if (set == null || set.getGraderConfigs() == null) {
+            return defaultStack();
+        }
+        List<TurEvalGraderConfig> enabled = set.getGraderConfigs().stream()
+                .filter(c -> c.getEnabled() == 1)
+                .toList();
+        if (enabled.isEmpty()) {
+            return defaultStack();
+        }
+        Map<String, TurEvalGraderConfig> effective = new LinkedHashMap<>();
+        enabled.stream()
+                .filter(c -> c.getCaseId() == null || c.getCaseId().isBlank())
+                .sorted(Comparator.comparingInt(TurEvalGraderConfig::getSortOrder))
+                .forEach(c -> effective.put(c.getGraderId(), c));
+        String caseId = evalCase == null ? null : evalCase.getId();
+        if (caseId != null) {
+            enabled.stream()
+                    .filter(c -> caseId.equals(c.getCaseId()))
+                    .sorted(Comparator.comparingInt(TurEvalGraderConfig::getSortOrder))
+                    .forEach(c -> effective.put(c.getGraderId(), c));
+        }
+        List<TurEvalGrader> stack = new ArrayList<>();
+        for (String graderId : effective.keySet()) {
+            find(graderId).ifPresent(stack::add);
+        }
+        return stack.isEmpty() ? defaultStack() : stack;
+    }
+
+    /** The legacy default stack (any built-in not wired is skipped defensively). */
+    private List<TurEvalGrader> defaultStack() {
         List<TurEvalGrader> stack = new ArrayList<>();
         for (String graderId : TurEvalBuiltinGraders.DEFAULT_STACK) {
             find(graderId).ifPresent(stack::add);

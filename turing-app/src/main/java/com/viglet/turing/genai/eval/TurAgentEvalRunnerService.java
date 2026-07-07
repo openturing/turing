@@ -173,7 +173,7 @@ public class TurAgentEvalRunnerService {
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
             for (TurAgentEvalCase evalCase : orderedCases(set)) {
-                results.add(runCase(agent, llmInstance, judgeModel, evalCase));
+                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase));
             }
         }
         return persistReport(agent, results);
@@ -216,7 +216,7 @@ public class TurAgentEvalRunnerService {
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
             for (TurAgentEvalCase evalCase : orderedCases(set)) {
-                results.add(runCase(agent, llmInstance, judgeModel, evalCase));
+                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase));
             }
         }
         return aggregateScore(results);
@@ -334,7 +334,7 @@ public class TurAgentEvalRunnerService {
     // ─────────────────────────── Per-case replay ───────────────────────────
 
     private TurAgentEvalCaseResultDto runCase(TurAIAgent agent, TurLLMInstance llmInstance,
-            ChatModel judgeModel, TurAgentEvalCase evalCase) {
+            ChatModel judgeModel, TurAgentEvalSet set, TurAgentEvalCase evalCase) {
         String conversationId = "eval-" + UUID.randomUUID();
         try {
             List<String> turns = parseTurns(evalCase.getSeedTurnsJson());
@@ -349,7 +349,7 @@ public class TurAgentEvalRunnerService {
             String finalNodeId = state.currentNodeId();
             String actualOutcome = resolveOutcome(conversationId, state);
 
-            return scoreCase(evalCase, judgeModel, turns, assistantReplies, capturedSlots,
+            return scoreCase(set, evalCase, judgeModel, turns, assistantReplies, capturedSlots,
                     finalNodeId, actualOutcome);
         } catch (RuntimeException e) {
             log.warn("[AgentEval] case '{}' replay failed: {}", evalCase.getName(), e.getMessage());
@@ -405,9 +405,9 @@ public class TurAgentEvalRunnerService {
      * rationale); a generic per-grader breakdown arrives with the Eval Studio
      * (T599).
      */
-    private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalCase evalCase, ChatModel judgeModel,
-            List<String> turns, List<String> assistantReplies, Map<String, String> capturedSlots,
-            String finalNodeId, String actualOutcome) {
+    private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalSet set, TurAgentEvalCase evalCase,
+            ChatModel judgeModel, List<String> turns, List<String> assistantReplies,
+            Map<String, String> capturedSlots, String finalNodeId, String actualOutcome) {
         TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, turns, assistantReplies,
                 capturedSlots, finalNodeId, actualOutcome, judgeModel);
 
@@ -417,7 +417,7 @@ public class TurAgentEvalRunnerService {
         String rubricVerdict = "na";
         String rubricRationale = null;
 
-        for (TurEvalGrader grader : graderRegistry.resolveGraders(evalCase)) {
+        for (TurEvalGrader grader : graderRegistry.resolveStack(set, evalCase)) {
             if (!grader.appliesTo(ctx)) {
                 continue;
             }

@@ -28,6 +28,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
+import com.viglet.turing.persistence.model.agent.TurEvalGraderConfig;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -480,6 +481,13 @@ public class TurAIAgentImportService {
                 for (TurAgentEvalCase c : set.getCases()) {
                     c.setId(null);
                     c.setTurAgentEvalSet(set);
+                }
+            }
+            // T587 — the grader stack travels inline with the set.
+            if (set.getGraderConfigs() != null) {
+                for (TurEvalGraderConfig gc : set.getGraderConfigs()) {
+                    gc.setId(null);
+                    gc.setTurAgentEvalSet(set);
                 }
             }
             evalSetRepository.save(set);

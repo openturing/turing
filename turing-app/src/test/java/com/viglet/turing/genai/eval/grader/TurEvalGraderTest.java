@@ -22,6 +22,8 @@ import com.viglet.turing.genai.eval.grader.builtin.TurRubricJudgeGrader;
 import com.viglet.turing.genai.eval.grader.builtin.TurSlotMatchGrader;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
+import com.viglet.turing.persistence.model.agent.TurEvalGraderConfig;
 
 /**
  * T586 / §XXXIII.1 — unit coverage for the grader SPI: the CODE built-ins
@@ -42,18 +44,69 @@ class TurEvalGraderTest {
         return new TurEvalGradingContext(c, List.of(), List.of(), slots, finalNodeId, actualOutcome, null);
     }
 
-    @Test
-    void registryResolvesLegacyDefaultStackInOrder() {
-        TurEvalGraderRegistry registry = new TurEvalGraderRegistry(
-                List.of(slot, outcome, node, new TurRubricJudgeGrader()));
+    private TurEvalGraderRegistry registry() {
+        return new TurEvalGraderRegistry(List.of(slot, outcome, node, new TurRubricJudgeGrader()));
+    }
 
-        List<TurEvalGrader> stack = registry.resolveGraders(new TurAgentEvalCase());
+    private static TurEvalGraderConfig config(String graderId, int order, String caseId) {
+        TurEvalGraderConfig c = new TurEvalGraderConfig();
+        c.setGraderId(graderId);
+        c.setSortOrder(order);
+        c.setCaseId(caseId);
+        c.setEnabled(1);
+        return c;
+    }
+
+    @Test
+    void registryResolvesLegacyDefaultStackWhenNoConfig() {
+        List<TurEvalGrader> stack = registry().resolveStack(null, new TurAgentEvalCase());
 
         assertThat(stack).extracting(TurEvalGrader::graderId).containsExactly(
                 TurEvalBuiltinGraders.SLOT_MATCH, TurEvalBuiltinGraders.OUTCOME,
                 TurEvalBuiltinGraders.NODE, TurEvalBuiltinGraders.RUBRIC);
-        assertThat(registry.find(TurEvalBuiltinGraders.SLOT_MATCH)).isPresent();
+        assertThat(registry().find(TurEvalBuiltinGraders.SLOT_MATCH)).isPresent();
         assertThat(slot.kind()).isEqualTo(TurEvalGraderKind.CODE);
+    }
+
+    @Test
+    void emptyGraderConfigsFallBackToDefaultStack() {
+        TurAgentEvalSet set = new TurAgentEvalSet();
+        assertThat(registry().resolveStack(set, new TurAgentEvalCase()))
+                .extracting(TurEvalGrader::graderId)
+                .containsExactly(TurEvalBuiltinGraders.SLOT_MATCH, TurEvalBuiltinGraders.OUTCOME,
+                        TurEvalBuiltinGraders.NODE, TurEvalBuiltinGraders.RUBRIC);
+    }
+
+    @Test
+    void setLevelConfigResolvesInSortOrderAndSkipsDisabledAndUnknown() {
+        TurAgentEvalSet set = new TurAgentEvalSet();
+        set.getGraderConfigs().add(config(TurEvalBuiltinGraders.RUBRIC, 10, null));
+        set.getGraderConfigs().add(config(TurEvalBuiltinGraders.SLOT_MATCH, 0, null));
+        TurEvalGraderConfig disabled = config(TurEvalBuiltinGraders.NODE, 5, null);
+        disabled.setEnabled(0);
+        set.getGraderConfigs().add(disabled);
+        set.getGraderConfigs().add(config("does-not-exist-yet", 3, null));
+
+        assertThat(registry().resolveStack(set, new TurAgentEvalCase()))
+                .extracting(TurEvalGrader::graderId)
+                .containsExactly(TurEvalBuiltinGraders.SLOT_MATCH, TurEvalBuiltinGraders.RUBRIC);
+    }
+
+    @Test
+    void perCaseOverrideAddsToSetLevelStackForThatCaseOnly() {
+        TurAgentEvalSet set = new TurAgentEvalSet();
+        set.getGraderConfigs().add(config(TurEvalBuiltinGraders.SLOT_MATCH, 0, null));
+        set.getGraderConfigs().add(config(TurEvalBuiltinGraders.NODE, 0, "case-1"));
+
+        TurAgentEvalCase case1 = new TurAgentEvalCase();
+        case1.setId("case-1");
+        TurAgentEvalCase case2 = new TurAgentEvalCase();
+        case2.setId("case-2");
+
+        assertThat(registry().resolveStack(set, case1)).extracting(TurEvalGrader::graderId)
+                .containsExactly(TurEvalBuiltinGraders.SLOT_MATCH, TurEvalBuiltinGraders.NODE);
+        assertThat(registry().resolveStack(set, case2)).extracting(TurEvalGrader::graderId)
+                .containsExactly(TurEvalBuiltinGraders.SLOT_MATCH);
     }
 
     @Test

@@ -102,6 +102,19 @@ public class TurAgentEvalSet implements Serializable {
     private Set<TurAgentEvalCase> cases = new LinkedHashSet<>();
 
     /**
+     * T587 / §XXXIII.2 — the set's grader stack (which graders score its cases,
+     * their order + config). Same aggregate lifecycle as {@link #cases}: eagerly
+     * loaded and cascade-persisted with the set, so it travels in export/import
+     * and is available to the non-transactional eval runner. An empty stack ⇒
+     * the registry falls back to the legacy default (slot/outcome/node/rubric).
+     */
+    @OneToMany(mappedBy = "turAgentEvalSet", orphanRemoval = true,
+            fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OrderBy("sortOrder ASC")
+    private Set<TurEvalGraderConfig> graderConfigs = new LinkedHashSet<>();
+
+    /**
      * Owning AI agent. Hidden from JSON because the client always knows the
      * agent id from the URL and we don't want to serialise the agent graph
      * on every list response.
