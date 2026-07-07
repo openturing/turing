@@ -424,6 +424,23 @@ class TurSolrTest {
     }
 
     @Test
+    void testSpellCheckTermEscapesColonToAvoidUndefinedField() throws Exception {
+        TurSolr turSolr = buildTurSolr(false);
+        QueryResponse response = mock(QueryResponse.class);
+        when(response.getSpellCheckResponse()).thenReturn(null);
+        ArgumentCaptor<SolrQuery> queryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        when(solrClient.query(org.mockito.ArgumentMatchers.eq("core"), queryCaptor.capture()))
+                .thenReturn(response);
+
+        turSolr.spellCheckTerm(turSolrInstance, "remuneração: Planejamento Empresarial");
+
+        // The colon must be escaped so the /tur_spell lucene parser does not read
+        // "remuneração" as a field name (which fails with "undefined field").
+        assertThat(queryCaptor.getValue().getQuery())
+                .isEqualTo("remuneração\\: Planejamento Empresarial");
+    }
+
+    @Test
     void testIsNotQueryExpressionReturnsTrueForNormalText() {
         assertThat(TurSolr.isNotQueryExpression(new SolrQuery().setQuery("hello world"))).isTrue();
     }

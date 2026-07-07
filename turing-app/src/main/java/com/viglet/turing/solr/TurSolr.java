@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -61,6 +62,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Transactional
 public class TurSolr {
+
+    /**
+     * Lucene query-syntax characters that must be escaped in a spellcheck term.
+     * Whitespace and the double-quote (stripped separately) are intentionally excluded.
+     */
+    private static final Pattern SPELL_CHECK_SPECIAL_CHARS =
+            Pattern.compile("[+\\-!(){}\\[\\]^~*?:\\\\/&|]");
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final boolean isCommitEnabled;
@@ -188,7 +196,7 @@ public class TurSolr {
 
     public TurSESpellCheckResult spellCheckTerm(TurSolrInstance turSolrInstance, String term) {
         return executeSolrQuery(turSolrInstance, new SolrQuery().setParam("qt", TUR_SPELL)
-                .setQuery(term.replace("\"", EMPTY))).map(
+                .setQuery(escapeSpellCheckTerm(term))).map(
                         queryResponse -> Optional.ofNullable(queryResponse.getSpellCheckResponse())
                                 .map(spellCheckResponse -> {
                                     String correctedText = spellCheckResponse.getCollatedResult();
@@ -198,6 +206,21 @@ public class TurSolr {
                                     return new TurSESpellCheckResult();
                                 }).orElse(new TurSESpellCheckResult()))
                 .orElse(new TurSESpellCheckResult());
+    }
+
+    /**
+     * Sanitizes a term before sending it to the {@code /tur_spell} handler. That
+     * handler uses the default {@code lucene} query parser (no {@code defType}), so an
+     * unescaped {@code :} in the term (e.g. {@code "remuneração: Planejamento"}) is
+     * parsed as a {@code field:value} clause and Solr fails with "undefined field".
+     * Quotes are stripped and the remaining Lucene syntax characters are escaped, while
+     * whitespace is preserved so the spellchecker still analyzes each word.
+     */
+    private static String escapeSpellCheckTerm(String term) {
+        if (StringUtils.isEmpty(term)) {
+            return term;
+        }
+        return SPELL_CHECK_SPECIAL_CHARS.matcher(term.replace("\"", EMPTY)).replaceAll("\\\\$0");
     }
 
     public TurSEResult findById(TurSolrInstance turSolrInstance, TurSNSite turSNSite, String id,
