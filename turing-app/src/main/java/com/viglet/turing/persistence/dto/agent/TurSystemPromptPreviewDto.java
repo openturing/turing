@@ -30,6 +30,14 @@ import java.util.List;
  *                       selector.
  * @param selectedFlowId the flow whose addendum is folded into this preview, or
  *                       {@code null} when previewing a no-flow turn.
+ * @param totalTokens    Block AL / T613 — best-effort total {@code chars/4} token
+ *                       estimate across the assembled (non-informational) segments.
+ * @param stableTokens   Block AL / T614 — token estimate of the STABLE
+ *                       (cacheable-prefix) segments; the share a provider prefix
+ *                       cache could reuse across turns.
+ * @param cacheBreakpointIndex Block AL / T614 — segment index at which the
+ *                       PER_TURN tail begins under cache-optimized ordering, or
+ *                       {@code -1} in legacy order (STABLE prefix not contiguous).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -39,5 +47,15 @@ public record TurSystemPromptPreviewDto(
         List<TurSystemPromptToolDto> tools,
         String assembledText,
         List<TurSystemPromptFlowOptionDto> flows,
-        String selectedFlowId) {
+        String selectedFlowId,
+        int totalTokens,
+        int stableTokens,
+        int cacheBreakpointIndex) {
+
+    /** Back-compat convenience for the pre-Block-AL 5-arg call sites. */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId) {
+        this(segments, tools, assembledText, flows, selectedFlowId, 0, 0, -1);
+    }
 }

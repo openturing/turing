@@ -2311,39 +2311,25 @@ injecting test parameters, validate the method + the final prompt, and show the
 truly faithful prompt.* Exactly right — and the scalable form of it is a pipeline,
 not a second call site.
 
-### XXXV.1 `PromptContributor` SPI + single-pass assembler (T613)
+> **T613 (SPI + single-pass assembler) and T614 (stability-classed ordering +
+> cache breakpoint) shipped** — see CHANGELOG Block AL. The `TurPromptContributor`
+> SPI, the single-pass `TurPromptAssemblyPipeline`, the six built-in contributors,
+> the byte-identical legacy join, the preview rendering the same segments, and the
+> opt-in STABLE-first reorder + `cacheBreakpointIndex` are all in. The subsections
+> that specified them were removed per the "no shipped reports in IMPROVEMENTS"
+> rule. What remains below is the unshipped tail (T615).
 
-Each source (persona, agent-base, MCP, flow, skill, memory, RAG, tools) becomes a
-`TurPromptContributor` emitting a `TurPromptSegment {origin, text, stability,
-tokens}`. The assembler runs the ordered contributor list **once**; the runtime
-joins the segments into `List<Message>` and the preview renders the *same*
-segments — so provenance is produced at the source, not reverse-engineered, and
-the reconstruction path is retired. Empty/default pipeline = byte-identical current
-prompt. The assembler becomes a TDD seam: inject contributors, assert the final
-prompt equals what the model receives — a regression-tested invariant, not a hope.
-This subsumes the old "preview through the real assembler" idea at the root, and
-makes T607/T608/T609/T610/T612 views over one true assembly.
+### XXXV.3 Retire the legacy concatenation entirely (T615, 💭)
 
-### XXXV.2 Stability-classed ordering + provider cache breakpoint (T614) ⭐
-
-Confirmed cache-hostile ordering today: the per-turn few-shot block sits *between*
-the stable persona and the stable agent-base/MCP/tools, so provider prefix caching
-(Anthropic `cache_control` / Gemini context cache — T502/T499) can only cache up to
-the persona; the heaviest stable content (agent-base + MCP + tool schemas) is
-re-billed every turn. With segments carrying a `stability` class, the assembler
-orders **STABLE-first** (persona-static, agent-base, MCP, tool schemas)
-contiguously, then **PER_TURN** (few-shot, flow addendum, "already collected", RAG,
-history), and exposes the boundary so the native providers set a prefix cache
-breakpoint there. This is the scalability/cost lever: the heavy stable prefix
-becomes cacheable across every turn of a conversation (order effects re-validated
-per step, gated).
-
-### XXXV.3 Migrate every prompt source to a contributor (T615, 💭)
-
-Move persona/base/MCP/flow/skill/memory (T115)/RAG each behind the SPI, one at a
-time behind a flag, retiring the ad-hoc concatenation in `TurPersonaPromptComposer`
-and the preview reconstruction entirely. End state: adding a new prompt source is
-registering a contributor, not editing a monolith + a parallel rebuild.
+T613 already moved persona/base/MCP/capability/skill/flow behind the SPI — adding a
+new prompt source is now "register a `TurPromptContributor`", not "edit a monolith
++ a parallel rebuild". What is left is deleting the pre-pipeline path that survives
+as the `turing.prompt.assembly.pipeline-enabled=false` escape hatch
+(`TurChatPromptAssembler.buildSystemPromptLegacy` + `TurPersonaPromptComposer.compose`)
+once the pipeline has soaked in production, and moving the two sources still handled
+*outside* the system-message pipeline — chat-memory compression (T115) and the
+history/RAG fan-out into user/assistant messages — behind the SPI too. End state:
+one assembly path, no escape hatch, no parallel rebuild.
 
 **Design invariants for the block:** foundational + incremental + gated —
 contributors are introduced behind the current assembler and migrated one at a

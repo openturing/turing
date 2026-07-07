@@ -33,12 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
+import com.viglet.turing.genai.prompt.TurPromptAssembly;
+import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
+import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
 import com.viglet.turing.genai.skill.activation.TurSkillRunnerService;
 import com.viglet.turing.genai.tool.TurMcpInstructionsProvider;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
-import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.service.chatmemory.TurChatMemoryCompressionService;
 import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 
@@ -75,6 +77,19 @@ public class TurChatPromptAssembler {
     private final TurChatAttachmentService chatAttachmentService;
     private final TurMcpInstructionsProvider mcpInstructionsProvider;
     private final TurSkillRunnerService skillRunnerService;
+    private final TurPromptAssemblyPipeline promptAssemblyPipeline;
+
+    /**
+     * Block AL / T613 — when {@code true} (default) the system prompt is built by
+     * the {@link TurPromptAssemblyPipeline} contributor chain (byte-identical to
+     * the legacy layout, but the single source of truth the Live Preview also
+     * renders). Set {@code turing.prompt.assembly.pipeline-enabled=false} to fall
+     * back to the historical inline {@link TurPersonaPromptComposer} path — the
+     * escape hatch the block's "exact current prompt can be restored" invariant
+     * requires.
+     */
+    @Value("${turing.prompt.assembly.pipeline-enabled:true}")
+    private boolean pipelineEnabled;
 
     /**
      * The rich-content rendering guidance ({@code ```html} live preview /
@@ -177,7 +192,8 @@ public class TurChatPromptAssembler {
             TurChatPipelineObservation chatPipelineObservation,
             TurChatAttachmentService chatAttachmentService,
             TurMcpInstructionsProvider mcpInstructionsProvider,
-            TurSkillRunnerService skillRunnerService) {
+            TurSkillRunnerService skillRunnerService,
+            TurPromptAssemblyPipeline promptAssemblyPipeline) {
         this.chatFlowEngineService = chatFlowEngineService;
         this.personaPromptComposer = personaPromptComposer;
         this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
@@ -186,6 +202,7 @@ public class TurChatPromptAssembler {
         this.chatAttachmentService = chatAttachmentService;
         this.mcpInstructionsProvider = mcpInstructionsProvider;
         this.skillRunnerService = skillRunnerService;
+        this.promptAssemblyPipeline = promptAssemblyPipeline;
     }
 
     /**
@@ -244,6 +261,53 @@ public class TurChatPromptAssembler {
     }
 
     /**
+     * Block AL / T613 — build the system prompt through the single-pass
+     * {@link TurPromptAssemblyPipeline}. The contributor chain produces the same
+     * labeled segments the Live Preview renders, so runtime and preview can never
+     * drift. In the default (legacy) ordering mode the joined text is
+     * byte-identical to {@link #buildSystemPromptLegacy}.
+     */
+    private String buildSystemPromptViaPipeline(TurChatPromptRequest request, String selectedSkillId) {
+        TurAIAgent agent = request.agent();
+        TurPromptAssemblyContext context = new TurPromptAssemblyContext(
+                agent,
+                request.effectivePersona(),
+                agent.getTurEmbeddingModelInstance(),
+                request.lastUserMessage(),
+                request.baseSystemPrompt(),
+                request.flowContext(),
+                selectedSkillId);
+        TurPromptAssembly assembly = promptAssemblyPipeline.assemble(context);
+        return assembly.systemText();
+    }
+
+    /**
+     * Escape-hatch path (pre-Block-AL): the historical inline concatenation —
+     * capability augmentation, then the flow addendum, then the persona wrap via
+     * {@link TurPersonaPromptComposer#compose}. Retained so
+     * {@code turing.prompt.assembly.pipeline-enabled=false} restores the exact
+     * legacy prompt.
+     */
+    private String buildSystemPromptLegacy(TurChatPromptRequest request, String selectedSkillId) {
+        TurAIAgent agent = request.agent();
+        TurAgentChatFlowContext flowContext = request.flowContext();
+        String mcpAugmented = augmentWithCapabilityPrompts(agent, request.baseSystemPrompt(), selectedSkillId);
+        String flowAugmented = flowContext == null
+                ? mcpAugmented
+                : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(
+                        flowContext.flow(), flowContext.state(), flowContext.graph());
+        // Fuse the persona on top of everything: its instruction + style
+        // guidelines + vocabulary constraints + brand-context hint + few-shot
+        // examples wrap the (already RAG-augmented) base prompt. No-op when the
+        // effective persona is null.
+        return personaPromptComposer.compose(
+                request.effectivePersona(),
+                agent.getTurEmbeddingModelInstance(),
+                request.lastUserMessage(),
+                flowAugmented);
+    }
+
+    /**
      * Produce the final {@code List<Message>} for the LLM call. See
      * {@link TurChatPromptRequest} for the meaning of each bundled input.
      */
@@ -282,25 +346,11 @@ public class TurChatPromptAssembler {
         TurAIAgent agent = request.agent();
         List<ChatMessageItem> history = request.history();
         String conversationId = request.conversationId();
-        TurAgentChatFlowContext flowContext = request.flowContext();
-        TurPersona effectivePersona = request.effectivePersona();
         String lastUserMessage = request.lastUserMessage();
-        String baseSystemPrompt = request.baseSystemPrompt();
         long t0 = System.currentTimeMillis();
-        String mcpAugmented = augmentWithCapabilityPrompts(agent, baseSystemPrompt, selectedSkillId);
-        String flowAugmented = flowContext == null
-                ? mcpAugmented
-                : mcpAugmented + chatFlowEngineService.buildSystemPromptAddendum(
-                        flowContext.flow(), flowContext.state(), flowContext.graph());
-        // Fuse the persona on top of everything: its instruction + style
-        // guidelines + vocabulary constraints + brand-context hint +
-        // few-shot examples wrap the (already RAG-augmented) base prompt.
-        // No-op when effectivePersona is null.
-        String resolvedSystemPrompt = personaPromptComposer.compose(
-                effectivePersona,
-                agent.getTurEmbeddingModelInstance(),
-                lastUserMessage,
-                flowAugmented);
+        String resolvedSystemPrompt = pipelineEnabled
+                ? buildSystemPromptViaPipeline(request, selectedSkillId)
+                : buildSystemPromptLegacy(request, selectedSkillId);
         long elapsed = System.currentTimeMillis() - t0;
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_COMPOSE, elapsed);
 
