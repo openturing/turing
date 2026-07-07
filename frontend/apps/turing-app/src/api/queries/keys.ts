@@ -121,6 +121,11 @@ export const queryKeys = {
     report: (agentId: string) => [...queryKeys.agentEval.all(), 'report', agentId] as const,
     available: (agentId: string) => [...queryKeys.agentEval.all(), 'available', agentId] as const,
   },
+  evalStudio: {
+    all: () => ['eval-studio'] as const,
+    datasets: () => [...queryKeys.evalStudio.all(), 'datasets'] as const,
+    graderStacks: () => [...queryKeys.evalStudio.all(), 'grader-stacks'] as const,
+  },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,
     list: () => [...queryKeys.chatFlowRecipes.all(), 'list'] as const,

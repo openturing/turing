@@ -134,4 +134,7 @@ export const ROUTES = {
   BENTO_TENANT_SETTINGS: "/bento/tenant",
   BENTO_TENANT_ADMIN: "/bento/tenant-admin",
   BENTO_USER_ACCOUNT: "/bento/user/account",
+
+  // Block AJ — Eval Studio (T599).
+  BENTO_EVAL: "/bento/eval",
 };

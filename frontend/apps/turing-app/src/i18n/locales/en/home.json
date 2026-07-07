@@ -24,6 +24,10 @@
       }
     },
     "features": {
+      "evalStudio": {
+        "title": "Eval Studio",
+        "description": "Datasets and grader stacks for the evaluation platform, shareable across agents."
+      },
       "languageModel": {
         "title": "Language Model",
         "description": "Configure LLM providers like OpenAI, Ollama, Anthropic, and Gemini for chat and generation."

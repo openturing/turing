@@ -10,8 +10,10 @@ import type {
   TurAgentEvalGateFinding,
   TurAgentEvalGateStatus,
 } from "@/models/agent/agent-eval.model";
-import { IconFlask, IconShieldCheck } from "@tabler/icons-react";
+import { ROUTES } from "@/app/routes.const";
+import { IconExternalLink, IconFlask, IconShieldCheck } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 interface ChatFlowEvalGatePanelProps {
   agentId: string;
@@ -92,6 +94,12 @@ export function ChatFlowEvalGatePanel({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="ghost">
+              <Link to={ROUTES.BENTO_EVAL}>
+                <IconExternalLink className="size-3.5" />
+                {t("evalStudio.open", { defaultValue: "Eval Studio" })}
+              </Link>
+            </Button>
             <Button
               size="sm"
               variant="ghost"

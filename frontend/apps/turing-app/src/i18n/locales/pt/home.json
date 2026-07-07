@@ -24,6 +24,10 @@
       }
     },
     "features": {
+      "evalStudio": {
+        "title": "Eval Studio",
+        "description": "Datasets e pilhas de avaliadores da plataforma de avaliação, compartilháveis entre agentes."
+      },
       "languageModel": {
         "title": "Modelo de Linguagem",
         "description": "Configure provedores de LLM como OpenAI, Ollama, Anthropic e Gemini para chat e geração."

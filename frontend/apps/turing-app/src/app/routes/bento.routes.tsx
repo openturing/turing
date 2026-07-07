@@ -3,6 +3,7 @@ import { Navigate, Route, useParams } from "react-router-dom";
 import { ROUTES } from "../routes.const";
 
 const BentoRootPage = lazy(() => import("../bento/bento.root.page"));
+const BentoEvalPage = lazy(() => import("../bento/eval/bento.eval.page"));
 const BentoHomePage = lazy(() => import("../bento/home/bento.home.page"));
 const BentoAreaPage = lazy(() => import("../bento/area/bento.area.page"));
 const BentoAIAgentListPage = lazy(() => import("../bento/ai-agent/bento.ai-agent.list.page"));
@@ -322,5 +323,7 @@ export const BentoRoutes = (
     </Route>
     <Route path="tenant" element={<BentoTenantSettingsPage />} />
     <Route path="tenant-admin" element={<BentoTenantAdminPage />} />
+    {/* Block AJ (T599) — Eval Studio. */}
+    <Route path="eval" element={<BentoEvalPage />} />
   </Route>
 );
