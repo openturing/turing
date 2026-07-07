@@ -18,10 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor;
@@ -32,6 +29,10 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
+import com.viglet.turing.genai.eval.grader.TurEvalBuiltinGraders;
+import com.viglet.turing.genai.eval.grader.TurEvalGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
+import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto.SlotDiff;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalReportDto;
@@ -100,6 +101,7 @@ public class TurAgentEvalRunnerService {
     private final com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService;
     private final com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService;
     private final com.viglet.turing.properties.TurConfigProperties configProperties;
+    private final com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry;
 
     /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
      *  in-memory prompt swap, so a trial run can never flush to the DB. */
@@ -119,7 +121,8 @@ public class TurAgentEvalRunnerService {
             TurSecretCryptoService secretCryptoService,
             com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService,
             com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService,
-            com.viglet.turing.properties.TurConfigProperties configProperties) {
+            com.viglet.turing.properties.TurConfigProperties configProperties,
+            com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
         this.reportRepository = reportRepository;
@@ -134,6 +137,7 @@ public class TurAgentEvalRunnerService {
         this.batchInferenceService = batchInferenceService;
         this.openAiEvalsService = openAiEvalsService;
         this.configProperties = configProperties;
+        this.graderRegistry = graderRegistry;
     }
 
     // ─────────────────────────── Public API ───────────────────────────
@@ -337,7 +341,7 @@ public class TurAgentEvalRunnerService {
             if (turns.isEmpty()) {
                 return failed(evalCase, "Case has no seed turns");
             }
-            replayTurns(agent, llmInstance, conversationId, turns);
+            List<String> assistantReplies = replayTurns(agent, llmInstance, conversationId, turns);
 
             Map<String, String> capturedSlots =
                     chatFlowEngineService.listSlotsForConversation(conversationId).slots();
@@ -345,7 +349,8 @@ public class TurAgentEvalRunnerService {
             String finalNodeId = state.currentNodeId();
             String actualOutcome = resolveOutcome(conversationId, state);
 
-            return scoreCase(evalCase, judgeModel, turns, capturedSlots, finalNodeId, actualOutcome);
+            return scoreCase(evalCase, judgeModel, turns, assistantReplies, capturedSlots,
+                    finalNodeId, actualOutcome);
         } catch (RuntimeException e) {
             log.warn("[AgentEval] case '{}' replay failed: {}", evalCase.getName(), e.getMessage());
             return failed(evalCase, e.getMessage());
@@ -354,14 +359,18 @@ public class TurAgentEvalRunnerService {
         }
     }
 
-    private void replayTurns(TurAIAgent agent, TurLLMInstance llmInstance,
+    /** Replays the scripted turns and returns the assistant reply for each. */
+    private List<String> replayTurns(TurAIAgent agent, TurLLMInstance llmInstance,
             String conversationId, List<String> turns) {
         List<ChatMessageItem> history = new ArrayList<>();
+        List<String> assistantReplies = new ArrayList<>();
         for (String turn : turns) {
             history.add(new ChatMessageItem("user", turn));
             String assistant = blockForAssistantReply(agent, llmInstance, history, conversationId);
             history.add(new ChatMessageItem("assistant", assistant));
+            assistantReplies.add(assistant);
         }
+        return assistantReplies;
     }
 
     private String blockForAssistantReply(TurAIAgent agent, TurLLMInstance llmInstance,
@@ -385,93 +394,59 @@ public class TurAgentEvalRunnerService {
         return sb.toString();
     }
 
-    // ─────────────────────────── Scoring ───────────────────────────
+    // ─────────────────────────── Scoring (grader stack) ───────────────────────────
 
     /**
-     * Compares each expected slot against {@code capturedSlots} (normalized),
-     * appending a {@link SlotDiff} per slot. Returns the number that matched.
+     * Scores one replayed case by running the resolved grader stack (T586).
+     * With no grader config this is the legacy default stack (slot / outcome /
+     * node / rubric), so the per-case score, pass flag and DTO projection are
+     * byte-identical to the pre-SPI inline scoring. The well-known built-ins
+     * still project into the legacy DTO fields (slot diffs, rubric verdict /
+     * rationale); a generic per-grader breakdown arrives with the Eval Studio
+     * (T599).
      */
-    private int countMatchedSlots(Map<String, String> expectedSlots,
-            Map<String, String> capturedSlots, List<SlotDiff> slotDiffs) {
-        int matched = 0;
-        for (Map.Entry<String, String> e : expectedSlots.entrySet()) {
-            String actual = capturedSlots.get(e.getKey());
-            boolean match = normalize(actual).equals(normalize(e.getValue()));
-            if (match) {
-                matched++;
-            }
-            slotDiffs.add(new SlotDiff(e.getKey(), e.getValue(), actual, match));
-        }
-        return matched;
-    }
-
     private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalCase evalCase, ChatModel judgeModel,
-            List<String> turns, Map<String, String> capturedSlots,
+            List<String> turns, List<String> assistantReplies, Map<String, String> capturedSlots,
             String finalNodeId, String actualOutcome) {
+        TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, turns, assistantReplies,
+                capturedSlots, finalNodeId, actualOutcome, judgeModel);
+
         List<Double> dimensionScores = new ArrayList<>();
         boolean allMatched = true;
-
-        // Slots dimension.
-        Map<String, String> expectedSlots = parseSlots(evalCase.getExpectedSlotsJson());
         List<SlotDiff> slotDiffs = new ArrayList<>();
-        if (!expectedSlots.isEmpty()) {
-            int matched = countMatchedSlots(expectedSlots, capturedSlots, slotDiffs);
-            double slotScore = (double) matched / expectedSlots.size();
-            dimensionScores.add(slotScore);
-            allMatched &= matched == expectedSlots.size();
-        }
-
-        // Outcome dimension.
-        TurAgentEvalExpectedOutcome expectedOutcome = evalCase.getExpectedOutcome();
-        if (expectedOutcome != null && expectedOutcome != TurAgentEvalExpectedOutcome.ANY) {
-            boolean match = expectedOutcome.name().equals(actualOutcome);
-            dimensionScores.add(match ? 1d : 0d);
-            allMatched &= match;
-        }
-
-        // Node dimension.
-        if (evalCase.getExpectedNodeId() != null && !evalCase.getExpectedNodeId().isBlank()) {
-            boolean match = evalCase.getExpectedNodeId().equals(finalNodeId);
-            dimensionScores.add(match ? 1d : 0d);
-            allMatched &= match;
-        }
-
-        // Rubric dimension (LLM judge).
         String rubricVerdict = "na";
         String rubricRationale = null;
-        if (evalCase.getRubric() != null && !evalCase.getRubric().isBlank()) {
-            JudgeVerdict verdict = judge(judgeModel, evalCase.getRubric(), turns);
-            rubricVerdict = verdict.pass() ? "pass" : "fail";
-            rubricRationale = verdict.rationale();
-            dimensionScores.add(verdict.score());
-            allMatched &= verdict.pass();
+
+        for (TurEvalGrader grader : graderRegistry.resolveGraders(evalCase)) {
+            if (!grader.appliesTo(ctx)) {
+                continue;
+            }
+            TurEvalGraderResult result = grader.grade(ctx);
+            if (result.deferred()) {
+                // No HUMAN grader in the default stack yet; deferral lands in T592.
+                continue;
+            }
+            dimensionScores.add(result.score());
+            allMatched &= result.passed();
+            switch (grader.graderId()) {
+                case TurEvalBuiltinGraders.SLOT_MATCH -> result.details().forEach(d ->
+                        slotDiffs.add(new SlotDiff(d.key(), d.expected(), d.actual(), d.match())));
+                case TurEvalBuiltinGraders.RUBRIC -> {
+                    rubricVerdict = result.verdict();
+                    rubricRationale = result.rationale();
+                }
+                default -> {
+                    // Other graders carry no legacy DTO projection yet.
+                }
+            }
         }
 
         double score = dimensionScores.isEmpty() ? 1d
                 : dimensionScores.stream().mapToDouble(Double::doubleValue).average().orElse(0d);
-        boolean passed = allMatched;
-        return new TurAgentEvalCaseResultDto(evalCase.getId(), evalCase.getName(), passed, score,
+        TurAgentEvalExpectedOutcome expectedOutcome = evalCase.getExpectedOutcome();
+        return new TurAgentEvalCaseResultDto(evalCase.getId(), evalCase.getName(), allMatched, score,
                 expectedOutcome == null ? null : expectedOutcome.name(), actualOutcome,
                 finalNodeId, slotDiffs, rubricVerdict, rubricRationale, null);
-    }
-
-    // ─────────────────────────── LLM judge ───────────────────────────
-
-    private record JudgeVerdict(boolean pass, double score, String rationale) {
-    }
-
-    private JudgeVerdict judge(ChatModel judgeModel, String rubric, List<String> turns) {
-        try {
-            Prompt prompt = new Prompt(List.of(
-                    new SystemMessage(TurEvalJudgePrompt.SYSTEM),
-                    new UserMessage(TurEvalJudgePrompt.buildUser(rubric, turns))));
-            String reply = judgeModel.call(prompt).getResult().getOutput().getText();
-            TurEvalJudgePrompt.Verdict verdict = TurEvalJudgePrompt.parse(reply);
-            return new JudgeVerdict(verdict.pass(), verdict.score(), verdict.rationale());
-        } catch (RuntimeException e) {
-            log.warn("[AgentEval] judge failed: {}", e.getMessage());
-            return new JudgeVerdict(false, 0d, "judge error: " + e.getMessage());
-        }
     }
 
     // ─────────────────────────── Outcome resolution ───────────────────────────
@@ -619,10 +594,6 @@ public class TurAgentEvalRunnerService {
                 null, null, List.of(), "na", null, error);
     }
 
-    private static String normalize(String s) {
-        return s == null ? "" : s.trim();
-    }
-
     private static List<String> parseTurns(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
@@ -633,19 +604,6 @@ public class TurAgentEvalRunnerService {
         } catch (RuntimeException e) {
             log.warn("[AgentEval] bad seedTurnsJson: {}", e.getMessage());
             return List.of();
-        }
-    }
-
-    private static Map<String, String> parseSlots(String json) {
-        if (json == null || json.isBlank()) {
-            return Map.of();
-        }
-        try {
-            Map<String, String> slots = OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
-            return slots == null ? Map.of() : slots;
-        } catch (RuntimeException e) {
-            log.warn("[AgentEval] bad expectedSlotsJson: {}", e.getMessage());
-            return Map.of();
         }
     }
 

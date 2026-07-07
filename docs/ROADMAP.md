@@ -232,7 +232,7 @@ fully shipped.**
 > stay green). Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXIII.
 
 **Phase 0 — grader SPI (refactor, zero behavior change):**
-- 📋 **T586** (deps: —) **Grader SPI + registry** — `TurEvalGrader` interface + `TurEvalGraderKind {MODEL, CODE, HUMAN}` + `TurEvalGradingContext` (case + replayed turns + captured slots + final node + outcome + assistant transcript + dataset row) + `TurEvalGraderResult` (score 0-1, passed, verdict, rationale, `deferred`). Refactor `TurAgentEvalRunnerService.scoreCase` to iterate a **resolved grader list**; wrap the four current dimensions as built-in graders (SlotMatch/Outcome/Node = CODE, Rubric = MODEL). Empty config ⇒ the legacy default stack, so every existing report/gate/IT is byte-identical. → §XXXIII.1
+- ✅ **T586** (deps: —) **Grader SPI + registry** — `TurEvalGrader` interface + `TurEvalGraderKind {MODEL, CODE, HUMAN}` + `TurEvalGradingContext` + `TurEvalGraderResult` (score/passed/verdict/rationale/`deferred`) + `TurEvalGraderRegistry`. `TurAgentEvalRunnerService.scoreCase` now iterates the resolved grader stack; the four dimensions became built-in graders (SlotMatch/Outcome/Node = CODE, Rubric = MODEL). Empty config ⇒ legacy default stack, byte-identical. → CHANGELOG
 - 📋 **T587** (deps: T586) **Grader config persistence** — `TurEvalGraderConfig` (kind, graderId, name, `configJson`, weight, threshold, `blocking`, enabled) attached per `TurAgentEvalSet` + optional per-case override; Liquibase; exported/imported inline with the agent (extend `TurAIAgentExchange.evalSets`). → §XXXIII.2
 
 **Phase 1 — CODE graders (deterministic, CI-safe, no LLM):**
