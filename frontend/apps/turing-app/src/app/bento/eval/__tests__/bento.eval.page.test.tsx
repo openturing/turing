@@ -8,6 +8,9 @@ const useEvalGraderStacks = vi.fn();
 const useEvalReviewInbox = vi.fn();
 const useSubmitReview = vi.fn();
 const usePromoteReview = vi.fn();
+const useEvalAgreement = vi.fn();
+const useEvalCalibration = vi.fn();
+const useSampleAudit = vi.fn();
 const useAiAgents = vi.fn();
 
 vi.mock("@/api/queries/eval-studio.queries", () => ({
@@ -16,6 +19,9 @@ vi.mock("@/api/queries/eval-studio.queries", () => ({
   useEvalReviewInbox: (agentId?: string) => useEvalReviewInbox(agentId),
   useSubmitReview: (agentId?: string) => useSubmitReview(agentId),
   usePromoteReview: (agentId?: string) => usePromoteReview(agentId),
+  useEvalAgreement: (agentId?: string) => useEvalAgreement(agentId),
+  useEvalCalibration: (agentId?: string) => useEvalCalibration(agentId),
+  useSampleAudit: (agentId?: string) => useSampleAudit(agentId),
 }));
 
 vi.mock("@/api/queries/ai-agent.queries", () => ({
@@ -49,6 +55,27 @@ describe("BentoEvalPage", () => {
     useEvalReviewInbox.mockReturnValue({ data: [], isError: false });
     useSubmitReview.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
     usePromoteReview.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
+    useEvalAgreement.mockReturnValue({
+      data: { items: 0, minRaters: 0, maxRaters: 0, kappa: null, interpretation: "n/a" },
+    });
+    useEvalCalibration.mockReturnValue({
+      data: {
+        audited: 0,
+        kappa: null,
+        interpretation: "n/a",
+        modelPassHumanPass: 0,
+        modelPassHumanFail: 0,
+        modelFailHumanPass: 0,
+        modelFailHumanFail: 0,
+        suggestion: "",
+      },
+    });
+    useSampleAudit.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+    });
   });
 
   it("renders the Eval Studio hero and the datasets tab by default", () => {
@@ -85,5 +112,31 @@ describe("BentoEvalPage", () => {
     fireEvent.click(screen.getByText("Review inbox"));
     fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
     expect(screen.getByText("greeting")).toBeInTheDocument();
+  });
+
+  it("shows the calibration panel with kappa metrics once an agent is selected", () => {
+    useEvalAgreement.mockReturnValue({
+      data: { items: 3, minRaters: 2, maxRaters: 3, kappa: 0.72, interpretation: "substantial" },
+    });
+    useEvalCalibration.mockReturnValue({
+      data: {
+        audited: 5,
+        agreementRate: 0.8,
+        kappa: 0.55,
+        interpretation: "moderate",
+        modelPassHumanPass: 3,
+        modelPassHumanFail: 1,
+        modelFailHumanPass: 0,
+        modelFailHumanFail: 1,
+        suggestion: "The judge over-passes: 1 case(s) it passed were failed by reviewers.",
+      },
+    });
+    renderPage();
+    fireEvent.click(screen.getByText("Review inbox"));
+    fireEvent.change(screen.getByLabelText("Agent"), { target: { value: "a1" } });
+    expect(screen.getByText("Calibration & agreement")).toBeInTheDocument();
+    expect(screen.getByText("κ 0.72")).toBeInTheDocument();
+    expect(screen.getByText("κ 0.55")).toBeInTheDocument();
+    expect(screen.getByText(/over-passes/)).toBeInTheDocument();
   });
 });

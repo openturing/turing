@@ -49,6 +49,13 @@ public class TurEvalReviewTask implements Serializable {
     /** {@code status} value for a task a reviewer has decided. */
     public static final String REVIEWED = "REVIEWED";
 
+    /** {@code taskType} — a case deferred by the HUMAN grader (T592). */
+    public static final String TYPE_DEFERRED = "DEFERRED";
+    /** {@code taskType} — a MODEL-graded case sampled for a calibration audit (T594). */
+    public static final String TYPE_AUDIT = "AUDIT";
+    /** Synthetic {@code graderId} carried by an audit task. */
+    public static final String AUDIT_GRADER = "model-audit";
+
     @Id
     @VigletAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
@@ -88,7 +95,28 @@ public class TurEvalReviewTask implements Serializable {
     @Column(name = "createdAt", nullable = false)
     private LocalDateTime createdAt;
 
-    // ── reviewer verdict (populated by the T593 inbox) ──
+    // ── T594 calibration & inter-annotator agreement ──
+
+    /** {@code DEFERRED} (HUMAN grader) or {@code AUDIT} (sampled MODEL-graded case). */
+    @Column(name = "taskType", nullable = false, length = 16)
+    private String taskType = TYPE_DEFERRED;
+
+    /**
+     * How many independent reviewers must decide before the consensus is
+     * computed and merged. Default 1 = the legacy single-reviewer behaviour.
+     */
+    @Column(name = "requiredReviewers", nullable = false)
+    private int requiredReviewers = 1;
+
+    /** For an AUDIT task: the model grader's original pass/fail (null otherwise). */
+    @Column(name = "modelPass")
+    private Boolean modelPass;
+
+    /** For an AUDIT task: the model grader's original score (null otherwise). */
+    @Column(name = "modelScore")
+    private Double modelScore;
+
+    // ── reviewer verdict (consensus; individual verdicts live in TurEvalReviewVerdict) ──
 
     /** Reviewer pass/fail (null until reviewed). */
     @Column(name = "reviewedPass")

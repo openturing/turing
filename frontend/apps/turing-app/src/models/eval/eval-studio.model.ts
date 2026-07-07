@@ -49,10 +49,22 @@ export interface TurEvalGraderStack {
   configs: TurEvalGraderConfigEntry[];
 }
 
+/** T594 — one reviewer's individual verdict on a review task. */
+export interface TurEvalReviewVerdict {
+  id: string;
+  reviewer?: string | null;
+  pass: boolean;
+  score: number;
+  notes?: string | null;
+  reviewedAt?: string | null;
+}
+
 /**
  * T593 / §XXXIII.8 — a parked human-review task: the reviewer reads the
  * replayed transcript + expected summary, submits a verdict, and can promote
- * the row into a golden dataset.
+ * the row into a golden dataset. T594 adds the calibration fields: the task
+ * type (DEFERRED vs AUDIT), N-reviewer progress, the model's original verdict
+ * (AUDIT tasks), and the individual verdicts (detail view).
  */
 export interface TurEvalReviewTask {
   id: string;
@@ -69,6 +81,12 @@ export interface TurEvalReviewTask {
   reviewerNotes?: string | null;
   reviewedBy?: string | null;
   reviewedAt?: string | null;
+  taskType?: string | null;
+  requiredReviewers?: number;
+  verdictCount?: number;
+  modelPass?: boolean | null;
+  modelScore?: number | null;
+  verdicts?: TurEvalReviewVerdict[] | null;
 }
 
 /** A reviewer's verdict on a human-review task. */
@@ -76,4 +94,33 @@ export interface TurEvalReviewRequest {
   pass: boolean;
   score?: number | null;
   notes?: string | null;
+}
+
+/**
+ * T594 — inter-annotator agreement (Fleiss' kappa) over an agent's
+ * multi-reviewer tasks.
+ */
+export interface TurEvalAgreement {
+  items: number;
+  minRaters: number;
+  maxRaters: number;
+  percentAgreement?: number | null;
+  kappa?: number | null;
+  interpretation: string;
+}
+
+/**
+ * T594 — MODEL-vs-human calibration over reviewed audit tasks (Cohen's kappa +
+ * a plain-language judge-prompt tuning hint).
+ */
+export interface TurEvalCalibration {
+  audited: number;
+  agreementRate?: number | null;
+  kappa?: number | null;
+  interpretation: string;
+  modelPassHumanPass: number;
+  modelPassHumanFail: number;
+  modelFailHumanPass: number;
+  modelFailHumanFail: number;
+  suggestion: string;
 }

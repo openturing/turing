@@ -10,13 +10,17 @@
 package com.viglet.turing.persistence.dto.agent;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.viglet.turing.persistence.model.agent.TurEvalReviewTask;
 
 /**
  * T593 / §XXXIII.8 — API view of a {@link TurEvalReviewTask} for the review
  * inbox: the reviewer reads the transcript + expected summary and submits a
- * verdict.
+ * verdict. T594 adds the calibration/agreement fields: the task type
+ * (DEFERRED vs AUDIT), how many reviewers are required, how many have decided so
+ * far, the model's original verdict (for AUDIT tasks), and the individual
+ * verdicts (detail view only).
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -35,12 +39,36 @@ public record TurEvalReviewTaskDto(
         Double reviewedScore,
         String reviewerNotes,
         String reviewedBy,
-        LocalDateTime reviewedAt) {
+        LocalDateTime reviewedAt,
+        String taskType,
+        int requiredReviewers,
+        int verdictCount,
+        Boolean modelPass,
+        Double modelScore,
+        List<TurEvalReviewVerdictDto> verdicts) {
 
-    public static TurEvalReviewTaskDto fromEntity(TurEvalReviewTask t) {
+    /** List view: no individual verdicts loaded, {@code verdictCount} supplied. */
+    public static TurEvalReviewTaskDto fromEntity(TurEvalReviewTask t, int verdictCount) {
         return new TurEvalReviewTaskDto(t.getId(), t.getAgentId(), t.getCaseId(), t.getCaseName(),
                 t.getGraderId(), t.getTranscript(), t.getExpectedSummary(), t.getStatus(),
                 t.getCreatedAt(), t.getReviewedPass(), t.getReviewedScore(), t.getReviewerNotes(),
-                t.getReviewedBy(), t.getReviewedAt());
+                t.getReviewedBy(), t.getReviewedAt(), t.getTaskType(), t.getRequiredReviewers(),
+                verdictCount, t.getModelPass(), t.getModelScore(), null);
+    }
+
+    /** Detail view with the individual verdicts attached. */
+    public static TurEvalReviewTaskDto fromEntity(TurEvalReviewTask t,
+            List<TurEvalReviewVerdictDto> verdicts) {
+        int count = verdicts == null ? 0 : verdicts.size();
+        return new TurEvalReviewTaskDto(t.getId(), t.getAgentId(), t.getCaseId(), t.getCaseName(),
+                t.getGraderId(), t.getTranscript(), t.getExpectedSummary(), t.getStatus(),
+                t.getCreatedAt(), t.getReviewedPass(), t.getReviewedScore(), t.getReviewerNotes(),
+                t.getReviewedBy(), t.getReviewedAt(), t.getTaskType(), t.getRequiredReviewers(),
+                count, t.getModelPass(), t.getModelScore(), verdicts);
+    }
+
+    /** Back-compat single-arg factory (verdict count unknown). */
+    public static TurEvalReviewTaskDto fromEntity(TurEvalReviewTask t) {
+        return fromEntity(t, 0);
     }
 }

@@ -33,4 +33,11 @@ public interface TurEvalReviewTaskRepository extends JpaRepository<TurEvalReview
             @Param("graderId") String graderId, @Param("status") String status);
 
     long countByAgentIdAndStatus(@Param("agentId") String agentId, @Param("status") String status);
+
+    /** T594 — all review tasks for an agent (any status), newest first. */
+    List<TurEvalReviewTask> findByAgentIdOrderByCreatedAtDesc(@Param("agentId") String agentId);
+
+    /** T594 — tasks of a given type in a given status (e.g. reviewed AUDIT tasks for calibration). */
+    List<TurEvalReviewTask> findByAgentIdAndTaskTypeAndStatus(@Param("agentId") String agentId,
+            @Param("taskType") String taskType, @Param("status") String status);
 }

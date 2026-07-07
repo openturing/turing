@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.genai.eval.TurEvalReviewTaskService;
+import com.viglet.turing.persistence.dto.agent.TurEvalAgreementDto;
+import com.viglet.turing.persistence.dto.agent.TurEvalCalibrationDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewRequest;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewTaskDto;
@@ -32,8 +34,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 /**
  * T593 / §XXXIII.8 — the human-review inbox: list the open review tasks an
  * agent's HUMAN grader (T592) parked, open one to read its transcript, and
- * submit a verdict that merges back into the latest report. Role-gated like the
- * rest of the Agent-CI surface.
+ * submit a verdict that merges back into the latest report. T594 adds the
+ * calibration surface: N-reviewer agreement (Fleiss' kappa), sampling a
+ * MODEL-graded run into audit tasks, and the MODEL-vs-human calibration report.
+ * Role-gated like the rest of the Agent-CI surface.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -78,5 +82,38 @@ public class TurAgentEvalReviewAPI {
     public TurEvalDatasetDto promote(@PathVariable String agentId, @PathVariable String taskId,
             @RequestParam("datasetId") String datasetId) {
         return reviewTaskService.promoteToDataset(taskId, datasetId);
+    }
+
+    // ─────────────────────────── T594 calibration & agreement ───────────────────────────
+
+    @Operation(summary = "Set how many reviewers a still-open task needs before consensus (T594)")
+    @PostMapping("/{taskId}/reviewers")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public TurEvalReviewTaskDto setReviewers(@PathVariable String agentId,
+            @PathVariable String taskId, @RequestParam("count") int count) {
+        return reviewTaskService.setRequiredReviewers(taskId, count);
+    }
+
+    @Operation(summary = "Sample MODEL-graded cases from the latest run into audit tasks (T594)")
+    @PostMapping("/audit")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public List<TurEvalReviewTaskDto> audit(@PathVariable String agentId,
+            @RequestParam(name = "sampleSize", defaultValue = "10") int sampleSize,
+            @RequestParam(name = "requiredReviewers", defaultValue = "1") int requiredReviewers) {
+        return reviewTaskService.sampleModelGradedAudit(agentId, sampleSize, requiredReviewers);
+    }
+
+    @Operation(summary = "Inter-annotator agreement (Fleiss' kappa) over multi-reviewer tasks (T594)")
+    @GetMapping("/agreement")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurEvalAgreementDto agreement(@PathVariable String agentId) {
+        return reviewTaskService.agreement(agentId);
+    }
+
+    @Operation(summary = "MODEL-vs-human calibration (Cohen's kappa) over reviewed audit tasks (T594)")
+    @GetMapping("/calibration")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurEvalCalibrationDto calibration(@PathVariable String agentId) {
+        return reviewTaskService.calibration(agentId);
     }
 }

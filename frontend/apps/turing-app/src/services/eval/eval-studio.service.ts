@@ -1,5 +1,7 @@
 import axios from "axios";
 import type {
+  TurEvalAgreement,
+  TurEvalCalibration,
   TurEvalDataset,
   TurEvalGraderStack,
   TurEvalReviewRequest,
@@ -65,6 +67,52 @@ export class TurEvalStudioService {
       `/ai-agent/${agentId}/eval/review/${taskId}/promote`,
       null,
       { params: { datasetId } },
+    );
+    return response.data;
+  }
+
+  // ─────────────────────────── T594 calibration & agreement ───────────────────────────
+
+  /** Inter-annotator agreement (Fleiss' kappa) over the agent's multi-reviewer tasks. */
+  async getAgreement(agentId: string): Promise<TurEvalAgreement> {
+    const response = await axios.get<TurEvalAgreement>(
+      `/ai-agent/${agentId}/eval/review/agreement`,
+    );
+    return response.data;
+  }
+
+  /** MODEL-vs-human calibration over the agent's reviewed audit tasks. */
+  async getCalibration(agentId: string): Promise<TurEvalCalibration> {
+    const response = await axios.get<TurEvalCalibration>(
+      `/ai-agent/${agentId}/eval/review/calibration`,
+    );
+    return response.data;
+  }
+
+  /** Sample MODEL-graded cases from the latest run into audit tasks. */
+  async sampleAudit(
+    agentId: string,
+    sampleSize: number,
+    requiredReviewers: number,
+  ): Promise<TurEvalReviewTask[]> {
+    const response = await axios.post<TurEvalReviewTask[]>(
+      `/ai-agent/${agentId}/eval/review/audit`,
+      null,
+      { params: { sampleSize, requiredReviewers } },
+    );
+    return response.data;
+  }
+
+  /** Set how many reviewers a still-open task needs before consensus. */
+  async setRequiredReviewers(
+    agentId: string,
+    taskId: string,
+    count: number,
+  ): Promise<TurEvalReviewTask> {
+    const response = await axios.post<TurEvalReviewTask>(
+      `/ai-agent/${agentId}/eval/review/${taskId}/reviewers`,
+      null,
+      { params: { count } },
     );
     return response.data;
   }

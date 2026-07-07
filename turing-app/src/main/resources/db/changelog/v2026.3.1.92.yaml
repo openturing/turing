@@ -1,0 +1,145 @@
+databaseChangeLog:
+  # T594 / §XXXIII.9 (Block AJ) — calibration & inter-annotator agreement.
+  #
+  #   tur_eval_review_verdict — one reviewer's verdict on a review task; a task
+  #   with requiredReviewers > 1 collects several before its consensus is merged,
+  #   and the set feeds the Fleiss' kappa agreement metric.
+  #
+  #   tur_eval_review_task new columns:
+  #     taskType          — DEFERRED (HUMAN grader) | AUDIT (sampled MODEL case)
+  #     requiredReviewers — how many reviewers before consensus (default 1 = legacy)
+  #     modelPass/modelScore — the model grader's original verdict on an AUDIT task
+  #
+  # Column names match the JPA field names (camelCase); longtext for big text;
+  # reviewTaskId FK ON DELETE CASCADE cleans up with the task. Idempotent.
+
+  - changeSet:
+      id: v2026.3.1.92-create-tur_eval_review_verdict
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_review_verdict
+      changes:
+        - createTable:
+            tableName: tur_eval_review_verdict
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: reviewTaskId
+                  type: varchar(36)
+              - column:
+                  name: reviewer
+                  type: varchar(200)
+              - column:
+                  name: reviewedPass
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reviewedScore
+                  type: double
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: longtext
+              - column:
+                  name: reviewedAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: tur_eval_review_verdict
+            indexName: ix_eval_review_verdict_task
+            columns:
+              - column:
+                  name: reviewTaskId
+
+  - changeSet:
+      id: v2026.3.1.92-fk-eval_review_verdict-task
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_eval_review_verdict_task
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_eval_review_verdict
+            baseColumnNames: reviewTaskId
+            referencedTableName: tur_eval_review_task
+            referencedColumnNames: id
+            constraintName: fk_eval_review_verdict_task
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.92-add-tur_eval_review_task-taskType
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_eval_review_task
+                columnName: taskType
+      changes:
+        - addColumn:
+            tableName: tur_eval_review_task
+            columns:
+              - column:
+                  name: taskType
+                  type: varchar(16)
+                  defaultValue: DEFERRED
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.92-add-tur_eval_review_task-requiredReviewers
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_eval_review_task
+                columnName: requiredReviewers
+      changes:
+        - addColumn:
+            tableName: tur_eval_review_task
+            columns:
+              - column:
+                  name: requiredReviewers
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.3.1.92-add-tur_eval_review_task-modelPass
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_eval_review_task
+                columnName: modelPass
+      changes:
+        - addColumn:
+            tableName: tur_eval_review_task
+            columns:
+              - column:
+                  name: modelPass
+                  type: boolean
+              - column:
+                  name: modelScore
+                  type: double

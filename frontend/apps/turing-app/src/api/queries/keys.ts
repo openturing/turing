@@ -128,6 +128,11 @@ export const queryKeys = {
     // T593 — per-agent human-review inbox.
     reviewInbox: (agentId: string) =>
       [...queryKeys.evalStudio.all(), 'review-inbox', agentId] as const,
+    // T594 — per-agent inter-annotator agreement + MODEL-vs-human calibration.
+    agreement: (agentId: string) =>
+      [...queryKeys.evalStudio.all(), 'agreement', agentId] as const,
+    calibration: (agentId: string) =>
+      [...queryKeys.evalStudio.all(), 'calibration', agentId] as const,
   },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,
