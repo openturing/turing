@@ -90,6 +90,14 @@ public class TurAgentEvalSet implements Serializable {
     private String datasetId;
 
     /**
+     * T600 — optional bound reusable {@link TurEvalGraderStack}. When set, the
+     * runner uses the stack's grader configs instead of this set's own {@link
+     * #graderConfigs}. Null = the set's own configs (or the legacy default stack).
+     */
+    @Column(name = "graderStackId", length = 36)
+    private String graderStackId;
+
+    /**
      * When 1, a red gate result hard-blocks the flow editor's publish; when
      * 0, the editor only surfaces a warning. Default 0 (warn) so adding a
      * golden set never breaks an author's existing publish flow until they

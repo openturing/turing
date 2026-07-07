@@ -37,13 +37,16 @@ import com.viglet.turing.persistence.model.agent.TurEvalGraderConfig;
 public class TurEvalGraderRegistry {
 
     private final Map<String, TurEvalGrader> byId;
+    private final com.viglet.turing.persistence.repository.agent.TurEvalGraderStackRepository stackRepository;
 
-    public TurEvalGraderRegistry(List<TurEvalGrader> graders) {
+    public TurEvalGraderRegistry(List<TurEvalGrader> graders,
+            com.viglet.turing.persistence.repository.agent.TurEvalGraderStackRepository stackRepository) {
         Map<String, TurEvalGrader> map = new LinkedHashMap<>();
         for (TurEvalGrader grader : graders) {
             map.put(grader.graderId(), grader);
         }
         this.byId = Map.copyOf(map);
+        this.stackRepository = stackRepository;
     }
 
     /** Looks up a grader by its stable id. */
@@ -69,14 +72,40 @@ public class TurEvalGraderRegistry {
      * classpath). An empty resolution falls back to the default stack.
      */
     public List<TurEvalResolvedGrader> resolveStack(TurAgentEvalSet set, TurAgentEvalCase evalCase) {
-        if (set == null || set.getGraderConfigs() == null) {
+        if (set == null) {
             return defaultStack();
         }
-        List<TurEvalGraderConfig> enabled = set.getGraderConfigs().stream()
+        // T600 — a bound reusable stack overrides the set's own configs.
+        String stackId = set.getGraderStackId();
+        if (stackId != null && !stackId.isBlank() && stackRepository != null) {
+            List<TurEvalResolvedGrader> fromStack = stackRepository.findById(stackId)
+                    .map(s -> resolveFromConfigs(s.getConfigs(), evalCase))
+                    .orElse(List.of());
+            if (!fromStack.isEmpty()) {
+                return fromStack;
+            }
+        }
+        List<TurEvalResolvedGrader> fromSet =
+                resolveFromConfigs(set.getGraderConfigs(), evalCase);
+        return fromSet.isEmpty() ? defaultStack() : fromSet;
+    }
+
+    /**
+     * Maps an ordered, enabled config collection to resolved graders: set-level
+     * rows (null/blank {@code caseId}) in {@code sortOrder}, then per-case
+     * override rows (matching {@code evalCase}) replace/append by {@code graderId}.
+     * Unknown grader ids are skipped. Returns empty when no config resolves.
+     */
+    private List<TurEvalResolvedGrader> resolveFromConfigs(
+            java.util.Collection<TurEvalGraderConfig> configs, TurAgentEvalCase evalCase) {
+        if (configs == null) {
+            return List.of();
+        }
+        List<TurEvalGraderConfig> enabled = configs.stream()
                 .filter(c -> c.getEnabled() == 1)
                 .toList();
         if (enabled.isEmpty()) {
-            return defaultStack();
+            return List.of();
         }
         Map<String, TurEvalGraderConfig> effective = new LinkedHashMap<>();
         enabled.stream()
@@ -95,7 +124,7 @@ public class TurEvalGraderRegistry {
             find(cfg.getGraderId()).ifPresent(g ->
                     stack.add(new TurEvalResolvedGrader(g, TurEvalGraderConfigView.fromEntity(cfg))));
         }
-        return stack.isEmpty() ? defaultStack() : stack;
+        return stack;
     }
 
     /** The legacy default stack (any built-in not wired is skipped defensively). */

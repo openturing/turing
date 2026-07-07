@@ -79,7 +79,8 @@ class TurEvalGraderTest {
     // ─────────────────── registry resolution ───────────────────
 
     private TurEvalGraderRegistry registry() {
-        return new TurEvalGraderRegistry(List.of(slot, outcome, node, new TurRubricJudgeGrader()));
+        // Stack repo null: these fixtures never bind a reusable stack (T600).
+        return new TurEvalGraderRegistry(List.of(slot, outcome, node, new TurRubricJudgeGrader()), null);
     }
 
     @Test

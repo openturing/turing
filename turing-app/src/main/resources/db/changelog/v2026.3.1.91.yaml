@@ -1,0 +1,91 @@
+databaseChangeLog:
+  # T600 / §XXXIII.15 (Block AJ) — named, reusable grader stacks.
+  #
+  #   tur_eval_grader_stack — a named, agent-decoupled stack of grader configs.
+  #   tur_eval_grader_config.stack_id — a config row can belong to a stack
+  #     (instead of a set); FK ON DELETE CASCADE.
+  #   tur_agent_eval_set.graderStackId — optional bound stack (runner uses its
+  #     configs instead of the set's own).
+  #
+  # camelCase column names; longtext for big text. Idempotent.
+
+  - changeSet:
+      id: v2026.3.1.91-create-tur_eval_grader_stack
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_grader_stack
+      changes:
+        - createTable:
+            tableName: tur_eval_grader_stack
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(1000)
+
+  - changeSet:
+      id: v2026.3.1.91-add-tur_eval_grader_config-stack_id
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_eval_grader_config
+                columnName: stack_id
+      changes:
+        - addColumn:
+            tableName: tur_eval_grader_config
+            columns:
+              - column:
+                  name: stack_id
+                  type: varchar(36)
+
+  - changeSet:
+      id: v2026.3.1.91-fk-eval_grader_config-stack
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_eval_grader_config_stack
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_eval_grader_config
+            baseColumnNames: stack_id
+            referencedTableName: tur_eval_grader_stack
+            referencedColumnNames: id
+            constraintName: fk_eval_grader_config_stack
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.91-add-tur_agent_eval_set-graderStackId
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_set
+                columnName: graderStackId
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_set
+            columns:
+              - column:
+                  name: graderStackId
+                  type: varchar(36)

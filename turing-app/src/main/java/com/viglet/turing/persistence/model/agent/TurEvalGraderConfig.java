@@ -104,9 +104,15 @@ public class TurEvalGraderConfig implements Serializable {
     @Column(name = "caseId", length = 36)
     private String caseId;
 
-    /** Owning eval set. Hidden from JSON (client knows the set from the URL). */
+    /** Owning eval set (set-level config). Null when this row belongs to a stack. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "eval_set_id")
     @JsonIgnore
     private TurAgentEvalSet turAgentEvalSet;
+
+    /** T600 — owning reusable stack (null when this row belongs to a set). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stack_id")
+    @JsonIgnore
+    private TurEvalGraderStack turEvalGraderStack;
 }

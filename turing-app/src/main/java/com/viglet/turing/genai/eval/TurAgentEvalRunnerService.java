@@ -35,6 +35,7 @@ import com.viglet.turing.genai.eval.grader.TurEvalGraderConfigView;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
 import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
 import com.viglet.turing.genai.eval.grader.TurEvalResolvedGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalStackAggregator;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto.SlotDiff;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalReportDto;
@@ -438,8 +439,8 @@ public class TurAgentEvalRunnerService {
                 assistantReplies, capturedSlots, finalNodeId, actualOutcome, judgeModel,
                 referenceAnswer);
 
-        List<Double> dimensionScores = new ArrayList<>();
-        boolean allMatched = true;
+        // T600 — collect each grader's weighted contribution + blocking policy.
+        List<TurEvalStackAggregator.Contribution> contributions = new ArrayList<>();
         boolean pendingReview = false;
         List<SlotDiff> slotDiffs = new ArrayList<>();
         String rubricVerdict = "na";
@@ -462,8 +463,8 @@ public class TurAgentEvalRunnerService {
                 }
                 continue;
             }
-            dimensionScores.add(result.score());
-            allMatched &= result.passed();
+            contributions.add(new TurEvalStackAggregator.Contribution(result.score(), result.passed(),
+                    config.weight(), config.threshold(), config.blocking() == 1));
             switch (grader.graderId()) {
                 case TurEvalBuiltinGraders.SLOT_MATCH -> result.details().forEach(d ->
                         slotDiffs.add(new SlotDiff(d.key(), d.expected(), d.actual(), d.match())));
@@ -477,10 +478,10 @@ public class TurAgentEvalRunnerService {
             }
         }
 
-        double score = dimensionScores.isEmpty() ? 1d
-                : dimensionScores.stream().mapToDouble(Double::doubleValue).average().orElse(0d);
+        TurEvalStackAggregator.Aggregate aggregate = TurEvalStackAggregator.aggregate(contributions);
+        double score = aggregate.score();
         // A case awaiting human review is neither pass nor fail yet.
-        boolean passed = allMatched && !pendingReview;
+        boolean passed = aggregate.passed() && !pendingReview;
         TurAgentEvalExpectedOutcome expectedOutcome = evalCase.getExpectedOutcome();
         return new TurAgentEvalCaseResultDto(evalCase.getId(), evalCase.getName(), passed, score,
                 expectedOutcome == null ? null : expectedOutcome.name(), actualOutcome,
