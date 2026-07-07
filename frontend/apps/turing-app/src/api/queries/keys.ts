@@ -125,6 +125,9 @@ export const queryKeys = {
     all: () => ['eval-studio'] as const,
     datasets: () => [...queryKeys.evalStudio.all(), 'datasets'] as const,
     graderStacks: () => [...queryKeys.evalStudio.all(), 'grader-stacks'] as const,
+    // T593 — per-agent human-review inbox.
+    reviewInbox: (agentId: string) =>
+      [...queryKeys.evalStudio.all(), 'review-inbox', agentId] as const,
   },
   chatFlowRecipes: {
     all: () => ['chat-flow-recipes'] as const,

@@ -1,9 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/queries/keys";
+import type { TurEvalReviewRequest } from "@/models/eval/eval-studio.model";
 import { TurEvalStudioService } from "@/services/eval/eval-studio.service";
 
 /**
  * T599 / Block AJ — read hooks for the Eval Studio's agent-decoupled assets.
+ * T593 adds the per-agent human-review inbox (list + submit-verdict + promote).
  *
  * @since 2026.3.4
  */
@@ -20,5 +22,44 @@ export function useEvalGraderStacks() {
   return useQuery({
     queryKey: queryKeys.evalStudio.graderStacks(),
     queryFn: () => service.listGraderStacks(),
+  });
+}
+
+/** T593 — open human-review tasks for one agent (disabled until an agent is picked). */
+export function useEvalReviewInbox(agentId: string | undefined) {
+  return useQuery({
+    queryKey: agentId
+      ? queryKeys.evalStudio.reviewInbox(agentId)
+      : ["eval-studio", "review-inbox", "pending"],
+    queryFn: () => service.listReviewTasks(agentId as string),
+    enabled: Boolean(agentId),
+  });
+}
+
+/** T593 — submit a reviewer verdict; refreshes the agent's inbox. */
+export function useSubmitReview(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, request }: { taskId: string; request: TurEvalReviewRequest }) =>
+      service.submitReview(agentId as string, taskId, request),
+    onSuccess: () => {
+      if (agentId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.evalStudio.reviewInbox(agentId),
+        });
+      }
+    },
+  });
+}
+
+/** T593 — promote a reviewed task into a golden dataset row; refreshes datasets. */
+export function usePromoteReview(agentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, datasetId }: { taskId: string; datasetId: string }) =>
+      service.promoteReview(agentId as string, taskId, datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.evalStudio.datasets() });
+    },
   });
 }

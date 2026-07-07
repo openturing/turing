@@ -12,7 +12,9 @@ package com.viglet.turing.genai.eval;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -21,16 +23,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto;
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewRequest;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewTaskDto;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
+import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalReport;
+import com.viglet.turing.persistence.model.agent.TurEvalDataset;
+import com.viglet.turing.persistence.model.agent.TurEvalDatasetRow;
 import com.viglet.turing.persistence.model.agent.TurEvalReviewTask;
 import com.viglet.turing.persistence.repository.agent.TurAgentEvalReportRepository;
+import com.viglet.turing.persistence.repository.agent.TurEvalDatasetRepository;
+import com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository;
 import com.viglet.turing.persistence.repository.agent.TurEvalReviewTaskRepository;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * T592 / §XXXIII.7 — parks and queries human-review tasks. The {@code
@@ -50,11 +60,17 @@ public class TurEvalReviewTaskService {
 
     private final TurEvalReviewTaskRepository reviewTaskRepository;
     private final TurAgentEvalReportRepository reportRepository;
+    private final TurEvalDatasetRepository datasetRepository;
+    private final TurEvalDatasetRowRepository datasetRowRepository;
 
     public TurEvalReviewTaskService(TurEvalReviewTaskRepository reviewTaskRepository,
-            TurAgentEvalReportRepository reportRepository) {
+            TurAgentEvalReportRepository reportRepository,
+            TurEvalDatasetRepository datasetRepository,
+            TurEvalDatasetRowRepository datasetRowRepository) {
         this.reviewTaskRepository = reviewTaskRepository;
         this.reportRepository = reportRepository;
+        this.datasetRepository = datasetRepository;
+        this.datasetRowRepository = datasetRowRepository;
     }
 
     /** Creates a PENDING review task for a deferred case (skips an existing open one). */
@@ -136,6 +152,45 @@ public class TurEvalReviewTaskService {
     }
 
     /**
+     * §XXXIII.8 "closes the loop" — promotes a reviewed case into a golden
+     * {@link TurEvalDatasetRow} appended to {@code datasetId}: the transcript's
+     * user turns become the seed turns, the last assistant reply the golden
+     * {@code referenceAnswer}, and the expected outcome/node are lifted from the
+     * parked summary. Provenance (task/agent/grader/reviewer) is kept in
+     * {@code metadataJson}. Bumps the dataset's {@code updatedAt}; returns the
+     * refreshed dataset summary.
+     */
+    @Transactional
+    public TurEvalDatasetDto promoteToDataset(String taskId, String datasetId) {
+        TurEvalReviewTask task = reviewTaskRepository.findById(taskId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Review task not found: " + taskId));
+        TurEvalDataset dataset = datasetRepository.findById(datasetId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Dataset not found: " + datasetId));
+        List<TurEvalDatasetRow> existing =
+                datasetRowRepository.findByTurEvalDataset_IdOrderBySortOrderAsc(datasetId);
+
+        Map<String, String> expected = parseExpectedSummary(task.getExpectedSummary());
+        TurEvalDatasetRow row = new TurEvalDatasetRow();
+        row.setName(task.getCaseName());
+        row.setSeedTurnsJson(userTurnsJson(task.getTranscript()));
+        row.setReferenceAnswer(lastAssistantReply(task.getTranscript()));
+        row.setExpectedOutcome(parseOutcome(expected.get("expectedOutcome")));
+        row.setExpectedNodeId(nullIfBlankOrNull(expected.get("expectedNodeId")));
+        row.setTags("promoted");
+        row.setMetadataJson(promotionMetadata(task));
+        row.setSortOrder(existing.size());
+        row.setTurEvalDataset(dataset);
+        datasetRowRepository.save(row);
+
+        dataset.setUpdatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        datasetRepository.save(dataset);
+        log.debug("[AgentEval] promoted review task '{}' into dataset '{}'", taskId, datasetId);
+        return TurEvalDatasetDto.summary(dataset, existing.size() + 1);
+    }
+
+    /**
      * Applies the human verdict to the matching case row of the agent's latest
      * report and recomputes its aggregate. No-op when the report or case can't
      * be found (e.g. a newer run replaced it).
@@ -180,6 +235,75 @@ public class TurEvalReviewTaskService {
             log.warn("[AgentEval] could not serialize merged results: {}", e.getMessage());
             return "[]";
         }
+    }
+
+    // ─────────────────────────── T593 promote-to-golden-row ───────────────────────────
+
+    /** Parses the {@code "USER: ...\nASSISTANT: ..."} transcript into a JSON array of user turns. */
+    private static String userTurnsJson(String transcript) {
+        ArrayNode turns = OBJECT_MAPPER.createArrayNode();
+        if (transcript != null) {
+            for (String line : transcript.split("\\R")) {
+                if (line.startsWith("USER: ")) {
+                    turns.add(line.substring("USER: ".length()));
+                }
+            }
+        }
+        return turns.toString();
+    }
+
+    /** The last {@code ASSISTANT:} line of the transcript — the reply the reviewer signed off on. */
+    private static String lastAssistantReply(String transcript) {
+        if (transcript == null) {
+            return null;
+        }
+        String reply = null;
+        for (String line : transcript.split("\\R")) {
+            if (line.startsWith("ASSISTANT: ")) {
+                reply = line.substring("ASSISTANT: ".length());
+            }
+        }
+        return reply;
+    }
+
+    /** Parses the {@code "k=v; k=v"} expected summary back into a map. */
+    private static Map<String, String> parseExpectedSummary(String summary) {
+        Map<String, String> out = new HashMap<>();
+        if (summary == null || summary.isBlank()) {
+            return out;
+        }
+        for (String pair : summary.split(";")) {
+            int eq = pair.indexOf('=');
+            if (eq > 0) {
+                out.put(pair.substring(0, eq).trim(), pair.substring(eq + 1).trim());
+            }
+        }
+        return out;
+    }
+
+    private static TurAgentEvalExpectedOutcome parseOutcome(String value) {
+        if (value == null || value.isBlank() || "null".equals(value)) {
+            return TurAgentEvalExpectedOutcome.ANY;
+        }
+        try {
+            return TurAgentEvalExpectedOutcome.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return TurAgentEvalExpectedOutcome.ANY;
+        }
+    }
+
+    private static String nullIfBlankOrNull(String value) {
+        return value == null || value.isBlank() || "null".equals(value) ? null : value;
+    }
+
+    private static String promotionMetadata(TurEvalReviewTask task) {
+        ObjectNode node = OBJECT_MAPPER.createObjectNode();
+        node.put("source", "human-review");
+        node.put("reviewTaskId", task.getId());
+        node.put("agentId", task.getAgentId());
+        node.put("graderId", task.getGraderId());
+        node.put("reviewedBy", task.getReviewedBy());
+        return node.toString();
     }
 
     private static String buildTranscript(List<String> userTurns, List<String> assistantReplies) {

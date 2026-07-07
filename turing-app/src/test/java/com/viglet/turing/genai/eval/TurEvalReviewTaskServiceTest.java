@@ -32,8 +32,12 @@ import com.viglet.turing.persistence.dto.agent.TurEvalReviewRequest;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalReport;
+import com.viglet.turing.persistence.model.agent.TurEvalDataset;
+import com.viglet.turing.persistence.model.agent.TurEvalDatasetRow;
 import com.viglet.turing.persistence.model.agent.TurEvalReviewTask;
 import com.viglet.turing.persistence.repository.agent.TurAgentEvalReportRepository;
+import com.viglet.turing.persistence.repository.agent.TurEvalDatasetRepository;
+import com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository;
 import com.viglet.turing.persistence.repository.agent.TurEvalReviewTaskRepository;
 
 import tools.jackson.databind.ObjectMapper;
@@ -54,9 +58,14 @@ class TurEvalReviewTaskServiceTest {
     private TurEvalReviewTaskRepository repository;
     @Mock
     private TurAgentEvalReportRepository reportRepository;
+    @Mock
+    private TurEvalDatasetRepository datasetRepository;
+    @Mock
+    private TurEvalDatasetRowRepository datasetRowRepository;
 
     private TurEvalReviewTaskService service() {
-        return new TurEvalReviewTaskService(repository, reportRepository);
+        return new TurEvalReviewTaskService(repository, reportRepository, datasetRepository,
+                datasetRowRepository);
     }
 
     private static TurAgentEvalCase evalCase() {
@@ -131,6 +140,43 @@ class TurEvalReviewTaskServiceTest {
         assertThat(merged.isPendingReview()).isFalse();
         assertThat(merged.isPassed()).isTrue();
         assertThat(merged.getPassedCount()).isEqualTo(1);
+    }
+
+    @Test
+    void promoteToDatasetAppendsGoldenRowFromTranscript() {
+        TurEvalReviewTask task = new TurEvalReviewTask();
+        task.setId("t1");
+        task.setAgentId("a1");
+        task.setCaseName("greeting");
+        task.setGraderId("human-review");
+        task.setReviewedBy("alice");
+        task.setTranscript("USER: hi\nASSISTANT: hello\nUSER: bye\nASSISTANT: goodbye\n");
+        task.setExpectedSummary(
+                "expectedOutcome=CAPTURED; actualOutcome=CAPTURED; expectedNodeId=welcome; finalNodeId=end");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+
+        TurEvalDataset dataset = new TurEvalDataset();
+        dataset.setId("d1");
+        dataset.setName("golden");
+        when(datasetRepository.findById("d1")).thenReturn(Optional.of(dataset));
+        when(datasetRowRepository.findByTurEvalDataset_IdOrderBySortOrderAsc("d1"))
+                .thenReturn(List.of());
+
+        var result = service().promoteToDataset("t1", "d1");
+
+        ArgumentCaptor<TurEvalDatasetRow> captor = ArgumentCaptor.forClass(TurEvalDatasetRow.class);
+        verify(datasetRowRepository).save(captor.capture());
+        TurEvalDatasetRow row = captor.getValue();
+        assertThat(row.getName()).isEqualTo("greeting");
+        assertThat(row.getSeedTurnsJson()).contains("hi").contains("bye");
+        assertThat(row.getReferenceAnswer()).isEqualTo("goodbye");
+        assertThat(row.getExpectedOutcome()).isEqualTo(TurAgentEvalExpectedOutcome.CAPTURED);
+        assertThat(row.getExpectedNodeId()).isEqualTo("welcome");
+        assertThat(row.getTags()).isEqualTo("promoted");
+        assertThat(row.getSortOrder()).isZero();
+        assertThat(row.getTurEvalDataset()).isSameAs(dataset);
+        verify(datasetRepository).save(dataset);
+        assertThat(result.rowCount()).isEqualTo(1);
     }
 
     @Test

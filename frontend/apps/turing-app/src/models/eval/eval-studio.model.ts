@@ -48,3 +48,32 @@ export interface TurEvalGraderStack {
   description?: string | null;
   configs: TurEvalGraderConfigEntry[];
 }
+
+/**
+ * T593 / §XXXIII.8 — a parked human-review task: the reviewer reads the
+ * replayed transcript + expected summary, submits a verdict, and can promote
+ * the row into a golden dataset.
+ */
+export interface TurEvalReviewTask {
+  id: string;
+  agentId: string;
+  caseId?: string | null;
+  caseName?: string | null;
+  graderId?: string | null;
+  transcript?: string | null;
+  expectedSummary?: string | null;
+  status: string;
+  createdAt?: string | null;
+  reviewedPass?: boolean | null;
+  reviewedScore?: number | null;
+  reviewerNotes?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+}
+
+/** A reviewer's verdict on a human-review task. */
+export interface TurEvalReviewRequest {
+  pass: boolean;
+  score?: number | null;
+  notes?: string | null;
+}

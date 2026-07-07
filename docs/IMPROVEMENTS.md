@@ -2075,16 +2075,13 @@ scalable, friendly, functional way.
 ### XXXIII.7–9 HUMAN graders — the missing third kind (T592–T594)
 
 The `deferred` flag from T586 is what lets human review be *a grader* rather than a
-bolt-on. T592's human-review grader emits `PENDING_REVIEW` and persists a
-`TurEvalReviewTask` per case-result; the report gains a `PENDING_REVIEW` status and
-the gate policy per stack is *warn* or *block-until-reviewed*. T593 makes it
-friendly: a bento review inbox where a reviewer sees the replayed transcript,
-expected-vs-actual, and the per-grader breakdown, submits `{pass, score, notes}`,
-and can **promote the row into the golden dataset** in one click — closing the loop
-from "a human noticed this was wrong" to "it's now a regression test". T594 (💭)
-adds inter-annotator agreement and a sample-based human audit of MODEL-graded runs
+bolt-on (T592 shipped the deferring grader + `PENDING_REVIEW`; T593 shipped the
+bento review inbox + promote-to-golden-row — see CHANGELOG). What remains is T594
+(💭): inter-annotator agreement and a sample-based human audit of MODEL-graded runs
 so the LLM judge can be *calibrated* to human labels — the standard answer to "can
-we trust the model grader?".
+we trust the model grader?". Optional N reviewers per item plus an agreement metric
+(e.g. Cohen's/Fleiss' κ), and a periodic sample of MODEL-graded cases routed to the
+same human-review inbox, whose verdicts feed judge-prompt tuning.
 
 ### XXXIII.10–13 Datasets — first-class, provided, versioned (T595–T598)
 

@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.genai.eval.TurEvalReviewTaskService;
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewRequest;
 import com.viglet.turing.persistence.dto.agent.TurEvalReviewTaskDto;
 
@@ -68,5 +70,13 @@ public class TurAgentEvalReviewAPI {
             @RequestBody TurEvalReviewRequest request, Principal principal) {
         String reviewer = principal == null ? null : principal.getName();
         return reviewTaskService.submitReview(taskId, request, reviewer);
+    }
+
+    @Operation(summary = "Promote a reviewed task into a golden dataset row (closes the loop)")
+    @PostMapping("/{taskId}/promote")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public TurEvalDatasetDto promote(@PathVariable String agentId, @PathVariable String taskId,
+            @RequestParam("datasetId") String datasetId) {
+        return reviewTaskService.promoteToDataset(taskId, datasetId);
     }
 }

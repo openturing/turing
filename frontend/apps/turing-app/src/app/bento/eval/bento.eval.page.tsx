@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import {
   IconDatabase,
   IconFlask2,
+  IconInbox,
   IconStack2,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
 import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.queries";
 import { BentoHero } from "@/components/bento";
+import { BentoEvalReviewInbox } from "./bento.eval.review-inbox";
 
-type EvalTab = "datasets" | "stacks";
+type EvalTab = "datasets" | "stacks" | "review";
 
 /**
  * T599 / §XXXIII.14 — Eval Studio. The bento home for the evaluation platform:
@@ -37,6 +39,11 @@ export default function BentoEvalPage() {
       id: "stacks",
       label: t("evalStudio.tabs.stacks", { defaultValue: "Grader stacks" }),
       icon: IconStack2,
+    },
+    {
+      id: "review",
+      label: t("evalStudio.tabs.review", { defaultValue: "Review inbox" }),
+      icon: IconInbox,
     },
   ];
 
@@ -77,7 +84,7 @@ export default function BentoEvalPage() {
         })}
       </nav>
 
-      {tab === "datasets" ? (
+      {tab === "datasets" && (
         <AssetGrid
           error={datasetsError}
           items={(datasets ?? []).map((d) => ({
@@ -97,7 +104,9 @@ export default function BentoEvalPage() {
           })}
           errorLabel={t("common.connectionError", { resource: "datasets" })}
         />
-      ) : (
+      )}
+
+      {tab === "stacks" && (
         <AssetGrid
           error={stacksError}
           items={(stacks ?? []).map((s) => ({
@@ -117,6 +126,8 @@ export default function BentoEvalPage() {
           errorLabel={t("common.connectionError", { resource: "grader stacks" })}
         />
       )}
+
+      {tab === "review" && <BentoEvalReviewInbox />}
     </div>
   );
 }
