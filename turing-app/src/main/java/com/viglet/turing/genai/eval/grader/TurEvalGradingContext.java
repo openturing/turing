@@ -33,6 +33,8 @@ import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
  * @param actualOutcome    the terminal outcome observed after the replay
  * @param judgeModel       the resolved LLM used by MODEL graders (nullable when
  *                         no usable LLM — CODE graders still run)
+ * @param referenceAnswer  T595 — the bound dataset row's golden reference answer
+ *                         (nullable; reference graders fall back to their config)
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -45,7 +47,16 @@ public record TurEvalGradingContext(
         Map<String, String> capturedSlots,
         String finalNodeId,
         String actualOutcome,
-        ChatModel judgeModel) {
+        ChatModel judgeModel,
+        String referenceAnswer) {
+
+    /** Legacy 8-arg constructor (no dataset reference); {@code referenceAnswer=null}. */
+    public TurEvalGradingContext(TurAgentEvalCase evalCase, String conversationId,
+            List<String> userTurns, List<String> assistantReplies, Map<String, String> capturedSlots,
+            String finalNodeId, String actualOutcome, ChatModel judgeModel) {
+        this(evalCase, conversationId, userTurns, assistantReplies, capturedSlots, finalNodeId,
+                actualOutcome, judgeModel, null);
+    }
 
     /** The last assistant reply (the "final answer"), or {@code ""} when none. */
     public String finalAnswer() {

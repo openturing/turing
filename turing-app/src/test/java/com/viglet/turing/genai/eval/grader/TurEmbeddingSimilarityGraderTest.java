@@ -105,4 +105,16 @@ class TurEmbeddingSimilarityGraderTest {
     void failsClosedOnEmptyAnswer() {
         assertThat(grader.grade(ctx("  "), cfg("{\"reference\":\"x\"}")).passed()).isFalse();
     }
+
+    @Test
+    void fallsBackToDatasetReferenceWhenConfigHasNone() {
+        when(globalSettings.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        withEmbeddings(new float[] {1f, 0f, 0f}, new float[] {1f, 0f, 0f});
+        // config carries no reference, but the bound dataset row supplies one (T595)
+        TurEvalGradingContext ctx = new TurEvalGradingContext(new TurAgentEvalCase(), "conv-1",
+                List.of(), List.of("the answer"), Map.of(), null, null, null, "the reference");
+
+        assertThat(grader.appliesTo(ctx, cfg("{}"))).isTrue();
+        assertThat(grader.grade(ctx, cfg("{}")).passed()).isTrue();
+    }
 }

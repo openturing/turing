@@ -74,7 +74,7 @@ public class TurModelJudgeGrader implements TurEvalGrader {
     public boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         boolean configured = config.has("strategy") || config.configString("prompt") != null
                 || !config.configStringList("criteria").isEmpty()
-                || config.configString("reference") != null;
+                || config.configString("reference") != null || ctx.referenceAnswer() != null;
         return configured && (ctx.judgeModel() != null || config.configString("model") != null);
     }
 
@@ -89,10 +89,13 @@ public class TurModelJudgeGrader implements TurEvalGrader {
         if (instruction == null && ctx.evalCase() != null) {
             instruction = ctx.evalCase().getRubric();
         }
+        String reference = config.configString("reference");
+        if (reference == null) {
+            reference = ctx.referenceAnswer();
+        }
         String system = TurEvalModelJudge.system(strategy);
         String user = TurEvalModelJudge.user(strategy, instruction,
-                config.configStringList("criteria"), config.configString("reference"),
-                ctx.userTurns(), ctx.finalAnswer());
+                config.configStringList("criteria"), reference, ctx.userTurns(), ctx.finalAnswer());
         try {
             String reply = model.call(new Prompt(List.of(new SystemMessage(system),
                     new UserMessage(user)))).getResult().getOutput().getText();

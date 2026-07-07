@@ -117,6 +117,17 @@ class TurModelJudgeTest {
     }
 
     @Test
+    void usesDatasetReferenceWhenConfigHasNone() {
+        ChatModel model = modelReturning("{\"verdict\":\"pass\",\"score\":1.0}");
+        // no strategy/prompt/reference in config, but the dataset row supplies a reference (T595)
+        TurEvalGradingContext ctx = new TurEvalGradingContext(new TurAgentEvalCase(), "conv-1",
+                List.of("hi"), List.of("answer"), Map.of(), null, null, model, "golden");
+
+        assertThat(grader.appliesTo(ctx, cfg("{}"))).isTrue();
+        assertThat(grader.grade(ctx, cfg("{\"strategy\":\"PAIRWISE\"}")).passed()).isTrue();
+    }
+
+    @Test
     void failsClosedWithoutModel() {
         TurEvalGraderResult r = grader.grade(ctx(null, "a"), cfg("{\"strategy\":\"SCORE\"}"));
         assertThat(r.passed()).isFalse();

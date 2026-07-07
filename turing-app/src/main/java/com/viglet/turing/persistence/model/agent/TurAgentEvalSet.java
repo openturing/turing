@@ -81,6 +81,15 @@ public class TurAgentEvalSet implements Serializable {
     private int enabled = 1;
 
     /**
+     * T595 — optional bound {@link TurEvalDataset}. When set, the runner sources
+     * this set's cases from the dataset's rows instead of the inline {@link
+     * #cases} (a set thus binds a reusable dataset + its grader stack). Null =
+     * legacy inline cases (byte-identical).
+     */
+    @Column(name = "datasetId", length = 36)
+    private String datasetId;
+
+    /**
      * When 1, a red gate result hard-blocks the flow editor's publish; when
      * 0, the editor only surfaces a warning. Default 0 (warn) so adding a
      * golden set never breaks an author's existing publish flow until they

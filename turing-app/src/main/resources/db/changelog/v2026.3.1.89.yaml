@@ -1,0 +1,134 @@
+databaseChangeLog:
+  # T595 / §XXXIII.10 (Block AJ) — reusable, agent-decoupled eval datasets.
+  #
+  #   tur_eval_dataset      — a versioned, agent-decoupled row collection.
+  #   tur_eval_dataset_row  — one scripted case + expectations + golden reference.
+  #   tur_agent_eval_set.datasetId — optional bound dataset (runner sources rows
+  #                                   from it instead of inline cases).
+  #
+  # Column names match the JPA field names (camelCase); longtext for big text.
+  # Row FK ON DELETE CASCADE. Idempotent.
+
+  - changeSet:
+      id: v2026.3.1.89-create-tur_eval_dataset
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_dataset
+      changes:
+        - createTable:
+            tableName: tur_eval_dataset
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(1000)
+              - column:
+                  name: version
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+              - column:
+                  name: updatedAt
+                  type: timestamp
+
+  - changeSet:
+      id: v2026.3.1.89-create-tur_eval_dataset_row
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_dataset_row
+      changes:
+        - createTable:
+            tableName: tur_eval_dataset_row
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+              - column:
+                  name: seedTurnsJson
+                  type: longtext
+              - column:
+                  name: expectedSlotsJson
+                  type: longtext
+              - column:
+                  name: expectedOutcome
+                  type: varchar(16)
+                  defaultValue: ANY
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expectedNodeId
+                  type: varchar(200)
+              - column:
+                  name: rubric
+                  type: longtext
+              - column:
+                  name: referenceAnswer
+                  type: longtext
+              - column:
+                  name: tags
+                  type: varchar(500)
+              - column:
+                  name: metadataJson
+                  type: longtext
+              - column:
+                  name: sortOrder
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dataset_id
+                  type: varchar(36)
+        - addForeignKeyConstraint:
+            baseTableName: tur_eval_dataset_row
+            baseColumnNames: dataset_id
+            referencedTableName: tur_eval_dataset
+            referencedColumnNames: id
+            constraintName: fk_eval_dataset_row_dataset
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.89-add-tur_agent_eval_set-datasetId
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_set
+                columnName: datasetId
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_set
+            columns:
+              - column:
+                  name: datasetId
+                  type: varchar(36)

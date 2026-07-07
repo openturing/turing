@@ -65,13 +65,19 @@ public class TurEmbeddingSimilarityGrader implements TurEvalGrader {
 
     @Override
     public boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
-        return config.configString("reference") != null
+        return resolveReference(ctx, config) != null
                 && StringUtils.hasText(globalSettingsService.getDefaultEmbeddingModelId());
+    }
+
+    /** Config {@code reference}, else the bound dataset row's golden answer (T595). */
+    private static String resolveReference(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
+        String reference = config.configString("reference");
+        return reference != null ? reference : ctx.referenceAnswer();
     }
 
     @Override
     public TurEvalGraderResult grade(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
-        String reference = config.configString("reference");
+        String reference = resolveReference(ctx, config);
         String answer = ctx.finalAnswer();
         if (answer == null || answer.isBlank()) {
             return TurEvalGraderResult.scored(0d, false, "fail", "empty answer to compare");

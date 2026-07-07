@@ -45,6 +45,7 @@ import com.viglet.turing.persistence.model.agent.TurAgentEvalExpectedOutcome;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalReport;
 import com.viglet.turing.persistence.model.agent.TurAgentEvalSet;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.agent.TurEvalDatasetRow;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurAgentEvalReportRepository;
@@ -105,6 +106,7 @@ public class TurAgentEvalRunnerService {
     private final com.viglet.turing.properties.TurConfigProperties configProperties;
     private final com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry;
     private final TurEvalReviewTaskService reviewTaskService;
+    private final com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository datasetRowRepository;
 
     /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
      *  in-memory prompt swap, so a trial run can never flush to the DB. */
@@ -126,7 +128,8 @@ public class TurAgentEvalRunnerService {
             com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService,
             com.viglet.turing.properties.TurConfigProperties configProperties,
             com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry,
-            TurEvalReviewTaskService reviewTaskService) {
+            TurEvalReviewTaskService reviewTaskService,
+            com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository datasetRowRepository) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
         this.reportRepository = reportRepository;
@@ -143,6 +146,7 @@ public class TurAgentEvalRunnerService {
         this.configProperties = configProperties;
         this.graderRegistry = graderRegistry;
         this.reviewTaskService = reviewTaskService;
+        this.datasetRowRepository = datasetRowRepository;
     }
 
     // ─────────────────────────── Public API ───────────────────────────
@@ -177,9 +181,9 @@ public class TurAgentEvalRunnerService {
 
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
-            for (TurAgentEvalCase evalCase : orderedCases(set)) {
+            for (EvalCaseSource source : resolveCases(set)) {
                 // persistSideEffects = true: a real run parks human-review tasks.
-                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase, true));
+                results.add(runCase(agent, llmInstance, judgeModel, set, source, true));
             }
         }
         return persistReport(agent, results);
@@ -221,9 +225,9 @@ public class TurAgentEvalRunnerService {
         ChatModel judgeModel = createChatModel(llmInstance);
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
-            for (TurAgentEvalCase evalCase : orderedCases(set)) {
+            for (EvalCaseSource source : resolveCases(set)) {
                 // persistSideEffects = false: a trial scoring never parks review tasks.
-                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase, false));
+                results.add(runCase(agent, llmInstance, judgeModel, set, source, false));
             }
         }
         return aggregateScore(results);
@@ -341,8 +345,9 @@ public class TurAgentEvalRunnerService {
     // ─────────────────────────── Per-case replay ───────────────────────────
 
     private TurAgentEvalCaseResultDto runCase(TurAIAgent agent, TurLLMInstance llmInstance,
-            ChatModel judgeModel, TurAgentEvalSet set, TurAgentEvalCase evalCase,
+            ChatModel judgeModel, TurAgentEvalSet set, EvalCaseSource source,
             boolean persistSideEffects) {
+        TurAgentEvalCase evalCase = source.evalCase();
         String conversationId = "eval-" + UUID.randomUUID();
         try {
             List<String> turns = parseTurns(evalCase.getSeedTurnsJson());
@@ -357,8 +362,9 @@ public class TurAgentEvalRunnerService {
             String finalNodeId = state.currentNodeId();
             String actualOutcome = resolveOutcome(conversationId, state);
 
-            return scoreCase(agent, set, evalCase, conversationId, persistSideEffects, judgeModel,
-                    turns, assistantReplies, capturedSlots, finalNodeId, actualOutcome);
+            return scoreCase(agent, set, evalCase, source.referenceAnswer(), conversationId,
+                    persistSideEffects, judgeModel, turns, assistantReplies, capturedSlots,
+                    finalNodeId, actualOutcome);
         } catch (RuntimeException e) {
             log.warn("[AgentEval] case '{}' replay failed: {}", evalCase.getName(), e.getMessage());
             return failed(evalCase, e.getMessage());
@@ -414,11 +420,13 @@ public class TurAgentEvalRunnerService {
      * (T599).
      */
     private TurAgentEvalCaseResultDto scoreCase(TurAIAgent agent, TurAgentEvalSet set,
-            TurAgentEvalCase evalCase, String conversationId, boolean persistSideEffects,
-            ChatModel judgeModel, List<String> turns, List<String> assistantReplies,
-            Map<String, String> capturedSlots, String finalNodeId, String actualOutcome) {
+            TurAgentEvalCase evalCase, String referenceAnswer, String conversationId,
+            boolean persistSideEffects, ChatModel judgeModel, List<String> turns,
+            List<String> assistantReplies, Map<String, String> capturedSlots, String finalNodeId,
+            String actualOutcome) {
         TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, conversationId, turns,
-                assistantReplies, capturedSlots, finalNodeId, actualOutcome, judgeModel);
+                assistantReplies, capturedSlots, finalNodeId, actualOutcome, judgeModel,
+                referenceAnswer);
 
         List<Double> dimensionScores = new ArrayList<>();
         boolean allMatched = true;
@@ -609,6 +617,44 @@ public class TurAgentEvalRunnerService {
         return set.getCases().stream()
                 .sorted((a, b) -> Integer.compare(a.getSortOrder(), b.getSortOrder()))
                 .toList();
+    }
+
+    /**
+     * T595 — one scorable case + its golden reference. Inline cases carry a null
+     * reference; a bound dataset supplies the row's {@code referenceAnswer}.
+     */
+    private record EvalCaseSource(TurAgentEvalCase evalCase, String referenceAnswer) {
+    }
+
+    /**
+     * Resolves the cases to score for a set: the bound {@link
+     * com.viglet.turing.persistence.model.agent.TurEvalDataset}'s rows (mapped to
+     * transient cases) when {@code datasetId} is set, else the legacy inline
+     * cases (byte-identical).
+     */
+    private List<EvalCaseSource> resolveCases(TurAgentEvalSet set) {
+        String datasetId = set.getDatasetId();
+        if (datasetId == null || datasetId.isBlank()) {
+            return orderedCases(set).stream()
+                    .map(c -> new EvalCaseSource(c, null))
+                    .toList();
+        }
+        return datasetRowRepository.findByTurEvalDataset_IdOrderBySortOrderAsc(datasetId).stream()
+                .map(TurAgentEvalRunnerService::rowToSource)
+                .toList();
+    }
+
+    /** Maps a dataset row to a transient {@link TurAgentEvalCase} + its reference. */
+    private static EvalCaseSource rowToSource(TurEvalDatasetRow row) {
+        TurAgentEvalCase c = new TurAgentEvalCase();
+        c.setId(row.getId());
+        c.setName(row.getName() == null ? row.getId() : row.getName());
+        c.setSeedTurnsJson(row.getSeedTurnsJson());
+        c.setExpectedSlotsJson(row.getExpectedSlotsJson());
+        c.setExpectedOutcome(row.getExpectedOutcome());
+        c.setExpectedNodeId(row.getExpectedNodeId());
+        c.setRubric(row.getRubric());
+        return new EvalCaseSource(c, row.getReferenceAnswer());
     }
 
     private static TurAgentEvalCaseResultDto failed(TurAgentEvalCase evalCase, String error) {
