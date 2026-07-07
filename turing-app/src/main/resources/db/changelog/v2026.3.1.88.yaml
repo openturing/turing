@@ -1,0 +1,122 @@
+databaseChangeLog:
+  # T592 / §XXXIII.7 (Block AJ) — human-in-the-loop review.
+  #
+  #   tur_eval_review_task  — a case-result parked by the human-review grader
+  #   (PENDING until a reviewer decides, then REVIEWED with the verdict columns).
+  #
+  #   tur_agent_eval_report.pendingReview — the report is amber (awaiting review)
+  #   when any case deferred to a human grader.
+  #
+  # Column names match the JPA field names (camelCase); longtext for big text;
+  # agent_id FK ON DELETE CASCADE cleans up with the agent. Idempotent.
+
+  - changeSet:
+      id: v2026.3.1.88-create-tur_eval_review_task
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_review_task
+      changes:
+        - createTable:
+            tableName: tur_eval_review_task
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: agent_id
+                  type: varchar(36)
+              - column:
+                  name: caseId
+                  type: varchar(36)
+              - column:
+                  name: caseName
+                  type: varchar(200)
+              - column:
+                  name: graderId
+                  type: varchar(100)
+              - column:
+                  name: transcript
+                  type: longtext
+              - column:
+                  name: expectedSummary
+                  type: longtext
+              - column:
+                  name: status
+                  type: varchar(16)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reviewedPass
+                  type: boolean
+              - column:
+                  name: reviewedScore
+                  type: double
+              - column:
+                  name: reviewerNotes
+                  type: longtext
+              - column:
+                  name: reviewedBy
+                  type: varchar(200)
+              - column:
+                  name: reviewedAt
+                  type: timestamp
+        - createIndex:
+            tableName: tur_eval_review_task
+            indexName: ix_eval_review_task_agent_status
+            columns:
+              - column:
+                  name: agent_id
+              - column:
+                  name: status
+
+  - changeSet:
+      id: v2026.3.1.88-fk-eval_review_task-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_eval_review_task_agent
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: tur_eval_review_task
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_eval_review_task_agent
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.3.1.88-add-tur_agent_eval_report-pendingReview
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_report
+                columnName: pendingReview
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_report
+            columns:
+              - column:
+                  name: pendingReview
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

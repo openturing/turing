@@ -26,6 +26,7 @@ import java.util.List;
  * @param passedCount cases that passed
  * @param baseline    true when this report is the agent's green baseline
  * @param regressed   true when this run regressed against the baseline
+ * @param pendingReview T592 — true when any case deferred to a human grader
  * @param results     per-case results
  * @param error       non-null when the run could not start (no enabled set,
  *                    no usable LLM, etc.)
@@ -42,8 +43,17 @@ public record TurAgentEvalReportDto(
         int passedCount,
         boolean baseline,
         boolean regressed,
+        boolean pendingReview,
         List<TurAgentEvalCaseResultDto> results,
         String error) {
+
+    /** Legacy constructor (no human review); {@code pendingReview=false}. */
+    public TurAgentEvalReportDto(String reportId, LocalDateTime createdAt, boolean passed, double score,
+            int caseCount, int passedCount, boolean baseline, boolean regressed,
+            List<TurAgentEvalCaseResultDto> results, String error) {
+        this(reportId, createdAt, passed, score, caseCount, passedCount, baseline, regressed, false,
+                results, error);
+    }
 
     public static TurAgentEvalReportDto error(String error) {
         return new TurAgentEvalReportDto(null, null, false, 0d, 0, 0, false, false, List.of(), error);

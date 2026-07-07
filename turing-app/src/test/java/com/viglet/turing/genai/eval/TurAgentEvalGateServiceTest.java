@@ -142,6 +142,36 @@ class TurAgentEvalGateServiceTest {
         assertThat(gateService.shouldBlockPublish(AGENT_ID)).isFalse();
     }
 
+    @Test
+    void pendingReview_warnsWhenNotBlocking() {
+        when(evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(setWithCase(false)));
+        TurAgentEvalReport report = report(false, false, caseResult("c1", false));
+        report.setPendingReview(true);
+        when(reportRepository.findFirstByTurAIAgent_IdOrderByCreatedAtDesc(AGENT_ID))
+                .thenReturn(Optional.of(report));
+
+        TurAgentEvalGateDto gate = gateService.gate(AGENT_ID);
+
+        assertThat(gate.status()).isEqualTo("PENDING_REVIEW");
+        assertThat(gate.findings()).hasSize(1);
+        assertThat(gate.findings().get(0).code()).isEqualTo("eval_pending_review");
+        assertThat(gate.findings().get(0).severity()).isEqualTo("WARNING");
+    }
+
+    @Test
+    void pendingReview_blocksWhenBlockingSet() {
+        when(evalSetRepository.findByTurAIAgent_IdOrderByNameAsc(AGENT_ID))
+                .thenReturn(List.of(setWithCase(true)));
+        TurAgentEvalReport report = report(false, false, caseResult("c1", false));
+        report.setPendingReview(true);
+        when(reportRepository.findFirstByTurAIAgent_IdOrderByCreatedAtDesc(AGENT_ID))
+                .thenReturn(Optional.of(report));
+
+        assertThat(gateService.gate(AGENT_ID).findings().get(0).severity()).isEqualTo("ERROR");
+        assertThat(gateService.shouldBlockPublish(AGENT_ID)).isTrue();
+    }
+
     // ─────────────────────────── Fixtures ───────────────────────────
 
     private static TurAgentEvalSet setWithCase(boolean blocking) {

@@ -29,6 +29,8 @@ import java.util.List;
  * @param rubricRationale the judge's one-line rationale (nullable)
  * @param error           non-null when the replay itself failed (engine /
  *                        LLM error); the case is then counted as failed
+ * @param pendingReview   T592 — true when a HUMAN grader deferred this case;
+ *                        the case awaits review and the report is amber
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -44,7 +46,16 @@ public record TurAgentEvalCaseResultDto(
         List<SlotDiff> slotDiffs,
         String rubricVerdict,
         String rubricRationale,
-        String error) {
+        String error,
+        boolean pendingReview) {
+
+    /** Legacy 11-arg constructor (no human review); {@code pendingReview=false}. */
+    public TurAgentEvalCaseResultDto(String caseId, String caseName, boolean passed, double score,
+            String expectedOutcome, String actualOutcome, String finalNodeId, List<SlotDiff> slotDiffs,
+            String rubricVerdict, String rubricRationale, String error) {
+        this(caseId, caseName, passed, score, expectedOutcome, actualOutcome, finalNodeId, slotDiffs,
+                rubricVerdict, rubricRationale, error, false);
+    }
 
     /**
      * One expected-vs-actual slot comparison.

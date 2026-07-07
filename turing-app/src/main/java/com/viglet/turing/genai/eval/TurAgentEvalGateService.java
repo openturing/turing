@@ -71,6 +71,18 @@ public class TurAgentEvalGateService {
             return new TurAgentEvalGateDto("GREEN", blocking, reportDto, List.of());
         }
 
+        // T592 — a run awaiting human review is amber (unless it also regressed,
+        // which is a hard ERROR handled below). Blocking sets block-until-reviewed.
+        if (latest.isPendingReview() && !latest.isRegressed()) {
+            String severity = blocking ? "ERROR" : "WARNING";
+            String hint = blocking
+                    ? "Resolve the pending human-review tasks before publishing."
+                    : "Human review is pending; the gate result may still change.";
+            return new TurAgentEvalGateDto("PENDING_REVIEW", blocking, reportDto,
+                    List.of(new Finding(severity, "eval_pending_review",
+                            "The eval gate is awaiting human review.", hint)));
+        }
+
         List<Finding> findings = new ArrayList<>();
         List<TurAgentEvalCaseResultDto> results = TurAgentEvalRunnerService.parseResults(latest.getResultsJson());
         String severity = latest.isRegressed() ? "ERROR" : "WARNING";
@@ -104,7 +116,8 @@ public class TurAgentEvalGateService {
     public boolean shouldBlockPublish(String agentId) {
         TurAgentEvalGateDto gate = gate(agentId);
         return gate.blocking()
-                && ("REGRESSED".equals(gate.status()) || "RED".equals(gate.status()));
+                && ("REGRESSED".equals(gate.status()) || "RED".equals(gate.status())
+                        || "PENDING_REVIEW".equals(gate.status()));
     }
 
     private static String failureHint(TurAgentEvalCaseResultDto r) {
@@ -128,7 +141,7 @@ public class TurAgentEvalGateService {
     private static TurAgentEvalReportDto toDto(TurAgentEvalReport report) {
         return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), report.isPassed(),
                 report.getScore(), report.getCaseCount(), report.getPassedCount(),
-                report.isBaseline(), report.isRegressed(),
+                report.isBaseline(), report.isRegressed(), report.isPendingReview(),
                 TurAgentEvalRunnerService.parseResults(report.getResultsJson()), null);
     }
 }

@@ -104,6 +104,7 @@ public class TurAgentEvalRunnerService {
     private final com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService;
     private final com.viglet.turing.properties.TurConfigProperties configProperties;
     private final com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry;
+    private final TurEvalReviewTaskService reviewTaskService;
 
     /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
      *  in-memory prompt swap, so a trial run can never flush to the DB. */
@@ -124,7 +125,8 @@ public class TurAgentEvalRunnerService {
             com.viglet.turing.genai.batch.TurBatchInferenceService batchInferenceService,
             com.viglet.turing.genai.nativeapi.openai.TurOpenAiEvalsService openAiEvalsService,
             com.viglet.turing.properties.TurConfigProperties configProperties,
-            com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry) {
+            com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry,
+            TurEvalReviewTaskService reviewTaskService) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
         this.reportRepository = reportRepository;
@@ -140,6 +142,7 @@ public class TurAgentEvalRunnerService {
         this.openAiEvalsService = openAiEvalsService;
         this.configProperties = configProperties;
         this.graderRegistry = graderRegistry;
+        this.reviewTaskService = reviewTaskService;
     }
 
     // ─────────────────────────── Public API ───────────────────────────
@@ -175,7 +178,8 @@ public class TurAgentEvalRunnerService {
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
             for (TurAgentEvalCase evalCase : orderedCases(set)) {
-                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase));
+                // persistSideEffects = true: a real run parks human-review tasks.
+                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase, true));
             }
         }
         return persistReport(agent, results);
@@ -218,7 +222,8 @@ public class TurAgentEvalRunnerService {
         List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
         for (TurAgentEvalSet set : sets) {
             for (TurAgentEvalCase evalCase : orderedCases(set)) {
-                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase));
+                // persistSideEffects = false: a trial scoring never parks review tasks.
+                results.add(runCase(agent, llmInstance, judgeModel, set, evalCase, false));
             }
         }
         return aggregateScore(results);
@@ -336,7 +341,8 @@ public class TurAgentEvalRunnerService {
     // ─────────────────────────── Per-case replay ───────────────────────────
 
     private TurAgentEvalCaseResultDto runCase(TurAIAgent agent, TurLLMInstance llmInstance,
-            ChatModel judgeModel, TurAgentEvalSet set, TurAgentEvalCase evalCase) {
+            ChatModel judgeModel, TurAgentEvalSet set, TurAgentEvalCase evalCase,
+            boolean persistSideEffects) {
         String conversationId = "eval-" + UUID.randomUUID();
         try {
             List<String> turns = parseTurns(evalCase.getSeedTurnsJson());
@@ -351,8 +357,8 @@ public class TurAgentEvalRunnerService {
             String finalNodeId = state.currentNodeId();
             String actualOutcome = resolveOutcome(conversationId, state);
 
-            return scoreCase(set, evalCase, conversationId, judgeModel, turns, assistantReplies,
-                    capturedSlots, finalNodeId, actualOutcome);
+            return scoreCase(agent, set, evalCase, conversationId, persistSideEffects, judgeModel,
+                    turns, assistantReplies, capturedSlots, finalNodeId, actualOutcome);
         } catch (RuntimeException e) {
             log.warn("[AgentEval] case '{}' replay failed: {}", evalCase.getName(), e.getMessage());
             return failed(evalCase, e.getMessage());
@@ -407,15 +413,16 @@ public class TurAgentEvalRunnerService {
      * rationale); a generic per-grader breakdown arrives with the Eval Studio
      * (T599).
      */
-    private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalSet set, TurAgentEvalCase evalCase,
-            String conversationId, ChatModel judgeModel, List<String> turns,
-            List<String> assistantReplies, Map<String, String> capturedSlots, String finalNodeId,
-            String actualOutcome) {
+    private TurAgentEvalCaseResultDto scoreCase(TurAIAgent agent, TurAgentEvalSet set,
+            TurAgentEvalCase evalCase, String conversationId, boolean persistSideEffects,
+            ChatModel judgeModel, List<String> turns, List<String> assistantReplies,
+            Map<String, String> capturedSlots, String finalNodeId, String actualOutcome) {
         TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, conversationId, turns,
                 assistantReplies, capturedSlots, finalNodeId, actualOutcome, judgeModel);
 
         List<Double> dimensionScores = new ArrayList<>();
         boolean allMatched = true;
+        boolean pendingReview = false;
         List<SlotDiff> slotDiffs = new ArrayList<>();
         String rubricVerdict = "na";
         String rubricRationale = null;
@@ -428,7 +435,13 @@ public class TurAgentEvalRunnerService {
             }
             TurEvalGraderResult result = grader.grade(ctx, config);
             if (result.deferred()) {
-                // No HUMAN grader in the default stack yet; deferral lands in T592.
+                // T592 — a HUMAN grader can't decide now: the case awaits review.
+                // Park a review task (only on a real run, never a trial scoring).
+                pendingReview = true;
+                if (persistSideEffects) {
+                    reviewTaskService.createIfAbsent(agent.getId(), evalCase, grader.graderId(),
+                            turns, assistantReplies, finalNodeId, actualOutcome);
+                }
                 continue;
             }
             dimensionScores.add(result.score());
@@ -448,10 +461,12 @@ public class TurAgentEvalRunnerService {
 
         double score = dimensionScores.isEmpty() ? 1d
                 : dimensionScores.stream().mapToDouble(Double::doubleValue).average().orElse(0d);
+        // A case awaiting human review is neither pass nor fail yet.
+        boolean passed = allMatched && !pendingReview;
         TurAgentEvalExpectedOutcome expectedOutcome = evalCase.getExpectedOutcome();
-        return new TurAgentEvalCaseResultDto(evalCase.getId(), evalCase.getName(), allMatched, score,
+        return new TurAgentEvalCaseResultDto(evalCase.getId(), evalCase.getName(), passed, score,
                 expectedOutcome == null ? null : expectedOutcome.name(), actualOutcome,
-                finalNodeId, slotDiffs, rubricVerdict, rubricRationale, null);
+                finalNodeId, slotDiffs, rubricVerdict, rubricRationale, null, pendingReview);
     }
 
     // ─────────────────────────── Outcome resolution ───────────────────────────
@@ -502,7 +517,9 @@ public class TurAgentEvalRunnerService {
     private TurAgentEvalReportDto persistReport(TurAIAgent agent, List<TurAgentEvalCaseResultDto> results) {
         int caseCount = results.size();
         int passedCount = (int) results.stream().filter(TurAgentEvalCaseResultDto::passed).count();
-        boolean passed = caseCount > 0 && passedCount == caseCount;
+        // T592 — a run with any case awaiting human review is amber, not green.
+        boolean pendingReview = results.stream().anyMatch(TurAgentEvalCaseResultDto::pendingReview);
+        boolean passed = caseCount > 0 && passedCount == caseCount && !pendingReview;
         double score = aggregateScore(results);
 
         // Compare to the green baseline to detect regressions.
@@ -518,6 +535,7 @@ public class TurAgentEvalRunnerService {
         report.setCaseCount(caseCount);
         report.setPassedCount(passedCount);
         report.setRegressed(regressed);
+        report.setPendingReview(pendingReview);
         report.setResultsJson(writeJson(results));
 
         // A green run becomes the new baseline (older baselines are demoted).
@@ -532,7 +550,7 @@ public class TurAgentEvalRunnerService {
         report = reportRepository.save(report);
 
         return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), passed, score,
-                caseCount, passedCount, report.isBaseline(), regressed, results, null);
+                caseCount, passedCount, report.isBaseline(), regressed, pendingReview, results, null);
     }
 
     /**

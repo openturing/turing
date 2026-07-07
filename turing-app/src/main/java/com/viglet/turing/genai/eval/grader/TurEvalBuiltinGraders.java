@@ -68,6 +68,9 @@ public final class TurEvalBuiltinGraders {
     /** CODE — cosine similarity of answer vs a {@code reference}, via the embedding provider (T591). */
     public static final String EMBEDDING_SIMILARITY = "embedding-similarity";
 
+    /** HUMAN — defers the case for human review (T592). */
+    public static final String HUMAN_REVIEW = "human-review";
+
     /**
      * The legacy default stack. Order is cosmetic for the aggregate (mean is
      * order-independent and the overall pass is a logical AND) but kept stable

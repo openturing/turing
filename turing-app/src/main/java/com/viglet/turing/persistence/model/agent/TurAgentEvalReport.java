@@ -86,6 +86,14 @@ public class TurAgentEvalReport implements Serializable {
     @Column(name = "regressed", nullable = false)
     private boolean regressed;
 
+    /**
+     * T592 — true when any case in this run deferred to a HUMAN grader, so the
+     * run is amber (awaiting review) rather than green/red until a reviewer
+     * decides. A pending run is never the green baseline.
+     */
+    @Column(name = "pendingReview", nullable = false)
+    private boolean pendingReview;
+
     /** Serialized {@code List<TurAgentEvalCaseResultDto>}. */
     @Column(name = "resultsJson", columnDefinition = "longtext")
     private String resultsJson;
