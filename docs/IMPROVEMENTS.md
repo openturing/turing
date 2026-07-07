@@ -2223,14 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.4 Cross-segment redundancy & contradiction lint (T610)
-
-Extend the existing conflict-check to run *across* segments, not within one:
-detect a rule repeated in persona + agent + flow (duplicated forbidden vocab,
-duplicated "never ask CPF") and contradictions between segments (agent "never
-answer general knowledge" vs a flow Goal "explain any concept"). Each finding
-carries the token waste and/or the ambiguity the model must resolve.
-
 ### XXXIV.5 Node picker + simulated variables (T611)
 
 Today the preview only shows the flow *entry* node with empty state. Let the

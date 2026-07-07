@@ -177,6 +177,14 @@
             "message": "O fluxo \"{{flow}}\" troca para a persona \"{{persona}}\", que é somente de audiência e não pode ser falante. Em tempo de execução o sistema volta para a persona padrão.",
             "hint": "Use uma persona cujo tipo seja SPEAKER ou BOTH para uma troca de voz no fluxo."
           },
+          "cross_segment_redundancy": {
+            "message": "A regra \"{{rule}}\" está repetida em {{segments}} — o modelo paga pela mesma instrução mais de uma vez (~{{tokens}} tokens desperdiçados).",
+            "hint": "Mantenha a regra em uma única camada e remova as cópias para economizar tokens e evitar divergência."
+          },
+          "cross_segment_contradiction": {
+            "message": "Contradição entre {{segments}}: uma diretiva é afirmada em um segmento e negada em outro. O modelo recebe instruções opostas sobre o mesmo ponto.",
+            "hint": "Reconcilie os dois segmentos para que uma única regra consistente controle esse comportamento."
+          },
           "deep_check_unavailable": {
             "message": "Nenhuma LLM padrão está configurada ou habilitada, então a análise profunda de conflitos não pode ser executada.",
             "hint": "Defina uma LLM padrão em Configurações Globais para habilitar a verificação profunda."

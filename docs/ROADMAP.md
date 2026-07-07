@@ -280,7 +280,6 @@ fully shipped.**
 > prompts. All read-only/opt-in; no change to the assembled prompt itself.
 > Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXIV.
 
-- 📋 **T610** (deps: —) **Cross-segment redundancy & contradiction lint** — extend the existing conflict-check to run *across* segments: detect the same rule repeated in persona + agent + flow (e.g. forbidden vocab duplicated in the Persona block and the agent "REGRAS DURAS"), and contradictory instructions between segments (e.g. agent "never answer general knowledge" vs a flow Goal "explain any concept"). Surfaces the token waste + the ambiguity the model has to resolve. → §XXXIV.4
 - 📋 **T611** (deps: —) **Node picker + simulated variables** — the preview only ever shows the flow's *entry* node with empty state; let the operator pick any node and supply collected slot values to preview a real mid-conversation turn (the "Already collected: {…}" line and next-step hint change accordingly). Turns the preview into a per-*turn* inspector, not a per-*flow* one. → §XXXIV.5
 - 💭 **T612** (deps: T427, T61) **Replay the actual assembled prompt from a real turn** — instead of synthesizing an entry-turn, capture and render the real system message sent on a chosen past conversation turn (from transcripts / the tool-call trace), so the preview shows exactly what happened — the ground truth for debugging a bad reply. → §XXXIV.6
 

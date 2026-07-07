@@ -177,6 +177,14 @@
             "message": "Flow \"{{flow}}\" switches to persona \"{{persona}}\", which is audience-only and cannot be a speaker. The runtime falls back to the default persona.",
             "hint": "Use a persona whose kind is SPEAKER or BOTH for a flow voice switch."
           },
+          "cross_segment_redundancy": {
+            "message": "The rule \"{{rule}}\" is repeated across {{segments}} — the model pays for the same instruction more than once (~{{tokens}} wasted tokens).",
+            "hint": "Keep the rule in one layer and delete the copies to save tokens and avoid drift."
+          },
+          "cross_segment_contradiction": {
+            "message": "Contradiction between {{segments}}: a directive is stated one way in one segment and negated in another. The model gets opposite instructions on the same point.",
+            "hint": "Reconcile the two segments so a single, consistent rule governs this behavior."
+          },
           "deep_check_unavailable": {
             "message": "No default LLM is configured or enabled, so the deep conflict analysis can't run.",
             "hint": "Set a default LLM in Global Settings to enable the deep check."

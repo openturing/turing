@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptIssueDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptSegmentDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.system.TurLlmSummaryService;
@@ -59,6 +60,17 @@ class TurSystemPromptValidatorServiceTest {
     private void stubPreview(String assembledText) {
         when(previewService.buildPreview(any()))
                 .thenReturn(new TurSystemPromptPreviewDto(List.of(), List.of(), assembledText, List.of(), null));
+    }
+
+    /** Stubs a preview whose assembled article is made of the given segments (T610). */
+    private void stubPreviewWithSegments(TurSystemPromptSegmentDto... segments) {
+        when(previewService.buildPreview(any()))
+                .thenReturn(new TurSystemPromptPreviewDto(List.of(segments), List.of(), "assembled",
+                        List.of(), null));
+    }
+
+    private static TurSystemPromptSegmentDto segment(String origin, String content) {
+        return new TurSystemPromptSegmentDto(origin, null, content, true, false, null);
     }
 
     private static TurAIAgent agent(String systemPrompt) {
@@ -170,6 +182,40 @@ class TurSystemPromptValidatorServiceTest {
 
         assertThat(codes(service.validate(agent("You are an assistant."))))
                 .contains("flow_persona_audience_only");
+    }
+
+    @Test
+    void crossSegmentRedundancyWarnsWhenRuleRepeatedAcrossSegments() {
+        stubPreviewWithSegments(
+                segment("PERSONA", "Never use the words talvez, impossivel or nao sei."),
+                segment("AGENT", "Never use the words talvez, impossivel or nao sei."));
+
+        var issues = service.validate(agent("You are an assistant."));
+        assertThat(issues).anyMatch(i -> i.code().equals("cross_segment_redundancy")
+                && i.severity().equals("WARNING")
+                && i.source().contains("PERSONA")
+                && i.source().contains("AGENT"));
+    }
+
+    @Test
+    void crossSegmentNoRedundancyWhenRuleInOneSegmentOnly() {
+        stubPreviewWithSegments(
+                segment("PERSONA", "Never use the words talvez, impossivel or nao sei."),
+                segment("AGENT", "Answer concisely and cite your sources."));
+
+        assertThat(codes(service.validate(agent("You are an assistant."))))
+                .doesNotContain("cross_segment_redundancy");
+    }
+
+    @Test
+    void crossSegmentContradictionWhenDirectiveNegatedInAnotherSegment() {
+        stubPreviewWithSegments(
+                segment("AGENT", "Never answer general knowledge questions from users."),
+                segment("FLOW", "Always answer general knowledge questions from users."));
+
+        var issues = service.validate(agent("You are an assistant."));
+        assertThat(issues).anyMatch(i -> i.code().equals("cross_segment_contradiction")
+                && i.severity().equals("ERROR"));
     }
 
     @Test
