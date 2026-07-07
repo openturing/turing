@@ -14,16 +14,20 @@ import {
   type TurSystemPromptMessageOrigin,
   type TurSystemPromptOrigin,
   type TurSystemPromptPreview,
+  type TurSystemPromptReplay,
   type TurSystemPromptSegment,
   type TurSystemPromptTool,
 } from "@/models/agent/system-prompt.model";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
+  IconAlertTriangle,
+  IconBolt,
   IconClipboard,
   IconClock,
   IconCoin,
   IconDatabase,
+  IconHistory,
   IconMessages,
   IconPlus,
   IconRoute,
@@ -68,6 +72,14 @@ interface Props {
   readonly onNodeChange?: (nodeId: string | undefined) => void;
   /** T611 — serialized simulated collected values ({} JSON), or undefined. */
   readonly onVarsChange?: (vars: string | undefined) => void;
+  /**
+   * T612 — current "replay a real conversation" id (undefined = not replaying).
+   * When `onReplayChange` is supplied the control bar shows a replay input; while
+   * a conversation is being replayed the synthetic flow/node/vars pickers are
+   * hidden (the replay derives them from the conversation's real state).
+   */
+  readonly replayConversationId?: string | undefined;
+  readonly onReplayChange?: (conversationId: string | undefined) => void;
   /**
    * Render the article's own masthead (H1 title + description lede). The console
    * page has no page header, so it needs one; the bento page already supplies a
@@ -159,9 +171,14 @@ export function SystemPromptLivePreview({
   nodeId,
   onNodeChange,
   onVarsChange,
+  replayConversationId,
+  onReplayChange,
   showHeader = true,
 }: Props) {
   const { t } = useTranslation();
+  // T612 — while replaying a real conversation the synthetic flow/node/vars
+  // pickers don't apply (the backend derives them from the conversation state).
+  const replaying = Boolean(replayConversationId?.trim());
 
   function originLabel(origin: TurSystemPromptOrigin): string {
     return t(`aiAgent.systemPrompt.origin.${origin}`, { defaultValue: origin });
@@ -221,9 +238,19 @@ export function SystemPromptLivePreview({
         </header>
       )}
 
+      {/* T612 — replay a real conversation: enter a conversation id to rebuild
+          the assembled prompt from its persisted state (ground truth), or clear
+          it to return to the synthesized preview. */}
+      {onReplayChange && (
+        <ReplayInput
+          value={replayConversationId}
+          onChange={onReplayChange}
+        />
+      )}
+
       {/* Control bar: flow selector + copy */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        {preview && preview.flows.length > 0 ? (
+        {!replaying && preview && preview.flows.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <IconSitemap className="size-4 text-muted-foreground" />
             <span className="text-sm font-medium">
@@ -286,9 +313,15 @@ export function SystemPromptLivePreview({
         )}
       </div>
 
+      {/* T612 — the replay banner: what real conversation this prompt was rebuilt
+          from (flow / cursor node / resolved persona), shown in place of the
+          synthetic pickers. */}
+      {!isLoading && preview?.replay && <ReplayBanner replay={preview.replay} />}
+
       {/* T611 — simulated collected values: seed slots to preview a real
-          mid-conversation turn (the "Already collected" line reflects them). */}
-      {onVarsChange && preview && preview.flowNodes.length > 0 && (
+          mid-conversation turn (the "Already collected" line reflects them).
+          Suppressed while replaying (the real slots come from the conversation). */}
+      {!replaying && onVarsChange && preview && preview.flowNodes.length > 0 && (
         <SimulatedVariablesEditor key={flowValue} onVarsChange={onVarsChange} />
       )}
 
@@ -371,7 +404,216 @@ export function SystemPromptLivePreview({
       {!isLoading && preview && preview.messages.length > 0 && (
         <MessageList messages={preview.messages} />
       )}
+
+      {/* T612 — the tool calls the model actually made on the replayed
+          conversation (from the T427 trace): cross-read "what the prompt said"
+          against "what the model did". Only in replay mode. */}
+      {!isLoading && preview?.replay && preview.replay.toolCalls.length > 0 && (
+        <ToolCallTrace calls={preview.replay.toolCalls} />
+      )}
     </div>
+  );
+}
+
+/**
+ * T612 — the "replay a real conversation" input. The operator pastes a
+ * conversation id (the value the SDK persists in the session cookie); the page
+ * swaps the synthesized preview for one rebuilt from that conversation's real
+ * persisted state. A clear button returns to the synthesized preview.
+ */
+function ReplayInput({
+  value,
+  onChange,
+}: Readonly<{
+  value: string | undefined;
+  onChange: (conversationId: string | undefined) => void;
+}>) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(value ?? "");
+  const active = Boolean(value?.trim());
+
+  function apply() {
+    const trimmed = draft.trim();
+    onChange(trimmed ? trimmed : undefined);
+  }
+
+  function clear() {
+    setDraft("");
+    onChange(undefined);
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
+      <IconHistory className="size-4 text-muted-foreground" />
+      <span className="text-sm font-medium">
+        {t("aiAgent.systemPrompt.preview.replayLabel", {
+          defaultValue: "Replay a real conversation",
+        })}
+      </span>
+      <Input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") apply();
+        }}
+        placeholder={t("aiAgent.systemPrompt.preview.replayPlaceholder", {
+          defaultValue: "conversation id",
+        })}
+        className="h-8 w-full text-xs sm:w-72"
+      />
+      <button
+        type="button"
+        onClick={apply}
+        disabled={!draft.trim()}
+        className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground disabled:opacity-50"
+      >
+        {t("aiAgent.systemPrompt.preview.replayApply", { defaultValue: "Replay" })}
+      </button>
+      {active && (
+        <button
+          type="button"
+          onClick={clear}
+          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+        >
+          <IconX className="size-3.5" />
+          {t("aiAgent.systemPrompt.preview.replayClear", { defaultValue: "Exit replay" })}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * T612 — the provenance banner for a replayed preview: names the source
+ * conversation and the real flow / cursor node / resolved persona the prompt was
+ * rebuilt at, so the operator knows this is ground truth, not a synthesized turn.
+ * When the id had no persisted state it says so (the preview fell back to a plain
+ * turn).
+ */
+function ReplayBanner({ replay }: Readonly<{ replay: TurSystemPromptReplay }>) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={cn(
+        "mb-4 rounded-lg border px-3 py-2.5 text-sm",
+        replay.resolved
+          ? "border-indigo-500/30 bg-indigo-500/5"
+          : "border-amber-500/40 bg-amber-500/5",
+      )}
+    >
+      <div className="flex items-center gap-2 font-medium text-foreground">
+        {replay.resolved ? (
+          <IconHistory className="size-4 text-indigo-600 dark:text-indigo-300" />
+        ) : (
+          <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-300" />
+        )}
+        {replay.resolved
+          ? t("aiAgent.systemPrompt.preview.replayResolved", {
+              defaultValue: "Replayed from a real conversation",
+            })
+          : t("aiAgent.systemPrompt.preview.replayUnresolved", {
+              defaultValue:
+                "No persisted state for this conversation — showing a plain turn",
+            })}
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span>
+          <span className="text-muted-foreground/70">
+            {t("aiAgent.systemPrompt.preview.replayConversation", {
+              defaultValue: "Conversation",
+            })}
+            :{" "}
+          </span>
+          <code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-foreground">
+            {replay.conversationId}
+          </code>
+        </span>
+        {replay.flowName && (
+          <span className="inline-flex items-center gap-1">
+            <IconSitemap className="size-3.5" />
+            {replay.flowName}
+            {replay.nodeId && (
+              <>
+                {" "}
+                <span className="text-muted-foreground/70">→</span> {replay.nodeId}
+              </>
+            )}
+          </span>
+        )}
+        {replay.personaName && (
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2 rounded-full bg-violet-500" />
+            {replay.personaName}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * T612 — the tool calls the model actually made on the replayed conversation
+ * (the T427 trace), oldest first: name, redacted args digest, ok/error status
+ * and duration. This is "what the model did", to be read against "what the
+ * prompt told it" above.
+ */
+function ToolCallTrace({
+  calls,
+}: Readonly<{ calls: TurSystemPromptReplay["toolCalls"] }>) {
+  const { t } = useTranslation();
+  return (
+    <section className="mt-8 rounded-xl border bg-muted/20 p-4">
+      <div className="mb-1 flex items-center gap-2">
+        <IconBolt className="size-4 text-muted-foreground" />
+        <span className="text-sm font-semibold text-foreground">
+          {t("aiAgent.systemPrompt.preview.toolTraceHeading", {
+            defaultValue: "Tool calls on this conversation",
+          })}
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-muted-foreground">
+        {t("aiAgent.systemPrompt.preview.toolTraceNote", {
+          defaultValue:
+            "What the model actually called during this conversation (recent, capped) — read against the prompt above.",
+        })}
+      </p>
+      <ol className="space-y-1.5">
+        {calls.map((call, idx) => (
+          <li
+            key={`${call.name}-${idx}`}
+            className="flex flex-wrap items-center gap-2 rounded-lg border bg-background/60 px-3 py-1.5 text-sm"
+          >
+            <span
+              className={cn(
+                "inline-flex size-2 shrink-0 rounded-full",
+                call.status === "ok" ? "bg-emerald-500" : "bg-red-500",
+              )}
+            />
+            <code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-[0.85em] text-foreground">
+              {call.name}
+            </code>
+            {call.argsSummary && (
+              <span className="truncate text-xs text-muted-foreground">
+                {call.argsSummary}
+              </span>
+            )}
+            <span className="ml-auto inline-flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span
+                className={cn(
+                  "rounded-full border px-1.5 py-0.5 uppercase",
+                  call.status === "ok"
+                    ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-300"
+                    : "border-red-500/30 text-red-600 dark:text-red-300",
+                )}
+              >
+                {call.status}
+              </span>
+              {call.durationMs > 0 && <span>{call.durationMs} ms</span>}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

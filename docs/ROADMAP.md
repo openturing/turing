@@ -261,31 +261,6 @@ fully shipped.**
 - 💭 **T602** (deps: T595, T600) **Public eval API + SDK/CLI** — `turing eval` (T125–T127) runs a named `dataset × grader stack` remotely; SDK `runEval`; a reusable CI gate over any dataset (extends T428/T430). → §XXXIII.17
 - 💭 **T603** (deps: T590, T588) **Continuous / online eval** — sample live production traffic, grade in the background with CODE+MODEL graders, and alert on quality **drift** (composes T87 sentiment + T155 citation-drift + T447 miner). "Eval in prod", not just pre-publish. → §XXXIII.18
 
-## Block AK — Live Preview as a per-turn prompt-diagnostics surface
-
-> The System-Prompt **Live Preview** already reverses the opaque assembled system
-> message into labeled segments (persona / agent / MCP / flow) — the redesign this
-> block builds on made it a readable Medium-style article with per-passage
-> provenance on hover. In practice it became a real *diagnostic* tool: it exposed
-> concrete waste in a live agent (the Insper multi-flow concierge) — ~40–50% of an
-> active-flow turn was **inert or duplicated** (welcome/first-interaction logic the
-> flow addendum tells the model to ignore; the forbidden-vocab list repeated in the
-> persona block *and* the agent "REGRAS DURAS"; a node label that costs tokens for
-> no behavior). It also **lied about the persona**: the preview always renders
-> `agent.getDefaultPersona()`, but at runtime a `persona`-type flow node switches
-> the persona via `__activePersonaId` (`TurAgentPersonaResolver`), so the persona
-> segment shown for a flow can be the wrong one. This block turns the preview from
-> "what a plain entry-turn looks like" into "what the model actually receives this
-> turn, what it costs, and what is wasted" — the loop for optimizing per-turn
-> prompts. All read-only/opt-in; no change to the assembled prompt itself.
-> Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXIV.
-
-- 💭 **T612** (deps: T427, T61) **Replay the actual assembled prompt from a real turn** — instead of synthesizing an entry-turn, capture and render the real system message sent on a chosen past conversation turn (from transcripts / the tool-call trace), so the preview shows exactly what happened — the ground truth for debugging a bad reply. → §XXXIV.6
-
-> **Note:** the preview's single-source-of-truth fix (render through the real
-> assembler, kill the reconstruction drift) is **T613** in Block AL — the whole
-> point of the pipeline. T607–T610 render/measure the segments that pipeline emits.
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

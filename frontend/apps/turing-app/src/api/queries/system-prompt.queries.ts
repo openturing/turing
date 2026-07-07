@@ -29,6 +29,26 @@ export function useSystemPromptPreview(
   });
 }
 
+/**
+ * T612 — replay the assembled prompt from a real conversation. Enabled only when
+ * a non-blank `conversationId` is supplied; changing it refetches. The result's
+ * `replay` envelope carries the conversation source + its tool-call trace.
+ */
+export function useSystemPromptReplayPreview(
+  agentId: string | undefined,
+  conversationId: string | undefined,
+) {
+  const trimmed = conversationId?.trim();
+  return useQuery({
+    queryKey:
+      agentId && trimmed
+        ? queryKeys.aiAgents.systemPromptReplay(agentId, trimmed)
+        : ["ai-agents", "system-prompt", "replay", "pending"],
+    queryFn: () => service.previewReplay(agentId as string, trimmed as string),
+    enabled: Boolean(agentId) && Boolean(trimmed),
+  });
+}
+
 /** Fast heuristic conflict validation — runs automatically on the page. */
 export function useValidateSystemPrompt(agentId: string | undefined) {
   return useQuery<TurSystemPromptIssue[]>({

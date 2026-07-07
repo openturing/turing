@@ -71,6 +71,9 @@ export const queryKeys = {
     systemPromptPreview: (id: string, flowId?: string, nodeId?: string, vars?: string) =>
       [...queryKeys.aiAgents.all(), 'system-prompt', 'preview', id,
         flowId ?? 'default', nodeId ?? 'entry', vars ?? 'empty'] as const,
+    // T612 — replay the assembled prompt from a real conversation.
+    systemPromptReplay: (id: string, conversationId: string) =>
+      [...queryKeys.aiAgents.all(), 'system-prompt', 'replay', id, conversationId] as const,
     systemPromptValidate: (id: string) =>
       [...queryKeys.aiAgents.all(), 'system-prompt', 'validate', id] as const,
   },

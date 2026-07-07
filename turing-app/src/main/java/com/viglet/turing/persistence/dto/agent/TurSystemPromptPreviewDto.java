@@ -56,6 +56,10 @@ import java.util.List;
  *                       turns), so the operator inspects the whole message list,
  *                       not just the system message. Empty when the agent has no
  *                       memory sources enabled.
+ * @param replay         Block AK / T612 — non-{@code null} when this preview was
+ *                       replayed from a real conversation's persisted state (the
+ *                       ground-truth prompt for that turn) rather than synthesized;
+ *                       carries the source conversation + its tool-call trace.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -73,11 +77,25 @@ public record TurSystemPromptPreviewDto(
         String costModelName,
         List<TurSystemPromptFlowNodeDto> flowNodes,
         String selectedNodeId,
-        List<TurSystemPromptMessageDto> messages) {
+        List<TurSystemPromptMessageDto> messages,
+        TurSystemPromptReplayDto replay) {
 
     public TurSystemPromptPreviewDto {
         flowNodes = flowNodes == null ? List.of() : flowNodes;
         messages = messages == null ? List.of() : messages;
+    }
+
+    /** Back-compat convenience for the T617 13-arg call sites (no replay envelope). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex,
+            double estimatedCostUsd, String costModelName,
+            List<TurSystemPromptFlowNodeDto> flowNodes, String selectedNodeId,
+            List<TurSystemPromptMessageDto> messages) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, estimatedCostUsd, costModelName,
+                flowNodes, selectedNodeId, messages, null);
     }
 
     /** Back-compat convenience for the T611 12-arg call sites (no message list). */

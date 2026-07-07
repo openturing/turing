@@ -73,6 +73,20 @@ public class TurAgentSystemPromptAPI {
         return previewService.buildPreview(requireAgent(id), flowId, nodeId, vars);
     }
 
+    @Operation(summary = "T612 — replay the assembled prompt from a real conversation. "
+            + "Rebuilds the system message from the conversation's persisted state (its "
+            + "governing flow, cursor node, collected slots and resolved persona) through "
+            + "the same runtime assembler, and rides its tool-call trace along, so the "
+            + "operator sees the ground-truth prompt for a specific turn (not a synthesized "
+            + "one). Degrades to a plain preview when the conversation has no state.")
+    @GetMapping("/preview/replay")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
+    @Transactional(readOnly = true)
+    public TurSystemPromptPreviewDto replay(@PathVariable String id,
+            @RequestParam String conversationId) {
+        return previewService.buildReplayPreview(requireAgent(id), conversationId);
+    }
+
     @Operation(summary = "Fast heuristic validation of the system prompt for conflicts")
     @GetMapping("/validate")
     @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})

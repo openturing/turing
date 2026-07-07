@@ -75,6 +75,35 @@ export interface TurSystemPromptTool {
   source: "CUSTOM" | "NATIVE" | "MCP";
 }
 
+/**
+ * Block AK/T612 — one tool the model actually called during a replayed
+ * conversation (from the T427 trace). Mirrors `TurSystemPromptToolCallDto`.
+ */
+export interface TurSystemPromptToolCall {
+  name: string;
+  /** Redacted/truncated argument digest — never raw secrets. */
+  argsSummary: string | null;
+  status: string;
+  durationMs: number;
+}
+
+/**
+ * Block AK/T612 — the "replayed from a real conversation" envelope. Present only
+ * when the preview was rebuilt from a conversation's persisted state (the
+ * ground-truth prompt for that turn) rather than synthesized. Mirrors
+ * `TurSystemPromptReplayDto`.
+ */
+export interface TurSystemPromptReplay {
+  conversationId: string;
+  /** False when the id had no persisted state (preview fell back to a plain turn). */
+  resolved: boolean;
+  flowName: string | null;
+  nodeId: string | null;
+  personaName: string | null;
+  /** The conversation's recorded tool calls, oldest first; empty when none traced. */
+  toolCalls: TurSystemPromptToolCall[];
+}
+
 /** A chat flow the operator can pick in the preview's flow selector. */
 export interface TurSystemPromptFlowOption {
   id: string;
@@ -112,6 +141,8 @@ export interface TurSystemPromptPreview {
   selectedNodeId: string | null;
   /** Block AL/T617 — the history-prefix messages prepended to the client history; empty when none. */
   messages: TurSystemPromptMessage[];
+  /** Block AK/T612 — set when this preview was replayed from a real conversation; null otherwise. */
+  replay: TurSystemPromptReplay | null;
 }
 
 /** Sentinel flowId for "preview a turn with no chat flow governing". */

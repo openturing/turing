@@ -34,6 +34,23 @@ export class TurSystemPromptService {
     return response.data;
   }
 
+  /**
+   * T612 — replay the assembled prompt from a real conversation: the backend
+   * rebuilds the system message from the conversation's persisted state (flow,
+   * cursor node, collected slots, resolved persona) through the same runtime
+   * assembler, and returns its tool-call trace in `preview.replay`.
+   */
+  async previewReplay(
+    agentId: string,
+    conversationId: string,
+  ): Promise<TurSystemPromptPreview> {
+    const response = await axios.get<TurSystemPromptPreview>(
+      `/ai-agent/${agentId}/system-prompt/preview/replay`,
+      { params: { conversationId } },
+    );
+    return response.data;
+  }
+
   /** Fast, deterministic heuristic conflict checks. */
   async validate(agentId: string): Promise<TurSystemPromptIssue[]> {
     const response = await axios.get<TurSystemPromptIssue[]>(

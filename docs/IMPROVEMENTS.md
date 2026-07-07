@@ -2223,13 +2223,6 @@ what does it cost, and what is wasted** — not just "what does a plain entry-tu
 look like". This block builds that. All additions are read-only/opt-in and never
 change the assembled prompt itself (that stays the faithful ground truth).
 
-### XXXIV.6 Replay the actual assembled prompt (T612, 💭)
-
-The ultimate ground truth: instead of synthesizing an entry-turn, capture and
-render the real system message sent on a chosen past conversation turn (from
-transcripts / the T427 tool-call trace) so the preview shows exactly what
-happened — the artifact you need when debugging a specific bad reply.
-
 ### XXXIV.7 Single source of truth — moved to Block AL
 
 The preview's fidelity fix (render through the real assembler, retire the

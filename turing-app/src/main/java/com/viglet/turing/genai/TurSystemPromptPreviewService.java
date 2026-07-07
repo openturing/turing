@@ -12,6 +12,7 @@ package com.viglet.turing.genai;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -23,7 +24,10 @@ import com.viglet.turing.genai.flow.ChatFlowEdge;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
+import com.viglet.turing.genai.tool.TurChatToolCall;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyContext;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptAssembly;
@@ -36,7 +40,9 @@ import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowOptionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptInertRegionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptReplayDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptSegmentDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptToolCallDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptToolDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
@@ -46,6 +52,7 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
+import com.viglet.turing.service.chatanalytics.TurToolCallTraceService;
 import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -93,25 +100,31 @@ public class TurSystemPromptPreviewService {
     private final TurChatFlowRepository chatFlowRepository;
     private final TurLLMPriceService priceService;
     private final TurInertRegionDetector inertRegionDetector;
+    private final TurAgentPersonaResolver personaResolver;
+    private final TurToolCallTraceService toolCallTraceService;
 
     public TurSystemPromptPreviewService(TurPromptAssemblyPipeline promptAssemblyPipeline,
             TurMessageAssemblyPipeline messageAssemblyPipeline,
             TurChatFlowEngineService chatFlowEngineService,
             TurChatFlowRepository chatFlowRepository,
             TurLLMPriceService priceService,
-            TurInertRegionDetector inertRegionDetector) {
+            TurInertRegionDetector inertRegionDetector,
+            TurAgentPersonaResolver personaResolver,
+            TurToolCallTraceService toolCallTraceService) {
         this.promptAssemblyPipeline = promptAssemblyPipeline;
         this.messageAssemblyPipeline = messageAssemblyPipeline;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowRepository = chatFlowRepository;
         this.priceService = priceService;
         this.inertRegionDetector = inertRegionDetector;
+        this.personaResolver = personaResolver;
+        this.toolCallTraceService = toolCallTraceService;
     }
 
     /** Convenience overload — previews the default flow (first enabled). */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent) {
-        return buildPreviewInternal(agent, null, null, null);
+        return buildPreviewInternal(agent, null, null, null, null);
     }
 
     /**
@@ -122,7 +135,7 @@ public class TurSystemPromptPreviewService {
      */
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent, String flowId) {
-        return buildPreviewInternal(agent, flowId, null, null);
+        return buildPreviewInternal(agent, flowId, null, null, null);
     }
 
     /**
@@ -136,11 +149,54 @@ public class TurSystemPromptPreviewService {
     @Transactional(readOnly = true)
     public TurSystemPromptPreviewDto buildPreview(TurAIAgent agent, String flowId,
             String nodeId, String variablesJson) {
-        return buildPreviewInternal(agent, flowId, nodeId, variablesJson);
+        return buildPreviewInternal(agent, flowId, nodeId, variablesJson, null);
+    }
+
+    /**
+     * T612 — replay the assembled prompt from a <em>real</em> conversation. Reads
+     * {@code conversationId}'s persisted leaf state (its governing flow, current
+     * cursor node and collected slots) and the persona the runtime resolved for it
+     * ({@link TurAgentPersonaResolver}, honouring a {@code __activePersonaId} flow
+     * override), then feeds them through the same shared assembler the runtime uses
+     * — so {@code assembledText} is what the model would receive for that
+     * conversation's next turn, not a synthesized entry turn. The conversation's
+     * T427 tool-call trace rides along so the operator can read "what the prompt
+     * said" against "what the model actually called".
+     *
+     * <p>A blank id, or one with no persisted state / whose flow isn't this agent's,
+     * degrades gracefully to a plain preview with {@code replay.resolved=false}.
+     */
+    @Transactional(readOnly = true)
+    public TurSystemPromptPreviewDto buildReplayPreview(TurAIAgent agent, String conversationId) {
+        if (!StringUtils.hasText(conversationId)) {
+            return buildPreviewInternal(agent, FLOW_NONE, null, null,
+                    new ReplayContext(conversationId, false, null, null, List.of()));
+        }
+        // Never null — getConversationState returns an empty-field DTO for an
+        // unknown conversation rather than null.
+        ConversationStateDto state = chatFlowEngineService.getConversationState(conversationId);
+        boolean resolved = StringUtils.hasText(state.flowId());
+        // Honour the conversation's flow only when it is one of this agent's flows;
+        // otherwise the replay falls back to a no-flow turn rather than silently
+        // rendering a different agent's flow (resolveSelectedFlow's default-pick).
+        boolean flowIsAgents = resolved && chatFlowRepository
+                .findByTurAIAgent_IdOrderByNameAsc(agent.getId()).stream()
+                .anyMatch(f -> f.getId().equals(state.flowId()));
+        String flowId = flowIsAgents ? state.flowId() : FLOW_NONE;
+        String nodeId = flowIsAgents ? state.currentNodeId() : null;
+        String variablesJson = flowIsAgents
+                ? serializeSlots(chatFlowEngineService.listSlotsForConversation(conversationId).slots())
+                : null;
+        // The persona the runtime would actually speak with for this conversation.
+        TurPersona persona = personaResolver.resolve(agent, conversationId);
+        List<TurChatToolCall> trace = toolCallTraceService.getTrace(conversationId);
+        ReplayContext replay = new ReplayContext(conversationId, resolved,
+                flowIsAgents ? state.flowName() : null, persona, trace);
+        return buildPreviewInternal(agent, flowId, nodeId, variablesJson, replay);
     }
 
     private TurSystemPromptPreviewDto buildPreviewInternal(TurAIAgent agent, String flowId,
-            String nodeId, String variablesJson) {
+            String nodeId, String variablesJson, ReplayContext replay) {
         boolean usesDefault = !StringUtils.hasText(agent.getSystemPrompt());
         String base = usesDefault ? DEFAULT_SYSTEM_PROMPT.strip() : agent.getSystemPrompt();
 
@@ -160,11 +216,15 @@ public class TurSystemPromptPreviewService {
         // T607 — resolve the persona the way the runtime does: a persona-type
         // node on the path to the entry anchor switches the active voice via
         // __activePersonaId (mirroring TurAgentPersonaResolver). Fall back to the
-        // agent default when no flow governs the turn or none applies.
+        // agent default when no flow governs the turn or none applies. For a T612
+        // replay the runtime's own resolution (from the real conversation state) is
+        // authoritative and wins — it reads the persisted __activePersonaId even
+        // when the switching node isn't on the static first-edge walk.
         FlowPersonaResolution personaResolution = flowPreview == null
                 ? null : flowPreview.personaResolution();
-        TurPersona persona = personaResolution != null
-                ? personaResolution.persona() : agent.getDefaultPersona();
+        TurPersona persona = replay != null ? replay.persona()
+                : (personaResolution != null
+                        ? personaResolution.persona() : agent.getDefaultPersona());
 
         // ONE assembly, shared with the runtime. Null embedding model + null
         // query so the persona contributor skips live few-shot retrieval; null
@@ -175,7 +235,7 @@ public class TurSystemPromptPreviewService {
 
         List<TurSystemPromptSegmentDto> segments = new ArrayList<>();
         for (TurPromptSegment seg : assembly.segments()) {
-            segments.add(toDto(seg, usesDefault, flowPreview));
+            segments.add(toDto(seg, usesDefault, flowPreview, replay != null));
         }
 
         // Informational-only segments: not part of assembledText, shown as
@@ -204,7 +264,58 @@ public class TurSystemPromptPreviewService {
                 estimatedCostUsd, costModelName,
                 flowPreview == null ? List.of() : flowPreview.flowNodes(),
                 flowPreview == null ? null : flowPreview.nodeId(),
-                buildHistoryPrefixMessages(agent));
+                buildHistoryPrefixMessages(agent),
+                buildReplayDto(replay, selectedFlow, flowPreview, persona));
+    }
+
+    /**
+     * T612 — the replay envelope for the returned preview, or {@code null} for a
+     * synthesized (non-replay) preview. Reports the real conversation source, the
+     * flow/node the addendum was rebuilt at, the resolved persona, and the T427
+     * tool-call trace mapped to display DTOs.
+     */
+    private static TurSystemPromptReplayDto buildReplayDto(ReplayContext replay,
+            TurChatFlow selectedFlow, FlowPreview flowPreview, TurPersona persona) {
+        if (replay == null) {
+            return null;
+        }
+        List<TurSystemPromptToolCallDto> toolCalls = new ArrayList<>();
+        for (TurChatToolCall call : replay.toolCalls()) {
+            toolCalls.add(new TurSystemPromptToolCallDto(call.name(), call.argsSummary(),
+                    call.status(), call.durationMs() == null ? 0L : call.durationMs()));
+        }
+        String flowName = replay.flowName() != null ? replay.flowName()
+                : (selectedFlow == null ? null : selectedFlow.getName());
+        return new TurSystemPromptReplayDto(replay.conversationId(), replay.resolved(),
+                flowName, flowPreview == null ? null : flowPreview.nodeId(),
+                persona == null ? null : persona.getName(), toolCalls);
+    }
+
+    /** Serializes a conversation's merged slot map to a JSON object string. */
+    private String serializeSlots(Map<String, String> slots) {
+        if (slots == null || slots.isEmpty()) {
+            return "{}";
+        }
+        try {
+            return VARS_MAPPER.writeValueAsString(slots);
+        } catch (RuntimeException e) {
+            log.debug("[SystemPrompt] replay slot serialization failed, using empty state: {}",
+                    e.getMessage());
+            return "{}";
+        }
+    }
+
+    /**
+     * T612 — inputs for a replay preview: the source conversation and the runtime
+     * facts (resolved persona, governing flow name, tool-call trace) that the
+     * static synthesis path cannot know. {@code persona} is authoritative over the
+     * flow-graph walk when this is set.
+     */
+    private record ReplayContext(String conversationId, boolean resolved, String flowName,
+            TurPersona persona, List<TurChatToolCall> toolCalls) {
+        ReplayContext {
+            toolCalls = toolCalls == null ? List.of() : toolCalls;
+        }
     }
 
     /**
@@ -273,11 +384,14 @@ public class TurSystemPromptPreviewService {
      * shows.
      */
     private TurSystemPromptSegmentDto toDto(TurPromptSegment seg, boolean usesDefault,
-            FlowPreview flowPreview) {
+            FlowPreview flowPreview, boolean replaying) {
         String title = seg.title();
         FlowPersonaResolution personaRes = flowPreview == null ? null : flowPreview.personaResolution();
         String note = switch (seg.origin()) {
-            case TurPromptSegment.ORIGIN_PERSONA -> personaNote(personaRes);
+            case TurPromptSegment.ORIGIN_PERSONA -> replaying
+                    ? "The persona the runtime resolved for the replayed conversation "
+                            + "(honouring any flow persona switch)."
+                    : personaNote(personaRes);
             case TurPromptSegment.ORIGIN_AGENT -> usesDefault
                     ? "Fallback default — this agent has no system prompt of its own."
                     : null;
@@ -287,8 +401,9 @@ public class TurSystemPromptPreviewService {
                 "Opt-in capability guidance appended to the agent prompt.";
             case TurPromptSegment.ORIGIN_SKILL ->
                 "Skill catalog (progressive disclosure) — the run_skill delegation surface.";
-            case TurPromptSegment.ORIGIN_FLOW ->
-                "From the selected chat flow. The runtime picks the active node by conversation state — this shows the entry node.";
+            case TurPromptSegment.ORIGIN_FLOW -> replaying
+                    ? "From the chat flow, rebuilt at the conversation's real cursor node and collected slots."
+                    : "From the selected chat flow. The runtime picks the active node by conversation state — this shows the entry node.";
             default -> null;
         };
         if (TurPromptSegment.ORIGIN_FLOW.equals(seg.origin())

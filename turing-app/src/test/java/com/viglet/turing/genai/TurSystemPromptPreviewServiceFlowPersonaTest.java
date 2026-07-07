@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.genai.TurSystemPromptPreviewService.FlowPersonaDiagnostic;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptAssembly;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
@@ -38,6 +40,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.persona.TurPersonaKind;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
+import com.viglet.turing.service.chatanalytics.TurToolCallTraceService;
 import com.viglet.turing.service.llm.price.TurLLMPriceService;
 
 /**
@@ -61,6 +64,10 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
     private TurChatFlowRepository chatFlowRepository;
     @Mock
     private TurLLMPriceService priceService;
+    @Mock
+    private TurAgentPersonaResolver personaResolver;
+    @Mock
+    private TurToolCallTraceService toolCallTraceService;
 
     private TurSystemPromptPreviewService service;
 
@@ -74,7 +81,8 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
                 new TurMessageAssemblyPipeline(List.of());
         service = new TurSystemPromptPreviewService(promptAssemblyPipeline,
                 messageAssemblyPipeline, chatFlowEngineService,
-                chatFlowRepository, priceService, new TurInertRegionDetector());
+                chatFlowRepository, priceService, new TurInertRegionDetector(),
+                personaResolver, toolCallTraceService);
     }
 
     /** start → persona(personaId) → aiQuestion — the canonical override path. */
@@ -242,5 +250,106 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
                 ArgumentCaptor.forClass(TurPromptAssemblyContext.class);
         verify(promptAssemblyPipeline).assemble(captor.capture());
         assertThat(captor.getValue().flowContext().state().getVariablesJson()).isEqualTo("{}");
+    }
+
+    // ---------------------------------------------------------------------
+    // T612 — replay the assembled prompt from a real conversation.
+    // ---------------------------------------------------------------------
+
+    private static ConversationStateDto conversationState(String flowId, String nodeId) {
+        return new ConversationStateDto("conv-1", flowId, "Concierge", nodeId,
+                null, null, null, null, null);
+    }
+
+    @Test
+    void replaySeedsAssemblyFromRealConversationState() throws Exception {
+        TurChatFlow flow = stubSingleFlow(twoQuestionGraph(), "Concierge");
+        TurAIAgent agent = agentWith();
+        TurPersona marina = persona("p-marina", "Marina", TurPersonaKind.SPEAKER);
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+        // The conversation is parked on node n3 with a collected slot; the runtime
+        // resolved the Marina persona and fired one tool.
+        when(chatFlowEngineService.getConversationState("conv-1"))
+                .thenReturn(conversationState(flow.getId(), "n3"));
+        when(chatFlowEngineService.listSlotsForConversation("conv-1"))
+                .thenReturn(new com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto(
+                        "conv-1", java.util.Map.of("cargo", "developer")));
+        when(personaResolver.resolve(agent, "conv-1")).thenReturn(marina);
+        when(toolCallTraceService.getTrace("conv-1")).thenReturn(List.of(
+                com.viglet.turing.genai.tool.TurChatToolCall.completed(
+                        "c1", "search_knowledge_base", "{q=...}", true, 42L)));
+
+        TurSystemPromptPreviewDto dto = service.buildReplayPreview(agent, "conv-1");
+
+        ArgumentCaptor<TurPromptAssemblyContext> captor =
+                ArgumentCaptor.forClass(TurPromptAssemblyContext.class);
+        verify(promptAssemblyPipeline).assemble(captor.capture());
+        var ctx = captor.getValue();
+        // The real cursor node + collected slots drove the assembly, and the
+        // resolver's persona won over the static graph walk.
+        assertThat(ctx.flowContext().state().getCurrentNodeId()).isEqualTo("n3");
+        assertThat(ctx.flowContext().state().getVariablesJson()).contains("cargo").contains("developer");
+        assertThat(ctx.persona()).isSameAs(marina);
+
+        assertThat(dto.replay()).isNotNull();
+        assertThat(dto.replay().resolved()).isTrue();
+        assertThat(dto.replay().conversationId()).isEqualTo("conv-1");
+        assertThat(dto.replay().nodeId()).isEqualTo("n3");
+        assertThat(dto.replay().personaName()).isEqualTo("Marina");
+        assertThat(dto.replay().toolCalls()).hasSize(1);
+        assertThat(dto.replay().toolCalls().get(0).name()).isEqualTo("search_knowledge_base");
+        assertThat(dto.replay().toolCalls().get(0).status()).isEqualTo("ok");
+        assertThat(dto.replay().toolCalls().get(0).durationMs()).isEqualTo(42L);
+    }
+
+    @Test
+    void replayOfUnknownConversationDegradesToPlainPreview() {
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(any())).thenReturn(List.of());
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+        // No persisted state → getConversationState returns an all-null DTO.
+        when(chatFlowEngineService.getConversationState("ghost"))
+                .thenReturn(conversationState(null, null));
+        when(personaResolver.resolve(any(), any())).thenReturn(null);
+        when(toolCallTraceService.getTrace("ghost")).thenReturn(List.of());
+        TurAIAgent agent = agentWith();
+
+        TurSystemPromptPreviewDto dto = service.buildReplayPreview(agent, "ghost");
+
+        assertThat(dto.replay()).isNotNull();
+        assertThat(dto.replay().resolved()).isFalse();
+        assertThat(dto.replay().nodeId()).isNull();
+        assertThat(dto.replay().toolCalls()).isEmpty();
+    }
+
+    @Test
+    void replayIgnoresFlowThatIsNotThisAgents() throws Exception {
+        // The agent owns flow-1, but the conversation's leaf flow is another
+        // agent's flow-X → replay must not silently render flow-1's addendum.
+        TurChatFlow owned = new TurChatFlow();
+        owned.setId("flow-1");
+        owned.setName("Concierge");
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(any()))
+                .thenReturn(List.of(owned));
+        TurAIAgent agent = agentWith();
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+        when(chatFlowEngineService.getConversationState("conv-2"))
+                .thenReturn(conversationState("flow-X", "nX"));
+        when(personaResolver.resolve(agent, "conv-2")).thenReturn(null);
+        when(toolCallTraceService.getTrace("conv-2")).thenReturn(List.of());
+
+        TurSystemPromptPreviewDto dto = service.buildReplayPreview(agent, "conv-2");
+
+        ArgumentCaptor<TurPromptAssemblyContext> captor =
+                ArgumentCaptor.forClass(TurPromptAssemblyContext.class);
+        verify(promptAssemblyPipeline).assemble(captor.capture());
+        // FLOW_NONE → no flow context fed to the assembler.
+        assertThat(captor.getValue().flowContext()).isNull();
+        // Still marked resolved (the conversation had state), but no flow/node.
+        assertThat(dto.replay().resolved()).isTrue();
+        assertThat(dto.replay().flowName()).isNull();
+        assertThat(dto.replay().nodeId()).isNull();
     }
 }

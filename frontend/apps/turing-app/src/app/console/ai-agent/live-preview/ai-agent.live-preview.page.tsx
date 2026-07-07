@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { useSystemPromptPreview } from "@/api/queries/system-prompt.queries";
+import {
+  useSystemPromptPreview,
+  useSystemPromptReplayPreview,
+} from "@/api/queries/system-prompt.queries";
 import { SystemPromptLivePreview } from "@/components/agent/system-prompt-live-preview";
 
 /**
@@ -25,7 +28,19 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
   // collected slot values (JSON string) for a mid-conversation preview.
   const [nodeId, setNodeId] = useState<string | undefined>(undefined);
   const [vars, setVars] = useState<string | undefined>(undefined);
-  const { data: preview, isLoading } = useSystemPromptPreview(id, flowId, nodeId, vars);
+  // T612 — a real conversation to replay (undefined → synthesized preview).
+  const [replayConversationId, setReplayConversationId] = useState<
+    string | undefined
+  >(undefined);
+  const replaying = Boolean(replayConversationId?.trim());
+
+  const synthesized = useSystemPromptPreview(id, flowId, nodeId, vars);
+  const replay = useSystemPromptReplayPreview(
+    id,
+    replaying ? replayConversationId : undefined,
+  );
+  const preview = replaying ? replay.data : synthesized.data;
+  const isLoading = replaying ? replay.isLoading : synthesized.isLoading;
 
   // Switching flows invalidates the picked node (node ids are per-flow).
   function handleFlowChange(value: string) {
@@ -44,6 +59,8 @@ export default function AIAgentLivePreviewPage({ chrome = "console" }: { chrome?
         nodeId={nodeId}
         onNodeChange={setNodeId}
         onVarsChange={setVars}
+        replayConversationId={replayConversationId}
+        onReplayChange={setReplayConversationId}
         // In bento the hero already shows the "Live Preview" title and reuses
         // this description as its subtitle, so suppress the article's masthead.
         showHeader={chrome !== "bento"}
