@@ -23,6 +23,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -293,6 +294,10 @@ public class TurSolr {
             return Optional.ofNullable(response);
         } catch (SolrServerException | IOException e) {
             logSolrException(query, e, false);
+        } catch (SolrException e) {
+            // RemoteSolrException (server-side rejection, e.g. undefined field) is unchecked
+            // and would otherwise escape the resilience wrapper as an unhandled exception.
+            logSolrException(query, e, true);
         }
         return Optional.empty();
     }
@@ -381,7 +386,9 @@ public class TurSolr {
     }
 
     public static int firstRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
-        return (turSEParameters.getCurrentPage() - 1) * turSEParameters.getRows();
+        // Clamp to 0: a client-supplied page <= 0 would otherwise yield a negative Solr
+        // 'start', which Solr rejects with "'start' parameter cannot be negative".
+        return Math.max(0, (turSEParameters.getCurrentPage() - 1) * turSEParameters.getRows());
     }
 
     public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
