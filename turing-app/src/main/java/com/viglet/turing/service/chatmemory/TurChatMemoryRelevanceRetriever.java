@@ -180,15 +180,45 @@ public class TurChatMemoryRelevanceRetriever {
                                         String conversationId,
                                         String latestUserMessage,
                                         List<ChatMessageItem> history) {
-        long start = System.currentTimeMillis();
         if (history == null) {
             // No timer sample on the null-history degenerate case — caller
             // misuse, not a runtime path worth dashboarding.
             return Collections.emptyList();
         }
+        List<ChatMessageItem> prefix = retrievePrefix(agent, conversationId, latestUserMessage);
+        if (prefix.isEmpty()) {
+            return history;
+        }
+        List<ChatMessageItem> augmented = new ArrayList<>(prefix.size() + history.size());
+        augmented.addAll(prefix);
+        augmented.addAll(history);
+        return augmented;
+    }
+
+    /**
+     * Returns <em>only</em> the relevance-retrieved older turns (marked up with
+     * their position/timestamp), in chronological order — the block {@link #enrich}
+     * prepends to the history. Never {@code null}; empty on any bypass condition,
+     * store error, or when BM25 finds nothing on-topic.
+     *
+     * <p>This is the message-level entry point the T616
+     * {@link com.viglet.turing.genai.prompt.TurMessageContributor} pipeline calls:
+     * the retriever contributes a history <em>prefix</em>, and the assembler owns
+     * the single concatenation with the client history. {@link #enrich} is retained
+     * as the {@code prefix + history} convenience for the legacy inline path.
+     *
+     * @param agent             agent being executed — read for the relevance knobs.
+     * @param conversationId    persisted-memory key; blank means no-op.
+     * @param latestUserMessage the user's latest turn — the scoring query.
+     * @return the retrieved older turns, or an empty list on any bypass/error path.
+     */
+    public List<ChatMessageItem> retrievePrefix(TurAIAgent agent,
+                                                String conversationId,
+                                                String latestUserMessage) {
+        long start = System.currentTimeMillis();
         if (!isRelevanceApplicable(agent, conversationId, latestUserMessage)) {
             recordBypass(start);
-            return history;
+            return Collections.emptyList();
         }
 
         int recentN = Math.max(0, agent.getChatMemoryRecentN());
@@ -202,21 +232,21 @@ public class TurChatMemoryRelevanceRetriever {
             log.warn("[ChatMemoryRelevance] store read failed for conv '{}': {}",
                     conversationId, e.getMessage());
             recordBypass(start);
-            return history;
+            return Collections.emptyList();
         }
         if (persisted == null || persisted.size() <= recentN) {
             // Either nothing persisted yet (first turn after enablement) or
             // the recent-N window already covers the entire pool — no
             // "older" turns to rescue.
             recordBypass(start);
-            return history;
+            return Collections.emptyList();
         }
 
         int olderCount = persisted.size() - recentN;
         List<PersistedMessage> older = parseOlderMessages(persisted, olderCount);
         if (older.isEmpty()) {
             recordBypass(start);
-            return history;
+            return Collections.emptyList();
         }
 
         List<PersistedMessage> retrieved = retrieveRelevant(older, latestUserMessage, topK);
@@ -226,7 +256,7 @@ public class TurChatMemoryRelevanceRetriever {
             // (the retrieval cost was paid but produced no signal).
             pipelineObservation.recordMemoryRetrieval(older.size(), 0,
                     System.currentTimeMillis() - start, TurMeterNames.OUTCOME_NO_HITS);
-            return history;
+            return Collections.emptyList();
         }
 
         // Build the prepended block in chronological order so the LLM sees
@@ -234,18 +264,17 @@ public class TurChatMemoryRelevanceRetriever {
         // the BM25 ranking dropping turns out of sequence.
         retrieved.sort((a, b) -> Integer.compare(a.position(), b.position()));
 
-        List<ChatMessageItem> augmented = new ArrayList<>(retrieved.size() + history.size());
+        List<ChatMessageItem> prefix = new ArrayList<>(retrieved.size());
         for (PersistedMessage m : retrieved) {
-            augmented.add(new ChatMessageItem(m.role(), markup(m)));
+            prefix.add(new ChatMessageItem(m.role(), markup(m)));
         }
-        augmented.addAll(history);
         if (log.isDebugEnabled()) {
-            log.debug("[ChatMemoryRelevance] conv '{}': prepended {} older turn(s) from a pool of {} (recent-N={})",
+            log.debug("[ChatMemoryRelevance] conv '{}': retrieved {} older turn(s) from a pool of {} (recent-N={})",
                     conversationId, retrieved.size(), older.size(), recentN);
         }
         pipelineObservation.recordMemoryRetrieval(older.size(), retrieved.size(),
                 System.currentTimeMillis() - start, TurMeterNames.OUTCOME_HITS);
-        return augmented;
+        return prefix;
     }
 
     /**

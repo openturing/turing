@@ -2279,28 +2279,29 @@ not a second call site.
 > `turing.prompt.assembly.pipeline-enabled` escape hatch were deleted, so the
 > pipeline is now the single system-prompt assembly path. The subsections that
 > specified all three were removed per the "no shipped reports in IMPROVEMENTS"
-> rule. What remains below is the unshipped tail (T616).
+> rule. **T616 also shipped** — the T115 memory summary and T30 relevance turns now
+> assemble through a message-level SPI (`TurMessageContributor` /
+> `TurMessageAssemblyPipeline`), so the whole message list has one assembly point.
+> What remains below is the unshipped tail (T617).
 
-### XXXV.3 Bring memory-T115 / RAG history fan-out behind the SPI (T616, 💭)
+### XXXV.3 Retire the message-pipeline escape hatch + mirror the full list (T617, 💭)
 
-T615 collapsed the system-prompt build to one path: the `TurPromptContributor`
-pipeline. But the turn's *message list* is still assembled in two layers —
-`TurPromptAssemblyPipeline` produces the system message, then
-`TurChatPromptAssembler.assemble` inlines two more sources that fan out into
-`user`/`assistant` messages rather than the system message:
+T616 collapsed the turn's *message list* onto one path: the system message comes
+from `TurPromptAssemblyPipeline`, and the history prefix (T115 memory summary + T30
+relevance turns) from `TurMessageAssemblyPipeline`, both fanned out through the
+assembler's single `user`/`assistant` conversion. Two loose ends remain before the
+block is truly closed:
 
-- **Chat-memory compression (T115)** — a single compact summary of the older
-  turn-pool prepended as one synthetic message when the pool exceeds the token
-  threshold.
-- **Conversation-relevance / RAG history retrieval (T30)** — BM25-top-K older
-  turns pinned back into the history ahead of the recent-N window.
-
-These live outside the SPI because today a `TurPromptContributor` emits
-system-text `TurPromptSegment`s, not full `Message`s. The task is to widen the SPI
-so a contributor can emit whole messages (or a message-level sibling interface),
-then move both sources onto it. End state: one assembly path for the *entire*
-message list, and the Live Preview can mirror the full list — not just the system
-message — with the same no-drift guarantee T613 gave the system prompt.
+- **The escape hatch.** T616 shipped gated behind
+  `turing.prompt.assembly.message-pipeline-enabled=true`, with the inline
+  `buildMemoryPrefixLegacy` retained for rollback. As T615 did for T613's flag, once
+  the message pipeline has soaked in production, delete the inline path and the flag
+  so there is genuinely one path, not two.
+- **Preview fidelity.** The Live Preview still mirrors only the *system* message. It
+  should also render the history-prefix messages the `TurMessageAssemblyPipeline`
+  emits (with their `origin`/`label` provenance), so an operator inspects the whole
+  message list — the same no-drift guarantee T613 gave the system prompt, extended
+  end-to-end.
 
 **Design invariants for the block:** foundational + incremental + gated —
 contributors are introduced behind the current assembler and migrated one at a

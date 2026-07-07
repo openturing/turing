@@ -309,7 +309,7 @@ fully shipped.**
 > model sees, so each step re-validates like the T607-era flow-heading change.
 > Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXV.
 
-- 💭 **T616** (deps: T615) **Bring memory-T115 / RAG history fan-out behind the SPI** — T615 retired the system-message escape hatch, but two prompt sources still live *outside* the assembly pipeline because they fan out into user/assistant messages rather than the system message: chat-memory compression (T115) and the conversation-relevance / RAG history retrieval, both still assembled inline in `TurChatPromptAssembler.assemble`. Extend the contributor SPI to emit full `Message`s (not just system-text segments) so these become contributors too — end state: one assembly path with the preview able to mirror the whole message list. Gated + incremental per §XXXV design invariants. → §XXXV.3
+- 💭 **T617** (deps: T616) **Retire the message-pipeline escape hatch + mirror the full message list in the preview** — T616 brought the T115 memory summary and T30 relevance turns behind the `TurMessageContributor` SPI, gated by the `turing.prompt.assembly.message-pipeline-enabled=true` escape hatch. Once it has soaked (as T615 did for T613's flag), delete the inline `buildMemoryPrefixLegacy` path and the flag, and teach the Live Preview to render the history-prefix messages (`TurMessageAssemblyPipeline`) alongside the system segments — today it mirrors only the system message. End state: one assembly path for the entire message list, mirrored end-to-end in the preview. → §XXXV.3
 
 ## Non-goals (do NOT add as tasks)
 
