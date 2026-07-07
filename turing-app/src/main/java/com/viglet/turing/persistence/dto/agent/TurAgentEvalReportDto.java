@@ -44,8 +44,18 @@ public record TurAgentEvalReportDto(
         boolean baseline,
         boolean regressed,
         boolean pendingReview,
+        String datasetId,
+        int datasetVersion,
         List<TurAgentEvalCaseResultDto> results,
         String error) {
+
+    /** T592 constructor (no dataset pin); {@code datasetId=null}, {@code datasetVersion=0}. */
+    public TurAgentEvalReportDto(String reportId, LocalDateTime createdAt, boolean passed, double score,
+            int caseCount, int passedCount, boolean baseline, boolean regressed, boolean pendingReview,
+            List<TurAgentEvalCaseResultDto> results, String error) {
+        this(reportId, createdAt, passed, score, caseCount, passedCount, baseline, regressed,
+                pendingReview, null, 0, results, error);
+    }
 
     /** Legacy constructor (no human review); {@code pendingReview=false}. */
     public TurAgentEvalReportDto(String reportId, LocalDateTime createdAt, boolean passed, double score,

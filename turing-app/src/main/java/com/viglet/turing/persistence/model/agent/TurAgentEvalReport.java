@@ -94,6 +94,17 @@ public class TurAgentEvalReport implements Serializable {
     @Column(name = "pendingReview", nullable = false)
     private boolean pendingReview;
 
+    /**
+     * T598 — the bound dataset (if any) + the dataset version this run scored
+     * against, so a regression comparison knows whether the dataset itself
+     * drifted between runs. {@code datasetVersion} is 0 for inline-case runs.
+     */
+    @Column(name = "datasetId", length = 36)
+    private String datasetId;
+
+    @Column(name = "datasetVersion", nullable = false)
+    private int datasetVersion;
+
     /** Serialized {@code List<TurAgentEvalCaseResultDto>}. */
     @Column(name = "resultsJson", columnDefinition = "longtext")
     private String resultsJson;

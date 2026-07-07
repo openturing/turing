@@ -1,0 +1,81 @@
+databaseChangeLog:
+  # T598 / §XXXIII.13 (Block AJ) — dataset versioning + drift.
+  #
+  #   tur_eval_dataset_snapshot — an immutable frozen copy of a dataset's rows
+  #   at a version (rowsJson = serialized List<TurEvalDatasetRowDto>).
+  #
+  #   tur_agent_eval_report.datasetId / datasetVersion — the dataset + version a
+  #   run scored against (0 when the set used inline cases).
+  #
+  # camelCase column names; longtext for big text. Idempotent.
+
+  - changeSet:
+      id: v2026.3.1.90-create-tur_eval_dataset_snapshot
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: tur_eval_dataset_snapshot
+      changes:
+        - createTable:
+            tableName: tur_eval_dataset_snapshot
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenantId
+                  type: varchar(40)
+              - column:
+                  name: dataset_id
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: createdAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rowsJson
+                  type: longtext
+        - createIndex:
+            tableName: tur_eval_dataset_snapshot
+            indexName: ix_eval_dataset_snapshot_dataset_version
+            columns:
+              - column:
+                  name: dataset_id
+              - column:
+                  name: version
+
+  - changeSet:
+      id: v2026.3.1.90-add-tur_agent_eval_report-dataset-pin
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_agent_eval_report
+                columnName: datasetId
+      changes:
+        - addColumn:
+            tableName: tur_agent_eval_report
+            columns:
+              - column:
+                  name: datasetId
+                  type: varchar(36)
+              - column:
+                  name: datasetVersion
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

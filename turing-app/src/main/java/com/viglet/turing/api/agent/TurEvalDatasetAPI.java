@@ -28,6 +28,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService;
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService.Format;
+import com.viglet.turing.genai.eval.TurEvalDatasetVersionService;
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDiffDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,9 +54,12 @@ public class TurEvalDatasetAPI {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurEvalDatasetImportService datasetService;
+    private final TurEvalDatasetVersionService versionService;
 
-    public TurEvalDatasetAPI(TurEvalDatasetImportService datasetService) {
+    public TurEvalDatasetAPI(TurEvalDatasetImportService datasetService,
+            TurEvalDatasetVersionService versionService) {
         this.datasetService = datasetService;
+        this.versionService = versionService;
     }
 
     @Operation(summary = "List datasets (summaries)")
@@ -108,6 +113,29 @@ public class TurEvalDatasetAPI {
     @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
     public String export(@PathVariable String datasetId) {
         return datasetService.exportJsonl(datasetId);
+    }
+
+    @Operation(summary = "Freeze an immutable snapshot at the current version, then bump the version")
+    @PostMapping("/{datasetId}/snapshot")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public Map<String, Object> snapshot(@PathVariable String datasetId) {
+        var snapshot = versionService.snapshot(datasetId);
+        return Map.of("version", snapshot.getVersion(), "snapshotId", snapshot.getId());
+    }
+
+    @Operation(summary = "Snapshotted versions of a dataset (newest first)")
+    @GetMapping("/{datasetId}/versions")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public List<Integer> versions(@PathVariable String datasetId) {
+        return versionService.versions(datasetId);
+    }
+
+    @Operation(summary = "Row-level drift between two dataset versions")
+    @GetMapping("/{datasetId}/diff")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public TurEvalDatasetDiffDto diff(@PathVariable String datasetId,
+            @RequestParam("from") int from, @RequestParam("to") int to) {
+        return versionService.diff(datasetId, from, to);
     }
 
     private static Map<String, String> parseMapping(String json) {

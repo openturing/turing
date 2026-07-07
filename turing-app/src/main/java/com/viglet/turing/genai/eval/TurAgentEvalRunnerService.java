@@ -107,6 +107,7 @@ public class TurAgentEvalRunnerService {
     private final com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry;
     private final TurEvalReviewTaskService reviewTaskService;
     private final com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository datasetRowRepository;
+    private final com.viglet.turing.persistence.repository.agent.TurEvalDatasetRepository datasetRepository;
 
     /** Used by {@link #scoreWithSystemPrompt} to detach the agent before the
      *  in-memory prompt swap, so a trial run can never flush to the DB. */
@@ -129,7 +130,8 @@ public class TurAgentEvalRunnerService {
             com.viglet.turing.properties.TurConfigProperties configProperties,
             com.viglet.turing.genai.eval.grader.TurEvalGraderRegistry graderRegistry,
             TurEvalReviewTaskService reviewTaskService,
-            com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository datasetRowRepository) {
+            com.viglet.turing.persistence.repository.agent.TurEvalDatasetRowRepository datasetRowRepository,
+            com.viglet.turing.persistence.repository.agent.TurEvalDatasetRepository datasetRepository) {
         this.agentRepository = agentRepository;
         this.evalSetRepository = evalSetRepository;
         this.reportRepository = reportRepository;
@@ -147,6 +149,7 @@ public class TurAgentEvalRunnerService {
         this.graderRegistry = graderRegistry;
         this.reviewTaskService = reviewTaskService;
         this.datasetRowRepository = datasetRowRepository;
+        this.datasetRepository = datasetRepository;
     }
 
     // ─────────────────────────── Public API ───────────────────────────
@@ -186,7 +189,14 @@ public class TurAgentEvalRunnerService {
                 results.add(runCase(agent, llmInstance, judgeModel, set, source, true));
             }
         }
-        return persistReport(agent, results);
+        // T598 — pin the bound dataset + its live version (if any) on the report.
+        String datasetId = sets.stream().map(TurAgentEvalSet::getDatasetId)
+                .filter(id -> id != null && !id.isBlank()).findFirst().orElse(null);
+        int datasetVersion = datasetId == null ? 0
+                : datasetRepository.findById(datasetId)
+                        .map(com.viglet.turing.persistence.model.agent.TurEvalDataset::getVersion)
+                        .orElse(0);
+        return persistReport(agent, results, datasetId, datasetVersion);
     }
 
     /** Negative sentinel returned by {@link #scoreWithSystemPrompt} when the
@@ -522,7 +532,8 @@ public class TurAgentEvalRunnerService {
 
     // ─────────────────────────── Report persistence ───────────────────────────
 
-    private TurAgentEvalReportDto persistReport(TurAIAgent agent, List<TurAgentEvalCaseResultDto> results) {
+    private TurAgentEvalReportDto persistReport(TurAIAgent agent, List<TurAgentEvalCaseResultDto> results,
+            String datasetId, int datasetVersion) {
         int caseCount = results.size();
         int passedCount = (int) results.stream().filter(TurAgentEvalCaseResultDto::passed).count();
         // T592 — a run with any case awaiting human review is amber, not green.
@@ -544,6 +555,8 @@ public class TurAgentEvalRunnerService {
         report.setPassedCount(passedCount);
         report.setRegressed(regressed);
         report.setPendingReview(pendingReview);
+        report.setDatasetId(datasetId);
+        report.setDatasetVersion(datasetVersion);
         report.setResultsJson(writeJson(results));
 
         // A green run becomes the new baseline (older baselines are demoted).
@@ -558,7 +571,8 @@ public class TurAgentEvalRunnerService {
         report = reportRepository.save(report);
 
         return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), passed, score,
-                caseCount, passedCount, report.isBaseline(), regressed, pendingReview, results, null);
+                caseCount, passedCount, report.isBaseline(), regressed, pendingReview,
+                datasetId, datasetVersion, results, null);
     }
 
     /**

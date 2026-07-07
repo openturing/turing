@@ -142,6 +142,7 @@ public class TurAgentEvalGateService {
         return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), report.isPassed(),
                 report.getScore(), report.getCaseCount(), report.getPassedCount(),
                 report.isBaseline(), report.isRegressed(), report.isPendingReview(),
+                report.getDatasetId(), report.getDatasetVersion(),
                 TurAgentEvalRunnerService.parseResults(report.getResultsJson()), null);
     }
 }
