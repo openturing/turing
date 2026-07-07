@@ -68,7 +68,7 @@ public class TurEvalGraderRegistry {
      * are skipped defensively (e.g. a config-only grader not yet on the
      * classpath). An empty resolution falls back to the default stack.
      */
-    public List<TurEvalGrader> resolveStack(TurAgentEvalSet set, TurAgentEvalCase evalCase) {
+    public List<TurEvalResolvedGrader> resolveStack(TurAgentEvalSet set, TurAgentEvalCase evalCase) {
         if (set == null || set.getGraderConfigs() == null) {
             return defaultStack();
         }
@@ -90,18 +90,20 @@ public class TurEvalGraderRegistry {
                     .sorted(Comparator.comparingInt(TurEvalGraderConfig::getSortOrder))
                     .forEach(c -> effective.put(c.getGraderId(), c));
         }
-        List<TurEvalGrader> stack = new ArrayList<>();
-        for (String graderId : effective.keySet()) {
-            find(graderId).ifPresent(stack::add);
+        List<TurEvalResolvedGrader> stack = new ArrayList<>();
+        for (TurEvalGraderConfig cfg : effective.values()) {
+            find(cfg.getGraderId()).ifPresent(g ->
+                    stack.add(new TurEvalResolvedGrader(g, TurEvalGraderConfigView.fromEntity(cfg))));
         }
         return stack.isEmpty() ? defaultStack() : stack;
     }
 
     /** The legacy default stack (any built-in not wired is skipped defensively). */
-    private List<TurEvalGrader> defaultStack() {
-        List<TurEvalGrader> stack = new ArrayList<>();
+    private List<TurEvalResolvedGrader> defaultStack() {
+        List<TurEvalResolvedGrader> stack = new ArrayList<>();
         for (String graderId : TurEvalBuiltinGraders.DEFAULT_STACK) {
-            find(graderId).ifPresent(stack::add);
+            find(graderId).ifPresent(g ->
+                    stack.add(new TurEvalResolvedGrader(g, TurEvalGraderConfigView.defaults(graderId, g.kind()))));
         }
         return stack;
     }

@@ -22,6 +22,8 @@ import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
  * conversation replay finishes.
  *
  * @param evalCase         the source golden case (its expectations + rubric)
+ * @param conversationId   the replay conversation id (T588: lets CODE graders
+ *                         read the T427 tool-call trace for this case)
  * @param userTurns        the scripted user turns that were replayed, in order
  * @param assistantReplies the assistant reply produced for each user turn (same
  *                         cardinality as {@code userTurns}); enables CODE graders
@@ -37,6 +39,7 @@ import com.viglet.turing.persistence.model.agent.TurAgentEvalCase;
  */
 public record TurEvalGradingContext(
         TurAgentEvalCase evalCase,
+        String conversationId,
         List<String> userTurns,
         List<String> assistantReplies,
         Map<String, String> capturedSlots,

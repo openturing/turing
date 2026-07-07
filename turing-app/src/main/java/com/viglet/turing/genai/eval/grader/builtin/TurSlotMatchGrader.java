@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.eval.grader.TurEvalBuiltinGraders;
 import com.viglet.turing.genai.eval.grader.TurEvalGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalGraderConfigView;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderKind;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
 import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
@@ -51,12 +52,12 @@ public class TurSlotMatchGrader implements TurEvalGrader {
     }
 
     @Override
-    public boolean appliesTo(TurEvalGradingContext ctx) {
+    public boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         return !parseSlots(ctx.evalCase().getExpectedSlotsJson()).isEmpty();
     }
 
     @Override
-    public TurEvalGraderResult grade(TurEvalGradingContext ctx) {
+    public TurEvalGraderResult grade(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         Map<String, String> expected = parseSlots(ctx.evalCase().getExpectedSlotsJson());
         Map<String, String> captured = ctx.capturedSlots();
         List<TurEvalGraderResult.Detail> details = new ArrayList<>();

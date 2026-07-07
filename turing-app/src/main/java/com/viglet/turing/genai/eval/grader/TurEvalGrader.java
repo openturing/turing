@@ -36,14 +36,15 @@ public interface TurEvalGrader {
     }
 
     /**
-     * Whether this grader has anything to assert for the given case. Built-in
-     * graders return {@code false} when the case declares no matching
-     * expectation (e.g. the slot grader when {@code expectedSlotsJson} is
-     * empty), so an unasserted dimension never contributes to the score — the
-     * behaviour the legacy runner had inline.
+     * Whether this grader has anything to assert for the given case + config.
+     * Built-in dimension graders return {@code false} when the case declares no
+     * matching expectation (e.g. the slot grader when {@code expectedSlotsJson}
+     * is empty); config-driven CODE graders (T588) return {@code false} when
+     * their required config is absent — so an unasserted grader never
+     * contributes to the score.
      */
-    boolean appliesTo(TurEvalGradingContext ctx);
+    boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config);
 
-    /** Scores the case. Called only when {@link #appliesTo(TurEvalGradingContext)}. */
-    TurEvalGraderResult grade(TurEvalGradingContext ctx);
+    /** Scores the case. Called only when {@link #appliesTo}. */
+    TurEvalGraderResult grade(TurEvalGradingContext ctx, TurEvalGraderConfigView config);
 }

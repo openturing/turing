@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.eval.grader.TurEvalBuiltinGraders;
 import com.viglet.turing.genai.eval.grader.TurEvalGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalGraderConfigView;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderKind;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
 import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
@@ -39,13 +40,13 @@ public class TurNodeGrader implements TurEvalGrader {
     }
 
     @Override
-    public boolean appliesTo(TurEvalGradingContext ctx) {
+    public boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         String expectedNodeId = ctx.evalCase().getExpectedNodeId();
         return expectedNodeId != null && !expectedNodeId.isBlank();
     }
 
     @Override
-    public TurEvalGraderResult grade(TurEvalGradingContext ctx) {
+    public TurEvalGraderResult grade(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         boolean match = ctx.evalCase().getExpectedNodeId().equals(ctx.finalNodeId());
         return TurEvalGraderResult.binary(match);
     }

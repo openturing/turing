@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import com.viglet.turing.genai.eval.TurEvalJudgePrompt;
 import com.viglet.turing.genai.eval.grader.TurEvalBuiltinGraders;
 import com.viglet.turing.genai.eval.grader.TurEvalGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalGraderConfigView;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderKind;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
 import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
@@ -51,13 +52,13 @@ public class TurRubricJudgeGrader implements TurEvalGrader {
     }
 
     @Override
-    public boolean appliesTo(TurEvalGradingContext ctx) {
+    public boolean appliesTo(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         String rubric = ctx.evalCase().getRubric();
         return rubric != null && !rubric.isBlank() && ctx.judgeModel() != null;
     }
 
     @Override
-    public TurEvalGraderResult grade(TurEvalGradingContext ctx) {
+    public TurEvalGraderResult grade(TurEvalGradingContext ctx, TurEvalGraderConfigView config) {
         ChatModel judgeModel = ctx.judgeModel();
         String rubric = ctx.evalCase().getRubric();
         try {

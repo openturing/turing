@@ -31,8 +31,10 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto;
 import com.viglet.turing.genai.eval.grader.TurEvalBuiltinGraders;
 import com.viglet.turing.genai.eval.grader.TurEvalGrader;
+import com.viglet.turing.genai.eval.grader.TurEvalGraderConfigView;
 import com.viglet.turing.genai.eval.grader.TurEvalGraderResult;
 import com.viglet.turing.genai.eval.grader.TurEvalGradingContext;
+import com.viglet.turing.genai.eval.grader.TurEvalResolvedGrader;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalCaseResultDto.SlotDiff;
 import com.viglet.turing.persistence.dto.agent.TurAgentEvalReportDto;
@@ -349,8 +351,8 @@ public class TurAgentEvalRunnerService {
             String finalNodeId = state.currentNodeId();
             String actualOutcome = resolveOutcome(conversationId, state);
 
-            return scoreCase(set, evalCase, judgeModel, turns, assistantReplies, capturedSlots,
-                    finalNodeId, actualOutcome);
+            return scoreCase(set, evalCase, conversationId, judgeModel, turns, assistantReplies,
+                    capturedSlots, finalNodeId, actualOutcome);
         } catch (RuntimeException e) {
             log.warn("[AgentEval] case '{}' replay failed: {}", evalCase.getName(), e.getMessage());
             return failed(evalCase, e.getMessage());
@@ -406,10 +408,11 @@ public class TurAgentEvalRunnerService {
      * (T599).
      */
     private TurAgentEvalCaseResultDto scoreCase(TurAgentEvalSet set, TurAgentEvalCase evalCase,
-            ChatModel judgeModel, List<String> turns, List<String> assistantReplies,
-            Map<String, String> capturedSlots, String finalNodeId, String actualOutcome) {
-        TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, turns, assistantReplies,
-                capturedSlots, finalNodeId, actualOutcome, judgeModel);
+            String conversationId, ChatModel judgeModel, List<String> turns,
+            List<String> assistantReplies, Map<String, String> capturedSlots, String finalNodeId,
+            String actualOutcome) {
+        TurEvalGradingContext ctx = new TurEvalGradingContext(evalCase, conversationId, turns,
+                assistantReplies, capturedSlots, finalNodeId, actualOutcome, judgeModel);
 
         List<Double> dimensionScores = new ArrayList<>();
         boolean allMatched = true;
@@ -417,11 +420,13 @@ public class TurAgentEvalRunnerService {
         String rubricVerdict = "na";
         String rubricRationale = null;
 
-        for (TurEvalGrader grader : graderRegistry.resolveStack(set, evalCase)) {
-            if (!grader.appliesTo(ctx)) {
+        for (TurEvalResolvedGrader resolved : graderRegistry.resolveStack(set, evalCase)) {
+            TurEvalGrader grader = resolved.grader();
+            TurEvalGraderConfigView config = resolved.config();
+            if (!grader.appliesTo(ctx, config)) {
                 continue;
             }
-            TurEvalGraderResult result = grader.grade(ctx);
+            TurEvalGraderResult result = grader.grade(ctx, config);
             if (result.deferred()) {
                 // No HUMAN grader in the default stack yet; deferral lands in T592.
                 continue;
