@@ -53,6 +53,32 @@ public class TurSelfTuningMiner {
     }
 
     public FailureSummary mine(String agentId) {
+        List<Map<String, Object>> failing = findFailingSessions(agentId);
+        StringBuilder digest = new StringBuilder();
+        int shown = 0;
+        for (Map<String, Object> s : failing) {
+            if (shown++ < MAX_SUMMARY_LINES) {
+                digest.append("- outcome=").append(str(s.get("outcome")))
+                        .append(", sentiment=").append(str(s.get("sentiment")))
+                        .append(", toolErrors=").append(num(s.get("totalToolErrors")))
+                        .append(", turns=").append(num(s.get("totalTurns")))
+                        .append("\n");
+            }
+        }
+        return new FailureSummary(failing.size(), digest.toString().trim());
+    }
+
+    /**
+     * The recent failing sessions for an agent (same 7-day window / 200-session
+     * cap / failure definition {@link #mine} uses), as engine-agnostic session
+     * maps. Fail-open to an empty list, so the NoOp store — or any store error —
+     * yields "no failures". Exposed so T596's dataset importer can turn each
+     * failing conversation into an eval-dataset row without re-implementing the
+     * failure heuristic.
+     *
+     * @since 2026.3.4
+     */
+    public List<Map<String, Object>> findFailingSessions(String agentId) {
         Instant now = Instant.now();
         Instant from = now.minus(Duration.ofDays(WINDOW_DAYS));
         List<Map<String, Object>> sessions;
@@ -62,24 +88,9 @@ public class TurSelfTuningMiner {
         } catch (RuntimeException e) {
             log.warn("[SelfTuning] mining failed for agent={}: {} — treating as no failures",
                     agentId, e.getMessage());
-            return new FailureSummary(0, "");
+            return List.of();
         }
-        StringBuilder digest = new StringBuilder();
-        int count = 0;
-        for (Map<String, Object> s : sessions) {
-            if (!isFailure(s)) {
-                continue;
-            }
-            count++;
-            if (count <= MAX_SUMMARY_LINES) {
-                digest.append("- outcome=").append(str(s.get("outcome")))
-                        .append(", sentiment=").append(str(s.get("sentiment")))
-                        .append(", toolErrors=").append(num(s.get("totalToolErrors")))
-                        .append(", turns=").append(num(s.get("totalTurns")))
-                        .append("\n");
-            }
-        }
-        return new FailureSummary(count, digest.toString().trim());
+        return sessions.stream().filter(TurSelfTuningMiner::isFailure).toList();
     }
 
     private static boolean isFailure(Map<String, Object> s) {

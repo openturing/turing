@@ -28,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService;
 import com.viglet.turing.genai.eval.TurEvalDatasetImportService.Format;
+import com.viglet.turing.genai.eval.TurEvalDatasetSourceImportService;
 import com.viglet.turing.genai.eval.TurEvalDatasetVersionService;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDiffDto;
 import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
@@ -55,11 +56,14 @@ public class TurEvalDatasetAPI {
 
     private final TurEvalDatasetImportService datasetService;
     private final TurEvalDatasetVersionService versionService;
+    private final TurEvalDatasetSourceImportService sourceImportService;
 
     public TurEvalDatasetAPI(TurEvalDatasetImportService datasetService,
-            TurEvalDatasetVersionService versionService) {
+            TurEvalDatasetVersionService versionService,
+            TurEvalDatasetSourceImportService sourceImportService) {
         this.datasetService = datasetService;
         this.versionService = versionService;
+        this.sourceImportService = sourceImportService;
     }
 
     @Operation(summary = "List datasets (summaries)")
@@ -106,6 +110,26 @@ public class TurEvalDatasetAPI {
         String datasetName = name != null ? name : file.getOriginalFilename();
         return datasetService.get(
                 datasetService.importDataset(datasetName, parsedFormat, content, mapping).getId());
+    }
+
+    @Operation(summary = "Build a dataset from an agent's recent production transcripts (T61)")
+    @PostMapping("/import/transcripts")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public TurEvalDatasetDto importFromTranscripts(@RequestParam("agentId") String agentId,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "limit", defaultValue = "100") int limit) {
+        return datasetService.get(
+                sourceImportService.importFromTranscripts(agentId, name, limit).getId());
+    }
+
+    @Operation(summary = "Build a dataset from an agent's mined failing conversations (T447)")
+    @PostMapping("/import/failures")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_EDIT" })
+    public TurEvalDatasetDto importFromFailures(@RequestParam("agentId") String agentId,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "limit", defaultValue = "100") int limit) {
+        return datasetService.get(
+                sourceImportService.importFromFailures(agentId, name, limit).getId());
     }
 
     @Operation(summary = "Export a dataset as JSONL")

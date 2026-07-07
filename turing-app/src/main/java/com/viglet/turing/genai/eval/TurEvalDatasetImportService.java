@@ -39,7 +39,8 @@ import tools.jackson.databind.node.ObjectNode;
  * (JSON array / JSONL / CSV / OpenAI-Evals JSONL) with an optional column
  * mapping, and exports a dataset as JSONL. Concrete "provide a dataset to be
  * tested" surface. Importing from anonymized transcripts (T61) / Chat-Analytics
- * failures (T447 miner) is a later composition and not included here.
+ * failures (T447 miner) composes onto {@link #importCanonicalRows} via
+ * {@link TurEvalDatasetSourceImportService}.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -79,9 +80,28 @@ public class TurEvalDatasetImportService {
             case CSV -> fromCsv(content, mapping);
             case OPENAI_EVALS -> fromOpenAiEvals(content);
         };
-        if (rows.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No rows parsed from import");
+        return persistDataset(name, rows);
+    }
+
+    /**
+     * T596 — persists a dataset from already-built canonical row nodes (see
+     * {@link #buildRow}). Lets the transcript / failure-mining source importers
+     * ({@link TurEvalDatasetSourceImportService}) reuse the exact same row
+     * mapping + persistence as the file importers instead of duplicating it.
+     */
+    @Transactional
+    public TurEvalDataset importCanonicalRows(String name, List<? extends JsonNode> canonicalRows) {
+        List<TurEvalDatasetRow> rows = new ArrayList<>();
+        for (JsonNode node : canonicalRows) {
+            rows.add(buildRow(node));
         }
+        if (rows.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No rows to import");
+        }
+        return persistDataset(name, rows);
+    }
+
+    private TurEvalDataset persistDataset(String name, List<TurEvalDatasetRow> rows) {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         TurEvalDataset dataset = new TurEvalDataset();
         dataset.setName(name == null || name.isBlank() ? "imported-dataset" : name);
