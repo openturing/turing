@@ -141,7 +141,16 @@
         "simulatedValues": "Valores coletados simulados",
         "slotName": "nome do slot",
         "slotValue": "valor",
-        "addValue": "Adicionar valor"
+        "addValue": "Adicionar valor",
+        "messageListHeading": "Lista de mensagens",
+        "messageListNote": "A lista completa e ordenada de mensagens enviadas ao modelo: a mensagem de sistema, os turnos de prefixo do histórico vindos da memória e, então, a conversa recente.",
+        "roleSystem": "sistema",
+        "systemMessageRef": "A mensagem de sistema montada exibida acima.",
+        "recentWindowRef": "…então a janela de conversa recente do cliente (os últimos turnos de usuário/assistente).",
+        "messageOrigin": {
+          "MEMORY_SUMMARY": "Resumo da memória",
+          "MEMORY_RELEVANCE": "Turnos anteriores relevantes"
+        }
       },
       "warnings": {
         "title": "Checagem de conflitos",

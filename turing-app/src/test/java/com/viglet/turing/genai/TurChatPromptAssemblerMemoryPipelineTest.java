@@ -26,7 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.Message;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
@@ -40,10 +39,12 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryCompressionService;
 import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 
 /**
- * Block AL / §XXXV.3 (T616) — proves the message contributor pipeline (default)
- * produces a <b>byte-identical</b> message list to the legacy inline concatenation
- * escape hatch, and that both layer {@code [system] + [summary] + [retrieved] +
- * [history]} in the correct order.
+ * Block AL / §XXXV.3 — proves the message contributor pipeline layers
+ * {@code [system] + [summary] + [retrieved] + [history]} in the correct order and
+ * fans each prefix message out to the right Spring AI message type. T617 retired
+ * the {@code message-pipeline-enabled} escape hatch and the inline
+ * {@code buildMemoryPrefixLegacy} path, so the pipeline is now the single assembly
+ * path — the earlier "pipeline == legacy" byte-identity tests are gone with it.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.4
@@ -75,8 +76,8 @@ class TurChatPromptAssemblerMemoryPipelineTest {
         TurMessageAssemblyPipeline messagePipeline = new TurMessageAssemblyPipeline(List.of(
                 new TurMemorySummaryMessageContributor(compressionService),
                 new TurRelevanceMessageContributor(relevanceRetriever)));
-        assembler = new TurChatPromptAssembler(relevanceRetriever, compressionService,
-                observation, attachmentService, promptAssemblyPipeline, messagePipeline);
+        assembler = new TurChatPromptAssembler(observation, attachmentService,
+                promptAssemblyPipeline, messagePipeline);
 
         lenient().when(promptAssemblyPipeline.assemble(any()))
                 .thenReturn(new TurPromptAssembly(List.of(), SYSTEM, -1));
@@ -104,7 +105,6 @@ class TurChatPromptAssemblerMemoryPipelineTest {
                         new ChatMessageItem("user", "[earlier turn #1] I fly monthly"),
                         new ChatMessageItem("assistant", "[earlier turn #2] got it")));
 
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", true);
         List<Message> messages = assembler.assemble(request());
 
         assertThat(shape(messages)).containsExactly(
@@ -116,55 +116,25 @@ class TurChatPromptAssemblerMemoryPipelineTest {
     }
 
     @Test
-    void pipelineAndLegacyProduceIdenticalMessageList() {
-        when(compressionService.summaryBlock(agent, CONV))
-                .thenReturn(Optional.of(new ChatMessageItem("user", "[Summary] older ctx")));
-        when(relevanceRetriever.retrievePrefix(agent, CONV, QUERY))
-                .thenReturn(List.of(
-                        new ChatMessageItem("user", "[earlier turn #1] I fly monthly"),
-                        new ChatMessageItem("assistant", "[earlier turn #2] got it")));
-
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", true);
-        List<String> viaPipeline = shape(assembler.assemble(request()));
-
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", false);
-        List<String> viaLegacy = shape(assembler.assemble(request()));
-
-        assertThat(viaPipeline).isEqualTo(viaLegacy);
-    }
-
-    @Test
-    void noMemory_bothPathsAreSystemPlusHistory() {
+    void noMemory_isSystemPlusHistory() {
         when(compressionService.summaryBlock(agent, CONV)).thenReturn(Optional.empty());
         when(relevanceRetriever.retrievePrefix(agent, CONV, QUERY)).thenReturn(List.of());
 
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", true);
-        List<String> viaPipeline = shape(assembler.assemble(request()));
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", false);
-        List<String> viaLegacy = shape(assembler.assemble(request()));
-
-        assertThat(viaPipeline)
-                .containsExactly("SystemMessage:" + SYSTEM, "UserMessage:" + QUERY)
-                .isEqualTo(viaLegacy);
+        assertThat(shape(assembler.assemble(request())))
+                .containsExactly("SystemMessage:" + SYSTEM, "UserMessage:" + QUERY);
     }
 
     @Test
     void assistantSummaryRole_becomesAssistantMessage() {
         // Guard the role fan-out: a summary emitted with role "assistant" must map
-        // to AssistantMessage, identically on both paths.
+        // to AssistantMessage.
         when(compressionService.summaryBlock(agent, CONV))
                 .thenReturn(Optional.of(new ChatMessageItem("assistant", "[Summary] as assistant")));
         when(relevanceRetriever.retrievePrefix(agent, CONV, QUERY)).thenReturn(List.of());
 
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", true);
-        List<String> viaPipeline = shape(assembler.assemble(request()));
-        ReflectionTestUtils.setField(assembler, "messagePipelineEnabled", false);
-        List<String> viaLegacy = shape(assembler.assemble(request()));
-
-        assertThat(viaPipeline).containsExactly(
+        assertThat(shape(assembler.assemble(request()))).containsExactly(
                 "SystemMessage:" + SYSTEM,
                 "AssistantMessage:[Summary] as assistant",
                 "UserMessage:" + QUERY);
-        assertThat(viaPipeline).isEqualTo(viaLegacy);
     }
 }

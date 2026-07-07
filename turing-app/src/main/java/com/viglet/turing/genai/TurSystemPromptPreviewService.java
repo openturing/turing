@@ -24,13 +24,17 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
+import com.viglet.turing.genai.prompt.TurMessageAssemblyContext;
+import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptAssembly;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
+import com.viglet.turing.genai.prompt.TurPromptMessage;
 import com.viglet.turing.genai.prompt.TurPromptSegment;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowNodeDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptFlowOptionDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptInertRegionDto;
+import com.viglet.turing.persistence.dto.agent.TurSystemPromptMessageDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptPreviewDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptSegmentDto;
 import com.viglet.turing.persistence.dto.agent.TurSystemPromptToolDto;
@@ -84,17 +88,20 @@ public class TurSystemPromptPreviewService {
     public static final String FLOW_NONE = "__none__";
 
     private final TurPromptAssemblyPipeline promptAssemblyPipeline;
+    private final TurMessageAssemblyPipeline messageAssemblyPipeline;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurLLMPriceService priceService;
     private final TurInertRegionDetector inertRegionDetector;
 
     public TurSystemPromptPreviewService(TurPromptAssemblyPipeline promptAssemblyPipeline,
+            TurMessageAssemblyPipeline messageAssemblyPipeline,
             TurChatFlowEngineService chatFlowEngineService,
             TurChatFlowRepository chatFlowRepository,
             TurLLMPriceService priceService,
             TurInertRegionDetector inertRegionDetector) {
         this.promptAssemblyPipeline = promptAssemblyPipeline;
+        this.messageAssemblyPipeline = messageAssemblyPipeline;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowRepository = chatFlowRepository;
         this.priceService = priceService;
@@ -196,7 +203,44 @@ public class TurSystemPromptPreviewService {
                 assembly.totalTokens(), assembly.stableTokens(), assembly.cacheBreakpointIndex(),
                 estimatedCostUsd, costModelName,
                 flowPreview == null ? List.of() : flowPreview.flowNodes(),
-                flowPreview == null ? null : flowPreview.nodeId());
+                flowPreview == null ? null : flowPreview.nodeId(),
+                buildHistoryPrefixMessages(agent));
+    }
+
+    /**
+     * T617 — mirror the runtime history-prefix message list in the preview. Runs
+     * the <em>same</em> {@link TurMessageAssemblyPipeline} the assembler uses (no
+     * drift), so any message it emits is carried verbatim. A config-level preview
+     * has no live conversation, so the pipeline emits nothing here; the two memory
+     * sources are then surfaced as informational {@code runtimeOnly} placeholders
+     * — the same treatment the persona few-shot and RAG segments get — so the
+     * operator can see where the T115 summary and the T30 relevance turns sit in
+     * the whole message list. Origins the pipeline already emitted concretely are
+     * not duplicated by a placeholder.
+     */
+    private List<TurSystemPromptMessageDto> buildHistoryPrefixMessages(TurAIAgent agent) {
+        List<TurPromptMessage> emitted = messageAssemblyPipeline.assemble(
+                new TurMessageAssemblyContext(agent, null, null));
+        List<TurSystemPromptMessageDto> messages = new ArrayList<>();
+        Set<String> concreteOrigins = new HashSet<>();
+        for (TurPromptMessage m : emitted) {
+            concreteOrigins.add(m.origin());
+            messages.add(new TurSystemPromptMessageDto(m.role(), m.origin(), m.label(),
+                    m.content(), m.tokens(), false, null));
+        }
+        if (!concreteOrigins.contains(TurPromptMessage.ORIGIN_MEMORY_SUMMARY)) {
+            messages.add(new TurSystemPromptMessageDto("user",
+                    TurPromptMessage.ORIGIN_MEMORY_SUMMARY, "Memory summary", "", 0, true,
+                    "When the conversation grows past the compression threshold, older turns are "
+                            + "summarized (T115) into a single block here — ahead of the recent window."));
+        }
+        if (!concreteOrigins.contains(TurPromptMessage.ORIGIN_MEMORY_RELEVANCE)) {
+            messages.add(new TurSystemPromptMessageDto("user",
+                    TurPromptMessage.ORIGIN_MEMORY_RELEVANCE, "Relevant earlier turns", "", 0, true,
+                    "At runtime the older turns most relevant to the user's message are retrieved "
+                            + "(T30) and replayed here, after the summary."));
+        }
+        return messages;
     }
 
     /** The agent's first enabled LLM instance, or {@code null} when none. */

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.genai.TurSystemPromptPreviewService.FlowPersonaDiagnostic;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.prompt.TurMessageAssemblyPipeline;
 import com.viglet.turing.genai.prompt.TurPromptAssembly;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyContext;
 import com.viglet.turing.genai.prompt.TurPromptAssemblyPipeline;
@@ -67,7 +68,12 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
 
     @BeforeEach
     void setUp() {
-        service = new TurSystemPromptPreviewService(promptAssemblyPipeline, chatFlowEngineService,
+        // No message contributors → the pipeline emits nothing, so the preview
+        // surfaces the two memory sources as informational placeholders (T617).
+        TurMessageAssemblyPipeline messageAssemblyPipeline =
+                new TurMessageAssemblyPipeline(List.of());
+        service = new TurSystemPromptPreviewService(promptAssemblyPipeline,
+                messageAssemblyPipeline, chatFlowEngineService,
                 chatFlowRepository, priceService, new TurInertRegionDetector());
     }
 
@@ -202,6 +208,25 @@ class TurSystemPromptPreviewServiceFlowPersonaTest {
 
         assertThat(dto.selectedNodeId()).isEqualTo("n3");
         assertThat(dto.flowNodes()).extracting(n -> n.id()).containsExactly("n2", "n3");
+    }
+
+    @Test
+    void previewSurfacesMemorySourcesAsPlaceholderMessages() {
+        // No live conversation → the message pipeline emits nothing, so the preview
+        // renders the T115 summary + T30 relevance sources as runtime-only
+        // placeholders in the whole-message-list section (T617).
+        when(chatFlowRepository.findByTurAIAgent_IdOrderByNameAsc(any())).thenReturn(List.of());
+        when(promptAssemblyPipeline.assemble(any()))
+                .thenReturn(new TurPromptAssembly(List.of(), "system text", -1));
+        TurAIAgent agent = agentWith();
+        agent.setSystemPrompt("You are helpful.");
+
+        TurSystemPromptPreviewDto dto = service.buildPreview(agent);
+
+        assertThat(dto.messages()).hasSize(2);
+        assertThat(dto.messages()).extracting(m -> m.origin())
+                .containsExactly("MEMORY_SUMMARY", "MEMORY_RELEVANCE");
+        assertThat(dto.messages()).allMatch(m -> m.runtimeOnly() && m.content().isEmpty());
     }
 
     @Test

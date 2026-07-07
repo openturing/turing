@@ -286,31 +286,6 @@ fully shipped.**
 > assembler, kill the reconstruction drift) is **T613** in Block AL — the whole
 > point of the pipeline. T607–T610 render/measure the segments that pipeline emits.
 
-## Block AL — Prompt assembly as a composable, cache-friendly pipeline
-
-> Every symptom in Block AK shares one root cause: the turn's system message is
-> built by **string concatenation spread across several services** with no
-> contract. `TurChatPromptAssembler` calls `TurPersonaPromptComposer.compose`,
-> which glues `persona-static + few-shot + "----" + (agent-base + mcp + flow
-> addendum)`; the preview *rebuilds a lookalike* separately. Two consequences:
-> (1) the preview drifts from runtime (the persona lie, the `===`), and (2) the
-> ordering is **cache-hostile** — the per-turn few-shot block sits *between* the
-> stable persona and the stable agent-base/MCP/tools, so provider prefix caching
-> (Anthropic `cache_control` / Gemini context cache — T502/T499) can only cache up
-> to the persona; the heaviest stable content is re-billed every turn. This block
-> makes assembly a **pipeline of `PromptContributor`s** that each emit a labeled
-> `PromptSegment` with a **stability class** (STABLE vs PER_TURN). The assembler
-> orders STABLE-first with a cache breakpoint at the boundary, runs once, and both
-> runtime and preview render the *same* segments. Provenance, token accounting,
-> redundancy/inert lint and preview-fidelity all fall out as properties of the
-> pipeline instead of bolt-ons. Foundational + incremental + gated: contributors
-> are introduced behind the current assembler and migrated one at a time, feature-
-> flagged so the exact current prompt can be restored. Reordering changes what the
-> model sees, so each step re-validates like the T607-era flow-heading change.
-> Design + rationale → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXV.
-
-- 💭 **T617** (deps: T616) **Retire the message-pipeline escape hatch + mirror the full message list in the preview** — T616 brought the T115 memory summary and T30 relevance turns behind the `TurMessageContributor` SPI, gated by the `turing.prompt.assembly.message-pipeline-enabled=true` escape hatch. Once it has soaked (as T615 did for T613's flag), delete the inline `buildMemoryPrefixLegacy` path and the flag, and teach the Live Preview to render the history-prefix messages (`TurMessageAssemblyPipeline`) alongside the system segments — today it mirrors only the system message. End state: one assembly path for the entire message list, mirrored end-to-end in the preview. → §XXXV.3
-
 ## Non-goals (do NOT add as tasks)
 
 Binding constraints — see [IMPROVEMENTS.md](IMPROVEMENTS.md) §I.6 (What NOT to

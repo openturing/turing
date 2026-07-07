@@ -50,6 +50,12 @@ import java.util.List;
  * @param selectedNodeId Block AK / T611 — the flow node this preview rendered
  *                       (the picked node, or the resolved entry anchor), or
  *                       {@code null} when no flow governs.
+ * @param messages       Block AL / T617 — the history-prefix messages the runtime
+ *                       {@code TurMessageAssemblyPipeline} prepends to the client
+ *                       history (T115 memory summary + T30 relevance-retrieved
+ *                       turns), so the operator inspects the whole message list,
+ *                       not just the system message. Empty when the agent has no
+ *                       memory sources enabled.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -66,10 +72,24 @@ public record TurSystemPromptPreviewDto(
         double estimatedCostUsd,
         String costModelName,
         List<TurSystemPromptFlowNodeDto> flowNodes,
-        String selectedNodeId) {
+        String selectedNodeId,
+        List<TurSystemPromptMessageDto> messages) {
 
     public TurSystemPromptPreviewDto {
         flowNodes = flowNodes == null ? List.of() : flowNodes;
+        messages = messages == null ? List.of() : messages;
+    }
+
+    /** Back-compat convenience for the T611 12-arg call sites (no message list). */
+    public TurSystemPromptPreviewDto(List<TurSystemPromptSegmentDto> segments,
+            List<TurSystemPromptToolDto> tools, String assembledText,
+            List<TurSystemPromptFlowOptionDto> flows, String selectedFlowId,
+            int totalTokens, int stableTokens, int cacheBreakpointIndex,
+            double estimatedCostUsd, String costModelName,
+            List<TurSystemPromptFlowNodeDto> flowNodes, String selectedNodeId) {
+        this(segments, tools, assembledText, flows, selectedFlowId,
+                totalTokens, stableTokens, cacheBreakpointIndex, estimatedCostUsd, costModelName,
+                flowNodes, selectedNodeId, List.of());
     }
 
     /** Back-compat convenience for the pre-Block-AL 5-arg call sites. */

@@ -47,6 +47,27 @@ export interface TurSystemPromptSegment {
   inertRegions: TurSystemPromptInertRegion[];
 }
 
+/** Source bucket for a history-prefix message (T617). */
+export type TurSystemPromptMessageOrigin = "MEMORY_SUMMARY" | "MEMORY_RELEVANCE";
+
+/**
+ * Block AL/T617 — one history-prefix message the runtime prepends to the client
+ * history (the T115 memory summary, the T30 relevance-retrieved turns). Mirrors
+ * the backend `TurSystemPromptMessageDto`.
+ */
+export interface TurSystemPromptMessage {
+  /** `"user"` or `"assistant"` — the turn type the runtime builds. */
+  role: string;
+  origin: TurSystemPromptMessageOrigin;
+  label: string;
+  /** Literal body, or empty for an informational `runtimeOnly` placeholder. */
+  content: string;
+  tokens: number;
+  /** Only materializes once the conversation accumulates history — shown as an example. */
+  runtimeOnly: boolean;
+  note: string | null;
+}
+
 /** A tool exposed to the LLM (sent as a schema channel, not in the prompt text). */
 export interface TurSystemPromptTool {
   name: string;
@@ -89,6 +110,8 @@ export interface TurSystemPromptPreview {
   flowNodes: TurSystemPromptFlowNode[];
   /** Block AK/T611 — the flow node this preview rendered, or null when no flow. */
   selectedNodeId: string | null;
+  /** Block AL/T617 — the history-prefix messages prepended to the client history; empty when none. */
+  messages: TurSystemPromptMessage[];
 }
 
 /** Sentinel flowId for "preview a turn with no chat flow governing". */

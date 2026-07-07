@@ -141,7 +141,16 @@
         "simulatedValues": "Simulated collected values",
         "slotName": "slot name",
         "slotValue": "value",
-        "addValue": "Add value"
+        "addValue": "Add value",
+        "messageListHeading": "Message list",
+        "messageListNote": "The full ordered list of messages sent to the model: the system message, the history-prefix turns prepended from memory, then the recent conversation.",
+        "roleSystem": "system",
+        "systemMessageRef": "The assembled system message shown above.",
+        "recentWindowRef": "…then the client's recent conversation window (the latest user/assistant turns).",
+        "messageOrigin": {
+          "MEMORY_SUMMARY": "Memory summary",
+          "MEMORY_RELEVANCE": "Relevant earlier turns"
+        }
       },
       "warnings": {
         "title": "Conflict check",

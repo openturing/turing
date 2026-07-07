@@ -2282,30 +2282,7 @@ not a second call site.
 > rule. **T616 also shipped** — the T115 memory summary and T30 relevance turns now
 > assemble through a message-level SPI (`TurMessageContributor` /
 > `TurMessageAssemblyPipeline`), so the whole message list has one assembly point.
-> What remains below is the unshipped tail (T617).
-
-### XXXV.3 Retire the message-pipeline escape hatch + mirror the full list (T617, 💭)
-
-T616 collapsed the turn's *message list* onto one path: the system message comes
-from `TurPromptAssemblyPipeline`, and the history prefix (T115 memory summary + T30
-relevance turns) from `TurMessageAssemblyPipeline`, both fanned out through the
-assembler's single `user`/`assistant` conversion. Two loose ends remain before the
-block is truly closed:
-
-- **The escape hatch.** T616 shipped gated behind
-  `turing.prompt.assembly.message-pipeline-enabled=true`, with the inline
-  `buildMemoryPrefixLegacy` retained for rollback. As T615 did for T613's flag, once
-  the message pipeline has soaked in production, delete the inline path and the flag
-  so there is genuinely one path, not two.
-- **Preview fidelity.** The Live Preview still mirrors only the *system* message. It
-  should also render the history-prefix messages the `TurMessageAssemblyPipeline`
-  emits (with their `origin`/`label` provenance), so an operator inspects the whole
-  message list — the same no-drift guarantee T613 gave the system prompt, extended
-  end-to-end.
-
-**Design invariants for the block:** foundational + incremental + gated —
-contributors are introduced behind the current assembler and migrated one at a
-time, feature-flagged so the exact current message list can be restored; the
-empty/default pipeline is byte-identical; any reordering changes what the model
-sees, so each step re-validates like the flow-heading change did; the preview never
-mutates the assembled prompt (it is a mirror).
+> **T617 also shipped** — the `message-pipeline-enabled` escape hatch and the inline
+> `buildMemoryPrefixLegacy` path were deleted (single history-prefix assembly path),
+> and the Live Preview now mirrors the whole message list, not just the system
+> message. Block AL (§XXXV) is now fully shipped and closed; see CHANGELOG Block AL.

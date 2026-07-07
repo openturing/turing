@@ -10,6 +10,8 @@ import {
 import {
   SYSTEM_PROMPT_FLOW_NONE,
   type TurSystemPromptInertRegion,
+  type TurSystemPromptMessage,
+  type TurSystemPromptMessageOrigin,
   type TurSystemPromptOrigin,
   type TurSystemPromptPreview,
   type TurSystemPromptSegment,
@@ -22,9 +24,11 @@ import {
   IconClock,
   IconCoin,
   IconDatabase,
+  IconMessages,
   IconPlus,
   IconRoute,
   IconSitemap,
+  IconStack2,
   IconTool,
   IconX,
 } from "@tabler/icons-react";
@@ -128,6 +132,24 @@ const LEGEND_ORDER: TurSystemPromptOrigin[] = [
   "FEW_SHOT",
   "RAG",
 ];
+
+/** T617 — accent classes per history-prefix message origin (dot + left bar). */
+const MESSAGE_ORIGIN_STYLE: Record<
+  TurSystemPromptMessageOrigin,
+  { bar: string; dot: string; badge: string }
+> = {
+  MEMORY_SUMMARY: {
+    bar: "bg-fuchsia-500",
+    dot: "bg-fuchsia-500",
+    badge:
+      "bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20 dark:text-fuchsia-300",
+  },
+  MEMORY_RELEVANCE: {
+    bar: "bg-teal-500",
+    dot: "bg-teal-500",
+    badge: "bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-300",
+  },
+};
 
 export function SystemPromptLivePreview({
   preview,
@@ -340,7 +362,132 @@ export function SystemPromptLivePreview({
           )}
         </article>
       )}
+
+      {/* T617 — the whole message list: the system message above, then the
+          history-prefix turns (T115 memory summary + T30 relevance) the runtime
+          prepends, then the client's recent window. Mirrors the same
+          TurMessageAssemblyPipeline the runtime uses, so the operator inspects the
+          entire list, not just the system message. */}
+      {!isLoading && preview && preview.messages.length > 0 && (
+        <MessageList messages={preview.messages} />
+      )}
     </div>
+  );
+}
+
+/**
+ * T617 — renders the ordered message list the model actually receives: a compact
+ * reference to the assembled system message (the article above), each
+ * history-prefix message with its role + origin provenance, and a trailing marker
+ * for the client's recent conversation window. Informational (runtimeOnly)
+ * messages render their explanatory note in place of a body, exactly like the
+ * few-shot / RAG system segments.
+ */
+function MessageList({
+  messages,
+}: Readonly<{ messages: TurSystemPromptMessage[] }>) {
+  const { t } = useTranslation();
+  return (
+    <section className="mt-8 rounded-xl border bg-muted/20 p-4">
+      <div className="mb-1 flex items-center gap-2">
+        <IconMessages className="size-4 text-muted-foreground" />
+        <span className="text-sm font-semibold text-foreground">
+          {t("aiAgent.systemPrompt.preview.messageListHeading", {
+            defaultValue: "Message list",
+          })}
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-muted-foreground">
+        {t("aiAgent.systemPrompt.preview.messageListNote", {
+          defaultValue:
+            "The full ordered list of messages sent to the model: the system message, the history-prefix turns prepended from memory, then the recent conversation.",
+        })}
+      </p>
+
+      <ol className="space-y-2">
+        {/* The assembled system message — shown above as the article. */}
+        <li className="flex items-start gap-3 rounded-lg border border-dashed bg-background/40 px-3 py-2">
+          <span className="mt-0.5 inline-flex items-center rounded-full border bg-background px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+            {t("aiAgent.systemPrompt.preview.roleSystem", { defaultValue: "system" })}
+          </span>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {t("aiAgent.systemPrompt.preview.systemMessageRef", {
+              defaultValue: "The assembled system message shown above.",
+            })}
+          </p>
+        </li>
+
+        {messages.map((message, idx) => (
+          <MessageRow key={`${message.origin}-${idx}`} message={message} />
+        ))}
+
+        {/* The client's recent conversation window closes the list. */}
+        <li className="flex items-start gap-3 rounded-lg border border-dashed bg-background/40 px-3 py-2">
+          <IconStack2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {t("aiAgent.systemPrompt.preview.recentWindowRef", {
+              defaultValue:
+                "…then the client's recent conversation window (the latest user/assistant turns).",
+            })}
+          </p>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+/** One history-prefix message row: role + origin badges, body or placeholder note. */
+function MessageRow({ message }: Readonly<{ message: TurSystemPromptMessage }>) {
+  const { t } = useTranslation();
+  const style = MESSAGE_ORIGIN_STYLE[message.origin];
+  const originLabel = t(`aiAgent.systemPrompt.preview.messageOrigin.${message.origin}`, {
+    defaultValue: message.label,
+  });
+  const tokLabel = t("aiAgent.systemPrompt.preview.tokens", { defaultValue: "tok" });
+  return (
+    <li
+      className={cn(
+        "relative rounded-lg border bg-background/60 px-3 py-2 pl-4",
+        message.runtimeOnly && "opacity-70",
+      )}
+    >
+      <span className={cn("absolute left-0 top-2 bottom-2 w-1 rounded-full", style.bar)} />
+      <div className="mb-1 flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center rounded-full border bg-background px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+          {message.role}
+        </span>
+        <Badge
+          variant="outline"
+          className={cn("bg-background text-[10px] uppercase", style.badge)}
+        >
+          {originLabel}
+        </Badge>
+        {message.runtimeOnly && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-background px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-300">
+            <IconClock className="size-3" />
+            {t("aiAgent.systemPrompt.preview.runtimeOnly", { defaultValue: "runtime only" })}
+          </span>
+        )}
+        {message.tokens > 0 && (
+          <span className="inline-flex items-center rounded-md border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {message.tokens} {tokLabel}
+          </span>
+        )}
+      </div>
+      {message.content ? (
+        <div className={PROSE_CLASSES}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+            {preserveSoftBreaks(message.content)}
+          </ReactMarkdown>
+        </div>
+      ) : (
+        message.note && (
+          <p className="text-xs italic leading-relaxed text-muted-foreground/80">
+            {message.note}
+          </p>
+        )
+      )}
+    </li>
   );
 }
 

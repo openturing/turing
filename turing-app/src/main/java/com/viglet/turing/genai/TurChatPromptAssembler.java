@@ -20,7 +20,6 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,8 +35,6 @@ import com.viglet.turing.genai.prompt.TurPromptMessage;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
-import com.viglet.turing.service.chatmemory.TurChatMemoryCompressionService;
-import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 
 /**
  * Composes the {@code List<Message>} that ships to the LLM:
@@ -58,8 +55,11 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
  * {@link TurMeterNames#STAGE_CHAT_SETUP_COMPOSE} substage timing — measured
  * around the system-prompt build (matches the pre-T33 boundary so dashboards
  * keep reading the same number). T615 retired the pre-pipeline inline
- * concatenation path and its {@code turing.prompt.assembly.pipeline-enabled}
- * escape hatch: the pipeline is now the single assembly path.
+ * system-prompt concatenation and its
+ * {@code turing.prompt.assembly.pipeline-enabled} escape hatch; T617 did the same
+ * for the history-prefix messages, deleting the inline {@code buildMemoryPrefixLegacy}
+ * path and its {@code turing.prompt.assembly.message-pipeline-enabled} flag. Both
+ * the system message and the history prefix now have a single assembly path.
  *
  * @author Alexandre Oliveira
  * @since 2026.3.1
@@ -68,35 +68,15 @@ import com.viglet.turing.service.chatmemory.TurChatMemoryRelevanceRetriever;
 @Service
 public class TurChatPromptAssembler {
 
-    private final TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever;
-    private final TurChatMemoryCompressionService chatMemoryCompressionService;
     private final TurChatPipelineObservation chatPipelineObservation;
     private final TurChatAttachmentService chatAttachmentService;
     private final TurPromptAssemblyPipeline promptAssemblyPipeline;
     private final TurMessageAssemblyPipeline messageAssemblyPipeline;
 
-    /**
-     * Block AL / §XXXV.3 (T616) — when {@code true} (default) the history-prefix
-     * messages (T115 memory summary + T30 relevance-retrieved turns) are built by
-     * the {@link TurMessageAssemblyPipeline} contributor chain, so the whole message
-     * list has one assembly path. Set
-     * {@code turing.prompt.assembly.message-pipeline-enabled=false} to fall back to
-     * the historical inline concatenation (call the two services directly) — the
-     * escape hatch the block's "exact current message list can be restored"
-     * invariant requires while the migration soaks. The two paths produce a
-     * byte-identical message list (proven by {@code TurChatPromptAssemblerMemoryPipelineTest}).
-     */
-    @Value("${turing.prompt.assembly.message-pipeline-enabled:true}")
-    private boolean messagePipelineEnabled;
-
-    public TurChatPromptAssembler(TurChatMemoryRelevanceRetriever chatMemoryRelevanceRetriever,
-            TurChatMemoryCompressionService chatMemoryCompressionService,
-            TurChatPipelineObservation chatPipelineObservation,
+    public TurChatPromptAssembler(TurChatPipelineObservation chatPipelineObservation,
             TurChatAttachmentService chatAttachmentService,
             TurPromptAssemblyPipeline promptAssemblyPipeline,
             TurMessageAssemblyPipeline messageAssemblyPipeline) {
-        this.chatMemoryRelevanceRetriever = chatMemoryRelevanceRetriever;
-        this.chatMemoryCompressionService = chatMemoryCompressionService;
         this.chatPipelineObservation = chatPipelineObservation;
         this.chatAttachmentService = chatAttachmentService;
         this.promptAssemblyPipeline = promptAssemblyPipeline;
@@ -131,53 +111,29 @@ public class TurChatPromptAssembler {
     }
 
     /**
-     * Block AL / §XXXV.3 (T616) — build the history-prefix messages (the T115
-     * chat-memory compression summary followed by the T30 relevance-retrieved older
-     * turns) that sit between the system message and the client's recent window.
+     * Block AL / §XXXV.3 (T616 + T617) — build the history-prefix messages (the
+     * T115 chat-memory compression summary followed by the T30 relevance-retrieved
+     * older turns) that sit between the system message and the client's recent
+     * window.
      *
-     * <p>By default this runs the {@link TurMessageAssemblyPipeline} contributor
-     * chain, so the two sources — historically concatenated inline here — live
-     * behind the same composable SPI as the system prompt. The
-     * {@code message-pipeline-enabled=false} escape hatch restores the exact legacy
-     * inline concatenation; both produce a byte-identical {@code [summary] +
-     * [retrieved]} prefix. Returns an empty list when neither source contributes.
+     * <p>Runs the {@link TurMessageAssemblyPipeline} contributor chain, so the two
+     * sources — historically concatenated inline here — live behind the same
+     * composable SPI as the system prompt. T617 deleted the inline
+     * {@code buildMemoryPrefixLegacy} escape hatch: this is now the single path.
+     * Returns an empty list when neither source contributes.
      */
     private List<ChatMessageItem> buildMemoryPrefix(TurAIAgent agent, String conversationId,
             String lastUserMessage) {
-        if (messagePipelineEnabled) {
-            List<TurPromptMessage> prefix = messageAssemblyPipeline.assemble(
-                    new TurMessageAssemblyContext(agent, conversationId, lastUserMessage));
-            if (prefix.isEmpty()) {
-                return List.of();
-            }
-            List<ChatMessageItem> items = new ArrayList<>(prefix.size());
-            for (TurPromptMessage m : prefix) {
-                items.add(new ChatMessageItem(m.role(), m.content()));
-            }
-            return items;
+        List<TurPromptMessage> prefix = messageAssemblyPipeline.assemble(
+                new TurMessageAssemblyContext(agent, conversationId, lastUserMessage));
+        if (prefix.isEmpty()) {
+            return List.of();
         }
-        return buildMemoryPrefixLegacy(agent, conversationId, lastUserMessage);
-    }
-
-    /**
-     * Escape-hatch path (pre-T616): the historical inline concatenation — T30
-     * relevance retrieval prepended to the history, then the T115 summary prepended
-     * ahead of that. Retained so {@code message-pipeline-enabled=false} restores the
-     * exact legacy prefix.
-     */
-    private List<ChatMessageItem> buildMemoryPrefixLegacy(TurAIAgent agent, String conversationId,
-            String lastUserMessage) {
-        List<ChatMessageItem> retrieved = chatMemoryRelevanceRetriever.retrievePrefix(
-                agent, conversationId, lastUserMessage);
-        java.util.Optional<ChatMessageItem> summary =
-                chatMemoryCompressionService.summaryBlock(agent, conversationId);
-        if (summary.isEmpty()) {
-            return retrieved;
+        List<ChatMessageItem> items = new ArrayList<>(prefix.size());
+        for (TurPromptMessage m : prefix) {
+            items.add(new ChatMessageItem(m.role(), m.content()));
         }
-        List<ChatMessageItem> prefix = new ArrayList<>(retrieved.size() + 1);
-        prefix.add(summary.get());
-        prefix.addAll(retrieved);
-        return prefix;
+        return items;
     }
 
     /**
