@@ -296,9 +296,9 @@ public class TurSNSiteFacetProfileService {
         if (!fieldsToSave.isEmpty()) {
             turSNSiteFieldExtRepository.saveAll(fieldsToSave);
         }
-        if (!customFacetsToSave.isEmpty()) {
-            turSNSiteCustomFacetRepository.saveAll(customFacetsToSave);
-        }
+        // Save each custom facet through the proxied save() so its designed @CacheEvict fires;
+        // saveAll() bypasses the caching aspect and would leave findByFieldExtsWithDetails stale.
+        customFacetsToSave.forEach(turSNSiteCustomFacetRepository::save);
         return buildOrdering(snSiteId, profile);
     }
 

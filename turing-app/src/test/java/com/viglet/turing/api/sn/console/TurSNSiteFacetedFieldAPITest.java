@@ -40,7 +40,9 @@ import com.viglet.turing.sn.facet.TurSNSiteFacetProfileService;
 
 /**
  * Unit tests for {@link TurSNSiteFacetedFieldAPI} — verifies it delegates to
- * {@link TurSNSiteFacetProfileService}.
+ * {@link TurSNSiteFacetProfileService}. The facet-position persistence logic
+ * itself (including custom-facet independence and cache eviction) is covered by
+ * {@code TurSNSiteFacetProfileServiceTest}.
  *
  * @author Arthur Nascimento
  * @since 2026.2.7

@@ -293,4 +293,32 @@ class TurSNSiteFacetProfileServiceTest {
         assertThat(field.getFacetPosition()).isEqualTo(9);
         verify(turSNSiteFieldExtRepository, never()).saveAll(any());
     }
+
+    @Test
+    void saveOrderingUpdatesCustomFacetViaProxiedSaveForCacheEviction() {
+        TurSNSite site = site();
+        TurSNSiteFieldExt field = fieldFacet("f1", 9);
+        TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
+                .id("cf1").name("price_range").facetPosition(5).build();
+        TurSNSiteFacetProfile profile = TurSNSiteFacetProfile.builder()
+                .id("p1").defaultProfile(true).turSNSite(site).build();
+
+        when(turSNSiteRepository.findById(SITE_ID)).thenReturn(Optional.of(site));
+        when(turSNSiteFacetProfileRepository.findById("p1")).thenReturn(Optional.of(profile));
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                .thenReturn(List.of(field));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(customFacet));
+        when(turSNSiteFacetProfileRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(turSNFieldProcess.getTurSNSiteFacetOrdering(SITE_ID))
+                .thenReturn(Optional.of(List.of(new TurSNFieldFacetDefinition(field, Set.of()))));
+
+        service.saveOrdering(SITE_ID, "p1",
+                List.of(new TurSNSiteFacetOrderingDto().setId("cf1").setFacetPosition(1)));
+
+        // Custom facet positions are persisted via the proxied save() (not saveAll), so the
+        // custom-facet @CacheEvict fires and findByFieldExtsWithDetails is not left stale.
+        assertThat(customFacet.getFacetPosition()).isEqualTo(1);
+        verify(turSNSiteCustomFacetRepository).save(customFacet);
+    }
 }

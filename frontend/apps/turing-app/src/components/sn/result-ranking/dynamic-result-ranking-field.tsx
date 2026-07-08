@@ -49,7 +49,7 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                 const fieldErrors = (errors?.[fieldName] as any)?.[index];
                 return (
                     <div key={field.id} className="rounded-lg border bg-muted/30 p-3">
-                        <div className="grid grid-cols-1 md:grid-cols-[200px_120px_1fr_auto] gap-2 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-[200px_120px_1fr_auto]! gap-2 items-start">
                             {/* Field select */}
                             <Controller
                                 control={control}

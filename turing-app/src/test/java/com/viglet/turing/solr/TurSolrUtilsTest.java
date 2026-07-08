@@ -224,9 +224,17 @@ class TurSolrUtilsTest {
     // ---- firstRowPositionFromCurrentPage edge cases ----
 
     @Test
-    void firstRowPositionPage0Rows10ShouldBeNegative() {
+    void firstRowPositionPage0Rows10ShouldBeClampedToZero() {
+        // A client-supplied page <= 0 must not produce a negative Solr 'start'
+        // (Solr rejects it with "'start' parameter cannot be negative").
         TurSEParameters params = createParams(0, 10);
-        assertEquals(-10, TurSolrUtils.firstRowPositionFromCurrentPage(params));
+        assertEquals(0, TurSolrUtils.firstRowPositionFromCurrentPage(params));
+    }
+
+    @Test
+    void firstRowPositionNegativePageShouldBeClampedToZero() {
+        TurSEParameters params = createParams(-3, 10);
+        assertEquals(0, TurSolrUtils.firstRowPositionFromCurrentPage(params));
     }
 
     @Test

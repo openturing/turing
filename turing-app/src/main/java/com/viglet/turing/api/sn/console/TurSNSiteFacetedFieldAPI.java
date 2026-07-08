@@ -50,6 +50,10 @@ import lombok.extern.slf4j.Slf4j;
  * The legacy endpoints ({@code GET /} and {@code PUT /ordering}) operate on the
  * site's default profile, preserving backward compatibility. The
  * {@code /profile} sub-resources manage named profiles and their orderings.
+ * <p>
+ * All facet-position persistence (including the LazyInitialization-safe custom
+ * facet loading and the {@code @CacheEvict}-triggering per-item save) lives in
+ * {@link TurSNSiteFacetProfileService}.
  *
  * @author Alexandre Oliveira
  * @since 0.3.9
