@@ -10,6 +10,7 @@
 package com.viglet.turing.persistence.repository.agent;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -24,4 +25,7 @@ import com.viglet.turing.persistence.model.agent.TurEvalGraderStack;
 public interface TurEvalGraderStackRepository extends JpaRepository<TurEvalGraderStack, String> {
 
     List<TurEvalGraderStack> findByOrderByNameAsc();
+
+    /** T602 — resolve a grader stack by human name (for the public {@code turing eval} API). */
+    Optional<TurEvalGraderStack> findFirstByName(String name);
 }

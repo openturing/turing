@@ -200,6 +200,61 @@ public class TurAgentEvalRunnerService {
         return persistReport(agent, results, datasetId, datasetVersion);
     }
 
+    /**
+     * T602 / §XXXIII.17 — the public "run a named {@code dataset × grader stack}
+     * remotely" entry-point behind {@code POST /api/eval/run}, the CLI
+     * ({@code turing eval --dataset}), and the SDK {@code runEval}. Unlike {@link
+     * #runAgent} — which replays the agent's own <b>configured</b> golden sets —
+     * this scores an <b>arbitrary</b> dataset against an <b>arbitrary</b> grader
+     * stack, so the same agent runtime can be gated by any reusable dataset in
+     * CI (extends T428/T430).
+     *
+     * <p>It builds a transient, non-persisted {@link TurAgentEvalSet} that only
+     * carries the {@code datasetId} + {@code graderStackId} bindings, then reuses
+     * the exact per-case replay + grader-stack scoring machinery. A blank / null
+     * {@code graderStackId} resolves to the legacy default stack.
+     *
+     * <p>The run replays with {@code persistSideEffects=false} (an ad-hoc CI run
+     * never parks human-review tasks); a deferring HUMAN grader therefore just
+     * marks its case {@code pendingReview}, which fails the gate. The report is
+     * persisted for history / the Eval Studio timeline but — deliberately —
+     * <b>never</b> becomes or demotes the agent's golden baseline and is never
+     * flagged {@code regressed}, so ad-hoc dataset runs can't corrupt the
+     * pre-publish gate baseline (which scores a different case set).
+     */
+    public TurAgentEvalReportDto runDataset(String agentId, String datasetId, String graderStackId) {
+        TurAIAgent agent = agentRepository.findById(agentId).orElse(null);
+        if (agent == null) {
+            return TurAgentEvalReportDto.error("Agent not found: " + agentId);
+        }
+        List<TurEvalDatasetRow> rows =
+                datasetRowRepository.findByTurEvalDataset_IdOrderBySortOrderAsc(datasetId);
+        if (rows.isEmpty()) {
+            return TurAgentEvalReportDto.error("Dataset has no rows: " + datasetId);
+        }
+        TurLLMInstance llmInstance = resolveLlm(agent);
+        if (llmInstance == null) {
+            return TurAgentEvalReportDto.error(
+                    "No usable LLM (attach an enabled LLM to the agent or set a default LLM)");
+        }
+        ChatModel judgeModel = createChatModel(llmInstance);
+
+        TurAgentEvalSet ephemeral = new TurAgentEvalSet();
+        ephemeral.setName("ad-hoc:" + datasetId);
+        ephemeral.setEnabled(1);
+        ephemeral.setDatasetId(datasetId);
+        ephemeral.setGraderStackId(graderStackId == null || graderStackId.isBlank() ? null : graderStackId);
+        ephemeral.setTurAIAgent(agent);
+
+        List<TurAgentEvalCaseResultDto> results = new ArrayList<>();
+        for (EvalCaseSource source : resolveCases(ephemeral)) {
+            results.add(runCase(agent, llmInstance, judgeModel, ephemeral, source, false));
+        }
+        int datasetVersion = datasetRepository.findById(datasetId)
+                .map(com.viglet.turing.persistence.model.agent.TurEvalDataset::getVersion).orElse(0);
+        return persistDatasetRunReport(agent, results, datasetId, datasetVersion);
+    }
+
     /** Negative sentinel returned by {@link #scoreWithSystemPrompt} when the
      *  agent can't be evaluated (missing agent / no enabled set / no LLM). */
     public static final double SCORE_UNAVAILABLE = -1d;
@@ -573,6 +628,40 @@ public class TurAgentEvalRunnerService {
 
         return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), passed, score,
                 caseCount, passedCount, report.isBaseline(), regressed, pendingReview,
+                datasetId, datasetVersion, results, null);
+    }
+
+    /**
+     * T602 — persists an ad-hoc {@code dataset × grader stack} run for history /
+     * the Eval Studio timeline, tagged with the dataset + version it ran against.
+     * Unlike {@link #persistReport} it never mutates the agent's green baseline
+     * and never sets {@code regressed}, so an arbitrary dataset run cannot
+     * corrupt the pre-publish golden-set gate.
+     */
+    private TurAgentEvalReportDto persistDatasetRunReport(TurAIAgent agent,
+            List<TurAgentEvalCaseResultDto> results, String datasetId, int datasetVersion) {
+        int caseCount = results.size();
+        int passedCount = (int) results.stream().filter(TurAgentEvalCaseResultDto::passed).count();
+        boolean pendingReview = results.stream().anyMatch(TurAgentEvalCaseResultDto::pendingReview);
+        boolean passed = caseCount > 0 && passedCount == caseCount && !pendingReview;
+        double score = aggregateScore(results);
+
+        TurAgentEvalReport report = new TurAgentEvalReport();
+        report.setTurAIAgent(agent);
+        report.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        report.setPassed(passed);
+        report.setScore(score);
+        report.setCaseCount(caseCount);
+        report.setPassedCount(passedCount);
+        report.setRegressed(false);
+        report.setPendingReview(pendingReview);
+        report.setDatasetId(datasetId);
+        report.setDatasetVersion(datasetVersion);
+        report.setResultsJson(writeJson(results));
+        report = reportRepository.save(report);
+
+        return new TurAgentEvalReportDto(report.getId(), report.getCreatedAt(), passed, score,
+                caseCount, passedCount, false, false, pendingReview,
                 datasetId, datasetVersion, results, null);
     }
 

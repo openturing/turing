@@ -10,6 +10,8 @@
  *   <li>{@code deploy} — push agent + flows + tools + skills to an instance.</li>
  *   <li>{@code logs --conversation <id>} — tail live chat events.</li>
  *   <li>{@code eval [path]} — run YAML eval suites ({@code --watch} to re-run).</li>
+ *   <li>{@code eval --dataset <id|name>} — run a stored dataset × grader stack
+ *       server-side as a reusable CI gate (T602).</li>
  *   <li>{@code eval record <conversationId>} — freeze a conversation as a fixture.</li>
  * </ul>
  *
@@ -33,6 +35,7 @@ import {
 } from "./config.js";
 import { ClientEvalBackend } from "./eval/backend.js";
 import { recordFixture } from "./eval/record.js";
+import { formatRunResult, runEval } from "./eval/remote.js";
 import { composeUp, resolveComposeFile, watchProject, type DevArgs } from "./commands/dev.js";
 import { deployProject } from "./commands/deploy.js";
 import { discoverSuiteFiles, runEvalFiles } from "./commands/eval.js";
@@ -202,6 +205,26 @@ async function evalCommand(rest: string[]): Promise<void> {
   const connected = await connect(flags, cwd);
   const agentId = connected.connection.agentId;
   if (!agentId) throw new Error("No agent id. Set agentId in turing.config.json, TURING_AGENT_ID, or --agent.");
+
+  // Remote mode: `turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>]`
+  // runs a stored dataset × grader stack server-side as a reusable CI gate (T602).
+  if (typeof extra.dataset === "string") {
+    await connected.client.authenticate();
+    const minScoreRaw = typeof extra["min-score"] === "string" ? Number(extra["min-score"]) : undefined;
+    if (minScoreRaw !== undefined && Number.isNaN(minScoreRaw)) {
+      throw new Error("--min-score must be a number between 0 and 1.");
+    }
+    const result = await runEval(connected.client, {
+      agentId,
+      dataset: extra.dataset,
+      graderStack: typeof extra.stack === "string" ? extra.stack : undefined,
+      minScore: minScoreRaw,
+    });
+    for (const line of formatRunResult(result)) log(line);
+    if (!result.gatePassed) process.exitCode = 1;
+    return;
+  }
+
   const backend = new ClientEvalBackend(connected.client);
   await connected.client.authenticate();
 
@@ -253,6 +276,7 @@ function printHelp(): void {
       "  turing deploy [--env <name>] [connection flags]",
       "  turing logs --conversation <id> [--slots] [connection flags]",
       "  turing eval [path] [--watch] [connection flags]",
+      "  turing eval --dataset <id|name> [--stack <id|name>] [--min-score <n>] [connection flags]",
       "  turing eval record <conversationId> [--out <file>] [connection flags]",
       "",
       "Connection flags (override turing.config.json + env):",

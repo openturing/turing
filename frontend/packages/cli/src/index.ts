@@ -25,6 +25,14 @@ export { loadSuiteFile, normalizeSuite, EvalParseError } from "./eval/load.js";
 export { runSuite, evaluate, describeAssertion, type EvalBackend, type AuditEntry } from "./eval/runner.js";
 export { ClientEvalBackend } from "./eval/backend.js";
 export { buildFixtureYaml, recordFixture, type ConversationExport } from "./eval/record.js";
+export {
+  runEval,
+  formatRunResult,
+  type EvalRunResult,
+  type EvalReport,
+  type EvalCaseResult,
+  type RunEvalOptions,
+} from "./eval/remote.js";
 export type * from "./eval/types.js";
 
 export { deployProject, buildFlowImportPayload, buildToolPayload } from "./commands/deploy.js";

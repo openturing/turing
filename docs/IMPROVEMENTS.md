@@ -2092,8 +2092,7 @@ version they ran against so regression comparisons are honest.
 
 T600 makes grader **stacks**
 reusable named templates with weighted aggregation and per-grader thresholds
-(retiring the hardcoded all-must-pass). T602
-(💭) exposes it through `turing eval` / the SDK for CI over any dataset; T603 (💭)
+(retiring the hardcoded all-must-pass). T603 (💭)
 extends grading from pre-publish to **online/continuous** — sampling live traffic
 and alerting on drift (composing T87 sentiment, T155 citation-drift, T447 miner).
 
