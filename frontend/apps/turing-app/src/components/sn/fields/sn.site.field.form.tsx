@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
@@ -217,6 +217,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
             {isBento ? (
+              <>
               <BentoHero
                 eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.fields.title")}</Link>}
                 leading={
@@ -226,8 +227,10 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
                 }
                 title={snField.name || t("common.new")}
                 subtitle={t("sn.fields.description")}
-                trailing={actions}
+                trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
               />
+              <BentoScrollSaveBar onCancel={() => navigate(urlBase)} loading={isSubmitting} />
+              </>
             ) : (
               <StickyPageHeader>
                 <StickyPageHeader.Title

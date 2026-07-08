@@ -45,7 +45,7 @@ import { toast } from "@viglet/viglet-design-system"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientSwitch } from "../ui/gradient-switch"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 
 interface Props {
@@ -114,6 +114,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
         className={isBento ? "flex flex-col gap-5" : "space-y-4 px-4 lg:px-6 pb-8"}
       >
         {isBento ? (
+          <>
           <BentoHero
             eyebrow={
               <Link to={backRoute} className="transition-colors hover:text-foreground">
@@ -127,8 +128,10 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew, baseRoute = 
             }
             title={t("sn.behavior.title")}
             subtitle={t("sn.behavior.description")}
-            trailing={actions}
+            trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
           />
+          <BentoScrollSaveBar onCancel={() => navigate(backRoute)} />
+          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

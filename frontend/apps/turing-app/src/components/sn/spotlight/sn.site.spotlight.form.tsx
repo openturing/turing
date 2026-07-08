@@ -45,7 +45,7 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router-dom"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -240,6 +240,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
         <Form {...form}>
             <form onSubmit={handleFormSubmit} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
                 {isBento ? (
+                    <>
                     <BentoHero
                         eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.spotlight.title")}</Link>}
                         leading={
@@ -249,8 +250,10 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                         }
                         title={value?.name || t("sn.spotlight.newSpotlight")}
                         subtitle={t("sn.spotlight.description")}
-                        trailing={actions}
+                        trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
                     />
+                    <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
+                    </>
                 ) : (
                     <StickyPageHeader>
                         <StickyPageHeader.Title

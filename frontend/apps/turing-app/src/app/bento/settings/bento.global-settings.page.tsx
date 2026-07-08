@@ -1,4 +1,4 @@
-import { BentoHero, BentoStickySaveBar } from "@/components/bento";
+import { BentoHero, BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
 import { Form } from "@/components/ui/form";
 import { SectionCardChromeProvider } from "@/components/ui/section-card";
 import { EmailSettingsSection } from "@/app/console/system/sections/email-settings.section";
@@ -43,8 +43,14 @@ export default function BentoGlobalSettingsPage() {
           subtitle={t("globalSettings.description")}
         />
 
-        <BentoStickySaveBar
-          title={t("globalSettings.breadcrumb")}
+        <div className="bento-fade-out">
+          <BentoSaveBar
+            loading={isSaving}
+            disabled={isLoading}
+            dirty={form.formState.isDirty}
+          />
+        </div>
+        <BentoScrollSaveBar
           loading={isSaving}
           disabled={isLoading}
           dirty={form.formState.isDirty}

@@ -10,7 +10,7 @@ import {
   parseIsoDateValue,
   parseRangeValue,
 } from "@/components/sn/facet/sn.site.custom.facet.form.utils";
-import { BentoStickySaveBar } from "@/components/bento";
+import { BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -207,6 +207,20 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
     }
   }
 
+  // Shared by the hero-anchored (fade-out) and the scroll-in sticky save bar.
+  const facetItemActions = (
+    <>
+      <GradientButton type="button" size="sm" onClick={onSave}>
+        <IconDeviceFloppy className="size-4" />
+        {t("forms.formActions.saveChanges")}
+      </GradientButton>
+      <GradientButton type="button" variant="outline" size="sm" onClick={backToFacet}>
+        <IconX className="size-4" />
+        {t("forms.formActions.cancel")}
+      </GradientButton>
+    </>
+  );
+
   return (
     <LoadProvider
       checkIsNotUndefined={customFacet && availableLocales}
@@ -220,22 +234,12 @@ export default function SNSiteCustomFacetItemPage({ baseRoute = ROUTES.SN_INSTAN
               {header}
               {/* Save/Cancel are onClick handlers (this page saves
                   imperatively, not via a form submit), so override the bar's
-                  default submit buttons via `actions`. */}
-              <BentoStickySaveBar
-                title={isNewItem ? t("forms.snCustomFacet.addItemTitle") : t("forms.snCustomFacet.editItem")}
-                actions={
-                  <>
-                    <GradientButton type="button" size="sm" onClick={onSave}>
-                      <IconDeviceFloppy className="size-4" />
-                      {t("forms.formActions.saveChanges")}
-                    </GradientButton>
-                    <GradientButton type="button" variant="outline" size="sm" onClick={backToFacet}>
-                      <IconX className="size-4" />
-                      {t("forms.formActions.cancel")}
-                    </GradientButton>
-                  </>
-                }
-              />
+                  default submit buttons via `actions` in both the hero-anchored
+                  (fade-out) copy and the scroll-in sticky copy. */}
+              <div className="bento-fade-out">
+                <BentoSaveBar actions={facetItemActions} />
+              </div>
+              <BentoScrollSaveBar actions={facetItemActions} />
             </>
           ) : (
             <StickyPageHeader>

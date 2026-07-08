@@ -39,7 +39,7 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
-import { BentoFormSection, BentoStickySaveBar, type BentoTone } from "../bento"
+import { BentoFormSection, BentoSaveBar, BentoScrollSaveBar, type BentoTone } from "../bento"
 import type { ComponentType, ReactNode } from "react"
 
 interface Props {
@@ -199,31 +199,34 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId, chr
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {chrome === "bento" ? (
-          <BentoStickySaveBar
-            title={t("intent.settings.title")}
-            onCancel={() => navigate(urlBase)}
-            actions={
-              <>
-                <GradientButton type="submit" size="sm">
-                  <IconDeviceFloppy className="size-4" />
-                  {t("forms.formActions.saveChanges")}
-                </GradientButton>
-                <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
-                  <IconX className="size-4" />
-                  {t("forms.formActions.cancel")}
-                </GradientButton>
-                {!isNew && (
-                  <DialogDelete
-                    feature={t("intent.title")}
-                    name={value.title}
-                    onDelete={onDelete}
-                    open={deleteOpen}
-                    setOpen={setDeleteOpen}
-                  />
-                )}
-              </>
-            }
-          />
+          <>
+            <div className="bento-fade-out">
+              <BentoSaveBar
+                actions={
+                  <>
+                    <GradientButton type="submit" size="sm">
+                      <IconDeviceFloppy className="size-4" />
+                      {t("forms.formActions.saveChanges")}
+                    </GradientButton>
+                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                      <IconX className="size-4" />
+                      {t("forms.formActions.cancel")}
+                    </GradientButton>
+                    {!isNew && (
+                      <DialogDelete
+                        feature={t("intent.title")}
+                        name={value.title}
+                        onDelete={onDelete}
+                        open={deleteOpen}
+                        setOpen={setDeleteOpen}
+                      />
+                    )}
+                  </>
+                }
+              />
+            </div>
+            <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
+          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

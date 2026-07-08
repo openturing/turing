@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { StickyPageHeader } from "@/components/sticky-page-header"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
@@ -124,6 +124,7 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {isBento ? (
+          <>
           <BentoHero
             eyebrow={<Link to={urlBase} className="hover:text-foreground">{t("sn.multiLanguage.feature")}</Link>}
             leading={
@@ -133,8 +134,10 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
             }
             title={isNew ? t("sn.multiLanguage.feature") : (snLocale.language || snLocale.core)}
             subtitle={isNew ? t("sn.multiLanguage.description") : snLocale.core}
-            trailing={actions}
+            trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
           />
+          <BentoScrollSaveBar onCancel={() => navigate(urlBase)} />
+          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title

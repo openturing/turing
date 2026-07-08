@@ -48,7 +48,7 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { Button } from "../../ui/button"
 import { StickyPageHeader } from "../../sticky-page-header"
@@ -351,6 +351,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
                 {isBento ? (
+                    <>
                     <BentoHero
                         eyebrow={<Link to={`${baseRoute}/${snSite.id}`} className="hover:text-foreground">{t("sn.title")}</Link>}
                         leading={
@@ -360,8 +361,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite, baseRoute = ROUTES.SN
                         }
                         title={t("sn.genai.title")}
                         subtitle={t("sn.genai.description")}
-                        trailing={actions}
+                        trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
                     />
+                    <BentoScrollSaveBar onCancel={() => form.reset(snSite.turSNSiteGenAi)} />
+                    </>
                 ) : (
                     <StickyPageHeader>
                         <StickyPageHeader.Title

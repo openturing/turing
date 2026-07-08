@@ -16,15 +16,24 @@ The shared scaffold (`BentoEntityShell`, `BentoListPage`, `BentoEntityTile`,
   only hand-roll a tile when the entity genuinely needs a different layout.
 - Identity fields (title / description / icon / enabled) live in the **hero**,
   never as form `FormField`s — the shell owns them.
-- A **settings / non-`BentoEntityShell` form** (agent settings, intent settings,
-  admin user/role/group, global settings) gets its save bar from
-  **`BentoStickySaveBar`**, never a hand-rolled `<div className="sticky …">`
-  wrapper. Rendered inside the `<form>`, it pins the `BentoSaveBar` at `top-20`
-  — **below** the `sticky top-0 z-30` shell header. A `top-0` bar slides
-  *behind* that header on scroll and its Save/Cancel become invisible and
-  un-clickable, which is the exact bug this component exists to prevent. Only
-  `BentoEntityShell` uses a different save bar (its scroll-linked `bento-fade-in
-  fixed` morph), because it also owns the hero the bar morphs out of.
+- The save bar always uses the **hero → sticky bar morph** (same as
+  `BentoEntityShell`), never a hand-rolled `<div className="sticky …">` wrapper
+  or a permanently-visible bar. The controls live in the hero at the top and a
+  fixed bar fades in only once the hero scrolls away — so nothing is duplicated
+  on screen and the stick appears exactly when the title leaves.
+  - **`BentoEntityShell`** detail pages get this for free (it owns the hero).
+  - A **settings / non-shell form** (agent settings, intent settings, admin
+    user/role/group, global settings, SN sub-forms, custom-facet item) composes
+    it from shared pieces: the hero-anchored actions wrapped in `bento-fade-out`
+    (or, when the hero is external, a `bento-fade-out`-wrapped `BentoSaveBar`
+    placed right after it), followed by **`BentoScrollSaveBar`** — which renders
+    the sentinel + `bento-save-bar-spacer` + the fixed `bento-fade-in`
+    `BentoSaveBar`, all driven by the shared **`useBentoScrollFade`** hook
+    (extracted from `BentoEntityShell` so both paths share one mechanic).
+  - Keep the **destructive** action (delete dialog) in the hero/fade-out copy
+    only — never pass it to `BentoScrollSaveBar`, since a controlled dialog
+    rendered twice would open two modals at once. The sticky copy carries just
+    Save/Cancel.
 
 ## 2. i18n — reuse keys, object-form defaults
 

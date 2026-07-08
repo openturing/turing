@@ -65,7 +65,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate, Link } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../../sticky-page-header"
-import { BentoHero } from "@/components/bento"
+import { BentoHero, BentoScrollSaveBar } from "@/components/bento"
 import { SNFormSection, type SNFormChrome } from "@/components/sn/sn-form-section"
 import { CustomFacetFieldChangeDialog } from "./sn.site.custom.facet.field-change-dialog"
 import { CustomFacetItemRow } from "./sn.site.custom.facet.item-row"
@@ -325,6 +325,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className={isBento ? "space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
           {isBento ? (
+            <>
             <BentoHero
               eyebrow={<Link to={`${baseRoute}/${snSiteId}/facet`} className="hover:text-foreground">{t("sn.facets.title")}</Link>}
               leading={
@@ -334,8 +335,10 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
               }
               title={value.name || t("sn.facets.customField")}
               subtitle={value.defaultLabel || t("sn.facets.customField")}
-              trailing={actions}
+              trailing={<div className="bento-fade-out flex shrink-0 items-center gap-2">{actions}</div>}
             />
+            <BentoScrollSaveBar onCancel={() => navigate(`${baseRoute}/${snSiteId}/facet`)} />
+            </>
           ) : (
             <StickyPageHeader>
               <StickyPageHeader.Title

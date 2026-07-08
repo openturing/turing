@@ -4,7 +4,7 @@ import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { BentoStickySaveBar } from "@/components/bento";
+import { BentoSaveBar, BentoScrollSaveBar } from "@/components/bento";
 import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -183,22 +183,24 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
                 {isBento ? (
                     <>
                         {header}
-                        <BentoStickySaveBar
-                            title={isNew ? t("admin.users.newUser") : (value?.username ?? "")}
-                            actions={
-                                <>
-                                    <GradientButton type="submit" size="sm">
-                                        <IconDeviceFloppy className="size-4" />
-                                        {t("forms.formActions.saveChanges")}
-                                    </GradientButton>
-                                    <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
-                                        <IconX className="size-4" />
-                                        {t("forms.formActions.cancel")}
-                                    </GradientButton>
-                                    {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                                </>
-                            }
-                        />
+                        <div className="bento-fade-out">
+                            <BentoSaveBar
+                                actions={
+                                    <>
+                                        <GradientButton type="submit" size="sm">
+                                            <IconDeviceFloppy className="size-4" />
+                                            {t("forms.formActions.saveChanges")}
+                                        </GradientButton>
+                                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(listRoute)}>
+                                            <IconX className="size-4" />
+                                            {t("forms.formActions.cancel")}
+                                        </GradientButton>
+                                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                                    </>
+                                }
+                            />
+                        </div>
+                        <BentoScrollSaveBar onCancel={() => navigate(listRoute)} />
                     </>
                 ) : (
                     <StickyPageHeader>

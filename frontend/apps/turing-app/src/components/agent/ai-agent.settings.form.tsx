@@ -41,7 +41,7 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
-import { BentoFormSection, BentoStickySaveBar, type BentoTone } from "../bento"
+import { BentoFormSection, BentoSaveBar, BentoScrollSaveBar, type BentoTone } from "../bento"
 import type { ComponentType, ReactNode } from "react"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
@@ -299,13 +299,22 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew, chrome = "c
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className={chrome === "bento" ? "space-y-4 md:space-y-5 pb-8" : "space-y-4 px-4 lg:px-6 pb-8"}>
         {chrome === "bento" ? (
-          <BentoStickySaveBar
-            title={t("aiAgent.settings.title")}
-            onCancel={() => navigate(urlBase)}
-            loading={createMutation.isPending || updateMutation.isPending}
-            titleMissing={!form.watch("title")?.trim()}
-            dirty={isNew || form.formState.isDirty}
-          />
+          <>
+            <div className="bento-fade-out">
+              <BentoSaveBar
+                onCancel={() => navigate(urlBase)}
+                loading={createMutation.isPending || updateMutation.isPending}
+                titleMissing={!form.watch("title")?.trim()}
+                dirty={isNew || form.formState.isDirty}
+              />
+            </div>
+            <BentoScrollSaveBar
+              onCancel={() => navigate(urlBase)}
+              loading={createMutation.isPending || updateMutation.isPending}
+              titleMissing={!form.watch("title")?.trim()}
+              dirty={isNew || form.formState.isDirty}
+            />
+          </>
         ) : (
           <StickyPageHeader>
             <StickyPageHeader.Title
