@@ -2,9 +2,10 @@ import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BentoEntityTile, BentoListPage } from "@/components/bento";
 import { Button } from "@/components/ui/button";
-import { IconMasksTheater, IconUserCircle } from "@tabler/icons-react";
+import { IconMasksTheater, IconTargetArrow, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { BentoPersonaFromAudioButton } from "./persona-from-audio.button";
 
 export default function BentoPersonaListPage() {
   const { t } = useTranslation();
@@ -22,12 +23,21 @@ export default function BentoPersonaListPage() {
       title={t("persona.title")}
       subtitle={t("persona.blankDescription")}
       headerAction={
-        <Button asChild variant="outline" size="sm" className="gap-2">
-          <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
-            <IconMasksTheater size={16} />
-            {t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" })}
-          </Link>
-        </Button>
+        <>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={ROUTES.BENTO_PERSONA_SUGGEST}>
+              <IconTargetArrow size={16} />
+              {t("forms.persona.suggest.trigger")}
+            </Link>
+          </Button>
+          <BentoPersonaFromAudioButton />
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to={ROUTES.BENTO_PERSONA_DIALOGUE}>
+              <IconMasksTheater size={16} />
+              {t("persona.launch.personaDialogue", { defaultValue: "Persona dialogue" })}
+            </Link>
+          </Button>
+        </>
       }
       newRoute={`${ROUTES.BENTO_PERSONA_INSTANCE}/new`}
       newLabel={t("persona.newInstance")}

@@ -85,11 +85,11 @@
 > full screen inventory → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXI. Remaining is
 > the cutover & retirement phase:
 
-**Phase 5 — cutover & retirement:** Block AG's committed scope (T547–T571) plus
-the T572 delight-polish follow-up are **complete** — cutover done, console
-retired, full a11y/responsive/perf/e2e pass passed, onboarding polish shipped.
-One optional 💭 follow-up remains:
-- 💭 **T619** (deps: T570) **Re-add persona from-audio authoring (T470) + persona-suggest (T471) to the bento persona surface** — both were console-only and dropped in the console retirement (T570); re-add to bento (resurrect the deleted services from git history) or confirm intentional removal.
+**Phase 5 — cutover & retirement:** Block AG's committed scope (T547–T571), the
+T572 delight-polish follow-up, and the T619 persona-parity follow-up are all
+**complete** — cutover done, console retired, full a11y/responsive/perf/e2e pass
+passed, onboarding polish shipped, and the two console-only persona tools
+(from-audio authoring + persona-suggest) re-added to bento. Block AG is closed.
 
 ## Non-goals (do NOT add as tasks)
 

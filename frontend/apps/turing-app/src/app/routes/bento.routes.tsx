@@ -65,6 +65,8 @@ const BentoPersonaEditor = lazy(() => import("../bento/persona/bento.persona.edi
 const BentoPersonaValidatePage = lazy(() => import("../bento/persona/bento.persona.validate.page"));
 // Block AI (T585) — global persona↔persona dialogue (two speakers + a topic).
 const BentoPersonaDialoguePage = lazy(() => import("../bento/persona/bento.persona.dialogue.page"));
+// Block AG follow-up (T619) — auto-suggest best-fit persona for content (T471).
+const BentoPersonaSuggestPage = lazy(() => import("../bento/persona/bento.persona.suggest.page"));
 const BentoGitPage = lazy(() => import("../bento/git/bento.git.page"));
 const GitRepoPage = lazy(() => import("../console/git/git.repo.page"));
 // Persona section sub-pages (reused from the console) — mounted under the
@@ -231,6 +233,8 @@ export const BentoRoutes = (
     <Route path="persona/validate/:personaId" element={<BentoPersonaValidatePage />} />
     {/* Block AI (T585) — GLOBAL persona↔persona dialogue (not scoped to one persona). */}
     <Route path="persona/dialogue" element={<BentoPersonaDialoguePage />} />
+    {/* Block AG follow-up (T619) — GLOBAL auto-suggest best-fit persona for content. */}
+    <Route path="persona/suggest" element={<BentoPersonaSuggestPage />} />
     <Route path="persona/instance" element={<BentoPersonaListPage />} />
     <Route path="persona/instance/:id" element={<BentoPersonaPage />}>
       {/* Landing = AI-agent-style dashboard (T582); new personas redirect to the editor. */}
