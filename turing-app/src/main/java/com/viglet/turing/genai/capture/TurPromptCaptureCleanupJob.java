@@ -28,7 +28,7 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
  *
  * <p>Walks every {@code .../prompt-captures/turn-*.json} object across all
  * tenants and deletes those older than
- * {@link TurPromptCaptureProperties#getRetentionDays()}. Age comes from the
+ * {@link TurPromptCaptureProperties#retentionDays}. Age comes from the
  * object's {@code lastModified} (tolerantly parsed by {@link TurPromptCaptureTimes});
  * an entry whose backend reports no parseable timestamp is left alone (never
  * deleted undated) — the per-conversation ring still bounds it.

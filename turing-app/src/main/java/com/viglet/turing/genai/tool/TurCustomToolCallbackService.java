@@ -329,7 +329,7 @@ public class TurCustomToolCallbackService {
      * exactly {@code \U}, which is what the Python sandbox needs. The
      * lexer is happy because the offending token never appears.
      *
-     * <p>Reproduced by {@link com.viglet.turing.genai.tool.TurCustomToolGroovyParserBugTest}.
+     * <p>Reproduced by {@code TurCustomToolGroovyParserBugTest}.
      *
      * <p>Public so the Groovy eval-grader engine (T589) can reuse the exact same
      * source sanitization as the Custom Tool sandbox.
