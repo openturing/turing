@@ -106,6 +106,17 @@ export default function BentoRootPage() {
        * the header + main clear it on desktop.
        */}
       <div className="relative min-h-svh w-full bg-background text-foreground md:pl-16">
+        {/*
+         * Skip-to-content link (a11y / T571): the first focusable element so a
+         * keyboard user can jump past the nav rail + header straight to the
+         * page body. Visually hidden until focused.
+         */}
+        <a
+          href="#bento-main-content"
+          className="sr-only rounded-full focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:border focus:border-border/60 focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg"
+        >
+          {t("bento.skipToContent", { defaultValue: "Skip to content" })}
+        </a>
         <AmbientBackground />
 
         <BentoNavRail />
@@ -150,7 +161,12 @@ export default function BentoRootPage() {
           </div>
         </header>
 
-        <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
+        <main
+          id="bento-main-content"
+          tabIndex={-1}
+          aria-label={t("bento.mainContent", { defaultValue: "Main content" })}
+          className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 focus:outline-none md:px-8 md:py-10"
+        >
           <Outlet />
         </main>
 

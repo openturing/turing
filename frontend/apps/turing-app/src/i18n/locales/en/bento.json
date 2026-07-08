@@ -3,6 +3,8 @@
     "nav": {
       "label": "Primary"
     },
+    "skipToContent": "Skip to content",
+    "mainContent": "Main content",
     "palette": {
       "title": "Command palette",
       "description": "Search and jump to any area",

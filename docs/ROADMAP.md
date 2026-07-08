@@ -85,9 +85,11 @@
 > full screen inventory → [IMPROVEMENTS.md](IMPROVEMENTS.md) §XXXI. Remaining is
 > the cutover & retirement phase:
 
-**Phase 5 — cutover & retirement:**
-- 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). Includes verifying migration completeness — e.g. persona from-audio authoring (T470) + persona-suggest (T471) were console-only and not carried into bento. → §XXXI.10
+**Phase 5 — cutover & retirement:** Block AG's committed scope (T547–T571) is
+**complete** — cutover done, console retired, full a11y/responsive/perf/e2e pass
+passed. Two optional 💭 follow-ups remain:
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
+- 💭 **T619** (deps: T570) **Re-add persona from-audio authoring (T470) + persona-suggest (T471) to the bento persona surface** — both were console-only and dropped in the console retirement (T570); re-add to bento (resurrect the deleted services from git history) or confirm intentional removal. → §XXXI.10
 
 ## Non-goals (do NOT add as tasks)
 

@@ -3,6 +3,8 @@
     "nav": {
       "label": "Navegação principal"
     },
+    "skipToContent": "Pular para o conteúdo",
+    "mainContent": "Conteúdo principal",
     "palette": {
       "title": "Paleta de comandos",
       "description": "Busque e navegue para qualquer área",
