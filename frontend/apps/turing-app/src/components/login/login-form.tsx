@@ -26,7 +26,7 @@ export function LoginForm({
     ...props
 }: React.ComponentProps<"form">) {
     const [searchParams] = useSearchParams();
-    const returnUrl = searchParams.get('returnUrl') || ROUTES.CONSOLE;
+    const returnUrl = searchParams.get('returnUrl') || ROUTES.BENTO_HOME;
     const { t } = useTranslation();
     const form = useForm<TurRestInfo>();
     const [error, setError] = useState('');

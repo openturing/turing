@@ -1,41 +1,15 @@
 import { lazy, Suspense } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
-import ConsoleRootPage from "./app/console/console.root.page"
 // Top-level pages are lazy-loaded so the auth/login bundle stays small —
 // users hitting /login don't need to download the dashboard, and vice-versa.
-const DashboardPage = lazy(() => import("./app/console/dashboard/dashboard.page"))
-const HomePage = lazy(() => import("./app/console/home/home.page"))
 const LoginPage = lazy(() => import("./app/login/login.page"))
 const RegisterPage = lazy(() => import("./app/register/register.page"))
 const SetupPage = lazy(() => import("./app/setup/setup.page"))
-import {
-  AdminRoutes,
-  AIAgentRoutes,
-  AssetRoutes,
-  SkillRoutes,
-  TenantRoutes,
-  BentoRoutes,
-  GitRoutes,
-  PageRoutes,
-  ChatRoutes,
-  EmbeddingModelRoutes,
-  GraphqlRoutes,
-  IntegrationRoutes,
-  LLMRoutes,
-  MarketplaceRoutes,
-  McpServerRoutes,
-  PersonaRoutes,
-  CustomToolRoutes,
-  RoutineRoutes,
-  ChatWebhookRoutes,
-  SERoutes,
-  SNRoutes,
-  StoreRoutes,
-  AiAnalyticsRoutes,
-  ConversationRoutes,
-  UserRoutes,
-  VoiceKioskRoutes
-} from "./app/routes"
+const ConsoleToBentoRedirect = lazy(() => import("./app/routes/console-redirect"))
+// Block AG (T569/T570) — Bento is the interface; the legacy console tree is
+// retired. Only two route groups survive outside bento: the standalone,
+// chrome-free voice kiosk and the bento tree itself.
+import { BentoRoutes, VoiceKioskRoutes } from "./app/routes"
 import { ROUTES } from "./app/routes.const"
 import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
@@ -53,7 +27,7 @@ function App() {
             <Toaster />
             <Suspense fallback={<div className="h-screen w-screen" aria-busy="true" />}>
             <Routes>
-              <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.CONSOLE} replace />} />
+              <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.BENTO_HOME} replace />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
@@ -61,35 +35,8 @@ function App() {
               <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
               {BentoRoutes}
               {VoiceKioskRoutes}
-              <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
-                <Route index element={<Navigate to={ROUTES.HOME} replace />} />
-                <Route path="home" element={<HomePage />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                {SERoutes}
-                {SNRoutes}
-                {StoreRoutes}
-                {EmbeddingModelRoutes}
-                {LLMRoutes}
-                {McpServerRoutes}
-                {CustomToolRoutes}
-                {RoutineRoutes}
-                {ChatWebhookRoutes}
-                {AIAgentRoutes}
-                {PersonaRoutes}
-                {IntegrationRoutes}
-                {MarketplaceRoutes}
-                {GraphqlRoutes}
-                {AssetRoutes}
-                {SkillRoutes}
-                {TenantRoutes}
-                {GitRoutes}
-                {PageRoutes}
-                {ChatRoutes}
-                {AiAnalyticsRoutes}
-                {ConversationRoutes}
-                {UserRoutes}
-                {AdminRoutes}
-              </Route>
+              {/* Retired console deep-links resolve to their bento equivalent. */}
+              <Route path={`${ROUTES.CONSOLE}/*`} element={<ConsoleToBentoRedirect />} />
             </Routes>
             </Suspense>
           </TuringServiceProvider>

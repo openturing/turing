@@ -86,7 +86,6 @@
 > the cutover & retirement phase:
 
 **Phase 5 — cutover & retirement:**
-- 📋 **T569** (deps: T551–T568) **Make `/bento` the default interface** — route cutover, console → bento redirects, drop the "Preview" badge. → §XXXI.10
 - 📋 **T570** (deps: T569) **Retire the legacy console** — delete migrated `console/*` pages + dead routes/components; no orphaned imports. → §XXXI.10
 - 📋 **T571** (deps: T569) **Full a11y + responsive + performance + e2e pass** across the whole bento surface (keyboard, reduced-motion, mobile, bundle/lazy-load, smoke IT). → §XXXI.10
 - 💭 **T572** (deps: T571) **Onboarding & delight polish** — consistent empty-states, keyboard-shortcut guide, motion-reduce audit, first-run tour. → §XXXI.10
