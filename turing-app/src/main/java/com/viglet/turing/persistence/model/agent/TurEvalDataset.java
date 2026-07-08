@@ -70,6 +70,15 @@ public class TurEvalDataset implements Serializable {
     @Column(length = 1000)
     private String description;
 
+    /**
+     * T601 — arbitrary dataset-level metadata as JSON. Rows already carry their
+     * own {@code metadataJson}; this holds shared, dataset-wide config — e.g. an
+     * NL→facet dataset stores {@code {"kind":"nl-facet","index":..,"locale":..,
+     * "schema":[..]}} here so it round-trips back into a {@code TurNLFacetEvalPack}.
+     */
+    @Column(name = "metadataJson", columnDefinition = "longtext")
+    private String metadataJson;
+
     /** Version counter (immutable snapshots + drift diff land with T598). */
     @Column(name = "version", nullable = false)
     private int version = 1;

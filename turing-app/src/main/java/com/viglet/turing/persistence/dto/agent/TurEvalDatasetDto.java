@@ -27,6 +27,7 @@ public record TurEvalDatasetDto(
         String description,
         int version,
         int rowCount,
+        String metadataJson,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         List<TurEvalDatasetRowDto> rows) {
@@ -34,12 +35,12 @@ public record TurEvalDatasetDto(
     /** Summary view (no rows) for list responses. */
     public static TurEvalDatasetDto summary(TurEvalDataset d, int rowCount) {
         return new TurEvalDatasetDto(d.getId(), d.getName(), d.getDescription(), d.getVersion(),
-                rowCount, d.getCreatedAt(), d.getUpdatedAt(), List.of());
+                rowCount, d.getMetadataJson(), d.getCreatedAt(), d.getUpdatedAt(), List.of());
     }
 
     /** Detail view with rows. */
     public static TurEvalDatasetDto detail(TurEvalDataset d, List<TurEvalDatasetRowDto> rows) {
         return new TurEvalDatasetDto(d.getId(), d.getName(), d.getDescription(), d.getVersion(),
-                rows.size(), d.getCreatedAt(), d.getUpdatedAt(), rows);
+                rows.size(), d.getMetadataJson(), d.getCreatedAt(), d.getUpdatedAt(), rows);
     }
 }

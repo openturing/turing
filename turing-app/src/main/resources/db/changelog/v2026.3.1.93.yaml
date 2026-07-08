@@ -1,0 +1,28 @@
+databaseChangeLog:
+  # T601 / §XXXIII.16 (Block AJ) — unify NL→facet eval (Block R) onto the
+  # dataset model.
+  #
+  #   tur_eval_dataset.metadataJson — dataset-level metadata (rows already carry
+  #   their own metadataJson). An NL→facet dataset stores its shared pack config
+  #   here ({"kind":"nl-facet","index":..,"locale":..,"schema":[..]}) so it
+  #   round-trips back into a TurNLFacetEvalPack for the additive Block R run path.
+  #
+  # Column name matches the JPA field name (camelCase); longtext for big text.
+  # Idempotent (MARK_RAN when the column already exists).
+
+  - changeSet:
+      id: v2026.3.1.93-add-tur_eval_dataset-metadataJson
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tur_eval_dataset
+                columnName: metadataJson
+      changes:
+        - addColumn:
+            tableName: tur_eval_dataset
+            columns:
+              - column:
+                  name: metadataJson
+                  type: longtext

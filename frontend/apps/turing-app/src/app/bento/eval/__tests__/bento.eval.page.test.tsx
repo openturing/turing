@@ -17,6 +17,19 @@ const useAugmentDataset = vi.fn();
 const useSaveReviewedRows = vi.fn();
 const useEvalRunHistory = vi.fn();
 const useRunEval = vi.fn();
+const useNLFacetEvalAvailable = vi.fn();
+const useNLFacetDatasets = vi.fn();
+const useImportNLFacetDataset = vi.fn();
+const useRunNLFacetDataset = vi.fn();
+const useDeleteNLFacetDataset = vi.fn();
+
+vi.mock("@/api/queries/sn-nl-facet-eval.queries", () => ({
+  useNLFacetEvalAvailable: () => useNLFacetEvalAvailable(),
+  useNLFacetDatasets: () => useNLFacetDatasets(),
+  useImportNLFacetDataset: () => useImportNLFacetDataset(),
+  useRunNLFacetDataset: () => useRunNLFacetDataset(),
+  useDeleteNLFacetDataset: () => useDeleteNLFacetDataset(),
+}));
 
 vi.mock("@/api/queries/eval-studio.queries", () => ({
   useEvalDatasets: () => useEvalDatasets(),
@@ -107,6 +120,11 @@ describe("BentoEvalPage", () => {
     });
     useEvalRunHistory.mockReturnValue({ data: [], isError: false });
     useRunEval.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
+    useNLFacetEvalAvailable.mockReturnValue({ data: true });
+    useNLFacetDatasets.mockReturnValue({ data: [], isError: false });
+    useImportNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    useRunNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false, variables: undefined });
+    useDeleteNLFacetDataset.mockReturnValue({ mutate: vi.fn(), isPending: false });
   });
 
   it("renders the Eval Studio hero and the datasets tab by default", () => {
@@ -194,6 +212,40 @@ describe("BentoEvalPage", () => {
     // ...and saving hands the reviewed rows to the mutation.
     fireEvent.click(screen.getByText("Save reviewed rows"));
     expect(saveMutate).toHaveBeenCalled();
+  });
+
+  it("switches to the NL→Facet tab and shows its empty state", () => {
+    renderPage();
+    fireEvent.click(screen.getByText("NL→Facet"));
+    expect(screen.getByText("No NL→facet datasets yet")).toBeInTheDocument();
+  });
+
+  it("lists an NL→facet dataset and runs it, showing the report", () => {
+    useNLFacetDatasets.mockReturnValue({
+      data: [{ id: "nf1", name: "catalog pack", version: 1, rowCount: 3 }],
+      isError: false,
+    });
+    useRunNLFacetDataset.mockReturnValue({
+      mutate: (_id: string, opts?: { onSuccess?: (r: unknown) => void }) =>
+        opts?.onSuccess?.({
+          packName: "catalog pack",
+          passed: true,
+          caseCount: 3,
+          passedCount: 3,
+          score: 1,
+          results: [{ caseName: "cheap online", passed: true, score: 1, findings: [], ungroundedFields: [] }],
+          error: null,
+        }),
+      isPending: false,
+      variables: undefined,
+    });
+    renderPage();
+    fireEvent.click(screen.getByText("NL→Facet"));
+    expect(screen.getByText("catalog pack")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Run"));
+    // The per-case breakdown renders once the run resolves (the summary line
+    // uses i18n interpolation, which the test mock does not expand).
+    expect(screen.getByText("cheap online")).toBeInTheDocument();
   });
 
   it("switches to the runs tab and shows the run-history empty state", () => {

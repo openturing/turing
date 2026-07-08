@@ -20,16 +20,21 @@
  */
 package com.viglet.turing.api.sn.console;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.agent.TurEvalDatasetDto;
+import com.viglet.turing.sn.dsl.eval.TurNLFacetDatasetService;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalPack;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalReport;
 import com.viglet.turing.sn.dsl.eval.TurNLFacetEvalService;
@@ -61,6 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNNLFacetEvalAPI {
 
     private final TurNLFacetEvalService evalService;
+    private final TurNLFacetDatasetService datasetService;
 
     @Operation(summary = "True when a usable default LLM is configured (the eval can run)")
     @GetMapping("/available")
@@ -74,5 +80,43 @@ public class TurSNNLFacetEvalAPI {
     @Secured({"ROLE_ADMIN", "SN_ACCESS"})
     public ResponseEntity<TurNLFacetEvalReport> run(@RequestBody TurNLFacetEvalPack pack) {
         return ResponseEntity.ok(evalService.run(pack));
+    }
+
+    // ─────────────── T601 — NL→facet packs as reusable eval datasets ───────────────
+
+    @Operation(summary = "Import an NL→facet eval pack as a reusable eval dataset")
+    @PostMapping("/dataset")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<TurEvalDatasetDto> importDataset(@RequestBody TurNLFacetEvalPack pack) {
+        return ResponseEntity.ok(datasetService.importPack(pack));
+    }
+
+    @Operation(summary = "List the saved NL→facet eval datasets")
+    @GetMapping("/dataset")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public List<TurEvalDatasetDto> listDatasets() {
+        return datasetService.list();
+    }
+
+    @Operation(summary = "Reconstruct the eval pack a saved NL→facet dataset holds")
+    @GetMapping("/dataset/{id}")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<TurNLFacetEvalPack> getDataset(@PathVariable String id) {
+        return ResponseEntity.ok(datasetService.toPack(id));
+    }
+
+    @Operation(summary = "Run a saved NL→facet dataset and return the pass/fail report")
+    @PostMapping("/dataset/{id}/run")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<TurNLFacetEvalReport> runDataset(@PathVariable String id) {
+        return ResponseEntity.ok(datasetService.run(id));
+    }
+
+    @Operation(summary = "Delete a saved NL→facet dataset")
+    @DeleteMapping("/dataset/{id}")
+    @Secured({"ROLE_ADMIN", "SN_ACCESS"})
+    public ResponseEntity<Void> deleteDataset(@PathVariable String id) {
+        datasetService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

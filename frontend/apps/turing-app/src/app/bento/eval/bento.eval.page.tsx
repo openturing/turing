@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   IconDatabase,
+  IconFilterSearch,
   IconFlask2,
   IconHistory,
   IconInbox,
@@ -13,10 +14,11 @@ import {
 import { useEvalDatasets, useEvalGraderStacks } from "@/api/queries/eval-studio.queries";
 import { BentoHero } from "@/components/bento";
 import { BentoEvalGeneratePanel } from "./bento.eval.generate-panel";
+import { BentoEvalNLFacetPanel } from "./bento.eval.nl-facet-panel";
 import { BentoEvalReviewInbox } from "./bento.eval.review-inbox";
 import { BentoEvalRunHistory } from "./bento.eval.run-history";
 
-type EvalTab = "datasets" | "generate" | "stacks" | "runs" | "review";
+type EvalTab = "datasets" | "generate" | "stacks" | "nlfacet" | "runs" | "review";
 
 /**
  * T599 / §XXXIII.14 — Eval Studio. The bento home for the evaluation platform:
@@ -49,6 +51,11 @@ export default function BentoEvalPage() {
       id: "stacks",
       label: t("evalStudio.tabs.stacks", { defaultValue: "Grader stacks" }),
       icon: IconStack2,
+    },
+    {
+      id: "nlfacet",
+      label: t("evalStudio.tabs.nlFacet", { defaultValue: "NL→Facet" }),
+      icon: IconFilterSearch,
     },
     {
       id: "runs",
@@ -143,6 +150,8 @@ export default function BentoEvalPage() {
           errorLabel={t("common.connectionError", { resource: "grader stacks" })}
         />
       )}
+
+      {tab === "nlfacet" && <BentoEvalNLFacetPanel />}
 
       {tab === "runs" && <BentoEvalRunHistory />}
 
