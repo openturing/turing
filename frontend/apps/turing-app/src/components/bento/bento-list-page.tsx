@@ -28,6 +28,7 @@ import {
 import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { BentoEmptyState } from "./bento-empty-state";
 import { BentoHero } from "./bento-hero";
 import {
   BENTO_EMPHASIS_SPAN,
@@ -529,12 +530,16 @@ function NewTile({
 }
 
 function EmptyHintTile({ title, description }: Readonly<{ title: string; description: string }>) {
+  // Shares the canonical BentoEmptyState look (T572); the grid span keeps it a
+  // 2×2 cell in the mosaic, left-aligned to sit beside the "New" tile.
   return (
-    <div className="bento-tile bento-glass col-span-2 row-span-2 flex flex-col items-start justify-end p-5 md:col-span-4">
-      <IconSparkles size={20} className="mb-3 text-indigo-500" />
-      <div className="text-lg font-semibold tracking-tight">{title}</div>
-      <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
-    </div>
+    <BentoEmptyState
+      icon={IconSparkles}
+      title={title}
+      description={description}
+      align="start"
+      className="col-span-2 row-span-2 justify-end md:col-span-4"
+    />
   );
 }
 

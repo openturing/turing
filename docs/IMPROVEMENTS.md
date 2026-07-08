@@ -2033,16 +2033,6 @@ JPA dependent-query pattern** (see `api/queries/admin.queries.ts`) — the bento
 re-skin must not collapse the source discriminator that toggles cleanly between
 backends.
 
-### XXXI.10 Cutover & retirement (T569–T572)
-
-Once every surface exists in bento: flip `/bento` to be the default entry, add
-`console/*` → `/bento/*` redirects, drop the "Preview" badge (T569); delete the
-migrated console pages and prune dead routes/components/imports (T570); a full
-a11y + responsive + performance (lazy-load/bundle) + e2e smoke pass across the
-whole surface (T571); and a delight polish round — consistent empty-states, a
-keyboard-shortcut guide, reduced-motion audit, first-run tour (T572, 💭). Only
-after T570 is the console truly retired; until then it stays live as the fallback.
-
 ## XXXIII. Evaluation platform — pluggable graders + datasets (Block AJ)
 
 ### XXXIII.0 The problem — eval is two hard-wired islands

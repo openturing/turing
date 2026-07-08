@@ -18,6 +18,36 @@
       "unsaved": "Alterações não salvas",
       "titleRequired": "Título obrigatório"
     },
+    "shortcuts": {
+      "title": "Atalhos de teclado",
+      "description": "Navegue pelo Turing sem tirar as mãos do teclado.",
+      "global": "Global",
+      "palette": "Paleta de comandos",
+      "openGuide": "Mostrar atalhos de teclado",
+      "navigate": "Navegar entre os resultados",
+      "openSelected": "Abrir a área selecionada",
+      "dismiss": "Fechar a paleta ou uma janela"
+    },
+    "tour": {
+      "welcome": "Bem-vindo ao Turing ES",
+      "skip": "Pular",
+      "back": "Voltar",
+      "next": "Próximo",
+      "done": "Começar",
+      "replay": "Fazer o tour",
+      "rail": {
+        "title": "Uma barra, três hubs",
+        "body": "A barra à esquerda mantém apenas Início e os três hubs — IA Generativa, Busca Corporativa e Gerenciamento. Todo o resto fica a um toque dentro do seu hub."
+      },
+      "palette": {
+        "title": "Vá a qualquer lugar pela paleta",
+        "body": "Pressione ⌘K (Ctrl+K) em qualquer tela para buscar e ir direto a qualquer área. Pressione ? a qualquer momento para ver todos os atalhos."
+      },
+      "customize": {
+        "title": "Deixe do seu jeito",
+        "body": "Em qualquer lista, Personalizar layout permite arrastar os blocos para reordenar e escolher o tamanho. Seu arranjo é mantido entre sessões."
+      }
+    },
     "layout": {
       "customize": "Personalizar layout",
       "editHint": "Arraste os blocos para reordenar · escolha P / M / G para redimensionar",

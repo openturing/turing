@@ -18,6 +18,36 @@
       "unsaved": "Unsaved changes",
       "titleRequired": "Title required"
     },
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "description": "Move around Turing without leaving the keyboard.",
+      "global": "Global",
+      "palette": "Command palette",
+      "openGuide": "Show keyboard shortcuts",
+      "navigate": "Move between results",
+      "openSelected": "Open the selected area",
+      "dismiss": "Close the palette or a dialog"
+    },
+    "tour": {
+      "welcome": "Welcome to Turing ES",
+      "skip": "Skip",
+      "back": "Back",
+      "next": "Next",
+      "done": "Get started",
+      "replay": "Take the tour",
+      "rail": {
+        "title": "One rail, three hubs",
+        "body": "The left rail keeps just Home and the three hubs — Generative AI, Enterprise Search, and Management. Everything else lives one tap inside its hub."
+      },
+      "palette": {
+        "title": "Jump anywhere with the palette",
+        "body": "Press ⌘K (Ctrl+K) from any screen to search and jump straight to any area. Press ? any time to see every shortcut."
+      },
+      "customize": {
+        "title": "Make it yours",
+        "body": "On any list, Customize layout lets you drag tiles to reorder them and pick their size. Your arrangement sticks across sessions."
+      }
+    },
     "layout": {
       "customize": "Customize layout",
       "editHint": "Drag tiles to reorder · pick S / M / L to resize",

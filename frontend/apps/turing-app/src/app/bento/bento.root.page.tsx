@@ -4,9 +4,12 @@ import {
   BENTO_NAV_SECTIONS,
   BentoBackToTop,
   BentoCommandPalette,
+  BentoFirstRunTour,
   BentoNavRail,
+  BentoShortcutsDialog,
   BentoUserMenu,
   bentoSectionAreaRoute,
+  hasSeenBentoTour,
 } from "@/components/bento";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -72,26 +75,51 @@ export default function BentoRootPage() {
   const { t } = useTranslation();
   const parentPath = resolveBentoParent(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   /*
-   * Global ⌘K / Ctrl+K opens the command palette (T549). Registered once
-   * at the shell root so it works from any bento screen. Ignores the combo
-   * while typing in an input/textarea/contenteditable so it never hijacks
-   * a keystroke the user meant for a field.
+   * Global shell shortcuts, registered once at the root so they work from any
+   * bento screen (T549 palette + T572 shortcut guide). Both ignore the key
+   * while the user is typing in an input/textarea/contenteditable so they
+   * never hijack a keystroke meant for a field.
+   *
+   *   ⌘K / Ctrl+K → toggle the command palette
+   *   ?           → open the keyboard-shortcut guide
    */
   useEffect(() => {
+    function isTyping(target: EventTarget | null): boolean {
+      const el = target as HTMLElement | null;
+      const tag = el?.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || Boolean(el?.isContentEditable);
+    }
     function onKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        const target = event.target as HTMLElement | null;
-        const tag = target?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+        if (isTyping(event.target)) return;
         event.preventDefault();
         setPaletteOpen((prev) => !prev);
+      } else if (event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (isTyping(event.target)) return;
+        event.preventDefault();
+        setShortcutsOpen((prev) => !prev);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  /*
+   * First-run tour (T572): shown once, only when landing on the bento home, and
+   * only if the user hasn't seen (or skipped) it. The tour itself persists the
+   * "seen" flag on dismiss; here we just decide whether to raise it. Deferred a
+   * tick so it doesn't fight the shell's own entrance animation.
+   */
+  useEffect(() => {
+    if (pathname !== ROUTES.BENTO_HOME && pathname !== ROUTES.BENTO_ROOT) return;
+    if (hasSeenBentoTour()) return;
+    const id = window.setTimeout(() => setTourOpen(true), 400);
+    return () => window.clearTimeout(id);
+  }, [pathname]);
 
   return (
     <UserProvider>
@@ -157,7 +185,10 @@ export default function BentoRootPage() {
             </button>
             <LanguageSwitcher />
             <ModeToggle />
-            <BentoUserMenu />
+            <BentoUserMenu
+              onOpenShortcuts={() => setShortcutsOpen(true)}
+              onReplayTour={() => setTourOpen(true)}
+            />
           </div>
         </header>
 
@@ -172,6 +203,8 @@ export default function BentoRootPage() {
 
         <BentoBackToTop />
         <BentoCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        <BentoShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} isMac={IS_MAC} />
+        <BentoFirstRunTour open={tourOpen} onOpenChange={setTourOpen} />
       </div>
     </UserProvider>
   );

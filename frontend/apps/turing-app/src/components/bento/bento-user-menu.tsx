@@ -10,7 +10,7 @@ import {
 import { ROUTES } from "@/app/routes.const";
 import { useFeatures } from "@/api/queries/features.queries";
 import { useCurrentUser } from "@/contexts/user.context";
-import { IconBuildingCommunity, IconBuildingSkyscraper, IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { IconBuildingCommunity, IconBuildingSkyscraper, IconKeyboard, IconLogout, IconSparkles, IconUserCircle } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { UserAvatar } from "@viglet/viglet-design-system";
@@ -23,7 +23,14 @@ import { UserAvatar } from "@viglet/viglet-design-system";
  * (`.bento-dropdown-item`) carry the frosted-glass look and iOS spring
  * easing so it feels like part of the bento language.
  */
-export function BentoUserMenu() {
+export interface BentoUserMenuProps {
+  /** Open the keyboard-shortcut guide (T572). Omit to hide the entry. */
+  onOpenShortcuts?: () => void;
+  /** Replay the first-run tour (T572). Omit to hide the entry. */
+  onReplayTour?: () => void;
+}
+
+export function BentoUserMenu({ onOpenShortcuts, onReplayTour }: Readonly<BentoUserMenuProps> = {}) {
   const { user } = useCurrentUser();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -114,6 +121,32 @@ export function BentoUserMenu() {
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
+
+        {(onOpenShortcuts || onReplayTour) && (
+          <>
+            <DropdownMenuSeparator className="my-1.5 bg-border/50" />
+            <DropdownMenuGroup>
+              {onReplayTour && (
+                <DropdownMenuItem
+                  onSelect={() => onReplayTour()}
+                  className="bento-dropdown-item cursor-pointer gap-2 px-3 py-2"
+                >
+                  <IconSparkles size={18} />
+                  {t("bento.tour.replay", { defaultValue: "Take the tour" })}
+                </DropdownMenuItem>
+              )}
+              {onOpenShortcuts && (
+                <DropdownMenuItem
+                  onSelect={() => onOpenShortcuts()}
+                  className="bento-dropdown-item cursor-pointer gap-2 px-3 py-2"
+                >
+                  <IconKeyboard size={18} />
+                  {t("bento.shortcuts.title", { defaultValue: "Keyboard shortcuts" })}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuGroup>
+          </>
+        )}
 
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />
 

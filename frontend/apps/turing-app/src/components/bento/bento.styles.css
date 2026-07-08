@@ -205,4 +205,12 @@
   /* The scroll-linked hero->save-bar morph animates via the --bento-fade
      custom property, not a CSS animation; the opacity swap still works but
      the translate is already neutralised above (bento-fade-out/in). */
+
+  /* The tile→detail View-Transitions morph is decorative; cut it to an
+     instant swap so a reduced-motion user doesn't get the 520ms cross-fade
+     (T572 motion audit — this was the one animation outside the guard). */
+  ::view-transition-old(bento-hero),
+  ::view-transition-new(bento-hero) {
+    animation: none !important;
+  }
 }
